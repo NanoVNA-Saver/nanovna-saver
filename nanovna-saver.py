@@ -9,8 +9,8 @@ import math
 class SmithChart(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
-        self.chartWidth = 720
-        self.chartHeight = 720
+        self.chartWidth = 360
+        self.chartHeight = 360
 
         self.setMinimumSize(self.chartWidth + 40, self.chartHeight + 40)
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding))
@@ -23,6 +23,11 @@ class SmithChart(QtWidgets.QWidget):
         self.frequencies = []
         self.marker = 0
 
+    def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
+        self.chartWidth = min(a0.size().width()-40, a0.size().height()-40)
+        self.chartHeight = min(a0.size().width()-40, a0.size().height()-40)
+        self.update()
+
     def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
         qp = QtGui.QPainter(self)
         #qp.begin(self)  # Apparently not needed?
@@ -30,12 +35,12 @@ class SmithChart(QtWidgets.QWidget):
         self.drawValues(qp)
         qp.end()
 
-    def drawSmithChart(self, qp: QtGui.QPainter):  # TODO: Make the Smith chart resizable
+    def drawSmithChart(self, qp: QtGui.QPainter):
         centerX = int(self.width()/2)
         centerY = int(self.height()/2)
         qp.setPen(QtGui.QPen(QtGui.QColor("lightgray")))
         qp.drawEllipse(QtCore.QPoint(centerX, centerY), int(self.chartWidth/2), int(self.chartHeight/2))
-        qp.drawLine(20, centerY, self.chartWidth+20, centerY)
+        qp.drawLine(centerX - int(self.chartWidth/2), centerY, centerX + int(self.chartWidth/2), centerY)
 
         qp.drawEllipse(QtCore.QPoint(centerX + int(self.chartWidth/4), centerY), int(self.chartWidth/4), int(self.chartHeight/4))  # Re(Z) = 1
         qp.drawEllipse(QtCore.QPoint(centerX + int(2/3*self.chartWidth/2), centerY), int(self.chartWidth/6), int(self.chartHeight/6))  # Re(Z) = 2
@@ -50,16 +55,11 @@ class SmithChart(QtWidgets.QWidget):
         qp.drawArc(centerX + int(self.chartWidth/4), centerY, int(self.chartWidth/2), int(self.chartHeight/2), 90*16, 127*16)  # Im(Z) = -2
         qp.drawArc(centerX + int(self.chartWidth/4), centerY, int(self.chartWidth/2), -int(self.chartHeight/2), -90*16, -127*16)  # Im(Z) = 2
         qp.drawArc(centerX, centerY, self.chartWidth, self.chartHeight, 90*16, 90*16)  # Im(Z) = -1
-        qp.drawArc(centerY, centerY, self.chartWidth, -self.chartHeight, -90 * 16, -90 * 16)  # Im(Z) = 1
-        qp.drawArc(20, centerY, self.chartWidth*2, self.chartHeight*2, 90*16, 53*16)  # Im(Z) = -0.5
-        qp.drawArc(20, centerY, self.chartWidth*2, -self.chartHeight*2, -90 * 16, -53 * 16)  # Im(Z) = 0.5
+        qp.drawArc(centerX, centerY, self.chartWidth, -self.chartHeight, -90 * 16, -90 * 16)  # Im(Z) = 1
+        qp.drawArc(centerX - int(self.chartWidth/2), centerY, self.chartWidth*2, self.chartHeight*2, int(99.5*16), int(43.5*16))  # Im(Z) = -0.5
+        qp.drawArc(centerX - int(self.chartWidth/2), centerY, self.chartWidth*2, -self.chartHeight*2, int(-99.5 * 16), int(-43.5 * 16))  # Im(Z) = 0.5
         qp.drawArc(centerX - self.chartWidth*2, centerY, self.chartWidth*5, self.chartHeight*5, int(93.85*16), int(18.85*16))  # Im(Z) = -0.2
         qp.drawArc(centerX - self.chartWidth*2, centerY, self.chartWidth*5, -self.chartHeight*5, int(-93.85 * 16), int(-18.85 * 16))  # Im(Z) = 0.2
-
-        # SWR rings
-        #qp.drawEllipse(QtCore.QPoint(200, 200), 54, 54)  # SWR = 2
-        #qp.drawEllipse(QtCore.QPoint(200, 200), 90, 90)  # SWR = 3
-        #qp.drawEllipse(QtCore.QPoint(200, 200), 126, 126)  # SWR = 5
 
     def drawValues(self, qp: QtGui.QPainter):
         pen = QtGui.QPen(QtGui.QColor(255, 220, 40))
@@ -74,11 +74,12 @@ class SmithChart(QtWidgets.QWidget):
             else:
                 qp.setPen(pen)
             rawx, rawy = self.values[i].split(" ")
-            x = (self.chartWidth+40)/2 + float(rawx) * self.chartWidth/2
-            y = (self.chartHeight+40)/2 + float(rawy) * -1 * self.chartHeight/2
+            x = self.width()/2 + float(rawx) * self.chartWidth/2
+            y = self.height()/2 + float(rawy) * -1 * self.chartHeight/2
             qp.drawPoint(int(x), int(y))
 
     def setValues(self, values, frequencies):
+        print("### Updating values ###")
         self.values = values
         self.frequencies = frequencies
         self.update()
@@ -121,6 +122,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         ################################################################################################################
 
         sweep_control_box = QtWidgets.QGroupBox()
+        sweep_control_box.setMaximumWidth(400)
         sweep_control_box.setTitle("Sweep control")
         sweep_control_layout = QtWidgets.QFormLayout(sweep_control_box)
 
@@ -152,6 +154,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         marker_control_box = QtWidgets.QGroupBox()
         marker_control_box.setTitle("Marker")
+        marker_control_box.setMaximumWidth(400)
         marker_control_layout = QtWidgets.QFormLayout(marker_control_box)
 
         self.markerFrequencyInput = QtWidgets.QLineEdit("")
@@ -162,13 +165,15 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         left_column.addWidget(marker_control_box)
 
-        left_column.addSpacerItem(QtWidgets.QSpacerItem(1, 1, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding))
-          
+        left_column.addSpacerItem(QtWidgets.QSpacerItem(1, 1, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding))
+
+
         ################################################################################################################
         #  Serial control
         ################################################################################################################
 
         serial_control_box = QtWidgets.QGroupBox()
+        serial_control_box.setMaximumWidth(400)
         serial_control_box.setTitle("Serial port control")
         serial_control_layout = QtWidgets.QFormLayout(serial_control_box)
         self.serialPortInput = QtWidgets.QLineEdit(self.serialPort)
@@ -191,6 +196,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         file_control_box = QtWidgets.QGroupBox()
         file_control_box.setTitle("Export file")
+        file_control_box.setMaximumWidth(400)
         file_control_layout = QtWidgets.QFormLayout(file_control_box)
         self.fileNameInput = QtWidgets.QLineEdit("")
         self.fileNameInput.setAlignment(QtCore.Qt.AlignRight)
@@ -208,6 +214,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         ################################################################################################################
 
         self.lister = QtWidgets.QPlainTextEdit()
+        self.lister.setFixedHeight(200)
         right_column.addWidget(self.lister)
         self.smithChart = SmithChart()
         right_column.addWidget(self.smithChart)
