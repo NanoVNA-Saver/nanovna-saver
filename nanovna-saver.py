@@ -26,6 +26,9 @@ class SmithChart(QtWidgets.QWidget):
         self.marker1Location = -1
         self.marker2Location = -1
 
+        self.marker1Color = QtGui.QColor(255, 0, 20)
+        self.marker2Color = QtGui.QColor(20, 0, 255)
+
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
         self.chartWidth = min(a0.size().width()-40, a0.size().height()-40)
         self.chartHeight = min(a0.size().width()-40, a0.size().height()-40)
@@ -65,7 +68,7 @@ class SmithChart(QtWidgets.QWidget):
         qp.drawArc(centerX - self.chartWidth*2, centerY, self.chartWidth*5, -self.chartHeight*5, int(-93.85 * 16), int(-18.85 * 16))  # Im(Z) = 0.2
 
     def drawValues(self, qp: QtGui.QPainter):
-        pen = QtGui.QPen(QtGui.QColor(255, 220, 40, 128))
+        pen = QtGui.QPen(QtGui.QColor(220, 200, 30, 128))
         pen.setWidth(2)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(3)
@@ -98,6 +101,7 @@ class SmithChart(QtWidgets.QWidget):
             qp.drawPoint(int(x), int(y))
         # Now draw the markers
         if self.marker1 != -1:
+            highlighter.setColor(self.marker1Color)
             qp.setPen(highlighter)
             rawx, rawy = self.values[marker1].split(" ")
             x = self.width() / 2 + float(rawx) * self.chartWidth / 2
@@ -106,7 +110,7 @@ class SmithChart(QtWidgets.QWidget):
             self.marker1Location = marker1
 
         if self.marker2 != -1:
-            highlighter.setColor(QtGui.QColor(255, 0, 20))
+            highlighter.setColor(self.marker2Color)
             qp.setPen(highlighter)
             rawx, rawy = self.values[marker2].split(" ")
             x = self.width() / 2 + float(rawx) * self.chartWidth / 2
@@ -155,6 +159,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.setWindowTitle("NanoVNA Saver")
         layout = QtWidgets.QGridLayout()
         self.setLayout(layout)
+
+        self.smithChart = SmithChart()
 
         left_column = QtWidgets.QVBoxLayout()
         right_column = QtWidgets.QVBoxLayout()
@@ -206,13 +212,35 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.marker1FrequencyInput.setAlignment(QtCore.Qt.AlignRight)
         self.marker1FrequencyInput.returnPressed.connect(lambda: self.smithChart.setMarker1(self.marker1FrequencyInput.text()))
 
-        marker_control_layout.addRow(QtWidgets.QLabel("Marker 1"), self.marker1FrequencyInput)
+        self.btnMarker1ColorPicker = QtWidgets.QPushButton("█")
+        self.btnMarker1ColorPicker.setFixedWidth(20)
+        p = self.btnMarker1ColorPicker.palette()
+        p.setColor(QtGui.QPalette.ButtonText, self.smithChart.marker1Color)
+        self.btnMarker1ColorPicker.setPalette(p)
+        self.btnMarker1ColorPicker.clicked.connect(lambda: self.setMarker1Color(QtWidgets.QColorDialog.getColor()))
+
+        marker1layout = QtWidgets.QHBoxLayout()
+        marker1layout.addWidget(self.marker1FrequencyInput)
+        marker1layout.addWidget(self.btnMarker1ColorPicker)
+
+        marker_control_layout.addRow(QtWidgets.QLabel("Marker 1"), marker1layout)
 
         self.marker2FrequencyInput = QtWidgets.QLineEdit("")
         self.marker2FrequencyInput.setAlignment(QtCore.Qt.AlignRight)
         self.marker2FrequencyInput.returnPressed.connect(lambda: self.smithChart.setMarker2(self.marker2FrequencyInput.text()))
 
-        marker_control_layout.addRow(QtWidgets.QLabel("Marker 2"), self.marker2FrequencyInput)
+        self.btnMarker2ColorPicker = QtWidgets.QPushButton("█")
+        self.btnMarker2ColorPicker.setFixedWidth(20)
+        p = self.btnMarker2ColorPicker.palette()
+        p.setColor(QtGui.QPalette.ButtonText, self.smithChart.marker2Color)
+        self.btnMarker2ColorPicker.setPalette(p)
+        self.btnMarker2ColorPicker.clicked.connect(lambda: self.setMarker2Color(QtWidgets.QColorDialog.getColor()))
+
+        marker2layout = QtWidgets.QHBoxLayout()
+        marker2layout.addWidget(self.marker2FrequencyInput)
+        marker2layout.addWidget(self.btnMarker2ColorPicker)
+
+        marker_control_layout.addRow(QtWidgets.QLabel("Marker 2"), marker2layout)
 
         self.marker1label = QtWidgets.QLabel("")
         marker_control_layout.addRow(QtWidgets.QLabel("Marker 1: "), self.marker1label)
@@ -272,7 +300,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.lister = QtWidgets.QPlainTextEdit()
         self.lister.setFixedHeight(200)
         right_column.addWidget(self.lister)
-        self.smithChart = SmithChart()
         right_column.addWidget(self.smithChart)
 
     def exportFile(self):
@@ -472,6 +499,17 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.serialLock.release()
             return values[1:102]
 
+    def setMarker1Color(self, color):
+        self.smithChart.marker1Color = color
+        p = self.btnMarker1ColorPicker.palette()
+        p.setColor(QtGui.QPalette.ButtonText, color)
+        self.btnMarker1ColorPicker.setPalette(p)
+
+    def setMarker2Color(self, color):
+        self.smithChart.marker2Color = color
+        p = self.btnMarker2ColorPicker.palette()
+        p.setColor(QtGui.QPalette.ButtonText, color)
+        self.btnMarker2ColorPicker.setPalette(p)
 
 if __name__ == '__main__':
     # Main code goes here
