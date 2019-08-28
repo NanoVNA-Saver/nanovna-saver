@@ -1,11 +1,16 @@
 #  Copyright 2019 Rune B. Broberg
+import collections
 import math
 from time import sleep
+from typing import List
+
 from PyQt5 import QtWidgets, QtCore, QtGui
 import serial
 import threading
 
 from SmithChart import SmithChart
+
+Datapoint = collections.namedtuple('Datapoint', 'freq re im')
 
 
 class NanoVNASaver(QtWidgets.QWidget):
@@ -19,6 +24,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.values = []
         self.frequencies = []
+        self.data : List[Datapoint] = []
 
         self.serialPort = "COM11"
         # self.serialSpeed = "115200"
@@ -309,6 +315,14 @@ class NanoVNASaver(QtWidgets.QWidget):
 
             self.values = values
             self.frequencies = frequencies
+            #  Test code which sets up an array of tuples of parsed values
+            self.data = []
+            for i in range(len(values)):
+                reStr, imStr = values[i].split(" ")
+                re = float(reStr)
+                im = float(imStr)
+                freq = int(frequencies[i])
+                self.data += [Datapoint(freq, re, im)]
 
             # Reset the device to show the full range
             self.setSweep(self.sweepStartInput.text(), self.sweepEndInput.text())
