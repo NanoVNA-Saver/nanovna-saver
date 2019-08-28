@@ -1,7 +1,10 @@
 #  Copyright 2019 Rune B. Broberg
+import collections
+from typing import List
 
 from PyQt5 import QtWidgets, QtGui, QtCore
 
+Datapoint = collections.namedtuple('Datapoint', 'freq re im')
 
 class SmithChart(QtWidgets.QWidget):
     def __init__(self):
@@ -18,6 +21,7 @@ class SmithChart(QtWidgets.QWidget):
 
         self.values = []
         self.frequencies = []
+        self.data : List[Datapoint] = []
         self.marker1 = -1
         self.marker2 = -1
         self.marker1Location = -1
@@ -72,44 +76,41 @@ class SmithChart(QtWidgets.QWidget):
         qp.setPen(pen)
         marker1 = -1
         marker2 = -1
-        for i in range(len(self.values)):
+        for i in range(len(self.data)):
             # TODO: Make this check for being "nearest" neater
-            if self.marker1 != -1 and abs(int(self.frequencies[i]) - self.marker1) < (int(self.frequencies[2]) - int(self.frequencies[1])):
+            if self.marker1 != -1 and abs(int(self.data[i].freq) - self.marker1) < (int(self.data[2].freq) - int(self.data[1].freq)):
                 if marker1 != -1:
                     # Are we closer than the other spot?
-                    if abs(int(self.frequencies[i]) - self.marker1) < abs(int(self.frequencies[marker1]) - self.marker1):
+                    if abs(int(self.data[i].freq) - self.marker1) < abs(int(self.data[marker1].freq) - self.marker1):
                         marker1 = i
                 else:
                     marker1 = i
 
-            if self.marker2 != -1 and abs(int(self.frequencies[i]) - self.marker2) < (int(self.frequencies[2]) - int(self.frequencies[1])):
+            if self.marker2 != -1 and abs(int(self.data[i].freq) - self.marker2) < (int(self.data[2].freq) - int(self.data[1].freq)):
                 if marker2 != -1:
                     # Are we closer than the other spot?
-                    if abs(int(self.frequencies[i]) - self.marker2) < abs(int(self.frequencies[marker2]) - self.marker2):
+                    if abs(int(self.data[i].freq) - self.marker2) < abs(int(self.data[marker2].freq) - self.marker2):
                         marker2 = i
                 else:
                     marker2 = i
 
-            rawx, rawy = self.values[i].split(" ")
-            x = self.width()/2 + float(rawx) * self.chartWidth/2
-            y = self.height()/2 + float(rawy) * -1 * self.chartHeight/2
+            x = self.width()/2 + self.data[i].re * self.chartWidth/2
+            y = self.height()/2 + self.data[i].im * -1 * self.chartHeight/2
             qp.drawPoint(int(x), int(y))
         # Now draw the markers
         if marker1 != -1:
             highlighter.setColor(self.marker1Color)
             qp.setPen(highlighter)
-            rawx, rawy = self.values[marker1].split(" ")
-            x = self.width() / 2 + float(rawx) * self.chartWidth / 2
-            y = self.height() / 2 + float(rawy) * -1 * self.chartHeight / 2
+            x = self.width() / 2 + self.data[marker1].re * self.chartWidth / 2
+            y = self.height() / 2 + self.data[marker1].im * -1 * self.chartHeight / 2
             qp.drawPoint(int(x), int(y))
             self.marker1Location = marker1
 
         if marker2 != -1:
             highlighter.setColor(self.marker2Color)
             qp.setPen(highlighter)
-            rawx, rawy = self.values[marker2].split(" ")
-            x = self.width() / 2 + float(rawx) * self.chartWidth / 2
-            y = self.height() / 2 + float(rawy) * -1 * self.chartHeight / 2
+            x = self.width() / 2 + self.data[marker2].re * self.chartWidth / 2
+            y = self.height() / 2 + self.data[marker2].im * -1 * self.chartHeight / 2
             qp.drawPoint(int(x), int(y))
             self.marker2Location = marker2
 
@@ -117,6 +118,11 @@ class SmithChart(QtWidgets.QWidget):
         print("### Updating values ###")
         self.values = values
         self.frequencies = frequencies
+        self.update()
+
+    def setData(self, data):
+        print("### Updating data ###")
+        self.data = data
         self.update()
 
     def setMarker1(self, value):

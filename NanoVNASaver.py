@@ -20,12 +20,14 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.threadpool = QtCore.QThreadPool()
         print("Max thread count " + str(self.threadpool.maxThreadCount()))
+        self.worker = SweepWorker(self)
 
         self.noSweeps = 1  # Number of sweeps to run
 
         self.serialLock = threading.Lock()
         self.serial = serial.Serial()
 
+        self.dataLock = threading.Lock()
         self.values = []
         self.frequencies = []
         self.data : List[Datapoint] = []
@@ -71,7 +73,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         sweep_control_layout.addRow(QtWidgets.QLabel("Sweep count"), self.sweepCountInput)
 
         self.sweepProgressBar = QtWidgets.QProgressBar()
-
+        self.sweepProgressBar.setMaximum(100)
+        self.sweepProgressBar.setValue(0)
         sweep_control_layout.addRow(self.sweepProgressBar)
 
         self.btnSweep = QtWidgets.QPushButton("Sweep")
@@ -183,6 +186,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         right_column.addWidget(self.lister)
         right_column.addWidget(self.smithChart)
 
+        self.worker.signals.updated.connect(self.dataUpdated)
+
     def exportFile(self):
         print("Save file to " + self.fileNameInput.text())
         filename = self.fileNameInput.text()
@@ -252,137 +257,34 @@ class NanoVNASaver(QtWidgets.QWidget):
             return
 
         self.sweepProgressBar.setValue(0)
-
-        worker = SweepWorker(self)
-        self.threadpool.start(worker)
-
         self.btnSweep.setDisabled(True)
 
-        if int(self.sweepCountInput.text()) > 0:
-            self.noSweeps = int(self.sweepCountInput.text())
+        self.threadpool.start(self.worker)
 
-        print("### Updating... ### ")
-
-        if len(self.frequencies) > 1:
-            # We've already run at least once
-            print("### Run at least once ###")
-            if (self.sweepStartInput.text() != self.frequencies[0]
-               or self.sweepEndInput.text() != self.frequencies[100]):
-                # Need to set frequency span
-                print("### Setting span ###")
-                # TODO: Set up for multiple sweeps
-                print("Setting sweep to run " + self.sweepStartInput.text() + " to " + self.sweepEndInput.text())
-                self.setSweep(self.sweepStartInput.text(), self.sweepEndInput.text())
-                sleep(0.5)
-
-        if self.noSweeps > 1 and self.sweepStartInput.text() != "" and self.sweepEndInput.text() != "":
-            # We're going to run multiple sweeps
-            print("### Multisweep ###")
-            span = int(self.sweepEndInput.text()) - int(self.sweepStartInput.text())
-            start = int(self.sweepStartInput.text())
-            end = int(self.sweepEndInput.text())
-            stepsize = int(span / (100 + (self.noSweeps-1)*101))
-            print("Doing " + str(100 + (self.noSweeps-1)*101) + " steps of size " + str(stepsize))
-            values = []
-            frequencies = []
-            for i in range(self.noSweeps):
-                self.setSweep(start + i*101*stepsize, start+(100+i*101)*stepsize)
-                QtWidgets.QApplication.processEvents()  # TODO: Make this multithreaded using the QT threads instead
-                sleep(0.2)
-                QtWidgets.QApplication.processEvents()  # This is a really stupid way to limit UI sleeps to 0.2 seconds
-                sleep(0.2)
-                QtWidgets.QApplication.processEvents()
-                sleep(0.2)
-                QtWidgets.QApplication.processEvents()
-                sleep(0.2)
-                tmpdata = []
-                done = False
-                while not done:
-                    done = True
-                    tmpdata = self.readValues("data 0")
-                    for d in tmpdata:
-                        a, b = d.split(" ")
-                        try:
-                            if float(a) < -1.5 or float(a) > 1.5:
-                                print("Warning: Got a non-float data value: " + d + " (" + a + ")")
-                                done = False
-                            if float(b) < -1.5 or float(b) > 1.5:
-                                print("Warning: Got a non-float data value: " + d + " (" + b + ")")
-                                done = False
-                        except Exception:
-                            done = False
-
-                values += tmpdata
-
-                # TODO: Figure out why frequencies sometimes arrive as non-numbers
-                tmpfreq = []
-                done = False
-                while not done:
-                    done = True
-                    tmpfreq = self.readValues("frequencies")
-                    for f in tmpfreq:
-                        if not f.isdigit():
-                            print("Warning: Got a non-digit frequency: " + f)
-                            done = False
-
-                frequencies += tmpfreq
-                self.smithChart.setValues(values, frequencies)
-                self.sweepProgressBar.setValue(round(100*(i+1)/self.noSweeps))
-
-            self.values = values
-            self.frequencies = frequencies
-            #  Test code which sets up an array of tuples of parsed values
-            self.data = []
-            for i in range(len(values)):
-                reStr, imStr = values[i].split(" ")
-                re = float(reStr)
-                im = float(imStr)
-                freq = int(frequencies[i])
-                self.data += [Datapoint(freq, re, im)]
-
-            # Reset the device to show the full range
-            self.setSweep(self.sweepStartInput.text(), self.sweepEndInput.text())
-        else:
-            print("### Reading values ###")
-            self.values = self.readValues("data 0")
-            print("### Reading frequencies ###")
-            self.frequencies = self.readValues("frequencies")
-            if self.sweepStartInput.text() == "":
-                self.sweepStartInput.setText(self.frequencies[0])
-            if self.sweepEndInput.text() == "":
-                self.sweepEndInput.setText(self.frequencies[100])
-            self.sweepProgressBar.setValue(100)
-
-        print("### Outputting values in textbox ###")
-        for line in self.values:
-            self.lister.appendPlainText(line)
-        print("### Displaying Smith chart ###")
-        self.smithChart.setValues(self.values, self.frequencies)
-        if self.smithChart.marker1Location != -1:
-            reStr, imStr = self.values[self.smithChart.marker1Location].split(" ")
-            re = float(reStr)
-            im = float(imStr)
-
-            re50 = 50*(1-re*re-im*im)/(1+re*re+im*im-2*re)
-            im50 = 50*(2*im)/(1+re*re+im*im-2*re)
-
-            mag = math.sqrt(re*re+im*im)
-            vswr = (1+mag)/(1-mag)
-            self.marker1label.setText(str(round(re50, 3)) + " + j" + str(round(im50, 3)) + " VSWR: 1:" + str(round(vswr, 3)))
-
-        if self.smithChart.marker2Location != -1:
-            reStr, imStr = self.values[self.smithChart.marker2Location].split(" ")
-            re = float(reStr)
-            im = float(imStr)
-
-            re50 = 50*(1-re*re-im*im)/(1+re*re+im*im-2*re)
-            im50 = 50*(2*im)/(1+re*re+im*im-2*re)
-
-            mag = math.sqrt(re*re+im*im)
-            vswr = (1+mag)/(1-mag)
-            self.marker2label.setText(str(round(re50, 3)) + " + j" + str(round(im50, 3)) + " VSWR: 1:" + str(round(vswr, 3)))
-
-        self.btnSweep.setDisabled(False)
+        # TODO: Make markers into separate objects, and integrate updating them.
+        # if self.smithChart.marker1Location != -1:
+        #     reStr, imStr = self.values[self.smithChart.marker1Location].split(" ")
+        #     re = float(reStr)
+        #     im = float(imStr)
+        #
+        #     re50 = 50*(1-re*re-im*im)/(1+re*re+im*im-2*re)
+        #     im50 = 50*(2*im)/(1+re*re+im*im-2*re)
+        #
+        #     mag = math.sqrt(re*re+im*im)
+        #     vswr = (1+mag)/(1-mag)
+        #     self.marker1label.setText(str(round(re50, 3)) + " + j" + str(round(im50, 3)) + " VSWR: 1:" + str(round(vswr, 3)))
+        #
+        # if self.smithChart.marker2Location != -1:
+        #     reStr, imStr = self.values[self.smithChart.marker2Location].split(" ")
+        #     re = float(reStr)
+        #     im = float(imStr)
+        #
+        #     re50 = 50*(1-re*re-im*im)/(1+re*re+im*im-2*re)
+        #     im50 = 50*(2*im)/(1+re*re+im*im-2*re)
+        #
+        #     mag = math.sqrt(re*re+im*im)
+        #     vswr = (1+mag)/(1-mag)
+        #     self.marker2label.setText(str(round(re50, 3)) + " + j" + str(round(im50, 3)) + " VSWR: 1:" + str(round(vswr, 3)))
         return
 
     def readValues(self, value):
@@ -420,3 +322,22 @@ class NanoVNASaver(QtWidgets.QWidget):
         p = self.btnMarker2ColorPicker.palette()
         p.setColor(QtGui.QPalette.ButtonText, color)
         self.btnMarker2ColorPicker.setPalette(p)
+
+    def saveData(self, data):
+        if self.dataLock.acquire(blocking=True):
+            self.data = data
+        else:
+            print("ERROR: Failed acquiring data lock while saving.")
+        self.dataLock.release()
+
+    def dataUpdated(self):
+        if self.dataLock.acquire(blocking=True):
+            self.smithChart.setData(self.data)
+            self.sweepProgressBar.setValue(self.worker.percentage)
+        else:
+            print("ERROR: Failed acquiring data lock while updating")
+        self.dataLock.release()
+
+    def sweepFinished(self):
+        self.sweepProgressBar.setValue(100)
+        self.btnSweep.setDisabled(False)
