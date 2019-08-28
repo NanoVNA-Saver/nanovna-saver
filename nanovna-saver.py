@@ -1,9 +1,10 @@
-import sys
+#  Copyright 2019 Rune B. Broberg
+#  This work is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/4.0/ or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
+
 from time import sleep
 from PyQt5 import QtWidgets, QtCore, QtGui
 import serial
 import threading
-import math
 
 
 class SmithChart(QtWidgets.QWidget):
@@ -21,7 +22,10 @@ class SmithChart(QtWidgets.QWidget):
 
         self.values = []
         self.frequencies = []
-        self.marker = 0
+        self.marker1 = -1
+        self.marker2 = -1
+        self.marker1Location = -1
+        self.marker2Location = -1
 
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
         self.chartWidth = min(a0.size().width()-40, a0.size().height()-40)
@@ -62,21 +66,54 @@ class SmithChart(QtWidgets.QWidget):
         qp.drawArc(centerX - self.chartWidth*2, centerY, self.chartWidth*5, -self.chartHeight*5, int(-93.85 * 16), int(-18.85 * 16))  # Im(Z) = 0.2
 
     def drawValues(self, qp: QtGui.QPainter):
-        pen = QtGui.QPen(QtGui.QColor(255, 220, 40))
+        pen = QtGui.QPen(QtGui.QColor(255, 220, 40, 128))
         pen.setWidth(2)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(3)
         qp.setPen(pen)
+        marker1 = -1
+        marker2 = -1
         for i in range(len(self.values)):
             # TODO: Make this check for being "nearest" neater
-            if self.marker != 0 and abs(int(self.frequencies[i]) - self.marker) < (int(self.frequencies[2]) - int(self.frequencies[1])):
-                qp.setPen(highlighter)
+            if self.marker1 != -1 and abs(int(self.frequencies[i]) - self.marker1) < (int(self.frequencies[2]) - int(self.frequencies[1])):
+                if marker1 != -1:
+                    # Are we closer than the other spot?
+                    if abs(int(self.frequencies[i]) - self.marker1) < abs(int(self.frequencies[marker1]) - self.marker1):
+                        marker1 = i
+                else:
+                    marker1 = i
+                #  We're within 1 of the spot
+            elif self.marker2 != -1 and abs(int(self.frequencies[i]) - self.marker2) < (int(self.frequencies[2]) - int(self.frequencies[1])):
+                if marker2 != -1:
+                    # Are we closer than the other spot?
+                    if abs(int(self.frequencies[i]) - self.marker2) < abs(int(self.frequencies[marker2]) - self.marker2):
+                        marker2 = i
+                else:
+                    marker2 = i
+                #  We're within 1 of the spot
             else:
                 qp.setPen(pen)
             rawx, rawy = self.values[i].split(" ")
             x = self.width()/2 + float(rawx) * self.chartWidth/2
             y = self.height()/2 + float(rawy) * -1 * self.chartHeight/2
             qp.drawPoint(int(x), int(y))
+        # Now draw the markers
+        if self.marker1 != -1:
+            qp.setPen(highlighter)
+            rawx, rawy = self.values[marker1].split(" ")
+            x = self.width() / 2 + float(rawx) * self.chartWidth / 2
+            y = self.height() / 2 + float(rawy) * -1 * self.chartHeight / 2
+            qp.drawPoint(int(x), int(y))
+            self.marker1Location = marker1
+
+        if self.marker2 != -1:
+            highlighter.setColor(QtGui.QColor(255, 0, 20))
+            qp.setPen(highlighter)
+            rawx, rawy = self.values[marker2].split(" ")
+            x = self.width() / 2 + float(rawx) * self.chartWidth / 2
+            y = self.height() / 2 + float(rawy) * -1 * self.chartHeight / 2
+            qp.drawPoint(int(x), int(y))
+            self.marker2Location = marker2
 
     def setValues(self, values, frequencies):
         print("### Updating values ###")
@@ -84,11 +121,20 @@ class SmithChart(QtWidgets.QWidget):
         self.frequencies = frequencies
         self.update()
 
-    def setMarker(self, value):
+    def setMarker1(self, value):
+        self.marker1Location = -1
         if value.isnumeric():
-            self.marker = int(value)
+            self.marker1 = int(value)
         else:
-            self.marker = 0
+            self.marker1 = -1
+        self.update()
+
+    def setMarker2(self, value):
+        self.marker2Location = -1
+        if value.isnumeric():
+            self.marker2 = int(value)
+        else:
+            self.marker2 = -1
         self.update()
 
 
@@ -153,20 +199,31 @@ class NanoVNASaver(QtWidgets.QWidget):
         ################################################################################################################
 
         marker_control_box = QtWidgets.QGroupBox()
-        marker_control_box.setTitle("Marker")
+        marker_control_box.setTitle("Markers")
         marker_control_box.setMaximumWidth(400)
         marker_control_layout = QtWidgets.QFormLayout(marker_control_box)
 
-        self.markerFrequencyInput = QtWidgets.QLineEdit("")
-        self.markerFrequencyInput.setAlignment(QtCore.Qt.AlignRight)
-        self.markerFrequencyInput.returnPressed.connect(lambda: self.smithChart.setMarker(self.markerFrequencyInput.text()))
+        self.marker1FrequencyInput = QtWidgets.QLineEdit("")
+        self.marker1FrequencyInput.setAlignment(QtCore.Qt.AlignRight)
+        self.marker1FrequencyInput.returnPressed.connect(lambda: self.smithChart.setMarker1(self.marker1FrequencyInput.text()))
 
-        marker_control_layout.addRow(QtWidgets.QLabel("Marker"), self.markerFrequencyInput)
+        marker_control_layout.addRow(QtWidgets.QLabel("Marker 1"), self.marker1FrequencyInput)
+
+        self.marker2FrequencyInput = QtWidgets.QLineEdit("")
+        self.marker2FrequencyInput.setAlignment(QtCore.Qt.AlignRight)
+        self.marker2FrequencyInput.returnPressed.connect(lambda: self.smithChart.setMarker2(self.marker2FrequencyInput.text()))
+
+        marker_control_layout.addRow(QtWidgets.QLabel("Marker 2"), self.marker2FrequencyInput)
+
+        self.marker1label = QtWidgets.QLabel("")
+        marker_control_layout.addRow(QtWidgets.QLabel("Marker 1: "), self.marker1label)
+
+        self.marker2label = QtWidgets.QLabel("")
+        marker_control_layout.addRow(QtWidgets.QLabel("Marker 2: "), self.marker2label)
 
         left_column.addWidget(marker_control_box)
 
         left_column.addSpacerItem(QtWidgets.QSpacerItem(1, 1, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding))
-
 
         ################################################################################################################
         #  Serial control
@@ -221,12 +278,17 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def exportFile(self):
         print("Save file to " + self.fileNameInput.text())
-        print("For now we just save to the text editor...")
+        filename = self.fileNameInput.text()
+        # TODO: Make some proper file handling here?
+        file = open(filename, "w+")
         self.lister.clear()
         self.lister.appendPlainText("# Hz S RI R 50")
+        file.write("# Hz S RI R 50\n")
         for i in range(len(self.values)):
             if i > 0 and self.frequencies[i] != self.frequencies[i-1]:
                 self.lister.appendPlainText(self.frequencies[i] + " " + self.values[i])
+                file.write(self.frequencies[i] + " " + self.values[i] + "\n")
+        file.close()
 
     def serialButtonClick(self):
         if self.serial.is_open:
@@ -321,8 +383,35 @@ class NanoVNASaver(QtWidgets.QWidget):
                 sleep(0.2)
                 QtWidgets.QApplication.processEvents()
                 sleep(0.2)
-                values += self.readValues("data 0")
-                frequencies += self.readValues("frequencies")
+                done = False
+                while not done:
+                    done = True
+                    tmpdata = self.readValues("data 0")
+                    for d in tmpdata:
+                        a, b = d.split(" ")
+                        try:
+                            if float(a) < -1.5 or float(a) > 1.5:
+                                print("Warning: Got a non-float data value: " + d + " (" + a + ")")
+                                done = False
+                            if float(b) < -1.5 or float(b) > 1.5:
+                                print("Warning: Got a non-float data value: " + d + " (" + b + ")")
+                                done = False
+                        except Exception:
+                            done = False
+
+                values += tmpdata
+
+                # TODO: Figure out why frequencies sometimes arrive as non-numbers
+                done = False
+                while not done:
+                    done = True
+                    tmpfreq = self.readValues("frequencies")
+                    for f in tmpfreq:
+                        if not f.isdigit():
+                            print("Warning: Got a non-digit frequency: " + f)
+                            done = False
+
+                frequencies += tmpfreq
                 self.smithChart.setValues(values, frequencies)
 
             self.values = values
@@ -345,6 +434,18 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.lister.appendPlainText(line)
         print("### Displaying Smith chart ###")
         self.smithChart.setValues(self.values, self.frequencies)
+        if self.smithChart.marker1Location != -1:
+            reStr, imStr = self.values[self.smithChart.marker1Location].split(" ")
+            re = float(reStr)
+            im = float(imStr)
+            self.marker1label.setText(str(round(50*(1-re*re-im*im)/(1+re*re+im*im-2*re), 3)) + " + j" + str(round(50*(2*im)/(1+re*re+im*im-2*re), 3)))
+
+        if self.smithChart.marker2Location != -1:
+            reStr, imStr = self.values[self.smithChart.marker2Location].split(" ")
+            re = float(reStr)
+            im = float(imStr)
+            self.marker2label.setText(str(round(50*(1-re*re-im*im)/(1+re*re+im*im-2*re), 3)) + " + j" + str(round(50*(2*im)/(1+re*re+im*im-2*re), 3)))
+
         self.btnSweep.setDisabled(False)
         return
 
