@@ -1,5 +1,5 @@
 #  Copyright 2019 Rune B. Broberg
-
+import math
 from time import sleep
 from PyQt5 import QtWidgets, QtCore, QtGui
 import serial
@@ -84,23 +84,21 @@ class SmithChart(QtWidgets.QWidget):
                         marker1 = i
                 else:
                     marker1 = i
-                #  We're within 1 of the spot
-            elif self.marker2 != -1 and abs(int(self.frequencies[i]) - self.marker2) < (int(self.frequencies[2]) - int(self.frequencies[1])):
+
+            if self.marker2 != -1 and abs(int(self.frequencies[i]) - self.marker2) < (int(self.frequencies[2]) - int(self.frequencies[1])):
                 if marker2 != -1:
                     # Are we closer than the other spot?
                     if abs(int(self.frequencies[i]) - self.marker2) < abs(int(self.frequencies[marker2]) - self.marker2):
                         marker2 = i
                 else:
                     marker2 = i
-                #  We're within 1 of the spot
-            else:
-                qp.setPen(pen)
+
             rawx, rawy = self.values[i].split(" ")
             x = self.width()/2 + float(rawx) * self.chartWidth/2
             y = self.height()/2 + float(rawy) * -1 * self.chartHeight/2
             qp.drawPoint(int(x), int(y))
         # Now draw the markers
-        if self.marker1 != -1:
+        if marker1 != -1:
             highlighter.setColor(self.marker1Color)
             qp.setPen(highlighter)
             rawx, rawy = self.values[marker1].split(" ")
@@ -109,7 +107,7 @@ class SmithChart(QtWidgets.QWidget):
             qp.drawPoint(int(x), int(y))
             self.marker1Location = marker1
 
-        if self.marker2 != -1:
+        if marker2 != -1:
             highlighter.setColor(self.marker2Color)
             qp.setPen(highlighter)
             rawx, rawy = self.values[marker2].split(" ")
@@ -464,13 +462,25 @@ class NanoVNASaver(QtWidgets.QWidget):
             reStr, imStr = self.values[self.smithChart.marker1Location].split(" ")
             re = float(reStr)
             im = float(imStr)
-            self.marker1label.setText(str(round(50*(1-re*re-im*im)/(1+re*re+im*im-2*re), 3)) + " + j" + str(round(50*(2*im)/(1+re*re+im*im-2*re), 3)))
+
+            re50 = 50*(1-re*re-im*im)/(1+re*re+im*im-2*re)
+            im50 = 50*(2*im)/(1+re*re+im*im-2*re)
+
+            mag = math.sqrt(re*re+im*im)
+            vswr = (1+mag)/(1-mag)
+            self.marker1label.setText(str(round(re50, 3)) + " + j" + str(round(im50, 3)) + " VSWR: 1:" + str(round(vswr, 3)))
 
         if self.smithChart.marker2Location != -1:
             reStr, imStr = self.values[self.smithChart.marker2Location].split(" ")
             re = float(reStr)
             im = float(imStr)
-            self.marker2label.setText(str(round(50*(1-re*re-im*im)/(1+re*re+im*im-2*re), 3)) + " + j" + str(round(50*(2*im)/(1+re*re+im*im-2*re), 3)))
+
+            re50 = 50*(1-re*re-im*im)/(1+re*re+im*im-2*re)
+            im50 = 50*(2*im)/(1+re*re+im*im-2*re)
+
+            mag = math.sqrt(re*re+im*im)
+            vswr = (1+mag)/(1-mag)
+            self.marker2label.setText(str(round(re50, 3)) + " + j" + str(round(im50, 3)) + " VSWR: 1:" + str(round(vswr, 3)))
 
         self.btnSweep.setDisabled(False)
         return
