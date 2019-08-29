@@ -1,6 +1,5 @@
 #  Copyright (c) 2019 Rune B. Broberg
 import collections
-import math
 import threading
 from time import sleep
 from typing import List
@@ -8,6 +7,7 @@ from typing import List
 import serial
 from PyQt5 import QtWidgets, QtCore, QtGui
 
+from Marker import Marker
 from SmithChart import SmithChart
 from SweepWorker import SweepWorker
 
@@ -92,39 +92,13 @@ class NanoVNASaver(QtWidgets.QWidget):
         marker_control_box.setMaximumWidth(400)
         marker_control_layout = QtWidgets.QFormLayout(marker_control_box)
 
-        self.marker1FrequencyInput = QtWidgets.QLineEdit("")
-        self.marker1FrequencyInput.setAlignment(QtCore.Qt.AlignRight)
-        self.marker1FrequencyInput.returnPressed.connect(lambda: self.smithChart.setMarker1(self.marker1FrequencyInput.text()))
+        self.marker1 = Marker("Marker 1", QtGui.QColor(255, 0, 20))
+        label, layout = self.marker1.getRow()
+        marker_control_layout.addRow(label, layout)
 
-        self.btnMarker1ColorPicker = QtWidgets.QPushButton("█")
-        self.btnMarker1ColorPicker.setFixedWidth(20)
-        p = self.btnMarker1ColorPicker.palette()
-        p.setColor(QtGui.QPalette.ButtonText, self.smithChart.marker1Color)
-        self.btnMarker1ColorPicker.setPalette(p)
-        self.btnMarker1ColorPicker.clicked.connect(lambda: self.setMarker1Color(QtWidgets.QColorDialog.getColor()))
-
-        marker1layout = QtWidgets.QHBoxLayout()
-        marker1layout.addWidget(self.marker1FrequencyInput)
-        marker1layout.addWidget(self.btnMarker1ColorPicker)
-
-        marker_control_layout.addRow(QtWidgets.QLabel("Marker 1"), marker1layout)
-
-        self.marker2FrequencyInput = QtWidgets.QLineEdit("")
-        self.marker2FrequencyInput.setAlignment(QtCore.Qt.AlignRight)
-        self.marker2FrequencyInput.returnPressed.connect(lambda: self.smithChart.setMarker2(self.marker2FrequencyInput.text()))
-
-        self.btnMarker2ColorPicker = QtWidgets.QPushButton("█")
-        self.btnMarker2ColorPicker.setFixedWidth(20)
-        p = self.btnMarker2ColorPicker.palette()
-        p.setColor(QtGui.QPalette.ButtonText, self.smithChart.marker2Color)
-        self.btnMarker2ColorPicker.setPalette(p)
-        self.btnMarker2ColorPicker.clicked.connect(lambda: self.setMarker2Color(QtWidgets.QColorDialog.getColor()))
-
-        marker2layout = QtWidgets.QHBoxLayout()
-        marker2layout.addWidget(self.marker2FrequencyInput)
-        marker2layout.addWidget(self.btnMarker2ColorPicker)
-
-        marker_control_layout.addRow(QtWidgets.QLabel("Marker 2"), marker2layout)
+        self.marker2 = Marker("Marker 2", QtGui.QColor(20, 0, 255))
+        label, layout = self.marker2.getRow()
+        marker_control_layout.addRow(label, layout)
 
         self.marker1label = QtWidgets.QLabel("")
         marker_control_layout.addRow(QtWidgets.QLabel("Marker 1: "), self.marker1label)

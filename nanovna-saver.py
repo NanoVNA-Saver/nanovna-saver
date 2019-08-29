@@ -1,5 +1,4 @@
 #  Copyright 2019 Rune B. Broberg
-import collections
 
 from PyQt5 import QtWidgets
 
