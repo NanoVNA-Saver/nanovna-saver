@@ -23,13 +23,17 @@ from Marker import Marker
 Datapoint = collections.namedtuple('Datapoint', 'freq re im')
 
 class SmithChart(QtWidgets.QWidget):
-    def __init__(self):
+    def __init__(self, name=""):
         super().__init__()
         self.chartWidth = 360
-        self.chartHeight = 360
+        self.chartHeight = 36
+
+        self.name = name
 
         self.setMinimumSize(self.chartWidth + 40, self.chartHeight + 40)
-        self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding))
+        sizepolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.MinimumExpanding)
+        sizepolicy.setHeightForWidth(True)
+        self.setSizePolicy(sizepolicy)
         pal = QtGui.QPalette()
         pal.setColor(QtGui.QPalette.Background, QtGui.QColor("white"))
         self.setPalette(pal)
@@ -58,6 +62,7 @@ class SmithChart(QtWidgets.QWidget):
     def drawSmithChart(self, qp: QtGui.QPainter):
         centerX = int(self.width()/2)
         centerY = int(self.height()/2)
+        qp.drawText(3, 15, self.name)
         qp.setPen(QtGui.QPen(QtGui.QColor("lightgray")))
         qp.drawEllipse(QtCore.QPoint(centerX, centerY), int(self.chartWidth/2), int(self.chartHeight/2))
         qp.drawLine(centerX - int(self.chartWidth/2), centerY, centerX + int(self.chartWidth/2), centerY)
@@ -115,3 +120,7 @@ class SmithChart(QtWidgets.QWidget):
 
     def setMarkers(self, markers):
         self.markers = markers
+
+    def heightForWidth(self, a0: int) -> int:
+        print("Asked about height")
+        return a0

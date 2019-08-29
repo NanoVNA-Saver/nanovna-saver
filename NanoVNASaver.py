@@ -57,8 +57,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         layout = QtWidgets.QGridLayout()
         self.setLayout(layout)
 
-        self.smithChart = SmithChart()
-        self.s12SmithChart = SmithChart()
+        self.smithChart = SmithChart("S11")
+        self.s12SmithChart = SmithChart("S12")
 
         left_column = QtWidgets.QVBoxLayout()
         right_column = QtWidgets.QVBoxLayout()
@@ -183,8 +183,8 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.lister = QtWidgets.QPlainTextEdit()
         self.lister.setFixedHeight(100)
-        self.s11LogMag = LogMagChart()
-        self.s12LogMag = LogMagChart()
+        self.s11LogMag = LogMagChart("S11")
+        self.s12LogMag = LogMagChart("S12")
         charts = QtWidgets.QGridLayout()
         charts.addWidget(self.smithChart, 0, 0)
         charts.addWidget(self.s12SmithChart, 1, 0)
