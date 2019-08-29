@@ -17,14 +17,18 @@ import collections
 from typing import List
 
 from PyQt5 import QtGui, QtWidgets, QtCore
+from PyQt5.QtCore import pyqtSignal
+
 Datapoint = collections.namedtuple('Datapoint', 'freq re im')
 
 
-class Marker:
+class Marker(QtCore.QObject):
     name = "Marker"
     frequency = 0
     color = QtGui.QColor()
     location = -1
+
+    updated = pyqtSignal()
 
     def __init__(self, name, initialColor, frequency=""):
         super().__init__()
@@ -46,7 +50,12 @@ class Marker:
         self.layout.addWidget(self.btnColorPicker)
 
     def setFrequency(self, frequency):
-        self.frequency = int(frequency)
+        if frequency.isnumeric():
+            self.frequency = int(frequency)
+            self.updated.emit()
+        else:
+            self.frequency = 0
+            return
 
     def setColor(self, color):
         self.color = color
@@ -59,6 +68,10 @@ class Marker:
 
     def findLocation(self, data: List[Datapoint]):
         self.location = -1
+        if self.frequency == 0:
+            # No frequency set for this marker
+            return
+
         stepsize = data[1].freq-data[0].freq
         for i in range(len(data)):
             if abs(data[i].freq-self.frequency) <= (stepsize/2):

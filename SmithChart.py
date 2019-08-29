@@ -25,8 +25,8 @@ Datapoint = collections.namedtuple('Datapoint', 'freq re im')
 class SmithChart(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
-        self.chartWidth = 360
-        self.chartHeight = 360
+        self.chartWidth = 500
+        self.chartHeight = 500
 
         self.setMinimumSize(self.chartWidth + 40, self.chartHeight + 40)
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding))

@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import collections
+import math
 import threading
 from time import sleep
 from typing import List
@@ -108,11 +109,13 @@ class NanoVNASaver(QtWidgets.QWidget):
         marker_control_layout = QtWidgets.QFormLayout(marker_control_box)
 
         marker1 = Marker("Marker 1", QtGui.QColor(255, 0, 20))
+        marker1.updated.connect(self.dataUpdated)
         label, layout = marker1.getRow()
         marker_control_layout.addRow(label, layout)
         self.markers.append(marker1)
 
         marker2 = Marker("Marker 2", QtGui.QColor(20, 0, 255))
+        marker2.updated.connect(self.dataUpdated)
         label, layout = marker2.getRow()
         marker_control_layout.addRow(label, layout)
         self.markers.append(marker2)
@@ -175,9 +178,9 @@ class NanoVNASaver(QtWidgets.QWidget):
         ################################################################################################################
 
         self.lister = QtWidgets.QPlainTextEdit()
-        self.lister.setFixedHeight(200)
-        right_column.addWidget(self.lister)
+        self.lister.setFixedHeight(100)
         right_column.addWidget(self.smithChart)
+        right_column.addWidget(self.lister)
 
         self.worker.signals.updated.connect(self.dataUpdated)
         self.worker.signals.finished.connect(self.sweepFinished)
@@ -261,32 +264,6 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.threadpool.start(self.worker)
 
-        # TODO: Make markers into separate objects, and integrate updating them.
-        # if self.smithChart.marker1Location != -1:
-        #     reStr, imStr = self.values[self.smithChart.marker1Location].split(" ")
-        #     re = float(reStr)
-        #     im = float(imStr)
-        #
-        #     re50 = 50*(1-re*re-im*im)/(1+re*re+im*im-2*re)
-        #     im50 = 50*(2*im)/(1+re*re+im*im-2*re)
-        #
-        #     mag = math.sqrt(re*re+im*im)
-        #     vswr = (1+mag)/(1-mag)
-        #     self.marker1label.setText(str(round(re50, 3)) + " + j" + str(round(im50, 3)) + " VSWR: 1:" + str(round(vswr, 3)))
-        #
-        # if self.smithChart.marker2Location != -1:
-        #     reStr, imStr = self.values[self.smithChart.marker2Location].split(" ")
-        #     re = float(reStr)
-        #     im = float(imStr)
-        #
-        #     re50 = 50*(1-re*re-im*im)/(1+re*re+im*im-2*re)
-        #     im50 = 50*(2*im)/(1+re*re+im*im-2*re)
-        #
-        #     mag = math.sqrt(re*re+im*im)
-        #     vswr = (1+mag)/(1-mag)
-        #     self.marker2label.setText(str(round(re50, 3)) + " + j" + str(round(im50, 3)) + " VSWR: 1:" + str(round(vswr, 3)))
-        return
-
     def readValues(self, value):
         if self.serialLock.acquire():
             print("### Reading " + str(value) + " ###")
@@ -322,6 +299,25 @@ class NanoVNASaver(QtWidgets.QWidget):
         if self.dataLock.acquire(blocking=True):
             for m in self.markers:
                 m.findLocation(self.data)
+            # TODO: Make a neater solution for showing data for markers
+            if self.markers[0].location != -1:
+                re = self.data[self.markers[0].location].re
+                im = self.data[self.markers[0].location].im
+                re50 = 50*(1-re*re-im*im)/(1+re*re+im*im-2*re)
+                im50 = 50*(2*im)/(1+re*re+im*im-2*re)
+                mag = math.sqrt(re*re+im*im)
+                vswr = (1+mag)/(1-mag)
+                self.marker1label.setText(str(round(re50, 3)) + " + j" + str(round(im50, 3)) + " VSWR: 1:" + str(round(vswr, 3)))
+
+            if self.markers[1].location != -1:
+                re = self.data[self.markers[1].location].re
+                im = self.data[self.markers[1].location].im
+                re50 = 50*(1-re*re-im*im)/(1+re*re+im*im-2*re)
+                im50 = 50*(2*im)/(1+re*re+im*im-2*re)
+                mag = math.sqrt(re*re+im*im)
+                vswr = (1+mag)/(1-mag)
+                self.marker2label.setText(str(round(re50, 3)) + " + j" + str(round(im50, 3)) + " VSWR: 1:" + str(round(vswr, 3)))
+
             self.smithChart.setData(self.data)
             self.sweepProgressBar.setValue(self.worker.percentage)
         else:
