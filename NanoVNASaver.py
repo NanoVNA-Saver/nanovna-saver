@@ -46,6 +46,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.values = []
         self.frequencies = []
         self.data : List[Datapoint] = []
+        self.data12 : List[Datapoint] = []
         self.markers = []
 
         self.serialPort = "COM11"
@@ -56,6 +57,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.setLayout(layout)
 
         self.smithChart = SmithChart()
+        self.s12SmithChart = SmithChart()
 
         left_column = QtWidgets.QVBoxLayout()
         right_column = QtWidgets.QVBoxLayout()
@@ -180,6 +182,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.lister = QtWidgets.QPlainTextEdit()
         self.lister.setFixedHeight(100)
         right_column.addWidget(self.smithChart)
+        right_column.addWidget(self.s12SmithChart)
         right_column.addWidget(self.lister)
 
         self.worker.signals.updated.connect(self.dataUpdated)
@@ -288,9 +291,10 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.serialLock.release()
             return values[1:102]
 
-    def saveData(self, data):
+    def saveData(self, data, data12):
         if self.dataLock.acquire(blocking=True):
             self.data = data
+            self.data12 = data12
         else:
             print("ERROR: Failed acquiring data lock while saving.")
         self.dataLock.release()
@@ -319,6 +323,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                 self.marker2label.setText(str(round(re50, 3)) + " + j" + str(round(im50, 3)) + " VSWR: 1:" + str(round(vswr, 3)))
 
             self.smithChart.setData(self.data)
+            self.s12SmithChart.setData(self.data12)
             self.sweepProgressBar.setValue(self.worker.percentage)
         else:
             print("ERROR: Failed acquiring data lock while updating")

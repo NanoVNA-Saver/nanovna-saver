@@ -64,10 +64,12 @@ class SweepWorker(QtCore.QRunnable):
             stepsize = int(span / (100 + (self.noSweeps-1)*101))
             print("Doing " + str(100 + (self.noSweeps-1)*101) + " steps of size " + str(stepsize))
             values = []
+            values12 = []
             frequencies = []
             for i in range(self.noSweeps):
                 self.app.setSweep(sweepFrom + i*101*stepsize, sweepFrom+(100+i*101)*stepsize)
                 sleep(0.8)
+                # S11
                 tmpdata = []
                 done = False
                 while not done:
@@ -87,6 +89,26 @@ class SweepWorker(QtCore.QRunnable):
 
                 values += tmpdata
 
+                # S12
+                tmpdata = []
+                done = False
+                while not done:
+                    done = True
+                    tmpdata = self.app.readValues("data 1")
+                    for d in tmpdata:
+                        a, b = d.split(" ")
+                        try:
+                            if float(a) < -1.5 or float(a) > 1.5:
+                                print("Warning: Got a non-float data value: " + d + " (" + a + ")")
+                                done = False
+                            if float(b) < -1.5 or float(b) > 1.5:
+                                print("Warning: Got a non-float data value: " + d + " (" + b + ")")
+                                done = False
+                        except Exception:
+                            done = False
+
+                values12 += tmpdata
+
                 # TODO: Figure out why frequencies sometimes arrive as non-numbers
                 tmpfreq = []
                 done = False
@@ -100,30 +122,36 @@ class SweepWorker(QtCore.QRunnable):
 
                 frequencies += tmpfreq
                 self.percentage = (i+1)*100/self.noSweeps
-                self.saveData(frequencies, values)
+                self.saveData(frequencies, values, values12)
 
             # Reset the device to show the full range
             self.app.setSweep(self.app.sweepStartInput.text(), self.app.sweepEndInput.text())
         else:
             print("### Reading values ###")
-            self.values = self.app.readValues("data 0")
+            values = self.app.readValues("data 0")
+            values12 = self.app.readValues("data 1")
             print("### Reading frequencies ###")
-            self.frequencies = self.app.readValues("frequencies")
+            frequencies = self.app.readValues("frequencies")
             print("Read data, saving")
-            self.saveData(self.frequencies, self.values)
+            self.saveData(frequencies, values, values12)
 
         self.percentage = 100
         self.signals.finished.emit()
         return
 
-    def saveData(self, frequencies, values):
+    def saveData(self, frequencies, values, values12):
         data = []
+        data12 = []
         for i in range(len(values)):
             reStr, imStr = values[i].split(" ")
             re = float(reStr)
             im = float(imStr)
+            reStr, imStr = values12[i].split(" ")
+            re12 = float(reStr)
+            im12 = float(imStr)
             freq = int(frequencies[i])
             data += [Datapoint(freq, re, im)]
-        self.app.saveData(data)
+            data12 += [Datapoint(freq, re12, im12)]
+        self.app.saveData(data, data12)
         print("Saved data, emitting signal")
         self.signals.updated.emit()
