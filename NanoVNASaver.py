@@ -31,6 +31,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.values = []
         self.frequencies = []
         self.data : List[Datapoint] = []
+        self.markers = []
 
         self.serialPort = "COM11"
         # self.serialSpeed = "115200"
@@ -92,13 +93,17 @@ class NanoVNASaver(QtWidgets.QWidget):
         marker_control_box.setMaximumWidth(400)
         marker_control_layout = QtWidgets.QFormLayout(marker_control_box)
 
-        self.marker1 = Marker("Marker 1", QtGui.QColor(255, 0, 20))
-        label, layout = self.marker1.getRow()
+        marker1 = Marker("Marker 1", QtGui.QColor(255, 0, 20))
+        label, layout = marker1.getRow()
         marker_control_layout.addRow(label, layout)
+        self.markers.append(marker1)
 
-        self.marker2 = Marker("Marker 2", QtGui.QColor(20, 0, 255))
-        label, layout = self.marker2.getRow()
+        marker2 = Marker("Marker 2", QtGui.QColor(20, 0, 255))
+        label, layout = marker2.getRow()
         marker_control_layout.addRow(label, layout)
+        self.markers.append(marker2)
+
+        self.smithChart.setMarkers(self.markers)
 
         self.marker1label = QtWidgets.QLabel("")
         marker_control_layout.addRow(QtWidgets.QLabel("Marker 1: "), self.marker1label)
@@ -161,6 +166,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         right_column.addWidget(self.smithChart)
 
         self.worker.signals.updated.connect(self.dataUpdated)
+        self.worker.signals.finished.connect(self.sweepFinished)
 
     def exportFile(self):
         print("Save file to " + self.fileNameInput.text())
@@ -198,7 +204,13 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.serial.timeout = 0.05
 
             self.serialLock.release()
-            sleep(0.25)
+            sleep(0.05)
+
+            frequencies = self.readValues("frequencies")
+
+            self.sweepStartInput.setText(str(frequencies[0]))
+            self.sweepEndInput.setText(str(frequencies[100]))
+
             self.sweep()
             return
 
@@ -285,18 +297,6 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.serialLock.release()
             return values[1:102]
 
-    def setMarker1Color(self, color):
-        self.smithChart.marker1Color = color
-        p = self.btnMarker1ColorPicker.palette()
-        p.setColor(QtGui.QPalette.ButtonText, color)
-        self.btnMarker1ColorPicker.setPalette(p)
-
-    def setMarker2Color(self, color):
-        self.smithChart.marker2Color = color
-        p = self.btnMarker2ColorPicker.palette()
-        p.setColor(QtGui.QPalette.ButtonText, color)
-        self.btnMarker2ColorPicker.setPalette(p)
-
     def saveData(self, data):
         if self.dataLock.acquire(blocking=True):
             self.data = data
@@ -306,6 +306,8 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def dataUpdated(self):
         if self.dataLock.acquire(blocking=True):
+            for m in self.markers:
+                m.findLocation(self.data)
             self.smithChart.setData(self.data)
             self.sweepProgressBar.setValue(self.worker.percentage)
         else:

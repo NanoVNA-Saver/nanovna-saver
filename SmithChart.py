@@ -4,6 +4,8 @@ from typing import List
 
 from PyQt5 import QtWidgets, QtGui, QtCore
 
+from Marker import Marker
+
 Datapoint = collections.namedtuple('Datapoint', 'freq re im')
 
 class SmithChart(QtWidgets.QWidget):
@@ -22,10 +24,7 @@ class SmithChart(QtWidgets.QWidget):
         self.values = []
         self.frequencies = []
         self.data : List[Datapoint] = []
-        self.marker1 = -1
-        self.marker2 = -1
-        self.marker1Location = -1
-        self.marker2Location = -1
+        self.markers : List[Marker] = []
 
         self.marker1Color = QtGui.QColor(255, 0, 20)
         self.marker2Color = QtGui.QColor(20, 0, 255)
@@ -77,42 +76,17 @@ class SmithChart(QtWidgets.QWidget):
         marker1 = -1
         marker2 = -1
         for i in range(len(self.data)):
-            # TODO: Make this check for being "nearest" neater
-            if self.marker1 != -1 and abs(int(self.data[i].freq) - self.marker1) < (int(self.data[2].freq) - int(self.data[1].freq)):
-                if marker1 != -1:
-                    # Are we closer than the other spot?
-                    if abs(int(self.data[i].freq) - self.marker1) < abs(int(self.data[marker1].freq) - self.marker1):
-                        marker1 = i
-                else:
-                    marker1 = i
-
-            if self.marker2 != -1 and abs(int(self.data[i].freq) - self.marker2) < (int(self.data[2].freq) - int(self.data[1].freq)):
-                if marker2 != -1:
-                    # Are we closer than the other spot?
-                    if abs(int(self.data[i].freq) - self.marker2) < abs(int(self.data[marker2].freq) - self.marker2):
-                        marker2 = i
-                else:
-                    marker2 = i
-
             x = self.width()/2 + self.data[i].re * self.chartWidth/2
             y = self.height()/2 + self.data[i].im * -1 * self.chartHeight/2
             qp.drawPoint(int(x), int(y))
         # Now draw the markers
-        if marker1 != -1:
-            highlighter.setColor(self.marker1Color)
-            qp.setPen(highlighter)
-            x = self.width() / 2 + self.data[marker1].re * self.chartWidth / 2
-            y = self.height() / 2 + self.data[marker1].im * -1 * self.chartHeight / 2
-            qp.drawPoint(int(x), int(y))
-            self.marker1Location = marker1
-
-        if marker2 != -1:
-            highlighter.setColor(self.marker2Color)
-            qp.setPen(highlighter)
-            x = self.width() / 2 + self.data[marker2].re * self.chartWidth / 2
-            y = self.height() / 2 + self.data[marker2].im * -1 * self.chartHeight / 2
-            qp.drawPoint(int(x), int(y))
-            self.marker2Location = marker2
+        for m in self.markers:
+            if m.location != -1:
+                highlighter.setColor(m.color)
+                qp.setPen(highlighter)
+                x = self.width() / 2 + self.data[m.location].re * self.chartWidth / 2
+                y = self.height() / 2 + self.data[m.location].im * -1 * self.chartHeight / 2
+                qp.drawPoint(int(x), int(y))
 
     def setValues(self, values, frequencies):
         print("### Updating values ###")
@@ -125,18 +99,5 @@ class SmithChart(QtWidgets.QWidget):
         self.data = data
         self.update()
 
-    def setMarker1(self, value):
-        self.marker1Location = -1
-        if value.isnumeric():
-            self.marker1 = int(value)
-        else:
-            self.marker1 = -1
-        self.update()
-
-    def setMarker2(self, value):
-        self.marker2Location = -1
-        if value.isnumeric():
-            self.marker2 = int(value)
-        else:
-            self.marker2 = -1
-        self.update()
+    def setMarkers(self, markers):
+        self.markers = markers
