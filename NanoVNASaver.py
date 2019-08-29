@@ -25,6 +25,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from Marker import Marker
 from SmithChart import SmithChart
 from SweepWorker import SweepWorker
+from LogMagChart import LogMagChart
 
 Datapoint = collections.namedtuple('Datapoint', 'freq re im')
 
@@ -123,6 +124,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.markers.append(marker2)
 
         self.smithChart.setMarkers(self.markers)
+        self.s12SmithChart.setMarkers(self.markers)
 
         self.marker1label = QtWidgets.QLabel("")
         marker_control_layout.addRow(QtWidgets.QLabel("Marker 1: "), self.marker1label)
@@ -181,8 +183,18 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.lister = QtWidgets.QPlainTextEdit()
         self.lister.setFixedHeight(100)
-        right_column.addWidget(self.smithChart)
-        right_column.addWidget(self.s12SmithChart)
+        self.s11LogMag = LogMagChart()
+        self.s12LogMag = LogMagChart()
+        charts = QtWidgets.QGridLayout()
+        charts.addWidget(self.smithChart, 0, 0)
+        charts.addWidget(self.s12SmithChart, 1, 0)
+        charts.addWidget(self.s11LogMag, 0, 1)
+        charts.addWidget(self.s12LogMag, 1, 1)
+
+        self.s11LogMag.setMarkers(self.markers)
+        self.s12LogMag.setMarkers(self.markers)
+
+        right_column.addLayout(charts)
         right_column.addWidget(self.lister)
 
         self.worker.signals.updated.connect(self.dataUpdated)
@@ -324,6 +336,8 @@ class NanoVNASaver(QtWidgets.QWidget):
 
             self.smithChart.setData(self.data)
             self.s12SmithChart.setData(self.data12)
+            self.s11LogMag.setData(self.data)
+            self.s12LogMag.setData(self.data12)
             self.sweepProgressBar.setValue(self.worker.percentage)
         else:
             print("ERROR: Failed acquiring data lock while updating")

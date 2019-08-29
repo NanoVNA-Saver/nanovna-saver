@@ -71,6 +71,9 @@ class Marker(QtCore.QObject):
         if self.frequency == 0:
             # No frequency set for this marker
             return
+        if len(data) == 0:
+            # Set the frequency before loading any data
+            return
 
         stepsize = data[1].freq-data[0].freq
         for i in range(len(data)):
