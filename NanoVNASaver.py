@@ -150,7 +150,6 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         left_column.addWidget(s11_control_box)
 
-
         s21_control_box = QtWidgets.QGroupBox()
         s21_control_box.setTitle("S21")
         s21_control_layout = QtWidgets.QFormLayout()
@@ -212,7 +211,11 @@ class NanoVNASaver(QtWidgets.QWidget):
         file_control_layout.addRow(QtWidgets.QLabel("Filename"), fileNameLayout)
 
         self.btnExportFile = QtWidgets.QPushButton("Export data S1P")
-        self.btnExportFile.clicked.connect(self.exportFileS11)
+        self.btnExportFile.clicked.connect(self.exportFileS1P)
+        file_control_layout.addRow(self.btnExportFile)
+
+        self.btnExportFile = QtWidgets.QPushButton("Export data S2P")
+        self.btnExportFile.clicked.connect(self.exportFileS2P)
         file_control_layout.addRow(self.btnExportFile)
 
         left_column.addWidget(file_control_box)
@@ -244,8 +247,34 @@ class NanoVNASaver(QtWidgets.QWidget):
         filename, _ = QtWidgets.QFileDialog.getSaveFileName(directory=self.fileNameInput.text(), filter="Touchstone Files (*.s1p *.s2p);;All files (*.*)")
         self.fileNameInput.setText(filename)
 
+    def exportFileS1P(self):
+        print("Save file to " + self.fileNameInput.text())
+        if len(self.data) == 0:
+            self.lister.appendPlainText("No data stored, nothing written.")
+            return
+        filename = self.fileNameInput.text()
+        if filename == "":
+            self.lister.appendPlainText("No filename entered.")
+            return
+        try:
+            file = open(filename, "w+")
+            self.lister.clear()
+            self.lister.appendPlainText("# Hz S RI R 50")
+            file.write("# Hz S RI R 50\n")
+            for i in range(len(self.data)):
+                if i == 0 or self.data[i].freq != self.data[i-1].freq:
+                    self.lister.appendPlainText(str(self.data[i].freq) + " " + str(self.data[i].re) + " " + str(self.data[i].im))
+                    file.write(str(self.data[i].freq) + " " + str(self.data[i].re) + " " + str(self.data[i].im) + "\n")
+            file.close()
+        except Exception as e:
+            print("Error during file export: " + str(e))
+            self.lister.appendPlainText("Error during file export: " + str(e))
+            return
 
-    def exportFileS11(self):
+        self.lister.appendPlainText("")
+        self.lister.appendPlainText("File " + filename + " written.")
+
+    def exportFileS2P(self):
         print("Save file to " + self.fileNameInput.text())
         if (len(self.data) == 0):
             self.lister.appendPlainText("No data stored, nothing written.")
@@ -260,9 +289,11 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.lister.appendPlainText("# Hz S RI R 50")
             file.write("# Hz S RI R 50\n")
             for i in range(len(self.data)):
-                if i > 0 and self.data[i].freq != self.data[i-1].freq:
-                    self.lister.appendPlainText(str(self.data[i].freq) + " " + str(self.data[i].re) + " " + str(self.data[i].im))
-                    file.write(str(self.data[i].freq) + " " + str(self.data[i].re) + " " + str(self.data[i].im) + "\n")
+                if i == 0 or self.data[i].freq != self.data[i-1].freq:
+                    self.lister.appendPlainText(str(self.data[i].freq) + " " + str(self.data[i].re) + " " + str(self.data[i].im) + " " +
+                                                str(self.data21[i].re) + " " + str(self.data21[i].im) + " 0 0 0 0")
+                    file.write(str(self.data[i].freq) + " " + str(self.data[i].re) + " " + str(self.data[i].im) + " " +
+                               str(self.data21[i].re) + " " + str(self.data21[i].im) + " 0 0 0 0\n")
             file.close()
         except Exception as e:
             print("Error during file export: " + str(e))
@@ -413,7 +444,6 @@ class NanoVNASaver(QtWidgets.QWidget):
             if maxGainFreq > -1:
                 self.s21_min_gain_label.setText(str(round(minGain, 3)) + " dB @ " + str(minGainFreq) + " Hz")
                 self.s21_max_gain_label.setText(str(round(maxGain, 3)) + " dB @ " + str(maxGainFreq) + " Hz")
-
 
         else:
             print("ERROR: Failed acquiring data lock while updating")
