@@ -10,7 +10,7 @@ This software connects to a NanoVNA and extracts the data for display on a compu
 Current features:
 - Reading data from a NanoVNA
 - Splitting a frequency range into multiple segments to increase resolution (tried up to >10k points)
-- Displaying data on Smith charts and logmag-charts for both S11 and S12
+- Displaying data on Smith charts and logmag-charts for both S11 and S21
 - Displaying two markers, and the impedance and VSWR (against 50 ohm) at these locations
 - Exporting S11 touchstone files
 
