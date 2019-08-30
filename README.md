@@ -13,9 +13,9 @@ Current features:
 - Displaying data on Smith charts and logmag-charts for both S11 and S21
 - Displaying two markers, and the impedance and VSWR (against 50 ohm) at these locations
 - Exporting S11 touchstone files
+- 2-port Touchstone files (Beta)
 
 Expected features:
-- 2-port Touchstone files
 - Mouse control of markers
 - Further data readout for markers, such as return loss
 - TDR function (very important in this community ;-)
