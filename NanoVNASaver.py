@@ -47,7 +47,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.values = []
         self.frequencies = []
         self.data : List[Datapoint] = []
-        self.data12 : List[Datapoint] = []
+        self.data21 : List[Datapoint] = []
         self.markers = []
 
         self.serialPort = "COM11"
@@ -58,7 +58,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.setLayout(layout)
 
         self.smithChart = SmithChart("S11")
-        self.s12SmithChart = SmithChart("S12")
+        self.s21SmithChart = SmithChart("S21")
 
         left_column = QtWidgets.QVBoxLayout()
         right_column = QtWidgets.QVBoxLayout()
@@ -124,7 +124,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.markers.append(marker2)
 
         self.smithChart.setMarkers(self.markers)
-        self.s12SmithChart.setMarkers(self.markers)
+        self.s21SmithChart.setMarkers(self.markers)
 
         self.marker1label = QtWidgets.QLabel("")
         marker_control_layout.addRow(QtWidgets.QLabel("Marker 1: "), self.marker1label)
@@ -133,6 +133,40 @@ class NanoVNASaver(QtWidgets.QWidget):
         marker_control_layout.addRow(QtWidgets.QLabel("Marker 2: "), self.marker2label)
 
         left_column.addWidget(marker_control_box)
+
+        ################################################################################################################
+        #  Statistics/analysis
+        ################################################################################################################
+
+        s11_control_box = QtWidgets.QGroupBox()
+        s11_control_box.setTitle("S11")
+        s11_control_layout = QtWidgets.QFormLayout()
+        s11_control_box.setLayout(s11_control_layout)
+
+        self.s11_min_swr_label = QtWidgets.QLabel()
+        s11_control_layout.addRow("Min VSWR:", self.s11_min_swr_label)
+        self.s11_min_rl_label = QtWidgets.QLabel()
+        s11_control_layout.addRow("Return loss:", self.s11_min_rl_label)
+
+        left_column.addWidget(s11_control_box)
+
+
+        s21_control_box = QtWidgets.QGroupBox()
+        s21_control_box.setTitle("S21")
+        s21_control_layout = QtWidgets.QFormLayout()
+        s21_control_box.setLayout(s21_control_layout)
+
+        self.s21_min_gain_label = QtWidgets.QLabel()
+        s21_control_layout.addRow("Min gain:", self.s21_min_gain_label)
+
+        self.s21_max_gain_label = QtWidgets.QLabel()
+        s21_control_layout.addRow("Max gain:", self.s21_max_gain_label)
+
+        left_column.addWidget(s21_control_box)
+
+        ################################################################################################################
+        #  Spacer
+        ################################################################################################################
 
         left_column.addSpacerItem(QtWidgets.QSpacerItem(1, 1, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding))
 
@@ -189,16 +223,16 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.lister = QtWidgets.QPlainTextEdit()
         self.lister.setFixedHeight(100)
-        self.s11LogMag = LogMagChart("S11")
-        self.s12LogMag = LogMagChart("S12")
+        self.s11LogMag = LogMagChart("S11 Return Loss")
+        self.s21LogMag = LogMagChart("S21 Gain")
         charts = QtWidgets.QGridLayout()
         charts.addWidget(self.smithChart, 0, 0)
-        charts.addWidget(self.s12SmithChart, 1, 0)
+        charts.addWidget(self.s21SmithChart, 1, 0)
         charts.addWidget(self.s11LogMag, 0, 1)
-        charts.addWidget(self.s12LogMag, 1, 1)
+        charts.addWidget(self.s21LogMag, 1, 1)
 
         self.s11LogMag.setMarkers(self.markers)
-        self.s12LogMag.setMarkers(self.markers)
+        self.s21LogMag.setMarkers(self.markers)
 
         right_column.addLayout(charts)
         right_column.addWidget(self.lister)
@@ -327,7 +361,7 @@ class NanoVNASaver(QtWidgets.QWidget):
     def saveData(self, data, data12):
         if self.dataLock.acquire(blocking=True):
             self.data = data
-            self.data12 = data12
+            self.data21 = data12
         else:
             print("ERROR: Failed acquiring data lock while saving.")
         self.dataLock.release()
@@ -338,31 +372,73 @@ class NanoVNASaver(QtWidgets.QWidget):
                 m.findLocation(self.data)
             # TODO: Make a neater solution for showing data for markers
             if self.markers[0].location != -1:
-                re = self.data[self.markers[0].location].re
-                im = self.data[self.markers[0].location].im
-                re50 = 50*(1-re*re-im*im)/(1+re*re+im*im-2*re)
-                im50 = 50*(2*im)/(1+re*re+im*im-2*re)
-                mag = math.sqrt(re*re+im*im)
-                vswr = (1+mag)/(1-mag)
+                im50, re50, vswr = self.vswr(self.data[self.markers[0].location])
                 self.marker1label.setText(str(round(re50, 3)) + " + j" + str(round(im50, 3)) + " VSWR: 1:" + str(round(vswr, 3)))
 
             if self.markers[1].location != -1:
-                re = self.data[self.markers[1].location].re
-                im = self.data[self.markers[1].location].im
-                re50 = 50*(1-re*re-im*im)/(1+re*re+im*im-2*re)
-                im50 = 50*(2*im)/(1+re*re+im*im-2*re)
-                mag = math.sqrt(re*re+im*im)
-                vswr = (1+mag)/(1-mag)
+                im50, re50, vswr = self.vswr(self.data[self.markers[1].location])
                 self.marker2label.setText(str(round(re50, 3)) + " + j" + str(round(im50, 3)) + " VSWR: 1:" + str(round(vswr, 3)))
 
             self.smithChart.setData(self.data)
-            self.s12SmithChart.setData(self.data12)
+            self.s21SmithChart.setData(self.data21)
             self.s11LogMag.setData(self.data)
-            self.s12LogMag.setData(self.data12)
+            self.s21LogMag.setData(self.data21)
             self.sweepProgressBar.setValue(self.worker.percentage)
+            # Find the minimum S11 VSWR:
+            minVSWR = 100
+            minVSWRfreq = -1
+            for d in self.data:
+                _, _, vswr = self.vswr(d)
+                if vswr < minVSWR:
+                    minVSWR = vswr
+                    minVSWRfreq = d.freq
+
+            if minVSWRfreq > -1:
+                self.s11_min_swr_label.setText(str(round(minVSWR, 3)) + " @ " + str(minVSWRfreq) + " Hz")
+                self.s11_min_rl_label.setText(str(round(20*math.log10((minVSWR-1)/(minVSWR+1)), 3)) + " dB")
+
+            minGain = 100
+            minGainFreq = -1
+            maxGain = -100
+            maxGainFreq = -1
+            for d in self.data21:
+                gain = self.gain(d)
+                if gain > maxGain:
+                    maxGain = gain
+                    maxGainFreq = d.freq
+                if gain < minGain:
+                    minGain = gain
+                    minGainFreq = d.freq
+
+            if maxGainFreq > -1:
+                self.s21_min_gain_label.setText(str(round(minGain, 3)) + " dB @ " + str(minGainFreq) + " Hz")
+                self.s21_max_gain_label.setText(str(round(maxGain, 3)) + " dB @ " + str(maxGainFreq) + " Hz")
+
+
         else:
             print("ERROR: Failed acquiring data lock while updating")
         self.dataLock.release()
+
+    @staticmethod
+    def vswr(data: Datapoint):
+        re = data.re
+        im = data.im
+        re50 = 50 * (1 - re * re - im * im) / (1 + re * re + im * im - 2 * re)
+        im50 = 50 * (2 * im) / (1 + re * re + im * im - 2 * re)
+        mag = math.sqrt(re * re + im * im)
+        vswr = (1 + mag) / (1 - mag)
+        return im50, re50, vswr
+
+    @staticmethod
+    def gain(data: Datapoint):
+        re = data.re
+        im = data.im
+        re50 = 50 * (1 - re * re - im * im) / (1 + re * re + im * im - 2 * re)
+        im50 = 50 * (2 * im) / (1 + re * re + im * im - 2 * re)
+        # Calculate the gain / reflection coefficient
+        mag = math.sqrt((re50 - 50) * (re50 - 50) + im50 * im50) / math.sqrt(
+            (re50 + 50) * (re50 + 50) + im50 * im50)
+        return(20 * math.log10(mag))
 
     def sweepFinished(self):
         self.sweepProgressBar.setValue(100)
