@@ -108,6 +108,20 @@ class LogMagChart(QtWidgets.QWidget):
         qp.setPen(QtCore.Qt.black)
         qp.drawText(3, 35, str(-min))
         qp.drawText(3, self.chartHeight+20, str(-max))
+        # Draw frequency markers
+        fstart = self.data[0].freq
+        fstop = self.data[len(self.data)-1].freq
+        fspan = fstop-fstart
+        # At least 100 px between ticks
+        qp.drawText(self.leftMargin-20, 20 + self.chartHeight + 15, LogMagChart.shortenFrequency(fstart))
+        ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
+        for i in range(ticks):
+            x = self.leftMargin + round((i+1)*self.chartWidth/ticks)
+            qp.setPen(QtGui.QPen(QtGui.QColor("lightgray")))
+            qp.drawLine(x, 20, x, 20+self.chartHeight+5)
+            qp.setPen(QtCore.Qt.black)
+            qp.drawText(x-20, 20+self.chartHeight+15, LogMagChart.shortenFrequency(round(fspan/ticks*(i+1) + fstart)))
+
         qp.setPen(pen)
         for i in range(len(self.data)):
             re = self.data[i].re
@@ -138,15 +152,21 @@ class LogMagChart(QtWidgets.QWidget):
                 qp.drawPoint(int(x), int(y))
 
     def setValues(self, values, frequencies):
-        print("### Updating values ###")
         self.values = values
         self.frequencies = frequencies
         self.update()
 
     def setData(self, data):
-        print("### Updating data ###")
         self.data = data
         self.update()
 
     def setMarkers(self, markers):
         self.markers = markers
+
+    @staticmethod
+    def shortenFrequency(frequency):
+        if frequency < 50000:
+            return frequency
+        if frequency < 5000000:
+            return str(round(frequency / 1000)) + "k"
+        return str(round(frequency / 1000000, 1)) + "M"

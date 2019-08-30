@@ -18,7 +18,15 @@ from PyQt5 import QtWidgets
 
 from NanoVNASaver import NanoVNASaver
 
+version = "0.0.1"
+
 if __name__ == '__main__':
+    print("NanoVNASaver " + version)
+    print("Copyright (C) 2019 Rune B. Broberg")
+    print("This program comes with ABSOLUTELY NO WARRANTY")
+    print("This program is licensed under the GNU General Public License version 3")
+    print("")
+    print("See https://github.com/mihtjel/nanovna-saver for further details")
     # Main code goes here
     app = QtWidgets.QApplication([])
     window = NanoVNASaver()

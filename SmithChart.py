@@ -108,13 +108,11 @@ class SmithChart(QtWidgets.QWidget):
                 qp.drawPoint(int(x), int(y))
 
     def setValues(self, values, frequencies):
-        print("### Updating values ###")
         self.values = values
         self.frequencies = frequencies
         self.update()
 
     def setData(self, data):
-        print("### Updating data ###")
         self.data = data
         self.update()
 
@@ -122,5 +120,4 @@ class SmithChart(QtWidgets.QWidget):
         self.markers = markers
 
     def heightForWidth(self, a0: int) -> int:
-        print("Asked about height")
         return a0

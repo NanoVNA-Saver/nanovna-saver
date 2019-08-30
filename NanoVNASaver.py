@@ -168,11 +168,17 @@ class NanoVNASaver(QtWidgets.QWidget):
         file_control_layout = QtWidgets.QFormLayout(file_control_box)
         self.fileNameInput = QtWidgets.QLineEdit("")
         self.fileNameInput.setAlignment(QtCore.Qt.AlignRight)
+        btnFilePicker = QtWidgets.QPushButton("...")
+        btnFilePicker.setMaximumWidth(25)
+        btnFilePicker.clicked.connect(self.pickFile)
+        fileNameLayout = QtWidgets.QHBoxLayout()
+        fileNameLayout.addWidget(self.fileNameInput)
+        fileNameLayout.addWidget(btnFilePicker)
 
-        file_control_layout.addRow(QtWidgets.QLabel("Filename"), self.fileNameInput)
+        file_control_layout.addRow(QtWidgets.QLabel("Filename"), fileNameLayout)
 
-        self.btnExportFile = QtWidgets.QPushButton("Export data")
-        self.btnExportFile.clicked.connect(self.exportFile)
+        self.btnExportFile = QtWidgets.QPushButton("Export data S1P")
+        self.btnExportFile.clicked.connect(self.exportFileS11)
         file_control_layout.addRow(self.btnExportFile)
 
         left_column.addWidget(file_control_box)
@@ -200,19 +206,37 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.worker.signals.updated.connect(self.dataUpdated)
         self.worker.signals.finished.connect(self.sweepFinished)
 
-    def exportFile(self):
+    def pickFile(self):
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(directory=self.fileNameInput.text(), filter="Touchstone Files (*.s1p *.s2p);;All files (*.*)")
+        self.fileNameInput.setText(filename)
+
+
+    def exportFileS11(self):
         print("Save file to " + self.fileNameInput.text())
+        if (len(self.data) == 0):
+            self.lister.appendPlainText("No data stored, nothing written.")
+            return
         filename = self.fileNameInput.text()
-        # TODO: Make some proper file handling here?
-        file = open(filename, "w+")
-        self.lister.clear()
-        self.lister.appendPlainText("# Hz S RI R 50")
-        file.write("# Hz S RI R 50\n")
-        for i in range(len(self.values)):
-            if i > 0 and self.frequencies[i] != self.frequencies[i-1]:
-                self.lister.appendPlainText(self.frequencies[i] + " " + self.values[i])
-                file.write(self.frequencies[i] + " " + self.values[i] + "\n")
-        file.close()
+        if filename == "":
+            self.lister.appendPlainText("No filename entered.")
+            return
+        try:
+            file = open(filename, "w+")
+            self.lister.clear()
+            self.lister.appendPlainText("# Hz S RI R 50")
+            file.write("# Hz S RI R 50\n")
+            for i in range(len(self.values)):
+                if i > 0 and self.frequencies[i] != self.frequencies[i-1]:
+                    self.lister.appendPlainText(self.frequencies[i] + " " + self.values[i])
+                    file.write(self.frequencies[i] + " " + self.values[i] + "\n")
+            file.close()
+        except Exception as e:
+            print("Error during file export: " + str(e))
+            self.lister.appendPlainText("Error during file export: " + str(e))
+            return
+
+        self.lister.appendPlainText("")
+        self.lister.appendPlainText("File " + filename + " written.")
 
     def serialButtonClick(self):
         if self.serial.is_open:
@@ -266,7 +290,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         return
 
     def setSweep(self, start, stop):
-        print("Sending: " + "sweep " + str(start) + " " + str(stop) + " 101")
+        # print("Sending: " + "sweep " + str(start) + " " + str(stop) + " 101")
         self.writeSerial("sweep " + str(start) + " " + str(stop) + " 101")
 
     def sweep(self):
@@ -281,7 +305,6 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def readValues(self, value):
         if self.serialLock.acquire():
-            print("### Reading " + str(value) + " ###")
             try:
                 data = "a"
                 while data != "":
@@ -290,16 +313,14 @@ class NanoVNASaver(QtWidgets.QWidget):
                 #  Then send the command to read data
                 self.serial.write(str(value + "\r").encode('ascii'))
             except serial.SerialException as exc:
-                print("Exception received")
+                print("Exception received: " + str(exc))
             result = ""
             data = ""
             sleep(0.01)
             while "ch>" not in data:
                 data = self.serial.readline().decode('ascii')
                 result += data
-            print("### Done reading ###")
             values = result.split("\r\n")
-            print("Total values: " + str(len(values) - 2))
             self.serialLock.release()
             return values[1:102]
 
@@ -346,3 +367,4 @@ class NanoVNASaver(QtWidgets.QWidget):
     def sweepFinished(self):
         self.sweepProgressBar.setValue(100)
         self.btnSweep.setDisabled(False)
+
