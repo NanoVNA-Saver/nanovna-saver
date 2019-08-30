@@ -225,10 +225,10 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.lister.clear()
             self.lister.appendPlainText("# Hz S RI R 50")
             file.write("# Hz S RI R 50\n")
-            for i in range(len(self.values)):
-                if i > 0 and self.frequencies[i] != self.frequencies[i-1]:
-                    self.lister.appendPlainText(self.frequencies[i] + " " + self.values[i])
-                    file.write(self.frequencies[i] + " " + self.values[i] + "\n")
+            for i in range(len(self.data)):
+                if i > 0 and self.data[i].freq != self.data[i-1].freq:
+                    self.lister.appendPlainText(str(self.data[i].freq) + " " + str(self.data[i].re) + " " + str(self.data[i].im))
+                    file.write(str(self.data[i].freq) + " " + str(self.data[i].re) + " " + str(self.data[i].im) + "\n")
             file.close()
         except Exception as e:
             print("Error during file export: " + str(e))
@@ -252,12 +252,12 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.serialPort = self.serialPortInput.text()
             try:
                 self.serial = serial.Serial(port=self.serialPort, baudrate=115200)
+                self.serial.timeout = 0.05
             except serial.SerialException as exc:
                 self.lister.appendPlainText("Tried to open " + self.serialPort + " and failed.")
                 self.serialLock.release()
                 return
             self.btnSerialToggle.setText("Close serial")
-            self.serial.timeout = 0.05
 
             self.serialLock.release()
             sleep(0.05)
