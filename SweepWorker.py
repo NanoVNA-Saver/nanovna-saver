@@ -40,7 +40,6 @@ class SweepWorker(QtCore.QRunnable):
 
     @pyqtSlot()
     def run(self):
-        print("I am thread")
         self.percentage = 0
         if not self.app.serial.is_open:
             return
@@ -48,7 +47,6 @@ class SweepWorker(QtCore.QRunnable):
         if int(self.app.sweepCountInput.text()) > 0:
             self.noSweeps = int(self.app.sweepCountInput.text())
 
-        print("### Updating... ### ")
         if not self.app.sweepStartInput.text().isnumeric() or not self.app.sweepEndInput.text().isnumeric():
             # We should handle the first startup by reading frequencies?
             sweepFrom = 1000000
@@ -64,66 +62,77 @@ class SweepWorker(QtCore.QRunnable):
             stepsize = int(span / (100 + (self.noSweeps-1)*101))
             print("Doing " + str(100 + (self.noSweeps-1)*101) + " steps of size " + str(stepsize))
             values = []
+            values12 = []
             frequencies = []
             for i in range(self.noSweeps):
                 self.app.setSweep(sweepFrom + i*101*stepsize, sweepFrom+(100+i*101)*stepsize)
                 sleep(0.8)
-                tmpdata = []
-                done = False
-                while not done:
-                    done = True
-                    tmpdata = self.app.readValues("data 0")
-                    for d in tmpdata:
-                        a, b = d.split(" ")
-                        try:
-                            if float(a) < -1.5 or float(a) > 1.5:
-                                print("Warning: Got a non-float data value: " + d + " (" + a + ")")
-                                done = False
-                            if float(b) < -1.5 or float(b) > 1.5:
-                                print("Warning: Got a non-float data value: " + d + " (" + b + ")")
-                                done = False
-                        except Exception:
-                            done = False
+                # S11
+                values += self.readData("data 0")
+                # S12
+                values12 += self.readData("data 1")
 
-                values += tmpdata
-
-                # TODO: Figure out why frequencies sometimes arrive as non-numbers
-                tmpfreq = []
-                done = False
-                while not done:
-                    done = True
-                    tmpfreq = self.app.readValues("frequencies")
-                    for f in tmpfreq:
-                        if not f.isdigit():
-                            print("Warning: Got a non-digit frequency: " + f)
-                            done = False
-
-                frequencies += tmpfreq
+                frequencies += self.readFreq()
                 self.percentage = (i+1)*100/self.noSweeps
-                self.saveData(frequencies, values)
+                self.saveData(frequencies, values, values12)
 
             # Reset the device to show the full range
             self.app.setSweep(self.app.sweepStartInput.text(), self.app.sweepEndInput.text())
         else:
-            print("### Reading values ###")
-            self.values = self.app.readValues("data 0")
-            print("### Reading frequencies ###")
-            self.frequencies = self.app.readValues("frequencies")
-            print("Read data, saving")
-            self.saveData(self.frequencies, self.values)
+            self.app.setSweep(sweepFrom, sweepTo)
+            sleep(0.8)
+            values = self.readData("data 0")
+            values12 = self.readData("data 1")
+            frequencies = self.readFreq()
+            self.saveData(frequencies, values, values12)
 
         self.percentage = 100
         self.signals.finished.emit()
         return
 
-    def saveData(self, frequencies, values):
+    def saveData(self, frequencies, values, values12):
         data = []
+        data12 = []
         for i in range(len(values)):
             reStr, imStr = values[i].split(" ")
             re = float(reStr)
             im = float(imStr)
+            reStr, imStr = values12[i].split(" ")
+            re12 = float(reStr)
+            im12 = float(imStr)
             freq = int(frequencies[i])
             data += [Datapoint(freq, re, im)]
-        self.app.saveData(data)
-        print("Saved data, emitting signal")
+            data12 += [Datapoint(freq, re12, im12)]
+        self.app.saveData(data, data12)
         self.signals.updated.emit()
+
+    def readData(self, data):
+        done = False
+        while not done:
+            done = True
+            tmpdata = self.app.readValues(data)
+            for d in tmpdata:
+                a, b = d.split(" ")
+                try:
+                    if float(a) < -1.5 or float(a) > 1.5:
+                        print("Warning: Got a non-float data value: " + d + " (" + a + ")")
+                        done = False
+                    if float(b) < -1.5 or float(b) > 1.5:
+                        print("Warning: Got a non-float data value: " + d + " (" + b + ")")
+                        done = False
+                except Exception:
+                    done = False
+        return tmpdata
+
+    def readFreq(self):
+        # TODO: Figure out why frequencies sometimes arrive as non-integers
+        tmpfreq = []
+        done = False
+        while not done:
+            done = True
+            tmpfreq = self.app.readValues("frequencies")
+            for f in tmpfreq:
+                if not f.isdigit():
+                    print("Warning: Got a non-digit frequency: " + f)
+                    done = False
+        return tmpfreq
