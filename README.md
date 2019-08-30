@@ -34,6 +34,12 @@ In order to run this app in Linux environment, you'll need the following package
 * `python3-serial`
 * `python3-pyqt5`
 
+### To Run
+
+```sh
+python3 nanovna-saver.py
+```
+
 ### License
 This software is licensed under version 3 of the GNU General Public License. It comes with NO WARRANTY.
 

@@ -1,3 +1,5 @@
+#! /bin/env python
+
 #  NanoVNASaver - a python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019.  Rune B. Broberg
 #
