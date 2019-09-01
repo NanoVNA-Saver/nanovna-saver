@@ -19,6 +19,7 @@ import threading
 from time import sleep
 from typing import List
 
+import numpy as np
 import serial
 from PyQt5 import QtWidgets, QtCore, QtGui
 
@@ -162,6 +163,39 @@ class NanoVNASaver(QtWidgets.QWidget):
         s21_control_layout.addRow("Max gain:", self.s21_max_gain_label)
 
         left_column.addWidget(s21_control_box)
+
+        tdr_control_box = QtWidgets.QGroupBox()
+        tdr_control_box.setTitle("TDR")
+        tdr_control_layout = QtWidgets.QFormLayout()
+        tdr_control_box.setLayout(tdr_control_layout)
+
+        self.tdr_velocity_dropdown = QtWidgets.QComboBox()
+        self.tdr_velocity_dropdown.addItem("Jelly filled (0.64)", 0.64)
+        self.tdr_velocity_dropdown.addItem("Polyethylene (0.66)", 0.66)
+        self.tdr_velocity_dropdown.addItem("PTFE (Teflon) (0.70)", 0.70)
+        self.tdr_velocity_dropdown.addItem("Pulp Insulation (0.72)", 0.72)
+        self.tdr_velocity_dropdown.addItem("Foam or Cellular PE (0.78)", 0.78)
+        self.tdr_velocity_dropdown.addItem("Semi-solid PE (SSPE) (0.84)", 0.84)
+        self.tdr_velocity_dropdown.addItem("Air (Helical spacers) (0.94)", 0.94)
+        self.tdr_velocity_dropdown.addItem("Custom", -1)
+
+        self.tdr_velocity_dropdown.setCurrentIndex(1)  # Default to PE (0.66)
+
+        self.tdr_velocity_dropdown.currentIndexChanged.connect(self.updateTDR)
+
+        tdr_control_layout.addRow(self.tdr_velocity_dropdown)
+
+        self.tdr_velocity_input = QtWidgets.QLineEdit()
+        self.tdr_velocity_input.setDisabled(True)
+        self.tdr_velocity_input.setText("0.66")
+        self.tdr_velocity_input.textChanged.connect(self.updateTDR)
+
+        tdr_control_layout.addRow("Velocity factor", self.tdr_velocity_input)
+
+        self.tdr_result_label = QtWidgets.QLabel()
+        tdr_control_layout.addRow("Estimated cable length:", self.tdr_result_label)
+
+        left_column.addWidget(tdr_control_box)
 
         ################################################################################################################
         #  Spacer
@@ -415,6 +449,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.s11LogMag.setData(self.data)
             self.s21LogMag.setData(self.data21)
             self.sweepProgressBar.setValue(self.worker.percentage)
+            self.updateTDR()
             # Find the minimum S11 VSWR:
             minVSWR = 100
             minVSWRfreq = -1
@@ -474,3 +509,37 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.sweepProgressBar.setValue(100)
         self.btnSweep.setDisabled(False)
 
+    def updateTDR(self):
+        c = 299792458
+        if len(self.data) < 2:
+            return
+
+        if self.tdr_velocity_dropdown.currentData() == -1:
+            self.tdr_velocity_input.setDisabled(False)
+        else:
+            self.tdr_velocity_input.setDisabled(True)
+            self.tdr_velocity_input.setText(str(self.tdr_velocity_dropdown.currentData()))
+
+        try:
+            v = float(self.tdr_velocity_input.text())
+        except ValueError:
+            return
+
+        step_size = self.data[1].freq - self.data[0].freq
+        s11 = []
+        for d in self.data:
+            s11.append(np.complex(d.re, d.im))
+
+        window = np.blackman(len(self.data))
+
+        windowed_s11 = window * s11
+
+        td = np.abs(np.fft.ifft(windowed_s11, 2**14))
+
+        time_axis = np.linspace(0, 1/step_size, 2**14)
+        distance_axis = time_axis * v * c
+
+        peak = np.max(td)  # We should check that this is an actual *peak*, and not just a vague maximum
+        index_peak = np.argmax(td)
+
+        self.tdr_result_label.setText(str(round(distance_axis[index_peak]/2, 3)) + " m")
