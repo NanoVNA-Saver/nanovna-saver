@@ -47,3 +47,10 @@ python3 nanovna-saver.py
 This software is licensed under version 3 of the GNU General Public License. It comes with NO WARRANTY.
 
 You can use it, commercially as well. You may make changes to the code, but I (and the license) ask that you give these changes back to the community.
+
+### Credits
+Original application by Rune B. Broberg (5Q5R)
+
+TDR inspiration shamelessly stolen from the work of Salil (VU2CWA) at https://nuclearrambo.com/wordpress/accurately-measuring-cable-length-with-nanovna/
+
+Thanks to everyone who's tested, commented and inspired.
