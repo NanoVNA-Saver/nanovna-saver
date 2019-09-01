@@ -20,6 +20,9 @@ Expected features:
 - Further data readout for markers, such as return loss/forward gain
 - Reading and displaying Touchstone files
 
+0.0.2:
+![Screenshot of version 0.0.1](https://i.imgur.com/eoLwv35.png)
+0.0.1:
 ![Screenshot of version 0.0.1](https://i.imgur.com/kcCC2eK.png)
 
 ### Windows
