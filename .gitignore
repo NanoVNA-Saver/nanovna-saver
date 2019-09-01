@@ -1,2 +1,5 @@
 /venv/
 .idea
+/build/
+/dist/
+/nanovna-saver.spec

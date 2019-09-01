@@ -43,7 +43,7 @@ class Marker(QtCore.QObject):
         self.btnColorPicker = QtWidgets.QPushButton("█")
         self.btnColorPicker.setFixedWidth(20)
         self.setColor(initialColor)
-        self.btnColorPicker.clicked.connect(lambda: self.setColor(QtWidgets.QColorDialog.getColor()))
+        self.btnColorPicker.clicked.connect(lambda: self.setColor(QtWidgets.QColorDialog.getColor(self.color, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
 
         self.layout = QtWidgets.QHBoxLayout()
         self.layout.addWidget(self.frequencyInput)
@@ -58,10 +58,11 @@ class Marker(QtCore.QObject):
             return
 
     def setColor(self, color):
-        self.color = color
-        p = self.btnColorPicker.palette()
-        p.setColor(QtGui.QPalette.ButtonText, self.color)
-        self.btnColorPicker.setPalette(p)
+        if color.isValid():
+            self.color = color
+            p = self.btnColorPicker.palette()
+            p.setColor(QtGui.QPalette.ButtonText, self.color)
+            self.btnColorPicker.setPalette(p)
 
     def getRow(self):
         return (QtWidgets.QLabel(self.name), self.layout)

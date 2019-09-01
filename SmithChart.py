@@ -46,6 +46,7 @@ class SmithChart(QtWidgets.QWidget):
 
         self.marker1Color = QtGui.QColor(255, 0, 20)
         self.marker2Color = QtGui.QColor(20, 0, 255)
+        self.sweepColor   = QtGui.QColor(220, 200, 30, 128)
 
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
         self.chartWidth = min(a0.size().width()-40, a0.size().height()-40)
@@ -87,7 +88,7 @@ class SmithChart(QtWidgets.QWidget):
         qp.drawArc(centerX - self.chartWidth*2, centerY, self.chartWidth*5, -self.chartHeight*5, int(-93.85 * 16), int(-18.85 * 16))  # Im(Z) = 0.2
 
     def drawValues(self, qp: QtGui.QPainter):
-        pen = QtGui.QPen(QtGui.QColor(220, 200, 30, 128))
+        pen = QtGui.QPen(self.sweepColor)
         pen.setWidth(2)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(3)
@@ -121,3 +122,7 @@ class SmithChart(QtWidgets.QWidget):
 
     def heightForWidth(self, a0: int) -> int:
         return a0
+
+    def setSweepColor(self, color : QtGui.QColor):
+        self.sweepColor = color
+        self.update()

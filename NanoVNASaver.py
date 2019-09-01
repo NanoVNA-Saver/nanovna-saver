@@ -54,12 +54,16 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.serialPort = "COM11"
         # self.serialSpeed = "115200"
 
+        self.color = QtGui.QColor(160, 140, 20, 128)
+
         self.setWindowTitle("NanoVNA Saver")
         layout = QtWidgets.QGridLayout()
         self.setLayout(layout)
 
         self.smithChart = SmithChart("S11")
         self.s21SmithChart = SmithChart("S21")
+        self.s11LogMag = LogMagChart("S11 Return Loss")
+        self.s21LogMag = LogMagChart("S21 Gain")
 
         left_column = QtWidgets.QVBoxLayout()
         right_column = QtWidgets.QVBoxLayout()
@@ -91,6 +95,13 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.sweepCountInput.setText("1")
 
         sweep_control_layout.addRow(QtWidgets.QLabel("Sweep count"), self.sweepCountInput)
+
+        self.btnColorPicker = QtWidgets.QPushButton("█")
+        self.btnColorPicker.setFixedWidth(20)
+        self.setSweepColor(self.color)
+        self.btnColorPicker.clicked.connect(lambda: self.setSweepColor(QtWidgets.QColorDialog.getColor(self.color, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
+
+        sweep_control_layout.addRow("Sweep color", self.btnColorPicker)
 
         self.sweepProgressBar = QtWidgets.QProgressBar()
         self.sweepProgressBar.setMaximum(100)
@@ -260,8 +271,6 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.lister = QtWidgets.QPlainTextEdit()
         self.lister.setFixedHeight(100)
-        self.s11LogMag = LogMagChart("S11 Return Loss")
-        self.s21LogMag = LogMagChart("S21 Gain")
         charts = QtWidgets.QGridLayout()
         charts.addWidget(self.smithChart, 0, 0)
         charts.addWidget(self.s21SmithChart, 1, 0)
@@ -543,3 +552,15 @@ class NanoVNASaver(QtWidgets.QWidget):
         index_peak = np.argmax(td)
 
         self.tdr_result_label.setText(str(round(distance_axis[index_peak]/2, 3)) + " m")
+
+    def setSweepColor(self, color : QtGui.QColor):
+        if color.isValid():
+            self.color = color
+            p = self.btnColorPicker.palette()
+            p.setColor(QtGui.QPalette.ButtonText, color)
+            self.btnColorPicker.setPalette(p)
+
+            self.smithChart.setSweepColor(color)
+            self.s21SmithChart.setSweepColor(color)
+            self.s11LogMag.setSweepColor(color)
+            self.s21LogMag.setSweepColor(color)

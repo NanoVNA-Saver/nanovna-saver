@@ -58,6 +58,8 @@ class LogMagChart(QtWidgets.QWidget):
 
         self.marker1Color = QtGui.QColor(255, 0, 20)
         self.marker2Color = QtGui.QColor(20, 0, 255)
+        self.sweepColor   = QtGui.QColor(220, 200, 30, 128)
+
 
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
         self.chartWidth = a0.size().width()-20-self.leftMargin
@@ -80,7 +82,7 @@ class LogMagChart(QtWidgets.QWidget):
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0:
             return
-        pen = QtGui.QPen(QtGui.QColor(220, 200, 30, 128))
+        pen = QtGui.QPen(self.sweepColor)
         pen.setWidth(2)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(3)
@@ -170,3 +172,7 @@ class LogMagChart(QtWidgets.QWidget):
         if frequency < 5000000:
             return str(round(frequency / 1000)) + "k"
         return str(round(frequency / 1000000, 1)) + "M"
+
+    def setSweepColor(self, color : QtGui.QColor):
+        self.sweepColor = color
+        self.update()
