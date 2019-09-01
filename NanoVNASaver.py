@@ -459,11 +459,19 @@ class NanoVNASaver(QtWidgets.QWidget):
             # TODO: Make a neater solution for showing data for markers
             if self.markers[0].location != -1:
                 im50, re50, vswr = self.vswr(self.data[self.markers[0].location])
-                self.marker1label.setText(str(round(re50, 3)) + " + j" + str(round(im50, 3)) + " VSWR: 1:" + str(round(vswr, 3)))
+                if (im50 < 0):
+                    im50str = "- j" + str(round(-1*im50, 3))
+                else:
+                    im50str = "+ j" + str(round(im50, 3))
+                self.marker1label.setText(str(round(re50, 3)) + im50str + " VSWR: 1:" + str(round(vswr, 3)))
 
             if self.markers[1].location != -1:
                 im50, re50, vswr = self.vswr(self.data[self.markers[1].location])
-                self.marker2label.setText(str(round(re50, 3)) + " + j" + str(round(im50, 3)) + " VSWR: 1:" + str(round(vswr, 3)))
+                if (im50 < 0):
+                    im50str = "- j" + str(round(im50, 3))
+                else:
+                    im50str = "+ j" + str(round(im50, 3))
+                self.marker2label.setText(str(round(re50, 3)) + im50str + " VSWR: 1:" + str(round(vswr, 3)))
 
             self.smithChart.setData(self.data)
             self.s21SmithChart.setData(self.data21)

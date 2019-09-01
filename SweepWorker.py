@@ -82,7 +82,7 @@ class SweepWorker(QtCore.QRunnable):
                 self.saveData(frequencies, values, values12)
 
             # Reset the device to show the full range
-            self.app.setSweep(self.app.sweepStartInput.text(), self.app.sweepEndInput.text())
+            self.app.setSweep(NanoVNASaver.parseFrequency(self.app.sweepStartInput.text()), NanoVNASaver.parseFrequency(self.app.sweepEndInput.text()))
         else:
             self.app.setSweep(sweepFrom, sweepTo)
             sleep(0.8)
@@ -113,6 +113,7 @@ class SweepWorker(QtCore.QRunnable):
 
     def readData(self, data):
         done = False
+        tmpdata = []
         while not done:
             done = True
             tmpdata = self.app.readValues(data)
