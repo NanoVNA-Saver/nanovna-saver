@@ -12,20 +12,19 @@ Current features:
 - Splitting a frequency range into multiple segments to increase resolution (tried up to >10k points)
 - Displaying data on Smith charts and logmag-charts for both S11 and S21
 - Displaying two markers, and the impedance and VSWR (against 50 ohm) at these locations
-- Exporting S11 touchstone files
+- Exporting 1-port and 2-port Touchstone files
+- TDR function (measurement of cable length)
 
 Expected features:
-- 2-port Touchstone files
 - Mouse control of markers
-- Further data readout for markers, such as return loss
-- TDR function (very important in this community ;-)
+- Further data readout for markers, such as return loss/forward gain
 - Reading and displaying Touchstone files
 
 ![Screenshot of version 0.0.1](https://i.imgur.com/kcCC2eK.png)
 
 ### Windows
 
-The software was written in Python on Windows, using Pycharm, and the modules PyQT5 and pyserial.
+The software was written in Python on Windows, using Pycharm, and the modules PyQT5, numpy and pyserial.
 
 ### Linux
 
@@ -33,6 +32,7 @@ In order to run this app in Linux environment, you'll need the following package
 
 * `python3-serial`
 * `python3-pyqt5`
+* `numpy`
 
 ### To Run
 
