@@ -32,11 +32,13 @@ from typing import List
 
 from PyQt5 import QtWidgets, QtGui, QtCore
 
+from Chart import Chart
 from Marker import Marker
 
 Datapoint = collections.namedtuple('Datapoint', 'freq re im')
 
-class LogMagChart(QtWidgets.QWidget):
+
+class LogMagChart(Chart):
     def __init__(self, name=""):
         super().__init__()
         self.leftMargin = 30
@@ -51,15 +53,8 @@ class LogMagChart(QtWidgets.QWidget):
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
-        self.values = []
-        self.frequencies = []
-        self.data : List[Datapoint] = []
-        self.markers : List[Marker] = []
-
         self.marker1Color = QtGui.QColor(255, 0, 20)
         self.marker2Color = QtGui.QColor(20, 0, 255)
-        self.sweepColor   = QtGui.QColor(220, 200, 30, 128)
-
 
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
         self.chartWidth = a0.size().width()-20-self.leftMargin
@@ -86,6 +81,9 @@ class LogMagChart(QtWidgets.QWidget):
         pen.setWidth(2)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(3)
+        fstart = self.data[0].freq
+        fstop = self.data[len(self.data)-1].freq
+        fspan = fstop-fstart
         # Find scaling
         min = 100
         max = 0
@@ -101,6 +99,21 @@ class LogMagChart(QtWidgets.QWidget):
                 max = logmag
             if logmag < min:
                 min = logmag
+        for d in self.reference:  # Also check min/max for the reference sweep
+            if d.freq < fstart or d.freq > fstop:
+                continue
+            re = d.re
+            im = d.im
+            re50 = 50 * (1 - re * re - im * im) / (1 + re * re + im * im - 2 * re)
+            im50 = 50 * (2 * im) / (1 + re * re + im * im - 2 * re)
+            # Calculate the reflection coefficient
+            mag = math.sqrt((re50-50)*(re50-50) + im50 * im50)/math.sqrt((re50+50)*(re50+50) + im50 * im50)
+            logmag = -20 * math.log10(mag)
+            if logmag > max:
+                max = logmag
+            if logmag < min:
+                min = logmag
+
         min = 10*math.floor(min/10)
         max = 10*math.ceil(max/10)
         span = max-min
@@ -136,6 +149,22 @@ class LogMagChart(QtWidgets.QWidget):
             x = self.leftMargin + 1 + round(self.chartWidth/len(self.data) * i)
             y = 30 + round((logmag-min)/span*(self.chartHeight-10))
             qp.drawPoint(int(x), int(y))
+        pen.setColor(self.referenceColor)
+        qp.setPen(pen)
+        for i in range(len(self.reference)):
+            if self.reference[i].freq < fstart or self.reference[i].freq > fstop:
+                continue
+
+            re = self.reference[i].re
+            im = self.reference[i].im
+            re50 = 50 * (1 - re * re - im * im) / (1 + re * re + im * im - 2 * re)
+            im50 = 50 * (2 * im) / (1 + re * re + im * im - 2 * re)
+            # Calculate the reflection coefficient
+            mag = math.sqrt((re50-50)*(re50-50) + im50 * im50)/math.sqrt((re50+50)*(re50+50) + im50 * im50)
+            logmag = -20 * math.log10(mag)
+            x = self.leftMargin + 1 + round(self.chartWidth*(self.reference[i].freq - fstart)/fspan)
+            y = 30 + round((logmag-min)/span*(self.chartHeight-10))
+            qp.drawPoint(int(x), int(y))
         # Now draw the markers
         for m in self.markers:
             if m.location != -1:
@@ -153,18 +182,6 @@ class LogMagChart(QtWidgets.QWidget):
                 y = 30 + round((logmag - min) / span * (self.chartHeight - 10))
                 qp.drawPoint(int(x), int(y))
 
-    def setValues(self, values, frequencies):
-        self.values = values
-        self.frequencies = frequencies
-        self.update()
-
-    def setData(self, data):
-        self.data = data
-        self.update()
-
-    def setMarkers(self, markers):
-        self.markers = markers
-
     @staticmethod
     def shortenFrequency(frequency):
         if frequency < 50000:
@@ -172,7 +189,3 @@ class LogMagChart(QtWidgets.QWidget):
         if frequency < 5000000:
             return str(round(frequency / 1000)) + "k"
         return str(round(frequency / 1000000, 1)) + "M"
-
-    def setSweepColor(self, color : QtGui.QColor):
-        self.sweepColor = color
-        self.update()

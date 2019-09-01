@@ -18,11 +18,13 @@ from typing import List
 
 from PyQt5 import QtWidgets, QtGui, QtCore
 
+from Chart import Chart
 from Marker import Marker
 
 Datapoint = collections.namedtuple('Datapoint', 'freq re im')
 
-class SmithChart(QtWidgets.QWidget):
+
+class SmithChart(Chart):
     def __init__(self, name=""):
         super().__init__()
         self.chartWidth = 360
@@ -39,14 +41,10 @@ class SmithChart(QtWidgets.QWidget):
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
-        self.values = []
-        self.frequencies = []
-        self.data : List[Datapoint] = []
-        self.markers : List[Marker] = []
-
         self.marker1Color = QtGui.QColor(255, 0, 20)
         self.marker2Color = QtGui.QColor(20, 0, 255)
         self.sweepColor   = QtGui.QColor(220, 200, 30, 128)
+        self.sweepColor = QtGui.QColor(50, 50, 200, 64)
 
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
         self.chartWidth = min(a0.size().width()-40, a0.size().height()-40)
@@ -88,16 +86,26 @@ class SmithChart(QtWidgets.QWidget):
         qp.drawArc(centerX - self.chartWidth*2, centerY, self.chartWidth*5, -self.chartHeight*5, int(-93.85 * 16), int(-18.85 * 16))  # Im(Z) = 0.2
 
     def drawValues(self, qp: QtGui.QPainter):
+        if len(self.data) == 0:
+            return
         pen = QtGui.QPen(self.sweepColor)
         pen.setWidth(2)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(3)
         qp.setPen(pen)
-        marker1 = -1
-        marker2 = -1
         for i in range(len(self.data)):
             x = self.width()/2 + self.data[i].re * self.chartWidth/2
             y = self.height()/2 + self.data[i].im * -1 * self.chartHeight/2
+            qp.drawPoint(int(x), int(y))
+        pen.setColor(self.referenceColor)
+        qp.setPen(pen)
+        fstart = self.data[0].freq
+        fstop  = self.data[len(self.data)-1].freq
+        for data in self.reference:
+            if data.freq < fstart or data.freq > fstop:
+                continue
+            x = self.width()/2 + data.re * self.chartWidth/2
+            y = self.height()/2 + data.im * -1 * self.chartHeight/2
             qp.drawPoint(int(x), int(y))
         # Now draw the markers
         for m in self.markers:
@@ -108,21 +116,5 @@ class SmithChart(QtWidgets.QWidget):
                 y = self.height() / 2 + self.data[m.location].im * -1 * self.chartHeight / 2
                 qp.drawPoint(int(x), int(y))
 
-    def setValues(self, values, frequencies):
-        self.values = values
-        self.frequencies = frequencies
-        self.update()
-
-    def setData(self, data):
-        self.data = data
-        self.update()
-
-    def setMarkers(self, markers):
-        self.markers = markers
-
     def heightForWidth(self, a0: int) -> int:
         return a0
-
-    def setSweepColor(self, color : QtGui.QColor):
-        self.sweepColor = color
-        self.update()
