@@ -413,6 +413,13 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.sweepProgressBar.setValue(0)
         self.btnSweep.setDisabled(True)
+        self.marker1label.setText("")
+        self.marker2label.setText("")
+        self.s11_min_rl_label.setText("")
+        self.s11_min_swr_label.setText("")
+        self.s21_min_gain_label.setText("")
+        self.s21_max_gain_label.setText("")
+        self.tdr_result_label.setText("")
 
         self.threadpool.start(self.worker)
 
@@ -469,12 +476,12 @@ class NanoVNASaver(QtWidgets.QWidget):
             minVSWRfreq = -1
             for d in self.data:
                 _, _, vswr = self.vswr(d)
-                if vswr < minVSWR:
+                if vswr < minVSWR and vswr > 0:
                     minVSWR = vswr
                     minVSWRfreq = d.freq
 
             if minVSWRfreq > -1:
-                self.s11_min_swr_label.setText(str(round(minVSWR, 3)) + " @ " + str(minVSWRfreq) + " Hz")
+                self.s11_min_swr_label.setText(str(round(minVSWR, 3)) + " @ " + self.formatFrequency(minVSWRfreq))
                 self.s11_min_rl_label.setText(str(round(20*math.log10((minVSWR-1)/(minVSWR+1)), 3)) + " dB")
 
             minGain = 100
@@ -491,8 +498,8 @@ class NanoVNASaver(QtWidgets.QWidget):
                     minGainFreq = d.freq
 
             if maxGainFreq > -1:
-                self.s21_min_gain_label.setText(str(round(minGain, 3)) + " dB @ " + str(minGainFreq) + " Hz")
-                self.s21_max_gain_label.setText(str(round(maxGain, 3)) + " dB @ " + str(maxGainFreq) + " Hz")
+                self.s21_min_gain_label.setText(str(round(minGain, 3)) + " dB @ " + self.formatFrequency(minGainFreq))
+                self.s21_max_gain_label.setText(str(round(maxGain, 3)) + " dB @ " + self.formatFrequency(maxGainFreq))
 
         else:
             print("ERROR: Failed acquiring data lock while updating")
@@ -504,7 +511,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         im = data.im
         re50 = 50 * (1 - re * re - im * im) / (1 + re * re + im * im - 2 * re)
         im50 = 50 * (2 * im) / (1 + re * re + im * im - 2 * re)
-        mag = math.sqrt(re * re + im * im)
+        mag = math.sqrt((re50 - 50) * (re50 - 50) + im50 * im50) / math.sqrt((re50 + 50) * (re50 + 50) + im50 * im50)
+        # mag = math.sqrt(re * re + im * im)  # Is this even right?
         vswr = (1 + mag) / (1 - mag)
         return im50, re50, vswr
 
@@ -540,6 +548,11 @@ class NanoVNASaver(QtWidgets.QWidget):
             return
 
         step_size = self.data[1].freq - self.data[0].freq
+        if step_size == 0:
+            self.tdr_result_label.setText("")
+            self.lister.appendPlainText("Cannot compute cable length at 0 span")
+            return
+
         s11 = []
         for d in self.data:
             s11.append(np.complex(d.re, d.im))
@@ -569,3 +582,40 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.s21SmithChart.setSweepColor(color)
             self.s11LogMag.setSweepColor(color)
             self.s21LogMag.setSweepColor(color)
+
+    @staticmethod
+    def formatFrequency(freq):
+        if math.log10(freq) < 3:
+            return str(freq) + " Hz"
+        elif math.log10(freq) < 7:
+            return "{:.3f}".format(freq/1000) + " kHz"
+        elif math.log10(freq) < 8:
+            return "{:.4f}".format(freq/1000000) + " MHz"
+        else:
+            return "{:.3f}".format(freq/1000000) + " MHz"
+
+    @staticmethod
+    def parseFrequency(freq : str):
+        freq = freq.replace(" ", "")  # People put all sorts of weird whitespace in.
+        if freq.isnumeric():
+            return int(freq)
+
+        multiplier = 1
+        freq = freq.lower()
+
+        if freq.endswith("k"):
+            multiplier = 1000
+            freq = freq[:-1]
+        elif freq.endswith("m"):
+            multiplier = 1000000
+            freq = freq[:-1]
+
+        if freq.isnumeric():
+            return int(freq) * multiplier
+
+        try:
+            f = float(freq)
+            return int(round(multiplier * f))
+        except ValueError:
+            # Okay, we couldn't parse this however much we tried.
+            return -1

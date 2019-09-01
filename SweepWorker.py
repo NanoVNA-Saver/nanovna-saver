@@ -47,13 +47,18 @@ class SweepWorker(QtCore.QRunnable):
         if int(self.app.sweepCountInput.text()) > 0:
             self.noSweeps = int(self.app.sweepCountInput.text())
 
-        if not self.app.sweepStartInput.text().isnumeric() or not self.app.sweepEndInput.text().isnumeric():
+        if self.app.sweepStartInput.text() == "" or self.app.sweepEndInput.text() == "":
             # We should handle the first startup by reading frequencies?
             sweepFrom = 1000000
             sweepTo = 800000000
         else:
-            sweepFrom = int(self.app.sweepStartInput.text())
-            sweepTo = int(self.app.sweepEndInput.text())
+            from NanoVNASaver import NanoVNASaver
+            sweepFrom = NanoVNASaver.parseFrequency(self.app.sweepStartInput.text())
+            sweepTo = NanoVNASaver.parseFrequency(self.app.sweepEndInput.text())
+            if sweepFrom < 0 or sweepTo < 0:
+                print("Can't sweep from " + self.app.sweepStartInput.text() + " to " + self.app.sweepEndInput.text())
+                self.signals.finished.emit()
+                return
 
         if self.noSweeps > 1:
             # We're going to run multiple sweeps
