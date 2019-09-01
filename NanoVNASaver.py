@@ -188,6 +188,11 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.tdr_velocity_dropdown.addItem("Foam or Cellular PE (0.78)", 0.78)
         self.tdr_velocity_dropdown.addItem("Semi-solid PE (SSPE) (0.84)", 0.84)
         self.tdr_velocity_dropdown.addItem("Air (Helical spacers) (0.94)", 0.94)
+        self.tdr_velocity_dropdown.insertSeparator(7)
+        self.tdr_velocity_dropdown.addItem("RG174 (0.66)", 0.66)
+        self.tdr_velocity_dropdown.addItem("RG316 (0.69)", 0.69)
+        self.tdr_velocity_dropdown.addItem("RG402 (0.695)", 0.695)
+        self.tdr_velocity_dropdown.insertSeparator(11)
         self.tdr_velocity_dropdown.addItem("Custom", -1)
 
         self.tdr_velocity_dropdown.setCurrentIndex(1)  # Default to PE (0.66)

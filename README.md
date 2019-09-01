@@ -43,6 +43,18 @@ In order to run this app in Linux environment, you'll need the following package
 python3 nanovna-saver.py
 ```
 
+### Using the software
+
+Connect your NanoVNA to a serial port, and enter this serial port in the serial port box. Click "Open serial" to connect.
+
+The app can collect multiple sweeps to get more accurate measurements. Enter the number of sweeps to be done in the
+sweep count box. Each sweep is 101 data points, and takes about 1.5 seconds to complete.
+
+Marker frequencies are entered in Hz. Press enter after typing the frequency for it to take effect.
+
+To get accurate TDR measurements, calibrate the device, and attach the cable to be measured at the calibration plane -
+ie. at the same position where the calibration load would be attached.
+
 ### License
 This software is licensed under version 3 of the GNU General Public License. It comes with NO WARRANTY.
 
