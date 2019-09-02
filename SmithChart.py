@@ -86,7 +86,7 @@ class SmithChart(Chart):
         qp.drawArc(centerX - self.chartWidth*2, centerY, self.chartWidth*5, -self.chartHeight*5, int(-93.85 * 16), int(-18.85 * 16))  # Im(Z) = 0.2
 
     def drawValues(self, qp: QtGui.QPainter):
-        if len(self.data) == 0:
+        if len(self.data) == 0 and len(self.reference) == 0:
             return
         pen = QtGui.QPen(self.sweepColor)
         pen.setWidth(2)
@@ -99,8 +99,12 @@ class SmithChart(Chart):
             qp.drawPoint(int(x), int(y))
         pen.setColor(self.referenceColor)
         qp.setPen(pen)
-        fstart = self.data[0].freq
-        fstop  = self.data[len(self.data)-1].freq
+        if len(self.data) > 0:
+            fstart = self.data[0].freq
+            fstop  = self.data[len(self.data)-1].freq
+        else:
+            fstart = self.reference[0].freq
+            fstop  = self.reference[len(self.reference)-1].freq
         for data in self.reference:
             if data.freq < fstart or data.freq > fstop:
                 continue

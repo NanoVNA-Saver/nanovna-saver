@@ -75,14 +75,18 @@ class LogMagChart(Chart):
         qp.drawLine(self.leftMargin-5, 20+self.chartHeight, self.leftMargin+self.chartWidth, 20 + self.chartHeight)
 
     def drawValues(self, qp: QtGui.QPainter):
-        if len(self.data) == 0:
+        if len(self.data) == 0 and len(self.reference) == 0:
             return
         pen = QtGui.QPen(self.sweepColor)
         pen.setWidth(2)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(3)
-        fstart = self.data[0].freq
-        fstop = self.data[len(self.data)-1].freq
+        if len(self.data) > 0:
+            fstart = self.data[0].freq
+            fstop = self.data[len(self.data)-1].freq
+        else:
+            fstart = self.reference[0].freq
+            fstop = self.reference[len(self.reference) - 1].freq
         fspan = fstop-fstart
         # Find scaling
         min = 100
@@ -123,10 +127,6 @@ class LogMagChart(Chart):
         qp.setPen(QtCore.Qt.black)
         qp.drawText(3, 35, str(-min))
         qp.drawText(3, self.chartHeight+20, str(-max))
-        # Draw frequency markers
-        fstart = self.data[0].freq
-        fstop = self.data[len(self.data)-1].freq
-        fspan = fstop-fstart
         # At least 100 px between ticks
         qp.drawText(self.leftMargin-20, 20 + self.chartHeight + 15, LogMagChart.shortenFrequency(fstart))
         ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
