@@ -10,18 +10,20 @@ This software connects to a NanoVNA and extracts the data for display on a compu
 Current features:
 - Reading data from a NanoVNA
 - Splitting a frequency range into multiple segments to increase resolution (tried up to >10k points)
-- Displaying data on Smith charts and logmag-charts for both S11 and S21
+- Displaying data on Smith charts and LogMag-charts for both S11 and S21
 - Displaying two markers, and the impedance and VSWR (against 50 ohm) at these locations
 - Exporting 1-port and 2-port Touchstone files
 - TDR function (measurement of cable length)
+- Reading and displaying Touchstone files as reference traces
 
 Expected features:
 - Mouse control of markers
 - Further data readout for markers, such as return loss/forward gain
-- Reading and displaying Touchstone files
 
+0.0.3:
+![Screenshot of version 0.0.3](https://i.imgur.com/Cyp4gax.png)
 0.0.2:
-![Screenshot of version 0.0.1](https://i.imgur.com/eoLwv35.png)
+![Screenshot of version 0.0.2](https://i.imgur.com/eoLwv35.png)
 0.0.1:
 ![Screenshot of version 0.0.1](https://i.imgur.com/kcCC2eK.png)
 
@@ -65,4 +67,4 @@ Original application by Rune B. Broberg (5Q5R)
 
 TDR inspiration shamelessly stolen from the work of Salil (VU2CWA) at https://nuclearrambo.com/wordpress/accurately-measuring-cable-length-with-nanovna/
 
-Thanks to everyone who's tested, commented and inspired.
+Thanks to everyone who have tested, commented and inspired.

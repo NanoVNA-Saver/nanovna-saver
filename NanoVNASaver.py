@@ -23,10 +23,12 @@ import numpy as np
 import serial
 from PyQt5 import QtWidgets, QtCore, QtGui
 
+import Chart
 from Marker import Marker
 from SmithChart import SmithChart
 from SweepWorker import SweepWorker
 from LogMagChart import LogMagChart
+from Touchstone import Touchstone
 
 Datapoint = collections.namedtuple('Datapoint', 'freq re im')
 
@@ -45,25 +47,33 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.serial = serial.Serial()
 
         self.dataLock = threading.Lock()
-        self.values = []
-        self.frequencies = []
         self.data : List[Datapoint] = []
         self.data21 : List[Datapoint] = []
+        self.referenceS11data : List[Datapoint] = []
+        self.referenceS21data : List[Datapoint] = []
+
         self.markers = []
 
         self.serialPort = "COM11"
         # self.serialSpeed = "115200"
 
         self.color = QtGui.QColor(160, 140, 20, 128)
+        self.referenceColor = QtGui.QColor(0, 0, 255, 32)
 
         self.setWindowTitle("NanoVNA Saver")
         layout = QtWidgets.QGridLayout()
         self.setLayout(layout)
 
-        self.smithChart = SmithChart("S11")
+        self.s11SmithChart = SmithChart("S11")
         self.s21SmithChart = SmithChart("S21")
         self.s11LogMag = LogMagChart("S11 Return Loss")
         self.s21LogMag = LogMagChart("S21 Gain")
+
+        self.charts : List[Chart] = []
+        self.charts.append(self.s11SmithChart)
+        self.charts.append(self.s21SmithChart)
+        self.charts.append(self.s11LogMag)
+        self.charts.append(self.s21LogMag)
 
         left_column = QtWidgets.QVBoxLayout()
         right_column = QtWidgets.QVBoxLayout()
@@ -135,7 +145,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         marker_control_layout.addRow(label, layout)
         self.markers.append(marker2)
 
-        self.smithChart.setMarkers(self.markers)
+        self.s11SmithChart.setMarkers(self.markers)
         self.s21SmithChart.setMarkers(self.markers)
 
         self.marker1label = QtWidgets.QLabel("")
@@ -220,6 +230,48 @@ class NanoVNASaver(QtWidgets.QWidget):
         left_column.addSpacerItem(QtWidgets.QSpacerItem(1, 1, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding))
 
         ################################################################################################################
+        #  Reference control
+        ################################################################################################################
+
+        reference_control_box = QtWidgets.QGroupBox()
+        reference_control_box.setMaximumWidth(400)
+        reference_control_box.setTitle("Reference sweep")
+        reference_control_layout = QtWidgets.QFormLayout(reference_control_box)
+
+        btnSetReference = QtWidgets.QPushButton("Set current as reference")
+        btnSetReference.clicked.connect(self.setReference)
+        self.btnResetReference = QtWidgets.QPushButton("Reset reference")
+        self.btnResetReference.clicked.connect(self.resetReference)
+        self.btnResetReference.setDisabled(True)
+        self.btnReferenceColorPicker = QtWidgets.QPushButton("█")
+        self.btnReferenceColorPicker.setFixedWidth(20)
+        self.setReferenceColor(self.referenceColor)
+        self.btnReferenceColorPicker.clicked.connect(lambda: self.setReferenceColor(
+            QtWidgets.QColorDialog.getColor(self.referenceColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
+
+        set_reference_layout = QtWidgets.QHBoxLayout()
+        set_reference_layout.addWidget(btnSetReference)
+        set_reference_layout.addWidget(self.btnReferenceColorPicker)
+        reference_control_layout.addRow(set_reference_layout)
+        reference_control_layout.addRow(self.btnResetReference)
+
+        self.referenceFileNameInput = QtWidgets.QLineEdit("")
+        btnReferenceFilePicker = QtWidgets.QPushButton("...")
+        btnReferenceFilePicker.setMaximumWidth(25)
+        btnReferenceFilePicker.clicked.connect(self.pickReferenceFile)
+        referenceFileNameLayout = QtWidgets.QHBoxLayout()
+        referenceFileNameLayout.addWidget(self.referenceFileNameInput)
+        referenceFileNameLayout.addWidget(btnReferenceFilePicker)
+
+        reference_control_layout.addRow(QtWidgets.QLabel("Filename"), referenceFileNameLayout)
+
+        btnImportReference = QtWidgets.QPushButton("Import reference file")
+        btnImportReference.clicked.connect(self.loadReferenceFile)
+        reference_control_layout.addRow(btnImportReference)
+
+        left_column.addWidget(reference_control_box)
+
+        ################################################################################################################
         #  Serial control
         ################################################################################################################
 
@@ -250,7 +302,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         file_control_box.setMaximumWidth(400)
         file_control_layout = QtWidgets.QFormLayout(file_control_box)
         self.fileNameInput = QtWidgets.QLineEdit("")
-        self.fileNameInput.setAlignment(QtCore.Qt.AlignRight)
         btnFilePicker = QtWidgets.QPushButton("...")
         btnFilePicker.setMaximumWidth(25)
         btnFilePicker.clicked.connect(self.pickFile)
@@ -277,7 +328,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.lister = QtWidgets.QPlainTextEdit()
         self.lister.setFixedHeight(100)
         charts = QtWidgets.QGridLayout()
-        charts.addWidget(self.smithChart, 0, 0)
+        charts.addWidget(self.s11SmithChart, 0, 0)
         charts.addWidget(self.s21SmithChart, 1, 0)
         charts.addWidget(self.s11LogMag, 0, 1)
         charts.addWidget(self.s21LogMag, 1, 1)
@@ -290,6 +341,10 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.worker.signals.updated.connect(self.dataUpdated)
         self.worker.signals.finished.connect(self.sweepFinished)
+
+    def pickReferenceFile(self):
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(directory=self.referenceFileNameInput.text(), filter="Touchstone Files (*.s1p *.s2p);;All files (*.*)")
+        self.referenceFileNameInput.setText(filename)
 
     def pickFile(self):
         filename, _ = QtWidgets.QFileDialog.getSaveFileName(directory=self.fileNameInput.text(), filter="Touchstone Files (*.s1p *.s2p);;All files (*.*)")
@@ -473,7 +528,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                     im50str = "+ j" + str(round(im50, 3))
                 self.marker2label.setText(str(round(re50, 3)) + im50str + " VSWR: 1:" + str(round(vswr, 3)))
 
-            self.smithChart.setData(self.data)
+            self.s11SmithChart.setData(self.data)
             self.s21SmithChart.setData(self.data21)
             self.s11LogMag.setData(self.data)
             self.s21LogMag.setData(self.data21)
@@ -586,10 +641,8 @@ class NanoVNASaver(QtWidgets.QWidget):
             p.setColor(QtGui.QPalette.ButtonText, color)
             self.btnColorPicker.setPalette(p)
 
-            self.smithChart.setSweepColor(color)
-            self.s21SmithChart.setSweepColor(color)
-            self.s11LogMag.setSweepColor(color)
-            self.s21LogMag.setSweepColor(color)
+            for c in self.charts:
+                c.setSweepColor(color)
 
     @staticmethod
     def formatFrequency(freq):
@@ -627,3 +680,39 @@ class NanoVNASaver(QtWidgets.QWidget):
         except ValueError:
             # Okay, we couldn't parse this however much we tried.
             return -1
+
+    def setReference(self):
+        self.setReference(self.data, self.data21)
+
+    def setReference(self, s11data, s21data):
+        self.referenceS11data = s11data
+        self.s11SmithChart.setReference(s11data)
+        self.s11LogMag.setReference(s11data)
+
+        self.referenceS21data = s21data
+        self.s21SmithChart.setReference(s21data)
+        self.s21LogMag.setReference(s21data)
+        self.btnResetReference.setDisabled(False)
+
+    def resetReference(self):
+        self.referenceS11data = []
+        self.referenceS21data = []
+        for c in self.charts:
+            c.resetReference()
+        self.btnResetReference.setDisabled(True)
+
+    def setReferenceColor(self, color):
+        if color.isValid():
+            self.referenceColor = color
+            p = self.btnReferenceColorPicker.palette()
+            p.setColor(QtGui.QPalette.ButtonText, color)
+            self.btnReferenceColorPicker.setPalette(p)
+
+            for c in self.charts:
+                c.setReferenceColor(color)
+
+    def loadReferenceFile(self):
+        filename = self.referenceFileNameInput.text()
+        t = Touchstone(filename)
+        t.load()
+        self.setReference(t.s11data, t.s21data)
