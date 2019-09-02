@@ -238,8 +238,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         reference_control_box.setTitle("Reference sweep")
         reference_control_layout = QtWidgets.QFormLayout(reference_control_box)
 
-        btnSetRefence = QtWidgets.QPushButton("Set current as reference")
-        btnSetRefence.clicked.connect(self.setReference)
+        btnSetReference = QtWidgets.QPushButton("Set current as reference")
+        btnSetReference.clicked.connect(self.setReference)
         self.btnResetReference = QtWidgets.QPushButton("Reset reference")
         self.btnResetReference.clicked.connect(self.resetReference)
         self.btnResetReference.setDisabled(True)
@@ -249,8 +249,10 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.btnReferenceColorPicker.clicked.connect(lambda: self.setReferenceColor(
             QtWidgets.QColorDialog.getColor(self.referenceColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
 
-        reference_control_layout.addRow("Reference color", self.btnReferenceColorPicker)
-        reference_control_layout.addRow(btnSetRefence)
+        set_reference_layout = QtWidgets.QHBoxLayout()
+        set_reference_layout.addWidget(btnSetReference)
+        set_reference_layout.addWidget(self.btnReferenceColorPicker)
+        reference_control_layout.addRow(set_reference_layout)
         reference_control_layout.addRow(self.btnResetReference)
 
         self.referenceFileNameInput = QtWidgets.QLineEdit("")
