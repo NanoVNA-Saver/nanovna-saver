@@ -22,6 +22,7 @@ from typing import List
 import numpy as np
 import serial
 from PyQt5 import QtWidgets, QtCore, QtGui
+from serial.tools import list_ports
 
 import Chart
 from Marker import Marker
@@ -32,6 +33,8 @@ from Touchstone import Touchstone
 
 Datapoint = collections.namedtuple('Datapoint', 'freq re im')
 
+VID = 1155
+PID = 22336
 
 class NanoVNASaver(QtWidgets.QWidget):
     def __init__(self):
@@ -54,7 +57,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.markers = []
 
-        self.serialPort = "COM11"
+        self.serialPort = self.getport()
         # self.serialSpeed = "115200"
 
         self.color = QtGui.QColor(160, 140, 20, 128)
@@ -346,6 +349,15 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.worker.signals.updated.connect(self.dataUpdated)
         self.worker.signals.finished.connect(self.sweepFinished)
+
+    # Get that windows port
+    def getport(self) -> str:
+        device_list = list_ports.comports()
+        for d in device_list:
+            if (d.vid == VID and
+                    d.pid == PID):
+                port = d.device
+                return port
 
     def pickReferenceFile(self):
         filename, _ = QtWidgets.QFileDialog.getOpenFileName(directory=self.referenceFileNameInput.text(), filter="Touchstone Files (*.s1p *.s2p);;All files (*.*)")
