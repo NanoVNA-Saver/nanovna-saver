@@ -50,11 +50,14 @@ class Marker(QtCore.QObject):
         self.layout.addWidget(self.btnColorPicker)
 
     def setFrequency(self, frequency):
-        if frequency.isnumeric():
-            self.frequency = int(frequency)
+        from NanoVNASaver import NanoVNASaver
+        f = NanoVNASaver.parseFrequency(frequency)
+        if f > 0:
+            self.frequency = f
             self.updated.emit()
         else:
             self.frequency = 0
+            self.updated.emit()
             return
 
     def setColor(self, color):

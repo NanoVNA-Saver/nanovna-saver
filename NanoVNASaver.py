@@ -265,9 +265,14 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         reference_control_layout.addRow(QtWidgets.QLabel("Filename"), referenceFileNameLayout)
 
-        btnImportReference = QtWidgets.QPushButton("Import reference file")
-        btnImportReference.clicked.connect(self.loadReferenceFile)
-        reference_control_layout.addRow(btnImportReference)
+        import_button_layout = QtWidgets.QHBoxLayout()
+        btnLoadReference = QtWidgets.QPushButton("Load reference")
+        btnLoadReference.clicked.connect(self.loadReferenceFile)
+        btnLoadSweep = QtWidgets.QPushButton("Load as sweep")
+        btnLoadSweep.clicked.connect(self.loadSweepFile)
+        import_button_layout.addWidget(btnLoadReference)
+        import_button_layout.addWidget(btnLoadSweep)
+        reference_control_layout.addRow(import_button_layout)
 
         left_column.addWidget(reference_control_box)
 
@@ -716,3 +721,11 @@ class NanoVNASaver(QtWidgets.QWidget):
         t = Touchstone(filename)
         t.load()
         self.setReference(t.s11data, t.s21data)
+
+
+    def loadSweepFile(self):
+        filename = self.referenceFileNameInput.text()
+        t = Touchstone(filename)
+        t.load()
+        self.saveData(t.s11data, t.s21data)
+        self.dataUpdated()
