@@ -14,11 +14,11 @@ Current features:
 - Displaying two markers, and the impedance and VSWR (against 50 ohm) at these locations
 - Exporting 1-port and 2-port Touchstone files
 - TDR function (measurement of cable length)
+- Reading and displaying Touchstone files as reference traces
 
 Expected features:
 - Mouse control of markers
 - Further data readout for markers, such as return loss/forward gain
-- Reading and displaying Touchstone files
 
 0.0.2:
 ![Screenshot of version 0.0.1](https://i.imgur.com/eoLwv35.png)
