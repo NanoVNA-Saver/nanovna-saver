@@ -45,6 +45,9 @@ class LogMagChart(Chart):
         self.chartWidth = 360
         self.chartHeight = 360
         self.name = name
+        self.fstart = 0
+        self.fstop = 0
+        self.mouselocation = 0
 
         self.setMinimumSize(self.chartWidth + 20 + self.leftMargin, self.chartHeight + 40)
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding))
@@ -87,6 +90,8 @@ class LogMagChart(Chart):
         else:
             fstart = self.reference[0].freq
             fstop = self.reference[len(self.reference) - 1].freq
+        self.fstart = fstart
+        self.fstop = fstop
         fspan = fstop-fstart
         # Find scaling
         min = 100
@@ -123,6 +128,7 @@ class LogMagChart(Chart):
         span = max-min
         for i in range(min, max, 10):
             y = 30 + round((i-min)/span*(self.chartHeight-10))
+            qp.setPen(QtGui.QPen(QtGui.QColor("lightgray")))
             qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.chartWidth, y)
         qp.setPen(QtCore.Qt.black)
         qp.drawText(3, 35, str(-min))
@@ -136,6 +142,11 @@ class LogMagChart(Chart):
             qp.drawLine(x, 20, x, 20+self.chartHeight+5)
             qp.setPen(QtCore.Qt.black)
             qp.drawText(x-20, 20+self.chartHeight+15, LogMagChart.shortenFrequency(round(fspan/ticks*(i+1) + fstart)))
+
+        if self.mouselocation != 0:
+            qp.setPen(QtGui.QPen(QtGui.QColor(224,224,224)))
+            x = self.leftMargin + 1 + round(self.chartWidth * (self.mouselocation - fstart) / fspan)
+            qp.drawLine(x, 20, x, 20 + self.chartHeight +5)
 
         qp.setPen(pen)
         for i in range(len(self.data)):
@@ -189,3 +200,24 @@ class LogMagChart(Chart):
         if frequency < 5000000:
             return str(round(frequency / 1000)) + "k"
         return str(round(frequency / 1000000, 1)) + "M"
+
+    def mousePressEvent(self, a0: QtGui.QMouseEvent) -> None:
+        self.mouseMoveEvent(a0)
+
+    def mouseMoveEvent(self, a0: QtGui.QMouseEvent) -> None:
+        x = a0.x()
+        absx = x - self.leftMargin
+        if absx < 0 or absx > self.chartWidth:
+            self.mouselocation = 0
+            a0.ignore()
+            return
+        a0.accept()
+        if self.fstop - self.fstart > 0:
+            span = self.fstop - self.fstart
+            step = span/self.chartWidth
+            f = absx * step
+#            self.mouselocation = f
+            self.markers[0].setFrequency(str(round(f)))
+        else:
+            self.mouselocation = 0
+        return

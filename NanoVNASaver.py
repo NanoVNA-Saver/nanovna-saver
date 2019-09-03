@@ -36,6 +36,7 @@ Datapoint = collections.namedtuple('Datapoint', 'freq re im')
 VID = 1155
 PID = 22336
 
+
 class NanoVNASaver(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
@@ -70,7 +71,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         outer.addWidget(scrollarea)
         self.setLayout(outer)
         scrollarea.setWidgetResizable(True)
-        self.resize(1100, 950)
+        self.resize(1150, 950)
         scrollarea.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
         self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
         widget = QtWidgets.QWidget()
@@ -146,6 +147,10 @@ class NanoVNASaver(QtWidgets.QWidget):
         marker_control_box.setMaximumWidth(400)
         marker_control_layout = QtWidgets.QFormLayout(marker_control_box)
 
+        mouse_marker = Marker("Mouse marker", QtGui.QColor(20, 255, 20))
+        mouse_marker.updated.connect(self.dataUpdated)
+        self.markers.append(mouse_marker)
+
         marker1 = Marker("Marker 1", QtGui.QColor(255, 0, 20))
         marker1.updated.connect(self.dataUpdated)
         label, layout = marker1.getRow()
@@ -161,11 +166,15 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s11SmithChart.setMarkers(self.markers)
         self.s21SmithChart.setMarkers(self.markers)
 
+        self.mousemarkerlabel = QtWidgets.QLabel("")
+        self.mousemarkerlabel.setMinimumWidth(160)
+        marker_control_layout.addRow(QtWidgets.QLabel("Mouse marker:"), self.mousemarkerlabel)
+
         self.marker1label = QtWidgets.QLabel("")
-        marker_control_layout.addRow(QtWidgets.QLabel("Marker 1: "), self.marker1label)
+        marker_control_layout.addRow(QtWidgets.QLabel("Marker 1:"), self.marker1label)
 
         self.marker2label = QtWidgets.QLabel("")
-        marker_control_layout.addRow(QtWidgets.QLabel("Marker 2: "), self.marker2label)
+        marker_control_layout.addRow(QtWidgets.QLabel("Marker 2:"), self.marker2label)
 
         left_column.addWidget(marker_control_box)
 
@@ -177,6 +186,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         s11_control_box.setTitle("S11")
         s11_control_layout = QtWidgets.QFormLayout()
         s11_control_box.setLayout(s11_control_layout)
+        s11_control_box.setMaximumWidth(400)
 
         self.s11_min_swr_label = QtWidgets.QLabel()
         s11_control_layout.addRow("Min VSWR:", self.s11_min_swr_label)
@@ -189,6 +199,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         s21_control_box.setTitle("S21")
         s21_control_layout = QtWidgets.QFormLayout()
         s21_control_box.setLayout(s21_control_layout)
+        s21_control_box.setMaximumWidth(400)
 
         self.s21_min_gain_label = QtWidgets.QLabel()
         s21_control_layout.addRow("Min gain:", self.s21_min_gain_label)
@@ -202,6 +213,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         tdr_control_box.setTitle("TDR")
         tdr_control_layout = QtWidgets.QFormLayout()
         tdr_control_box.setLayout(tdr_control_layout)
+        tdr_control_box.setMaximumWidth(400)
 
         self.tdr_velocity_dropdown = QtWidgets.QComboBox()
         self.tdr_velocity_dropdown.addItem("Jelly filled (0.64)", 0.64)
@@ -495,6 +507,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.sweepProgressBar.setValue(0)
         self.btnSweep.setDisabled(True)
+        self.mousemarkerlabel.setText("")
         self.marker1label.setText("")
         self.marker2label.setText("")
         self.s11_min_rl_label.setText("")
@@ -545,10 +558,17 @@ class NanoVNASaver(QtWidgets.QWidget):
                     im50str = "- j" + str(round(-1*im50, 3))
                 else:
                     im50str = "+ j" + str(round(im50, 3))
-                self.marker1label.setText(str(round(re50, 3)) + im50str + " VSWR: 1:" + str(round(vswr, 3)))
-
+                self.mousemarkerlabel.setText(str(round(re50, 3)) + im50str + " VSWR: 1:" + str(round(vswr, 3)))
             if self.markers[1].location != -1:
                 im50, re50, vswr = self.vswr(self.data[self.markers[1].location])
+                if (im50 < 0):
+                    im50str = "- j" + str(round(-1*im50, 3))
+                else:
+                    im50str = "+ j" + str(round(im50, 3))
+                self.marker1label.setText(str(round(re50, 3)) + im50str + " VSWR: 1:" + str(round(vswr, 3)))
+
+            if self.markers[2].location != -1:
+                im50, re50, vswr = self.vswr(self.data[self.markers[2].location])
                 if (im50 < 0):
                     im50str = "- j" + str(round(im50, 3))
                 else:
