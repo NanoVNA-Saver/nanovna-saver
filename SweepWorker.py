@@ -15,6 +15,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import collections
 from time import sleep
+from typing import List
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSlot, pyqtSignal
@@ -37,6 +38,8 @@ class SweepWorker(QtCore.QRunnable):
         self.noSweeps = 1
         self.setAutoDelete(False)
         self.percentage = 0
+        self.data11: List[Datapoint] = []
+        self.data12: List[Datapoint] = []
 
     @pyqtSlot()
     def run(self):
@@ -106,8 +109,12 @@ class SweepWorker(QtCore.QRunnable):
             re12 = float(reStr)
             im12 = float(imStr)
             freq = int(frequencies[i])
+            if self.app.calibration.isCalculated:  # We only have 1-port calibration for now
+                re, im = self.app.calibration.correct11(re, im, freq)
             data += [Datapoint(freq, re, im)]
             data12 += [Datapoint(freq, re12, im12)]
+        self.data11 = data
+        self.data12 = data12
         self.app.saveData(data, data12)
         self.signals.updated.emit()
 

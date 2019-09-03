@@ -25,6 +25,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from serial.tools import list_ports
 
 import Chart
+from Calibration import CalibrationWindow, Calibration
 from Marker import Marker
 from SmithChart import SmithChart
 from SweepWorker import SweepWorker
@@ -55,6 +56,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.data21 : List[Datapoint] = []
         self.referenceS11data : List[Datapoint] = []
         self.referenceS21data : List[Datapoint] = []
+
+        self.calibration = Calibration()
 
         self.markers = []
 
@@ -249,6 +252,18 @@ class NanoVNASaver(QtWidgets.QWidget):
         left_column.addWidget(tdr_control_box)
 
         ################################################################################################################
+        #  Calibration
+        ################################################################################################################
+        calibration_control_box = QtWidgets.QGroupBox("Calibration")
+        calibration_control_box.setMaximumWidth(400)
+        calibration_control_layout = QtWidgets.QFormLayout(calibration_control_box)
+        b = QtWidgets.QPushButton("Calibration ...")
+        self.calibrationWindow = CalibrationWindow(self)
+        b.clicked.connect(self.calibrationWindow.show)
+        calibration_control_layout.addRow(b)
+        left_column.addWidget(calibration_control_box)
+
+        ################################################################################################################
         #  Spacer
         ################################################################################################################
 
@@ -280,25 +295,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         reference_control_layout.addRow(set_reference_layout)
         reference_control_layout.addRow(self.btnResetReference)
 
-        self.referenceFileNameInput = QtWidgets.QLineEdit("")
-        btnReferenceFilePicker = QtWidgets.QPushButton("...")
-        btnReferenceFilePicker.setMaximumWidth(25)
-        btnReferenceFilePicker.clicked.connect(self.pickReferenceFile)
-        referenceFileNameLayout = QtWidgets.QHBoxLayout()
-        referenceFileNameLayout.addWidget(self.referenceFileNameInput)
-        referenceFileNameLayout.addWidget(btnReferenceFilePicker)
-
-        reference_control_layout.addRow(QtWidgets.QLabel("Filename"), referenceFileNameLayout)
-
-        import_button_layout = QtWidgets.QHBoxLayout()
-        btnLoadReference = QtWidgets.QPushButton("Load reference")
-        btnLoadReference.clicked.connect(self.loadReferenceFile)
-        btnLoadSweep = QtWidgets.QPushButton("Load as sweep")
-        btnLoadSweep.clicked.connect(self.loadSweepFile)
-        import_button_layout.addWidget(btnLoadReference)
-        import_button_layout.addWidget(btnLoadSweep)
-        reference_control_layout.addRow(import_button_layout)
-
         left_column.addWidget(reference_control_box)
 
         ################################################################################################################
@@ -327,6 +323,31 @@ class NanoVNASaver(QtWidgets.QWidget):
         #  File control
         ################################################################################################################
 
+        self.fileWindow = QtWidgets.QWidget()
+        self.fileWindow.setWindowTitle("Files")
+        file_window_layout = QtWidgets.QVBoxLayout()
+        self.fileWindow.setLayout(file_window_layout)
+
+        reference_file_control_box = QtWidgets.QGroupBox("Import file")
+        reference_file_control_layout = QtWidgets.QFormLayout(reference_file_control_box)
+        self.referenceFileNameInput = QtWidgets.QLineEdit("")
+        btnReferenceFilePicker = QtWidgets.QPushButton("...")
+        btnReferenceFilePicker.setMaximumWidth(25)
+        btnReferenceFilePicker.clicked.connect(self.pickReferenceFile)
+        referenceFileNameLayout = QtWidgets.QHBoxLayout()
+        referenceFileNameLayout.addWidget(self.referenceFileNameInput)
+        referenceFileNameLayout.addWidget(btnReferenceFilePicker)
+
+        reference_file_control_layout.addRow(QtWidgets.QLabel("Filename"), referenceFileNameLayout)
+        file_window_layout.addWidget(reference_file_control_box)
+
+        btnLoadReference = QtWidgets.QPushButton("Load reference")
+        btnLoadReference.clicked.connect(self.loadReferenceFile)
+        btnLoadSweep = QtWidgets.QPushButton("Load as sweep")
+        btnLoadSweep.clicked.connect(self.loadSweepFile)
+        reference_file_control_layout.addRow(btnLoadReference)
+        reference_file_control_layout.addRow(btnLoadSweep)
+
         file_control_box = QtWidgets.QGroupBox()
         file_control_box.setTitle("Export file")
         file_control_box.setMaximumWidth(400)
@@ -349,6 +370,16 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.btnExportFile.clicked.connect(self.exportFileS2P)
         file_control_layout.addRow(self.btnExportFile)
 
+        file_window_layout.addWidget(file_control_box)
+
+        file_control_box = QtWidgets.QGroupBox()
+        file_control_box.setTitle("Files")
+        file_control_box.setMaximumWidth(400)
+        file_control_layout = QtWidgets.QFormLayout(file_control_box)
+        btnOpenFileWindow = QtWidgets.QPushButton("Files ...")
+        file_control_layout.addWidget(btnOpenFileWindow)
+        btnOpenFileWindow.clicked.connect(lambda: self.fileWindow.show())
+
         left_column.addWidget(file_control_box)
 
         ################################################################################################################
@@ -356,7 +387,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         ################################################################################################################
 
         self.lister = QtWidgets.QPlainTextEdit()
-        self.lister.setFixedHeight(100)
+        self.lister.setFixedHeight(80)
         charts = QtWidgets.QGridLayout()
         charts.addWidget(self.s11SmithChart, 0, 0)
         charts.addWidget(self.s21SmithChart, 1, 0)
@@ -383,11 +414,13 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def pickReferenceFile(self):
         filename, _ = QtWidgets.QFileDialog.getOpenFileName(directory=self.referenceFileNameInput.text(), filter="Touchstone Files (*.s1p *.s2p);;All files (*.*)")
-        self.referenceFileNameInput.setText(filename)
+        if filename != "":
+            self.referenceFileNameInput.setText(filename)
 
     def pickFile(self):
         filename, _ = QtWidgets.QFileDialog.getSaveFileName(directory=self.fileNameInput.text(), filter="Touchstone Files (*.s1p *.s2p);;All files (*.*)")
-        self.fileNameInput.setText(filename)
+        if filename != "":
+            self.fileNameInput.setText(filename)
 
     def exportFileS1P(self):
         print("Save file to " + self.fileNameInput.text())
