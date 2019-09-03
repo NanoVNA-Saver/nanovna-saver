@@ -25,6 +25,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from serial.tools import list_ports
 
 import Chart
+from Calibration import CalibrationWindow, Calibration
 from Marker import Marker
 from SmithChart import SmithChart
 from SweepWorker import SweepWorker
@@ -54,6 +55,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.data21 : List[Datapoint] = []
         self.referenceS11data : List[Datapoint] = []
         self.referenceS21data : List[Datapoint] = []
+
+        self.calibration = Calibration()
 
         self.markers = []
 
@@ -225,6 +228,17 @@ class NanoVNASaver(QtWidgets.QWidget):
         tdr_control_layout.addRow("Estimated cable length:", self.tdr_result_label)
 
         left_column.addWidget(tdr_control_box)
+
+        ################################################################################################################
+        #  Calibration
+        ################################################################################################################
+        calibration_control_box = QtWidgets.QGroupBox("Calibration")
+        calibration_control_layout = QtWidgets.QFormLayout(calibration_control_box)
+        b = QtWidgets.QPushButton("Calibration")
+        self.calibrationWindow = CalibrationWindow(self)
+        b.clicked.connect(self.calibrationWindow.show)
+        calibration_control_layout.addRow(b)
+        left_column.addWidget(calibration_control_box)
 
         ################################################################################################################
         #  Spacer
