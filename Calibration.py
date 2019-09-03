@@ -56,17 +56,28 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.cal_load_label = QtWidgets.QLabel("Uncalibrated")
 
         btn_cal_through = QtWidgets.QPushButton("Through")
+        btn_cal_through.setDisabled(True)
+        self.cal_through_label = QtWidgets.QLabel("Uncalibrated")
+
         btn_cal_isolation = QtWidgets.QPushButton("Isolation")
+        btn_cal_isolation.setDisabled(True)
+        self.cal_isolation_label = QtWidgets.QLabel("Uncalibrated")
 
         calibration_control_layout.addRow(btn_cal_short, self.cal_short_label)
         calibration_control_layout.addRow(btn_cal_open, self.cal_open_label)
         calibration_control_layout.addRow(btn_cal_load, self.cal_load_label)
-        calibration_control_layout.addRow(btn_cal_through)
-        calibration_control_layout.addRow(btn_cal_isolation)
+        calibration_control_layout.addRow(btn_cal_through, self.cal_through_label)
+        calibration_control_layout.addRow(btn_cal_isolation, self.cal_isolation_label)
 
-        btn_run = QtWidgets.QPushButton("Run")
-        calibration_control_layout.addRow(btn_run)
-        btn_run.clicked.connect(self.app.calibration.calculateCorrections)
+        calibration_control_layout.addRow(QtWidgets.QLabel(""))
+
+        btn_apply = QtWidgets.QPushButton("Apply")
+        calibration_control_layout.addRow(btn_apply)
+        btn_apply.clicked.connect(self.calculate)
+
+        btn_reset = QtWidgets.QPushButton("Reset")
+        calibration_control_layout.addRow(btn_reset)
+        btn_reset.clicked.connect(self.reset)
 
         layout.addWidget(calibration_control_group)
 
@@ -82,6 +93,16 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.app.calibration.s11load = self.app.data
         self.cal_load_label.setText("Calibrated")
 
+    def reset(self):
+        self.app.calibration = Calibration()
+        self.cal_short_label.setText("Uncalibrated")
+        self.cal_open_label.setText("Uncalibrated")
+        self.cal_load_label.setText("Uncalibrated")
+        self.calibration_status_label.setText("Device calibration")
+
+    def calculate(self):
+        if self.app.calibration.calculateCorrections():
+            self.calibration_status_label.setText("Application calibration")
 
 class Calibration:
     s11short: List[Datapoint] = []
@@ -110,11 +131,11 @@ class Calibration:
 
     def calculateCorrections(self):
         if not self.isValid1Port():
-            return
-        self.frequencies = [] * len(self.s11short)
-        self.e00 = [] * len(self.s11short)
-        self.e11 = [] * len(self.s11short)
-        self.deltaE = [] * len(self.s11short)
+            return False
+        self.frequencies = [int] * len(self.s11short)
+        self.e00 = [np.complex] * len(self.s11short)
+        self.e11 = [np.complex] * len(self.s11short)
+        self.deltaE = [np.complex] * len(self.s11short)
         for i in range(len(self.s11short)):
             self.frequencies[i] = self.s11short[i].freq
 
@@ -126,12 +147,13 @@ class Calibration:
             gm2 = np.complex(self.s11open[i].re, self.s11open[i].im)
             gm3 = np.complex(self.s11load[i].re, self.s11load[i].im)
 
-            denominator = g1*(g2-g3)*gm1 + g2*g3*gm3 - g2*g3*gm3 - (g2*gm2-g3*gm3)*g1
-            self.e00[i] = ((g2*gm3 - g3*gm3)*g1*gm2 - (g2*g3*gm2 - g2*g3*gm3 - (g3*gm2 - g2*gm3)*g1)*gm1) / denominator
+            denominator = g1*(g2-g3)*gm1 + g2*g3*gm2 - g2*g3*gm3 - (g2*gm2-g3*gm3)*g1
+            self.e00[i] = - ((g2*gm3 - g3*gm3)*g1*gm2 - (g2*g3*gm2 - g2*g3*gm3 - (g3*gm2 - g2*gm3)*g1)*gm1) / denominator
             self.e11[i] = ((g2-g3)*gm1-g1*(gm2-gm3)+g3*gm2-g2*gm3) / denominator
-            self.deltaE[i] = ((g1*(gm2-gm3)-g2*gm2+g3*gm3)*gm1+(g2*gm3-g3*gm3)*gm2) / denominator
+            self.deltaE[i] = - ((g1*(gm2-gm3)-g2*gm2+g3*gm3)*gm1+(g2*gm3-g3*gm3)*gm2) / denominator
 
         self.isCalculated = True
+        return self.isCalculated
 
     def correct11(self, re, im, freq):
         s11m = np.complex(re, im)
@@ -142,5 +164,5 @@ class Calibration:
                 index = i
                 distance = abs(self.s11short[i].freq - freq)
 
-        s11 = (s11m - self.e00[index]) / (s11m * self.e11[index]) - self.deltaE[index]
+        s11 = (s11m - self.e00[index]) / ((s11m * self.e11[index]) - self.deltaE[index])
         return s11.real, s11.imag
