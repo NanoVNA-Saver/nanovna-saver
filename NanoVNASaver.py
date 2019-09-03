@@ -65,7 +65,17 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.setWindowTitle("NanoVNA Saver")
         layout = QtWidgets.QGridLayout()
-        self.setLayout(layout)
+        scrollarea = QtWidgets.QScrollArea()
+        outer = QtWidgets.QVBoxLayout()
+        outer.addWidget(scrollarea)
+        self.setLayout(outer)
+        scrollarea.setWidgetResizable(True)
+        self.resize(1100, 950)
+        scrollarea.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
+        self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
+        widget = QtWidgets.QWidget()
+        widget.setLayout(layout)
+        scrollarea.setWidget(widget)
 
         self.s11SmithChart = SmithChart("S11")
         self.s21SmithChart = SmithChart("S21")
@@ -741,3 +751,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         t.load()
         self.saveData(t.s11data, t.s21data)
         self.dataUpdated()
+
+    def sizeHint(self) -> QtCore.QSize:
+        return QtCore.QSize(1100, 950)
