@@ -20,7 +20,7 @@ from PyQt5 import QtWidgets
 
 from NanoVNASaver import NanoVNASaver
 
-version = "0.0.3"
+version = "0.0.4"
 
 if __name__ == '__main__':
     print("NanoVNASaver " + version)
