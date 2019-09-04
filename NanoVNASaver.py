@@ -534,11 +534,13 @@ class NanoVNASaver(QtWidgets.QWidget):
         return
 
     def flushSerialBuffers(self):
-        self.serial.write(b"\r\n\r\n")
-        sleep(0.1)
-        self.serial.reset_input_buffer()
-        self.serial.reset_output_buffer()
-        sleep(0.1)
+        if self.serialLock.acquire():
+            self.serial.write(b"\r\n\r\n")
+            sleep(0.1)
+            self.serial.reset_input_buffer()
+            self.serial.reset_output_buffer()
+            sleep(0.1)
+            self.serialLock.release()
 
     def startSerial(self):
         self.lister.appendPlainText("Opening serial port " + self.serialPort)
@@ -558,6 +560,9 @@ class NanoVNASaver(QtWidgets.QWidget):
             sleep(0.05)
 
             self.flushSerialBuffers()
+            sleep(0.05)
+
+            self.lister.appendPlainText(self.readFirmware())
 
             frequencies = self.readValues("frequencies")
 
@@ -617,6 +622,25 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.tdr_result_label.setText("")
 
         self.threadpool.start(self.worker)
+
+    def readFirmware(self):
+        if self.serialLock.acquire():
+            try:
+                data = "a"
+                while data != "":
+                    data = self.serial.readline().decode('ascii')
+                #  Then send the command to read data
+                self.serial.write("info\r".encode('ascii'))
+            except serial.SerialException as exc:
+                print("Exception received: " + str(exc))
+            result = ""
+            data = ""
+            sleep(0.01)
+            while "ch>" not in data:
+                data = self.serial.readline().decode('ascii')
+                result += data
+            self.serialLock.release()
+            return result
 
     def readValues(self, value):
         if self.serialLock.acquire():
