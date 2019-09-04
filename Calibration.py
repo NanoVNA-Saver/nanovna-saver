@@ -41,6 +41,18 @@ class CalibrationWindow(QtWidgets.QWidget):
         calibration_status_group.setLayout(calibration_status_layout)
         layout.addWidget(calibration_status_group)
 
+        calibration_instructions_group = QtWidgets.QGroupBox("Instructions")
+        calibration_instructions_layout = QtWidgets.QVBoxLayout(calibration_instructions_group)
+        calibration_instructions_layout.addWidget(QtWidgets.QLabel("Instructions for use"))
+        instructions = QtWidgets.QLabel("For each calibration standard, first sweep in the main application window, " +
+                                        "then press the relevant button in this window. Short, open and load are " +
+                                        "sufficient for 1-port calibration.  Sweep all standards with the same sweep " +
+                                        "count.")
+        instructions.setWordWrap(True)
+        calibration_instructions_layout.addWidget(instructions)
+
+        layout.addWidget(calibration_instructions_group)
+
         calibration_control_group = QtWidgets.QGroupBox("Calibrate")
         calibration_control_layout = QtWidgets.QFormLayout(calibration_control_group)
         btn_cal_short = QtWidgets.QPushButton("Short")
@@ -108,6 +120,8 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.cal_short_label.setText("Uncalibrated")
         self.cal_open_label.setText("Uncalibrated")
         self.cal_load_label.setText("Uncalibrated")
+        self.cal_through_label.setText("Uncalibrated")
+        self.cal_isolation_label.setText("Uncalibrated")
         self.calibration_status_label.setText("Device calibration")
 
     def calculate(self):
