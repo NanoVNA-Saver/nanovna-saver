@@ -83,7 +83,7 @@ class LogMagChart(Chart):
         pen = QtGui.QPen(self.sweepColor)
         pen.setWidth(2)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
-        highlighter.setWidth(3)
+        highlighter.setWidth(1)
         if len(self.data) > 0:
             fstart = self.data[0].freq
             fstop = self.data[len(self.data)-1].freq
@@ -191,7 +191,10 @@ class LogMagChart(Chart):
                 logmag = -20 * math.log10(mag)
                 x = self.leftMargin + 1 + round(self.chartWidth/len(self.data) * m.location)
                 y = 30 + round((logmag - min) / span * (self.chartHeight - 10))
-                qp.drawPoint(int(x), int(y))
+                qp.drawLine(int(x), int(y) + 3, int(x) - 3, int(y) - 3)
+                qp.drawLine(int(x), int(y) + 3, int(x) + 3, int(y) - 3)
+                qp.drawLine(int(x) - 3, int(y) - 3, int(x) + 3, int(y) - 3)
+                #qp.drawPoint(int(x), int(y))
 
     @staticmethod
     def shortenFrequency(frequency):

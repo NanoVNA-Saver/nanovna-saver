@@ -74,7 +74,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         outer.addWidget(scrollarea)
         self.setLayout(outer)
         scrollarea.setWidgetResizable(True)
-        self.resize(1150, 950)
+        self.resize(1350, 950)
         scrollarea.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
         self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
         widget = QtWidgets.QWidget()
@@ -93,17 +93,19 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.charts.append(self.s21LogMag)
 
         left_column = QtWidgets.QVBoxLayout()
+        marker_column = QtWidgets.QVBoxLayout()
         right_column = QtWidgets.QVBoxLayout()
 
         layout.addLayout(left_column, 0, 0)
-        layout.addLayout(right_column, 0, 1)
+        layout.addLayout(marker_column, 0, 1)
+        layout.addLayout(right_column, 0, 2)
 
         ################################################################################################################
         #  Sweep control
         ################################################################################################################
 
         sweep_control_box = QtWidgets.QGroupBox()
-        sweep_control_box.setMaximumWidth(400)
+        sweep_control_box.setMaximumWidth(250)
         sweep_control_box.setTitle("Sweep control")
         sweep_control_layout = QtWidgets.QFormLayout(sweep_control_box)
 
@@ -147,7 +149,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         marker_control_box = QtWidgets.QGroupBox()
         marker_control_box.setTitle("Markers")
-        marker_control_box.setMaximumWidth(400)
+        marker_control_box.setMaximumWidth(300)
         marker_control_layout = QtWidgets.QFormLayout(marker_control_box)
 
         mouse_marker = Marker("Mouse marker", QtGui.QColor(20, 255, 20))
@@ -169,17 +171,53 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s11SmithChart.setMarkers(self.markers)
         self.s21SmithChart.setMarkers(self.markers)
 
-        self.mousemarkerlabel = QtWidgets.QLabel("")
-        self.mousemarkerlabel.setMinimumWidth(160)
-        marker_control_layout.addRow(QtWidgets.QLabel("Mouse marker:"), self.mousemarkerlabel)
+        self.mousemarker_frequency_label = QtWidgets.QLabel("")
+        label, layout = mouse_marker.getRow()
+        marker_control_layout.addRow(label, layout)
+        mouse_marker.frequencyInput.setDisabled(True)
+        marker_column.addWidget(marker_control_box)
 
-        self.marker1label = QtWidgets.QLabel("")
-        marker_control_layout.addRow(QtWidgets.QLabel("Marker 1:"), self.marker1label)
+        marker1_box = QtWidgets.QGroupBox("Marker 1")
+        marker1_box_layout = QtWidgets.QFormLayout(marker1_box)
 
-        self.marker2label = QtWidgets.QLabel("")
-        marker_control_layout.addRow(QtWidgets.QLabel("Marker 2:"), self.marker2label)
+        marker_column.addWidget(marker1_box)
 
-        left_column.addWidget(marker_control_box)
+        self.marker1_impedance_label = QtWidgets.QLabel("")
+        marker1_box_layout.addRow(QtWidgets.QLabel("Impedance:"), self.marker1_impedance_label)
+        self.marker1_returnloss_label = QtWidgets.QLabel("")
+        marker1_box_layout.addRow(QtWidgets.QLabel("Return loss:"), self.marker1_returnloss_label)
+        self.marker1_vswr_label = QtWidgets.QLabel("")
+        marker1_box_layout.addRow(QtWidgets.QLabel("VSWR:"), self.marker1_vswr_label)
+        self.marker1_gain_label = QtWidgets.QLabel("")
+        marker1_box_layout.addRow(QtWidgets.QLabel("S21 Gain:"), self.marker1_gain_label)
+
+        marker2_box = QtWidgets.QGroupBox("Marker 2")
+        marker2_box_layout = QtWidgets.QFormLayout(marker2_box)
+
+        marker_column.addWidget(marker2_box)
+
+        self.marker2_impedance_label = QtWidgets.QLabel("")
+        marker2_box_layout.addRow(QtWidgets.QLabel("Impedance:"), self.marker2_impedance_label)
+        self.marker2_returnloss_label = QtWidgets.QLabel("")
+        marker2_box_layout.addRow(QtWidgets.QLabel("Return loss:"), self.marker2_returnloss_label)
+        self.marker2_vswr_label = QtWidgets.QLabel("")
+        marker2_box_layout.addRow(QtWidgets.QLabel("VSWR:"), self.marker2_vswr_label)
+        self.marker2_gain_label = QtWidgets.QLabel("")
+        marker2_box_layout.addRow(QtWidgets.QLabel("S21 Gain:"), self.marker2_gain_label)
+        
+        mousemarker_box = QtWidgets.QGroupBox("Mouse marker")
+        mousemarker_box_layout = QtWidgets.QFormLayout(mousemarker_box)
+
+        marker_column.addWidget(mousemarker_box)
+        
+        self.mousemarker_impedance_label = QtWidgets.QLabel("")
+        mousemarker_box_layout.addRow(QtWidgets.QLabel("Impedance:"), self.mousemarker_impedance_label)
+        self.mousemarker_returnloss_label = QtWidgets.QLabel("")
+        mousemarker_box_layout.addRow(QtWidgets.QLabel("Return loss:"), self.mousemarker_returnloss_label)
+        self.mousemarker_vswr_label = QtWidgets.QLabel("")
+        mousemarker_box_layout.addRow(QtWidgets.QLabel("VSWR:"), self.mousemarker_vswr_label)
+        self.mousemarker_gain_label = QtWidgets.QLabel("")
+        mousemarker_box_layout.addRow(QtWidgets.QLabel("S21 Gain:"), self.mousemarker_gain_label)
 
         ################################################################################################################
         #  Statistics/analysis
@@ -189,7 +227,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         s11_control_box.setTitle("S11")
         s11_control_layout = QtWidgets.QFormLayout()
         s11_control_box.setLayout(s11_control_layout)
-        s11_control_box.setMaximumWidth(400)
+        s11_control_box.setMaximumWidth(250)
 
         self.s11_min_swr_label = QtWidgets.QLabel()
         s11_control_layout.addRow("Min VSWR:", self.s11_min_swr_label)
@@ -202,7 +240,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         s21_control_box.setTitle("S21")
         s21_control_layout = QtWidgets.QFormLayout()
         s21_control_box.setLayout(s21_control_layout)
-        s21_control_box.setMaximumWidth(400)
+        s21_control_box.setMaximumWidth(250)
 
         self.s21_min_gain_label = QtWidgets.QLabel()
         s21_control_layout.addRow("Min gain:", self.s21_min_gain_label)
@@ -212,11 +250,17 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         left_column.addWidget(s21_control_box)
 
+        marker_column.addSpacerItem(QtWidgets.QSpacerItem(1, 1, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding))
+
+        ################################################################################################################
+        # TDR
+        ################################################################################################################
+
         tdr_control_box = QtWidgets.QGroupBox()
         tdr_control_box.setTitle("TDR")
         tdr_control_layout = QtWidgets.QFormLayout()
         tdr_control_box.setLayout(tdr_control_layout)
-        tdr_control_box.setMaximumWidth(400)
+        tdr_control_box.setMaximumWidth(250)
 
         self.tdr_velocity_dropdown = QtWidgets.QComboBox()
         self.tdr_velocity_dropdown.addItem("Jelly filled (0.64)", 0.64)
@@ -255,7 +299,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         #  Calibration
         ################################################################################################################
         calibration_control_box = QtWidgets.QGroupBox("Calibration")
-        calibration_control_box.setMaximumWidth(400)
+        calibration_control_box.setMaximumWidth(250)
         calibration_control_layout = QtWidgets.QFormLayout(calibration_control_box)
         b = QtWidgets.QPushButton("Calibration ...")
         self.calibrationWindow = CalibrationWindow(self)
@@ -274,7 +318,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         ################################################################################################################
 
         reference_control_box = QtWidgets.QGroupBox()
-        reference_control_box.setMaximumWidth(400)
+        reference_control_box.setMaximumWidth(250)
         reference_control_box.setTitle("Reference sweep")
         reference_control_layout = QtWidgets.QFormLayout(reference_control_box)
 
@@ -302,7 +346,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         ################################################################################################################
 
         serial_control_box = QtWidgets.QGroupBox()
-        serial_control_box.setMaximumWidth(400)
+        serial_control_box.setMaximumWidth(250)
         serial_control_box.setTitle("Serial port control")
         serial_control_layout = QtWidgets.QFormLayout(serial_control_box)
         self.serialPortInput = QtWidgets.QLineEdit(self.serialPort)
@@ -350,7 +394,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         file_control_box = QtWidgets.QGroupBox()
         file_control_box.setTitle("Export file")
-        file_control_box.setMaximumWidth(400)
+        file_control_box.setMaximumWidth(300)
         file_control_layout = QtWidgets.QFormLayout(file_control_box)
         self.fileNameInput = QtWidgets.QLineEdit("")
         btnFilePicker = QtWidgets.QPushButton("...")
@@ -374,7 +418,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         file_control_box = QtWidgets.QGroupBox()
         file_control_box.setTitle("Files")
-        file_control_box.setMaximumWidth(400)
+        file_control_box.setMaximumWidth(300)
         file_control_layout = QtWidgets.QFormLayout(file_control_box)
         btnOpenFileWindow = QtWidgets.QPushButton("Files ...")
         file_control_layout.addWidget(btnOpenFileWindow)
@@ -387,7 +431,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         ################################################################################################################
 
         self.lister = QtWidgets.QPlainTextEdit()
-        self.lister.setFixedHeight(80)
+        self.lister.setFixedHeight(200)
+        self.lister.setMaximumWidth(300)
         charts = QtWidgets.QGridLayout()
         charts.addWidget(self.s11SmithChart, 0, 0)
         charts.addWidget(self.s21SmithChart, 1, 0)
@@ -398,7 +443,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s21LogMag.setMarkers(self.markers)
 
         right_column.addLayout(charts)
-        right_column.addWidget(self.lister)
+        marker_column.addWidget(self.lister)
 
         self.worker.signals.updated.connect(self.dataUpdated)
         self.worker.signals.finished.connect(self.sweepFinished)
@@ -488,6 +533,15 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.startSerial()
         return
 
+    def flushSerialBuffers(self):
+        if self.serialLock.acquire():
+            self.serial.write(b"\r\n\r\n")
+            sleep(0.1)
+            self.serial.reset_input_buffer()
+            self.serial.reset_output_buffer()
+            sleep(0.1)
+            self.serialLock.release()
+
     def startSerial(self):
         self.lister.appendPlainText("Opening serial port " + self.serialPort)
 
@@ -504,6 +558,11 @@ class NanoVNASaver(QtWidgets.QWidget):
 
             self.serialLock.release()
             sleep(0.05)
+
+            self.flushSerialBuffers()
+            sleep(0.05)
+
+            self.lister.appendPlainText(self.readFirmware())
 
             frequencies = self.readValues("frequencies")
 
@@ -543,9 +602,19 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.sweepProgressBar.setValue(0)
         self.btnSweep.setDisabled(True)
-        self.mousemarkerlabel.setText("")
-        self.marker1label.setText("")
-        self.marker2label.setText("")
+        self.markers[0].frequencyInput.setText("")
+        self.marker1_impedance_label.setText("")
+        self.marker1_vswr_label.setText("")
+        self.marker1_returnloss_label.setText("")
+        self.marker1_gain_label.setText("")
+        self.marker2_impedance_label.setText("")
+        self.marker2_vswr_label.setText("")
+        self.marker2_returnloss_label.setText("")
+        self.marker2_gain_label.setText("")
+        self.mousemarker_impedance_label.setText("")
+        self.mousemarker_vswr_label.setText("")
+        self.mousemarker_returnloss_label.setText("")
+        self.mousemarker_gain_label.setText("")
         self.s11_min_rl_label.setText("")
         self.s11_min_swr_label.setText("")
         self.s21_min_gain_label.setText("")
@@ -553,6 +622,25 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.tdr_result_label.setText("")
 
         self.threadpool.start(self.worker)
+
+    def readFirmware(self):
+        if self.serialLock.acquire():
+            try:
+                data = "a"
+                while data != "":
+                    data = self.serial.readline().decode('ascii')
+                #  Then send the command to read data
+                self.serial.write("info\r".encode('ascii'))
+            except serial.SerialException as exc:
+                print("Exception received: " + str(exc))
+            result = ""
+            data = ""
+            sleep(0.01)
+            while "ch>" not in data:
+                data = self.serial.readline().decode('ascii')
+                result += data
+            self.serialLock.release()
+            return result
 
     def readValues(self, value):
         if self.serialLock.acquire():
@@ -591,25 +679,41 @@ class NanoVNASaver(QtWidgets.QWidget):
             if self.markers[0].location != -1:
                 im50, re50, vswr = self.vswr(self.data[self.markers[0].location])
                 if im50 < 0:
-                    im50str = "- j" + str(round(-1*im50, 3))
+                    im50str = " - j" + str(round(-1*im50, 3))
                 else:
-                    im50str = "+ j" + str(round(im50, 3))
-                self.mousemarkerlabel.setText(str(round(re50, 3)) + im50str + " VSWR: 1:" + str(round(vswr, 3)))
+                    im50str = " + j" + str(round(im50, 3))
+                self.markers[0].frequencyInput.setText(self.formatFrequency(self.markers[0].frequency))
+                self.mousemarker_impedance_label.setText(str(round(re50, 3)) + im50str)
+                self.mousemarker_returnloss_label.setText(str(round(20*math.log10((vswr-1)/(vswr+1)), 3)) + " dB")
+                self.mousemarker_vswr_label.setText(str(round(vswr, 3)))
+                if len(self.data21) == len(self.data):
+                    _, _, vswr = self.vswr(self.data21[self.markers[0].location])
+                    self.mousemarker_gain_label.setText(str(round(20*math.log10((vswr-1)/(vswr+1)), 3)) + " dB")
             if self.markers[1].location != -1:
                 im50, re50, vswr = self.vswr(self.data[self.markers[1].location])
                 if im50 < 0:
-                    im50str = "- j" + str(round(-1*im50, 3))
+                    im50str = " - j" + str(round(-1*im50, 3))
                 else:
-                    im50str = "+ j" + str(round(im50, 3))
-                self.marker1label.setText(str(round(re50, 3)) + im50str + " VSWR: 1:" + str(round(vswr, 3)))
+                    im50str = " + j" + str(round(im50, 3))
+                self.marker1_impedance_label.setText(str(round(re50, 3)) + im50str)
+                self.marker1_returnloss_label.setText(str(round(20*math.log10((vswr-1)/(vswr+1)), 3)) + " dB")
+                self.marker1_vswr_label.setText(str(round(vswr, 3)))
+                if len(self.data21) == len(self.data):
+                    _, _, vswr = self.vswr(self.data21[self.markers[1].location])
+                    self.marker1_gain_label.setText(str(round(20*math.log10((vswr-1)/(vswr+1)), 3)) + " dB")
 
             if self.markers[2].location != -1:
                 im50, re50, vswr = self.vswr(self.data[self.markers[2].location])
                 if im50 < 0:
-                    im50str = "- j" + str(round(im50, 3))
+                    im50str = " - j" + str(round(im50, 3))
                 else:
-                    im50str = "+ j" + str(round(im50, 3))
-                self.marker2label.setText(str(round(re50, 3)) + im50str + " VSWR: 1:" + str(round(vswr, 3)))
+                    im50str = " + j" + str(round(im50, 3))
+                self.marker2_impedance_label.setText(str(round(re50, 3)) + im50str)
+                self.marker2_returnloss_label.setText(str(round(20*math.log10((vswr-1)/(vswr+1)), 3)) + " dB")
+                self.marker2_vswr_label.setText(str(round(vswr, 3)))
+                if len(self.data21) == len(self.data):
+                    _, _, vswr = self.vswr(self.data21[self.markers[2].location])
+                    self.marker2_gain_label.setText(str(round(20*math.log10((vswr-1)/(vswr+1)), 3)) + " dB")
 
             self.s11SmithChart.setData(self.data)
             self.s21SmithChart.setData(self.data21)
