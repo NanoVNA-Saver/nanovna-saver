@@ -52,10 +52,10 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.serial = serial.Serial()
 
         self.dataLock = threading.Lock()
-        self.data : List[Datapoint] = []
-        self.data21 : List[Datapoint] = []
-        self.referenceS11data : List[Datapoint] = []
-        self.referenceS21data : List[Datapoint] = []
+        self.data: List[Datapoint] = []
+        self.data21: List[Datapoint] = []
+        self.referenceS11data: List[Datapoint] = []
+        self.referenceS21data: List[Datapoint] = []
 
         self.calibration = Calibration()
 
@@ -86,7 +86,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s11LogMag = LogMagChart("S11 Return Loss")
         self.s21LogMag = LogMagChart("S21 Gain")
 
-        self.charts : List[Chart] = []
+        self.charts: List[Chart] = []
         self.charts.append(self.s11SmithChart)
         self.charts.append(self.s21SmithChart)
         self.charts.append(self.s11LogMag)
@@ -126,7 +126,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.btnColorPicker = QtWidgets.QPushButton("█")
         self.btnColorPicker.setFixedWidth(20)
         self.setSweepColor(self.color)
-        self.btnColorPicker.clicked.connect(lambda: self.setSweepColor(QtWidgets.QColorDialog.getColor(self.color, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
+        self.btnColorPicker.clicked.connect(lambda:self.setSweepColor(QtWidgets.QColorDialog.getColor(self.color,options=QtWidgets.QColorDialog.ShowAlphaChannel)))
 
         sweep_control_layout.addRow("Sweep color", self.btnColorPicker)
 
@@ -404,7 +404,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.worker.signals.finished.connect(self.sweepFinished)
 
     # Get that windows port
-    def getport(self) -> str:
+    @staticmethod
+    def getport() -> str:
         device_list = list_ports.comports()
         for d in device_list:
             if (d.vid == VID and
@@ -413,12 +414,14 @@ class NanoVNASaver(QtWidgets.QWidget):
                 return port
 
     def pickReferenceFile(self):
-        filename, _ = QtWidgets.QFileDialog.getOpenFileName(directory=self.referenceFileNameInput.text(), filter="Touchstone Files (*.s1p *.s2p);;All files (*.*)")
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(directory=self.referenceFileNameInput.text(),
+                                                            filter="Touchstone Files (*.s1p *.s2p);;All files (*.*)")
         if filename != "":
             self.referenceFileNameInput.setText(filename)
 
     def pickFile(self):
-        filename, _ = QtWidgets.QFileDialog.getSaveFileName(directory=self.fileNameInput.text(), filter="Touchstone Files (*.s1p *.s2p);;All files (*.*)")
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(directory=self.fileNameInput.text(),
+                                                            filter="Touchstone Files (*.s1p *.s2p);;All files (*.*)")
         if filename != "":
             self.fileNameInput.setText(filename)
 
@@ -451,7 +454,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def exportFileS2P(self):
         print("Save file to " + self.fileNameInput.text())
-        if (len(self.data) == 0):
+        if len(self.data) == 0:
             self.lister.appendPlainText("No data stored, nothing written.")
             return
         filename = self.fileNameInput.text()
@@ -494,7 +497,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                 self.serial = serial.Serial(port=self.serialPort, baudrate=115200)
                 self.serial.timeout = 0.05
             except serial.SerialException as exc:
-                self.lister.appendPlainText("Tried to open " + self.serialPort + " and failed.")
+                self.lister.appendPlainText("Tried to open " + self.serialPort + " and failed: " + str(exc))
                 self.serialLock.release()
                 return
             self.btnSerialToggle.setText("Close serial")
@@ -525,7 +528,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                 self.serial.write(str(command + "\r").encode('ascii'))
                 self.serial.readline()
             except serial.SerialException as exc:
-                print("Exception received")
+                print("Exception received: " + str(exc))
             self.serialLock.release()
         return
 
@@ -587,14 +590,14 @@ class NanoVNASaver(QtWidgets.QWidget):
             # TODO: Make a neater solution for showing data for markers
             if self.markers[0].location != -1:
                 im50, re50, vswr = self.vswr(self.data[self.markers[0].location])
-                if (im50 < 0):
+                if im50 < 0:
                     im50str = "- j" + str(round(-1*im50, 3))
                 else:
                     im50str = "+ j" + str(round(im50, 3))
                 self.mousemarkerlabel.setText(str(round(re50, 3)) + im50str + " VSWR: 1:" + str(round(vswr, 3)))
             if self.markers[1].location != -1:
                 im50, re50, vswr = self.vswr(self.data[self.markers[1].location])
-                if (im50 < 0):
+                if im50 < 0:
                     im50str = "- j" + str(round(-1*im50, 3))
                 else:
                     im50str = "+ j" + str(round(im50, 3))
@@ -602,7 +605,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
             if self.markers[2].location != -1:
                 im50, re50, vswr = self.vswr(self.data[self.markers[2].location])
-                if (im50 < 0):
+                if im50 < 0:
                     im50str = "- j" + str(round(im50, 3))
                 else:
                     im50str = "+ j" + str(round(im50, 3))
@@ -619,7 +622,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             minVSWRfreq = -1
             for d in self.data:
                 _, _, vswr = self.vswr(d)
-                if vswr < minVSWR and vswr > 0:
+                if minVSWR > vswr > 0:
                     minVSWR = vswr
                     minVSWRfreq = d.freq
 
@@ -668,7 +671,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         # Calculate the gain / reflection coefficient
         mag = math.sqrt((re50 - 50) * (re50 - 50) + im50 * im50) / math.sqrt(
             (re50 + 50) * (re50 + 50) + im50 * im50)
-        return(20 * math.log10(mag))
+        return 20 * math.log10(mag)
 
     def sweepFinished(self):
         self.sweepProgressBar.setValue(100)
@@ -709,12 +712,12 @@ class NanoVNASaver(QtWidgets.QWidget):
         time_axis = np.linspace(0, 1/step_size, 2**14)
         distance_axis = time_axis * v * c
 
-        peak = np.max(td)  # We should check that this is an actual *peak*, and not just a vague maximum
+        # peak = np.max(td)  # We should check that this is an actual *peak*, and not just a vague maximum
         index_peak = np.argmax(td)
 
         self.tdr_result_label.setText(str(round(distance_axis[index_peak]/2, 3)) + " m")
 
-    def setSweepColor(self, color : QtGui.QColor):
+    def setSweepColor(self, color: QtGui.QColor):
         if color.isValid():
             self.color = color
             p = self.btnColorPicker.palette()
@@ -736,7 +739,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             return "{:.3f}".format(freq/1000000) + " MHz"
 
     @staticmethod
-    def parseFrequency(freq : str):
+    def parseFrequency(freq: str):
         freq = freq.replace(" ", "")  # People put all sorts of weird whitespace in.
         if freq.isnumeric():
             return int(freq)
@@ -797,7 +800,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         t = Touchstone(filename)
         t.load()
         self.setReference(t.s11data, t.s21data)
-
 
     def loadSweepFile(self):
         filename = self.referenceFileNameInput.text()
