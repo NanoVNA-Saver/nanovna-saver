@@ -18,7 +18,7 @@ from typing import List
 
 from PyQt5 import QtWidgets, QtGui, QtCore
 
-from Marker import Marker
+from .Marker import Marker
 Datapoint = collections.namedtuple('Datapoint', 'freq re im')
 
 

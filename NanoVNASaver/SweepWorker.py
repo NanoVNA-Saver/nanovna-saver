@@ -43,6 +43,7 @@ class SweepWorker(QtCore.QRunnable):
 
     @pyqtSlot()
     def run(self):
+        global obj
         self.percentage = 0
         if not self.app.serial.is_open:
             return
@@ -55,9 +56,9 @@ class SweepWorker(QtCore.QRunnable):
             sweepFrom = 1000000
             sweepTo = 800000000
         else:
-            from NanoVNASaver import NanoVNASaver
-            sweepFrom = NanoVNASaver.parseFrequency(self.app.sweepStartInput.text())
-            sweepTo = NanoVNASaver.parseFrequency(self.app.sweepEndInput.text())
+            from NanoVNASaver import NanoVNASaver as obj
+            sweepFrom = obj.NanoVNASaver.parseFrequency(self.app.sweepStartInput.text())
+            sweepTo = obj.NanoVNASaver.parseFrequency(self.app.sweepEndInput.text())
             if sweepFrom < 0 or sweepTo < 0:
                 print("Can't sweep from " + self.app.sweepStartInput.text() + " to " + self.app.sweepEndInput.text())
                 self.signals.finished.emit()
@@ -85,7 +86,7 @@ class SweepWorker(QtCore.QRunnable):
                 self.saveData(frequencies, values, values12)
 
             # Reset the device to show the full range
-            self.app.setSweep(NanoVNASaver.parseFrequency(self.app.sweepStartInput.text()), NanoVNASaver.parseFrequency(self.app.sweepEndInput.text()))
+            self.app.setSweep(obj.NanoVNASaver.parseFrequency(self.app.sweepStartInput.text()), obj.NanoVNASaver.parseFrequency(self.app.sweepEndInput.text()))
         else:
             self.app.setSweep(sweepFrom, sweepTo)
             sleep(0.8)

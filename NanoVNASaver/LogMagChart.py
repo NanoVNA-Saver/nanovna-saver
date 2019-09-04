@@ -32,8 +32,8 @@ from typing import List
 
 from PyQt5 import QtWidgets, QtGui, QtCore
 
-from Chart import Chart
-from Marker import Marker
+from .Chart import Chart
+from .Marker import Marker
 
 Datapoint = collections.namedtuple('Datapoint', 'freq re im')
 

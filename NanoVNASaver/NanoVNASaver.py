@@ -24,13 +24,13 @@ import serial
 from PyQt5 import QtWidgets, QtCore, QtGui
 from serial.tools import list_ports
 
-import Chart
-from Calibration import CalibrationWindow, Calibration
-from Marker import Marker
-from SmithChart import SmithChart
-from SweepWorker import SweepWorker
-from LogMagChart import LogMagChart
-from Touchstone import Touchstone
+from .Chart import Chart
+from .Calibration import CalibrationWindow, Calibration
+from .Marker import Marker
+from .SmithChart import SmithChart
+from .SweepWorker import SweepWorker
+from .LogMagChart import LogMagChart
+from .Touchstone import Touchstone
 
 Datapoint = collections.namedtuple('Datapoint', 'freq re im')
 

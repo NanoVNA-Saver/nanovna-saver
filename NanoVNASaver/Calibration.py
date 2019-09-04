@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import collections
 from PyQt5 import QtWidgets
 from typing import List
@@ -25,7 +26,7 @@ class CalibrationWindow(QtWidgets.QWidget):
     def __init__(self, app):
         super().__init__()
 
-        from NanoVNASaver import NanoVNASaver
+        from .NanoVNASaver import NanoVNASaver
 
         self.app: NanoVNASaver = app
 
