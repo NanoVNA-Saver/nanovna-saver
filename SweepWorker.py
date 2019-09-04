@@ -106,13 +106,15 @@ class SweepWorker(QtCore.QRunnable):
             re = float(reStr)
             im = float(imStr)
             reStr, imStr = values12[i].split(" ")
-            re12 = float(reStr)
-            im12 = float(imStr)
+            re21 = float(reStr)
+            im21 = float(imStr)
             freq = int(frequencies[i])
             if self.app.calibration.isCalculated:  # We only have 1-port calibration for now
                 re, im = self.app.calibration.correct11(re, im, freq)
+                if self.app.calibration.isValid2Port():
+                    re21, im21 = self.app.calibration.correct21(re21, im21, freq)
             data += [Datapoint(freq, re, im)]
-            data12 += [Datapoint(freq, re12, im12)]
+            data12 += [Datapoint(freq, re21, im21)]
         self.data11 = data
         self.data12 = data12
         self.app.saveData(data, data12)
