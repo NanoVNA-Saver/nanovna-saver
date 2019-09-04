@@ -761,10 +761,11 @@ class NanoVNASaver(QtWidgets.QWidget):
             # Okay, we couldn't parse this however much we tried.
             return -1
 
-    def setReference(self):
-        self.setReference(self.data, self.data21)
-
-    def setReference(self, s11data, s21data):
+    def setReference(self, s11data=None, s21data=None):
+        if not s11data:
+            s11data = self.data
+        if not s21data:
+            s21data = self.data21
         self.referenceS11data = s11data
         self.s11SmithChart.setReference(s11data)
         self.s11LogMag.setReference(s11data)
