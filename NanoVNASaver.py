@@ -531,6 +531,13 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.startSerial()
         return
 
+    def flushSerialBuffers(self):
+        self.serial.write(b"\r\n\r\n")
+        sleep(0.1)
+        self.serial.reset_input_buffer()
+        self.serial.reset_output_buffer()
+        sleep(0.1)
+
     def startSerial(self):
         self.lister.appendPlainText("Opening serial port " + self.serialPort)
 
@@ -547,6 +554,8 @@ class NanoVNASaver(QtWidgets.QWidget):
 
             self.serialLock.release()
             sleep(0.05)
+
+            self.flushSerialBuffers()
 
             frequencies = self.readValues("frequencies")
 
