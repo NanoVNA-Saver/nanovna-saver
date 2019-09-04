@@ -15,12 +15,13 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import collections
 from typing import List
+
 Datapoint = collections.namedtuple('Datapoint', 'freq re im')
 
 
 class Touchstone:
-    s11data : List[Datapoint] = []
-    s21data : List[Datapoint] = []
+    s11data: List[Datapoint] = []
+    s21data: List[Datapoint] = []
 
     filename = ""
 

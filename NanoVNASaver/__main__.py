@@ -18,11 +18,12 @@
 
 from PyQt5 import QtWidgets
 
-from NanoVNASaver import NanoVNASaver
+from .NanoVNASaver import NanoVNASaver
 
 version = "0.0.4"
 
-if __name__ == '__main__':
+
+def main():
     print("NanoVNASaver " + version)
     print("Copyright (C) 2019 Rune B. Broberg")
     print("This program comes with ABSOLUTELY NO WARRANTY")
@@ -34,3 +35,7 @@ if __name__ == '__main__':
     window = NanoVNASaver()
     window.show()
     app.exec_()
+
+
+if __name__ == '__main__':
+    main()

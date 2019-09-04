@@ -45,6 +45,20 @@ In order to run this app in Linux environment, you'll need the following package
 python3 nanovna-saver.py
 ```
 
+### Installation and Use with pip
+
+1. Clone repo and cd into the directory 
+   - `git clone https://github.com/mihtjel/nanovna-saver`
+   - `cd nanovna-saver`
+
+2. Run the pip installation
+
+    `pip install .`
+    
+2. Once completed run with the following command
+
+    `NanoVNASaver` 
+
 ### Using the software
 
 Connect your NanoVNA to a serial port, and enter this serial port in the serial port box. Click "Open serial" to connect.
