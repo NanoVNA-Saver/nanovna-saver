@@ -91,7 +91,7 @@ class SmithChart(Chart):
         pen = QtGui.QPen(self.sweepColor)
         pen.setWidth(2)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
-        highlighter.setWidth(3)
+        highlighter.setWidth(1)
         qp.setPen(pen)
         for i in range(len(self.data)):
             x = self.width()/2 + self.data[i].re * self.chartWidth/2
@@ -118,7 +118,10 @@ class SmithChart(Chart):
                 qp.setPen(highlighter)
                 x = self.width() / 2 + self.data[m.location].re * self.chartWidth / 2
                 y = self.height() / 2 + self.data[m.location].im * -1 * self.chartHeight / 2
-                qp.drawPoint(int(x), int(y))
+                qp.drawLine(int(x), int(y) + 3, int(x) - 3, int(y) - 3)
+                qp.drawLine(int(x), int(y) + 3, int(x) + 3, int(y) - 3)
+                qp.drawLine(int(x) - 3, int(y) - 3, int(x) + 3, int(y) - 3)
+                #qp.drawPoint(int(x), int(y))
 
     def heightForWidth(self, a0: int) -> int:
         return a0
