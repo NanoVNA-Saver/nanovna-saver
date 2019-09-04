@@ -35,7 +35,7 @@ with open("README.md", "r") as fh:
 setup(
     name='NanoVNASaver',
     url='https://github.com/mihtjel/nanovna-saver',
-    version='0.0.4',
+    version='0.0.5',
     author='Rune B. Broberg',
     author_email='',
     packages=find_packages(),
