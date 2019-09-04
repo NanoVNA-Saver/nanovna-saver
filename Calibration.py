@@ -29,7 +29,7 @@ class CalibrationWindow(QtWidgets.QWidget):
 
         self.app: NanoVNASaver = app
 
-        self.setMinimumSize(300, 300)
+        self.setMinimumSize(300, 320)
         self.setWindowTitle("Calibration")
         layout = QtWidgets.QVBoxLayout()
         self.setLayout(layout)
@@ -37,7 +37,7 @@ class CalibrationWindow(QtWidgets.QWidget):
         calibration_status_group = QtWidgets.QGroupBox("Active calibration")
         calibration_status_layout = QtWidgets.QFormLayout()
         self.calibration_status_label = QtWidgets.QLabel("Device calibration")
-        calibration_status_layout.addRow("Calibration active: ", self.calibration_status_label)
+        calibration_status_layout.addRow("Calibration active:", self.calibration_status_label)
         calibration_status_group.setLayout(calibration_status_layout)
         layout.addWidget(calibration_status_group)
 
@@ -69,12 +69,12 @@ class CalibrationWindow(QtWidgets.QWidget):
 
         btn_cal_through = QtWidgets.QPushButton("Through")
         btn_cal_through.clicked.connect(self.saveThrough)
-        #btn_cal_through.setDisabled(True)
+        # btn_cal_through.setDisabled(True)
         self.cal_through_label = QtWidgets.QLabel("Uncalibrated")
 
         btn_cal_isolation = QtWidgets.QPushButton("Isolation")
         btn_cal_isolation.clicked.connect(self.saveIsolation)
-        #btn_cal_isolation.setDisabled(True)
+        # btn_cal_isolation.setDisabled(True)
         self.cal_isolation_label = QtWidgets.QLabel("Uncalibrated")
 
         calibration_control_layout.addRow(btn_cal_short, self.cal_short_label)
@@ -95,25 +95,38 @@ class CalibrationWindow(QtWidgets.QWidget):
 
         layout.addWidget(calibration_control_group)
 
+        file_box = QtWidgets.QGroupBox()
+        file_layout = QtWidgets.QFormLayout(file_box)
+        filename_input = QtWidgets.QLineEdit()
+        file_layout.addRow("Filename", filename_input)
+        btn_save_file = QtWidgets.QPushButton("Save calibration")
+        btn_save_file.clicked.connect(lambda: self.app.calibration.saveCalibration(filename_input.text()))
+        file_layout.addRow(btn_save_file)
+        btn_load_file = QtWidgets.QPushButton("Load calibration")
+        btn_load_file.clicked.connect(lambda: self.loadFile(filename_input.text()))
+        file_layout.addRow(btn_load_file)
+
+        layout.addWidget(file_box)
+
     def saveShort(self):
         self.app.calibration.s11short = self.app.data
-        self.cal_short_label.setText("Calibrated")
+        self.cal_short_label.setText("Calibrated (" + str(len(self.app.calibration.s11short)) + " points)")
 
     def saveOpen(self):
         self.app.calibration.s11open = self.app.data
-        self.cal_open_label.setText("Calibrated")
+        self.cal_open_label.setText("Calibrated (" + str(len(self.app.calibration.s11open)) + " points)")
 
     def saveLoad(self):
         self.app.calibration.s11load = self.app.data
-        self.cal_load_label.setText("Calibrated")
+        self.cal_load_label.setText("Calibrated (" + str(len(self.app.calibration.s11load)) + " points)")
 
     def saveIsolation(self):
         self.app.calibration.s21isolation = self.app.data21
-        self.cal_isolation_label.setText("Calibrated")
+        self.cal_isolation_label.setText("Calibrated (" + str(len(self.app.calibration.s21isolation)) + " points)")
 
     def saveThrough(self):
         self.app.calibration.s21through = self.app.data21
-        self.cal_through_label.setText("Calibrated")
+        self.cal_through_label.setText("Calibrated (" + str(len(self.app.calibration.s21through)) + " points)")
 
     def reset(self):
         self.app.calibration = Calibration()
@@ -126,7 +139,19 @@ class CalibrationWindow(QtWidgets.QWidget):
 
     def calculate(self):
         if self.app.calibration.calculateCorrections():
-            self.calibration_status_label.setText("Application calibration")
+            self.calibration_status_label.setText("Application calibration (" + str(len(self.app.calibration.s11short)) + " points)")
+
+    def loadFile(self, filename):
+        self.app.calibration.loadCalibration(filename)
+        if self.app.calibration.isValid1Port():
+            self.cal_short_label.setText("Calibrated")
+            self.cal_open_label.setText("Calibrated")
+            self.cal_load_label.setText("Calibrated")
+        if self.app.calibration.isValid2Port():
+            self.cal_through_label.setText("Calibrated")
+            self.cal_isolation_label.setText("Calibrated")
+        self.calculate()
+
 
 class Calibration:
     s11short: List[Datapoint] = []
@@ -178,10 +203,15 @@ class Calibration:
             gm2 = np.complex(self.s11open[i].re, self.s11open[i].im)
             gm3 = np.complex(self.s11load[i].re, self.s11load[i].im)
 
-            denominator = g1*(g2-g3)*gm1 + g2*g3*gm2 - g2*g3*gm3 - (g2*gm2-g3*gm3)*g1
-            self.e00[i] = - ((g2*gm3 - g3*gm3)*g1*gm2 - (g2*g3*gm2 - g2*g3*gm3 - (g3*gm2 - g2*gm3)*g1)*gm1) / denominator
-            self.e11[i] = ((g2-g3)*gm1-g1*(gm2-gm3)+g3*gm2-g2*gm3) / denominator
-            self.deltaE[i] = - ((g1*(gm2-gm3)-g2*gm2+g3*gm3)*gm1+(g2*gm3-g3*gm3)*gm2) / denominator
+            try:
+                denominator = g1*(g2-g3)*gm1 + g2*g3*gm2 - g2*g3*gm3 - (g2*gm2-g3*gm3)*g1
+                self.e00[i] = - ((g2*gm3 - g3*gm3)*g1*gm2 - (g2*g3*gm2 - g2*g3*gm3 - (g3*gm2 - g2*gm3)*g1)*gm1) / denominator
+                self.e11[i] = ((g2-g3)*gm1-g1*(gm2-gm3)+g3*gm2-g2*gm3) / denominator
+                self.deltaE[i] = - ((g1*(gm2-gm3)-g2*gm2+g3*gm3)*gm1+(g2*gm3-g3*gm3)*gm2) / denominator
+            except ZeroDivisionError:
+                self.isCalculated = False
+                print("Division error - did you use the same measurement for two of short, open and load?")
+                return
 
             if self.isValid2Port():
                 self.e30[i] = np.complex(self.s21isolation[i].re, self.s21isolation[i].im)
@@ -199,6 +229,7 @@ class Calibration:
             if abs(self.s11short[i].freq - freq) < distance:
                 index = i
                 distance = abs(self.s11short[i].freq - freq)
+        # TODO: Interpolate with the adjacent data point to get better corrections?
 
         s11 = (s11m - self.e00[index]) / ((s11m * self.e11[index]) - self.deltaE[index])
         return s11.real, s11.imag
@@ -213,3 +244,85 @@ class Calibration:
                 distance = abs(self.s21through[i].freq - freq)
         s21 = (s21m - self.e30[index]) / self.e10e32[index]
         return s21.real, s21.imag
+
+    def saveCalibration(self, filename):
+        # Save the calibration data to file
+        if filename == "" or not self.isValid1Port():
+            return
+        try:
+            file = open(filename, "w+")
+            file.write("# Calibration data for NanoVNA-Saver\n")
+            file.write("# Hz ShortR ShortI OpenR OpenI LoadR LoadI ThroughR ThroughI IsolationR IsolationI\n")
+            for i in range(len(self.s11short)):
+                freq = str(self.s11short[i].freq)
+                shortr = str(self.s11short[i].re)
+                shorti = str(self.s11short[i].im)
+                openr = str(self.s11open[i].re)
+                openi = str(self.s11open[i].im)
+                loadr = str(self.s11load[i].re)
+                loadi = str(self.s11load[i].im)
+                file.write(freq + " " + shortr + " " + shorti + " " + openr + " " + openi + " " + loadr + " " + loadi)
+                if self.isValid2Port():
+                    throughr = str(self.s21through[i].re)
+                    throughi = str(self.s21through[i].im)
+                    isolationr = str(self.s21isolation[i].re)
+                    isolationi = str(self.s21isolation[i].im)
+                    file.write(" " + throughr + " " + throughi + " " + isolationr + " " + isolationi)
+                file.write("\n")
+            file.close()
+        except Exception as e:
+            print("Error saving calibration data: " + str(e))
+
+    def loadCalibration(self, filename):
+        # Load calibration data from file
+        if filename == "":
+            return
+
+        self.s11short = []
+        self.s11open  = []
+        self.s11load  = []
+
+        self.s21through   = []
+        self.s21isolation = []
+
+        try:
+            file = open(filename, "r")
+            lines = file.readlines()
+            parsed_header = False
+            for l in lines:
+                l = l.strip()
+                if l.startswith("!"):
+                    continue
+                if l.startswith("#") and not parsed_header:
+                    # Check that this is a valid header
+                    if l == "# Hz ShortR ShortI OpenR OpenI LoadR LoadI ThroughR ThroughI IsolationR IsolationI":
+                        parsed_header = True
+                        continue
+                    else:
+                        # This is some other comment line
+                        continue
+                if not parsed_header:
+                    print("Warning: Read line without having read header: " + l)
+                    continue
+
+                try:
+                    if l.count(" ") == 6:
+                        freq, shortr, shorti, openr, openi, loadr, loadi = l.split(" ")
+                        self.s11short.append(Datapoint(int(freq), float(shortr), float(shorti)))
+                        self.s11open.append(Datapoint(int(freq), float(openr), float(openi)))
+                        self.s11load.append(Datapoint(int(freq), float(loadr), float(loadi)))
+
+                    else:
+                        freq, shortr, shorti, openr, openi, loadr, loadi, throughr, throughi, isolationr, isolationi = l.split(" ")
+                        self.s11short.append(Datapoint(int(freq), float(shortr), float(shorti)))
+                        self.s11open.append(Datapoint(int(freq), float(openr), float(openi)))
+                        self.s11load.append(Datapoint(int(freq), float(loadr), float(loadi)))
+                        self.s21through.append(Datapoint(int(freq), float(throughr), float(throughi)))
+                        self.s21isolation.append(Datapoint(int(freq), float(isolationr), float(isolationi)))
+
+                except ValueError as e:
+                    print("Attemped parsing " + l)
+                    print("Error parsing calibration data: " + str(e))
+            file.close()
+        except Exception as e:
+            print("Failed loading calibration data: " + str(e))
