@@ -39,12 +39,6 @@ In order to run this app in Linux environment, you'll need the following package
 * `python3-pyqt5`
 * `numpy`
 
-### To Run
-
-```sh
-python3 nanovna-saver.py
-```
-
 ### Installation and Use with pip
 
 1. Clone repo and cd into the directory 
