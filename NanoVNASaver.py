@@ -74,7 +74,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         outer.addWidget(scrollarea)
         self.setLayout(outer)
         scrollarea.setWidgetResizable(True)
-        self.resize(1150, 950)
+        self.resize(1350, 950)
         scrollarea.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
         self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
         widget = QtWidgets.QWidget()
@@ -172,8 +172,9 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s21SmithChart.setMarkers(self.markers)
 
         self.mousemarker_frequency_label = QtWidgets.QLabel("")
-        self.mousemarker_frequency_label.setMinimumWidth(160)
-        marker_control_layout.addRow(QtWidgets.QLabel("Mouse marker:"), self.mousemarker_frequency_label)
+        label, layout = mouse_marker.getRow()
+        marker_control_layout.addRow(label, layout)
+        mouse_marker.frequencyInput.setDisabled(True)
         marker_column.addWidget(marker_control_box)
 
         marker1_box = QtWidgets.QGroupBox("Marker 1")
@@ -430,7 +431,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         ################################################################################################################
 
         self.lister = QtWidgets.QPlainTextEdit()
-        self.lister.setFixedHeight(80)
+        self.lister.setFixedHeight(200)
+        self.lister.setMaximumWidth(300)
         charts = QtWidgets.QGridLayout()
         charts.addWidget(self.s11SmithChart, 0, 0)
         charts.addWidget(self.s21SmithChart, 1, 0)
@@ -441,7 +443,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s21LogMag.setMarkers(self.markers)
 
         right_column.addLayout(charts)
-        right_column.addWidget(self.lister)
+        marker_column.addWidget(self.lister)
 
         self.worker.signals.updated.connect(self.dataUpdated)
         self.worker.signals.finished.connect(self.sweepFinished)
@@ -595,7 +597,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.sweepProgressBar.setValue(0)
         self.btnSweep.setDisabled(True)
-        self.mousemarker_frequency_label.setText("")
+        self.markers[0].frequencyInput.setText("")
         self.marker1_impedance_label.setText("")
         self.marker1_vswr_label.setText("")
         self.marker1_returnloss_label.setText("")
@@ -656,7 +658,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                     im50str = " - j" + str(round(-1*im50, 3))
                 else:
                     im50str = " + j" + str(round(im50, 3))
-                self.mousemarker_frequency_label.setText(self.formatFrequency(self.markers[0].frequency))
+                self.markers[0].frequencyInput.setText(self.formatFrequency(self.markers[0].frequency))
                 self.mousemarker_impedance_label.setText(str(round(re50, 3)) + im50str)
                 self.mousemarker_returnloss_label.setText(str(round(20*math.log10((vswr-1)/(vswr+1)), 3)) + " dB")
                 self.mousemarker_vswr_label.setText(str(round(vswr, 3)))
