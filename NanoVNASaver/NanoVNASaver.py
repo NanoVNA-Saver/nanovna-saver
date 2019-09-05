@@ -976,13 +976,13 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         chart00_selection = QtWidgets.QComboBox()
         chart00_selection.addItems(selections)
-        chart00_selection.setCurrentIndex(0)  # TODO: Make a better default setting than static numbers
+        chart00_selection.setCurrentIndex(selections.index("S11 Smith Chart"))
         chart00_selection.currentTextChanged.connect(lambda: self.changeChart(0, 0, chart00_selection.currentText()))
         charts_layout.addWidget(chart00_selection, 0, 0)
 
         chart01_selection = QtWidgets.QComboBox()
         chart01_selection.addItems(selections)
-        chart01_selection.setCurrentIndex(1)
+        chart01_selection.setCurrentIndex(selections.index("S11 Return Loss"))
         chart01_selection.currentTextChanged.connect(lambda: self.changeChart(0, 1, chart01_selection.currentText()))
         charts_layout.addWidget(chart01_selection, 0, 1)
         
@@ -994,13 +994,13 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         chart10_selection = QtWidgets.QComboBox()
         chart10_selection.addItems(selections)
-        chart10_selection.setCurrentIndex(3)
+        chart10_selection.setCurrentIndex(selections.index("S21 Smith Chart"))
         chart10_selection.currentTextChanged.connect(lambda: self.changeChart(1, 0, chart10_selection.currentText()))
         charts_layout.addWidget(chart10_selection, 1, 0)
 
         chart11_selection = QtWidgets.QComboBox()
         chart11_selection.addItems(selections)
-        chart11_selection.setCurrentIndex(4)
+        chart11_selection.setCurrentIndex(selections.index("S21 Gain"))
         chart11_selection.currentTextChanged.connect(lambda: self.changeChart(1, 1, chart11_selection.currentText()))
         charts_layout.addWidget(chart11_selection, 1, 1)
 

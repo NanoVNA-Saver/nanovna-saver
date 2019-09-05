@@ -61,7 +61,7 @@ class LogMagChart(Chart):
 
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
         self.chartWidth = a0.size().width()-20-self.leftMargin
-        self.chartHeight = min(a0.size().width()-40, a0.size().height()-40)
+        self.chartHeight = a0.size().height()-40
         self.update()
 
     def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
