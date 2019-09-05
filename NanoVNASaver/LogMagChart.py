@@ -218,7 +218,7 @@ class LogMagChart(Chart):
         if self.fstop - self.fstart > 0:
             span = self.fstop - self.fstart
             step = span/self.chartWidth
-            f = absx * step
+            f = self.fstart + absx * step
 #            self.mouselocation = f
             self.markers[0].setFrequency(str(round(f)))
         else:
