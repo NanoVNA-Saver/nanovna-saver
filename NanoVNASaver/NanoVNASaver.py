@@ -206,6 +206,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         marker1_box_layout.addRow(QtWidgets.QLabel("Return loss:"), self.marker1_returnloss_label)
         self.marker1_vswr_label = QtWidgets.QLabel("")
         marker1_box_layout.addRow(QtWidgets.QLabel("VSWR:"), self.marker1_vswr_label)
+        self.marker1_reactance_label = QtWidgets.QLabel("")
+        marker1_box_layout.addRow(QtWidgets.QLabel("Reactance:"), self.marker1_reactance_label)
         self.marker1_gain_label = QtWidgets.QLabel("")
         marker1_box_layout.addRow(QtWidgets.QLabel("S21 Gain:"), self.marker1_gain_label)
 
@@ -220,6 +222,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         marker2_box_layout.addRow(QtWidgets.QLabel("Return loss:"), self.marker2_returnloss_label)
         self.marker2_vswr_label = QtWidgets.QLabel("")
         marker2_box_layout.addRow(QtWidgets.QLabel("VSWR:"), self.marker2_vswr_label)
+        self.marker2_reactance_label = QtWidgets.QLabel("")
+        marker2_box_layout.addRow(QtWidgets.QLabel("Reactance:"), self.marker2_reactance_label)
         self.marker2_gain_label = QtWidgets.QLabel("")
         marker2_box_layout.addRow(QtWidgets.QLabel("S21 Gain:"), self.marker2_gain_label)
         
@@ -234,6 +238,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         mousemarker_box_layout.addRow(QtWidgets.QLabel("Return loss:"), self.mousemarker_returnloss_label)
         self.mousemarker_vswr_label = QtWidgets.QLabel("")
         mousemarker_box_layout.addRow(QtWidgets.QLabel("VSWR:"), self.mousemarker_vswr_label)
+        self.mousemarker_reactance_label = QtWidgets.QLabel("")
+        mousemarker_box_layout.addRow(QtWidgets.QLabel("Reactance:"), self.mousemarker_reactance_label)
         self.mousemarker_gain_label = QtWidgets.QLabel("")
         mousemarker_box_layout.addRow(QtWidgets.QLabel("S21 Gain:"), self.mousemarker_gain_label)
 
@@ -641,14 +647,17 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.marker1_impedance_label.setText("")
         self.marker1_vswr_label.setText("")
         self.marker1_returnloss_label.setText("")
+        self.marker1_reactance_label.setText("")
         self.marker1_gain_label.setText("")
         self.marker2_impedance_label.setText("")
         self.marker2_vswr_label.setText("")
         self.marker2_returnloss_label.setText("")
+        self.marker2_reactance_label.setText("")
         self.marker2_gain_label.setText("")
         self.mousemarker_impedance_label.setText("")
         self.mousemarker_vswr_label.setText("")
         self.mousemarker_returnloss_label.setText("")
+        self.mousemarker_reactance_label.setText("")
         self.mousemarker_gain_label.setText("")
         self.s11_min_rl_label.setText("")
         self.s11_min_swr_label.setText("")
@@ -725,6 +734,8 @@ class NanoVNASaver(QtWidgets.QWidget):
                 self.markers[0].frequencyInput.setText(self.formatFrequency(self.markers[0].frequency))
                 self.mousemarker_impedance_label.setText(str(round(re50, 3)) + im50str)
                 self.mousemarker_returnloss_label.setText(str(round(20*math.log10((vswr-1)/(vswr+1)), 3)) + " dB")
+                reactance = self.reactanceEquivalent(im50, self.data[self.markers[0].location].freq)
+                self.mousemarker_reactance_label.setText(reactance)
                 self.mousemarker_vswr_label.setText(str(round(vswr, 3)))
                 if len(self.data21) == len(self.data):
                     _, _, vswr = self.vswr(self.data21[self.markers[0].location])
@@ -737,6 +748,8 @@ class NanoVNASaver(QtWidgets.QWidget):
                     im50str = " + j" + str(round(im50, 3))
                 self.marker1_impedance_label.setText(str(round(re50, 3)) + im50str)
                 self.marker1_returnloss_label.setText(str(round(20*math.log10((vswr-1)/(vswr+1)), 3)) + " dB")
+                reactance = self.reactanceEquivalent(im50, self.data[self.markers[1].location].freq)
+                self.marker1_reactance_label.setText(reactance)
                 self.marker1_vswr_label.setText(str(round(vswr, 3)))
                 if len(self.data21) == len(self.data):
                     _, _, vswr = self.vswr(self.data21[self.markers[1].location])
@@ -750,6 +763,8 @@ class NanoVNASaver(QtWidgets.QWidget):
                     im50str = " + j" + str(round(im50, 3))
                 self.marker2_impedance_label.setText(str(round(re50, 3)) + im50str)
                 self.marker2_returnloss_label.setText(str(round(20*math.log10((vswr-1)/(vswr+1)), 3)) + " dB")
+                reactance = self.reactanceEquivalent(im50, self.data[self.markers[2].location].freq)
+                self.marker2_reactance_label.setText(reactance)
                 self.marker2_vswr_label.setText(str(round(vswr, 3)))
                 if len(self.data21) == len(self.data):
                     _, _, vswr = self.vswr(self.data21[self.markers[2].location])
@@ -806,6 +821,14 @@ class NanoVNASaver(QtWidgets.QWidget):
         # mag = math.sqrt(re * re + im * im)  # Is this even right?
         vswr = (1 + mag) / (1 - mag)
         return im50, re50, vswr
+
+    @staticmethod
+    def reactanceEquivalent(im50, freq) -> str:
+        reactance = im50 / (freq * 2 * math.pi)
+        if reactance < 0:
+            return str(round(-reactance * 1000000000, 3)) + " nF"
+        else:
+            return str(round(reactance * 1000000000, 3)) + " nH"
 
     @staticmethod
     def gain(data: Datapoint):
