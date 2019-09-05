@@ -311,7 +311,7 @@ class VSWRChart(Chart):
         for i in range(len(self.reference)):
             if self.reference[i].freq < fstart or self.reference[i].freq > fstop:
                 continue
-            _, _, vswr = NanoVNASaver.vswr(self.data[i])
+            _, _, vswr = NanoVNASaver.vswr(self.reference[i])
             x = self.leftMargin + 1 + round(self.chartWidth*(self.reference[i].freq - fstart)/fspan)
             y = 30 + round((maxVSWR - vswr) / span * (self.chartHeight - 10))
             if y < 30:

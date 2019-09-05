@@ -16,7 +16,7 @@
 import collections
 import math
 import threading
-from time import sleep
+from time import sleep, strftime, gmtime
 from typing import List
 
 import numpy as np
@@ -59,6 +59,9 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.referenceS11data: List[Datapoint] = []
         self.referenceS21data: List[Datapoint] = []
 
+        self.sweepSource = ""
+        self.referenceSource = ""
+
         self.calibration = Calibration()
 
         self.markers = []
@@ -69,7 +72,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.color = QtGui.QColor(160, 140, 20, 128)
         self.referenceColor = QtGui.QColor(0, 0, 255, 32)
 
-        self.setWindowTitle("NanoVNA Saver " + NanoVNASaver.version)
+        self.baseTitle = "NanoVNA Saver " + NanoVNASaver.version
+        self.updateTitle()
         layout = QtWidgets.QGridLayout()
         scrollarea = QtWidgets.QScrollArea()
         outer = QtWidgets.QVBoxLayout()
@@ -575,10 +579,9 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.serialLock.release()
 
     def startSerial(self):
-        self.lister.appendPlainText("Opening serial port " + self.serialPort)
-
         if self.serialLock.acquire():
             self.serialPort = self.serialPortInput.text()
+            self.lister.appendPlainText("Opening serial port " + self.serialPort)
             try:
                 self.serial = serial.Serial(port=self.serialPort, baudrate=115200)
                 self.serial.timeout = 0.05
@@ -695,13 +698,18 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.serialLock.release()
             return values[1:102]
 
-    def saveData(self, data, data12):
+    def saveData(self, data, data12, source=None):
         if self.dataLock.acquire(blocking=True):
             self.data = data
             self.data21 = data12
         else:
             print("ERROR: Failed acquiring data lock while saving.")
         self.dataLock.release()
+        if source is not None:
+            self.sweepSource = source
+        else:
+            self.sweepSource = strftime("%Y-%m-%d %H:%M:%S", gmtime())
+        self.updateTitle()
 
     def dataUpdated(self):
         if self.dataLock.acquire(blocking=True):
@@ -901,7 +909,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             # Okay, we couldn't parse this however much we tried.
             return -1
 
-    def setReference(self, s11data=None, s21data=None):
+    def setReference(self, s11data=None, s21data=None, source=None):
         if not s11data:
             s11data = self.data
         if not s21data:
@@ -915,9 +923,30 @@ class NanoVNASaver(QtWidgets.QWidget):
             c.setReference(s21data)
         self.btnResetReference.setDisabled(False)
 
+        if source is not None:
+            # Save the reference source info
+            self.referenceSource = source
+        else:
+            self.referenceSource = self.sweepSource
+        self.updateTitle()
+
+    def updateTitle(self):
+        title = self.baseTitle
+        insert = ""
+        if self.sweepSource != "":
+            insert += "Sweep: " + self.sweepSource + " @ " + str(len(self.data)) + " points"
+        if self.referenceSource != "":
+            if insert != "":
+                insert += ", "
+            insert += "Reference: " + self.referenceSource + " @ " + str(len(self.referenceS11data)) + " points"
+        if insert != "":
+            title = title + " (" + insert + ")"
+        self.setWindowTitle(title)
+
     def resetReference(self):
         self.referenceS11data = []
         self.referenceS21data = []
+        self.referenceSource = ""
         for c in self.charts:
             c.resetReference()
         self.btnResetReference.setDisabled(True)
@@ -936,13 +965,13 @@ class NanoVNASaver(QtWidgets.QWidget):
         filename = self.referenceFileNameInput.text()
         t = Touchstone(filename)
         t.load()
-        self.setReference(t.s11data, t.s21data)
+        self.setReference(t.s11data, t.s21data, filename)
 
     def loadSweepFile(self):
         filename = self.referenceFileNameInput.text()
         t = Touchstone(filename)
         t.load()
-        self.saveData(t.s11data, t.s21data)
+        self.saveData(t.s11data, t.s21data, filename)
         self.dataUpdated()
 
     def sizeHint(self) -> QtCore.QSize:
