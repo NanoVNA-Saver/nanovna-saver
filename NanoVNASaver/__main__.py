@@ -20,11 +20,9 @@ from PyQt5 import QtWidgets
 
 from .NanoVNASaver import NanoVNASaver
 
-version = "0.0.5"
-
 
 def main():
-    print("NanoVNASaver " + version)
+    print("NanoVNASaver " + NanoVNASaver.version)
     print("Copyright (C) 2019 Rune B. Broberg")
     print("This program comes with ABSOLUTELY NO WARRANTY")
     print("This program is licensed under the GNU General Public License version 3")

@@ -24,7 +24,7 @@ import serial
 from PyQt5 import QtWidgets, QtCore, QtGui
 from serial.tools import list_ports
 
-from .Chart import Chart
+from .Chart import Chart, PhaseChart
 from .Calibration import CalibrationWindow, Calibration
 from .Marker import Marker
 from .SmithChart import SmithChart
@@ -39,6 +39,8 @@ PID = 22336
 
 
 class NanoVNASaver(QtWidgets.QWidget):
+    version = "0.0.6"
+
     def __init__(self):
         super().__init__()
 
@@ -67,7 +69,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.color = QtGui.QColor(160, 140, 20, 128)
         self.referenceColor = QtGui.QColor(0, 0, 255, 32)
 
-        self.setWindowTitle("NanoVNA Saver")
+        self.setWindowTitle("NanoVNA Saver " + NanoVNASaver.version)
         layout = QtWidgets.QGridLayout()
         scrollarea = QtWidgets.QScrollArea()
         outer = QtWidgets.QVBoxLayout()
@@ -81,16 +83,24 @@ class NanoVNASaver(QtWidgets.QWidget):
         widget.setLayout(layout)
         scrollarea.setWidget(widget)
 
-        self.s11SmithChart = SmithChart("S11")
-        self.s21SmithChart = SmithChart("S21")
+        self.s11SmithChart = SmithChart("S11 Smith Chart")
+        self.s21SmithChart = SmithChart("S21 Smith Chart")
         self.s11LogMag = LogMagChart("S11 Return Loss")
         self.s21LogMag = LogMagChart("S21 Gain")
+        self.s11Phase = PhaseChart("S11 Phase")
+        self.s21Phase = PhaseChart("S21 Phase")
 
-        self.charts: List[Chart] = []
-        self.charts.append(self.s11SmithChart)
-        self.charts.append(self.s21SmithChart)
-        self.charts.append(self.s11LogMag)
-        self.charts.append(self.s21LogMag)
+        self.s11charts: List[Chart] = []
+        self.s11charts.append(self.s11SmithChart)
+        self.s11charts.append(self.s11LogMag)
+        self.s11charts.append(self.s11Phase)
+
+        self.s21charts: List[Chart] = []
+        self.s21charts.append(self.s21SmithChart)
+        self.s21charts.append(self.s21LogMag)
+        self.s21charts.append(self.s21Phase)
+
+        self.charts = self.s11charts + self.s21charts
 
         left_column = QtWidgets.QVBoxLayout()
         marker_column = QtWidgets.QVBoxLayout()
@@ -168,8 +178,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         marker_control_layout.addRow(label, layout)
         self.markers.append(marker2)
 
-        self.s11SmithChart.setMarkers(self.markers)
-        self.s21SmithChart.setMarkers(self.markers)
+        for c in self.charts:
+            c.setMarkers(self.markers)
 
         self.mousemarker_frequency_label = QtWidgets.QLabel("")
         label, layout = mouse_marker.getRow()
@@ -427,22 +437,40 @@ class NanoVNASaver(QtWidgets.QWidget):
         left_column.addWidget(file_control_box)
 
         ################################################################################################################
+        #  Display setup
+        ################################################################################################################
+
+        b = QtWidgets.QPushButton("Display setup ...")
+        b.setMaximumWidth(250)
+        self.display_setupWindow = DisplaySettingsWindow(self)
+        b.clicked.connect(self.display_setupWindow.show)
+        left_column.addWidget(b)
+
+        btn_about = QtWidgets.QPushButton("About ...")
+        btn_about.setMaximumWidth(250)
+        btn_about.clicked.connect(lambda: QtWidgets.QMessageBox.about(self, "About NanoVNASaver",
+                                                                      "NanoVNASaver version "
+                                                                      + NanoVNASaver.version +
+                                                                      "\n\n\N{COPYRIGHT SIGN} Copyright 2019 Rune B. Broberg\n" +
+                                                                      "This program comes with ABSOLUTELY NO WARRANTY\n" +
+                                                                      "This program is licensed under the GNU General Public License version 3\n\n" +
+                                                                      "See https://github.com/mihtjel/nanovna-saver for further details"))
+        left_column.addWidget(btn_about)
+
+        ################################################################################################################
         #  Right side
         ################################################################################################################
 
         self.lister = QtWidgets.QPlainTextEdit()
         self.lister.setFixedHeight(200)
         self.lister.setMaximumWidth(300)
-        charts = QtWidgets.QGridLayout()
-        charts.addWidget(self.s11SmithChart, 0, 0)
-        charts.addWidget(self.s21SmithChart, 1, 0)
-        charts.addWidget(self.s11LogMag, 0, 1)
-        charts.addWidget(self.s21LogMag, 1, 1)
+        self.charts_layout = QtWidgets.QGridLayout()
+        self.charts_layout.addWidget(self.s11SmithChart, 0, 0)
+        self.charts_layout.addWidget(self.s21SmithChart, 1, 0)
+        self.charts_layout.addWidget(self.s11LogMag, 0, 1)
+        self.charts_layout.addWidget(self.s21LogMag, 1, 1)
 
-        self.s11LogMag.setMarkers(self.markers)
-        self.s21LogMag.setMarkers(self.markers)
-
-        right_column.addLayout(charts)
+        right_column.addLayout(self.charts_layout)
         marker_column.addWidget(self.lister)
 
         self.worker.signals.updated.connect(self.dataUpdated)
@@ -715,10 +743,11 @@ class NanoVNASaver(QtWidgets.QWidget):
                     _, _, vswr = self.vswr(self.data21[self.markers[2].location])
                     self.marker2_gain_label.setText(str(round(20*math.log10((vswr-1)/(vswr+1)), 3)) + " dB")
 
-            self.s11SmithChart.setData(self.data)
-            self.s21SmithChart.setData(self.data21)
-            self.s11LogMag.setData(self.data)
-            self.s21LogMag.setData(self.data21)
+            for c in self.s11charts:
+                c.setData(self.data)
+
+            for c in self.s21charts:
+                c.setData(self.data21)
             self.sweepProgressBar.setValue(self.worker.percentage)
             self.updateTDR()
             # Find the minimum S11 VSWR:
@@ -874,12 +903,12 @@ class NanoVNASaver(QtWidgets.QWidget):
         if not s21data:
             s21data = self.data21
         self.referenceS11data = s11data
-        self.s11SmithChart.setReference(s11data)
-        self.s11LogMag.setReference(s11data)
+        for c in self.s11charts:
+            c.setReference(s11data)
 
         self.referenceS21data = s21data
-        self.s21SmithChart.setReference(s21data)
-        self.s21LogMag.setReference(s21data)
+        for c in self.s21charts:
+            c.setReference(s21data)
         self.btnResetReference.setDisabled(False)
 
     def resetReference(self):
@@ -914,3 +943,87 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def sizeHint(self) -> QtCore.QSize:
         return QtCore.QSize(1100, 950)
+
+
+class DisplaySettingsWindow(QtWidgets.QWidget):
+    def __init__(self, app: NanoVNASaver):
+        super().__init__()
+
+        self.app = app
+        self.setWindowTitle("Display settings")
+
+        layout = QtWidgets.QVBoxLayout()
+        self.setLayout(layout)
+
+        charts_box = QtWidgets.QGroupBox("Displayed charts")
+        charts_layout = QtWidgets.QGridLayout(charts_box)
+
+        # selections = ["S11 Smith chart",
+        #               "S11 LogMag",
+        #               "S11 VSWR",
+        #               "S11 Phase",
+        #               "S21 Smith chart",
+        #               "S21 LogMag",
+        #               "S21 Phase",
+        #               "None"]
+
+        selections = []
+
+        for c in self.app.charts:
+            selections.append(c.name)
+
+        selections.append("None")
+
+        chart00_selection = QtWidgets.QComboBox()
+        chart00_selection.addItems(selections)
+        chart00_selection.setCurrentIndex(0)  # TODO: Make a better default setting than static numbers
+        chart00_selection.currentTextChanged.connect(lambda: self.changeChart(0, 0, chart00_selection.currentText()))
+        charts_layout.addWidget(chart00_selection, 0, 0)
+
+        chart01_selection = QtWidgets.QComboBox()
+        chart01_selection.addItems(selections)
+        chart01_selection.setCurrentIndex(1)
+        chart01_selection.currentTextChanged.connect(lambda: self.changeChart(0, 1, chart01_selection.currentText()))
+        charts_layout.addWidget(chart01_selection, 0, 1)
+        
+        chart02_selection = QtWidgets.QComboBox()
+        chart02_selection.addItems(selections)
+        chart02_selection.setCurrentIndex(len(selections)-1)
+        chart02_selection.currentTextChanged.connect(lambda: self.changeChart(0, 2, chart02_selection.currentText()))
+        charts_layout.addWidget(chart02_selection, 0, 2)
+
+        chart10_selection = QtWidgets.QComboBox()
+        chart10_selection.addItems(selections)
+        chart10_selection.setCurrentIndex(3)
+        chart10_selection.currentTextChanged.connect(lambda: self.changeChart(1, 0, chart10_selection.currentText()))
+        charts_layout.addWidget(chart10_selection, 1, 0)
+
+        chart11_selection = QtWidgets.QComboBox()
+        chart11_selection.addItems(selections)
+        chart11_selection.setCurrentIndex(4)
+        chart11_selection.currentTextChanged.connect(lambda: self.changeChart(1, 1, chart11_selection.currentText()))
+        charts_layout.addWidget(chart11_selection, 1, 1)
+
+        chart12_selection = QtWidgets.QComboBox()
+        chart12_selection.addItems(selections)
+        chart12_selection.setCurrentIndex(len(selections)-1)
+        chart12_selection.currentTextChanged.connect(lambda: self.changeChart(1, 2, chart12_selection.currentText()))
+        charts_layout.addWidget(chart12_selection, 1, 2)
+
+        layout.addWidget(charts_box)
+
+    def changeChart(self, x, y, chart):
+        found = None
+        for c in self.app.charts:
+            if c.name == chart:
+                found = c
+
+        oldWidget = self.app.charts_layout.itemAtPosition(x, y)
+        if oldWidget is not None:
+            w = oldWidget.widget()
+            self.app.charts_layout.removeWidget(w)
+            w.hide()
+        if found is not None:
+            self.app.charts_layout.addWidget(found, x, y)
+            if found.isHidden():
+                found.show()
