@@ -24,7 +24,7 @@ import serial
 from PyQt5 import QtWidgets, QtCore, QtGui
 from serial.tools import list_ports
 
-from .Chart import Chart, PhaseChart
+from .Chart import Chart, PhaseChart, VSWRChart
 from .Calibration import CalibrationWindow, Calibration
 from .Marker import Marker
 from .SmithChart import SmithChart
@@ -89,16 +89,20 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s21LogMag = LogMagChart("S21 Gain")
         self.s11Phase = PhaseChart("S11 Phase")
         self.s21Phase = PhaseChart("S21 Phase")
+        self.s11VSWR = VSWRChart("S11 VSWR")
+        self.s21VSWR = VSWRChart("S21 VSWR")
 
         self.s11charts: List[Chart] = []
         self.s11charts.append(self.s11SmithChart)
         self.s11charts.append(self.s11LogMag)
         self.s11charts.append(self.s11Phase)
+        self.s11charts.append(self.s11VSWR)
 
         self.s21charts: List[Chart] = []
         self.s21charts.append(self.s21SmithChart)
         self.s21charts.append(self.s21LogMag)
         self.s21charts.append(self.s21Phase)
+        self.s21charts.append(self.s21VSWR)
 
         self.charts = self.s11charts + self.s21charts
 
