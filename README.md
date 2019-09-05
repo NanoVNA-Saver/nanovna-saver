@@ -47,7 +47,7 @@ In order to run this app in Linux environment, you'll need the following package
 
 2. Run the pip installation
 
-    `pip install .`
+    `pip3 install .`
     
 2. Once completed run with the following command
 
