@@ -49,7 +49,7 @@ setup(
     },
     install_requires=[
         'pyserial',
-        'PyQt5',
+        'PyQt5==5.11.2',
         'numpy',
     ],
 )
