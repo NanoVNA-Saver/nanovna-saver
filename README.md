@@ -20,12 +20,10 @@ Expected features:
 - Mouse control of markers
 - Further data readout for markers, such as return loss/forward gain
 
+0.0.6:
+![Screenshot of version 0.0.6](https://i.imgur.com/YnotmVw.png)
 0.0.3:
 ![Screenshot of version 0.0.3](https://i.imgur.com/Cyp4gax.png)
-0.0.2:
-![Screenshot of version 0.0.2](https://i.imgur.com/eoLwv35.png)
-0.0.1:
-![Screenshot of version 0.0.1](https://i.imgur.com/kcCC2eK.png)
 
 ### Windows
 
