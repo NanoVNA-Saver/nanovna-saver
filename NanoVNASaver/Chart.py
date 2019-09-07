@@ -34,6 +34,7 @@ class Chart(QtWidgets.QWidget):
     markers: List[Marker] = []
     name = ""
     drawLines = False
+    mouselocation = 0
 
     def setSweepColor(self, color : QtGui.QColor):
         self.sweepColor = color
@@ -531,6 +532,35 @@ class PolarChart(Chart):
     def heightForWidth(self, a0: int) -> int:
         return a0
 
+    def mousePressEvent(self, a0: QtGui.QMouseEvent) -> None:
+        self.mouseMoveEvent(a0)
+
+    def mouseMoveEvent(self, a0: QtGui.QMouseEvent) -> None:
+        x = a0.x()
+        y = a0.y()
+        absx = x - (self.width() - self.chartWidth) / 2
+        absy = y - (self.height() - self.chartHeight) / 2
+        if absx < 0 or absx > self.chartWidth or absy < 0 or absy > self.chartHeight \
+                or len(self.data) == len(self.reference) == 0:
+            a0.ignore()
+            return
+        a0.accept()
+
+        if len(self.data) > 0:
+            target = self.data
+        else:
+            target = self.reference
+        positions = []
+        for d in target:
+            thisx = self.width() / 2 + d.re * self.chartWidth / 2
+            thisy = self.height() / 2 + d.im * -1 * self.chartHeight / 2
+            positions.append(math.sqrt((x - thisx)**2 + (y - thisy)**2))
+
+        print("Found " + str(len(positions)) + " positions, minimum is " + str(min(positions)))
+        minimum_position = positions.index(min(positions))
+        self.markers[0].setFrequency(str(round(target[minimum_position].freq)))
+        return
+
 
 class SmithChart(Chart):
     def __init__(self, name=""):
@@ -651,6 +681,35 @@ class SmithChart(Chart):
     def heightForWidth(self, a0: int) -> int:
         return a0
 
+    def mousePressEvent(self, a0: QtGui.QMouseEvent) -> None:
+        self.mouseMoveEvent(a0)
+
+    def mouseMoveEvent(self, a0: QtGui.QMouseEvent) -> None:
+        x = a0.x()
+        y = a0.y()
+        absx = x - (self.width() - self.chartWidth) / 2
+        absy = y - (self.height() - self.chartHeight) / 2
+        if absx < 0 or absx > self.chartWidth or absy < 0 or absy > self.chartHeight \
+                or len(self.data) == len(self.reference) == 0:
+            a0.ignore()
+            return
+        a0.accept()
+
+        if len(self.data) > 0:
+            target = self.data
+        else:
+            target = self.reference
+        positions = []
+        for d in target:
+            thisx = self.width() / 2 + d.re * self.chartWidth / 2
+            thisy = self.height() / 2 + d.im * -1 * self.chartHeight / 2
+            positions.append(math.sqrt((x - thisx)**2 + (y - thisy)**2))
+
+        print("Found " + str(len(positions)) + " positions, minimum is " + str(min(positions)))
+        minimum_position = positions.index(min(positions))
+        self.markers[0].setFrequency(str(round(target[minimum_position].freq)))
+        return
+
 
 class LogMagChart(Chart):
     def __init__(self, name=""):
@@ -661,7 +720,6 @@ class LogMagChart(Chart):
         self.name = name
         self.fstart = 0
         self.fstop = 0
-        self.mouselocation = 0
 
         self.setMinimumSize(self.chartWidth + 20 + self.leftMargin, self.chartHeight + 40)
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding))
