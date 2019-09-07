@@ -206,6 +206,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         marker1_box_layout.addRow(QtWidgets.QLabel("Reactance:"), self.marker1_reactance_label)
         self.marker1_gain_label = QtWidgets.QLabel("")
         marker1_box_layout.addRow(QtWidgets.QLabel("S21 Gain:"), self.marker1_gain_label)
+        self.marker1_phase_label = QtWidgets.QLabel("")
+        marker1_box_layout.addRow(QtWidgets.QLabel("S21 Phase:"), self.marker1_phase_label)
 
         marker2_box = QtWidgets.QGroupBox("Marker 2")
         marker2_box_layout = QtWidgets.QFormLayout(marker2_box)
@@ -222,6 +224,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         marker2_box_layout.addRow(QtWidgets.QLabel("Reactance:"), self.marker2_reactance_label)
         self.marker2_gain_label = QtWidgets.QLabel("")
         marker2_box_layout.addRow(QtWidgets.QLabel("S21 Gain:"), self.marker2_gain_label)
+        self.marker2_phase_label = QtWidgets.QLabel("")
+        marker2_box_layout.addRow(QtWidgets.QLabel("S21 Phase:"), self.marker2_phase_label)
         
         mousemarker_box = QtWidgets.QGroupBox("Mouse marker")
         mousemarker_box_layout = QtWidgets.QFormLayout(mousemarker_box)
@@ -238,6 +242,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         mousemarker_box_layout.addRow(QtWidgets.QLabel("Reactance:"), self.mousemarker_reactance_label)
         self.mousemarker_gain_label = QtWidgets.QLabel("")
         mousemarker_box_layout.addRow(QtWidgets.QLabel("S21 Gain:"), self.mousemarker_gain_label)
+        self.mousemarker_phase_label = QtWidgets.QLabel("")
+        mousemarker_box_layout.addRow(QtWidgets.QLabel("S21 Phase:"), self.mousemarker_phase_label)
 
         ################################################################################################################
         #  Statistics/analysis
@@ -645,16 +651,19 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.marker1_returnloss_label.setText("")
         self.marker1_reactance_label.setText("")
         self.marker1_gain_label.setText("")
+        self.marker1_phase_label.setText("")
         self.marker2_impedance_label.setText("")
         self.marker2_vswr_label.setText("")
         self.marker2_returnloss_label.setText("")
         self.marker2_reactance_label.setText("")
         self.marker2_gain_label.setText("")
+        self.marker2_phase_label.setText("")
         self.mousemarker_impedance_label.setText("")
         self.mousemarker_vswr_label.setText("")
         self.mousemarker_returnloss_label.setText("")
         self.mousemarker_reactance_label.setText("")
         self.mousemarker_gain_label.setText("")
+        self.mousemarker_phase_label.setText("")
         self.s11_min_rl_label.setText("")
         self.s11_min_swr_label.setText("")
         self.s21_min_gain_label.setText("")
@@ -736,6 +745,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                 if len(self.data21) == len(self.data):
                     _, _, vswr = self.vswr(self.data21[self.markers[0].location])
                     self.mousemarker_gain_label.setText(str(round(20*math.log10((vswr-1)/(vswr+1)), 3)) + " dB")
+                    self.mousemarker_phase_label.setText(str(round(PhaseChart.angle(self.data21[self.markers[0].location]), 2)) + "\N{DEGREE SIGN}")
             if self.markers[1].location != -1:
                 im50, re50, vswr = self.vswr(self.data[self.markers[1].location])
                 if im50 < 0:
@@ -750,6 +760,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                 if len(self.data21) == len(self.data):
                     _, _, vswr = self.vswr(self.data21[self.markers[1].location])
                     self.marker1_gain_label.setText(str(round(20*math.log10((vswr-1)/(vswr+1)), 3)) + " dB")
+                    self.marker1_phase_label.setText(str(round(PhaseChart.angle(self.data21[self.markers[1].location]), 2)) + "\N{DEGREE SIGN}")
 
             if self.markers[2].location != -1:
                 im50, re50, vswr = self.vswr(self.data[self.markers[2].location])
@@ -765,6 +776,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                 if len(self.data21) == len(self.data):
                     _, _, vswr = self.vswr(self.data21[self.markers[2].location])
                     self.marker2_gain_label.setText(str(round(20*math.log10((vswr-1)/(vswr+1)), 3)) + " dB")
+                    self.marker2_phase_label.setText(str(round(PhaseChart.angle(self.data21[self.markers[2].location]), 2)) + "\N{DEGREE SIGN}")
 
             for c in self.s11charts:
                 c.setData(self.data)

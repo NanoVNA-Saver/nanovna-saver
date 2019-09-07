@@ -173,7 +173,7 @@ class PhaseChart(Chart):
 
         qp.setPen(pen)
         for i in range(len(self.data)):
-            angle = self.angle(self.data[i])
+            angle = -self.angle(self.data[i])
             x = self.leftMargin + 1 + round(self.chartWidth/len(self.data) * i)
             y = 30 + round((angle-minAngle)/span*(self.chartHeight-10))
             qp.drawPoint(int(x), int(y))
@@ -189,7 +189,7 @@ class PhaseChart(Chart):
         for i in range(len(self.reference)):
             if self.reference[i].freq < fstart or self.reference[i].freq > fstop:
                 continue
-            angle = self.angle(self.reference[i])
+            angle = -self.angle(self.reference[i])
             x = self.leftMargin + 1 + round(self.chartWidth*(self.reference[i].freq - fstart)/fspan)
             y = 30 + round((angle-minAngle)/span*(self.chartHeight-10))
             qp.drawPoint(int(x), int(y))
@@ -205,7 +205,7 @@ class PhaseChart(Chart):
             if m.location != -1:
                 highlighter.setColor(m.color)
                 qp.setPen(highlighter)
-                angle = self.angle(self.data[m.location])
+                angle = -self.angle(self.data[m.location])
                 x = self.leftMargin + 1 + round(self.chartWidth/len(self.data) * m.location)
                 y = 30 + round((angle - minAngle) / span * (self.chartHeight - 10))
                 qp.drawLine(int(x), int(y) + 3, int(x) - 3, int(y) - 3)
@@ -238,7 +238,7 @@ class PhaseChart(Chart):
     def angle(d: Datapoint) -> float:
         re = d.re
         im = d.im
-        return math.degrees(math.atan2(im, re))
+        return -math.degrees(math.atan2(im, re))
 
 
 class VSWRChart(Chart):
