@@ -82,6 +82,8 @@ class LogMagChart(Chart):
             return
         pen = QtGui.QPen(self.sweepColor)
         pen.setWidth(2)
+        line_pen = QtGui.QPen(self.sweepColor)
+        line_pen.setWidth(1)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(1)
         if len(self.data) > 0:
@@ -94,45 +96,33 @@ class LogMagChart(Chart):
         self.fstop = fstop
         fspan = fstop-fstart
         # Find scaling
-        min = 100
-        max = 0
-        for i in range(len(self.data)):
-            re = self.data[i].re
-            im = self.data[i].im
-            re50 = 50 * (1 - re * re - im * im) / (1 + re * re + im * im - 2 * re)
-            im50 = 50 * (2 * im) / (1 + re * re + im * im - 2 * re)
-            # Calculate the reflection coefficient
-            mag = math.sqrt((re50-50)*(re50-50) + im50 * im50)/math.sqrt((re50+50)*(re50+50) + im50 * im50)
-            logmag = -20 * math.log10(mag)
-            if logmag > max:
-                max = logmag
-            if logmag < min:
-                min = logmag
+        minValue = 100
+        maxValue = 0
+        for d in self.data:
+            logmag = self.logMag(d)
+            if logmag > maxValue:
+                maxValue = logmag
+            if logmag < minValue:
+                minValue = logmag
         for d in self.reference:  # Also check min/max for the reference sweep
             if d.freq < fstart or d.freq > fstop:
                 continue
-            re = d.re
-            im = d.im
-            re50 = 50 * (1 - re * re - im * im) / (1 + re * re + im * im - 2 * re)
-            im50 = 50 * (2 * im) / (1 + re * re + im * im - 2 * re)
-            # Calculate the reflection coefficient
-            mag = math.sqrt((re50-50)*(re50-50) + im50 * im50)/math.sqrt((re50+50)*(re50+50) + im50 * im50)
-            logmag = -20 * math.log10(mag)
-            if logmag > max:
-                max = logmag
-            if logmag < min:
-                min = logmag
+            logmag = self.logMag(d)
+            if logmag > maxValue:
+                maxValue = logmag
+            if logmag < minValue:
+                minValue = logmag
 
-        min = 10*math.floor(min/10)
-        max = 10*math.ceil(max/10)
-        span = max-min
-        for i in range(min, max, 10):
-            y = 30 + round((i-min)/span*(self.chartHeight-10))
+        minValue = 10*math.floor(minValue/10)
+        maxValue = 10*math.ceil(maxValue/10)
+        span = maxValue-minValue
+        for i in range(minValue, maxValue, 10):
+            y = 30 + round((i-minValue)/span*(self.chartHeight-10))
             qp.setPen(QtGui.QPen(QtGui.QColor("lightgray")))
             qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.chartWidth, y)
         qp.setPen(QtCore.Qt.black)
-        qp.drawText(3, 35, str(-min))
-        qp.drawText(3, self.chartHeight+20, str(-max))
+        qp.drawText(3, 35, str(-minValue))
+        qp.drawText(3, self.chartHeight+20, str(-maxValue))
         # At least 100 px between ticks
         qp.drawText(self.leftMargin-20, 20 + self.chartHeight + 15, LogMagChart.shortenFrequency(fstart))
         ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
@@ -150,47 +140,42 @@ class LogMagChart(Chart):
 
         qp.setPen(pen)
         for i in range(len(self.data)):
-            re = self.data[i].re
-            im = self.data[i].im
-            re50 = 50 * (1 - re * re - im * im) / (1 + re * re + im * im - 2 * re)
-            im50 = 50 * (2 * im) / (1 + re * re + im * im - 2 * re)
-            # Calculate the reflection coefficient
-            mag = math.sqrt((re50-50)*(re50-50) + im50 * im50)/math.sqrt((re50+50)*(re50+50) + im50 * im50)
-            logmag = -20 * math.log10(mag)
+            logmag = self.logMag(self.data[i])
             x = self.leftMargin + 1 + round(self.chartWidth/len(self.data) * i)
-            y = 30 + round((logmag-min)/span*(self.chartHeight-10))
+            y = 30 + round((logmag-minValue)/span*(self.chartHeight-10))
             qp.drawPoint(int(x), int(y))
+            if self.drawLines and i > 0:
+                logmag = self.logMag(self.data[i-1])
+                prevx = self.leftMargin + 1 + round(self.chartWidth / len(self.data) * (i-1))
+                prevy = 30 + round((logmag - minValue) / span * (self.chartHeight - 10))
+                qp.setPen(line_pen)
+                qp.drawLine(x, y, prevx, prevy)
+                qp.setPen(pen)
         pen.setColor(self.referenceColor)
+        line_pen.setColor(self.referenceColor)
         qp.setPen(pen)
         for i in range(len(self.reference)):
             if self.reference[i].freq < fstart or self.reference[i].freq > fstop:
                 continue
-
-            re = self.reference[i].re
-            im = self.reference[i].im
-            re50 = 50 * (1 - re * re - im * im) / (1 + re * re + im * im - 2 * re)
-            im50 = 50 * (2 * im) / (1 + re * re + im * im - 2 * re)
-            # Calculate the reflection coefficient
-            mag = math.sqrt((re50-50)*(re50-50) + im50 * im50)/math.sqrt((re50+50)*(re50+50) + im50 * im50)
-            logmag = -20 * math.log10(mag)
+            logmag = self.logMag(self.reference[i])
             x = self.leftMargin + 1 + round(self.chartWidth*(self.reference[i].freq - fstart)/fspan)
-            y = 30 + round((logmag-min)/span*(self.chartHeight-10))
+            y = 30 + round((logmag-minValue)/span*(self.chartHeight-10))
             qp.drawPoint(int(x), int(y))
+            if self.drawLines and i > 0:
+                logmag = self.logMag(self.reference[i-1])
+                prevx = self.leftMargin + 1 + round(self.chartWidth*(self.reference[i-1].freq - fstart)/fspan)
+                prevy = 30 + round((logmag - minValue) / span * (self.chartHeight - 10))
+                qp.setPen(line_pen)
+                qp.drawLine(x, y, prevx, prevy)
+                qp.setPen(pen)
         # Now draw the markers
         for m in self.markers:
             if m.location != -1:
                 highlighter.setColor(m.color)
                 qp.setPen(highlighter)
-                re = self.data[m.location].re
-                im = self.data[m.location].im
-                re50 = 50 * (1 - re * re - im * im) / (1 + re * re + im * im - 2 * re)
-                im50 = 50 * (2 * im) / (1 + re * re + im * im - 2 * re)
-                # Calculate the reflection coefficient
-                mag = math.sqrt((re50 - 50) * (re50 - 50) + im50 * im50) / math.sqrt(
-                    (re50 + 50) * (re50 + 50) + im50 * im50)
-                logmag = -20 * math.log10(mag)
+                logmag = self.logMag(self.data[m.location])
                 x = self.leftMargin + 1 + round(self.chartWidth/len(self.data) * m.location)
-                y = 30 + round((logmag - min) / span * (self.chartHeight - 10))
+                y = 30 + round((logmag - minValue) / span * (self.chartHeight - 10))
                 qp.drawLine(int(x), int(y) + 3, int(x) - 3, int(y) - 3)
                 qp.drawLine(int(x), int(y) + 3, int(x) + 3, int(y) - 3)
                 qp.drawLine(int(x) - 3, int(y) - 3, int(x) + 3, int(y) - 3)
@@ -224,3 +209,13 @@ class LogMagChart(Chart):
         else:
             self.mouselocation = 0
         return
+
+    @staticmethod
+    def logMag(p: Datapoint) -> float:
+        re = p.re
+        im = p.im
+        re50 = 50 * (1 - re * re - im * im) / (1 + re * re + im * im - 2 * re)
+        im50 = 50 * (2 * im) / (1 + re * re + im * im - 2 * re)
+        # Calculate the reflection coefficient
+        mag = math.sqrt((re50 - 50) * (re50 - 50) + im50 * im50) / math.sqrt((re50 + 50) * (re50 + 50) + im50 * im50)
+        return -20 * math.log10(mag)

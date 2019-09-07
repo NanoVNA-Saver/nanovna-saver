@@ -24,10 +24,9 @@ import serial
 from PyQt5 import QtWidgets, QtCore, QtGui
 from serial.tools import list_ports
 
-from .Chart import Chart, PhaseChart, VSWRChart, PolarChart
+from .Chart import Chart, PhaseChart, VSWRChart, PolarChart, SmithChart
 from .Calibration import CalibrationWindow, Calibration
 from .Marker import Marker
-from .SmithChart import SmithChart
 from .SweepWorker import SweepWorker
 from .LogMagChart import LogMagChart
 from .Touchstone import Touchstone
@@ -1021,6 +1020,15 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         layout = QtWidgets.QVBoxLayout()
         self.setLayout(layout)
 
+        display_options_box = QtWidgets.QGroupBox("Options")
+        display_options_layout = QtWidgets.QFormLayout(display_options_box)
+
+        self.show_lines_option = QtWidgets.QCheckBox("Show lines - Displays a thin line between data points")
+        self.show_lines_option.stateChanged.connect(self.changeShowLines)
+        display_options_layout.addWidget(self.show_lines_option)
+
+        layout.addWidget(display_options_box)
+
         charts_box = QtWidgets.QGroupBox("Displayed charts")
         charts_layout = QtWidgets.QGridLayout(charts_box)
 
@@ -1093,3 +1101,8 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self.app.charts_layout.addWidget(found, x, y)
             if found.isHidden():
                 found.show()
+
+    def changeShowLines(self):
+        state = self.show_lines_option.isChecked()
+        for c in self.app.charts:
+            c.setDrawLines(state)
