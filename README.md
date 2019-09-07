@@ -20,12 +20,10 @@ Expected features:
 - Mouse control of markers
 - Further data readout for markers, such as return loss/forward gain
 
+0.0.6:
+![Screenshot of version 0.0.6](https://i.imgur.com/YnotmVw.png)
 0.0.3:
 ![Screenshot of version 0.0.3](https://i.imgur.com/Cyp4gax.png)
-0.0.2:
-![Screenshot of version 0.0.2](https://i.imgur.com/eoLwv35.png)
-0.0.1:
-![Screenshot of version 0.0.1](https://i.imgur.com/kcCC2eK.png)
 
 ### Windows
 
@@ -38,8 +36,25 @@ In order to run this app in Linux environment, you'll need the following package
 * `python3-serial`
 * `python3-pyqt5`
 * `numpy`
+## Ubuntu 18.04
+### Installation and Use with pip 
+1. Install python3.7 and pip
+   - `sudo apt install python3.7 python3-pip`
 
-### Installation and Use with pip
+2. Clone repo and cd into the directory 
+   - `git clone https://github.com/mihtjel/nanovna-saver`
+   - `cd nanovna-saver`
+
+3. Run the pip installation
+
+    - `python37 -m pip install .`
+    
+4. Once completed run with the following command
+
+    - `python3.7 nanovna-saver.py` 
+    
+## Windows
+### Installation and Use with pip 
 
 1. Clone repo and cd into the directory 
    - `git clone https://github.com/mihtjel/nanovna-saver`
@@ -47,11 +62,11 @@ In order to run this app in Linux environment, you'll need the following package
 
 2. Run the pip installation
 
-    `pip3 install .`
+    - `pip3 install .`
     
-2. Once completed run with the following command
+3. Once completed run with the following command
 
-    `NanoVNASaver` 
+    - `NanoVNASaver`
 
 ### Using the software
 
