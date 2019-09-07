@@ -24,11 +24,10 @@ import serial
 from PyQt5 import QtWidgets, QtCore, QtGui
 from serial.tools import list_ports
 
-from .Chart import Chart, PhaseChart, VSWRChart, PolarChart, SmithChart
+from .Chart import Chart, PhaseChart, VSWRChart, PolarChart, SmithChart, LogMagChart
 from .Calibration import CalibrationWindow, Calibration
 from .Marker import Marker
 from .SweepWorker import SweepWorker
-from .LogMagChart import LogMagChart
 from .Touchstone import Touchstone
 
 Datapoint = collections.namedtuple('Datapoint', 'freq re im')
@@ -1023,9 +1022,15 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         display_options_box = QtWidgets.QGroupBox("Options")
         display_options_layout = QtWidgets.QFormLayout(display_options_box)
 
-        self.show_lines_option = QtWidgets.QCheckBox("Show lines - Displays a thin line between data points")
+        self.show_lines_option = QtWidgets.QCheckBox("Show lines")
+        show_lines_label = QtWidgets.QLabel("Displays a thin line between data points")
         self.show_lines_option.stateChanged.connect(self.changeShowLines)
-        display_options_layout.addWidget(self.show_lines_option)
+        display_options_layout.addRow(self.show_lines_option, show_lines_label)
+
+        self.dark_mode_option = QtWidgets.QCheckBox("Dark mode")
+        dark_mode_label = QtWidgets.QLabel("Black background with white text")
+        self.dark_mode_option.stateChanged.connect(self.changeDarkMode)
+        display_options_layout.addRow(self.dark_mode_option, dark_mode_label)
 
         layout.addWidget(display_options_box)
 
@@ -1106,3 +1111,14 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         state = self.show_lines_option.isChecked()
         for c in self.app.charts:
             c.setDrawLines(state)
+
+    def changeDarkMode(self):
+        state = self.dark_mode_option.isChecked()
+        if state:
+            for c in self.app.charts:
+                c.setBackgroundColor(QtGui.QColor(QtCore.Qt.black))
+                c.setTextColor(QtGui.QColor(QtCore.Qt.white))
+        else:
+            for c in self.app.charts:
+                c.setBackgroundColor(QtGui.QColor(QtCore.Qt.white))
+                c.setTextColor(QtGui.QColor(QtCore.Qt.black))
