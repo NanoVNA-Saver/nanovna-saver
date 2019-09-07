@@ -24,7 +24,7 @@ import serial
 from PyQt5 import QtWidgets, QtCore, QtGui
 from serial.tools import list_ports
 
-from .Chart import Chart, PhaseChart, VSWRChart
+from .Chart import Chart, PhaseChart, VSWRChart, PolarChart
 from .Calibration import CalibrationWindow, Calibration
 from .Marker import Marker
 from .SmithChart import SmithChart
@@ -88,13 +88,12 @@ class NanoVNASaver(QtWidgets.QWidget):
         scrollarea.setWidget(widget)
 
         self.s11SmithChart = SmithChart("S11 Smith Chart")
-        self.s21SmithChart = SmithChart("S21 Smith Chart")
+        self.s21PolarChart = PolarChart("S21 Polar Plot")
         self.s11LogMag = LogMagChart("S11 Return Loss")
         self.s21LogMag = LogMagChart("S21 Gain")
         self.s11Phase = PhaseChart("S11 Phase")
         self.s21Phase = PhaseChart("S21 Phase")
         self.s11VSWR = VSWRChart("S11 VSWR")
-        self.s21VSWR = VSWRChart("S21 VSWR")
 
         self.s11charts: List[Chart] = []
         self.s11charts.append(self.s11SmithChart)
@@ -103,10 +102,9 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s11charts.append(self.s11VSWR)
 
         self.s21charts: List[Chart] = []
-        self.s21charts.append(self.s21SmithChart)
+        self.s21charts.append(self.s21PolarChart)
         self.s21charts.append(self.s21LogMag)
         self.s21charts.append(self.s21Phase)
-        self.s21charts.append(self.s21VSWR)
 
         self.charts = self.s11charts + self.s21charts
 
@@ -327,7 +325,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         calibration_control_layout = QtWidgets.QFormLayout(calibration_control_box)
         b = QtWidgets.QPushButton("Calibration ...")
         self.calibrationWindow = CalibrationWindow(self)
-        b.clicked.connect(self.calibrationWindow.show)
+        b.clicked.connect(self.displayCalibrationWindow)
         calibration_control_layout.addRow(b)
         left_column.addWidget(calibration_control_box)
 
@@ -381,7 +379,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         serial_control_layout.addRow(QtWidgets.QLabel("Serial port"), self.serialPortInput)
         # serial_control_layout.addRow(QtWidgets.QLabel("Speed"), self.serialSpeedInput)
 
-        self.btnSerialToggle = QtWidgets.QPushButton("Open serial")
+        self.btnSerialToggle = QtWidgets.QPushButton("Connect to NanoVNA")
         self.btnSerialToggle.clicked.connect(self.serialButtonClick)
         serial_control_layout.addRow(self.btnSerialToggle)
 
@@ -446,7 +444,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         file_control_layout = QtWidgets.QFormLayout(file_control_box)
         btnOpenFileWindow = QtWidgets.QPushButton("Files ...")
         file_control_layout.addWidget(btnOpenFileWindow)
-        btnOpenFileWindow.clicked.connect(lambda: self.fileWindow.show())
+        btnOpenFileWindow.clicked.connect(self.displayFileWindow)
 
         left_column.addWidget(file_control_box)
 
@@ -457,7 +455,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         b = QtWidgets.QPushButton("Display setup ...")
         b.setMaximumWidth(250)
         self.display_setupWindow = DisplaySettingsWindow(self)
-        b.clicked.connect(self.display_setupWindow.show)
+        b.clicked.connect(self.displaySettingsWindow)
         left_column.addWidget(b)
 
         btn_about = QtWidgets.QPushButton("About ...")
@@ -480,7 +478,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.lister.setMaximumWidth(300)
         self.charts_layout = QtWidgets.QGridLayout()
         self.charts_layout.addWidget(self.s11SmithChart, 0, 0)
-        self.charts_layout.addWidget(self.s21SmithChart, 1, 0)
+        self.charts_layout.addWidget(self.s21PolarChart, 1, 0)
         self.charts_layout.addWidget(self.s11LogMag, 0, 1)
         self.charts_layout.addWidget(self.s21LogMag, 1, 1)
 
@@ -595,7 +593,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                 self.lister.appendPlainText("Tried to open " + self.serialPort + " and failed: " + str(exc))
                 self.serialLock.release()
                 return
-            self.btnSerialToggle.setText("Close serial")
+            self.btnSerialToggle.setText("Disconnect")
 
             self.serialLock.release()
             sleep(0.05)
@@ -617,7 +615,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         if self.serialLock.acquire():
             self.serial.close()
             self.serialLock.release()
-            self.btnSerialToggle.setText("Open serial")
+            self.btnSerialToggle.setText("Connect to NanoVNA")
 
     def writeSerial(self, command):
         if not self.serial.is_open:
@@ -1000,6 +998,18 @@ class NanoVNASaver(QtWidgets.QWidget):
     def sizeHint(self) -> QtCore.QSize:
         return QtCore.QSize(1100, 950)
 
+    def displaySettingsWindow(self):
+        self.display_setupWindow.show()
+        QtWidgets.QApplication.setActiveWindow(self.display_setupWindow)
+
+    def displayCalibrationWindow(self):
+        self.calibrationWindow.show()
+        QtWidgets.QApplication.setActiveWindow(self.calibrationWindow)
+
+    def displayFileWindow(self):
+        self.fileWindow.show()
+        QtWidgets.QApplication.setActiveWindow(self.fileWindow)
+
 
 class DisplaySettingsWindow(QtWidgets.QWidget):
     def __init__(self, app: NanoVNASaver):
@@ -1050,7 +1060,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         chart10_selection = QtWidgets.QComboBox()
         chart10_selection.addItems(selections)
-        chart10_selection.setCurrentIndex(selections.index("S21 Smith Chart"))
+        chart10_selection.setCurrentIndex(selections.index("S21 Polar Plot"))
         chart10_selection.currentTextChanged.connect(lambda: self.changeChart(1, 0, chart10_selection.currentText()))
         charts_layout.addWidget(chart10_selection, 1, 0)
 
