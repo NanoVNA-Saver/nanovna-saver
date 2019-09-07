@@ -687,7 +687,7 @@ class LogMagChart(Chart):
 
     def drawChart(self, qp: QtGui.QPainter):
         qp.setPen(QtGui.QPen(self.textColor))
-        qp.drawText(3, 15, self.name)
+        qp.drawText(3, 15, self.name + " (dB)")
         qp.setPen(QtGui.QPen(QtGui.QColor("lightgray")))
         qp.drawLine(self.leftMargin, 20, self.leftMargin, 20+self.chartHeight+5)
         qp.drawLine(self.leftMargin-5, 20+self.chartHeight, self.leftMargin+self.chartWidth, 20 + self.chartHeight)
@@ -735,6 +735,9 @@ class LogMagChart(Chart):
             y = 30 + round((i-minValue)/span*(self.chartHeight-10))
             qp.setPen(QtGui.QPen(QtGui.QColor("lightgray")))
             qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.chartWidth, y)
+            if i > minValue:
+                qp.setPen(QtGui.QPen(self.textColor))
+                qp.drawText(3, y + 4, str(-i))
         qp.setPen(self.textColor)
         qp.drawText(3, 35, str(-minValue))
         qp.drawText(3, self.chartHeight+20, str(-maxValue))

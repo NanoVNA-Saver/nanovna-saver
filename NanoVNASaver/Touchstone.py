@@ -31,6 +31,7 @@ class Touchstone:
     def load(self):
         self.s11data = []
         self.s21data = []
+        factor = 1
         try:
             file = open(self.filename, "r")
 
@@ -44,6 +45,19 @@ class Touchstone:
                     # Check that this is a valid header
                     if l == "# Hz S RI R 50":
                         parsed_header = True
+                        factor = 1
+                        continue
+                    elif l == "# kHz S RI R 50":
+                        parsed_header = True
+                        factor = 10**3
+                        continue
+                    elif l == "# MHz S RI R 50":
+                        parsed_header = True
+                        factor = 10**6
+                        continue
+                    elif l == "# GHz S RI R 50":
+                        parsed_header = True
+                        factor = 10**9
                         continue
                     else:
                         # This is some other comment line
@@ -53,24 +67,20 @@ class Touchstone:
                     continue
 
                 try:
-                    if l.count(" ") > 2:
-                        freq, re11, im11, re21, im21, _ = l.split(maxsplit=5)
-                        freq = int(freq)
-                        re11 = float(re11)
-                        im11 = float(im11)
+                    values = l.split(maxsplit=5)
+                    freq = values[0]
+                    re11 = values[1]
+                    im11 = values[2]
+                    freq = int(float(freq) * factor)
+                    re11 = float(re11)
+                    im11 = float(im11)
+                    self.s11data.append(Datapoint(freq, re11, im11))
+                    if len(values) > 3:
+                        re21 = values[3]
+                        im21 = values[4]
                         re21 = float(re21)
                         im21 = float(im21)
-                        self.s11data.append(Datapoint(freq, re11, im11))
                         self.s21data.append(Datapoint(freq, re21, im21))
-                    elif l.count(" ") == 2:
-                        freq, re11, im11 = l.split()
-                        freq = int(freq)
-                        re11 = float(re11)
-                        im11 = float(im11)
-                        self.s11data.append(Datapoint(freq, re11, im11))
-                    else:
-                        print("Warning: Read a line with not enough values: " + l)
-                        continue
                 except ValueError as e:
                     print("Error parsing line " + l + " : " + str(e))
 

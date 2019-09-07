@@ -982,16 +982,21 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def loadReferenceFile(self):
         filename = self.referenceFileNameInput.text()
-        t = Touchstone(filename)
-        t.load()
-        self.setReference(t.s11data, t.s21data, filename)
+        if filename is not "":
+            self.resetReference()
+            t = Touchstone(filename)
+            t.load()
+            self.setReference(t.s11data, t.s21data, filename)
 
     def loadSweepFile(self):
         filename = self.referenceFileNameInput.text()
-        t = Touchstone(filename)
-        t.load()
-        self.saveData(t.s11data, t.s21data, filename)
-        self.dataUpdated()
+        if filename is not "":
+            self.data = []
+            self.data21 = []
+            t = Touchstone(filename)
+            t.load()
+            self.saveData(t.s11data, t.s21data, filename)
+            self.dataUpdated()
 
     def sizeHint(self) -> QtCore.QSize:
         return QtCore.QSize(1100, 950)
