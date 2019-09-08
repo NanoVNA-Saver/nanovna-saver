@@ -130,10 +130,10 @@ class SweepWorker(QtCore.QRunnable):
             for d in tmpdata:
                 a, b = d.split(" ")
                 try:
-                    if float(a) < -1.5 or float(a) > 1.5:
+                    if float(a) < -2.5 or float(a) > 2.5:
                         print("Warning: Got a non-float data value: " + d + " (" + a + ")")
                         done = False
-                    if float(b) < -1.5 or float(b) > 1.5:
+                    if float(b) < -2.5 or float(b) > 2.5:
                         print("Warning: Got a non-float data value: " + d + " (" + b + ")")
                         done = False
                 except Exception:

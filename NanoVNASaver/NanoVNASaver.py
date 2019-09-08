@@ -832,11 +832,12 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     @staticmethod
     def reactanceEquivalent(im50, freq) -> str:
-        reactance = im50 / (freq * 2 * math.pi)
-        if reactance < 0:
-            return str(round(-reactance * 1000000000, 3)) + " nF"
+        capacitance = 10**12/(freq * 2 * math.pi * im50)
+        inductance = im50 / (freq * 2 * math.pi)
+        if im50 < 0:
+            return str(round(-capacitance, 3)) + " pF"
         else:
-            return str(round(reactance * 1000000000, 3)) + " nH"
+            return str(round(inductance * 1000000000, 3)) + " nH"
 
     @staticmethod
     def gain(data: Datapoint):
