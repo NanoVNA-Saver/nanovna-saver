@@ -723,7 +723,6 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.sweepSource = source
         else:
             self.sweepSource = strftime("%Y-%m-%d %H:%M:%S", gmtime())
-        self.updateTitle()
 
     def dataUpdated(self):
         if self.dataLock.acquire(blocking=True):
@@ -817,6 +816,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         else:
             print("ERROR: Failed acquiring data lock while updating")
+        self.updateTitle()
         self.dataLock.release()
 
     @staticmethod
