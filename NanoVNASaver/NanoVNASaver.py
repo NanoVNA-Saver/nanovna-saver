@@ -37,7 +37,7 @@ PID = 22336
 
 
 class NanoVNASaver(QtWidgets.QWidget):
-    version = "0.0.6"
+    version = "0.0.7"
 
     def __init__(self):
         super().__init__()
