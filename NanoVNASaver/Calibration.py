@@ -15,6 +15,8 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import collections
+import math
+
 from PyQt5 import QtWidgets
 from typing import List
 import numpy as np
@@ -30,17 +32,21 @@ class CalibrationWindow(QtWidgets.QWidget):
 
         self.app: NanoVNASaver = app
 
-        self.setMinimumSize(300, 320)
+        self.setMinimumSize(600, 320)
         self.setWindowTitle("Calibration")
-        layout = QtWidgets.QVBoxLayout()
-        self.setLayout(layout)
+        top_layout = QtWidgets.QHBoxLayout()
+        left_layout = QtWidgets.QVBoxLayout()
+        right_layout = QtWidgets.QVBoxLayout()
+        top_layout.addLayout(left_layout)
+        top_layout.addLayout(right_layout)
+        self.setLayout(top_layout)
 
         calibration_status_group = QtWidgets.QGroupBox("Active calibration")
         calibration_status_layout = QtWidgets.QFormLayout()
         self.calibration_status_label = QtWidgets.QLabel("Device calibration")
         calibration_status_layout.addRow("Calibration active:", self.calibration_status_label)
         calibration_status_group.setLayout(calibration_status_layout)
-        layout.addWidget(calibration_status_group)
+        left_layout.addWidget(calibration_status_group)
 
         calibration_instructions_group = QtWidgets.QGroupBox("Instructions")
         calibration_instructions_layout = QtWidgets.QVBoxLayout(calibration_instructions_group)
@@ -52,7 +58,7 @@ class CalibrationWindow(QtWidgets.QWidget):
         instructions.setWordWrap(True)
         calibration_instructions_layout.addWidget(instructions)
 
-        layout.addWidget(calibration_instructions_group)
+        left_layout.addWidget(calibration_instructions_group)
 
         calibration_control_group = QtWidgets.QGroupBox("Calibrate")
         calibration_control_layout = QtWidgets.QFormLayout(calibration_control_group)
@@ -94,7 +100,7 @@ class CalibrationWindow(QtWidgets.QWidget):
         calibration_control_layout.addRow(btn_reset)
         btn_reset.clicked.connect(self.reset)
 
-        layout.addWidget(calibration_control_group)
+        left_layout.addWidget(calibration_control_group)
 
         file_box = QtWidgets.QGroupBox()
         file_layout = QtWidgets.QFormLayout(file_box)
@@ -107,7 +113,55 @@ class CalibrationWindow(QtWidgets.QWidget):
         btn_load_file.clicked.connect(lambda: self.loadFile(filename_input.text()))
         file_layout.addRow(btn_load_file)
 
-        layout.addWidget(file_box)
+        left_layout.addWidget(file_box)
+
+        cal_standard_box = QtWidgets.QGroupBox("Calibration standards")
+        cal_standard_layout = QtWidgets.QFormLayout(cal_standard_box)
+        self.use_ideal_values = QtWidgets.QCheckBox("Use ideal values")
+        self.use_ideal_values.setChecked(True)
+        self.use_ideal_values.stateChanged.connect(self.idealCheckboxChanged)
+        cal_standard_layout.addRow(self.use_ideal_values)
+
+        self.cal_short_box = QtWidgets.QGroupBox("Short")
+        cal_short_form = QtWidgets.QFormLayout(self.cal_short_box)
+        self.cal_short_box.setDisabled(True)
+        self.short_l0_input = QtWidgets.QLineEdit("0")
+        self.short_l1_input = QtWidgets.QLineEdit("0")
+        self.short_l2_input = QtWidgets.QLineEdit("0")
+        self.short_l3_input = QtWidgets.QLineEdit("0")
+        self.short_length = QtWidgets.QLineEdit("0")
+        cal_short_form.addRow("L0 (F(e-12))", self.short_l0_input)
+        cal_short_form.addRow("L1 (F(e-24))", self.short_l1_input)
+        cal_short_form.addRow("L2 (F(e-33))", self.short_l2_input)
+        cal_short_form.addRow("L3 (F(e-42))", self.short_l3_input)
+        cal_short_form.addRow("Delay (ps)", self.short_length)
+
+        self.cal_open_box = QtWidgets.QGroupBox("Open")
+        cal_open_form = QtWidgets.QFormLayout(self.cal_open_box)
+        self.cal_open_box.setDisabled(True)
+        self.open_c0_input = QtWidgets.QLineEdit("50")
+        self.open_c1_input = QtWidgets.QLineEdit("0")
+        self.open_c2_input = QtWidgets.QLineEdit("0")
+        self.open_c3_input = QtWidgets.QLineEdit("0")
+        self.open_length = QtWidgets.QLineEdit("0")
+        cal_open_form.addRow("C0 (H(e-15))", self.open_c0_input)
+        cal_open_form.addRow("C1 (H(e-27))", self.open_c1_input)
+        cal_open_form.addRow("C2 (H(e-36))", self.open_c2_input)
+        cal_open_form.addRow("C3 (H(e-45))", self.open_c3_input)
+        cal_open_form.addRow("Delay (ps)", self.open_length)
+
+        self.cal_load_box = QtWidgets.QGroupBox("Load")
+        cal_load_form = QtWidgets.QFormLayout(self.cal_load_box)
+        self.cal_load_box.setDisabled(True)
+        self.load_resistance = QtWidgets.QLineEdit("50")
+        self.load_inductance = QtWidgets.QLineEdit("0")
+        cal_load_form.addRow("Resistance (\N{OHM SIGN})", self.load_resistance)
+        cal_load_form.addRow("Inductance (H(e-12)", self.load_inductance)
+
+        cal_standard_layout.addWidget(self.cal_short_box)
+        cal_standard_layout.addWidget(self.cal_open_box)
+        cal_standard_layout.addWidget(self.cal_load_box)
+        right_layout.addWidget(cal_standard_box)
 
     def saveShort(self):
         self.app.calibration.s11short = self.app.data
@@ -139,6 +193,31 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.calibration_status_label.setText("Device calibration")
 
     def calculate(self):
+        # TODO: Error handling for all the fields.
+        if self.use_ideal_values.isChecked():
+            self.app.calibration.useIdealShort = True
+            self.app.calibration.useIdealOpen = True
+            self.app.calibration.useIdealLoad = True
+        else:
+            # We are using custom calibration standards
+            self.app.calibration.shortL0 = float(self.short_l0_input.text())/10**15
+            self.app.calibration.shortL1 = float(self.short_l1_input.text())/10**27
+            self.app.calibration.shortL2 = float(self.short_l2_input.text())/10**36
+            self.app.calibration.shortL3 = float(self.short_l3_input.text())/10**45
+            self.app.calibration.shortLength = float(self.short_length.text())/10**12
+            self.app.calibration.useIdealShort = False
+
+            self.app.calibration.openC0 = float(self.open_c0_input.text())/10**12
+            self.app.calibration.openC1 = float(self.open_c1_input.text())/10**24
+            self.app.calibration.openC2 = float(self.open_c2_input.text())/10**33
+            self.app.calibration.openC3 = float(self.open_c3_input.text())/10**42
+            self.app.calibration.openLength = float(self.open_length.text())/10**12
+            self.app.calibration.useIdealOpen = False
+
+            self.app.calibration.loadR = float(self.load_resistance.text())
+            self.app.calibration.loadL = float(self.load_inductance.text())/10**12
+            self.app.calibration.useIdealLoad = False
+
         if self.app.calibration.calculateCorrections():
             self.calibration_status_label.setText("Application calibration (" + str(len(self.app.calibration.s11short)) + " points)")
 
@@ -153,6 +232,11 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.cal_isolation_label.setText("Calibrated")
         self.calculate()
 
+    def idealCheckboxChanged(self):
+        self.cal_short_box.setDisabled(self.use_ideal_values.isChecked())
+        self.cal_open_box.setDisabled(self.use_ideal_values.isChecked())
+        self.cal_load_box.setDisabled(self.use_ideal_values.isChecked())
+
 
 class Calibration:
     s11short: List[Datapoint] = []
@@ -164,17 +248,35 @@ class Calibration:
     frequencies = []
 
     # 1-port
-    e00 = []    # Directivity
-    e11 = []    # Port match
-    deltaE = [] # Tracking
+    e00 = []     # Directivity
+    e11 = []     # Port match
+    deltaE = []  # Tracking
 
     # 2-port
-    e30 = []    # Port match
-    e10e32 = [] # Transmission
+    e30 = []     # Port match
+    e10e32 = []  # Transmission
 
     shortIdeal = np.complex(-1, 0)
-    openIdeal  = np.complex(1, 0)
-    loadIdeal  = np.complex(0, 0)
+    useIdealShort = True
+    shortL0 = 5.7 * 10E-12
+    shortL1 = -8960 * 10E-24
+    shortL2 = -1100 * 10E-33
+    shortL3 = -41200 * 10E-42
+    shortLength = -34.2  # Picoseconds
+    # These numbers look very large, considering what Keysight suggests their numbers are.
+
+    useIdealOpen = True
+    openIdeal = np.complex(1, 0)
+    openC0 = 2.1 * 10E-14  # Subtract 50fF for the nanoVNA calibration if nanoVNA is calibrated?
+    openC1 = 5.67 * 10E-23
+    openC2 = -2.39 * 10E-31
+    openC3 = 2.0 * 10E-40
+    openLength = 0
+
+    useIdealLoad = True
+    loadR = 25
+    loadL = 0
+    loadIdeal = np.complex(0, 0)
 
     isCalculated = False
 
@@ -195,10 +297,34 @@ class Calibration:
         self.e10e32 = [np.complex] * len(self.s11short)
         for i in range(len(self.s11short)):
             self.frequencies[i] = self.s11short[i].freq
+            f = self.s11short[i].freq
+            pi = math.pi
 
-            g1 = self.shortIdeal
-            g2 = self.openIdeal
-            g3 = self.loadIdeal
+            if self.useIdealShort:
+                g1 = self.shortIdeal
+            else:
+                Zsp = np.complex(0, 1) * 2 * pi * f * (self.shortL0 +
+                                                       self.shortL1 * f +
+                                                       self.shortL2 * f**2 +
+                                                       self.shortL3 * f**3)
+                gammaShort = (Zsp - 1) / (Zsp + 1)
+                g1 = gammaShort * math.exp(2*math.pi*f*self.shortLength)
+
+            if self.useIdealOpen:
+                g2 = self.openIdeal
+            else:
+                divisor = (2 * pi * f * (self.openC0 + self.openC1 * f + self.openC2 * f**2 + self.openC3 * f**3))
+                if divisor != 0:
+                    Zop = np.complex(0, -1) / divisor
+                    gammaOpen = (Zop - 1) / (Zop + 1)
+                    g2 = gammaOpen * math.exp(2 * math.pi * f * self.openLength)
+                else:
+                    g2 = self.openIdeal
+            if self.useIdealLoad:
+                g3 = self.loadIdeal
+            else:
+                Zl = self.loadR + 2 * math.pi * f * self.loadL
+                g3 = ((Zl/50)-1) / ((Zl/50)+1)
 
             gm1 = np.complex(self.s11short[i].re, self.s11short[i].im)
             gm2 = np.complex(self.s11open[i].re, self.s11open[i].im)
