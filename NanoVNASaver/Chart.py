@@ -556,7 +556,6 @@ class PolarChart(Chart):
             thisy = self.height() / 2 + d.im * -1 * self.chartHeight / 2
             positions.append(math.sqrt((x - thisx)**2 + (y - thisy)**2))
 
-        print("Found " + str(len(positions)) + " positions, minimum is " + str(min(positions)))
         minimum_position = positions.index(min(positions))
         self.markers[0].setFrequency(str(round(target[minimum_position].freq)))
         return
@@ -705,7 +704,6 @@ class SmithChart(Chart):
             thisy = self.height() / 2 + d.im * -1 * self.chartHeight / 2
             positions.append(math.sqrt((x - thisx)**2 + (y - thisy)**2))
 
-        print("Found " + str(len(positions)) + " positions, minimum is " + str(min(positions)))
         minimum_position = positions.index(min(positions))
         self.markers[0].setFrequency(str(round(target[minimum_position].freq)))
         return
