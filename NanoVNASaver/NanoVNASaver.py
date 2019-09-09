@@ -42,8 +42,11 @@ class NanoVNASaver(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
 
+        self.settings = QtCore.QSettings(QtCore.QSettings.IniFormat,
+                                         QtCore.QSettings.UserScope,
+                                         "NanoVNASaver", "NanoVNASaver")
+        print("Settings: " + self.settings.fileName())
         self.threadpool = QtCore.QThreadPool()
-        print("Max thread count " + str(self.threadpool.maxThreadCount()))
         self.worker = SweepWorker(self)
 
         self.noSweeps = 1  # Number of sweeps to run
@@ -67,8 +70,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.serialPort = self.getport()
         # self.serialSpeed = "115200"
 
-        self.color = QtGui.QColor(160, 140, 20, 128)
-        self.referenceColor = QtGui.QColor(0, 0, 255, 32)
+        self.sweepColor = self.settings.value("SweepColor", defaultValue=QtGui.QColor(160, 140, 20, 128), type=QtGui.QColor)
+        self.referenceColor = self.settings.value("ReferenceColor", defaultValue=QtGui.QColor(0, 0, 255, 32), type=QtGui.QColor)
 
         self.baseTitle = "NanoVNA Saver " + NanoVNASaver.version
         self.updateTitle()
@@ -78,7 +81,9 @@ class NanoVNASaver(QtWidgets.QWidget):
         outer.addWidget(scrollarea)
         self.setLayout(outer)
         scrollarea.setWidgetResizable(True)
-        self.resize(1350, 950)
+        window_width = self.settings.value("WindowWidth", 1350, type=int)
+        window_height = self.settings.value("WindowHeight", 950, type=int)
+        self.resize(window_width, window_height)
         scrollarea.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
         self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
         widget = QtWidgets.QWidget()
@@ -106,9 +111,13 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.charts = self.s11charts + self.s21charts
 
+        self.charts_layout = QtWidgets.QGridLayout()
+
         left_column = QtWidgets.QVBoxLayout()
         marker_column = QtWidgets.QVBoxLayout()
         right_column = QtWidgets.QVBoxLayout()
+
+        right_column.addLayout(self.charts_layout)
 
         layout.addLayout(left_column, 0, 0)
         layout.addLayout(marker_column, 0, 1)
@@ -141,8 +150,8 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.btnColorPicker = QtWidgets.QPushButton("█")
         self.btnColorPicker.setFixedWidth(20)
-        self.setSweepColor(self.color)
-        self.btnColorPicker.clicked.connect(lambda:self.setSweepColor(QtWidgets.QColorDialog.getColor(self.color,options=QtWidgets.QColorDialog.ShowAlphaChannel)))
+        self.setSweepColor(self.sweepColor)
+        self.btnColorPicker.clicked.connect(lambda: self.setSweepColor(QtWidgets.QColorDialog.getColor(self.sweepColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
 
         sweep_control_layout.addRow("Sweep color", self.btnColorPicker)
 
@@ -166,17 +175,21 @@ class NanoVNASaver(QtWidgets.QWidget):
         marker_control_box.setMaximumWidth(300)
         marker_control_layout = QtWidgets.QFormLayout(marker_control_box)
 
-        mouse_marker = Marker("Mouse marker", QtGui.QColor(20, 255, 20))
+        mouse_marker_color = self.settings.value("MouseMarkerColor", QtGui.QColor(20, 255, 20), QtGui.QColor)
+        mouse_marker = Marker("Mouse marker", mouse_marker_color)
         mouse_marker.updated.connect(self.dataUpdated)
         self.markers.append(mouse_marker)
 
-        marker1 = Marker("Marker 1", QtGui.QColor(255, 0, 20))
+
+        marker1_color = self.settings.value("Marker1Color", QtGui.QColor(255, 0, 20), QtGui.QColor)
+        marker1 = Marker("Marker 1", marker1_color)
         marker1.updated.connect(self.dataUpdated)
         label, layout = marker1.getRow()
         marker_control_layout.addRow(label, layout)
         self.markers.append(marker1)
 
-        marker2 = Marker("Marker 2", QtGui.QColor(20, 0, 255))
+        marker2_color = self.settings.value("Marker2Color", QtGui.QColor(20, 0, 255), QtGui.QColor)
+        marker2 = Marker("Marker 2", marker2_color)
         marker2.updated.connect(self.dataUpdated)
         label, layout = marker2.getRow()
         marker_control_layout.addRow(label, layout)
@@ -274,6 +287,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         ################################################################################################################
         #  Calibration
         ################################################################################################################
+
         calibration_control_box = QtWidgets.QGroupBox("Calibration")
         calibration_control_box.setMaximumWidth(250)
         calibration_control_layout = QtWidgets.QFormLayout(calibration_control_box)
@@ -430,13 +444,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.lister = QtWidgets.QPlainTextEdit()
         self.lister.setFixedHeight(200)
         self.lister.setMaximumWidth(300)
-        self.charts_layout = QtWidgets.QGridLayout()
-        self.charts_layout.addWidget(self.s11SmithChart, 0, 0)
-        self.charts_layout.addWidget(self.s21PolarChart, 1, 0)
-        self.charts_layout.addWidget(self.s11LogMag, 0, 1)
-        self.charts_layout.addWidget(self.s21LogMag, 1, 1)
-
-        right_column.addLayout(self.charts_layout)
         marker_column.addWidget(self.lister)
 
         self.worker.signals.updated.connect(self.dataUpdated)
@@ -664,54 +671,6 @@ class NanoVNASaver(QtWidgets.QWidget):
                 m.findLocation(self.data)
                 m.resetLabels()
                 m.updateLabels(self.data, self.data21)
-            # TODO: Make a neater solution for showing data for markers
-            # if self.markers[0].location != -1:
-            #     im50, re50, vswr = self.vswr(self.data[self.markers[0].location])
-            #     if im50 < 0:
-            #         im50str = " - j" + str(round(-1*im50, 3))
-            #     else:
-            #         im50str = " + j" + str(round(im50, 3))
-            #     self.markers[0].frequencyInput.setText(self.formatFrequency(self.markers[0].frequency))
-            #     self.mousemarker_impedance_label.setText(str(round(re50, 3)) + im50str)
-            #     self.mousemarker_returnloss_label.setText(str(round(20*math.log10((vswr-1)/(vswr+1)), 3)) + " dB")
-            #     reactance = self.reactanceEquivalent(im50, self.data[self.markers[0].location].freq)
-            #     self.mousemarker_reactance_label.setText(reactance)
-            #     self.mousemarker_vswr_label.setText(str(round(vswr, 3)))
-            #     if len(self.data21) == len(self.data):
-            #         _, _, vswr = self.vswr(self.data21[self.markers[0].location])
-            #         self.mousemarker_gain_label.setText(str(round(20*math.log10((vswr-1)/(vswr+1)), 3)) + " dB")
-            #         self.mousemarker_phase_label.setText(str(round(PhaseChart.angle(self.data21[self.markers[0].location]), 2)) + "\N{DEGREE SIGN}")
-            # if self.markers[1].location != -1:
-            #     im50, re50, vswr = self.vswr(self.data[self.markers[1].location])
-            #     if im50 < 0:
-            #         im50str = " - j" + str(round(-1*im50, 3))
-            #     else:
-            #         im50str = " + j" + str(round(im50, 3))
-            #     self.marker1_impedance_label.setText(str(round(re50, 3)) + im50str)
-            #     self.marker1_returnloss_label.setText(str(round(20*math.log10((vswr-1)/(vswr+1)), 3)) + " dB")
-            #     reactance = self.reactanceEquivalent(im50, self.data[self.markers[1].location].freq)
-            #     self.marker1_reactance_label.setText(reactance)
-            #     self.marker1_vswr_label.setText(str(round(vswr, 3)))
-            #     if len(self.data21) == len(self.data):
-            #         _, _, vswr = self.vswr(self.data21[self.markers[1].location])
-            #         self.marker1_gain_label.setText(str(round(20*math.log10((vswr-1)/(vswr+1)), 3)) + " dB")
-            #         self.marker1_phase_label.setText(str(round(PhaseChart.angle(self.data21[self.markers[1].location]), 2)) + "\N{DEGREE SIGN}")
-            #
-            # if self.markers[2].location != -1:
-            #     im50, re50, vswr = self.vswr(self.data[self.markers[2].location])
-            #     if im50 < 0:
-            #         im50str = " - j" + str(round(im50, 3))
-            #     else:
-            #         im50str = " + j" + str(round(im50, 3))
-            #     self.marker2_impedance_label.setText(str(round(re50, 3)) + im50str)
-            #     self.marker2_returnloss_label.setText(str(round(20*math.log10((vswr-1)/(vswr+1)), 3)) + " dB")
-            #     reactance = self.reactanceEquivalent(im50, self.data[self.markers[2].location].freq)
-            #     self.marker2_reactance_label.setText(reactance)
-            #     self.marker2_vswr_label.setText(str(round(vswr, 3)))
-            #     if len(self.data21) == len(self.data):
-            #         _, _, vswr = self.vswr(self.data21[self.markers[2].location])
-            #         self.marker2_gain_label.setText(str(round(20*math.log10((vswr-1)/(vswr+1)), 3)) + " dB")
-            #         self.marker2_phase_label.setText(str(round(PhaseChart.angle(self.data21[self.markers[2].location]), 2)) + "\N{DEGREE SIGN}")
 
             for c in self.s11charts:
                 c.setData(self.data)
@@ -834,11 +793,12 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def setSweepColor(self, color: QtGui.QColor):
         if color.isValid():
-            self.color = color
+            self.sweepColor = color
             p = self.btnColorPicker.palette()
             p.setColor(QtGui.QPalette.ButtonText, color)
             self.btnColorPicker.setPalette(p)
-
+            self.settings.setValue("SweepColor", color)
+            self.settings.sync()
             for c in self.charts:
                 c.setSweepColor(color)
 
@@ -927,6 +887,8 @@ class NanoVNASaver(QtWidgets.QWidget):
             p = self.btnReferenceColorPicker.palette()
             p.setColor(QtGui.QPalette.ButtonText, color)
             self.btnReferenceColorPicker.setPalette(p)
+            self.settings.setValue("ReferenceColor", color)
+            self.settings.sync()
 
             for c in self.charts:
                 c.setReferenceColor(color)
@@ -963,6 +925,17 @@ class NanoVNASaver(QtWidgets.QWidget):
     def displayFileWindow(self):
         self.fileWindow.show()
         QtWidgets.QApplication.setActiveWindow(self.fileWindow)
+
+    def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
+        self.settings.setValue("MouseMarkerColor", self.markers[0].color)
+        self.settings.setValue("Marker1Color", self.markers[1].color)
+        self.settings.setValue("Marker2Color", self.markers[2].color)
+
+        self.settings.setValue("WindowHeight", self.height())
+        self.settings.setValue("WindowWidth", self.width())
+
+        self.settings.sync()
+        a0.accept()
 
 
 class DisplaySettingsWindow(QtWidgets.QWidget):
@@ -1011,47 +984,58 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         chart00_selection = QtWidgets.QComboBox()
         chart00_selection.addItems(selections)
-        chart00_selection.setCurrentIndex(selections.index("S11 Smith Chart"))
+        chart00_selection.setCurrentIndex(selections.index(self.app.settings.value("Chart00", "S11 Smith Chart")))
         chart00_selection.currentTextChanged.connect(lambda: self.changeChart(0, 0, chart00_selection.currentText()))
         charts_layout.addWidget(chart00_selection, 0, 0)
 
         chart01_selection = QtWidgets.QComboBox()
         chart01_selection.addItems(selections)
-        chart01_selection.setCurrentIndex(selections.index("S11 Return Loss"))
+        chart01_selection.setCurrentIndex(selections.index(self.app.settings.value("Chart01", "S11 Return Loss")))
         chart01_selection.currentTextChanged.connect(lambda: self.changeChart(0, 1, chart01_selection.currentText()))
         charts_layout.addWidget(chart01_selection, 0, 1)
         
         chart02_selection = QtWidgets.QComboBox()
         chart02_selection.addItems(selections)
-        chart02_selection.setCurrentIndex(len(selections)-1)
+        chart02_selection.setCurrentIndex(selections.index(self.app.settings.value("Chart02", "None")))
         chart02_selection.currentTextChanged.connect(lambda: self.changeChart(0, 2, chart02_selection.currentText()))
         charts_layout.addWidget(chart02_selection, 0, 2)
 
         chart10_selection = QtWidgets.QComboBox()
         chart10_selection.addItems(selections)
-        chart10_selection.setCurrentIndex(selections.index("S21 Polar Plot"))
+        chart10_selection.setCurrentIndex(selections.index(self.app.settings.value("Chart10", "S21 Polar Plot")))
         chart10_selection.currentTextChanged.connect(lambda: self.changeChart(1, 0, chart10_selection.currentText()))
         charts_layout.addWidget(chart10_selection, 1, 0)
 
         chart11_selection = QtWidgets.QComboBox()
         chart11_selection.addItems(selections)
-        chart11_selection.setCurrentIndex(selections.index("S21 Gain"))
+        chart11_selection.setCurrentIndex(selections.index(self.app.settings.value("Chart11", "S21 Gain")))
         chart11_selection.currentTextChanged.connect(lambda: self.changeChart(1, 1, chart11_selection.currentText()))
         charts_layout.addWidget(chart11_selection, 1, 1)
 
         chart12_selection = QtWidgets.QComboBox()
         chart12_selection.addItems(selections)
-        chart12_selection.setCurrentIndex(len(selections)-1)
+        chart12_selection.setCurrentIndex(selections.index(self.app.settings.value("Chart12", "None")))
         chart12_selection.currentTextChanged.connect(lambda: self.changeChart(1, 2, chart12_selection.currentText()))
         charts_layout.addWidget(chart12_selection, 1, 2)
 
+        self.changeChart(0, 0, chart00_selection.currentText())
+        self.changeChart(0, 1, chart01_selection.currentText())
+        self.changeChart(0, 2, chart02_selection.currentText())
+        self.changeChart(1, 0, chart10_selection.currentText())
+        self.changeChart(1, 1, chart11_selection.currentText())
+        self.changeChart(1, 2, chart12_selection.currentText())
+
         layout.addWidget(charts_box)
+        self.dark_mode_option.setChecked(self.app.settings.value("DarkMode", False, bool))
+        self.show_lines_option.setChecked(self.app.settings.value("ShowLines", False, bool))
 
     def changeChart(self, x, y, chart):
         found = None
         for c in self.app.charts:
             if c.name == chart:
                 found = c
+
+        self.app.settings.setValue("Chart" + str(x) + str(y), chart)
 
         oldWidget = self.app.charts_layout.itemAtPosition(x, y)
         if oldWidget is not None:
@@ -1065,11 +1049,13 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
     def changeShowLines(self):
         state = self.show_lines_option.isChecked()
+        self.app.settings.setValue("ShowLines", state)
         for c in self.app.charts:
             c.setDrawLines(state)
 
     def changeDarkMode(self):
         state = self.dark_mode_option.isChecked()
+        self.app.settings.setValue("DarkMode", state)
         if state:
             for c in self.app.charts:
                 c.setBackgroundColor(QtGui.QColor(QtCore.Qt.black))
