@@ -14,7 +14,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import collections
-from time import sleep
 from typing import List
 
 from PyQt5 import QtCore
@@ -75,7 +74,6 @@ class SweepWorker(QtCore.QRunnable):
             frequencies = []
             for i in range(self.noSweeps):
                 self.app.setSweep(sweepFrom + i*101*stepsize, sweepFrom+(100+i*101)*stepsize)
-                sleep(0.8)
                 # S11
                 values += self.readData("data 0")
                 # S12
@@ -89,7 +87,6 @@ class SweepWorker(QtCore.QRunnable):
             self.app.setSweep(obj.NanoVNASaver.parseFrequency(self.app.sweepStartInput.text()), obj.NanoVNASaver.parseFrequency(self.app.sweepEndInput.text()))
         else:
             self.app.setSweep(sweepFrom, sweepTo)
-            sleep(0.8)
             values = self.readData("data 0")
             values12 = self.readData("data 1")
             frequencies = self.readFreq()
