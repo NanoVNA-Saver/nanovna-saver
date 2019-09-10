@@ -41,7 +41,6 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def __init__(self):
         super().__init__()
-
         self.settings = QtCore.QSettings(QtCore.QSettings.IniFormat,
                                          QtCore.QSettings.UserScope,
                                          "NanoVNASaver", "NanoVNASaver")

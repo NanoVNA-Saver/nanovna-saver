@@ -965,11 +965,6 @@ class QualityFactorChart(Chart):
         self.minQ = math.floor(minQ/10**scale) * 10**scale
         self.span = self.maxQ - self.minQ
         step = math.floor(self.span / 10)
-        print("Scale: " + str(scale))
-        print("MaxQ: " + str(self.maxQ))
-        print("MinQ: " + str(self.minQ))
-        print("Span: " + str(self.span))
-        print("Step: " + str(step))
         if step == 0:
             return  # No data to draw the graph from
         for i in range(self.minQ, self.maxQ, step):
