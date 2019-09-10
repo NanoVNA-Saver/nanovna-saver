@@ -36,7 +36,7 @@ In order to run this app in Linux environment, you'll need the following package
 * `python3-serial`
 * `python3-pyqt5`
 * `numpy`
-## Ubuntu 18.04
+## Ubuntu 18.04 & 19.04
 ### Installation and Use with pip 
 1. Install python3.7 and pip
    - `sudo apt install python3.7 python3-pip`
@@ -47,7 +47,7 @@ In order to run this app in Linux environment, you'll need the following package
 
 3. Run the pip installation
 
-    - `python37 -m pip install .`
+    - `python3.7 -m pip install .`
     
 4. Once completed run with the following command
 
