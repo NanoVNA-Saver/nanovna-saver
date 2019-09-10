@@ -155,6 +155,11 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         sweep_control_layout.addRow("Sweep color", self.btnColorPicker)
 
+        self.continuousSweep = QtWidgets.QCheckBox()
+        self.continuousSweep.stateChanged.connect(lambda: self.worker.setContinuousSweep(self.continuousSweep.isChecked()))
+
+        sweep_control_layout.addRow("Continuous sweep", self.continuousSweep)
+
         self.sweepProgressBar = QtWidgets.QProgressBar()
         self.sweepProgressBar.setMaximum(100)
         self.sweepProgressBar.setValue(0)
@@ -162,7 +167,16 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.btnSweep = QtWidgets.QPushButton("Sweep")
         self.btnSweep.clicked.connect(self.sweep)
-        sweep_control_layout.addRow(self.btnSweep)
+        self.btnStopSweep = QtWidgets.QPushButton("Stop")
+        self.btnStopSweep.clicked.connect(self.stopSweep)
+        self.btnStopSweep.setDisabled(True)
+        btnLayout = QtWidgets.QHBoxLayout()
+        btnLayout.addWidget(self.btnSweep)
+        btnLayout.addWidget(self.btnStopSweep)
+        btnLayout.setContentsMargins(0, 0, 0, 0)
+        btnLayoutWidget = QtWidgets.QWidget()
+        btnLayoutWidget.setLayout(btnLayout)
+        sweep_control_layout.addRow(btnLayoutWidget)
 
         left_column.addWidget(sweep_control_box)
 
@@ -304,19 +318,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         left_column.addWidget(tdr_control_box)
 
         ################################################################################################################
-        #  Calibration
-        ################################################################################################################
-
-        calibration_control_box = QtWidgets.QGroupBox("Calibration")
-        calibration_control_box.setMaximumWidth(250)
-        calibration_control_layout = QtWidgets.QFormLayout(calibration_control_box)
-        b = QtWidgets.QPushButton("Calibration ...")
-        self.calibrationWindow = CalibrationWindow(self)
-        b.clicked.connect(self.displayCalibrationWindow)
-        calibration_control_layout.addRow(b)
-        left_column.addWidget(calibration_control_box)
-
-        ################################################################################################################
         #  Spacer
         ################################################################################################################
 
@@ -425,15 +426,18 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         file_window_layout.addWidget(file_control_box)
 
-        file_control_box = QtWidgets.QGroupBox()
-        file_control_box.setTitle("Files")
-        file_control_box.setMaximumWidth(300)
-        file_control_layout = QtWidgets.QFormLayout(file_control_box)
         btnOpenFileWindow = QtWidgets.QPushButton("Files ...")
-        file_control_layout.addWidget(btnOpenFileWindow)
         btnOpenFileWindow.clicked.connect(self.displayFileWindow)
+        left_column.addWidget(btnOpenFileWindow)
 
-        left_column.addWidget(file_control_box)
+        ################################################################################################################
+        #  Calibration
+        ################################################################################################################
+
+        btnOpenCalibrationWindow = QtWidgets.QPushButton("Calibration ...")
+        self.calibrationWindow = CalibrationWindow(self)
+        btnOpenCalibrationWindow.clicked.connect(self.displayCalibrationWindow)
+        left_column.addWidget(btnOpenCalibrationWindow)
 
         ################################################################################################################
         #  Display setup
@@ -618,9 +622,11 @@ class NanoVNASaver(QtWidgets.QWidget):
         # Run the serial port update
         if not self.serial.is_open:
             return
+        self.worker.stopped = False
 
         self.sweepProgressBar.setValue(0)
         self.btnSweep.setDisabled(True)
+        self.btnStopSweep.setDisabled(False)
         self.markers[0].frequencyInput.setText("")
         for m in self.markers:
             m.resetLabels()
@@ -631,6 +637,9 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.tdr_result_label.setText("")
 
         self.threadpool.start(self.worker)
+
+    def stopSweep(self):
+        self.worker.stopped = True
 
     def readFirmware(self):
         if self.serialLock.acquire():
@@ -664,7 +673,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                 print("Exception received: " + str(exc))
             result = ""
             data = ""
-            sleep(0.01)
+            sleep(0.05)
             while "ch>" not in data:
                 data = self.serial.readline().decode('ascii')
                 result += data
@@ -769,6 +778,7 @@ class NanoVNASaver(QtWidgets.QWidget):
     def sweepFinished(self):
         self.sweepProgressBar.setValue(100)
         self.btnSweep.setDisabled(False)
+        self.btnStopSweep.setDisabled(True)
 
     def updateTDR(self):
         c = 299792458
@@ -946,6 +956,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         QtWidgets.QApplication.setActiveWindow(self.fileWindow)
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
+        self.worker.stopped = True
         self.settings.setValue("MouseMarkerColor", self.markers[0].color)
         self.settings.setValue("Marker1Color", self.markers[1].color)
         self.settings.setValue("Marker2Color", self.markers[2].color)
@@ -954,6 +965,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.settings.setValue("WindowWidth", self.width())
 
         self.settings.sync()
+        self.threadpool.waitForDone(2500)
         a0.accept()
 
 
