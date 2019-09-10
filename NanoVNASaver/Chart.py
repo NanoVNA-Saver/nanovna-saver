@@ -178,7 +178,7 @@ class PhaseChart(Chart):
             y = 30 + round((angle-minAngle)/span*(self.chartHeight-10))
             qp.drawPoint(int(x), int(y))
             if self.drawLines and i > 0:
-                angle = self.angle(self.data[i-1])
+                angle = -self.angle(self.data[i-1])
                 prevx = self.leftMargin + 1 + round(self.chartWidth / len(self.data) * (i-1))
                 prevy = 30 + round((angle - minAngle) / span * (self.chartHeight - 10))
                 qp.setPen(line_pen)
@@ -194,7 +194,7 @@ class PhaseChart(Chart):
             y = 30 + round((angle-minAngle)/span*(self.chartHeight-10))
             qp.drawPoint(int(x), int(y))
             if self.drawLines and i > 0:
-                angle = self.angle(self.reference[i-1])
+                angle = -self.angle(self.reference[i-1])
                 prevx = x = self.leftMargin + 1 + round(self.chartWidth*(self.reference[i-1].freq - fstart)/fspan)
                 prevy = 30 + round((angle - minAngle) / span * (self.chartHeight - 10))
                 qp.setPen(line_pen)
