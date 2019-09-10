@@ -954,33 +954,34 @@ class QualityFactorChart(Chart):
                 maxQ = Q
             if Q < minQ:
                 minQ = Q
-        if maxQ != 0:
-            maxQ = min(1000, maxQ)   # Don't show Q over 1000
-            maxScale = math.floor(max(math.log10(maxQ), 1))
-        else:
-            maxScale = 1
-        if minQ != 0:
-            minQ = max(-1000, minQ)  # Nor Q less than -1000
-            minScale = math.floor(max(math.log10(abs(minQ)), 1))
-        else:
-            minScale = 1
-        self.maxQ = math.ceil(round(maxQ / maxScale) * maxScale)
-        self.minQ = math.floor(round(minQ / minScale) * minScale)
-        self.span = maxQ - minQ
-        step = math.floor(self.span / 8)
+        span = maxQ - minQ
+        scale = 0
+        if maxQ > 0:
+            scale = max(scale, math.floor(math.log10(maxQ)))
+        if minQ < 0:
+            scale = max(scale, math.floor(math.log10(abs(minQ))))
+
+        self.maxQ = math.ceil(maxQ/10**scale) * 10**scale
+        self.minQ = math.floor(minQ/10**scale) * 10**scale
+        self.span = self.maxQ - self.minQ
+        step = math.floor(self.span / 10)
+        print("Scale: " + str(scale))
+        print("MaxQ: " + str(self.maxQ))
+        print("MinQ: " + str(self.minQ))
+        print("Span: " + str(self.span))
+        print("Step: " + str(step))
         if step == 0:
             return  # No data to draw the graph from
         for i in range(self.minQ, self.maxQ, step):
-            y = 30 + round((maxQ - i) / self.span * (self.chartHeight-10))
-            if i != minQ:
-                qp.setPen(QtGui.QPen(self.textColor))
-                qp.drawText(3, y+3, str(i))
+            y = 30 + round((self.maxQ - i) / self.span * (self.chartHeight-10))
+            qp.setPen(QtGui.QPen(self.textColor))
+            qp.drawText(3, y+3, str(i))
             qp.setPen(QtGui.QPen(QtGui.QColor("lightgray")))
             qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.chartWidth, y)
-        #qp.drawLine(self.leftMargin - 5, 30, self.leftMargin + self.chartWidth, 30)
+        qp.drawLine(self.leftMargin - 5, 30, self.leftMargin + self.chartWidth, 30)
         qp.setPen(self.textColor)
-        #qp.drawText(3, 35, str(maxQ))
-        #qp.drawText(3, self.chartHeight+20, str(minQ))
+        qp.drawText(3, 35, str(self.maxQ))
+        #qp.drawText(3, self.chartHeight+20, str(self.minQ))
 
     def drawValues(self, qp: QtGui.QPainter):
         from NanoVNASaver.NanoVNASaver import NanoVNASaver
