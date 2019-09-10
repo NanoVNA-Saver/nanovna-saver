@@ -212,10 +212,9 @@ class NanoVNASaver(QtWidgets.QWidget):
         for c in self.charts:
             c.setMarkers(self.markers)
 
-        self.mousemarker_frequency_label = QtWidgets.QLabel("")
         label, layout = mouse_marker.getRow()
         marker_control_layout.addRow(label, layout)
-        mouse_marker.frequencyInput.setDisabled(True)
+        #mouse_marker.frequencyInput.setDisabled(True)
         marker_column.addWidget(marker_control_box)
 
         marker_column.addWidget(self.markers[1].getGroupBox())

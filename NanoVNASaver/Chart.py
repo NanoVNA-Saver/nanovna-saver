@@ -230,6 +230,7 @@ class PhaseChart(Chart):
             f = self.fstart + absx * step
 #            self.mouselocation = f
             self.markers[0].setFrequency(str(round(f)))
+            self.markers[0].frequencyInput.setText(str(round(f)))
         else:
             self.mouselocation = 0
         return
@@ -415,6 +416,7 @@ class VSWRChart(Chart):
             f = self.fstart + absx * step
 #            self.mouselocation = f
             self.markers[0].setFrequency(str(round(f)))
+            self.markers[0].frequencyInput.setText(str(round(f)))
         else:
             self.mouselocation = 0
         return
@@ -558,6 +560,7 @@ class PolarChart(Chart):
 
         minimum_position = positions.index(min(positions))
         self.markers[0].setFrequency(str(round(target[minimum_position].freq)))
+        self.markers[0].frequencyInput.setText(str(round(target[minimum_position].freq)))
         return
 
 
@@ -706,6 +709,7 @@ class SmithChart(Chart):
 
         minimum_position = positions.index(min(positions))
         self.markers[0].setFrequency(str(round(target[minimum_position].freq)))
+        self.markers[0].frequencyInput.setText(str(round(target[minimum_position].freq)))
         return
 
 
@@ -880,6 +884,7 @@ class LogMagChart(Chart):
             f = self.fstart + absx * step
 #            self.mouselocation = f
             self.markers[0].setFrequency(str(round(f)))
+            self.markers[0].frequencyInput.setText(str(round(f)))
         else:
             self.mouselocation = 0
         return
