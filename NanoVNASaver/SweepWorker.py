@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import collections
+from time import sleep
 from typing import List
 
 from PyQt5 import QtCore
@@ -38,11 +39,15 @@ class SweepWorker(QtCore.QRunnable):
         self.setAutoDelete(False)
         self.percentage = 0
         self.data11: List[Datapoint] = []
-        self.data12: List[Datapoint] = []
+        self.data21: List[Datapoint] = []
+        self.rawData11: List[Datapoint] = []
+        self.rawData21: List[Datapoint] = []
+        self.stopped = False
+        self.continuousSweep = False
 
     @pyqtSlot()
     def run(self):
-        global obj
+        from NanoVNASaver.NanoVNASaver import NanoVNASaver
         self.percentage = 0
         if not self.app.serial.is_open:
             return
@@ -55,50 +60,81 @@ class SweepWorker(QtCore.QRunnable):
             sweepFrom = 1000000
             sweepTo = 800000000
         else:
-            from NanoVNASaver import NanoVNASaver as obj
-            sweepFrom = obj.NanoVNASaver.parseFrequency(self.app.sweepStartInput.text())
-            sweepTo = obj.NanoVNASaver.parseFrequency(self.app.sweepEndInput.text())
+            sweepFrom = NanoVNASaver.parseFrequency(self.app.sweepStartInput.text())
+            sweepTo = NanoVNASaver.parseFrequency(self.app.sweepEndInput.text())
             if sweepFrom < 0 or sweepTo < 0:
                 print("Can't sweep from " + self.app.sweepStartInput.text() + " to " + self.app.sweepEndInput.text())
                 self.signals.finished.emit()
                 return
 
-        if self.noSweeps > 1:
-            # We're going to run multiple sweeps
-            print("### Multisweep ###")
-            span = sweepTo - sweepFrom
-            stepsize = int(span / (100 + (self.noSweeps-1)*101))
-            print("Doing " + str(100 + (self.noSweeps-1)*101) + " steps of size " + str(stepsize))
-            values = []
-            values12 = []
-            frequencies = []
-            for i in range(self.noSweeps):
-                self.app.setSweep(sweepFrom + i*101*stepsize, sweepFrom+(100+i*101)*stepsize)
-                # S11
-                values += self.readData("data 0")
-                # S12
-                values12 += self.readData("data 1")
+        span = sweepTo - sweepFrom
+        stepsize = int(span / (100 + (self.noSweeps-1)*101))
+        print("Doing " + str(100 + (self.noSweeps-1)*101) + " steps of size " + str(stepsize))
+        values = []
+        values12 = []
+        frequencies = []
+        for i in range(self.noSweeps):
+            if self.stopped:
+                break
+            self.app.setSweep(sweepFrom + i*101*stepsize, sweepFrom+(100+i*101)*stepsize)
+            sleep(0.3)
+            # S11
+            values += self.readData("data 0")
+            # S12
+            values12 += self.readData("data 1")
 
-                frequencies += self.readFreq()
-                self.percentage = (i+1)*100/self.noSweeps
-                self.saveData(frequencies, values, values12)
-
-            # Reset the device to show the full range
-            self.app.setSweep(obj.NanoVNASaver.parseFrequency(self.app.sweepStartInput.text()), obj.NanoVNASaver.parseFrequency(self.app.sweepEndInput.text()))
-        else:
-            self.app.setSweep(sweepFrom, sweepTo)
-            values = self.readData("data 0")
-            values12 = self.readData("data 1")
-            frequencies = self.readFreq()
+            frequencies += self.readFreq()
+            self.percentage = (i+1)*100/self.noSweeps
             self.saveData(frequencies, values, values12)
+
+        while self.continuousSweep and not self.stopped:
+            for i in range(self.noSweeps):
+                if self.stopped:
+                    break
+                self.app.setSweep(sweepFrom + i * 101 * stepsize, sweepFrom + (100 + i * 101) * stepsize)
+                sleep(0.3)
+                # S11
+                values = self.readData("data 0")
+                # S12
+                values12 = self.readData("data 1")
+
+                self.updateData(values, values12, i)
+
+        # Reset the device to show the full range
+        self.app.setSweep(NanoVNASaver.parseFrequency(self.app.sweepStartInput.text()), NanoVNASaver.parseFrequency(self.app.sweepEndInput.text()))
 
         self.percentage = 100
         self.signals.finished.emit()
         return
 
+    def updateData(self, values11, values21, offset):
+        # Update the data from (i*101) to (i+1)*101
+        for i in range(len(values11)):
+            reStr, imStr = values11[i].split(" ")
+            re = float(reStr)
+            im = float(imStr)
+            reStr, imStr = values21[i].split(" ")
+            re21 = float(reStr)
+            im21 = float(imStr)
+            freq = self.data11[offset*101 + i].freq
+            rawData11 = Datapoint(freq, re, im)
+            rawData21 = Datapoint(freq, re21, im21)
+            if self.app.calibration.isCalculated:
+                re, im = self.app.calibration.correct11(re, im, freq)
+                if self.app.calibration.isValid2Port():
+                    re21, im21 = self.app.calibration.correct21(re21, im21, freq)
+            self.data11[offset*101 + i] = Datapoint(freq, re, im)
+            self.data21[offset * 101 + i] = Datapoint(freq, re21, im21)
+            self.rawData11[offset * 101 + i] = rawData11
+            self.rawData21[offset * 101 + i] = rawData21
+        self.app.saveData(self.data11, self.data21)
+        self.signals.updated.emit()
+
     def saveData(self, frequencies, values, values12):
         data = []
         data12 = []
+        rawData11 = []
+        rawData21 = []
         for i in range(len(values)):
             reStr, imStr = values[i].split(" ")
             re = float(reStr)
@@ -107,14 +143,18 @@ class SweepWorker(QtCore.QRunnable):
             re21 = float(reStr)
             im21 = float(imStr)
             freq = int(frequencies[i])
-            if self.app.calibration.isCalculated:  # We only have 1-port calibration for now
+            rawData11 += [Datapoint(freq, re, im)]
+            rawData21 += [Datapoint(freq, re21, im21)]
+            if self.app.calibration.isCalculated:
                 re, im = self.app.calibration.correct11(re, im, freq)
                 if self.app.calibration.isValid2Port():
                     re21, im21 = self.app.calibration.correct21(re21, im21, freq)
             data += [Datapoint(freq, re, im)]
             data12 += [Datapoint(freq, re21, im21)]
         self.data11 = data
-        self.data12 = data12
+        self.data21 = data12
+        self.rawData11 = rawData11
+        self.rawData21 = rawData21
         self.app.saveData(data, data12)
         self.signals.updated.emit()
 
@@ -127,10 +167,10 @@ class SweepWorker(QtCore.QRunnable):
             for d in tmpdata:
                 a, b = d.split(" ")
                 try:
-                    if float(a) < -2.5 or float(a) > 2.5:
+                    if float(a) < -9.5 or float(a) > 9.5:
                         print("Warning: Got a non-float data value: " + d + " (" + a + ")")
                         done = False
-                    if float(b) < -2.5 or float(b) > 2.5:
+                    if float(b) < -9.5 or float(b) > 9.5:
                         print("Warning: Got a non-float data value: " + d + " (" + b + ")")
                         done = False
                 except Exception:
@@ -149,3 +189,6 @@ class SweepWorker(QtCore.QRunnable):
                     print("Warning: Got a non-digit frequency: " + f)
                     done = False
         return tmpfreq
+
+    def setContinuousSweep(self, continuousSweep):
+        self.continuousSweep = continuousSweep
