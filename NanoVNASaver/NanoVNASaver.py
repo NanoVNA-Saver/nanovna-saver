@@ -972,10 +972,10 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.settings.setValue("WindowHeight", self.height())
         self.settings.setValue("WindowWidth", self.width())
-
         self.settings.sync()
         self.threadpool.waitForDone(2500)
         a0.accept()
+        quit()
 
 
 class DisplaySettingsWindow(QtWidgets.QWidget):
