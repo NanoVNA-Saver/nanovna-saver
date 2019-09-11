@@ -41,31 +41,66 @@ class Marker(QtCore.QObject):
         self.frequencyInput.setAlignment(QtCore.Qt.AlignRight)
         self.frequencyInput.returnPressed.connect(lambda: self.setFrequency(self.frequencyInput.text()))
 
+        ################################################################################################################
+        # Data display label
+        ################################################################################################################
+
+        self.frequency_label = QtWidgets.QLabel("")
+        self.frequency_label.setMinimumWidth(100)
+        self.impedance_label = QtWidgets.QLabel("")
+        self.returnloss_label = QtWidgets.QLabel("")
+        self.returnloss_label.setMinimumWidth(80)
+        self.vswr_label = QtWidgets.QLabel("")
+        self.inductance_label = QtWidgets.QLabel("")
+        self.capacitance_label = QtWidgets.QLabel("")
+        self.gain_label = QtWidgets.QLabel("")
+        self.phase_label = QtWidgets.QLabel("")
+        self.quality_factor_label = QtWidgets.QLabel("")
+
+        ################################################################################################################
+        # Marker control layout
+        ################################################################################################################
+
         self.btnColorPicker = QtWidgets.QPushButton("█")
         self.btnColorPicker.setFixedWidth(20)
         self.setColor(initialColor)
         self.btnColorPicker.clicked.connect(lambda: self.setColor(QtWidgets.QColorDialog.getColor(self.color, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
+        self.radioButton = QtWidgets.QRadioButton()
 
         self.layout = QtWidgets.QHBoxLayout()
         self.layout.addWidget(self.frequencyInput)
         self.layout.addWidget(self.btnColorPicker)
+        self.layout.addWidget(self.radioButton)
+
+        ################################################################################################################
+        # Data display layout
+        ################################################################################################################
 
         self.group_box = QtWidgets.QGroupBox(self.name)
-        box_layout = QtWidgets.QFormLayout(self.group_box)
-        self.frequency_label = QtWidgets.QLabel("")
-        box_layout.addRow(QtWidgets.QLabel("Actual frequency:"), self.frequency_label)
-        self.impedance_label = QtWidgets.QLabel("")
-        box_layout.addRow(QtWidgets.QLabel("Impedance:"), self.impedance_label)
-        self.returnloss_label = QtWidgets.QLabel("")
-        box_layout.addRow(QtWidgets.QLabel("Return loss:"), self.returnloss_label)
-        self.vswr_label = QtWidgets.QLabel("")
-        box_layout.addRow(QtWidgets.QLabel("VSWR:"), self.vswr_label)
-        self.reactance_label = QtWidgets.QLabel("")
-        box_layout.addRow(QtWidgets.QLabel("C/L equivalent:"), self.reactance_label)
-        self.gain_label = QtWidgets.QLabel("")
-        box_layout.addRow(QtWidgets.QLabel("S21 Gain:"), self.gain_label)
-        self.phase_label = QtWidgets.QLabel("")
-        box_layout.addRow(QtWidgets.QLabel("S21 Phase:"), self.phase_label)
+        box_layout = QtWidgets.QHBoxLayout(self.group_box)
+
+        line = QtWidgets.QFrame()
+        line.setFrameShape(QtWidgets.QFrame.VLine)
+        #line.setFrameShadow(QtWidgets.QFrame.Sunken)
+
+        left_form = QtWidgets.QFormLayout()
+        right_form = QtWidgets.QFormLayout()
+        box_layout.addLayout(left_form)
+        box_layout.addWidget(line)
+        box_layout.addLayout(right_form)
+
+        # Left side
+        left_form.addRow(QtWidgets.QLabel("Frequency:"), self.frequency_label)
+        left_form.addRow(QtWidgets.QLabel("Impedance:"), self.impedance_label)
+        left_form.addRow(QtWidgets.QLabel("L equiv.:"), self.inductance_label)
+        left_form.addRow(QtWidgets.QLabel("C equiv.:"), self.capacitance_label)
+        left_form.addRow(QtWidgets.QLabel("Q:"), self.quality_factor_label)
+
+        # Right side
+        right_form.addRow(QtWidgets.QLabel("Return loss:"), self.returnloss_label)
+        right_form.addRow(QtWidgets.QLabel("VSWR:"), self.vswr_label)
+        right_form.addRow(QtWidgets.QLabel("S21 Gain:"), self.gain_label)
+        right_form.addRow(QtWidgets.QLabel("S21 Phase:"), self.phase_label)
 
     def setFrequency(self, frequency):
         from .NanoVNASaver import NanoVNASaver
@@ -111,9 +146,11 @@ class Marker(QtCore.QObject):
         self.impedance_label.setText("")
         self.vswr_label.setText("")
         self.returnloss_label.setText("")
-        self.reactance_label.setText("")
+        self.inductance_label.setText("")
+        self.capacitance_label.setText("")
         self.gain_label.setText("")
         self.phase_label.setText("")
+        self.quality_factor_label.setText("")
 
     def updateLabels(self, s11data: List[Datapoint], s21data: List[Datapoint]):
         from NanoVNASaver.Chart import PhaseChart
@@ -121,15 +158,21 @@ class Marker(QtCore.QObject):
         if self.location != -1:
             im50, re50, vswr = NanoVNASaver.vswr(s11data[self.location])
             if im50 < 0:
-                im50str = " - j" + str(round(-1 * im50, 3))
+                im50str = " -j" + str(round(-1 * im50, 3))
             else:
-                im50str = " + j" + str(round(im50, 3))
+                im50str = " +j" + str(round(im50, 3))
             self.frequency_label.setText(NanoVNASaver.formatFrequency(s11data[self.location].freq))
             self.impedance_label.setText(str(round(re50, 3)) + im50str)
             self.returnloss_label.setText(str(round(20 * math.log10((vswr - 1) / (vswr + 1)), 3)) + " dB")
-            reactance = NanoVNASaver.reactanceEquivalent(im50, s11data[self.location].freq)
-            self.reactance_label.setText(reactance)
-            self.vswr_label.setText(str(round(vswr, 3)))
+            capacitance = NanoVNASaver.capacitanceEquivalent(im50, s11data[self.location].freq)
+            inductance = NanoVNASaver.inductanceEquivalent(im50, s11data[self.location].freq)
+            self.inductance_label.setText(inductance)
+            self.capacitance_label.setText(capacitance)
+            vswr = round(vswr, 3)
+            if vswr < 0:
+                vswr = "-"
+            self.vswr_label.setText(str(vswr))
+            self.quality_factor_label.setText(str(round(NanoVNASaver.qualifyFactor(s11data[self.location]), 1)))
             if len(s21data) == len(s11data):
                 _, _, vswr = NanoVNASaver.vswr(s21data[self.location])
                 self.gain_label.setText(str(round(20 * math.log10((vswr - 1) / (vswr + 1)), 3)) + " dB")

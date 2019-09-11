@@ -41,6 +41,8 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def __init__(self):
         super().__init__()
+        self.setWindowIcon(QtGui.QIcon("icon_48x48.png"))
+
         self.settings = QtCore.QSettings(QtCore.QSettings.IniFormat,
                                          QtCore.QSettings.UserScope,
                                          "NanoVNASaver", "NanoVNASaver")
@@ -187,7 +189,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         marker_control_box = QtWidgets.QGroupBox()
         marker_control_box.setTitle("Markers")
-        marker_control_box.setMaximumWidth(300)
+        marker_control_box.setMaximumWidth(350)
         marker_control_layout = QtWidgets.QFormLayout(marker_control_box)
 
         mouse_marker_color = self.settings.value("MouseMarkerColor", QtGui.QColor(20, 255, 20), QtGui.QColor)
@@ -466,7 +468,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.lister = QtWidgets.QPlainTextEdit()
         self.lister.setFixedHeight(200)
-        self.lister.setMaximumWidth(300)
+        self.lister.setMaximumWidth(350)
         marker_column.addWidget(self.lister)
 
         self.worker.signals.updated.connect(self.dataUpdated)
@@ -768,10 +770,14 @@ class NanoVNASaver(QtWidgets.QWidget):
         return Q
 
     @staticmethod
-    def reactanceEquivalent(im50, freq) -> str:
+    def capacitanceEquivalent(im50, freq) -> str:
         capacitance = 10**12/(freq * 2 * math.pi * im50)
+        return str(round(-capacitance, 3)) + " pF"
+
+    @staticmethod
+    def inductanceEquivalent(im50, freq) -> str:
         inductance = im50 / (freq * 2 * math.pi)
-        return str(round(-capacitance, 3)) + " pF / " + str(round(inductance * 1000000000, 3)) + " nH"
+        return str(round(inductance * 1000000000, 3)) + " nH"
 
     @staticmethod
     def gain(data: Datapoint):
