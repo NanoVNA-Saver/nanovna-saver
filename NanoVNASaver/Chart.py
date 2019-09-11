@@ -34,7 +34,6 @@ class Chart(QtWidgets.QWidget):
     markers: List[Marker] = []
     name = ""
     drawLines = False
-    mouselocation = 0
 
     def setSweepColor(self, color : QtGui.QColor):
         self.sweepColor = color
@@ -70,6 +69,12 @@ class Chart(QtWidgets.QWidget):
     def setMarkers(self, markers):
         self.markers = markers
 
+    def getActiveMarker(self) -> Marker:
+        for m in self.markers:
+            if m.isMouseControlledRadioButton.isChecked():
+                return m
+        return None
+
     def setDrawLines(self, drawLines):
         self.drawLines = drawLines
         self.update()
@@ -92,7 +97,6 @@ class PhaseChart(Chart):
         self.name = name
         self.fstart = 0
         self.fstop = 0
-        self.mouselocation = 0
 
         self.setMinimumSize(self.chartWidth + 20 + self.leftMargin, self.chartHeight + 40)
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding))
@@ -166,11 +170,6 @@ class PhaseChart(Chart):
             qp.setPen(self.textColor)
             qp.drawText(x-20, 20+self.chartHeight+15, Chart.shortenFrequency(round(fspan/ticks*(i+1) + fstart)))
 
-        if self.mouselocation != 0:
-            qp.setPen(QtGui.QPen(QtGui.QColor(224,224,224)))
-            x = self.leftMargin + 1 + round(self.chartWidth * (self.mouselocation - fstart) / fspan)
-            qp.drawLine(x, 20, x, 20 + self.chartHeight +5)
-
         qp.setPen(pen)
         for i in range(len(self.data)):
             angle = -self.angle(self.data[i])
@@ -220,7 +219,6 @@ class PhaseChart(Chart):
         x = a0.x()
         absx = x - self.leftMargin
         if absx < 0 or absx > self.chartWidth:
-            self.mouselocation = 0
             a0.ignore()
             return
         a0.accept()
@@ -228,11 +226,8 @@ class PhaseChart(Chart):
             span = self.fstop - self.fstart
             step = span/self.chartWidth
             f = self.fstart + absx * step
-#            self.mouselocation = f
             self.markers[0].setFrequency(str(round(f)))
             self.markers[0].frequencyInput.setText(str(round(f)))
-        else:
-            self.mouselocation = 0
         return
 
     @staticmethod
@@ -251,7 +246,6 @@ class VSWRChart(Chart):
         self.name = name
         self.fstart = 0
         self.fstop = 0
-        self.mouselocation = 0
 
         self.setMinimumSize(self.chartWidth + 20 + self.leftMargin, self.chartHeight + 40)
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding))
@@ -341,11 +335,6 @@ class VSWRChart(Chart):
             qp.setPen(self.textColor)
             qp.drawText(x-20, 20+self.chartHeight+15, Chart.shortenFrequency(round(fspan/ticks*(i+1) + fstart)))
 
-        if self.mouselocation != 0:
-            qp.setPen(QtGui.QPen(QtGui.QColor(224,224,224)))
-            x = self.leftMargin + 1 + round(self.chartWidth * (self.mouselocation - fstart) / fspan)
-            qp.drawLine(x, 20, x, 20 + self.chartHeight +5)
-
         qp.setPen(pen)
         for i in range(len(self.data)):
             _, _, vswr = NanoVNASaver.vswr(self.data[i])
@@ -406,19 +395,16 @@ class VSWRChart(Chart):
         x = a0.x()
         absx = x - self.leftMargin
         if absx < 0 or absx > self.chartWidth:
-            self.mouselocation = 0
             a0.ignore()
             return
         a0.accept()
         if self.fstop - self.fstart > 0:
+            m = self.getActiveMarker()
             span = self.fstop - self.fstart
             step = span/self.chartWidth
             f = self.fstart + absx * step
-#            self.mouselocation = f
-            self.markers[0].setFrequency(str(round(f)))
-            self.markers[0].frequencyInput.setText(str(round(f)))
-        else:
-            self.mouselocation = 0
+            m.setFrequency(str(round(f)))
+            m.frequencyInput.setText(str(round(f)))
         return
 
 
@@ -559,8 +545,9 @@ class PolarChart(Chart):
             positions.append(math.sqrt((x - thisx)**2 + (y - thisy)**2))
 
         minimum_position = positions.index(min(positions))
-        self.markers[0].setFrequency(str(round(target[minimum_position].freq)))
-        self.markers[0].frequencyInput.setText(str(round(target[minimum_position].freq)))
+        m = self.getActiveMarker()
+        m.setFrequency(str(round(target[minimum_position].freq)))
+        m.frequencyInput.setText(str(round(target[minimum_position].freq)))
         return
 
 
@@ -708,8 +695,9 @@ class SmithChart(Chart):
             positions.append(math.sqrt((x - thisx)**2 + (y - thisy)**2))
 
         minimum_position = positions.index(min(positions))
-        self.markers[0].setFrequency(str(round(target[minimum_position].freq)))
-        self.markers[0].frequencyInput.setText(str(round(target[minimum_position].freq)))
+        m = self.getActiveMarker()
+        m.setFrequency(str(round(target[minimum_position].freq)))
+        m.frequencyInput.setText(str(round(target[minimum_position].freq)))
         return
 
 
@@ -811,11 +799,6 @@ class LogMagChart(Chart):
             qp.setPen(self.textColor)
             qp.drawText(x-20, 20+self.chartHeight+15, LogMagChart.shortenFrequency(round(fspan/ticks*(i+1) + fstart)))
 
-        if self.mouselocation != 0:
-            qp.setPen(QtGui.QPen(QtGui.QColor(224,224,224)))
-            x = self.leftMargin + 1 + round(self.chartWidth * (self.mouselocation - fstart) / fspan)
-            qp.drawLine(x, 20, x, 20 + self.chartHeight +5)
-
         qp.setPen(pen)
         for i in range(len(self.data)):
             logmag = self.logMag(self.data[i])
@@ -874,19 +857,16 @@ class LogMagChart(Chart):
         x = a0.x()
         absx = x - self.leftMargin
         if absx < 0 or absx > self.chartWidth:
-            self.mouselocation = 0
             a0.ignore()
             return
         a0.accept()
         if self.fstop - self.fstart > 0:
+            m = self.getActiveMarker()
             span = self.fstop - self.fstart
             step = span/self.chartWidth
             f = self.fstart + absx * step
-#            self.mouselocation = f
-            self.markers[0].setFrequency(str(round(f)))
-            self.markers[0].frequencyInput.setText(str(round(f)))
-        else:
-            self.mouselocation = 0
+            m.setFrequency(str(round(f)))
+            m.frequencyInput.setText(str(round(f)))
         return
 
     @staticmethod
@@ -909,8 +889,6 @@ class QualityFactorChart(Chart):
         self.name = name
         self.fstart = 0
         self.fstop = 0
-        self.mouselocation = 0
-
         self.minQ = 0
         self.maxQ = 0
         self.span = 0
@@ -1006,11 +984,6 @@ class QualityFactorChart(Chart):
             qp.setPen(self.textColor)
             qp.drawText(x-20, 20+self.chartHeight+15, Chart.shortenFrequency(round(fspan/ticks*(i+1) + fstart)))
 
-        if self.mouselocation != 0:
-            qp.setPen(QtGui.QPen(QtGui.QColor(224,224,224)))
-            x = self.leftMargin + 1 + round(self.chartWidth * (self.mouselocation - fstart) / fspan)
-            qp.drawLine(x, 20, x, 20 + self.chartHeight +5)
-
         qp.setPen(pen)
         for i in range(len(self.data)):
             Q = NanoVNASaver.qualifyFactor(self.data[i])
@@ -1061,19 +1034,16 @@ class QualityFactorChart(Chart):
         x = a0.x()
         absx = x - self.leftMargin
         if absx < 0 or absx > self.chartWidth:
-            self.mouselocation = 0
             a0.ignore()
             return
         a0.accept()
         if self.fstop - self.fstart > 0:
+            m = self.getActiveMarker()
             span = self.fstop - self.fstart
             step = span/self.chartWidth
             f = self.fstart + absx * step
-#            self.mouselocation = f
-            self.markers[0].setFrequency(str(round(f)))
-            self.markers[0].frequencyInput.setText(str(round(f)))
-        else:
-            self.mouselocation = 0
+            m.setFrequency(str(round(f)))
+            m.frequencyInput.setText(str(round(f)))
         return
 
     @staticmethod

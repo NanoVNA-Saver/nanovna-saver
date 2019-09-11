@@ -65,12 +65,12 @@ class Marker(QtCore.QObject):
         self.btnColorPicker.setFixedWidth(20)
         self.setColor(initialColor)
         self.btnColorPicker.clicked.connect(lambda: self.setColor(QtWidgets.QColorDialog.getColor(self.color, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
-        self.radioButton = QtWidgets.QRadioButton()
+        self.isMouseControlledRadioButton = QtWidgets.QRadioButton()
 
         self.layout = QtWidgets.QHBoxLayout()
         self.layout.addWidget(self.frequencyInput)
         self.layout.addWidget(self.btnColorPicker)
-        self.layout.addWidget(self.radioButton)
+        self.layout.addWidget(self.isMouseControlledRadioButton)
 
         ################################################################################################################
         # Data display layout

@@ -192,11 +192,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         marker_control_box.setMaximumWidth(350)
         marker_control_layout = QtWidgets.QFormLayout(marker_control_box)
 
-        mouse_marker_color = self.settings.value("MouseMarkerColor", QtGui.QColor(20, 255, 20), QtGui.QColor)
-        mouse_marker = Marker("Mouse marker", mouse_marker_color)
-        mouse_marker.updated.connect(self.dataUpdated)
-        self.markers.append(mouse_marker)
-
 
         marker1_color = self.settings.value("Marker1Color", QtGui.QColor(255, 0, 20), QtGui.QColor)
         marker1 = Marker("Marker 1", marker1_color)
@@ -204,6 +199,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         label, layout = marker1.getRow()
         marker_control_layout.addRow(label, layout)
         self.markers.append(marker1)
+        marker1.isMouseControlledRadioButton.setChecked(True)
 
         marker2_color = self.settings.value("Marker2Color", QtGui.QColor(20, 0, 255), QtGui.QColor)
         marker2 = Marker("Marker 2", marker2_color)
@@ -212,17 +208,22 @@ class NanoVNASaver(QtWidgets.QWidget):
         marker_control_layout.addRow(label, layout)
         self.markers.append(marker2)
 
+        marker3_color = self.settings.value("Marker3Color", QtGui.QColor(20, 255, 20), QtGui.QColor)
+        marker3 = Marker("Marker 3", marker3_color)
+        marker3.updated.connect(self.dataUpdated)
+        label, layout = marker3.getRow()
+        marker_control_layout.addRow(label, layout)
+        self.markers.append(marker3)
+
+
         for c in self.charts:
             c.setMarkers(self.markers)
-
-        label, layout = mouse_marker.getRow()
-        marker_control_layout.addRow(label, layout)
-        #mouse_marker.frequencyInput.setDisabled(True)
+        #marker3.frequencyInput.setDisabled(True)
         marker_column.addWidget(marker_control_box)
 
+        marker_column.addWidget(self.markers[0].getGroupBox())
         marker_column.addWidget(self.markers[1].getGroupBox())
         marker_column.addWidget(self.markers[2].getGroupBox())
-        marker_column.addWidget(self.markers[0].getGroupBox())
 
         ################################################################################################################
         #  Statistics/analysis
@@ -972,9 +973,9 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
         self.worker.stopped = True
-        self.settings.setValue("MouseMarkerColor", self.markers[0].color)
-        self.settings.setValue("Marker1Color", self.markers[1].color)
-        self.settings.setValue("Marker2Color", self.markers[2].color)
+        self.settings.setValue("Marker1Color", self.markers[0].color)
+        self.settings.setValue("Marker2Color", self.markers[1].color)
+        self.settings.setValue("Marker3Color", self.markers[2].color)
 
         self.settings.setValue("WindowHeight", self.height())
         self.settings.setValue("WindowWidth", self.width())
