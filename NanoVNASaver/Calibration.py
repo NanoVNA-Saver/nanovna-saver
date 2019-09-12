@@ -307,7 +307,7 @@ class Calibration:
                                                        self.shortL1 * f +
                                                        self.shortL2 * f**2 +
                                                        self.shortL3 * f**3)
-                gammaShort = (Zsp - 1) / (Zsp + 1)
+                gammaShort = ((Zsp/50) - 1) / ((Zsp/50) + 1)
                 g1 = gammaShort * math.exp(2*math.pi*f*self.shortLength)
 
             if self.useIdealOpen:
@@ -316,7 +316,7 @@ class Calibration:
                 divisor = (2 * pi * f * (self.openC0 + self.openC1 * f + self.openC2 * f**2 + self.openC3 * f**3))
                 if divisor != 0:
                     Zop = np.complex(0, -1) / divisor
-                    gammaOpen = (Zop - 1) / (Zop + 1)
+                    gammaOpen = ((Zop/50) - 1) / ((Zop/50) + 1)
                     g2 = gammaOpen * math.exp(2 * math.pi * f * self.openLength)
                 else:
                     g2 = self.openIdeal
