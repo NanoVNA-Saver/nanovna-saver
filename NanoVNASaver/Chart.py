@@ -223,11 +223,12 @@ class PhaseChart(Chart):
             return
         a0.accept()
         if self.fstop - self.fstart > 0:
+            m = self.getActiveMarker()
             span = self.fstop - self.fstart
             step = span/self.chartWidth
             f = self.fstart + absx * step
-            self.markers[0].setFrequency(str(round(f)))
-            self.markers[0].frequencyInput.setText(str(round(f)))
+            m.setFrequency(str(round(f)))
+            m.frequencyInput.setText(str(round(f)))
         return
 
     @staticmethod
