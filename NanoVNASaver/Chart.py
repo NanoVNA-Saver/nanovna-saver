@@ -923,7 +923,6 @@ class QualityFactorChart(Chart):
         qp.setPen(QtGui.QPen(QtGui.QColor("lightgray")))
         qp.drawLine(self.leftMargin, 20, self.leftMargin, 20+self.chartHeight+5)
         qp.drawLine(self.leftMargin-5, 20+self.chartHeight, self.leftMargin+self.chartWidth, 20 + self.chartHeight)
-        minQ = 0  # We always want 0 to be included in the graph
         maxQ = 0
 
         # Make up some sensible scaling here
@@ -931,20 +930,16 @@ class QualityFactorChart(Chart):
             Q = NanoVNASaver.qualifyFactor(d)
             if Q > maxQ:
                 maxQ = Q
-            if Q < minQ:
-                minQ = Q
-        span = maxQ - minQ
         scale = 0
         if maxQ > 0:
             scale = max(scale, math.floor(math.log10(maxQ)))
-        if minQ < 0:
-            scale = max(scale, math.floor(math.log10(abs(minQ))))
 
         self.maxQ = math.ceil(maxQ/10**scale) * 10**scale
-        self.minQ = math.floor(minQ/10**scale) * 10**scale
         self.span = self.maxQ - self.minQ
         step = math.floor(self.span / 10)
         if step == 0:
+            step = 1  # Always show at least one step of size 1
+        if self.span == 0:
             return  # No data to draw the graph from
         for i in range(self.minQ, self.maxQ, step):
             y = 30 + round((self.maxQ - i) / self.span * (self.chartHeight-10))
@@ -960,6 +955,8 @@ class QualityFactorChart(Chart):
     def drawValues(self, qp: QtGui.QPainter):
         from NanoVNASaver.NanoVNASaver import NanoVNASaver
         if len(self.data) == 0 and len(self.reference) == 0:
+            return
+        if self.span == 0:
             return
         pen = QtGui.QPen(self.sweepColor)
         pen.setWidth(2)

@@ -768,7 +768,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             Q = im50 / re50
         else:
             Q = 0
-        return Q
+        return abs(Q)
 
     @staticmethod
     def capacitanceEquivalent(im50, freq) -> str:
