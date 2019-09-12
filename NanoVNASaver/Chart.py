@@ -69,11 +69,37 @@ class Chart(QtWidgets.QWidget):
     def setMarkers(self, markers):
         self.markers = markers
 
-    def getActiveMarker(self) -> Marker:
+    def getActiveMarker(self, event: QtGui.QMouseEvent) -> Marker:
+        if event.modifiers() & QtCore.Qt.ShiftModifier:
+            absx = event.x() - (self.width() - self.chartWidth) / 2
+            absy = event.y() - (self.height() - self.chartHeight) / 2
+            return self.getNearestMarker(absx, absy)
         for m in self.markers:
             if m.isMouseControlledRadioButton.isChecked():
                 return m
         return None
+
+    def getNearestMarker(self, x, y) -> Marker:
+        shortest = 10**6
+        nearest = None
+        for m in self.markers:
+            mx, my = self.getPosition(self.data[m.location])
+            dx = abs(x - mx)
+            dy = abs(y - my)
+            distance = math.sqrt(dx**2 + dy**2)
+            if distance < shortest:
+                shortest = distance
+                nearest = m
+        return nearest
+
+    def getYPosition(self, d: Datapoint) -> int:
+        return 0
+
+    def getXPosition(self, d: Datapoint) -> int:
+        return 0
+
+    def getPosition(self, d: Datapoint) -> (int, int):
+        return (self.getXPosition(d), self.getYPosition(d))
 
     def setDrawLines(self, drawLines):
         self.drawLines = drawLines
@@ -87,6 +113,9 @@ class Chart(QtWidgets.QWidget):
             return str(round(frequency / 1000)) + "k"
         return str(round(frequency / 1000000, 1)) + "M"
 
+    def mousePressEvent(self, a0: QtGui.QMouseEvent) -> None:
+        self.mouseMoveEvent(a0)
+
 
 class PhaseChart(Chart):
     def __init__(self, name=""):
@@ -97,6 +126,8 @@ class PhaseChart(Chart):
         self.name = name
         self.fstart = 0
         self.fstop = 0
+        self.minAngle = 0
+        self.span = 0
 
         self.setMinimumSize(self.chartWidth + 20 + self.leftMargin, self.chartHeight + 40)
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding))
@@ -115,7 +146,6 @@ class PhaseChart(Chart):
 
     def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
         qp = QtGui.QPainter(self)
-        #qp.begin(self)  # Apparently not needed?
         self.drawChart(qp)
         self.drawValues(qp)
         qp.end()
@@ -129,6 +159,8 @@ class PhaseChart(Chart):
         minAngle = -180
         maxAngle = 180
         span = maxAngle-minAngle
+        self.minAngle = minAngle
+        self.span = span
         for i in range(minAngle, maxAngle, 90):
             y = 30 + round((i-minAngle)/span*(self.chartHeight-10))
             if i != minAngle and i != maxAngle:
@@ -210,10 +242,14 @@ class PhaseChart(Chart):
                 qp.drawLine(int(x), int(y) + 3, int(x) - 3, int(y) - 3)
                 qp.drawLine(int(x), int(y) + 3, int(x) + 3, int(y) - 3)
                 qp.drawLine(int(x) - 3, int(y) - 3, int(x) + 3, int(y) - 3)
-                #qp.drawPoint(int(x), int(y))
 
-    def mousePressEvent(self, a0: QtGui.QMouseEvent) -> None:
-        self.mouseMoveEvent(a0)
+    def getXPosition(self, d: Datapoint) -> int:
+        span = self.fstop - self.fstart
+        return self.leftMargin + 1 + round(self.chartWidth * (d.freq - self.fstart) / span)
+
+    def getYPosition(self, d: Datapoint) -> int:
+        angle = -self.angle(d)
+        return 30 + round((angle - self.minAngle) / self.span * (self.chartHeight - 10))
 
     def mouseMoveEvent(self, a0: QtGui.QMouseEvent) -> None:
         x = a0.x()
@@ -223,7 +259,7 @@ class PhaseChart(Chart):
             return
         a0.accept()
         if self.fstop - self.fstart > 0:
-            m = self.getActiveMarker()
+            m = self.getActiveMarker(a0)
             span = self.fstop - self.fstart
             step = span/self.chartWidth
             f = self.fstart + absx * step
@@ -265,7 +301,6 @@ class VSWRChart(Chart):
 
     def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
         qp = QtGui.QPainter(self)
-        #qp.begin(self)  # Apparently not needed?
         self.drawChart(qp)
         self.drawValues(qp)
         qp.end()
@@ -304,7 +339,9 @@ class VSWRChart(Chart):
             if vswr > maxVSWR:
                 maxVSWR = vswr
         maxVSWR = min(25, math.ceil(maxVSWR))
+        self.maxVSWR = maxVSWR
         span = maxVSWR-minVSWR
+        self.span = span
         ticksize = 1
         if span > 10 and span % 5 == 0:
             ticksize = 5
@@ -387,10 +424,15 @@ class VSWRChart(Chart):
                 qp.drawLine(int(x), int(y) + 3, int(x) - 3, int(y) - 3)
                 qp.drawLine(int(x), int(y) + 3, int(x) + 3, int(y) - 3)
                 qp.drawLine(int(x) - 3, int(y) - 3, int(x) + 3, int(y) - 3)
-                #qp.drawPoint(int(x), int(y))
 
-    def mousePressEvent(self, a0: QtGui.QMouseEvent) -> None:
-        self.mouseMoveEvent(a0)
+    def getXPosition(self, d: Datapoint) -> int:
+        span = self.fstop - self.fstart
+        return self.leftMargin + 1 + round(self.chartWidth * (d.freq - self.fstart) / span)
+
+    def getYPosition(self, d: Datapoint) -> int:
+        from NanoVNASaver.NanoVNASaver import NanoVNASaver
+        _, _, vswr = NanoVNASaver.vswr(d)
+        return 30 + round((self.maxVSWR - vswr) / self.span * (self.chartHeight - 10))
 
     def mouseMoveEvent(self, a0: QtGui.QMouseEvent) -> None:
         x = a0.x()
@@ -400,7 +442,7 @@ class VSWRChart(Chart):
             return
         a0.accept()
         if self.fstop - self.fstart > 0:
-            m = self.getActiveMarker()
+            m = self.getActiveMarker(a0)
             span = self.fstop - self.fstart
             step = span/self.chartWidth
             f = self.fstart + absx * step
@@ -438,7 +480,6 @@ class PolarChart(Chart):
 
     def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
         qp = QtGui.QPainter(self)
-        #qp.begin(self)  # Apparently not needed?
         self.drawChart(qp)
         self.drawValues(qp)
         qp.end()
@@ -518,11 +559,14 @@ class PolarChart(Chart):
                 qp.drawLine(int(x) - 3, int(y) - 3, int(x) + 3, int(y) - 3)
                 #qp.drawPoint(int(x), int(y))
 
+    def getXPosition(self, d: Datapoint) -> int:
+        return self.width()/2 + d.re * self.chartWidth/2
+
+    def getYPosition(self, d: Datapoint) -> int:
+        return self.height()/2 + d.im * -1 * self.chartHeight/2
+
     def heightForWidth(self, a0: int) -> int:
         return a0
-
-    def mousePressEvent(self, a0: QtGui.QMouseEvent) -> None:
-        self.mouseMoveEvent(a0)
 
     def mouseMoveEvent(self, a0: QtGui.QMouseEvent) -> None:
         x = a0.x()
@@ -546,7 +590,7 @@ class PolarChart(Chart):
             positions.append(math.sqrt((x - thisx)**2 + (y - thisy)**2))
 
         minimum_position = positions.index(min(positions))
-        m = self.getActiveMarker()
+        m = self.getActiveMarker(a0)
         m.setFrequency(str(round(target[minimum_position].freq)))
         m.frequencyInput.setText(str(round(target[minimum_position].freq)))
         return
@@ -668,11 +712,14 @@ class SmithChart(Chart):
                 qp.drawLine(int(x) - 3, int(y) - 3, int(x) + 3, int(y) - 3)
                 #qp.drawPoint(int(x), int(y))
 
+    def getXPosition(self, d: Datapoint) -> int:
+        return self.width()/2 + d.re * self.chartWidth/2
+
+    def getYPosition(self, d: Datapoint) -> int:
+        return self.height()/2 + d.im * -1 * self.chartHeight/2
+
     def heightForWidth(self, a0: int) -> int:
         return a0
-
-    def mousePressEvent(self, a0: QtGui.QMouseEvent) -> None:
-        self.mouseMoveEvent(a0)
 
     def mouseMoveEvent(self, a0: QtGui.QMouseEvent) -> None:
         x = a0.x()
@@ -696,7 +743,7 @@ class SmithChart(Chart):
             positions.append(math.sqrt((x - thisx)**2 + (y - thisy)**2))
 
         minimum_position = positions.index(min(positions))
-        m = self.getActiveMarker()
+        m = self.getActiveMarker(a0)
         m.setFrequency(str(round(target[minimum_position].freq)))
         m.frequencyInput.setText(str(round(target[minimum_position].freq)))
         return
@@ -778,8 +825,10 @@ class LogMagChart(Chart):
                 minValue = logmag
 
         minValue = 10*math.floor(minValue/10)
+        self.minValue = minValue
         maxValue = 10*math.ceil(maxValue/10)
         span = maxValue-minValue
+        self.span = span
         for i in range(minValue, maxValue, 10):
             y = 30 + round((i-minValue)/span*(self.chartHeight-10))
             qp.setPen(QtGui.QPen(QtGui.QColor("lightgray")))
@@ -841,18 +890,14 @@ class LogMagChart(Chart):
                 qp.drawLine(int(x), int(y) + 3, int(x) - 3, int(y) - 3)
                 qp.drawLine(int(x), int(y) + 3, int(x) + 3, int(y) - 3)
                 qp.drawLine(int(x) - 3, int(y) - 3, int(x) + 3, int(y) - 3)
-                #qp.drawPoint(int(x), int(y))
 
-    @staticmethod
-    def shortenFrequency(frequency):
-        if frequency < 50000:
-            return frequency
-        if frequency < 5000000:
-            return str(round(frequency / 1000)) + "k"
-        return str(round(frequency / 1000000, 1)) + "M"
+    def getXPosition(self, d: Datapoint) -> int:
+        span = self.fstop - self.fstart
+        return self.leftMargin + 1 + round(self.chartWidth * (d.freq - self.fstart) / span)
 
-    def mousePressEvent(self, a0: QtGui.QMouseEvent) -> None:
-        self.mouseMoveEvent(a0)
+    def getYPosition(self, d: Datapoint) -> int:
+        logMag = self.logMag(d)
+        return 30 + round((logMag - self.minValue) / self.span * (self.chartHeight - 10))
 
     def mouseMoveEvent(self, a0: QtGui.QMouseEvent) -> None:
         x = a0.x()
@@ -862,7 +907,7 @@ class LogMagChart(Chart):
             return
         a0.accept()
         if self.fstop - self.fstart > 0:
-            m = self.getActiveMarker()
+            m = self.getActiveMarker(a0)
             span = self.fstop - self.fstart
             step = span/self.chartWidth
             f = self.fstart + absx * step
@@ -911,7 +956,6 @@ class QualityFactorChart(Chart):
 
     def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
         qp = QtGui.QPainter(self)
-        #qp.begin(self)  # Apparently not needed?
         self.drawChart(qp)
         self.drawValues(qp)
         qp.end()
@@ -950,7 +994,6 @@ class QualityFactorChart(Chart):
         qp.drawLine(self.leftMargin - 5, 30, self.leftMargin + self.chartWidth, 30)
         qp.setPen(self.textColor)
         qp.drawText(3, 35, str(self.maxQ))
-        #qp.drawText(3, self.chartHeight+20, str(self.minQ))
 
     def drawValues(self, qp: QtGui.QPainter):
         from NanoVNASaver.NanoVNASaver import NanoVNASaver
@@ -1023,10 +1066,15 @@ class QualityFactorChart(Chart):
                 qp.drawLine(int(x), int(y) + 3, int(x) - 3, int(y) - 3)
                 qp.drawLine(int(x), int(y) + 3, int(x) + 3, int(y) - 3)
                 qp.drawLine(int(x) - 3, int(y) - 3, int(x) + 3, int(y) - 3)
-                #qp.drawPoint(int(x), int(y))
 
-    def mousePressEvent(self, a0: QtGui.QMouseEvent) -> None:
-        self.mouseMoveEvent(a0)
+    def getXPosition(self, d: Datapoint) -> int:
+        span = self.fstop - self.fstart
+        return self.leftMargin + 1 + round(self.chartWidth * (d.freq - self.fstart) / span)
+
+    def getYPosition(self, d: Datapoint) -> int:
+        from NanoVNASaver.NanoVNASaver import NanoVNASaver
+        Q = NanoVNASaver.qualifyFactor(d)
+        return 30 + round((self.maxQ - Q) / self.span * (self.chartHeight - 10))
 
     def mouseMoveEvent(self, a0: QtGui.QMouseEvent) -> None:
         x = a0.x()
@@ -1036,7 +1084,7 @@ class QualityFactorChart(Chart):
             return
         a0.accept()
         if self.fstop - self.fstart > 0:
-            m = self.getActiveMarker()
+            m = self.getActiveMarker(a0)
             span = self.fstop - self.fstart
             step = span/self.chartWidth
             f = self.fstart + absx * step
