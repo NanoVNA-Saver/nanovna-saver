@@ -99,7 +99,7 @@ class Chart(QtWidgets.QWidget):
         return 0
 
     def getPosition(self, d: Datapoint) -> (int, int):
-        return (self.getXPosition(d), self.getYPosition(d))
+        return self.getXPosition(d), self.getYPosition(d)
 
     def setDrawLines(self, drawLines):
         self.drawLines = drawLines

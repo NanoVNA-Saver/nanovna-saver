@@ -157,10 +157,13 @@ class Marker(QtCore.QObject):
         from NanoVNASaver.NanoVNASaver import NanoVNASaver
         if self.location != -1:
             im50, re50, vswr = NanoVNASaver.vswr(s11data[self.location])
+            re50 = round(re50, 4 - math.floor(math.log10(abs(re50))))
+            im50 = round(im50, 4 - math.floor(math.log10(abs(im50))))
+
             if im50 < 0:
-                im50str = " -j" + str(round(-1 * im50, 3))
+                im50str = " -j" + str(-1 * im50)
             else:
-                im50str = " +j" + str(round(im50, 3))
+                im50str = " +j" + str(im50)
             self.frequency_label.setText(NanoVNASaver.formatFrequency(s11data[self.location].freq))
             self.impedance_label.setText(str(round(re50, 3)) + im50str)
             self.returnloss_label.setText(str(round(20 * math.log10((vswr - 1) / (vswr + 1)), 3)) + " dB")
