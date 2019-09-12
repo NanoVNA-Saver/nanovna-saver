@@ -135,21 +135,46 @@ class NanoVNASaver(QtWidgets.QWidget):
         sweep_control_box.setTitle("Sweep control")
         sweep_control_layout = QtWidgets.QFormLayout(sweep_control_box)
 
+        line = QtWidgets.QFrame()
+        line.setFrameShape(QtWidgets.QFrame.VLine)
+
+        sweep_input_layout = QtWidgets.QHBoxLayout()
+        sweep_input_left_layout = QtWidgets.QFormLayout()
+        sweep_input_right_layout = QtWidgets.QFormLayout()
+        sweep_input_layout.addLayout(sweep_input_left_layout)
+        sweep_input_layout.addWidget(line)
+        sweep_input_layout.addLayout(sweep_input_right_layout)
+        sweep_control_layout.addRow(sweep_input_layout)
+
         self.sweepStartInput = QtWidgets.QLineEdit("")
         self.sweepStartInput.setAlignment(QtCore.Qt.AlignRight)
+        self.sweepStartInput.textEdited.connect(self.updateCenterSpan)
 
-        sweep_control_layout.addRow(QtWidgets.QLabel("Sweep start"), self.sweepStartInput)
+        sweep_input_left_layout.addRow(QtWidgets.QLabel("Start"), self.sweepStartInput)
 
         self.sweepEndInput = QtWidgets.QLineEdit("")
         self.sweepEndInput.setAlignment(QtCore.Qt.AlignRight)
+        self.sweepEndInput.textEdited.connect(self.updateCenterSpan)
 
-        sweep_control_layout.addRow(QtWidgets.QLabel("Sweep end"), self.sweepEndInput)
+        sweep_input_left_layout.addRow(QtWidgets.QLabel("Stop"), self.sweepEndInput)
+
+        self.sweepCenterInput = QtWidgets.QLineEdit("")
+        self.sweepCenterInput.setAlignment(QtCore.Qt.AlignRight)
+        self.sweepCenterInput.textEdited.connect(self.updateStartEnd)
+
+        sweep_input_right_layout.addRow(QtWidgets.QLabel("Center"), self.sweepCenterInput)
+        
+        self.sweepSpanInput = QtWidgets.QLineEdit("")
+        self.sweepSpanInput.setAlignment(QtCore.Qt.AlignRight)
+        self.sweepSpanInput.textEdited.connect(self.updateStartEnd)
+
+        sweep_input_right_layout.addRow(QtWidgets.QLabel("Span"), self.sweepSpanInput)
 
         self.sweepCountInput = QtWidgets.QLineEdit("")
         self.sweepCountInput.setAlignment(QtCore.Qt.AlignRight)
         self.sweepCountInput.setText("1")
 
-        sweep_control_layout.addRow(QtWidgets.QLabel("Sweep count"), self.sweepCountInput)
+        sweep_control_layout.addRow(QtWidgets.QLabel("Segments"), self.sweepCountInput)
 
         self.btnColorPicker = QtWidgets.QPushButton("█")
         self.btnColorPicker.setFixedWidth(20)
@@ -630,7 +655,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.sweepProgressBar.setValue(0)
         self.btnSweep.setDisabled(True)
         self.btnStopSweep.setDisabled(False)
-        self.markers[0].frequencyInput.setText("")
         for m in self.markers:
             m.resetLabels()
         self.s11_min_rl_label.setText("")
@@ -835,6 +859,28 @@ class NanoVNASaver(QtWidgets.QWidget):
         index_peak = np.argmax(td)
 
         self.tdr_result_label.setText(str(round(distance_axis[index_peak]/2, 3)) + " m")
+
+    def updateCenterSpan(self):
+        fstart = self.parseFrequency(self.sweepStartInput.text())
+        fstop = self.parseFrequency(self.sweepEndInput.text())
+        fspan = fstop - fstart
+        fcenter = int(round((fstart+fstop)/2))
+        if fspan < 0 or fstart < 0 or fstop < 0:
+            return
+        self.sweepSpanInput.setText(str(fspan))
+        self.sweepCenterInput.setText(str(fcenter))
+
+    def updateStartEnd(self):
+        fcenter = self.parseFrequency(self.sweepCenterInput.text())
+        fspan = self.parseFrequency(self.sweepSpanInput.text())
+        if fspan < 0 or fcenter < 0:
+            return
+        fstart = int(round(fcenter - fspan/2))
+        fstop = int(round(fcenter + fspan/2))
+        if fstart < 0 or fstop < 0:
+            return
+        self.sweepStartInput.setText(str(fstart))
+        self.sweepEndInput.setText(str(fstop))
 
     def setSweepColor(self, color: QtGui.QColor):
         if color.isValid():

@@ -32,6 +32,7 @@ class Chart(QtWidgets.QWidget):
     data: List[Datapoint] = []
     reference: List[Datapoint] = []
     markers: List[Marker] = []
+    draggedMarker: Marker = None
     name = ""
     drawLines = False
 
@@ -70,16 +71,16 @@ class Chart(QtWidgets.QWidget):
         self.markers = markers
 
     def getActiveMarker(self, event: QtGui.QMouseEvent) -> Marker:
-        if event.modifiers() & QtCore.Qt.ShiftModifier:
-            absx = event.x() - (self.width() - self.chartWidth) / 2
-            absy = event.y() - (self.height() - self.chartHeight) / 2
-            return self.getNearestMarker(absx, absy)
+        if self.draggedMarker is not None:
+            return self.draggedMarker
         for m in self.markers:
             if m.isMouseControlledRadioButton.isChecked():
                 return m
         return None
 
     def getNearestMarker(self, x, y) -> Marker:
+        if len(self.data) == 0:
+            return None
         shortest = 10**6
         nearest = None
         for m in self.markers:
@@ -113,8 +114,13 @@ class Chart(QtWidgets.QWidget):
             return str(round(frequency / 1000)) + "k"
         return str(round(frequency / 1000000, 1)) + "M"
 
-    def mousePressEvent(self, a0: QtGui.QMouseEvent) -> None:
-        self.mouseMoveEvent(a0)
+    def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
+        if event.modifiers() == QtCore.Qt.ShiftModifier:
+            self.draggedMarker = self.getNearestMarker(event.x(), event.y())
+        self.mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, a0: QtGui.QMouseEvent) -> None:
+        self.draggedMarker = None
 
 
 class PhaseChart(Chart):
