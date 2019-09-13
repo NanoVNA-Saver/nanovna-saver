@@ -16,6 +16,7 @@
 import collections
 import math
 from typing import List
+import numpy as np
 
 from PyQt5 import QtWidgets, QtGui, QtCore
 
@@ -1103,3 +1104,58 @@ class QualityFactorChart(Chart):
         re = d.re
         im = d.im
         return -math.degrees(math.atan2(im, re))
+
+
+class TDRChart(Chart):
+    def __init__(self, name):
+        super().__init__()
+        self.name = name
+        self.tdrWindow = None
+        self.leftMargin = 20
+        self.rightMargin = 20
+        self.lowerMargin = 35
+        self.setMinimumSize(400, 400)
+        self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding))
+        pal = QtGui.QPalette()
+        pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
+        self.setPalette(pal)
+        self.setAutoFillBackground(True)
+
+    def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
+        qp = QtGui.QPainter(self)
+        qp.setPen(QtGui.QPen(self.textColor))
+        qp.drawText(3, 15, self.name)
+
+        width = self.width() - self.leftMargin - self.rightMargin
+        height = self.height() - self.lowerMargin
+
+        qp.setPen(QtCore.Qt.lightGray)
+        qp.drawLine(self.leftMargin - 5, self.height() - self.lowerMargin, self.width() - self.rightMargin,
+                    self.height() - self.lowerMargin)
+        qp.drawLine(self.leftMargin, 20, self.leftMargin, self.height() - self.lowerMargin + 5)
+
+        ticks = math.floor((self.width() - self.leftMargin)/100)  # Number of ticks does not include the origin
+
+        if len(self.tdrWindow.td) > 0:
+            x_step = len(self.tdrWindow.distance_axis) / width
+            y_step = np.max(self.tdrWindow.td)*1.1 / height
+
+            for i in range(ticks):
+                x = self.leftMargin + round((i + 1) * width / ticks)
+                qp.setPen(QtGui.QPen(QtGui.QColor("lightgray")))
+                qp.drawLine(x, 20, x, height)
+                qp.setPen(QtGui.QPen(self.textColor))
+                qp.drawText(x - 20, 20 + height,
+                            str(round(self.tdrWindow.distance_axis[int((x - self.leftMargin) * x_step) - 1]/2, 1)) + "m")
+
+            qp.setPen(self.tdrWindow.app.sweepColor)
+            for i in range(len(self.tdrWindow.distance_axis)):
+                qp.drawPoint(self.leftMargin + int(i / x_step), height - int(self.tdrWindow.td[i] / y_step))
+            id_max = np.argmax(self.tdrWindow.td)
+            max_point = QtCore.QPoint(self.leftMargin + int(id_max / x_step),
+                                      height - int(self.tdrWindow.td[id_max] / y_step))
+            qp.setPen(self.markers[0].color)
+            qp.drawEllipse(max_point, 2, 2)
+            qp.setPen(self.textColor)
+            qp.drawText(max_point.x() - 10, max_point.y() - 5, str(round(self.tdrWindow.distance_axis[id_max]/2, 2)) + "m")
+        qp.end()
