@@ -39,7 +39,7 @@ class Marker(QtCore.QObject):
             self.frequency = int(frequency)
         self.frequencyInput = QtWidgets.QLineEdit(frequency)
         self.frequencyInput.setAlignment(QtCore.Qt.AlignRight)
-        self.frequencyInput.returnPressed.connect(lambda: self.setFrequency(self.frequencyInput.text()))
+        self.frequencyInput.textEdited.connect(lambda: self.setFrequency(self.frequencyInput.text()))
 
         ################################################################################################################
         # Data display label
