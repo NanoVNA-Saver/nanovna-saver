@@ -15,6 +15,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import collections
 import math
+import sys
 import threading
 from time import sleep, strftime, gmtime
 from typing import List
@@ -990,7 +991,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.settings.sync()
         self.threadpool.waitForDone(2500)
         a0.accept()
-        quit()
+        sys.exit()
 
 
 class DisplaySettingsWindow(QtWidgets.QWidget):
