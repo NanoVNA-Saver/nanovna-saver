@@ -69,7 +69,6 @@ class SweepWorker(QtCore.QRunnable):
 
         span = sweepTo - sweepFrom
         stepsize = int(span / (100 + (self.noSweeps-1)*101))
-        print("Doing " + str(100 + (self.noSweeps-1)*101) + " steps of size " + str(stepsize))
         values = []
         values12 = []
         frequencies = []

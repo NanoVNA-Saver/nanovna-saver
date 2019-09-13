@@ -48,6 +48,9 @@ class Marker(QtCore.QObject):
         self.frequency_label = QtWidgets.QLabel("")
         self.frequency_label.setMinimumWidth(100)
         self.impedance_label = QtWidgets.QLabel("")
+        # self.admittance_label = QtWidgets.QLabel("")
+        self.parallel_r_label = QtWidgets.QLabel("")
+        self.parallel_x_label = QtWidgets.QLabel("")
         self.returnloss_label = QtWidgets.QLabel("")
         self.returnloss_label.setMinimumWidth(80)
         self.vswr_label = QtWidgets.QLabel("")
@@ -90,17 +93,20 @@ class Marker(QtCore.QObject):
         box_layout.addLayout(right_form)
 
         # Left side
-        left_form.addRow(QtWidgets.QLabel("Frequency:"), self.frequency_label)
-        left_form.addRow(QtWidgets.QLabel("Impedance:"), self.impedance_label)
-        left_form.addRow(QtWidgets.QLabel("L equiv.:"), self.inductance_label)
-        left_form.addRow(QtWidgets.QLabel("C equiv.:"), self.capacitance_label)
-        left_form.addRow(QtWidgets.QLabel("Q:"), self.quality_factor_label)
+        left_form.addRow("Frequency:", self.frequency_label)
+        left_form.addRow("Impedance:", self.impedance_label)
+        # left_form.addRow("Admittance:", self.admittance_label)
+        left_form.addRow("Parallel R:", self.parallel_r_label)
+        left_form.addRow("Parallel X:", self.parallel_x_label)
+        left_form.addRow("L equiv.:", self.inductance_label)
+        left_form.addRow("C equiv.:", self.capacitance_label)
 
         # Right side
-        right_form.addRow(QtWidgets.QLabel("Return loss:"), self.returnloss_label)
-        right_form.addRow(QtWidgets.QLabel("VSWR:"), self.vswr_label)
-        right_form.addRow(QtWidgets.QLabel("S21 Gain:"), self.gain_label)
-        right_form.addRow(QtWidgets.QLabel("S21 Phase:"), self.phase_label)
+        right_form.addRow("Return loss:", self.returnloss_label)
+        right_form.addRow("VSWR:", self.vswr_label)
+        right_form.addRow("Q:", self.quality_factor_label)
+        right_form.addRow("S21 Gain:", self.gain_label)
+        right_form.addRow("S21 Phase:", self.phase_label)
 
     def setFrequency(self, frequency):
         from .NanoVNASaver import NanoVNASaver
@@ -144,6 +150,9 @@ class Marker(QtCore.QObject):
     def resetLabels(self):
         self.frequency_label.setText("")
         self.impedance_label.setText("")
+        self.parallel_r_label.setText("")
+        self.parallel_x_label.setText("")
+        # self.admittance_label.setText("")
         self.vswr_label.setText("")
         self.returnloss_label.setText("")
         self.inductance_label.setText("")
@@ -157,15 +166,27 @@ class Marker(QtCore.QObject):
         from NanoVNASaver.NanoVNASaver import NanoVNASaver
         if self.location != -1:
             im50, re50, vswr = NanoVNASaver.vswr(s11data[self.location])
-            re50 = round(re50, 4 - math.floor(math.log10(abs(re50))))
-            im50 = round(im50, 4 - math.floor(math.log10(abs(im50))))
-
+            rp = (re50 ** 2 + im50 ** 2) / re50
+            xp = (re50 ** 2 + im50 ** 2) / im50
+            re50 = round(re50, 4 - max(0, math.floor(math.log10(abs(re50)))))
+            rp = round(rp, 4 - max(0, math.floor(math.log10(abs(rp)))))
+            im50 = round(im50, 4 - max(0, math.floor(math.log10(abs(im50)))))
+            xp = round(xp, 4 - max(0, math.floor(math.log10(abs(xp)))))
             if im50 < 0:
                 im50str = " -j" + str(-1 * im50)
             else:
                 im50str = " +j" + str(im50)
+            im50str += "\N{OHM SIGN}"
+
+            if xp < 0:
+                xpstr = NanoVNASaver.capacitanceEquivalent(xp, s11data[self.location].freq)
+            else:
+                xpstr = NanoVNASaver.inductanceEquivalent(xp, s11data[self.location].freq)
+
             self.frequency_label.setText(NanoVNASaver.formatFrequency(s11data[self.location].freq))
-            self.impedance_label.setText(str(round(re50, 3)) + im50str)
+            self.impedance_label.setText(str(re50) + im50str)
+            self.parallel_r_label.setText(str(rp) + "\N{OHM SIGN}")
+            self.parallel_x_label.setText(xpstr)
             self.returnloss_label.setText(str(round(20 * math.log10((vswr - 1) / (vswr + 1)), 3)) + " dB")
             capacitance = NanoVNASaver.capacitanceEquivalent(im50, s11data[self.location].freq)
             inductance = NanoVNASaver.inductanceEquivalent(im50, s11data[self.location].freq)

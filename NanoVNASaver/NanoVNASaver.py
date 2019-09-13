@@ -37,7 +37,7 @@ PID = 22336
 
 
 class NanoVNASaver(QtWidgets.QWidget):
-    version = "0.0.8"
+    version = "0.0.9"
 
     def __init__(self):
         super().__init__()
@@ -118,12 +118,15 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         left_column = QtWidgets.QVBoxLayout()
         marker_column = QtWidgets.QVBoxLayout()
+        self.marker_frame = QtWidgets.QFrame()
+        marker_column.setContentsMargins(0, 0, 0, 0)
+        self.marker_frame.setLayout(marker_column)
         right_column = QtWidgets.QVBoxLayout()
-
         right_column.addLayout(self.charts_layout)
+        self.marker_frame.setHidden(not self.settings.value("MarkersVisible", True, bool))
 
         layout.addLayout(left_column, 0, 0)
-        layout.addLayout(marker_column, 0, 1)
+        layout.addWidget(self.marker_frame, 0, 1)
         layout.addLayout(right_column, 0, 2)
 
         ################################################################################################################
@@ -214,7 +217,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         marker_control_box = QtWidgets.QGroupBox()
         marker_control_box.setTitle("Markers")
-        marker_control_box.setMaximumWidth(350)
+        marker_control_box.setMaximumWidth(250)
         marker_control_layout = QtWidgets.QFormLayout(marker_control_box)
 
 
@@ -238,17 +241,26 @@ class NanoVNASaver(QtWidgets.QWidget):
         marker3.updated.connect(self.dataUpdated)
         label, layout = marker3.getRow()
         marker_control_layout.addRow(label, layout)
+
         self.markers.append(marker3)
 
+        self.showMarkerButton = QtWidgets.QPushButton()
+        if self.marker_frame.isHidden():
+            self.showMarkerButton.setText("Show data")
+        else:
+            self.showMarkerButton.setText("Hide data")
+        self.showMarkerButton.clicked.connect(self.toggleMarkerFrame)
+        marker_control_layout.addRow(self.showMarkerButton)
 
         for c in self.charts:
             c.setMarkers(self.markers)
         #marker3.frequencyInput.setDisabled(True)
-        marker_column.addWidget(marker_control_box)
+        left_column.addWidget(marker_control_box)
 
         marker_column.addWidget(self.markers[0].getGroupBox())
         marker_column.addWidget(self.markers[1].getGroupBox())
         marker_column.addWidget(self.markers[2].getGroupBox())
+
 
         ################################################################################################################
         #  Statistics/analysis
@@ -495,7 +507,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.lister = QtWidgets.QPlainTextEdit()
         self.lister.setFixedHeight(200)
         self.lister.setMaximumWidth(350)
-        marker_column.addWidget(self.lister)
+        # The lister doesn't really need to be visible for now. Maybe put it in a separate window?
+        #marker_column.addWidget(self.lister)
 
         self.worker.signals.updated.connect(self.dataUpdated)
         self.worker.signals.finished.connect(self.sweepFinished)
@@ -776,10 +789,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     @staticmethod
     def vswr(data: Datapoint):
-        re = data.re
-        im = data.im
-        re50 = 50 * (1 - re * re - im * im) / (1 + re * re + im * im - 2 * re)
-        im50 = 50 * (2 * im) / (1 + re * re + im * im - 2 * re)
+        im50, re50 = NanoVNASaver.normalize50(data)
         mag = math.sqrt((re50 - 50) * (re50 - 50) + im50 * im50) / math.sqrt((re50 + 50) * (re50 + 50) + im50 * im50)
         # mag = math.sqrt(re * re + im * im)  # Is this even right?
         vswr = (1 + mag) / (1 - mag)
@@ -806,14 +816,26 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     @staticmethod
     def gain(data: Datapoint):
-        re = data.re
-        im = data.im
-        re50 = 50 * (1 - re * re - im * im) / (1 + re * re + im * im - 2 * re)
-        im50 = 50 * (2 * im) / (1 + re * re + im * im - 2 * re)
+        im50, re50 = NanoVNASaver.normalize50(data)
         # Calculate the gain / reflection coefficient
         mag = math.sqrt((re50 - 50) * (re50 - 50) + im50 * im50) / math.sqrt(
             (re50 + 50) * (re50 + 50) + im50 * im50)
         return 20 * math.log10(mag)
+
+    @staticmethod
+    def normalize50(data):
+        re = data.re
+        im = data.im
+        re50 = 50 * (1 - re * re - im * im) / (1 + re * re + im * im - 2 * re)
+        im50 = 50 * (2 * im) / (1 + re * re + im * im - 2 * re)
+        return im50, re50
+
+    @staticmethod
+    def admittance(data):
+        re50, im50 = NanoVNASaver.normalize50(data)
+        rp = re50 / (re50**2 + im50**2)
+        xp = - im50 / (re50**2 + im50**2)
+        return rp, xp
 
     def sweepFinished(self):
         self.sweepProgressBar.setValue(100)
@@ -963,6 +985,16 @@ class NanoVNASaver(QtWidgets.QWidget):
         if insert != "":
             title = title + " (" + insert + ")"
         self.setWindowTitle(title)
+
+    def toggleMarkerFrame(self):
+        if self.marker_frame.isHidden():
+            self.marker_frame.setHidden(False)
+            self.settings.setValue("MarkersVisible", True)
+            self.showMarkerButton.setText("Hide data")
+        else:
+            self.marker_frame.setHidden(True)
+            self.settings.setValue("MarkersVisible", False)
+            self.showMarkerButton.setText("Show data")
 
     def resetReference(self):
         self.referenceS11data = []
