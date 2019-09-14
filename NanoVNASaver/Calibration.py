@@ -200,17 +200,17 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.app.calibration.useIdealLoad = True
         else:
             # We are using custom calibration standards
-            self.app.calibration.shortL0 = float(self.short_l0_input.text())/10**15
-            self.app.calibration.shortL1 = float(self.short_l1_input.text())/10**27
-            self.app.calibration.shortL2 = float(self.short_l2_input.text())/10**36
-            self.app.calibration.shortL3 = float(self.short_l3_input.text())/10**45
+            self.app.calibration.shortL0 = float(self.short_l0_input.text())/10**12
+            self.app.calibration.shortL1 = float(self.short_l1_input.text())/10**24
+            self.app.calibration.shortL2 = float(self.short_l2_input.text())/10**33
+            self.app.calibration.shortL3 = float(self.short_l3_input.text())/10**42
             self.app.calibration.shortLength = float(self.short_length.text())/10**12
             self.app.calibration.useIdealShort = False
 
-            self.app.calibration.openC0 = float(self.open_c0_input.text())/10**12
-            self.app.calibration.openC1 = float(self.open_c1_input.text())/10**24
-            self.app.calibration.openC2 = float(self.open_c2_input.text())/10**33
-            self.app.calibration.openC3 = float(self.open_c3_input.text())/10**42
+            self.app.calibration.openC0 = float(self.open_c0_input.text())/10**15
+            self.app.calibration.openC1 = float(self.open_c1_input.text())/10**27
+            self.app.calibration.openC2 = float(self.open_c2_input.text())/10**36
+            self.app.calibration.openC3 = float(self.open_c3_input.text())/10**45
             self.app.calibration.openLength = float(self.open_length.text())/10**12
             self.app.calibration.useIdealOpen = False
 
@@ -320,7 +320,7 @@ class Calibration:
                 if divisor != 0:
                     Zop = np.complex(0, -1) / divisor
                     gammaOpen = ((Zop/50) - 1) / ((Zop/50) + 1)
-                    g2 = gammaOpen * np.exp(np.complex(0, 1) * 2 * 2 * math.pi * f * self.shortLength)
+                    g2 = gammaOpen * np.exp(np.complex(0, 1) * 2 * 2 * math.pi * f * self.shortLength * -1)
                 else:
                     g2 = self.openIdeal
             if self.useIdealLoad:

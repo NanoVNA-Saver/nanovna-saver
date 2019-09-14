@@ -211,7 +211,7 @@ class PhaseChart(Chart):
 
         qp.setPen(pen)
         for i in range(len(self.data)):
-            angle = -self.angle(self.data[i])
+            angle = self.angle(self.data[i])
             x = self.leftMargin + 1 + round(self.chartWidth/len(self.data) * i)
             y = 30 + round((angle-minAngle)/span*(self.chartHeight-10))
             qp.drawPoint(int(x), int(y))
@@ -227,12 +227,12 @@ class PhaseChart(Chart):
         for i in range(len(self.reference)):
             if self.reference[i].freq < fstart or self.reference[i].freq > fstop:
                 continue
-            angle = -self.angle(self.reference[i])
+            angle = self.angle(self.reference[i])
             x = self.leftMargin + 1 + round(self.chartWidth*(self.reference[i].freq - fstart)/fspan)
             y = 30 + round((angle-minAngle)/span*(self.chartHeight-10))
             qp.drawPoint(int(x), int(y))
             if self.drawLines and i > 0:
-                angle = -self.angle(self.reference[i-1])
+                angle = self.angle(self.reference[i-1])
                 prevx = x = self.leftMargin + 1 + round(self.chartWidth*(self.reference[i-1].freq - fstart)/fspan)
                 prevy = 30 + round((angle - minAngle) / span * (self.chartHeight - 10))
                 qp.setPen(line_pen)
@@ -243,7 +243,7 @@ class PhaseChart(Chart):
             if m.location != -1:
                 highlighter.setColor(m.color)
                 qp.setPen(highlighter)
-                angle = -self.angle(self.data[m.location])
+                angle = self.angle(self.data[m.location])
                 x = self.leftMargin + 1 + round(self.chartWidth/len(self.data) * m.location)
                 y = 30 + round((angle - minAngle) / span * (self.chartHeight - 10))
                 qp.drawLine(int(x), int(y) + 3, int(x) - 3, int(y) - 3)
@@ -255,7 +255,7 @@ class PhaseChart(Chart):
         return self.leftMargin + 1 + round(self.chartWidth * (d.freq - self.fstart) / span)
 
     def getYPosition(self, d: Datapoint) -> int:
-        angle = -self.angle(d)
+        angle = self.angle(d)
         return 30 + round((angle - self.minAngle) / self.span * (self.chartHeight - 10))
 
     def mouseMoveEvent(self, a0: QtGui.QMouseEvent) -> None:
