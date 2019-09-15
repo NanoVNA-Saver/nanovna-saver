@@ -15,6 +15,7 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+import sys
 
 from PyQt5 import QtWidgets, QtCore
 
@@ -30,7 +31,7 @@ def main():
     print("See https://github.com/mihtjel/nanovna-saver for further details")
     # Main code goes here
     QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
-    app = QtWidgets.QApplication([])
+    app = QtWidgets.QApplication(sys.argv)
     window = NanoVNASaver()
     window.show()
     app.exec_()
