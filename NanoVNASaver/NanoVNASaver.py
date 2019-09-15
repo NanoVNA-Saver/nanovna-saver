@@ -1225,6 +1225,10 @@ class TDRWindow(QtWidgets.QWidget):
         # peak = np.max(td)  # We should check that this is an actual *peak*, and not just a vague maximum
         index_peak = np.argmax(self.td)
 
-        self.tdr_result_label.setText(str(round(self.distance_axis[index_peak]/2, 3)) + " m")
-        self.app.tdr_result_label.setText(str(round(self.distance_axis[index_peak] / 2, 3)) + " m")
+        cable_len = round(self.distance_axis[index_peak]/2, 3)
+        feet = math.floor(cable_len / 0.3048)
+        inches = round(((cable_len / 0.3048) - feet)*12, 1)
+
+        self.tdr_result_label.setText(str(cable_len) + " m (" + str(feet) + "ft " + str(inches) + "in)")
+        self.app.tdr_result_label.setText(str(cable_len) + " m")
         self.app.tdr_chart.update()
