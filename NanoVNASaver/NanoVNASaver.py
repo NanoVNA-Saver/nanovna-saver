@@ -1206,7 +1206,7 @@ class TDRWindow(QtWidgets.QWidget):
         step_size = self.app.data[1].freq - self.app.data[0].freq
         if step_size == 0:
             self.tdr_result_label.setText("")
-            self.lister.appendPlainText("Cannot compute cable length at 0 span")
+            self.app.lister.appendPlainText("Cannot compute cable length at 0 span")
             return
 
         s11 = []
