@@ -14,6 +14,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import collections
+import logging
 import math
 import sys
 import threading
@@ -35,6 +36,8 @@ Datapoint = collections.namedtuple('Datapoint', 'freq re im')
 
 VID = 1155
 PID = 22336
+
+logger = logging.getLogger(__name__)
 
 
 class NanoVNASaver(QtWidgets.QWidget):
@@ -69,7 +72,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.markers = []
 
-        self.serialPort = self.getport()
+        self.serialPort = self.getPort()
         # self.serialSpeed = "115200"
 
         self.sweepColor = self.settings.value("SweepColor", defaultValue=QtGui.QColor(160, 140, 20, 128), type=QtGui.QColor)
@@ -480,7 +483,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     # Get that windows port
     @staticmethod
-    def getport() -> str:
+    def getPort() -> str:
         device_list = list_ports.comports()
         for d in device_list:
             if (d.vid == VID and
@@ -511,12 +514,9 @@ class NanoVNASaver(QtWidgets.QWidget):
             return
         try:
             file = open(filename, "w+")
-            self.lister.clear()
-            self.lister.appendPlainText("# Hz S RI R 50")
             file.write("# Hz S RI R 50\n")
             for i in range(len(self.data)):
                 if i == 0 or self.data[i].freq != self.data[i-1].freq:
-                    self.lister.appendPlainText(str(self.data[i].freq) + " " + str(self.data[i].re) + " " + str(self.data[i].im))
                     file.write(str(self.data[i].freq) + " " + str(self.data[i].re) + " " + str(self.data[i].im) + "\n")
             file.close()
         except Exception as e:
@@ -524,7 +524,6 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.lister.appendPlainText("Error during file export: " + str(e))
             return
 
-        self.lister.appendPlainText("")
         self.lister.appendPlainText("File " + filename + " written.")
 
     def exportFileS2P(self):

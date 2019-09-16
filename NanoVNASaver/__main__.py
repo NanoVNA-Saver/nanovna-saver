@@ -15,6 +15,7 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+import logging
 import sys
 
 from PyQt5 import QtWidgets, QtCore
@@ -30,6 +31,16 @@ def main():
     print("")
     print("See https://github.com/mihtjel/nanovna-saver for further details")
     # Main code goes here
+
+    logger = logging.getLogger("NanoVNASaver")
+    logger.setLevel(logging.WARNING)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+    logger.info("Startup...")
+
     QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
     app = QtWidgets.QApplication(sys.argv)
     window = NanoVNASaver()
