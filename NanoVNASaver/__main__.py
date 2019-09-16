@@ -31,15 +31,37 @@ def main():
     print("")
     print("See https://github.com/mihtjel/nanovna-saver for further details")
     # Main code goes here
+    console_log_level = logging.WARNING
+    file_log_level = logging.DEBUG
+    log_file = ""
+
+    for i in range(len(sys.argv)):
+        if sys.argv[i] == "-d":
+            console_log_level = logging.DEBUG
+        elif sys.argv[i] == "-D" and i < len(sys.argv) - 1:
+            log_file = sys.argv[i+1]
+        elif sys.argv[i] == "-D":
+            print("You must enter a file name when using -D")
+            return
 
     logger = logging.getLogger("NanoVNASaver")
     logger.setLevel(logging.DEBUG)
     ch = logging.StreamHandler()
-    #ch.setLevel(logging.WARNING)
-    ch.setLevel(logging.DEBUG)
+    ch.setLevel(console_log_level)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     ch.setFormatter(formatter)
     logger.addHandler(ch)
+    if log_file != "":
+        try:
+            fh = logging.FileHandler(log_file)
+        except Exception as e:
+            logger.exception("Error opening log file: %s", e)
+            return
+
+        fh.setLevel(file_log_level)
+        fh.setFormatter(formatter)
+        logger.addHandler(fh)
+
     logger.info("Startup...")
 
     QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)

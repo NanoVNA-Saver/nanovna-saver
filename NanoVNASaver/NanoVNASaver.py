@@ -528,7 +528,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             file.close()
             logger.debug("File written")
         except Exception as e:
-            logger.exception("Error during file export!", e)
+            logger.exception("Error during file export: %s", e)
             return
 
     def exportFileS2P(self):
@@ -552,7 +552,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             file.close()
             logger.debug("File written")
         except Exception as e:
-            logger.exception("Error during file export!", e)
+            logger.exception("Error during file export: %s", e)
             return
 
     def serialButtonClick(self):
@@ -617,7 +617,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                 self.serial.write(str(command + "\r").encode('ascii'))
                 self.serial.readline()
             except serial.SerialException as exc:
-                logger.exception("Exception while writing to serial port (%s)", command, exc)
+                logger.exception("Exception while writing to serial port (%s): %s", command, exc)
             self.serialLock.release()
         return
 
@@ -662,7 +662,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                     data = self.serial.readline().decode('ascii')
                     result += data
             except serial.SerialException as exc:
-                logger.exception("Exception while reading firmware data.", exc)
+                logger.exception("Exception while reading firmware data: %s", exc)
             self.serialLock.release()
             return result
         else:
@@ -686,7 +686,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                     result += data
                 values = result.split("\r\n")
             except serial.SerialException as exc:
-                logger.exception("Exception while reading %s", value, exc)
+                logger.exception("Exception while reading %s: %s", value, exc)
 
             self.serialLock.release()
             return values[1:102]
