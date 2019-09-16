@@ -89,18 +89,20 @@ class SweepWorker(QtCore.QRunnable):
             if self.stopped:
                 logger.debug("Stopping sweeping as signalled")
                 break
-            logger.debug("Setting sweep range to %d to %d", sweepFrom + i*101*stepsize, sweepFrom+(100+i*101)*stepsize)
-            self.app.setSweep(sweepFrom + i*101*stepsize, sweepFrom+(100+i*101)*stepsize)
+            start = sweepFrom + i*101*stepsize
+            logger.debug("Setting sweep range to %d to %d", start, sweepFrom+(100+i*101)*stepsize)
+            self.app.setSweep(start, sweepFrom+(100+i*101)*stepsize)
             sleep(0.3)
+            # Let's check the frequencies first:
+            frequencies += self.readFreq()
+            if start != frequencies[0]:
+                # We got the wrong frequencies? Let's just log it for now.
+                logger.warning("Wrong frequency received - %d is not %d", frequencies[0], start)
             # S11
-            logger.debug("Reading S11")
             values += self.readData("data 0")
             # S21
-            logger.debug("Reading S21")
             values21 += self.readData("data 1")
 
-            logger.debug("Reading frequencies")
-            frequencies += self.readFreq()
             self.percentage = (i+1)*100/self.noSweeps
             logger.debug("Saving acquired data")
             self.saveData(frequencies, values, values21)
@@ -117,10 +119,8 @@ class SweepWorker(QtCore.QRunnable):
                 self.app.setSweep(sweepFrom + i * 101 * stepsize, sweepFrom + (100 + i * 101) * stepsize)
                 sleep(0.3)
                 # S11
-                logger.debug("Reading S11")
                 values = self.readData("data 0")
                 # S21
-                logger.debug("Reading S21")
                 values21 = self.readData("data 1")
 
                 logger.debug("Updating acquired data")
@@ -219,6 +219,7 @@ class SweepWorker(QtCore.QRunnable):
                     logger.debug("Re-reading %s", data)
                     done = False
             if not done:
+                sleep(0.2)
                 count += 1
                 if count == 10:
                     logger.error("Tried and failed to read %s %d times.", data, count)

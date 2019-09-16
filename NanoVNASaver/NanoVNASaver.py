@@ -78,6 +78,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.sweepColor = self.settings.value("SweepColor", defaultValue=QtGui.QColor(160, 140, 20, 128), type=QtGui.QColor)
         self.referenceColor = self.settings.value("ReferenceColor", defaultValue=QtGui.QColor(0, 0, 255, 32), type=QtGui.QColor)
 
+        logger.debug("Building user interface")
+
         self.baseTitle = "NanoVNA Saver " + NanoVNASaver.version
         self.updateTitle()
         layout = QtWidgets.QGridLayout()
@@ -481,6 +483,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.worker.signals.updated.connect(self.dataUpdated)
         self.worker.signals.finished.connect(self.sweepFinished)
 
+        logger.debug("Finished building interface")
+
     # Get that windows port
     @staticmethod
     def getPort() -> str:
@@ -489,6 +493,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             if (d.vid == VID and
                     d.pid == PID):
                 port = d.device
+                logger.info("Found NanoVNA (%04x %04x) on port %s", d.vid, d.pid, d.device)
                 return port
 
     def pickReferenceFile(self):
@@ -504,56 +509,51 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.fileNameInput.setText(filename)
 
     def exportFileS1P(self):
-        print("Save file to " + self.fileNameInput.text())
+        logger.debug("Save S1P file to %s", self.fileNameInput.text())
         if len(self.data) == 0:
-            self.lister.appendPlainText("No data stored, nothing written.")
+            logger.warning("No data stored, nothing written.")
             return
         filename = self.fileNameInput.text()
         if filename == "":
-            self.lister.appendPlainText("No filename entered.")
+            logger.warning("No filename entered, nothing saved.")
             return
         try:
+            logger.debug("Opening %s for writing", filename)
             file = open(filename, "w+")
+            logger.debug("Writing file")
             file.write("# Hz S RI R 50\n")
             for i in range(len(self.data)):
                 if i == 0 or self.data[i].freq != self.data[i-1].freq:
                     file.write(str(self.data[i].freq) + " " + str(self.data[i].re) + " " + str(self.data[i].im) + "\n")
             file.close()
+            logger.debug("File written")
         except Exception as e:
-            print("Error during file export: " + str(e))
-            self.lister.appendPlainText("Error during file export: " + str(e))
+            logger.exception("Error during file export!", e)
             return
 
-        self.lister.appendPlainText("File " + filename + " written.")
-
     def exportFileS2P(self):
-        print("Save file to " + self.fileNameInput.text())
-        if len(self.data) == 0:
-            self.lister.appendPlainText("No data stored, nothing written.")
+        logger.debug("Save S2P file to %s", self.fileNameInput.text())
+        if len(self.data) == 0 or len(self.data21) == 0:
+            logger.warning("No data stored, nothing written.")
             return
         filename = self.fileNameInput.text()
         if filename == "":
-            self.lister.appendPlainText("No filename entered.")
+            logger.warning("No filename entered, nothing saved.")
             return
         try:
+            logger.debug("Opening %s for writing", filename)
             file = open(filename, "w+")
-            self.lister.clear()
-            self.lister.appendPlainText("# Hz S RI R 50")
+            logger.debug("Writing file")
             file.write("# Hz S RI R 50\n")
             for i in range(len(self.data)):
                 if i == 0 or self.data[i].freq != self.data[i-1].freq:
-                    self.lister.appendPlainText(str(self.data[i].freq) + " " + str(self.data[i].re) + " " + str(self.data[i].im) + " " +
-                                                str(self.data21[i].re) + " " + str(self.data21[i].im) + " 0 0 0 0")
                     file.write(str(self.data[i].freq) + " " + str(self.data[i].re) + " " + str(self.data[i].im) + " " +
                                str(self.data21[i].re) + " " + str(self.data21[i].im) + " 0 0 0 0\n")
             file.close()
+            logger.debug("File written")
         except Exception as e:
-            print("Error during file export: " + str(e))
-            self.lister.appendPlainText("Error during file export: " + str(e))
+            logger.exception("Error during file export!", e)
             return
-
-        self.lister.appendPlainText("")
-        self.lister.appendPlainText("File " + filename + " written.")
 
     def serialButtonClick(self):
         if self.serial.is_open:
@@ -574,12 +574,12 @@ class NanoVNASaver(QtWidgets.QWidget):
     def startSerial(self):
         if self.serialLock.acquire():
             self.serialPort = self.serialPortInput.text()
-            self.lister.appendPlainText("Opening serial port " + self.serialPort)
+            logger.info("Opening serial port %s", self.serialPort)
             try:
                 self.serial = serial.Serial(port=self.serialPort, baudrate=115200)
                 self.serial.timeout = 0.05
             except serial.SerialException as exc:
-                self.lister.appendPlainText("Tried to open " + self.serialPort + " and failed: " + str(exc))
+                logger.error("Tried to open %s and failed: ", self.serialPort, exc)
                 self.serialLock.release()
                 return
             self.btnSerialToggle.setText("Disconnect")
@@ -590,37 +590,38 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.flushSerialBuffers()
             sleep(0.05)
 
-            self.lister.appendPlainText(self.readFirmware())
+            logger.info(self.readFirmware())
 
             frequencies = self.readValues("frequencies")
-
+            logger.info("Read starting frequency %s and end frequency %s", frequencies[0], frequencies[100])
             self.sweepStartInput.setText(str(frequencies[0]))
             self.sweepEndInput.setText(str(frequencies[100]))
 
+            logger.debug("Starting initial sweep")
             self.sweep()
             return
 
     def stopSerial(self):
         if self.serialLock.acquire():
+            logger.info("Closing connection to NanoVNA")
             self.serial.close()
             self.serialLock.release()
             self.btnSerialToggle.setText("Connect to NanoVNA")
 
     def writeSerial(self, command):
         if not self.serial.is_open:
-            print("Warning: Writing without serial port being opened (" + command + ")")
+            logger.warning("Writing without serial port being opened (%s)", command)
             return
         if self.serialLock.acquire():
             try:
                 self.serial.write(str(command + "\r").encode('ascii'))
                 self.serial.readline()
             except serial.SerialException as exc:
-                print("Exception received: " + str(exc))
+                logger.exception("Exception while writing to serial port (%s)", command, exc)
             self.serialLock.release()
         return
 
     def setSweep(self, start, stop):
-        # print("Sending: " + "sweep " + str(start) + " " + str(stop) + " 101")
         self.writeSerial("sweep " + str(start) + " " + str(stop) + " 101")
 
     def sweep(self):
@@ -647,22 +648,26 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def readFirmware(self):
         if self.serialLock.acquire():
+            result = ""
             try:
                 data = "a"
                 while data != "":
                     data = self.serial.readline().decode('ascii')
                 #  Then send the command to read data
                 self.serial.write("info\r".encode('ascii'))
+                result = ""
+                data = ""
+                sleep(0.01)
+                while "ch>" not in data:
+                    data = self.serial.readline().decode('ascii')
+                    result += data
             except serial.SerialException as exc:
-                print("Exception received: " + str(exc))
-            result = ""
-            data = ""
-            sleep(0.01)
-            while "ch>" not in data:
-                data = self.serial.readline().decode('ascii')
-                result += data
+                logger.exception("Exception while reading firmware data.", exc)
             self.serialLock.release()
             return result
+        else:
+            logger.error("Unable to acquire serial lock to read firmware.")
+            return ""
 
     def readValues(self, value):
         if self.serialLock.acquire():
@@ -673,24 +678,28 @@ class NanoVNASaver(QtWidgets.QWidget):
 
                 #  Then send the command to read data
                 self.serial.write(str(value + "\r").encode('ascii'))
+                result = ""
+                data = ""
+                sleep(0.05)
+                while "ch>" not in data:
+                    data = self.serial.readline().decode('ascii')
+                    result += data
+                values = result.split("\r\n")
             except serial.SerialException as exc:
-                print("Exception received: " + str(exc))
-            result = ""
-            data = ""
-            sleep(0.05)
-            while "ch>" not in data:
-                data = self.serial.readline().decode('ascii')
-                result += data
-            values = result.split("\r\n")
+                logger.exception("Exception while reading %s", value, exc)
+
             self.serialLock.release()
             return values[1:102]
+        else:
+            logger.error("Unable to acquire serial lock to read %s", value)
+            return
 
     def saveData(self, data, data12, source=None):
         if self.dataLock.acquire(blocking=True):
             self.data = data
             self.data21 = data12
         else:
-            print("ERROR: Failed acquiring data lock while saving.")
+            logger.error("Failed acquiring data lock while saving.")
         self.dataLock.release()
         if source is not None:
             self.sweepSource = source
@@ -749,7 +758,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                 self.s21_max_gain_label.setText("")
 
         else:
-            print("ERROR: Failed acquiring data lock while updating")
+            logger.error("Failed acquiring data lock while updating.")
         self.updateTitle()
         self.dataLock.release()
 
@@ -1205,7 +1214,7 @@ class TDRWindow(QtWidgets.QWidget):
         step_size = self.app.data[1].freq - self.app.data[0].freq
         if step_size == 0:
             self.tdr_result_label.setText("")
-            self.app.lister.appendPlainText("Cannot compute cable length at 0 span")
+            logger.info("Cannot compute cable length at 0 span")
             return
 
         s11 = []
