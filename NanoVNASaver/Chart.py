@@ -29,6 +29,7 @@ class Chart(QtWidgets.QWidget):
     referenceColor: QtGui.QColor = QtGui.QColor(QtCore.Qt.blue)
     referenceColor.setAlpha(64)
     backgroundColor: QtGui.QColor = QtGui.QColor(QtCore.Qt.white)
+    foregroundColor: QtGui.QColor = QtGui.QColor(QtCore.Qt.lightGray)
     textColor: QtGui.QColor = QtGui.QColor(QtCore.Qt.black)
     data: List[Datapoint] = []
     reference: List[Datapoint] = []
@@ -50,6 +51,10 @@ class Chart(QtWidgets.QWidget):
         pal = self.palette()
         pal.setColor(QtGui.QPalette.Background, color)
         self.setPalette(pal)
+        self.update()
+
+    def setForegroundColor(self, color: QtGui.QColor):
+        self.foregroundColor = color
         self.update()
 
     def setTextColor(self, color: QtGui.QColor):
@@ -160,7 +165,7 @@ class PhaseChart(Chart):
     def drawChart(self, qp: QtGui.QPainter):
         qp.setPen(QtGui.QPen(self.textColor))
         qp.drawText(3, 15, self.name)
-        qp.setPen(QtGui.QPen(QtGui.QColor("lightgray")))
+        qp.setPen(QtGui.QPen(self.foregroundColor))
         qp.drawLine(self.leftMargin, 20, self.leftMargin, 20+self.chartHeight+5)
         qp.drawLine(self.leftMargin-5, 20+self.chartHeight, self.leftMargin+self.chartWidth, 20 + self.chartHeight)
         minAngle = -180
@@ -173,7 +178,7 @@ class PhaseChart(Chart):
             if i != minAngle and i != maxAngle:
                 qp.setPen(QtGui.QPen(self.textColor))
                 qp.drawText(3, y+3, str(-i) + "°")
-            qp.setPen(QtGui.QPen(QtGui.QColor("lightgray")))
+            qp.setPen(QtGui.QPen(self.foregroundColor))
             qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.chartWidth, y)
         qp.setPen(self.textColor)
         qp.drawText(3, 35, str(-minAngle) + "°")
@@ -204,7 +209,7 @@ class PhaseChart(Chart):
         ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
         for i in range(ticks):
             x = self.leftMargin + round((i+1)*self.chartWidth/ticks)
-            qp.setPen(QtGui.QPen(QtGui.QColor("lightgray")))
+            qp.setPen(QtGui.QPen(self.foregroundColor))
             qp.drawLine(x, 20, x, 20+self.chartHeight+5)
             qp.setPen(self.textColor)
             qp.drawText(x-20, 20+self.chartHeight+15, Chart.shortenFrequency(round(fspan/ticks*(i+1) + fstart)))
@@ -315,7 +320,7 @@ class VSWRChart(Chart):
     def drawChart(self, qp: QtGui.QPainter):
         qp.setPen(QtGui.QPen(self.textColor))
         qp.drawText(3, 15, self.name)
-        qp.setPen(QtGui.QPen(QtGui.QColor("lightgray")))
+        qp.setPen(QtGui.QPen(self.foregroundColor))
         qp.drawLine(self.leftMargin, 20, self.leftMargin, 20+self.chartHeight+5)
         qp.drawLine(self.leftMargin-5, 20+self.chartHeight, self.leftMargin+self.chartWidth, 20 + self.chartHeight)
 
@@ -364,7 +369,7 @@ class VSWRChart(Chart):
             if i != minVSWR and i != maxVSWR:
                 qp.setPen(self.textColor)
                 qp.drawText(3, y+3, str(i))
-            qp.setPen(QtGui.QPen(QtGui.QColor("lightgray")))
+            qp.setPen(QtGui.QPen(self.foregroundColor))
             qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.chartWidth, y)
         qp.drawLine(self.leftMargin - 5, 30, self.leftMargin + self.chartWidth, 30)
         qp.setPen(self.textColor)
@@ -375,7 +380,7 @@ class VSWRChart(Chart):
         ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
         for i in range(ticks):
             x = self.leftMargin + round((i+1)*self.chartWidth/ticks)
-            qp.setPen(QtGui.QPen(QtGui.QColor("lightgray")))
+            qp.setPen(QtGui.QPen(self.foregroundColor))
             qp.drawLine(x, 20, x, 20+self.chartHeight+5)
             qp.setPen(self.textColor)
             qp.drawText(x-20, 20+self.chartHeight+15, Chart.shortenFrequency(round(fspan/ticks*(i+1) + fstart)))
@@ -496,7 +501,7 @@ class PolarChart(Chart):
         centerY = int(self.height()/2)
         qp.setPen(QtGui.QPen(self.textColor))
         qp.drawText(3, 15, self.name)
-        qp.setPen(QtGui.QPen(QtGui.QColor("lightgray")))
+        qp.setPen(QtGui.QPen(self.foregroundColor))
         qp.drawEllipse(QtCore.QPoint(centerX, centerY), int(self.chartWidth/2), int(self.chartHeight/2))
         qp.drawEllipse(QtCore.QPoint(centerX, centerY), int(self.chartWidth/4), int(self.chartHeight/4))
         qp.drawLine(centerX - int(self.chartWidth/2), centerY, centerX + int(self.chartWidth/2), centerY)
@@ -642,7 +647,7 @@ class SmithChart(Chart):
         centerY = int(self.height()/2)
         qp.setPen(QtGui.QPen(self.textColor))
         qp.drawText(3, 15, self.name)
-        qp.setPen(QtGui.QPen(QtGui.QColor("lightgray")))
+        qp.setPen(QtGui.QPen(self.foregroundColor))
         qp.drawEllipse(QtCore.QPoint(centerX, centerY), int(self.chartWidth/2), int(self.chartHeight/2))
         qp.drawLine(centerX - int(self.chartWidth/2), centerY, centerX + int(self.chartWidth/2), centerY)
 
@@ -791,7 +796,7 @@ class LogMagChart(Chart):
     def drawChart(self, qp: QtGui.QPainter):
         qp.setPen(QtGui.QPen(self.textColor))
         qp.drawText(3, 15, self.name + " (dB)")
-        qp.setPen(QtGui.QPen(QtGui.QColor("lightgray")))
+        qp.setPen(QtGui.QPen(self.foregroundColor))
         qp.drawLine(self.leftMargin, 20, self.leftMargin, 20+self.chartHeight+5)
         qp.drawLine(self.leftMargin-5, 20+self.chartHeight, self.leftMargin+self.chartWidth, 20 + self.chartHeight)
 
@@ -838,7 +843,7 @@ class LogMagChart(Chart):
         self.span = span
         for i in range(minValue, maxValue, 10):
             y = 30 + round((i-minValue)/span*(self.chartHeight-10))
-            qp.setPen(QtGui.QPen(QtGui.QColor("lightgray")))
+            qp.setPen(QtGui.QPen(self.foregroundColor))
             qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.chartWidth, y)
             if i > minValue:
                 qp.setPen(QtGui.QPen(self.textColor))
@@ -851,7 +856,7 @@ class LogMagChart(Chart):
         ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
         for i in range(ticks):
             x = self.leftMargin + round((i+1)*self.chartWidth/ticks)
-            qp.setPen(QtGui.QPen(QtGui.QColor("lightgray")))
+            qp.setPen(QtGui.QPen(self.foregroundColor))
             qp.drawLine(x, 20, x, 20+self.chartHeight+5)
             qp.setPen(self.textColor)
             qp.drawText(x-20, 20+self.chartHeight+15, LogMagChart.shortenFrequency(round(fspan/ticks*(i+1) + fstart)))
@@ -971,7 +976,7 @@ class QualityFactorChart(Chart):
         from NanoVNASaver.NanoVNASaver import NanoVNASaver
         qp.setPen(QtGui.QPen(self.textColor))
         qp.drawText(3, 15, self.name)
-        qp.setPen(QtGui.QPen(QtGui.QColor("lightgray")))
+        qp.setPen(QtGui.QPen(self.foregroundColor))
         qp.drawLine(self.leftMargin, 20, self.leftMargin, 20+self.chartHeight+5)
         qp.drawLine(self.leftMargin-5, 20+self.chartHeight, self.leftMargin+self.chartWidth, 20 + self.chartHeight)
         maxQ = 0
@@ -996,7 +1001,7 @@ class QualityFactorChart(Chart):
             y = 30 + round((self.maxQ - i) / self.span * (self.chartHeight-10))
             qp.setPen(QtGui.QPen(self.textColor))
             qp.drawText(3, y+3, str(i))
-            qp.setPen(QtGui.QPen(QtGui.QColor("lightgray")))
+            qp.setPen(QtGui.QPen(self.foregroundColor))
             qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.chartWidth, y)
         qp.drawLine(self.leftMargin - 5, 30, self.leftMargin + self.chartWidth, 30)
         qp.setPen(self.textColor)
@@ -1027,7 +1032,7 @@ class QualityFactorChart(Chart):
         ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
         for i in range(ticks):
             x = self.leftMargin + round((i+1)*self.chartWidth/ticks)
-            qp.setPen(QtGui.QPen(QtGui.QColor("lightgray")))
+            qp.setPen(QtGui.QPen(self.foregroundColor))
             qp.drawLine(x, 20, x, 20+self.chartHeight+5)
             qp.setPen(self.textColor)
             qp.drawText(x-20, 20+self.chartHeight+15, Chart.shortenFrequency(round(fspan/ticks*(i+1) + fstart)))
@@ -1129,7 +1134,7 @@ class TDRChart(Chart):
         width = self.width() - self.leftMargin - self.rightMargin
         height = self.height() - self.lowerMargin
 
-        qp.setPen(QtCore.Qt.lightGray)
+        qp.setPen(QtGui.QPen(self.foregroundColor))
         qp.drawLine(self.leftMargin - 5, self.height() - self.lowerMargin, self.width() - self.rightMargin,
                     self.height() - self.lowerMargin)
         qp.drawLine(self.leftMargin, 20, self.leftMargin, self.height() - self.lowerMargin + 5)
@@ -1142,7 +1147,7 @@ class TDRChart(Chart):
 
             for i in range(ticks):
                 x = self.leftMargin + round((i + 1) * width / ticks)
-                qp.setPen(QtGui.QPen(QtGui.QColor("lightgray")))
+                qp.setPen(QtGui.QPen(self.foregroundColor))
                 qp.drawLine(x, 20, x, height)
                 qp.setPen(QtGui.QPen(self.textColor))
                 qp.drawText(x - 20, 20 + height,

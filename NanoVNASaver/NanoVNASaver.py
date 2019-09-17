@@ -1030,6 +1030,33 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         layout.addWidget(display_options_box)
 
+        color_options_box = QtWidgets.QGroupBox("Colors")
+        color_options_layout = QtWidgets.QFormLayout(color_options_box)
+
+        self.use_custom_colors = QtWidgets.QCheckBox("Use custom colors")
+        self.use_custom_colors.stateChanged.connect(self.changeCustomColors)
+        color_options_layout.addRow(self.use_custom_colors)
+
+        self.btn_background_picker = QtWidgets.QPushButton("█")
+        self.btn_background_picker.setFixedWidth(20)
+        self.btn_background_picker.clicked.connect(lambda: self.setColor("background", QtWidgets.QColorDialog.getColor(self.backgroundColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
+
+        color_options_layout.addRow("Chart background", self.btn_background_picker)
+
+        self.btn_foreground_picker = QtWidgets.QPushButton("█")
+        self.btn_foreground_picker.setFixedWidth(20)
+        self.btn_foreground_picker.clicked.connect(lambda: self.setColor("foreground", QtWidgets.QColorDialog.getColor(self.foregroundColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
+
+        color_options_layout.addRow("Chart foreground", self.btn_foreground_picker)
+        
+        self.btn_text_picker = QtWidgets.QPushButton("█")
+        self.btn_text_picker.setFixedWidth(20)
+        self.btn_text_picker.clicked.connect(lambda: self.setColor("text", QtWidgets.QColorDialog.getColor(self.textColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
+
+        color_options_layout.addRow("Chart text", self.btn_text_picker)
+
+        layout.addWidget(color_options_box)
+
         charts_box = QtWidgets.QGroupBox("Displayed charts")
         charts_layout = QtWidgets.QGridLayout(charts_box)
 
@@ -1096,6 +1123,34 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.dark_mode_option.setChecked(self.app.settings.value("DarkMode", False, bool))
         self.show_lines_option.setChecked(self.app.settings.value("ShowLines", False, bool))
 
+        self.backgroundColor = self.app.settings.value("BackgroundColor", defaultValue=QtGui.QColor("white"),
+                                                       type=QtGui.QColor)
+        self.foregroundColor = self.app.settings.value("ForegroundColor", defaultValue=QtGui.QColor("lightgray"),
+                                                       type=QtGui.QColor)
+        self.textColor = self.app.settings.value("TextColor", defaultValue=QtGui.QColor("black"),
+                                                 type=QtGui.QColor)
+
+        if self.app.settings.value("UseCustomColors", defaultValue=False, type=bool):
+            self.dark_mode_option.setDisabled(True)
+            self.dark_mode_option.setChecked(False)
+            self.use_custom_colors.setChecked(True)
+        else:
+            self.btn_background_picker.setDisabled(True)
+            self.btn_foreground_picker.setDisabled(True)
+            self.btn_text_picker.setDisabled(True)
+
+        p = self.btn_background_picker.palette()
+        p.setColor(QtGui.QPalette.ButtonText, self.backgroundColor)
+        self.btn_background_picker.setPalette(p)
+
+        p = self.btn_foreground_picker.palette()
+        p.setColor(QtGui.QPalette.ButtonText, self.foregroundColor)
+        self.btn_foreground_picker.setPalette(p)
+
+        p = self.btn_text_picker.palette()
+        p.setColor(QtGui.QPalette.ButtonText, self.textColor)
+        self.btn_text_picker.setPalette(p)
+
     def changeChart(self, x, y, chart):
         found = None
         for c in self.app.charts:
@@ -1126,11 +1181,53 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         if state:
             for c in self.app.charts:
                 c.setBackgroundColor(QtGui.QColor(QtCore.Qt.black))
+                c.setForegroundColor(QtGui.QColor(QtCore.Qt.lightGray))
                 c.setTextColor(QtGui.QColor(QtCore.Qt.white))
         else:
             for c in self.app.charts:
                 c.setBackgroundColor(QtGui.QColor(QtCore.Qt.white))
+                c.setForegroundColor(QtGui.QColor(QtCore.Qt.lightGray))
                 c.setTextColor(QtGui.QColor(QtCore.Qt.black))
+
+    def changeCustomColors(self):
+        self.app.settings.setValue("UseCustomColors", self.use_custom_colors.isChecked())
+        if self.use_custom_colors.isChecked():
+            self.dark_mode_option.setDisabled(True)
+            self.dark_mode_option.setChecked(False)
+            self.btn_background_picker.setDisabled(False)
+            self.btn_foreground_picker.setDisabled(False)
+            self.btn_text_picker.setDisabled(False)
+            for c in self.app.charts:
+                c.setBackgroundColor(self.backgroundColor)
+                c.setForegroundColor(self.foregroundColor)
+                c.setTextColor(self.textColor)
+        else:
+            self.dark_mode_option.setDisabled(False)
+            self.btn_background_picker.setDisabled(True)
+            self.btn_foreground_picker.setDisabled(True)
+            self.btn_text_picker.setDisabled(True)
+            self.changeDarkMode()  # Reset to the default colors depending on Dark Mode setting
+
+    def setColor(self, name: str, color: QtGui.QColor):
+        if name == "background":
+            p = self.btn_background_picker.palette()
+            p.setColor(QtGui.QPalette.ButtonText, color)
+            self.btn_background_picker.setPalette(p)
+            self.backgroundColor = color
+            self.app.settings.setValue("BackgroundColor", color)
+        elif name == "foreground":
+            p = self.btn_foreground_picker.palette()
+            p.setColor(QtGui.QPalette.ButtonText, color)
+            self.btn_foreground_picker.setPalette(p)
+            self.foregroundColor = color
+            self.app.settings.setValue("ForegroundColor", color)
+        elif name == "text":
+            p = self.btn_text_picker.palette()
+            p.setColor(QtGui.QPalette.ButtonText, color)
+            self.btn_text_picker.setPalette(p)
+            self.textColor = color
+            self.app.settings.setValue("TextColor", color)
+        self.changeCustomColors()
 
 
 class TDRWindow(QtWidgets.QWidget):
