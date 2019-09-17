@@ -15,7 +15,8 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import sys
-from NanoVNASaver.NanoVNASaver import NanoVNASaver
+from NanoVNASaver.about import version
+
 if sys.version_info < (3, 7):
     print("You need at least Python 3.7 for this application!")
     if sys.version_info[0] < 3:
@@ -35,7 +36,7 @@ with open("README.md", "r") as fh:
 setup(
     name='NanoVNASaver',
     url='https://github.com/mihtjel/nanovna-saver',
-    version=NanoVNASaver.version,
+    version=version,
     author='Rune B. Broberg',
     author_email='',
     packages=find_packages(),

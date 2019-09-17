@@ -30,6 +30,7 @@ from .Calibration import CalibrationWindow, Calibration
 from .Marker import Marker
 from .SweepWorker import SweepWorker
 from .Touchstone import Touchstone
+from .about import version as ver
 
 Datapoint = collections.namedtuple('Datapoint', 'freq re im')
 
@@ -38,7 +39,7 @@ PID = 22336
 
 
 class NanoVNASaver(QtWidgets.QWidget):
-    version = "0.0.9"
+    version = ver
 
     def __init__(self):
         super().__init__()
