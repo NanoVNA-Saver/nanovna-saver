@@ -273,7 +273,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         marker_column.addWidget(self.markers[1].getGroupBox())
         marker_column.addWidget(self.markers[2].getGroupBox())
 
-
         ################################################################################################################
         #  Statistics/analysis
         ################################################################################################################
@@ -1057,6 +1056,21 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         layout.addWidget(color_options_box)
 
+        font_options_box = QtWidgets.QGroupBox("Font")
+        font_options_layout = QtWidgets.QFormLayout(font_options_box)
+        self.font_dropdown = QtWidgets.QComboBox()
+        self.font_dropdown.addItems(["7", "8", "9", "10", "11", "12"])
+        font_size = self.app.settings.value("FontSize",
+                                            defaultValue=str(QtWidgets.QApplication.instance().font().pointSize()),
+                                            type=str)
+        self.font_dropdown.setCurrentText(font_size)
+        self.changeFont()
+
+        self.font_dropdown.currentTextChanged.connect(self.changeFont)
+        font_options_layout.addRow("Font size", self.font_dropdown)
+
+        layout.addWidget(font_options_box)
+
         charts_box = QtWidgets.QGroupBox("Displayed charts")
         charts_layout = QtWidgets.QGridLayout(charts_box)
 
@@ -1228,6 +1242,14 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self.textColor = color
             self.app.settings.setValue("TextColor", color)
         self.changeCustomColors()
+
+    def changeFont(self):
+        font_size = self.font_dropdown.currentText()
+        self.app.settings.setValue("FontSize", font_size)
+        app: QtWidgets.QApplication = QtWidgets.QApplication.instance()
+        font = app.font()
+        font.setPointSize(int(font_size))
+        app.setFont(font)
 
 
 class TDRWindow(QtWidgets.QWidget):
