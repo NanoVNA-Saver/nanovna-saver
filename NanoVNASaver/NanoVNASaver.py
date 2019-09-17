@@ -159,6 +159,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         sweep_control_layout.addRow(sweep_input_layout)
 
         self.sweepStartInput = QtWidgets.QLineEdit("")
+        self.sweepStartInput.setMinimumWidth(60)
         self.sweepStartInput.setAlignment(QtCore.Qt.AlignRight)
         self.sweepStartInput.textEdited.connect(self.updateCenterSpan)
 
@@ -171,6 +172,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         sweep_input_left_layout.addRow(QtWidgets.QLabel("Stop"), self.sweepEndInput)
 
         self.sweepCenterInput = QtWidgets.QLineEdit("")
+        self.sweepCenterInput.setMinimumWidth(60)
         self.sweepCenterInput.setAlignment(QtCore.Qt.AlignRight)
         self.sweepCenterInput.textEdited.connect(self.updateStartEnd)
 
