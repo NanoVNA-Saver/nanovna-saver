@@ -337,13 +337,25 @@ class VSWRChart(Chart):
         self.drawValues(qp)
         qp.end()
 
+    def _drawBands(self, qp,fstart,fstop,fspan):
+
+        f_px = self.chartWidth/fspan
+        
+        qp.setPen(QtGui.QPen(QtGui.QColor(125, 125, 125, 32)))
+        qp.setBrush(QtGui.QColor(125, 125, 125, 32))
+        for m_start,m_stop  in identifica(fstart,fstop):
+            x = self.leftMargin +   (m_start - self.fstart)* f_px
+            y =  (m_stop - m_start)* f_px
+            qp.drawRect(x, 30, y, self.chartHeight-10)
+            
     def drawChart(self, qp: QtGui.QPainter):
         qp.setPen(QtGui.QPen(self.textColor))
         qp.drawText(3, 15, self.name)
         qp.setPen(QtGui.QPen(self.foregroundColor))
         qp.drawLine(self.leftMargin, 20, self.leftMargin, 20+self.chartHeight+5)
         qp.drawLine(self.leftMargin-5, 20+self.chartHeight, self.leftMargin+self.chartWidth, 20 + self.chartHeight)
-
+        
+        
     def drawValues(self, qp: QtGui.QPainter):
         from NanoVNASaver.NanoVNASaver import NanoVNASaver
         if len(self.data) == 0 and len(self.reference) == 0:
@@ -363,7 +375,6 @@ class VSWRChart(Chart):
         self.fstart = fstart
         self.fstop = fstop
         fspan = fstop-fstart
-        f_px = self.chartWidth/fspan
         # Find scaling
         minVSWR = 1
         maxVSWR = 3
@@ -405,14 +416,9 @@ class VSWRChart(Chart):
             qp.drawLine(x, 20, x, 20+self.chartHeight+5)
             qp.setPen(self.textColor)
             qp.drawText(x-20, 20+self.chartHeight+15, Chart.shortenFrequency(round(fspan/ticks*(i+1) + fstart)))
-        qp.setPen(QtGui.QPen(QtGui.QColor(125, 125, 125, 32)))
-        qp.setBrush(QtGui.QColor(125, 125, 125, 32))
-        for m_start,m_stop  in identifica(fstart,fstop):
-            x = self.leftMargin +   (m_start - self.fstart)* f_px
-            y =  (m_stop - m_start)* f_px
-            print(x,y, self.chartWidth, f_px)
-            qp.drawRect(x, 30, y, self.chartHeight-10)
-            
+        
+        self._drawBands(qp,fstart,fstop,fspan)
+        
         qp.setPen(pen)
         for i in range(len(self.data)):
             _, _, vswr = NanoVNASaver.vswr(self.data[i])
