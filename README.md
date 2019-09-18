@@ -30,6 +30,9 @@ Current features:
 
 The software was written in Python on Windows, using Pycharm, and the modules PyQT5, numpy and pyserial.
 
+#### Binary releases
+You can find binary (.exe) releases for Windows at https://github.com/mihtjel/nanovna-saver/releases
+
 #### Installation and Use with pip
 
 1. Clone repo and cd into the directory
