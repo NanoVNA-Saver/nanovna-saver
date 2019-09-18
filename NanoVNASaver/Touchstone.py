@@ -15,6 +15,8 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import collections
 import logging
+import math
+import re
 from typing import List
 
 Datapoint = collections.namedtuple('Datapoint', 'freq re im')
@@ -48,32 +50,51 @@ class Touchstone:
             for line in lines:
                 line = line.strip()
                 if line.startswith("!"):
+                    logger.info(line)
                     continue
                 if line.startswith("#") and not parsed_header:
-                    # Check that this is a valid header
-                    if line == "# Hz S RI R 50":
+                    pattern = "^# (.?HZ) S RI R 50$"
+                    match = re.match(pattern, line.upper())
+                    if match:
+                        logger.debug("Found header for RealImaginary and %s", match.group(1))
+                        match = match.group(1)
                         parsed_header = True
                         realimaginary = True
-                        factor = 1
+                        if match == "HZ":
+                            factor = 1
+                        elif match == "KHZ":
+                            factor = 10**3
+                        elif match == "MHZ":
+                            factor = 10**6
+                        elif match == "GHZ":
+                            factor = 10**9
+                        else:
+                            factor = 10**9  # Default Touchstone frequency unit is GHz
                         continue
-                    elif line == "# kHz S RI R 50":
+
+                    pattern = "^# (.?HZ) S MA R 50$"
+                    match = re.match(pattern, line.upper())
+                    if match:
+                        logger.debug("Found header for MagnitudeAngle and %s", match.group(1))
+                        match = match.group(1)
                         parsed_header = True
-                        realimaginary = True
-                        factor = 10**3
+                        magnitudeangle = True
+                        if match == "HZ":
+                            factor = 1
+                        elif match == "KHZ":
+                            factor = 10**3
+                        elif match == "MHZ":
+                            factor = 10**6
+                        elif match == "GHZ":
+                            factor = 10**9
+                        else:
+                            factor = 10**9  # Default Touchstone frequency unit is GHz
                         continue
-                    elif line == "# MHz S RI R 50":
-                        parsed_header = True
-                        realimaginary = True
-                        factor = 10**6
-                        continue
-                    elif line == "# GHz S RI R 50":
-                        parsed_header = True
-                        realimaginary = True
-                        factor = 10**9
-                        continue
-                    else:
-                        # This is some other comment line
-                        continue
+
+                    # else:
+                    # This is some other comment line
+                    logger.debug("Comment line: %s", line)
+                    continue
                 if not parsed_header:
                     logger.warning("Read line without having read header: %s", line)
                     continue
@@ -95,7 +116,21 @@ class Touchstone:
                             im21 = float(im21)
                             self.s21data.append(Datapoint(freq, re21, im21))
                     elif magnitudeangle:
-                        #  TODO: Implement parsing code for Magnitude-Angle
+                        values = line.split(maxsplit=5)
+                        freq = values[0]
+                        mag11 = float(values[1])
+                        angle11 = float(values[2])
+                        freq = int(float(freq) * factor)
+                        re11 = float(mag11) * math.cos(math.radians(angle11))
+                        im11 = float(mag11) * math.sin(math.radians(angle11))
+                        self.s11data.append(Datapoint(freq, re11, im11))
+                        if len(values) > 3:
+                            mag21 = float(values[3])
+                            angle21 = float(values[4])
+                            re21 = float(mag21) * math.cos(math.radians(angle21))
+                            im21 = float(mag21) * math.sin(math.radians(angle21))
+                            self.s21data.append(Datapoint(freq, re21, im21))
+
                         continue
                 except ValueError as e:
                     logger.exception("Failed to parse line: %s (%s)", line, e)
