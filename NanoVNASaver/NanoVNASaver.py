@@ -185,9 +185,8 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         sweep_input_right_layout.addRow(QtWidgets.QLabel("Span"), self.sweepSpanInput)
 
-        self.sweepCountInput = QtWidgets.QLineEdit("")
+        self.sweepCountInput = QtWidgets.QLineEdit(self.settings.value("Segments", "1"))
         self.sweepCountInput.setAlignment(QtCore.Qt.AlignRight)
-        self.sweepCountInput.setText("1")
 
         sweep_control_layout.addRow(QtWidgets.QLabel("Segments"), self.sweepCountInput)
 
@@ -642,6 +641,9 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s21_min_gain_label.setText("")
         self.s21_max_gain_label.setText("")
         self.tdr_result_label.setText("")
+
+        if self.sweepCountInput.text().isdigit():
+            self.settings.setValue("Segments", self.sweepCountInput.text())
 
         self.threadpool.start(self.worker)
 

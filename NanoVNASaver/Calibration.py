@@ -15,11 +15,15 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import collections
+import logging
 import math
 
 from PyQt5 import QtWidgets
 from typing import List
 import numpy as np
+
+logger = logging.getLogger(__name__)
+
 
 Datapoint = collections.namedtuple('Datapoint', 'freq re im')
 
@@ -104,10 +108,10 @@ class CalibrationWindow(QtWidgets.QWidget):
 
         file_box = QtWidgets.QGroupBox()
         file_layout = QtWidgets.QFormLayout(file_box)
-        filename_input = QtWidgets.QLineEdit()
+        filename_input = QtWidgets.QLineEdit(self.app.settings.value("CalibrationFile", ""))
         file_layout.addRow("Filename", filename_input)
         btn_save_file = QtWidgets.QPushButton("Save calibration")
-        btn_save_file.clicked.connect(lambda: self.app.calibration.saveCalibration(filename_input.text()))
+        btn_save_file.clicked.connect(lambda: self.saveCalibration(filename_input.text()))
         file_layout.addRow(btn_save_file)
         btn_load_file = QtWidgets.QPushButton("Load calibration")
         btn_load_file.clicked.connect(lambda: self.loadFile(filename_input.text()))
@@ -227,10 +231,15 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.cal_short_label.setText("Calibrated")
             self.cal_open_label.setText("Calibrated")
             self.cal_load_label.setText("Calibrated")
-        if self.app.calibration.isValid2Port():
-            self.cal_through_label.setText("Calibrated")
-            self.cal_isolation_label.setText("Calibrated")
-        self.calculate()
+            if self.app.calibration.isValid2Port():
+                self.cal_through_label.setText("Calibrated")
+                self.cal_isolation_label.setText("Calibrated")
+            self.calculate()
+            self.app.settings.setValue("CalibrationFile", filename)
+
+    def saveCalibration(self, filename):
+        if self.app.calibration.saveCalibration(filename):
+            self.app.settings.setValue("CalibrationFile", filename)
 
     def idealCheckboxChanged(self):
         self.cal_short_box.setDisabled(self.use_ideal_values.isChecked())
@@ -340,7 +349,7 @@ class Calibration:
                 self.deltaE[i] = - ((g1*(gm2-gm3)-g2*gm2+g3*gm3)*gm1+(g2*gm3-g3*gm3)*gm2) / denominator
             except ZeroDivisionError:
                 self.isCalculated = False
-                print("Division error - did you use the same measurement for two of short, open and load?")
+                logger.error("Division error - did you use the same measurement for two of short, open and load?")
                 return
 
             if self.isValid2Port():
@@ -378,7 +387,7 @@ class Calibration:
     def saveCalibration(self, filename):
         # Save the calibration data to file
         if filename == "" or not self.isValid1Port():
-            return
+            return False
         try:
             file = open(filename, "w+")
             file.write("# Calibration data for NanoVNA-Saver\n")
@@ -400,8 +409,10 @@ class Calibration:
                     file.write(" " + throughr + " " + throughi + " " + isolationr + " " + isolationi)
                 file.write("\n")
             file.close()
+            return True
         except Exception as e:
-            print("Error saving calibration data: " + str(e))
+            logger.exception("Error saving calibration data: %s", e)
+            return False
 
     def loadCalibration(self, filename):
         # Load calibration data from file
@@ -432,7 +443,7 @@ class Calibration:
                         # This is some other comment line
                         continue
                 if not parsed_header:
-                    print("Warning: Read line without having read header: " + l)
+                    logger.warning("Warning: Read line without having read header: %s", l)
                     continue
 
                 try:
@@ -451,8 +462,7 @@ class Calibration:
                         self.s21isolation.append(Datapoint(int(freq), float(isolationr), float(isolationi)))
 
                 except ValueError as e:
-                    print("Attemped parsing " + l)
-                    print("Error parsing calibration data: " + str(e))
+                    logger.exception("Error parsing calibration data \"%s\": %s", l, e)
             file.close()
         except Exception as e:
-            print("Failed loading calibration data: " + str(e))
+            logger.exception("Failed loading calibration data: %s", e)
