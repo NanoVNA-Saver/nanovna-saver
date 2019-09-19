@@ -231,7 +231,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         marker_control_box.setMaximumWidth(250)
         marker_control_layout = QtWidgets.QFormLayout(marker_control_box)
 
-
         marker1_color = self.settings.value("Marker1Color", QtGui.QColor(255, 0, 20), QtGui.QColor)
         marker1 = Marker("Marker 1", marker1_color)
         marker1.updated.connect(self.dataUpdated)
@@ -280,20 +279,18 @@ class NanoVNASaver(QtWidgets.QWidget):
         s11_control_box.setTitle("S11")
         s11_control_layout = QtWidgets.QFormLayout()
         s11_control_box.setLayout(s11_control_layout)
-        s11_control_box.setMaximumWidth(250)
 
         self.s11_min_swr_label = QtWidgets.QLabel()
         s11_control_layout.addRow("Min VSWR:", self.s11_min_swr_label)
         self.s11_min_rl_label = QtWidgets.QLabel()
         s11_control_layout.addRow("Return loss:", self.s11_min_rl_label)
 
-        left_column.addWidget(s11_control_box)
+        marker_column.addWidget(s11_control_box)
 
         s21_control_box = QtWidgets.QGroupBox()
         s21_control_box.setTitle("S21")
         s21_control_layout = QtWidgets.QFormLayout()
         s21_control_box.setLayout(s21_control_layout)
-        s21_control_box.setMaximumWidth(250)
 
         self.s21_min_gain_label = QtWidgets.QLabel()
         s21_control_layout.addRow("Min gain:", self.s21_min_gain_label)
@@ -301,7 +298,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s21_max_gain_label = QtWidgets.QLabel()
         s21_control_layout.addRow("Max gain:", self.s21_max_gain_label)
 
-        left_column.addWidget(s21_control_box)
+        marker_column.addWidget(s21_control_box)
 
         marker_column.addSpacerItem(QtWidgets.QSpacerItem(1, 1, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding))
 
@@ -439,7 +436,6 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         btnOpenFileWindow = QtWidgets.QPushButton("Files ...")
         btnOpenFileWindow.clicked.connect(self.displayFileWindow)
-        left_column.addWidget(btnOpenFileWindow)
 
         ################################################################################################################
         #  Calibration
@@ -448,17 +444,15 @@ class NanoVNASaver(QtWidgets.QWidget):
         btnOpenCalibrationWindow = QtWidgets.QPushButton("Calibration ...")
         self.calibrationWindow = CalibrationWindow(self)
         btnOpenCalibrationWindow.clicked.connect(self.displayCalibrationWindow)
-        left_column.addWidget(btnOpenCalibrationWindow)
 
         ################################################################################################################
         #  Display setup
         ################################################################################################################
 
-        b = QtWidgets.QPushButton("Display setup ...")
-        b.setMaximumWidth(250)
+        btn_display_setup = QtWidgets.QPushButton("Display setup ...")
+        btn_display_setup.setMaximumWidth(250)
         self.display_setupWindow = DisplaySettingsWindow(self)
-        b.clicked.connect(self.displaySettingsWindow)
-        left_column.addWidget(b)
+        btn_display_setup.clicked.connect(self.displaySettingsWindow)
 
         btn_about = QtWidgets.QPushButton("About ...")
         btn_about.setMaximumWidth(250)
@@ -469,7 +463,17 @@ class NanoVNASaver(QtWidgets.QWidget):
                                                                       "This program comes with ABSOLUTELY NO WARRANTY\n" +
                                                                       "This program is licensed under the GNU General Public License version 3\n\n" +
                                                                       "See https://github.com/mihtjel/nanovna-saver for further details"))
-        left_column.addWidget(btn_about)
+
+        button_grid = QtWidgets.QGridLayout()
+        button_grid.addWidget(btnOpenFileWindow, 0, 0)
+        button_grid.addWidget(btnOpenCalibrationWindow, 0, 1)
+        button_grid.addWidget(btn_display_setup, 1, 0)
+        button_grid.addWidget(btn_about, 1, 1)
+        left_column.addLayout(button_grid)
+        #left_column.addWidget(btnOpenFileWindow)
+        #left_column.addWidget(btnOpenCalibrationWindow)
+        #left_column.addWidget(btn_display_setup)
+        #left_column.addWidget(btn_about)
 
         ################################################################################################################
         #  Right side

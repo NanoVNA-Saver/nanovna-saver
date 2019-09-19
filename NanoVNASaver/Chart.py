@@ -37,6 +37,12 @@ class Chart(QtWidgets.QWidget):
     draggedMarker: Marker = None
     name = ""
     drawLines = False
+    minChartHeight = 200
+    minChartWidth = 200
+
+    def __init__(self, name):
+        super().__init__()
+        self.name = name
 
     def setSweepColor(self, color : QtGui.QColor):
         self.sweepColor = color
@@ -129,13 +135,25 @@ class Chart(QtWidgets.QWidget):
         self.draggedMarker = None
 
 
+class SquareChart(Chart):
+    def __init__(self, name):
+        super().__init__(name)
+        sizepolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.MinimumExpanding)
+        self.setSizePolicy(sizepolicy)
+
+    def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
+        self.setFixedWidth(a0.size().height())
+        self.chartWidth = a0.size().height()-40
+        self.chartHeight = a0.size().height()-40
+        self.update()
+
+
 class PhaseChart(Chart):
     def __init__(self, name=""):
-        super().__init__()
+        super().__init__(name)
         self.leftMargin = 35
-        self.chartWidth = 360
-        self.chartHeight = 360
-        self.name = name
+        self.chartWidth = 250
+        self.chartHeight = 250
         self.fstart = 0
         self.fstop = 0
         self.minAngle = 0
@@ -288,11 +306,10 @@ class PhaseChart(Chart):
 
 class VSWRChart(Chart):
     def __init__(self, name=""):
-        super().__init__()
+        super().__init__(name)
         self.leftMargin = 30
-        self.chartWidth = 360
-        self.chartHeight = 360
-        self.name = name
+        self.chartWidth = 250
+        self.chartHeight = 250
         self.fstart = 0
         self.fstop = 0
 
@@ -463,18 +480,13 @@ class VSWRChart(Chart):
         return
 
 
-class PolarChart(Chart):
+class PolarChart(SquareChart):
     def __init__(self, name=""):
-        super().__init__()
-        self.chartWidth = 360
-        self.chartHeight = 36
-
-        self.name = name
+        super().__init__(name)
+        self.chartWidth = 250
+        self.chartHeight = 250
 
         self.setMinimumSize(self.chartWidth + 40, self.chartHeight + 40)
-        sizepolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.MinimumExpanding)
-        sizepolicy.setHeightForWidth(True)
-        self.setSizePolicy(sizepolicy)
         pal = QtGui.QPalette()
         pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
         self.setPalette(pal)
@@ -484,11 +496,6 @@ class PolarChart(Chart):
         self.marker2Color = QtGui.QColor(20, 0, 255)
         self.sweepColor   = QtGui.QColor(220, 200, 30, 128)
         self.sweepColor = QtGui.QColor(50, 50, 200, 64)
-
-    def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
-        self.chartWidth = min(a0.size().width()-40, a0.size().height()-40)
-        self.chartHeight = min(a0.size().width()-40, a0.size().height()-40)
-        self.update()
 
     def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
         qp = QtGui.QPainter(self)
@@ -577,9 +584,6 @@ class PolarChart(Chart):
     def getYPosition(self, d: Datapoint) -> int:
         return self.height()/2 + d.im * -1 * self.chartHeight/2
 
-    def heightForWidth(self, a0: int) -> int:
-        return a0
-
     def mouseMoveEvent(self, a0: QtGui.QMouseEvent) -> None:
         x = a0.x()
         y = a0.y()
@@ -608,18 +612,13 @@ class PolarChart(Chart):
         return
 
 
-class SmithChart(Chart):
+class SmithChart(SquareChart):
     def __init__(self, name=""):
-        super().__init__()
-        self.chartWidth = 360
-        self.chartHeight = 36
-
-        self.name = name
+        super().__init__(name)
+        self.chartWidth = 250
+        self.chartHeight = 250
 
         self.setMinimumSize(self.chartWidth + 40, self.chartHeight + 40)
-        sizepolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.MinimumExpanding)
-        sizepolicy.setHeightForWidth(True)
-        self.setSizePolicy(sizepolicy)
         pal = QtGui.QPalette()
         pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
         self.setPalette(pal)
@@ -629,11 +628,6 @@ class SmithChart(Chart):
         self.marker2Color = QtGui.QColor(20, 0, 255)
         self.sweepColor   = QtGui.QColor(220, 200, 30, 128)
         self.sweepColor = QtGui.QColor(50, 50, 200, 64)
-
-    def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
-        self.chartWidth = min(a0.size().width()-40, a0.size().height()-40)
-        self.chartHeight = min(a0.size().width()-40, a0.size().height()-40)
-        self.update()
 
     def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
         qp = QtGui.QPainter(self)
@@ -763,11 +757,10 @@ class SmithChart(Chart):
 
 class LogMagChart(Chart):
     def __init__(self, name=""):
-        super().__init__()
+        super().__init__(name)
         self.leftMargin = 30
-        self.chartWidth = 360
-        self.chartHeight = 360
-        self.name = name
+        self.chartWidth = 250
+        self.chartHeight = 250
         self.fstart = 0
         self.fstop = 0
 
@@ -940,11 +933,10 @@ class LogMagChart(Chart):
 
 class QualityFactorChart(Chart):
     def __init__(self, name=""):
-        super().__init__()
+        super().__init__(name)
         self.leftMargin = 35
-        self.chartWidth = 360
-        self.chartHeight = 360
-        self.name = name
+        self.chartWidth = 250
+        self.chartHeight = 250
         self.fstart = 0
         self.fstop = 0
         self.minQ = 0
@@ -1113,8 +1105,7 @@ class QualityFactorChart(Chart):
 
 class TDRChart(Chart):
     def __init__(self, name):
-        super().__init__()
-        self.name = name
+        super().__init__(name)
         self.tdrWindow = None
         self.leftMargin = 20
         self.rightMargin = 20
