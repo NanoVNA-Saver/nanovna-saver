@@ -76,9 +76,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.serialPort = self.getPort()
         # self.serialSpeed = "115200"
 
-        self.sweepColor = self.settings.value("SweepColor", defaultValue=QtGui.QColor(160, 140, 20, 128), type=QtGui.QColor)
-        self.referenceColor = self.settings.value("ReferenceColor", defaultValue=QtGui.QColor(0, 0, 255, 32), type=QtGui.QColor)
-
         logger.debug("Building user interface")
 
         self.baseTitle = "NanoVNA Saver " + NanoVNASaver.version
@@ -189,13 +186,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.sweepCountInput.setAlignment(QtCore.Qt.AlignRight)
 
         sweep_control_layout.addRow(QtWidgets.QLabel("Segments"), self.sweepCountInput)
-
-        self.btnColorPicker = QtWidgets.QPushButton("█")
-        self.btnColorPicker.setFixedWidth(20)
-        self.setSweepColor(self.sweepColor)
-        self.btnColorPicker.clicked.connect(lambda: self.setSweepColor(QtWidgets.QColorDialog.getColor(self.sweepColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
-
-        sweep_control_layout.addRow("Sweep color", self.btnColorPicker)
 
         self.continuousSweep = QtWidgets.QCheckBox()
         self.continuousSweep.stateChanged.connect(lambda: self.worker.setContinuousSweep(self.continuousSweep.isChecked()))
@@ -345,16 +335,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.btnResetReference = QtWidgets.QPushButton("Reset reference")
         self.btnResetReference.clicked.connect(self.resetReference)
         self.btnResetReference.setDisabled(True)
-        self.btnReferenceColorPicker = QtWidgets.QPushButton("█")
-        self.btnReferenceColorPicker.setFixedWidth(20)
-        self.setReferenceColor(self.referenceColor)
-        self.btnReferenceColorPicker.clicked.connect(lambda: self.setReferenceColor(
-            QtWidgets.QColorDialog.getColor(self.referenceColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
 
-        set_reference_layout = QtWidgets.QHBoxLayout()
-        set_reference_layout.addWidget(btnSetReference)
-        set_reference_layout.addWidget(self.btnReferenceColorPicker)
-        reference_control_layout.addRow(set_reference_layout)
+        reference_control_layout.addRow(btnSetReference)
         reference_control_layout.addRow(self.btnResetReference)
 
         left_column.addWidget(reference_control_box)
@@ -847,17 +829,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.sweepStartInput.setText(str(fstart))
         self.sweepEndInput.setText(str(fstop))
 
-    def setSweepColor(self, color: QtGui.QColor):
-        if color.isValid():
-            self.sweepColor = color
-            p = self.btnColorPicker.palette()
-            p.setColor(QtGui.QPalette.ButtonText, color)
-            self.btnColorPicker.setPalette(p)
-            self.settings.setValue("SweepColor", color)
-            self.settings.sync()
-            for c in self.charts:
-                c.setSweepColor(color)
-
     @staticmethod
     def formatFrequency(freq):
         if math.log10(freq) < 3:
@@ -947,18 +918,6 @@ class NanoVNASaver(QtWidgets.QWidget):
             c.resetReference()
         self.btnResetReference.setDisabled(True)
 
-    def setReferenceColor(self, color):
-        if color.isValid():
-            self.referenceColor = color
-            p = self.btnReferenceColorPicker.palette()
-            p.setColor(QtGui.QPalette.ButtonText, color)
-            self.btnReferenceColorPicker.setPalette(p)
-            self.settings.setValue("ReferenceColor", color)
-            self.settings.sync()
-
-            for c in self.charts:
-                c.setReferenceColor(color)
-
     def loadReferenceFile(self):
         filename = self.referenceFileNameInput.text()
         if filename is not "":
@@ -1033,12 +992,32 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.dark_mode_option.stateChanged.connect(self.changeDarkMode)
         display_options_layout.addRow(self.dark_mode_option, dark_mode_label)
 
+        self.btnColorPicker = QtWidgets.QPushButton("█")
+        self.btnColorPicker.setFixedWidth(20)
+        self.sweepColor = self.app.settings.value("SweepColor", defaultValue=QtGui.QColor(160, 140, 20, 128),
+                                                  type=QtGui.QColor)
+        self.setSweepColor(self.sweepColor)
+        self.btnColorPicker.clicked.connect(lambda: self.setSweepColor(
+                 QtWidgets.QColorDialog.getColor(self.sweepColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
+
+        display_options_layout.addRow("Sweep color", self.btnColorPicker)
+
+        self.btnReferenceColorPicker = QtWidgets.QPushButton("█")
+        self.btnReferenceColorPicker.setFixedWidth(20)
+        self.referenceColor = self.app.settings.value("ReferenceColor", defaultValue=QtGui.QColor(0, 0, 255, 32),
+                                                      type=QtGui.QColor)
+        self.setReferenceColor(self.referenceColor)
+        self.btnReferenceColorPicker.clicked.connect(lambda: self.setReferenceColor(
+            QtWidgets.QColorDialog.getColor(self.referenceColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
+
+        display_options_layout.addRow("Reference color", self.btnReferenceColorPicker)
+
         layout.addWidget(display_options_box)
 
-        color_options_box = QtWidgets.QGroupBox("Colors")
+        color_options_box = QtWidgets.QGroupBox("Chart colors")
         color_options_layout = QtWidgets.QFormLayout(color_options_box)
 
-        self.use_custom_colors = QtWidgets.QCheckBox("Use custom colors")
+        self.use_custom_colors = QtWidgets.QCheckBox("Use custom chart colors")
         self.use_custom_colors.stateChanged.connect(self.changeCustomColors)
         color_options_layout.addRow(self.use_custom_colors)
 
@@ -1248,6 +1227,29 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self.textColor = color
             self.app.settings.setValue("TextColor", color)
         self.changeCustomColors()
+
+    def setSweepColor(self, color: QtGui.QColor):
+        if color.isValid():
+            self.sweepColor = color
+            p = self.btnColorPicker.palette()
+            p.setColor(QtGui.QPalette.ButtonText, color)
+            self.btnColorPicker.setPalette(p)
+            self.app.settings.setValue("SweepColor", color)
+            self.app.settings.sync()
+            for c in self.app.charts:
+                c.setSweepColor(color)
+
+    def setReferenceColor(self, color):
+        if color.isValid():
+            self.referenceColor = color
+            p = self.btnReferenceColorPicker.palette()
+            p.setColor(QtGui.QPalette.ButtonText, color)
+            self.btnReferenceColorPicker.setPalette(p)
+            self.app.settings.setValue("ReferenceColor", color)
+            self.app.settings.sync()
+
+            for c in self.app.charts:
+                c.setReferenceColor(color)
 
     def changeFont(self):
         font_size = self.font_dropdown.currentText()
