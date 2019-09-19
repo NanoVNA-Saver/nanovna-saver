@@ -1144,7 +1144,7 @@ class TDRChart(Chart):
                 qp.drawText(x - 20, 20 + height,
                             str(round(self.tdrWindow.distance_axis[int((x - self.leftMargin) * x_step) - 1]/2, 1)) + "m")
 
-            qp.setPen(self.tdrWindow.app.sweepColor)
+            qp.setPen(self.sweepColor)
             for i in range(len(self.tdrWindow.distance_axis)):
                 qp.drawPoint(self.leftMargin + int(i / x_step), height - int(self.tdrWindow.td[i] / y_step))
             id_max = np.argmax(self.tdrWindow.td)
