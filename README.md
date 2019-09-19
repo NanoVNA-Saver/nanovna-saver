@@ -1,3 +1,4 @@
+
 NanoVNASaver
 ============
 A multiplatform tool to save Touchstone files from the NanoVNA, sweep frequency spans in segments to gain more than
@@ -29,19 +30,23 @@ Current features:
 
 The software was written in Python on Windows, using Pycharm, and the modules PyQT5, numpy and pyserial.
 
+#### Binary releases
+You can find binary (.exe) releases for Windows at https://github.com/mihtjel/nanovna-saver/releases
+
 #### Installation and Use with pip
 
 1. Clone repo and cd into the directory
-   - `git clone https://github.com/mihtjel/nanovna-saver`
-   - `cd nanovna-saver`
 
-2. Run the pip installation
+	   git clone https://github.com/mihtjel/nanovna-saver
+	   cd nanovna-saver
 
-    - `pip3 install .`
+3. Run the pip installation
 
-3. Once completed run with the following command
+		pip3 install .
 
-    - `NanoVNASaver`
+4. Once completed run with the following command
+
+		NanoVNASaver
 
 ### Linux
 
@@ -53,19 +58,39 @@ In order to run this app in Linux environment, you'll need the following package
 #### Ubuntu 18.04 & 19.04
 #### Installation and Use with pip
 1. Install python3.7 and pip
-   - `sudo apt install python3.7 python3-pip`
 
-2. Clone repo and cd into the directory 
-   - `git clone https://github.com/mihtjel/nanovna-saver`
-   - `cd nanovna-saver`
+		sudo apt install python3.7 python3-pip
 
-3. Run the pip installation
+3. Clone repo and cd into the directory 
+		
+		git clone https://github.com/mihtjel/nanovna-saver
+		cd nanovna-saver
 
-    - `python3.7 -m pip install .`
+4. Run the pip installation
+
+		python3.7 -m pip install .
     
-4. Once completed run with the following command
+5. Once completed run with the following command
 
-    - `python3.7 nanovna-saver.py` 
+		python3.7 nanovna-saver.py
+    
+    
+### Mac OS:
+#### Homebrew
+1. Install Homebrew
+		From : https://brew.sh/
+
+	    $ /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+
+2. Python :
+
+	    $ brew install python
+
+3. NanoVNASaver Installation
+
+	    $ git clone https://github.com/mihtjel/nanovna-saver && cd nanovna-saver
+	    $ python3 setup.py install
+	    $ NanoVNASaver
 
 ## Using the software
 
