@@ -18,6 +18,7 @@ import collections
 import math
 from typing import List
 
+import numpy as np
 
 from .Marker import Marker
 from .contrib.utils import identifica
