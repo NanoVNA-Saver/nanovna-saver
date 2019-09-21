@@ -18,7 +18,7 @@ import collections
 import logging
 import math
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 from typing import List
 import numpy as np
 
@@ -38,6 +38,9 @@ class CalibrationWindow(QtWidgets.QWidget):
 
         self.setMinimumSize(600, 320)
         self.setWindowTitle("Calibration")
+
+        shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
+
         top_layout = QtWidgets.QHBoxLayout()
         left_layout = QtWidgets.QVBoxLayout()
         right_layout = QtWidgets.QVBoxLayout()

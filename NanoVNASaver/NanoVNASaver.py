@@ -370,6 +370,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.fileWindow = QtWidgets.QWidget()
         self.fileWindow.setWindowTitle("Files")
+        shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self.fileWindow, self.fileWindow.hide)
         file_window_layout = QtWidgets.QVBoxLayout()
         self.fileWindow.setLayout(file_window_layout)
 
@@ -982,6 +983,8 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.app = app
         self.setWindowTitle("Display settings")
 
+        shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
+
         layout = QtWidgets.QVBoxLayout()
         self.setLayout(layout)
 
@@ -1276,6 +1279,8 @@ class TDRWindow(QtWidgets.QWidget):
 
         self.setWindowTitle("TDR")
 
+        shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
+
         layout = QtWidgets.QFormLayout()
         self.setLayout(layout)
 
@@ -1384,6 +1389,8 @@ class SweepSettingsWindow(QtWidgets.QWidget):
 
         self.app = app
         self.setWindowTitle("Sweep settings")
+
+        shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
         layout = QtWidgets.QFormLayout()
         self.setLayout(layout)
