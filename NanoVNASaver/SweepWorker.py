@@ -17,6 +17,7 @@ import collections
 from time import sleep
 from typing import List
 
+import numpy as np
 from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSlot, pyqtSignal
 
@@ -48,6 +49,9 @@ class SweepWorker(QtCore.QRunnable):
         self.rawData21: List[Datapoint] = []
         self.stopped = False
         self.continuousSweep = False
+        self.averaging = False
+        self.averages = 3
+        self.truncates = 0
 
     @pyqtSlot()
     def run(self):
@@ -61,53 +65,68 @@ class SweepWorker(QtCore.QRunnable):
         if int(self.app.sweepCountInput.text()) > 0:
             self.noSweeps = int(self.app.sweepCountInput.text())
 
-        logger.debug("%d sweeps", self.noSweeps)
+        logger.info("%d sweeps", self.noSweeps)
+        if self.averaging:
+            logger.info("%d averages", self.averages)
 
         if self.app.sweepStartInput.text() == "" or self.app.sweepEndInput.text() == "":
             logger.debug("First sweep - standard range")
             # We should handle the first startup by reading frequencies?
-            sweepFrom = 1000000
-            sweepTo = 800000000
+            sweep_from = 1000000
+            sweep_to = 800000000
         else:
-            sweepFrom = NanoVNASaver.parseFrequency(self.app.sweepStartInput.text())
-            sweepTo = NanoVNASaver.parseFrequency(self.app.sweepEndInput.text())
-            logger.debug("Parsed sweep range as %d to %d", sweepFrom, sweepTo)
-            if sweepFrom < 0 or sweepTo < 0:
+            sweep_from = NanoVNASaver.parseFrequency(self.app.sweepStartInput.text())
+            sweep_to = NanoVNASaver.parseFrequency(self.app.sweepEndInput.text())
+            logger.debug("Parsed sweep range as %d to %d", sweep_from, sweep_to)
+            if sweep_from < 0 or sweep_to < 0:
                 logger.warning("Can't sweep from %s to %s",
                                self.app.sweepStartInput.text(),
                                self.app.sweepEndInput.text())
                 self.signals.finished.emit()
                 return
 
-        span = sweepTo - sweepFrom
+        span = sweep_to - sweep_from
         stepsize = int(span / (100 + (self.noSweeps-1)*101))
+
+        #  Setup complete
+
         values = []
         values21 = []
         frequencies = []
-        for i in range(self.noSweeps):
-            logger.debug("Sweep segment no %d", i)
-            if self.stopped:
-                logger.debug("Stopping sweeping as signalled")
-                break
-            start = sweepFrom + i*101*stepsize
-            logger.debug("Setting sweep range to %d to %d", start, sweepFrom+(100+i*101)*stepsize)
-            self.app.setSweep(start, sweepFrom+(100+i*101)*stepsize)
-            sleep(0.3)
-            # Let's check the frequencies first:
-            frequencies += self.readFreq()
-            #  TODO: Set up checks for getting the right frequencies. Challenge: We don't set frequency to single-Hz
-            #        accuracy, but rather "quite close". Ex: 106213728 vs 106213726
-            # if start != int(frequencies[i*101]):
-            #     # We got the wrong frequencies? Let's just log it for now.
-            #     logger.warning("Wrong frequency received - %d is not %d", int(frequencies[i*101]), start)
-            # S11
-            values += self.readData("data 0")
-            # S21
-            values21 += self.readData("data 1")
 
-            self.percentage = (i+1)*100/self.noSweeps
-            logger.debug("Saving acquired data")
-            self.saveData(frequencies, values, values21)
+        if self.averaging:
+            for i in range(self.noSweeps):
+                logger.debug("Sweep segment no %d averaged over %d readings", i, self.averages)
+                if self.stopped:
+                    logger.debug("Stopping sweeping as signalled")
+                    break
+                start = sweep_from + i * 101 * stepsize
+                freq, val11, val21 = self.readAveragedSegment(start, start + 100 * stepsize, self.averages)
+
+                frequencies += freq
+                values += val11
+                values21 += val21
+
+                self.percentage = (i + 1) * 100 / self.noSweeps
+                logger.debug("Saving acquired data")
+                self.saveData(frequencies, values, values21)
+
+        else:
+            for i in range(self.noSweeps):
+                logger.debug("Sweep segment no %d", i)
+                if self.stopped:
+                    logger.debug("Stopping sweeping as signalled")
+                    break
+                start = sweep_from + i*101*stepsize
+                freq, val11, val21 = self.readSegment(start, start+100*stepsize)
+
+                frequencies += freq
+                values += val11
+                values21 += val21
+
+                self.percentage = (i+1)*100/self.noSweeps
+                logger.debug("Saving acquired data")
+                self.saveData(frequencies, values, values21)
 
         while self.continuousSweep and not self.stopped:
             logger.debug("Continuous sweeping")
@@ -116,15 +135,8 @@ class SweepWorker(QtCore.QRunnable):
                 if self.stopped:
                     logger.debug("Stopping sweeping as signalled")
                     break
-                logger.debug("Setting sweep range to %d to %d", sweepFrom + i * 101 * stepsize,
-                             sweepFrom + (100 + i * 101) * stepsize)
-                self.app.setSweep(sweepFrom + i * 101 * stepsize, sweepFrom + (100 + i * 101) * stepsize)
-                sleep(0.3)
-                # S11
-                values = self.readData("data 0")
-                # S21
-                values21 = self.readData("data 1")
-
+                start = sweep_from + i * 101 * stepsize
+                _, values, values21 = self.readSegment(start, start + 100 * stepsize)
                 logger.debug("Updating acquired data")
                 self.updateData(values, values21, i)
 
@@ -143,12 +155,8 @@ class SweepWorker(QtCore.QRunnable):
         # Update the data from (i*101) to (i+1)*101
         logger.debug("Calculating data and inserting in existing data at offset %d", offset)
         for i in range(len(values11)):
-            reStr, imStr = values11[i].split(" ")
-            re = float(reStr)
-            im = float(imStr)
-            reStr, imStr = values21[i].split(" ")
-            re21 = float(reStr)
-            im21 = float(imStr)
+            re, im = values11[i]
+            re21, im21 = values21[i]
             freq = self.data11[offset*101 + i].freq
             rawData11 = Datapoint(freq, re, im)
             rawData21 = Datapoint(freq, re21, im21)
@@ -165,20 +173,16 @@ class SweepWorker(QtCore.QRunnable):
         logger.debug("Sending \"updated\" signal")
         self.signals.updated.emit()
 
-    def saveData(self, frequencies, values, values12):
+    def saveData(self, frequencies, values11, values21):
         data = []
         data12 = []
         rawData11 = []
         rawData21 = []
         logger.debug("Calculating data including corrections")
-        for i in range(len(values)):
-            reStr, imStr = values[i].split(" ")
-            re = float(reStr)
-            im = float(imStr)
-            reStr, imStr = values12[i].split(" ")
-            re21 = float(reStr)
-            im21 = float(imStr)
-            freq = int(frequencies[i])
+        for i in range(len(values11)):
+            re, im = values11[i]
+            re21, im21 = values21[i]
+            freq = frequencies[i]
             rawData11 += [Datapoint(freq, re, im)]
             rawData21 += [Datapoint(freq, re21, im21)]
             if self.app.calibration.isCalculated:
@@ -196,13 +200,88 @@ class SweepWorker(QtCore.QRunnable):
         logger.debug("Sending \"updated\" signal")
         self.signals.updated.emit()
 
+    def readAveragedSegment(self, start, stop, averages):
+        val11 = []
+        val21 = []
+        freq = []
+        logger.info("Reading %d averages from %d to %d", averages, start, stop)
+        for i in range(averages):
+            if self.stopped:
+                logger.debug("Stopping averaging as signalled")
+                break
+            logger.debug("Reading average no %d / %d", i+1, averages)
+            freq, tmp11, tmp21 = self.readSegment(start, stop)
+            val11.append(tmp11)
+            val21.append(tmp21)
+            self.percentage += 100/(self.noSweeps*averages)
+            self.signals.updated.emit()
+
+        logger.debug("Post-processing averages")
+        logger.debug("Truncating %d values by %d", len(val11), self.truncates)
+        val11 = self.truncate(val11, self.truncates)
+        val21 = self.truncate(val21, self.truncates)
+        logger.debug("Averaging %d values", len(val11))
+
+        return11 = np.average(val11, 0).tolist()
+        return21 = np.average(val21, 0).tolist()
+
+        return freq, return11, return21
+
+    def truncate(self, values: List[List[tuple]], count):
+        logger.debug("Truncating from %d values to %d", len(values), len(values) - count)
+        if count < 1:
+            return values
+        values = np.swapaxes(values, 0, 1)
+        return_values = []
+
+        for valueset in values:
+            avg = np.average(valueset, 0)  # avg becomes a 2-value array of the location of the average
+            for n in range(count):
+                max_deviance = 0
+                max_idx = -1
+                new_valueset = valueset
+                for i in range(len(new_valueset)):
+                    deviance = abs(new_valueset[i][0] - avg[0])**2 + abs(new_valueset[i][1] - avg[1])**2
+                    if deviance > max_deviance:
+                        max_deviance = deviance
+                        max_idx = i
+                next_valueset = []
+                for i in range(len(new_valueset)):
+                    if i != max_idx:
+                        next_valueset.append((new_valueset[i][0], new_valueset[i][1]))
+                new_valueset = next_valueset
+
+            return_values.append(new_valueset)
+
+        return_values = np.swapaxes(return_values, 0, 1)
+        return return_values.tolist()
+
+    def readSegment(self, start, stop):
+        logger.debug("Setting sweep range to %d to %d", start, stop)
+        self.app.setSweep(start, stop)
+        sleep(0.3)
+        # Let's check the frequencies first:
+        frequencies = self.readFreq()
+        #  TODO: Set up checks for getting the right frequencies. Challenge: We don't set frequency to single-Hz
+        #        accuracy, but rather "quite close". Ex: 106213728 vs 106213726
+        # if start != int(frequencies[i*101]):
+        #     # We got the wrong frequencies? Let's just log it for now.
+        #     logger.warning("Wrong frequency received - %d is not %d", int(frequencies[i*101]), start)
+        # S11
+        values11 = self.readData("data 0")
+        # S21
+        values21 = self.readData("data 1")
+
+        return frequencies, values11, values21
+
     def readData(self, data):
         logger.debug("Reading %s", data)
         done = False
-        tmpdata = []
+        returndata = []
         count = 0
         while not done:
             done = True
+            returndata = []
             tmpdata = self.app.readValues(data)
             logger.debug("Read %d values", len(tmpdata))
             for d in tmpdata:
@@ -212,10 +291,12 @@ class SweepWorker(QtCore.QRunnable):
                         logger.warning("Got a non-float data value: %s (%s)", d, a)
                         logger.debug("Re-reading %s", data)
                         done = False
-                    if float(b) < -9.5 or float(b) > 9.5:
+                    elif float(b) < -9.5 or float(b) > 9.5:
                         logger.warning("Got a non-float data value: %s (%s)", d, b)
                         logger.debug("Re-reading %s", data)
                         done = False
+                    else:
+                        returndata.append((float(a), float(b)))
                 except Exception as e:
                     logger.exception("An exception occurred reading %s: %s", data, e)
                     logger.debug("Re-reading %s", data)
@@ -228,16 +309,17 @@ class SweepWorker(QtCore.QRunnable):
                 if count >= 20:
                     logger.error("Tried and failed to read %s %d times. Giving up.", data, count)
                     return None  # Put a proper exception in here
-        return tmpdata
+        return returndata
 
     def readFreq(self):
         # TODO: Figure out why frequencies sometimes arrive as non-integers
         logger.debug("Reading frequencies")
-        tmpfreq = []
+        returnfreq = []
         done = False
         count = 0
         while not done:
             done = True
+            returnfreq = []
             tmpfreq = self.app.readValues("frequencies")
             for f in tmpfreq:
                 if not f.isdigit():
@@ -250,7 +332,17 @@ class SweepWorker(QtCore.QRunnable):
                     if count >= 20:
                         logger.critical("Tried and failed to read frequencies from the NanoVNA more than %d times.", count)
                         return None  # Put a proper exception in here
-        return tmpfreq
+                else:
+                    returnfreq.append(int(f))
+        return returnfreq
 
     def setContinuousSweep(self, continuousSweep):
         self.continuousSweep = continuousSweep
+
+    def setAveraging(self, averaging, averages, truncates):
+        self.averaging = averaging
+        try:
+            self.averages = int(averages)
+            self.truncates = int(truncates)
+        except:
+            return

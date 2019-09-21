@@ -187,10 +187,11 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         sweep_control_layout.addRow(QtWidgets.QLabel("Segments"), self.sweepCountInput)
 
-        self.continuousSweep = QtWidgets.QCheckBox()
-        self.continuousSweep.stateChanged.connect(lambda: self.worker.setContinuousSweep(self.continuousSweep.isChecked()))
+        self.sweepSettingsWindow = SweepSettingsWindow(self)
+        btn_sweep_settings_window = QtWidgets.QPushButton("Sweep settings")
+        btn_sweep_settings_window.clicked.connect(self.displaySweepSettingsWindow)
 
-        sweep_control_layout.addRow("Continuous sweep", self.continuousSweep)
+        sweep_control_layout.addRow(btn_sweep_settings_window)
 
         self.sweepProgressBar = QtWidgets.QProgressBar()
         self.sweepProgressBar.setMaximum(100)
@@ -433,7 +434,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         btn_display_setup = QtWidgets.QPushButton("Display setup ...")
         btn_display_setup.setMaximumWidth(250)
-        self.display_setupWindow = DisplaySettingsWindow(self)
+        self.displaySetupWindow = DisplaySettingsWindow(self)
         btn_display_setup.clicked.connect(self.displaySettingsWindow)
 
         btn_about = QtWidgets.QPushButton("About ...")
@@ -914,6 +915,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.referenceS11data = []
         self.referenceS21data = []
         self.referenceSource = ""
+        self.updateTitle()
         for c in self.charts:
             c.resetReference()
         self.btnResetReference.setDisabled(True)
@@ -940,8 +942,12 @@ class NanoVNASaver(QtWidgets.QWidget):
         return QtCore.QSize(1100, 950)
 
     def displaySettingsWindow(self):
-        self.display_setupWindow.show()
-        QtWidgets.QApplication.setActiveWindow(self.display_setupWindow)
+        self.displaySetupWindow.show()
+        QtWidgets.QApplication.setActiveWindow(self.displaySetupWindow)
+
+    def displaySweepSettingsWindow(self):
+        self.sweepSettingsWindow.show()
+        QtWidgets.QApplication.setActiveWindow(self.sweepSettingsWindow)
 
     def displayCalibrationWindow(self):
         self.calibrationWindow.show()
@@ -1370,3 +1376,41 @@ class TDRWindow(QtWidgets.QWidget):
         self.tdr_result_label.setText(str(cable_len) + " m (" + str(feet) + "ft " + str(inches) + "in)")
         self.app.tdr_result_label.setText(str(cable_len) + " m")
         self.app.tdr_chart.update()
+
+
+class SweepSettingsWindow(QtWidgets.QWidget):
+    def __init__(self, app: NanoVNASaver):
+        super().__init__()
+
+        self.app = app
+        self.setWindowTitle("Sweep settings")
+
+        layout = QtWidgets.QFormLayout()
+        self.setLayout(layout)
+
+        self.single_sweep_radiobutton = QtWidgets.QRadioButton("Single sweep")
+        self.continuous_sweep_radiobutton = QtWidgets.QRadioButton("Continuous sweep")
+        self.averaged_sweep_radiobutton = QtWidgets.QRadioButton("Averaged sweep")
+
+        layout.addWidget(self.single_sweep_radiobutton)
+        self.single_sweep_radiobutton.setChecked(True)
+        layout.addWidget(self.continuous_sweep_radiobutton)
+        layout.addWidget(self.averaged_sweep_radiobutton)
+
+        self.averages = QtWidgets.QLineEdit("3")
+        self.truncates = QtWidgets.QLineEdit("0")
+
+        layout.addRow("Number of measurements to average", self.averages)
+        layout.addRow("Number to discard", self.truncates)
+        layout.addRow(QtWidgets.QLabel("Averaging allows discarding outlying samples to get better averages."))
+        layout.addRow(QtWidgets.QLabel("Common values are 3/0, 5/2, 9/4 and 25/6."))
+
+        self.continuous_sweep_radiobutton.toggled.connect(lambda: self.app.worker.setContinuousSweep(self.continuous_sweep_radiobutton.isChecked()))
+        self.averaged_sweep_radiobutton.toggled.connect(self.updateAveraging)
+        self.averages.textEdited.connect(self.updateAveraging)
+        self.truncates.textEdited.connect(self.updateAveraging)
+
+    def updateAveraging(self):
+        self.app.worker.setAveraging(self.averaged_sweep_radiobutton.isChecked(),
+                                     self.averages.text(),
+                                     self.truncates.text())
