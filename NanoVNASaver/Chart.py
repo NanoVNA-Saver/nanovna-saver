@@ -17,15 +17,18 @@ import collections
 import math
 from typing import List
 import numpy as np
+import logging
 
 from PyQt5 import QtWidgets, QtGui, QtCore
 
 from .Marker import Marker
+logger = logging.getLogger(__name__)
 Datapoint = collections.namedtuple('Datapoint', 'freq re im')
 
 
 class Chart(QtWidgets.QWidget):
     sweepColor = QtCore.Qt.darkYellow
+    secondarySweepColor = QtCore.Qt.darkMagenta
     referenceColor: QtGui.QColor = QtGui.QColor(QtCore.Qt.blue)
     referenceColor.setAlpha(64)
     backgroundColor: QtGui.QColor = QtGui.QColor(QtCore.Qt.white)
@@ -46,6 +49,10 @@ class Chart(QtWidgets.QWidget):
 
     def setSweepColor(self, color : QtGui.QColor):
         self.sweepColor = color
+        self.update()
+
+    def setSecondarySweepColor(self, color : QtGui.QColor):
+        self.secondarySweepColor = color
         self.update()
 
     def setReferenceColor(self, color : QtGui.QColor):
@@ -165,9 +172,6 @@ class PhaseChart(Chart):
         pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
-
-        self.marker1Color = QtGui.QColor(255, 0, 20)
-        self.marker2Color = QtGui.QColor(20, 0, 255)
 
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
         self.chartWidth = a0.size().width()-20-self.leftMargin
@@ -319,9 +323,6 @@ class VSWRChart(Chart):
         pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
-
-        self.marker1Color = QtGui.QColor(255, 0, 20)
-        self.marker2Color = QtGui.QColor(20, 0, 255)
 
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
         self.chartWidth = a0.size().width()-20-self.leftMargin
@@ -492,11 +493,6 @@ class PolarChart(SquareChart):
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
-        self.marker1Color = QtGui.QColor(255, 0, 20)
-        self.marker2Color = QtGui.QColor(20, 0, 255)
-        self.sweepColor   = QtGui.QColor(220, 200, 30, 128)
-        self.sweepColor = QtGui.QColor(50, 50, 200, 64)
-
     def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
         qp = QtGui.QPainter(self)
         self.drawChart(qp)
@@ -623,11 +619,6 @@ class SmithChart(SquareChart):
         pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
-
-        self.marker1Color = QtGui.QColor(255, 0, 20)
-        self.marker2Color = QtGui.QColor(20, 0, 255)
-        self.sweepColor   = QtGui.QColor(220, 200, 30, 128)
-        self.sweepColor = QtGui.QColor(50, 50, 200, 64)
 
     def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
         qp = QtGui.QPainter(self)
@@ -770,9 +761,6 @@ class LogMagChart(Chart):
         pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
-
-        self.marker1Color = QtGui.QColor(255, 0, 20)
-        self.marker2Color = QtGui.QColor(20, 0, 255)
 
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
         self.chartWidth = a0.size().width()-20-self.leftMargin
@@ -950,9 +938,6 @@ class QualityFactorChart(Chart):
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
-        self.marker1Color = QtGui.QColor(255, 0, 20)
-        self.marker2Color = QtGui.QColor(20, 0, 255)
-
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
         self.chartWidth = a0.size().width()-20-self.leftMargin
         self.chartHeight = a0.size().height()-40
@@ -1110,7 +1095,7 @@ class TDRChart(Chart):
         self.leftMargin = 20
         self.rightMargin = 20
         self.lowerMargin = 35
-        self.setMinimumSize(400, 400)
+        self.setMinimumSize(250, 250)
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding))
         pal = QtGui.QPalette()
         pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
@@ -1155,3 +1140,272 @@ class TDRChart(Chart):
             qp.setPen(self.textColor)
             qp.drawText(max_point.x() - 10, max_point.y() - 5, str(round(self.tdrWindow.distance_axis[id_max]/2, 2)) + "m")
         qp.end()
+
+
+class RealImaginaryChart(Chart):
+    def __init__(self, name=""):
+        super().__init__(name)
+        self.leftMargin = 35
+        self.rightMargin = 35
+        self.chartWidth = 230
+        self.chartHeight = 250
+        self.fstart = 0
+        self.fstop = 0
+        self.span_real = 0
+        self.span_imag = 0
+        self.max_real = 0
+        self.max_imag = 0
+
+        self.setMinimumSize(self.chartWidth + self.leftMargin + self.rightMargin, self.chartHeight + 40)
+        self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding))
+        pal = QtGui.QPalette()
+        pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
+        self.setPalette(pal)
+        self.setAutoFillBackground(True)
+
+    def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
+        self.chartWidth = a0.size().width()-self.leftMargin-self.rightMargin
+        self.chartHeight = a0.size().height()-40
+        self.update()
+
+    def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
+        qp = QtGui.QPainter(self)
+        #qp.begin(self)  # Apparently not needed?
+        self.drawChart(qp)
+        self.drawValues(qp)
+        qp.end()
+
+    def drawChart(self, qp: QtGui.QPainter):
+        qp.setPen(QtGui.QPen(self.textColor))
+        qp.drawText(self.leftMargin + 5, 15, self.name + " (\N{OHM SIGN})")
+        qp.drawText(10, 15, "R")
+        qp.drawText(self.leftMargin + self.chartWidth + 10, 15, "X")
+        qp.setPen(QtGui.QPen(self.foregroundColor))
+        qp.drawLine(self.leftMargin, 20, self.leftMargin, 20+self.chartHeight+5)
+        qp.drawLine(self.leftMargin-5, 20+self.chartHeight, self.leftMargin+self.chartWidth+5, 20 + self.chartHeight)
+
+    def drawValues(self, qp: QtGui.QPainter):
+        from NanoVNASaver.NanoVNASaver import NanoVNASaver
+        if len(self.data) == 0 and len(self.reference) == 0:
+            return
+        pen = QtGui.QPen(self.sweepColor)
+        pen.setWidth(2)
+        line_pen = QtGui.QPen(self.sweepColor)
+        line_pen.setWidth(1)
+        highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
+        highlighter.setWidth(1)
+        if len(self.data) > 0:
+            fstart = self.data[0].freq
+            fstop = self.data[len(self.data)-1].freq
+        else:
+            fstart = self.reference[0].freq
+            fstop = self.reference[len(self.reference) - 1].freq
+        self.fstart = fstart
+        self.fstop = fstop
+        fspan = fstop-fstart
+        # Find scaling
+        min_real = 1000
+        min_imag = 1000
+        max_real = 0
+        max_imag = -1000
+        for d in self.data:
+            re, im = NanoVNASaver.normalize50(d)
+            if re > max_real:
+                max_real = re
+            if re < min_real:
+                min_real = re
+            if im > max_imag:
+                max_imag = im
+            if im < min_imag:
+                min_imag = im
+        for d in self.reference:  # Also check min/max for the reference sweep
+            if d.freq < fstart or d.freq > fstop:
+                continue
+            re, im = NanoVNASaver.normalize50(d)
+            if re > max_real:
+                max_real = re
+            if re < min_real:
+                min_real = re
+            if im > max_imag:
+                max_imag = im
+            if im < min_imag:
+                min_imag = im
+
+        max_real = math.ceil(max_real)
+        min_real = max(0, math.floor(min_real))  # Negative real resistance? No.
+        max_imag = math.ceil(max_imag)
+        min_imag = math.floor(min_imag)
+
+        self.max_real = max_real
+        self.max_imag = max_imag
+
+        span_real = max_real - min_real
+        self.span_real = span_real
+
+        span_imag = max_imag - min_imag
+        self.span_imag = span_imag
+
+        # We want one horizontal tick per 50 pixels, at most
+        horizontal_ticks = math.floor(self.chartHeight/50)
+
+        # TODO: Find a way to always have a line at X=0
+        for i in range(horizontal_ticks):
+            y = 30 + round(i * (self.chartHeight-10) / horizontal_ticks)
+            qp.setPen(QtGui.QPen(self.foregroundColor))
+            qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.chartWidth + 5, y)
+            qp.setPen(QtGui.QPen(self.textColor))
+            re = max_real - round(i * span_real / horizontal_ticks)
+            im = max_imag - round(i * span_imag / horizontal_ticks)
+            qp.drawText(3, y + 4, str(re))
+            qp.drawText(self.leftMargin + self.chartWidth + 8, y + 4, str(im))
+
+        qp.drawText(3, self.chartHeight + 20, str(min_real))
+        qp.drawText(self.leftMargin + self.chartWidth + 8, self.chartHeight + 20, str(min_imag))
+
+        qp.drawText(self.leftMargin-20, 20 + self.chartHeight + 15, LogMagChart.shortenFrequency(fstart))
+        ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
+        for i in range(ticks):
+            x = self.leftMargin + round((i+1)*self.chartWidth/ticks)
+            qp.setPen(QtGui.QPen(self.foregroundColor))
+            qp.drawLine(x, 20, x, 20+self.chartHeight+5)
+            qp.setPen(self.textColor)
+            qp.drawText(x-20, 20+self.chartHeight+15, LogMagChart.shortenFrequency(round(fspan/ticks*(i+1) + fstart)))
+
+        primary_pen = pen
+        secondary_pen = QtGui.QPen(self.secondarySweepColor)
+        secondary_pen.setWidth(2)
+        if len(self.data) > 0:
+            c = QtGui.QColor(self.sweepColor)
+            c.setAlpha(255)
+            pen = QtGui.QPen(c)
+            pen.setWidth(2)
+            qp.setPen(pen)
+            qp.drawLine(20, 9, 25, 9)
+            c = QtGui.QColor(self.secondarySweepColor)
+            c.setAlpha(255)
+            pen.setColor(c)
+            qp.setPen(pen)
+            qp.drawLine(self.leftMargin + self.chartWidth, 9, self.leftMargin + self.chartWidth + 5, 9)
+
+        for i in range(len(self.data)):
+            re, im = NanoVNASaver.normalize50(self.data[i])
+            x = self.getXPosition(self.data[i])
+            y_re = 30 + round((max_real - re) / span_real * (self.chartHeight - 10))
+            y_im = 30 + round((max_imag - im) / span_imag * (self.chartHeight - 10))
+            qp.setPen(primary_pen)
+            if re > 0:
+                qp.drawPoint(int(x), int(y_re))
+            qp.setPen(secondary_pen)
+            qp.drawPoint(int(x), int(y_im))
+            if self.drawLines and i > 0:
+                new_re, new_im = NanoVNASaver.normalize50(self.data[i-1])
+                prev_x = self.getXPosition(self.data[i-1])
+                prev_y_re = 30 + round((max_real - new_re) / span_real * (self.chartHeight - 10))
+                prev_y_im = 30 + round((max_imag - new_im) / span_imag * (self.chartHeight - 10))
+
+                if re > 0 and new_re > 0:
+                    line_pen.setColor(self.sweepColor)
+                    qp.setPen(line_pen)
+                    qp.drawLine(x, y_re, prev_x, prev_y_re)
+
+                line_pen.setColor(self.secondarySweepColor)
+                qp.setPen(line_pen)
+                qp.drawLine(x, y_im, prev_x, prev_y_im)
+
+        primary_pen.setColor(self.referenceColor)
+        line_pen.setColor(self.referenceColor)
+        secondary_pen.setColor(self.referenceColor)
+        qp.setPen(primary_pen)
+        if len(self.reference) > 0:
+            c = QtGui.QColor(self.referenceColor)
+            c.setAlpha(255)
+            pen = QtGui.QPen(c)
+            pen.setWidth(2)
+            qp.setPen(pen)
+            qp.drawLine(20, 14, 25, 14)  # Alpha might be low, so we draw twice
+            qp.drawLine(self.leftMargin + self.chartWidth, 14, self.leftMargin + self.chartWidth + 5, 14)
+
+        for i in range(len(self.reference)):
+            if self.reference[i].freq < fstart or self.reference[i].freq > fstop:
+                continue
+            re, im = NanoVNASaver.normalize50(self.reference[i])
+            x = self.getXPosition(self.reference[i])
+            y_re = 30 + round((max_real - re) / span_real * (self.chartHeight - 10))
+            y_im = 30 + round((max_imag - im) / span_imag * (self.chartHeight - 10))
+            qp.setPen(primary_pen)
+            if re > 0:
+                qp.drawPoint(int(x), int(y_re))
+            qp.setPen(secondary_pen)
+            qp.drawPoint(int(x), int(y_im))
+
+            # if self.drawLines and i > 0:
+            #     logmag = self.logMag(self.reference[i-1])
+            #     prevx = self.leftMargin + 1 + round(self.chartWidth*(self.reference[i-1].freq - fstart)/fspan)
+            #     prevy = 30 + round((logmag - minValue) / span * (self.chartHeight - 10))
+            #     qp.setPen(line_pen)
+            #     qp.drawLine(x, y, prevx, prevy)
+            #     qp.setPen(pen)
+        # Now draw the markers
+        for m in self.markers:
+            if m.location != -1:
+                highlighter.setColor(m.color)
+                qp.setPen(highlighter)
+                re, im = NanoVNASaver.normalize50(self.data[m.location])
+                x = self.getXPosition(self.data[m.location])
+                y_re = 30 + round((max_real - re) / span_real * (self.chartHeight - 10))
+                y_im = 30 + round((max_imag - im) / span_imag * (self.chartHeight - 10))
+                
+                qp.drawLine(int(x), int(y_re) + 3, int(x) - 3, int(y_re) - 3)
+                qp.drawLine(int(x), int(y_re) + 3, int(x) + 3, int(y_re) - 3)
+                qp.drawLine(int(x) - 3, int(y_re) - 3, int(x) + 3, int(y_re) - 3)
+
+                qp.drawLine(int(x), int(y_im) + 3, int(x) - 3, int(y_im) - 3)
+                qp.drawLine(int(x), int(y_im) + 3, int(x) + 3, int(y_im) - 3)
+                qp.drawLine(int(x) - 3, int(y_im) - 3, int(x) + 3, int(y_im) - 3)
+
+    def getXPosition(self, d: Datapoint) -> int:
+        span = self.fstop - self.fstart
+        return self.leftMargin + 1 + round(self.chartWidth * (d.freq - self.fstart) / span)
+
+    def getImYPosition(self, d: Datapoint) -> int:
+        from NanoVNASaver.NanoVNASaver import NanoVNASaver
+        re, im = NanoVNASaver.normalize50(d)
+        return 30 + round((self.max_imag - im) / self.span_imag * (self.chartHeight - 10))
+
+    def getReYPosition(self, d: Datapoint) -> int:
+        from NanoVNASaver.NanoVNASaver import NanoVNASaver
+        re, im = NanoVNASaver.normalize50(d)
+        return 30 + round((self.max_real - re) / self.span_real * (self.chartHeight - 10))
+
+    def getNearestMarker(self, x, y) -> Marker:
+        if len(self.data) == 0:
+            return None
+        shortest = 10**6
+        nearest = None
+        for m in self.markers:
+            mx, _ = self.getPosition(self.data[m.location])
+            myr = self.getReYPosition(self.data[m.location])
+            myi = self.getImYPosition(self.data[m.location])
+            dx = abs(x - mx)
+            dy = min(abs(y - myr), abs(y-myi))
+            distance = math.sqrt(dx**2 + dy**2)
+            if distance < shortest:
+                shortest = distance
+                nearest = m
+        return nearest
+
+    def mouseMoveEvent(self, a0: QtGui.QMouseEvent) -> None:
+        x = a0.x()
+        absx = x - self.leftMargin
+        if absx < 0 or absx > self.chartWidth:
+            a0.ignore()
+            return
+        a0.accept()
+        if self.fstop - self.fstart > 0:
+            m = self.getActiveMarker(a0)
+            span = self.fstop - self.fstart
+            step = span/self.chartWidth
+            f = self.fstart + absx * step
+            m.setFrequency(str(round(f)))
+            m.frequencyInput.setText(str(round(f)))
+        return

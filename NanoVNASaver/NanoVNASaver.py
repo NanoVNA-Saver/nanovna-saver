@@ -26,7 +26,8 @@ import serial
 from PyQt5 import QtWidgets, QtCore, QtGui
 from serial.tools import list_ports
 
-from .Chart import Chart, PhaseChart, VSWRChart, PolarChart, SmithChart, LogMagChart, QualityFactorChart, TDRChart
+from .Chart import Chart, PhaseChart, VSWRChart, PolarChart, SmithChart, LogMagChart, QualityFactorChart, TDRChart, \
+    RealImaginaryChart
 from .Calibration import CalibrationWindow, Calibration
 from .Marker import Marker
 from .SweepWorker import SweepWorker
@@ -103,12 +104,14 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s21Phase = PhaseChart("S21 Phase")
         self.s11VSWR = VSWRChart("S11 VSWR")
         self.s11QualityFactor = QualityFactorChart("S11 Quality Factor")
+        self.s11RealImaginary = RealImaginaryChart("S11 R+jX")
 
         self.s11charts: List[Chart] = []
         self.s11charts.append(self.s11SmithChart)
         self.s11charts.append(self.s11LogMag)
         self.s11charts.append(self.s11Phase)
         self.s11charts.append(self.s11VSWR)
+        self.s11charts.append(self.s11RealImaginary)
         self.s11charts.append(self.s11QualityFactor)
 
         self.s21charts: List[Chart] = []
@@ -568,7 +571,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                 self.serial = serial.Serial(port=self.serialPort, baudrate=115200)
                 self.serial.timeout = 0.05
             except serial.SerialException as exc:
-                logger.error("Tried to open %s and failed: ", self.serialPort, exc)
+                logger.error("Tried to open %s and failed: %s", self.serialPort, exc)
                 self.serialLock.release()
                 return
             self.btnSerialToggle.setText("Disconnect")
@@ -756,7 +759,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     @staticmethod
     def vswr(data: Datapoint):
-        im50, re50 = NanoVNASaver.normalize50(data)
+        re50, im50 = NanoVNASaver.normalize50(data)
         mag = math.sqrt((re50 - 50) * (re50 - 50) + im50 * im50) / math.sqrt((re50 + 50) * (re50 + 50) + im50 * im50)
         # mag = math.sqrt(re * re + im * im)  # Is this even right?
         vswr = (1 + mag) / (1 - mag)
@@ -783,7 +786,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     @staticmethod
     def gain(data: Datapoint):
-        im50, re50 = NanoVNASaver.normalize50(data)
+        re50, im50 = NanoVNASaver.normalize50(data)
         # Calculate the gain / reflection coefficient
         mag = math.sqrt((re50 - 50) * (re50 - 50) + im50 * im50) / math.sqrt(
             (re50 + 50) * (re50 + 50) + im50 * im50)
@@ -795,7 +798,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         im = data.im
         re50 = 50 * (1 - re * re - im * im) / (1 + re * re + im * im - 2 * re)
         im50 = 50 * (2 * im) / (1 + re * re + im * im - 2 * re)
-        return im50, re50
+        return re50, im50
 
     @staticmethod
     def admittance(data):
@@ -1010,6 +1013,18 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
                  QtWidgets.QColorDialog.getColor(self.sweepColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
 
         display_options_layout.addRow("Sweep color", self.btnColorPicker)
+
+        self.btnSecondaryColorPicker = QtWidgets.QPushButton("█")
+        self.btnSecondaryColorPicker.setFixedWidth(20)
+        self.secondarySweepColor = self.app.settings.value("SecondarySweepColor",
+                                                           defaultValue=QtGui.QColor(20, 160, 140, 128),
+                                                           type=QtGui.QColor)
+        self.setSecondarySweepColor(self.secondarySweepColor)
+        self.btnSecondaryColorPicker.clicked.connect(lambda: self.setSecondarySweepColor(
+                 QtWidgets.QColorDialog.getColor(self.secondarySweepColor,
+                                                 options=QtWidgets.QColorDialog.ShowAlphaChannel)))
+
+        display_options_layout.addRow("Second sweep color", self.btnSecondaryColorPicker)
 
         self.btnReferenceColorPicker = QtWidgets.QPushButton("█")
         self.btnReferenceColorPicker.setFixedWidth(20)
@@ -1248,6 +1263,17 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             for c in self.app.charts:
                 c.setSweepColor(color)
 
+    def setSecondarySweepColor(self, color: QtGui.QColor):
+        if color.isValid():
+            self.secondarySweepColor = color
+            p = self.btnSecondaryColorPicker.palette()
+            p.setColor(QtGui.QPalette.ButtonText, color)
+            self.btnSecondaryColorPicker.setPalette(p)
+            self.app.settings.setValue("SecondarySweepColor", color)
+            self.app.settings.sync()
+            for c in self.app.charts:
+                c.setSecondarySweepColor(color)
+
     def setReferenceColor(self, color):
         if color.isValid():
             self.referenceColor = color
@@ -1294,17 +1320,17 @@ class TDRWindow(QtWidgets.QWidget):
         self.tdr_velocity_dropdown.addItem("Air (Helical spacers) (0.94)", 0.94)
         self.tdr_velocity_dropdown.insertSeparator(self.tdr_velocity_dropdown.count())
         # Lots of table types added by Larry Goga, AE5CZ
-        self.tdr_velocity_dropdown.addItem("RG-6/U PE 75ohm (Belden 8215) (0.66)", 0.66)
-        self.tdr_velocity_dropdown.addItem("RG-6/U Foam 75 ohm (Belden 9290) (0.81)", 0.81)
-        self.tdr_velocity_dropdown.addItem("RG-8/U PE 50 ohm (Belden 8237) (0.66)", 0.66)
+        self.tdr_velocity_dropdown.addItem("RG-6/U PE 75\N{OHM SIGN} (Belden 8215) (0.66)", 0.66)
+        self.tdr_velocity_dropdown.addItem("RG-6/U Foam 75\N{OHM SIGN} (Belden 9290) (0.81)", 0.81)
+        self.tdr_velocity_dropdown.addItem("RG-8/U PE 50\N{OHM SIGN} (Belden 8237) (0.66)", 0.66)
         self.tdr_velocity_dropdown.addItem("RG-8/U Foam (Belden 8214) (0.78)", 0.78)
         self.tdr_velocity_dropdown.addItem("RG-8/U (Belden 9913) (0.84)", 0.84)
         self.tdr_velocity_dropdown.addItem("RG-8X (Belden 9258) (0.82)", 0.82)
-        self.tdr_velocity_dropdown.addItem("RG-11/U 75 ohm Foam HDPE (Belden 9292) (0.84)", 0.84)
-        self.tdr_velocity_dropdown.addItem("RG-58/U 52 ohm PE (Belden 9201) (0.66)", 0.66)
-        self.tdr_velocity_dropdown.addItem("RG-58A/U 54 ohm Foam (Belden 8219) (0.73)", 0.73)
-        self.tdr_velocity_dropdown.addItem("RG-59A/U PE 75 ohm (Belden 8241) (0.66)", 0.66)
-        self.tdr_velocity_dropdown.addItem("RG-59A/U Foam 75 ohm (Belden 8241F) (0.78)", 0.78)
+        self.tdr_velocity_dropdown.addItem("RG-11/U 75\N{OHM SIGN} Foam HDPE (Belden 9292) (0.84)", 0.84)
+        self.tdr_velocity_dropdown.addItem("RG-58/U 52\N{OHM SIGN} PE (Belden 9201) (0.66)", 0.66)
+        self.tdr_velocity_dropdown.addItem("RG-58A/U 54\N{OHM SIGN} Foam (Belden 8219) (0.73)", 0.73)
+        self.tdr_velocity_dropdown.addItem("RG-59A/U PE 75\N{OHM SIGN} (Belden 8241) (0.66)", 0.66)
+        self.tdr_velocity_dropdown.addItem("RG-59A/U Foam 75\N{OHM SIGN} (Belden 8241F) (0.78)", 0.78)
         self.tdr_velocity_dropdown.addItem("RG-174 PE (Belden 8216)(0.66)", 0.66)
         self.tdr_velocity_dropdown.addItem("RG-174 Foam (Belden 7805R) (0.735)", 0.735)
         self.tdr_velocity_dropdown.addItem("RG-213/U PE (Belden 8267) (0.66)", 0.66)
