@@ -1145,8 +1145,8 @@ class TDRChart(Chart):
 class RealImaginaryChart(Chart):
     def __init__(self, name=""):
         super().__init__(name)
-        self.leftMargin = 35
-        self.rightMargin = 35
+        self.leftMargin = 45
+        self.rightMargin = 45
         self.chartWidth = 230
         self.chartHeight = 250
         self.fstart = 0
@@ -1231,10 +1231,15 @@ class RealImaginaryChart(Chart):
             if im < min_imag:
                 min_imag = im
 
-        max_real = math.ceil(max_real)
+        max_real = max(8, math.ceil(max_real))   # Always have at least 8 numbered horizontal lines
         min_real = max(0, math.floor(min_real))  # Negative real resistance? No.
         max_imag = math.ceil(max_imag)
         min_imag = math.floor(min_imag)
+
+        if max_imag - min_imag < 8:
+            missing = 8 - (max_imag - min_imag)
+            max_imag += math.ceil(missing/2)
+            min_imag -= math.floor(missing/2)
 
         self.max_real = max_real
         self.max_imag = max_imag
@@ -1254,13 +1259,13 @@ class RealImaginaryChart(Chart):
             qp.setPen(QtGui.QPen(self.foregroundColor))
             qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.chartWidth + 5, y)
             qp.setPen(QtGui.QPen(self.textColor))
-            re = max_real - round(i * span_real / horizontal_ticks)
-            im = max_imag - round(i * span_imag / horizontal_ticks)
-            qp.drawText(3, y + 4, str(re))
-            qp.drawText(self.leftMargin + self.chartWidth + 8, y + 4, str(im))
+            re = max_real - i * span_real / horizontal_ticks
+            im = max_imag - i * span_imag / horizontal_ticks
+            qp.drawText(3, y + 4, str(round(re, 1)))
+            qp.drawText(self.leftMargin + self.chartWidth + 8, y + 4, str(round(im, 1)))
 
-        qp.drawText(3, self.chartHeight + 20, str(min_real))
-        qp.drawText(self.leftMargin + self.chartWidth + 8, self.chartHeight + 20, str(min_imag))
+        qp.drawText(3, self.chartHeight + 20, str(round(min_real, 1)))
+        qp.drawText(self.leftMargin + self.chartWidth + 8, self.chartHeight + 20, str(round(min_imag, 1)))
 
         qp.drawText(self.leftMargin-20, 20 + self.chartHeight + 15, LogMagChart.shortenFrequency(fstart))
         ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin

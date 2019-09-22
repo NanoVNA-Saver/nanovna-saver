@@ -231,12 +231,12 @@ class CalibrationWindow(QtWidgets.QWidget):
     def loadFile(self, filename):
         self.app.calibration.loadCalibration(filename)
         if self.app.calibration.isValid1Port():
-            self.cal_short_label.setText("Calibrated")
-            self.cal_open_label.setText("Calibrated")
-            self.cal_load_label.setText("Calibrated")
+            self.cal_short_label.setText("Loaded (" + str(len(self.app.calibration.s11short)) + ")")
+            self.cal_open_label.setText("Loaded (" + str(len(self.app.calibration.s11open)) + ")")
+            self.cal_load_label.setText("Loaded (" + str(len(self.app.calibration.s11load)) + ")")
             if self.app.calibration.isValid2Port():
-                self.cal_through_label.setText("Calibrated")
-                self.cal_isolation_label.setText("Calibrated")
+                self.cal_through_label.setText("Loaded (" + str(len(self.app.calibration.s21through)) + ")")
+                self.cal_isolation_label.setText("Loaded (" + str(len(self.app.calibration.s21isolation)) + ")")
             self.calculate()
             self.app.settings.setValue("CalibrationFile", filename)
 

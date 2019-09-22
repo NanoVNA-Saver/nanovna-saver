@@ -78,7 +78,7 @@ class SweepWorker(QtCore.QRunnable):
             sweep_from = NanoVNASaver.parseFrequency(self.app.sweepStartInput.text())
             sweep_to = NanoVNASaver.parseFrequency(self.app.sweepEndInput.text())
             logger.debug("Parsed sweep range as %d to %d", sweep_from, sweep_to)
-            if sweep_from < 0 or sweep_to < 0:
+            if sweep_from < 0 or sweep_to < 0 or sweep_from == sweep_to:
                 logger.warning("Can't sweep from %s to %s",
                                self.app.sweepStartInput.text(),
                                self.app.sweepEndInput.text())

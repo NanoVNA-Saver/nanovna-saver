@@ -586,8 +586,12 @@ class NanoVNASaver(QtWidgets.QWidget):
 
             frequencies = self.readValues("frequencies")
             logger.info("Read starting frequency %s and end frequency %s", frequencies[0], frequencies[100])
-            self.sweepStartInput.setText(str(frequencies[0]))
-            self.sweepEndInput.setText(str(frequencies[100]))
+            if int(frequencies[0]) == int(frequencies[100]) and (self.sweepStartInput.text() == "" or self.sweepEndInput.text() == ""):
+                self.sweepStartInput.setText(frequencies[0])
+                self.sweepEndInput.setText(str(int(frequencies[100]) + 100000))
+            elif self.sweepStartInput.text() == "" or self.sweepEndInput.text() == "":
+                self.sweepStartInput.setText(frequencies[0])
+                self.sweepEndInput.setText(frequencies[100])
 
             logger.debug("Starting initial sweep")
             self.sweep()
@@ -964,6 +968,9 @@ class NanoVNASaver(QtWidgets.QWidget):
     def displayTDRWindow(self):
         self.tdr_window.show()
         QtWidgets.QApplication.setActiveWindow(self.tdr_window)
+
+    def showError(self, text):
+        QtWidgets.QErrorMessage.showMessage(text)
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
         self.worker.stopped = True
