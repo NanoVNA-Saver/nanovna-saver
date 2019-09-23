@@ -187,8 +187,16 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.sweepCountInput = QtWidgets.QLineEdit(self.settings.value("Segments", "1"))
         self.sweepCountInput.setAlignment(QtCore.Qt.AlignRight)
+        self.sweepCountInput.setFixedWidth(60)
+        self.sweepCountInput.textEdited.connect(self.updateStepSize)
 
-        sweep_control_layout.addRow(QtWidgets.QLabel("Segments"), self.sweepCountInput)
+        self.sweepStepLabel = QtWidgets.QLabel("Hz/step")
+        self.sweepStepLabel.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+
+        segment_layout = QtWidgets.QHBoxLayout()
+        segment_layout.addWidget(self.sweepCountInput)
+        segment_layout.addWidget(self.sweepStepLabel)
+        sweep_control_layout.addRow(QtWidgets.QLabel("Segments"), segment_layout)
 
         self.sweepSettingsWindow = SweepSettingsWindow(self)
         btn_sweep_settings_window = QtWidgets.QPushButton("Sweep settings")
@@ -825,6 +833,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             return
         self.sweepSpanInput.setText(str(fspan))
         self.sweepCenterInput.setText(str(fcenter))
+        self.updateStepSize()
 
     def updateStartEnd(self):
         fcenter = self.parseFrequency(self.sweepCenterInput.text())
@@ -837,11 +846,21 @@ class NanoVNASaver(QtWidgets.QWidget):
             return
         self.sweepStartInput.setText(str(fstart))
         self.sweepEndInput.setText(str(fstop))
+        self.updateStepSize()
+
+    def updateStepSize(self):
+        fspan = self.parseFrequency(self.sweepSpanInput.text())
+        if fspan < 0:
+            return
+        if self.sweepCountInput.text().isdigit():
+            segments = int(self.sweepCountInput.text())
+            fstep = fspan / (segments * 101)
+            self.sweepStepLabel.setText(self.formatFrequency(fstep) + "/step")
 
     @staticmethod
     def formatFrequency(freq):
         if math.log10(freq) < 3:
-            return str(freq) + " Hz"
+            return str(round(freq)) + " Hz"
         elif math.log10(freq) < 7:
             return "{:.3f}".format(freq/1000) + " kHz"
         elif math.log10(freq) < 8:
