@@ -57,7 +57,8 @@ class Marker(QtCore.QObject):
         self.inductance_label = QtWidgets.QLabel("")
         self.capacitance_label = QtWidgets.QLabel("")
         self.gain_label = QtWidgets.QLabel("")
-        self.phase_label = QtWidgets.QLabel("")
+        self.s11_phase_label = QtWidgets.QLabel("")
+        self.s21_phase_label = QtWidgets.QLabel("")
         self.quality_factor_label = QtWidgets.QLabel("")
 
         ################################################################################################################
@@ -105,8 +106,9 @@ class Marker(QtCore.QObject):
         right_form.addRow("Return loss:", self.returnloss_label)
         right_form.addRow("VSWR:", self.vswr_label)
         right_form.addRow("Q:", self.quality_factor_label)
+        right_form.addRow("S11 Phase:", self.s11_phase_label)
         right_form.addRow("S21 Gain:", self.gain_label)
-        right_form.addRow("S21 Phase:", self.phase_label)
+        right_form.addRow("S21 Phase:", self.s21_phase_label)
 
     def setFrequency(self, frequency):
         from .NanoVNASaver import NanoVNASaver
@@ -127,7 +129,7 @@ class Marker(QtCore.QObject):
             self.btnColorPicker.setPalette(p)
 
     def getRow(self):
-        return (QtWidgets.QLabel(self.name), self.layout)
+        return QtWidgets.QLabel(self.name), self.layout
 
     def findLocation(self, data: List[Datapoint]):
         self.location = -1
@@ -158,7 +160,8 @@ class Marker(QtCore.QObject):
         self.inductance_label.setText("")
         self.capacitance_label.setText("")
         self.gain_label.setText("")
-        self.phase_label.setText("")
+        self.s11_phase_label.setText("")
+        self.s21_phase_label.setText("")
         self.quality_factor_label.setText("")
 
     def updateLabels(self, s11data: List[Datapoint], s21data: List[Datapoint]):
@@ -197,8 +200,10 @@ class Marker(QtCore.QObject):
                 vswr = "-"
             self.vswr_label.setText(str(vswr))
             self.quality_factor_label.setText(str(round(NanoVNASaver.qualifyFactor(s11data[self.location]), 1)))
+            self.s11_phase_label.setText(
+                str(round(-PhaseChart.angle(s11data[self.location]), 2)) + "\N{DEGREE SIGN}")
             if len(s21data) == len(s11data):
                 _, _, vswr = NanoVNASaver.vswr(s21data[self.location])
                 self.gain_label.setText(str(round(20 * math.log10((vswr - 1) / (vswr + 1)), 3)) + " dB")
-                self.phase_label.setText(
-                    str(round(PhaseChart.angle(s21data[self.location]), 2)) + "\N{DEGREE SIGN}")
+                self.s21_phase_label.setText(
+                    str(round(-PhaseChart.angle(s21data[self.location]), 2)) + "\N{DEGREE SIGN}")
