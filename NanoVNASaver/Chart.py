@@ -1307,6 +1307,45 @@ class RealImaginaryChart(FrequencyChart):
         self.max_real = 0
         self.max_imag = 0
 
+        self.maxDisplayReal = 100
+        self.maxDisplayImag = 100
+        self.minDisplayReal = 0
+        self.minDisplayImag = -100
+
+        self.y_menu.clear()
+
+        self.y_action_automatic = QtWidgets.QAction("Automatic")
+        self.y_action_automatic.setCheckable(True)
+        self.y_action_automatic.setChecked(True)
+        self.y_action_automatic.changed.connect(lambda: self.setFixedValues(self.y_action_fixed_span.isChecked()))
+        self.y_action_fixed_span = QtWidgets.QAction("Fixed span")
+        self.y_action_fixed_span.setCheckable(True)
+        self.y_action_fixed_span.changed.connect(lambda: self.setFixedValues(self.y_action_fixed_span.isChecked()))
+        mode_group = QtWidgets.QActionGroup(self)
+        mode_group.addAction(self.y_action_automatic)
+        mode_group.addAction(self.y_action_fixed_span)
+        self.y_menu.addAction(self.y_action_automatic)
+        self.y_menu.addAction(self.y_action_fixed_span)
+        self.y_menu.addSeparator()
+
+        self.action_set_fixed_maximum_real = QtWidgets.QAction("Maximum R (" + str(self.maxDisplayReal) + ")")
+        self.action_set_fixed_maximum_real.triggered.connect(self.setMaximumRealValue)
+
+        self.action_set_fixed_minimum_real = QtWidgets.QAction("Minimum R (" + str(self.minDisplayReal) + ")")
+        self.action_set_fixed_minimum_real.triggered.connect(self.setMinimumRealValue)
+
+        self.action_set_fixed_maximum_imag = QtWidgets.QAction("Maximum jX (" + str(self.maxDisplayImag) + ")")
+        self.action_set_fixed_maximum_imag.triggered.connect(self.setMaximumImagValue)
+
+        self.action_set_fixed_minimum_imag = QtWidgets.QAction("Minimum jX (" + str(self.minDisplayImag) + ")")
+        self.action_set_fixed_minimum_imag.triggered.connect(self.setMinimumImagValue)
+
+        self.y_menu.addAction(self.action_set_fixed_maximum_real)
+        self.y_menu.addAction(self.action_set_fixed_minimum_real)
+        self.y_menu.addSeparator()
+        self.y_menu.addAction(self.action_set_fixed_maximum_imag)
+        self.y_menu.addAction(self.action_set_fixed_minimum_imag)
+
         self.setMinimumSize(self.chartWidth + self.leftMargin + self.rightMargin, self.chartHeight + 40)
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding))
         pal = QtGui.QPalette()
@@ -1359,42 +1398,48 @@ class RealImaginaryChart(FrequencyChart):
         self.fstop = fstop
         fspan = fstop-fstart
         # Find scaling
-        min_real = 1000
-        min_imag = 1000
-        max_real = 0
-        max_imag = -1000
-        for d in self.data:
-            re, im = NanoVNASaver.normalize50(d)
-            if re > max_real:
-                max_real = re
-            if re < min_real:
-                min_real = re
-            if im > max_imag:
-                max_imag = im
-            if im < min_imag:
-                min_imag = im
-        for d in self.reference:  # Also check min/max for the reference sweep
-            if d.freq < fstart or d.freq > fstop:
-                continue
-            re, im = NanoVNASaver.normalize50(d)
-            if re > max_real:
-                max_real = re
-            if re < min_real:
-                min_real = re
-            if im > max_imag:
-                max_imag = im
-            if im < min_imag:
-                min_imag = im
+        if self.fixedValues:
+            min_real = self.minDisplayReal
+            max_real = self.maxDisplayReal
+            min_imag = self.minDisplayImag
+            max_imag = self.maxDisplayImag
+        else:
+            min_real = 1000
+            min_imag = 1000
+            max_real = 0
+            max_imag = -1000
+            for d in self.data:
+                re, im = NanoVNASaver.normalize50(d)
+                if re > max_real:
+                    max_real = re
+                if re < min_real:
+                    min_real = re
+                if im > max_imag:
+                    max_imag = im
+                if im < min_imag:
+                    min_imag = im
+            for d in self.reference:  # Also check min/max for the reference sweep
+                if d.freq < fstart or d.freq > fstop:
+                    continue
+                re, im = NanoVNASaver.normalize50(d)
+                if re > max_real:
+                    max_real = re
+                if re < min_real:
+                    min_real = re
+                if im > max_imag:
+                    max_imag = im
+                if im < min_imag:
+                    min_imag = im
 
-        max_real = max(8, math.ceil(max_real))   # Always have at least 8 numbered horizontal lines
-        min_real = max(0, math.floor(min_real))  # Negative real resistance? No.
-        max_imag = math.ceil(max_imag)
-        min_imag = math.floor(min_imag)
+            max_real = max(8, math.ceil(max_real))   # Always have at least 8 numbered horizontal lines
+            min_real = max(0, math.floor(min_real))  # Negative real resistance? No.
+            max_imag = math.ceil(max_imag)
+            min_imag = math.floor(min_imag)
 
-        if max_imag - min_imag < 8:
-            missing = 8 - (max_imag - min_imag)
-            max_imag += math.ceil(missing/2)
-            min_imag -= math.floor(missing/2)
+            if max_imag - min_imag < 8:
+                missing = 8 - (max_imag - min_imag)
+                max_imag += math.ceil(missing/2)
+                min_imag -= math.floor(missing/2)
 
         self.max_real = max_real
         self.max_imag = max_imag
@@ -1553,3 +1598,49 @@ class RealImaginaryChart(FrequencyChart):
                 shortest = distance
                 nearest = m
         return nearest
+
+    def setMinimumRealValue(self):
+        min_val, selected = QtWidgets.QInputDialog.getInt(self, "Minimum real value",
+                                                          "Set minimum real value", value=self.minDisplayReal)
+        if not selected:
+            return
+        self.minDisplayValue = min_val
+        if self.fixedValues:
+            self.update()
+
+    def setMaximumRealValue(self):
+        max_val, selected = QtWidgets.QInputDialog.getInt(self, "Maximum real value",
+                                                          "Set maximum real value", value=self.maxDisplayReal)
+        if not selected:
+            return
+        self.maxDisplayValue = max_val
+        if self.fixedValues:
+            self.update()
+
+    def setMinimumImagValue(self):
+        min_val, selected = QtWidgets.QInputDialog.getInt(self, "Minimum imaginary value",
+                                                          "Set minimum imaginary value", value=self.minDisplayImag)
+        if not selected:
+            return
+        self.minDisplayValue = min_val
+        if self.fixedValues:
+            self.update()
+
+    def setMaximumImagValue(self):
+        max_val, selected = QtWidgets.QInputDialog.getInt(self, "Maximum imaginary value",
+                                                          "Set maximum imaginary value", value=self.maxDisplayImag)
+        if not selected:
+            return
+        self.maxDisplayValue = max_val
+        if self.fixedValues:
+            self.update()
+
+    def contextMenuEvent(self, event):
+        self.action_set_fixed_start.setText("Start (" + Chart.shortenFrequency(self.minFrequency) + ")")
+        self.action_set_fixed_stop.setText("Stop (" + Chart.shortenFrequency(self.maxFrequency) + ")")
+        self.action_set_fixed_minimum_real.setText("Minimum R (" + str(self.minDisplayReal) + ")")
+        self.action_set_fixed_maximum_real.setText("Maximum R (" + str(self.maxDisplayReal) + ")")
+        self.action_set_fixed_minimum_imag.setText("Minimum jX (" + str(self.minDisplayImag) + ")")
+        self.action_set_fixed_maximum_imag.setText("Maximum jX (" + str(self.maxDisplayImag) + ")")
+
+        self.menu.exec_(event.globalPos())
