@@ -17,6 +17,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 import sys
+import os
 
 from PyQt5 import QtWidgets, QtCore
 
@@ -63,6 +64,11 @@ def main():
         logger.addHandler(fh)
 
     logger.info("Startup...")
+
+    #  k5dru: without this, on my two-monitor Linux Mint laptop setup, neither screen is right.  
+    #    with it, it looks perfect. 
+    #  Also toyed with os.environ["QT_SCALE_FACTOR"] = "1.0", but not needed.
+    os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "0"
 
     QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
     app = QtWidgets.QApplication(sys.argv)
