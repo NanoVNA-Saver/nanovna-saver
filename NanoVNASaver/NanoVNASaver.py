@@ -363,11 +363,13 @@ class NanoVNASaver(QtWidgets.QWidget):
         serial_control_layout = QtWidgets.QFormLayout(serial_control_box)
         self.serialPortInput = QtWidgets.QLineEdit(self.serialPort)
         self.serialPortInput.setAlignment(QtCore.Qt.AlignRight)
-        # self.serialSpeedInput = QtWidgets.QLineEdit(str(self.serialSpeed))
-        # self.serialSpeedInput.setValidator(QtGui.QIntValidator())
-        # self.serialSpeedInput.setAlignment(QtCore.Qt.AlignRight)
-        serial_control_layout.addRow(QtWidgets.QLabel("Serial port"), self.serialPortInput)
-        # serial_control_layout.addRow(QtWidgets.QLabel("Speed"), self.serialSpeedInput)
+        btn_rescan_serial_port = QtWidgets.QPushButton("Rescan")
+        btn_rescan_serial_port.setFixedWidth(60)
+        btn_rescan_serial_port.clicked.connect(self.rescanSerialPort)
+        serial_port_input_layout = QtWidgets.QHBoxLayout()
+        serial_port_input_layout.addWidget(self.serialPortInput)
+        serial_port_input_layout.addWidget(btn_rescan_serial_port)
+        serial_control_layout.addRow(QtWidgets.QLabel("Serial port"), serial_port_input_layout)
 
         self.btnSerialToggle = QtWidgets.QPushButton("Connect to NanoVNA")
         self.btnSerialToggle.clicked.connect(self.serialButtonClick)
@@ -485,6 +487,11 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         logger.debug("Finished building interface")
 
+    def rescanSerialPort(self):
+        serial_port = self.getPort()
+        self.serialPort = serial_port
+        self.serialPortInput.setText(serial_port)
+
     # Get that windows port
     @staticmethod
     def getPort() -> str:
@@ -495,6 +502,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                 port = d.device
                 logger.info("Found NanoVNA (%04x %04x) on port %s", d.vid, d.pid, d.device)
                 return port
+        return ""
 
     def pickReferenceFile(self):
         filename, _ = QtWidgets.QFileDialog.getOpenFileName(directory=self.referenceFileNameInput.text(),
