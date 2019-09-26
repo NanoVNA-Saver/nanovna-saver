@@ -1312,6 +1312,10 @@ class RealImaginaryChart(FrequencyChart):
         self.minDisplayReal = 0
         self.minDisplayImag = -100
 
+        #
+        #  Build the context menu
+        #
+
         self.y_menu.clear()
 
         self.y_action_automatic = QtWidgets.QAction("Automatic")
@@ -1346,6 +1350,10 @@ class RealImaginaryChart(FrequencyChart):
         self.y_menu.addAction(self.action_set_fixed_maximum_imag)
         self.y_menu.addAction(self.action_set_fixed_minimum_imag)
 
+        #
+        # Set up size policy and palette
+        #
+
         self.setMinimumSize(self.chartWidth + self.leftMargin + self.rightMargin, self.chartHeight + 40)
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding))
         pal = QtGui.QPalette()
@@ -1360,7 +1368,6 @@ class RealImaginaryChart(FrequencyChart):
 
     def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
         qp = QtGui.QPainter(self)
-        #qp.begin(self)  # Apparently not needed?
         self.drawChart(qp)
         self.drawValues(qp)
         qp.end()
@@ -1440,6 +1447,31 @@ class RealImaginaryChart(FrequencyChart):
                 missing = 8 - (max_imag - min_imag)
                 max_imag += math.ceil(missing/2)
                 min_imag -= math.floor(missing/2)
+
+            if 0 > max_imag > -2:
+                max_imag = 0
+            if 0 < min_imag < 2:
+                min_imag = 0
+
+            if (max_imag - min_imag) > 8 and min_imag < 0 < max_imag:
+                # We should show a "0" line for the reactive part
+                logger.debug("Scaling RealImaginary from %s - %s", min_imag, max_imag)
+                span = max_imag - min_imag
+                step_size = span / 8
+                if max_imag < step_size:
+                    # The 0 line is the first step after the top. Scale accordingly.
+                    max_imag = -min_imag/7
+                elif -min_imag < step_size:
+                    # The 0 line is the last step before the bottom. Scale accordingly.
+                    min_imag = -max_imag/7
+                else:
+                    # Scale max_imag to be a whole factor of min_imag
+                    num_min = math.floor(min_imag/step_size * -1)
+                    num_max = 8 - num_min
+                    logger.debug("Scaling max_imag to be %s times num_min", num_max)
+                    max_imag = num_max * (min_imag / num_min) * -1
+
+                logger.debug("Scaled RealImaginary to %s - %s", min_imag, max_imag)
 
         self.max_real = max_real
         self.max_imag = max_imag
