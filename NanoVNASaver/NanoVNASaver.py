@@ -19,11 +19,13 @@ import math
 import sys
 import threading
 from time import sleep, strftime, gmtime
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
 import serial
+import typing
 from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5.QtCore import QModelIndex
 from serial.tools import list_ports
 
 from .Chart import Chart, PhaseChart, VSWRChart, PolarChart, SmithChart, LogMagChart, QualityFactorChart, TDRChart, \
@@ -55,6 +57,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         print("Settings: " + self.settings.fileName())
         self.threadpool = QtCore.QThreadPool()
         self.worker = SweepWorker(self)
+
+        self.bands = BandsModel()
 
         self.noSweeps = 1  # Number of sweeps to run
 
@@ -265,6 +269,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         for c in self.charts:
             c.setMarkers(self.markers)
+            c.setBands(self.bands)
         left_column.addWidget(marker_control_box)
 
         marker_column.addWidget(self.markers[0].getGroupBox())
@@ -1026,6 +1031,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.settings.setValue("WindowHeight", self.height())
         self.settings.setValue("WindowWidth", self.width())
         self.settings.sync()
+        self.bands.saveSettings()
         self.threadpool.waitForDone(2500)
         a0.accept()
         sys.exit()
@@ -1131,6 +1137,23 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         font_options_layout.addRow("Font size", self.font_dropdown)
 
         layout.addWidget(font_options_box)
+
+        bands_box = QtWidgets.QGroupBox("Bands")
+        bands_layout = QtWidgets.QFormLayout(bands_box)
+
+        self.show_bands = QtWidgets.QCheckBox("Show bands")
+        bands_layout.addRow(self.show_bands)
+
+        self.btn_manage_bands = QtWidgets.QPushButton("Manage bands")
+        self.btn_manage_bands.clicked.connect(self.app.bands.addRow)
+        bands_layout.addRow(self.btn_manage_bands)
+
+        bands_table = QtWidgets.QTableView()
+        bands_table.setModel(self.app.bands)
+
+        bands_layout.addRow(bands_table)
+
+        layout.addWidget(bands_box)
 
         charts_box = QtWidgets.QGroupBox("Displayed charts")
         charts_layout = QtWidgets.QGridLayout(charts_box)
@@ -1499,3 +1522,86 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         self.app.worker.setAveraging(self.averaged_sweep_radiobutton.isChecked(),
                                      self.averages.text(),
                                      self.truncates.text())
+
+
+class BandsModel(QtCore.QAbstractTableModel):
+    bands: List[Tuple[str, int, int]] = []
+    enabled = True
+
+    def __init__(self):
+        super().__init__()
+        self.settings = QtCore.QSettings(QtCore.QSettings.IniFormat,
+                                         QtCore.QSettings.UserScope,
+                                         "NanoVNASaver", "Bands")
+        self.settings.setIniCodec("UTF-8")
+        self.bands = self.settings.value("bands", [])
+
+    def saveSettings(self):
+        self.settings.setValue("bands", self.bands)
+        self.settings.sync()
+
+    def columnCount(self, parent: QModelIndex = ...) -> int:
+        return 3
+
+    def rowCount(self, parent: QModelIndex = ...) -> int:
+        return len(self.bands)
+
+    def data(self, index: QModelIndex, role: int = ...) -> QtCore.QVariant:
+        if role == QtCore.Qt.DisplayRole or role == QtCore.Qt.ItemDataRole or role == QtCore.Qt.EditRole:
+            return QtCore.QVariant(self.bands[index.row()][index.column()])
+        elif role == QtCore.Qt.TextAlignmentRole:
+            if index.column() == 0:
+                return QtCore.QVariant(QtCore.Qt.AlignCenter)
+            else:
+                return QtCore.QVariant(QtCore.Qt.AlignRight)
+        else:
+            return QtCore.QVariant()
+
+    def setData(self, index: QModelIndex, value: typing.Any, role: int = ...) -> bool:
+        if role == QtCore.Qt.EditRole and index.isValid():
+            t = self.bands[index.row()]
+            name = t[0]
+            start = t[1]
+            end = t[2]
+            if index.column() == 0:
+                name = value
+            elif index.column() == 1:
+                start = value
+            elif index.column() == 2:
+                end = value
+            self.bands[index.row()] = (name, start, end)
+            self.dataChanged.emit(index, index)
+            return True
+        return False
+
+    def index(self, row: int, column: int, parent: QModelIndex = ...) -> QModelIndex:
+        return self.createIndex(row, column)
+
+    def addRow(self):
+        self.bands.append(("New", 0, 0))
+        self.dataChanged.emit(self.index(len(self.bands), 0), self.index(len(self.bands), 2))
+        self.layoutChanged.emit()
+
+    def removeRow(self, row: int, parent: QModelIndex = ...) -> bool:
+        self.bands.remove(self.bands[row])
+        self.layoutChanged.emit()
+        return True
+
+    def headerData(self, section: int, orientation: QtCore.Qt.Orientation, role: int = ...):
+        if role == QtCore.Qt.DisplayRole and orientation == QtCore.Qt.Horizontal:
+            if section == 0:
+                return "Band"
+            if section == 1:
+                return "Start (Hz)"
+            if section == 2:
+                return "End (Hz)"
+            else:
+                return "Invalid"
+        else:
+            super().headerData(section, orientation, role)
+
+    def flags(self, index: QModelIndex) -> QtCore.Qt.ItemFlags:
+        if index.isValid():
+            return QtCore.Qt.ItemFlags(QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable)
+        else:
+            super().flags(index)

@@ -37,6 +37,7 @@ class Chart(QtWidgets.QWidget):
     data: List[Datapoint] = []
     reference: List[Datapoint] = []
     markers: List[Marker] = []
+    bands = None
     draggedMarker: Marker = None
     name = ""
     drawLines = False
@@ -88,6 +89,9 @@ class Chart(QtWidgets.QWidget):
 
     def setMarkers(self, markers):
         self.markers = markers
+
+    def setBands(self, bands):
+        self.bands = bands
 
     def getActiveMarker(self, event: QtGui.QMouseEvent) -> Marker:
         if self.draggedMarker is not None:
@@ -312,6 +316,27 @@ class FrequencyChart(Chart):
             m.frequencyInput.setText(str(round(f)))
         return
 
+    def drawBands(self, qp, fstart, fstop):
+        qp.setBrush(QtGui.QColor(128, 128, 128, 48))
+        qp.setPen(QtGui.QColor(128, 128, 128, 0))
+        for (name, start, end) in self.bands.bands:
+            if fstart < start < fstop and fstart < end < fstop:
+                # The band is entirely within the chart
+                x_start = self.getXPosition(Datapoint(start, 0, 0))
+                x_end = self.getXPosition(Datapoint(end, 0, 0))
+                qp.drawRect(x_start, 30, x_end - x_start, self.chartHeight - 10)
+            elif fstart < start < fstop:
+                # Only the start of the band is within the chart
+                x_start = self.getXPosition(Datapoint(start, 0, 0))
+                qp.drawRect(x_start, 30, self.leftMargin + self.chartWidth - x_start, self.chartHeight - 10)
+            elif fstart < end < fstop:
+                # Only the end of the band is within the chart
+                x_end = self.getXPosition(Datapoint(end, 0, 0))
+                qp.drawRect(self.leftMargin + 1, 30, x_end - (self.leftmargin + 1), self.chartHeight - 10)
+            elif start < fstart < fstop < end:
+                # All the chart is in a band, we won't show it(?)
+                pass
+
 
 class SquareChart(Chart):
     def __init__(self, name):
@@ -401,6 +426,11 @@ class PhaseChart(FrequencyChart):
         self.fstart = fstart
         self.fstop = fstop
         fspan = self.fstop-self.fstart
+
+        # Draw bands if required
+        if self.bands.enabled:
+            self.drawBands(qp, fstart, fstop)
+
         minAngle = -180
         maxAngle = 180
         span = maxAngle-minAngle
@@ -527,6 +557,11 @@ class VSWRChart(FrequencyChart):
         self.fstart = fstart
         self.fstop = fstop
         fspan = fstop-fstart
+
+        # Draw bands if required
+        if self.bands.enabled:
+            self.drawBands(qp, fstart, fstop)
+
         # Find scaling
         if self.fixedValues:
             minVSWR = max(1, self.minDisplayValue)
@@ -960,9 +995,14 @@ class LogMagChart(FrequencyChart):
             self.fstart = fstart
             self.fstop = fstop
         else:
-            self.fstart = self.minFrequency
-            self.fstop = self.maxFrequency
+            fstart = self.fstart = self.minFrequency
+            fstop = self.fstop = self.maxFrequency
         fspan = self.fstop - self.fstart
+
+        # Draw bands if required
+        if self.bands.enabled:
+            self.drawBands(qp, fstart, fstop)
+
         if self.fixedValues:
             maxValue = -self.minDisplayValue  # These are negative, because the entire logmag chart is
             minValue = -self.maxDisplayValue  # upside down.
@@ -1172,6 +1212,11 @@ class QualityFactorChart(FrequencyChart):
         self.fstart = fstart
         self.fstop = fstop
         fspan = fstop-fstart
+
+        # Draw bands if required
+        if self.bands.enabled:
+            self.drawBands(qp, fstart, fstop)
+
         qp.drawText(self.leftMargin-20, 20 + self.chartHeight + 15, Chart.shortenFrequency(fstart))
         ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
         for i in range(ticks):
@@ -1404,6 +1449,11 @@ class RealImaginaryChart(FrequencyChart):
         self.fstart = fstart
         self.fstop = fstop
         fspan = fstop-fstart
+
+        # Draw bands if required
+        if self.bands.enabled:
+            self.drawBands(qp, fstart, fstop)
+
         # Find scaling
         if self.fixedValues:
             min_real = self.minDisplayReal
