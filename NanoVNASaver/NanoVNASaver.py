@@ -796,11 +796,15 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     @staticmethod
     def capacitanceEquivalent(im50, freq) -> str:
+        if im50 == 0 or freq == 0:
+            return "- pF"
         capacitance = 10**12/(freq * 2 * math.pi * im50)
         return str(round(-capacitance, 3)) + " pF"
 
     @staticmethod
     def inductanceEquivalent(im50, freq) -> str:
+        if freq == 0:
+            return "- nH"
         inductance = im50 / (freq * 2 * math.pi)
         return str(round(inductance * 1000000000, 3)) + " nH"
 
