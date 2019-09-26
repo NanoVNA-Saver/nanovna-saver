@@ -32,6 +32,7 @@ Datapoint = collections.namedtuple('Datapoint', 'freq re im')
 class WorkerSignals(QtCore.QObject):
     updated = pyqtSignal()
     finished = pyqtSignal()
+    sweepError = pyqtSignal()
 
 
 class SweepWorker(QtCore.QRunnable):
@@ -52,6 +53,7 @@ class SweepWorker(QtCore.QRunnable):
         self.averaging = False
         self.averages = 3
         self.truncates = 0
+        self.error_message = ""
 
     @pyqtSlot()
     def run(self):
@@ -118,15 +120,20 @@ class SweepWorker(QtCore.QRunnable):
                     logger.debug("Stopping sweeping as signalled")
                     break
                 start = sweep_from + i*101*stepsize
-                freq, val11, val21 = self.readSegment(start, start+100*stepsize)
+                try:
+                    freq, val11, val21 = self.readSegment(start, start+100*stepsize)
 
-                frequencies += freq
-                values += val11
-                values21 += val21
+                    frequencies += freq
+                    values += val11
+                    values21 += val21
 
-                self.percentage = (i+1)*100/self.noSweeps
-                logger.debug("Saving acquired data")
-                self.saveData(frequencies, values, values21)
+                    self.percentage = (i+1)*100/self.noSweeps
+                    logger.debug("Saving acquired data")
+                    self.saveData(frequencies, values, values21)
+                except NanoVNAValueException as e:
+                    self.error_message = str(e)
+                    self.stopped = True
+                    self.signals.sweepError.emit()
 
         while self.continuousSweep and not self.stopped:
             logger.debug("Continuous sweeping")
@@ -136,9 +143,14 @@ class SweepWorker(QtCore.QRunnable):
                     logger.debug("Stopping sweeping as signalled")
                     break
                 start = sweep_from + i * 101 * stepsize
-                _, values, values21 = self.readSegment(start, start + 100 * stepsize)
-                logger.debug("Updating acquired data")
-                self.updateData(values, values21, i)
+                try:
+                    _, values, values21 = self.readSegment(start, start + 100 * stepsize)
+                    logger.debug("Updating acquired data")
+                    self.updateData(values, values21, i)
+                except NanoVNAValueException as e:
+                    self.error_message = str(e)
+                    self.stopped = True
+                    self.signals.sweepError.emit()
 
         # Reset the device to show the full range
         logger.debug("Resetting NanoVNA sweep to full range: %d to %d",
@@ -307,8 +319,9 @@ class SweepWorker(QtCore.QRunnable):
                 if count == 10:
                     logger.error("Tried and failed to read %s %d times.", data, count)
                 if count >= 20:
-                    logger.error("Tried and failed to read %s %d times. Giving up.", data, count)
-                    return None  # Put a proper exception in here
+                    logger.critical("Tried and failed to read %s %d times. Giving up.", data, count)
+                    raise NanoVNAValueException("Failed reading " + str(data) + " " + str(count) + " times.\n" +
+                                                "Data outside expected valid ranges, or in an unexpected format.")
         return returndata
 
     def readFreq(self):
@@ -330,19 +343,23 @@ class SweepWorker(QtCore.QRunnable):
                     if count == 10:
                         logger.error("Tried and failed %d times to read frequencies.", count)
                     if count >= 20:
-                        logger.critical("Tried and failed to read frequencies from the NanoVNA more than %d times.", count)
-                        return None  # Put a proper exception in here
+                        logger.critical("Tried and failed to read frequencies from the NanoVNA %d times.", count)
+                        raise NanoVNAValueException("Failed reading frequencies " + str(count) + " times.")
                 else:
                     returnfreq.append(int(f))
         return returnfreq
 
-    def setContinuousSweep(self, continuousSweep):
+    def setContinuousSweep(self, continuousSweep: bool):
         self.continuousSweep = continuousSweep
 
-    def setAveraging(self, averaging, averages, truncates):
+    def setAveraging(self, averaging: bool, averages: str, truncates: str):
         self.averaging = averaging
         try:
             self.averages = int(averages)
             self.truncates = int(truncates)
         except:
             return
+
+
+class NanoVNAValueException(Exception):
+    pass

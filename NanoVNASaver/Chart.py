@@ -126,20 +126,191 @@ class Chart(QtWidgets.QWidget):
         self.update()
 
     @staticmethod
-    def shortenFrequency(frequency):
+    def shortenFrequency(frequency: int) -> str:
         if frequency < 50000:
-            return frequency
+            return str(frequency)
         if frequency < 5000000:
             return str(round(frequency / 1000)) + "k"
         return str(round(frequency / 1000000, 1)) + "M"
 
     def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
+        if event.buttons() == QtCore.Qt.RightButton:
+            event.ignore()
+            return
         if event.modifiers() == QtCore.Qt.ShiftModifier:
             self.draggedMarker = self.getNearestMarker(event.x(), event.y())
         self.mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, a0: QtGui.QMouseEvent) -> None:
         self.draggedMarker = None
+
+
+class FrequencyChart(Chart):
+    fstart = 0
+    fstop = 0
+
+    maxFrequency = 100000000
+    minFrequency = 1000000
+
+    minDisplayValue = -1
+    maxDisplayValue = 1
+
+    fixedSpan = False
+    fixedValues = False
+
+    linear = True
+    logarithmic = False
+
+    def __init__(self, name):
+        super().__init__(name)
+
+        mode_group = QtWidgets.QActionGroup(self)
+        self.menu = QtWidgets.QMenu()
+
+        self.reset = QtWidgets.QAction("Reset")
+        self.reset.triggered.connect(self.resetDisplayLimits)
+        self.menu.addAction(self.reset)
+
+        self.x_menu = QtWidgets.QMenu("Frequency axis")
+        self.action_automatic = QtWidgets.QAction("Automatic")
+        self.action_automatic.setCheckable(True)
+        self.action_automatic.setChecked(True)
+        self.action_automatic.changed.connect(lambda: self.setFixedSpan(self.action_fixed_span.isChecked()))
+        self.action_fixed_span = QtWidgets.QAction("Fixed span")
+        self.action_fixed_span.setCheckable(True)
+        self.action_fixed_span.changed.connect(lambda: self.setFixedSpan(self.action_fixed_span.isChecked()))
+        mode_group.addAction(self.action_automatic)
+        mode_group.addAction(self.action_fixed_span)
+        self.x_menu.addAction(self.action_automatic)
+        self.x_menu.addAction(self.action_fixed_span)
+        self.x_menu.addSeparator()
+
+        self.action_set_fixed_start = QtWidgets.QAction("Start (" + Chart.shortenFrequency(self.minFrequency) + ")")
+        self.action_set_fixed_start.triggered.connect(self.setMinimumFrequency)
+
+        self.action_set_fixed_stop = QtWidgets.QAction("Stop (" + Chart.shortenFrequency(self.maxFrequency) + ")")
+        self.action_set_fixed_stop.triggered.connect(self.setMaximumFrequency)
+
+        self.x_menu.addAction(self.action_set_fixed_start)
+        self.x_menu.addAction(self.action_set_fixed_stop)
+
+        self.y_menu = QtWidgets.QMenu("Data axis")
+        self.y_action_automatic = QtWidgets.QAction("Automatic")
+        self.y_action_automatic.setCheckable(True)
+        self.y_action_automatic.setChecked(True)
+        self.y_action_automatic.changed.connect(lambda: self.setFixedValues(self.y_action_fixed_span.isChecked()))
+        self.y_action_fixed_span = QtWidgets.QAction("Fixed span")
+        self.y_action_fixed_span.setCheckable(True)
+        self.y_action_fixed_span.changed.connect(lambda: self.setFixedValues(self.y_action_fixed_span.isChecked()))
+        mode_group = QtWidgets.QActionGroup(self)
+        mode_group.addAction(self.y_action_automatic)
+        mode_group.addAction(self.y_action_fixed_span)
+        self.y_menu.addAction(self.y_action_automatic)
+        self.y_menu.addAction(self.y_action_fixed_span)
+        self.y_menu.addSeparator()
+
+        self.action_set_fixed_maximum = QtWidgets.QAction("Maximum (" + str(self.maxDisplayValue) + ")")
+        self.action_set_fixed_maximum.triggered.connect(self.setMaximumValue)
+
+        self.action_set_fixed_minimum = QtWidgets.QAction("Minimum (" + str(self.minDisplayValue) + ")")
+        self.action_set_fixed_minimum.triggered.connect(self.setMinimumValue)
+
+        self.y_menu.addAction(self.action_set_fixed_maximum)
+        self.y_menu.addAction(self.action_set_fixed_minimum)
+
+        self.menu.addMenu(self.x_menu)
+        self.menu.addMenu(self.y_menu)
+
+    def contextMenuEvent(self, event):
+        self.action_set_fixed_start.setText("Start (" + Chart.shortenFrequency(self.minFrequency) + ")")
+        self.action_set_fixed_stop.setText("Stop (" + Chart.shortenFrequency(self.maxFrequency) + ")")
+        self.action_set_fixed_minimum.setText("Minimum (" + str(self.minDisplayValue) + ")")
+        self.action_set_fixed_maximum.setText("Maximum (" + str(self.maxDisplayValue) + ")")
+
+        self.menu.exec_(event.globalPos())
+
+    def setFixedSpan(self, fixed_span: bool):
+        self.fixedSpan = fixed_span
+        self.update()
+
+    def setFixedValues(self, fixed_values: bool):
+        self.fixedValues = fixed_values
+        self.update()
+
+    def setMinimumFrequency(self):
+        from NanoVNASaver.NanoVNASaver import NanoVNASaver
+        min_freq_str, selected = QtWidgets.QInputDialog.getText(self, "Start frequency",
+                                                                "Set start frequency", text=str(self.minFrequency))
+        if not selected:
+            return
+        min_freq = NanoVNASaver.parseFrequency(min_freq_str)
+        if min_freq > 0:
+            self.minFrequency = min_freq
+        if self.fixedSpan:
+            self.update()
+
+    def setMaximumFrequency(self):
+        from NanoVNASaver.NanoVNASaver import NanoVNASaver
+        max_freq_str, selected = QtWidgets.QInputDialog.getText(self, "Stop frequency",
+                                                                "Set stop frequency", text=str(self.maxFrequency))
+        if not selected:
+            return
+        max_freq = NanoVNASaver.parseFrequency(max_freq_str)
+        if max_freq > 0:
+            self.maxFrequency = max_freq
+        if self.fixedSpan:
+            self.update()
+
+    def setMinimumValue(self):
+        min_val, selected = QtWidgets.QInputDialog.getInt(self, "Minimum value",
+                                                          "Set minimum value", value=self.minDisplayValue)
+        if not selected:
+            return
+        self.minDisplayValue = min_val
+        if self.fixedValues:
+            self.update()
+
+    def setMaximumValue(self):
+        max_val, selected = QtWidgets.QInputDialog.getInt(self, "Maximum value",
+                                                          "Set maximum value", value=self.maxDisplayValue)
+        if not selected:
+            return
+        self.maxDisplayValue = max_val
+        if self.fixedValues:
+            self.update()
+
+    def resetDisplayLimits(self):
+        self.fixedValues = False
+        self.y_action_automatic.setChecked(True)
+        self.fixedSpan = False
+        self.action_automatic.setChecked(True)
+        self.update()
+
+    def getXPosition(self, d: Datapoint) -> int:
+        span = self.fstop - self.fstart
+        if span > 0:
+            return self.leftMargin + 1 + round(self.chartWidth * (d.freq - self.fstart) / span)
+        else:
+            return math.floor(self.width()/2)
+
+    def mouseMoveEvent(self, a0: QtGui.QMouseEvent) -> None:
+        if a0.buttons() == QtCore.Qt.RightButton:
+            a0.ignore()
+            return
+        x = a0.x()
+        absx = x - self.leftMargin
+        if absx < 0 or absx > self.chartWidth:
+            a0.ignore()
+            return
+        a0.accept()
+        if self.fstop - self.fstart > 0:
+            m = self.getActiveMarker(a0)
+            span = self.fstop - self.fstart
+            step = span/self.chartWidth
+            f = self.fstart + absx * step
+            m.setFrequency(str(round(f)))
+            m.frequencyInput.setText(str(round(f)))
+        return
 
 
 class SquareChart(Chart):
@@ -155,7 +326,7 @@ class SquareChart(Chart):
         self.update()
 
 
-class PhaseChart(Chart):
+class PhaseChart(FrequencyChart):
     def __init__(self, name=""):
         super().__init__(name)
         self.leftMargin = 35
@@ -165,6 +336,8 @@ class PhaseChart(Chart):
         self.fstop = 0
         self.minAngle = 0
         self.span = 0
+
+        self.y_menu.setDisabled(True)
 
         self.setMinimumSize(self.chartWidth + 20 + self.leftMargin, self.chartHeight + 40)
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding))
@@ -215,26 +388,30 @@ class PhaseChart(Chart):
         line_pen.setWidth(1)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(1)
-        if len(self.data) > 0:
-            fstart = self.data[0].freq
-            fstop = self.data[len(self.data)-1].freq
+        if self.fixedSpan:
+            fstart = self.minFrequency
+            fstop = self.maxFrequency
         else:
-            fstart = self.reference[0].freq
-            fstop = self.reference[len(self.reference) - 1].freq
+            if len(self.data) > 0:
+                fstart = self.data[0].freq
+                fstop = self.data[len(self.data)-1].freq
+            else:
+                fstart = self.reference[0].freq
+                fstop = self.reference[len(self.reference) - 1].freq
         self.fstart = fstart
         self.fstop = fstop
-        fspan = fstop-fstart
+        fspan = self.fstop-self.fstart
         minAngle = -180
         maxAngle = 180
         span = maxAngle-minAngle
-        qp.drawText(self.leftMargin-20, 20 + self.chartHeight + 15, Chart.shortenFrequency(fstart))
+        qp.drawText(self.leftMargin-20, 20 + self.chartHeight + 15, Chart.shortenFrequency(self.fstart))
         ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
         for i in range(ticks):
             x = self.leftMargin + round((i+1)*self.chartWidth/ticks)
             qp.setPen(QtGui.QPen(self.foregroundColor))
             qp.drawLine(x, 20, x, 20+self.chartHeight+5)
             qp.setPen(self.textColor)
-            qp.drawText(x-20, 20+self.chartHeight+15, Chart.shortenFrequency(round(fspan/ticks*(i+1) + fstart)))
+            qp.drawText(x-20, 20+self.chartHeight+15, Chart.shortenFrequency(round(fspan/ticks*(i+1) + self.fstart)))
 
         qp.setPen(pen)
         for i in range(len(self.data)):
@@ -260,7 +437,7 @@ class PhaseChart(Chart):
             qp.drawPoint(int(x), int(y))
             if self.drawLines and i > 0:
                 angle = self.angle(self.reference[i-1])
-                prevx = x = self.leftMargin + 1 + round(self.chartWidth*(self.reference[i-1].freq - fstart)/fspan)
+                prevx = self.leftMargin + 1 + round(self.chartWidth*(self.reference[i-1].freq - fstart)/fspan)
                 prevy = 30 + round((angle - minAngle) / span * (self.chartHeight - 10))
                 qp.setPen(line_pen)
                 qp.drawLine(x, y, prevx, prevy)
@@ -285,22 +462,6 @@ class PhaseChart(Chart):
         angle = self.angle(d)
         return 30 + round((angle - self.minAngle) / self.span * (self.chartHeight - 10))
 
-    def mouseMoveEvent(self, a0: QtGui.QMouseEvent) -> None:
-        x = a0.x()
-        absx = x - self.leftMargin
-        if absx < 0 or absx > self.chartWidth:
-            a0.ignore()
-            return
-        a0.accept()
-        if self.fstop - self.fstart > 0:
-            m = self.getActiveMarker(a0)
-            span = self.fstop - self.fstart
-            step = span/self.chartWidth
-            f = self.fstart + absx * step
-            m.setFrequency(str(round(f)))
-            m.frequencyInput.setText(str(round(f)))
-        return
-
     @staticmethod
     def angle(d: Datapoint) -> float:
         re = d.re
@@ -308,7 +469,7 @@ class PhaseChart(Chart):
         return -math.degrees(math.atan2(im, re))
 
 
-class VSWRChart(Chart):
+class VSWRChart(FrequencyChart):
     def __init__(self, name=""):
         super().__init__(name)
         self.leftMargin = 30
@@ -316,6 +477,8 @@ class VSWRChart(Chart):
         self.chartHeight = 250
         self.fstart = 0
         self.fstop = 0
+        self.maxDisplayValue = 25
+        self.minDisplayValue = 1
 
         self.setMinimumSize(self.chartWidth + 20 + self.leftMargin, self.chartHeight + 40)
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding))
@@ -352,7 +515,10 @@ class VSWRChart(Chart):
         line_pen.setWidth(1)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(1)
-        if len(self.data) > 0:
+        if self.fixedSpan:
+            fstart = self.minFrequency
+            fstop = self.maxFrequency
+        elif len(self.data) > 0:
             fstart = self.data[0].freq
             fstop = self.data[len(self.data)-1].freq
         else:
@@ -362,18 +528,24 @@ class VSWRChart(Chart):
         self.fstop = fstop
         fspan = fstop-fstart
         # Find scaling
-        minVSWR = 1
-        maxVSWR = 3
-        for d in self.data:
-            _, _, vswr = NanoVNASaver.vswr(d)
-            if vswr > maxVSWR:
-                maxVSWR = vswr
-        maxVSWR = min(25, math.ceil(maxVSWR))
+        if self.fixedValues:
+            minVSWR = max(1, self.minDisplayValue)
+            maxVSWR = self.maxDisplayValue
+        else:
+            minVSWR = 1
+            maxVSWR = 3
+            for d in self.data:
+                _, _, vswr = NanoVNASaver.vswr(d)
+                if vswr > maxVSWR:
+                    maxVSWR = vswr
+            maxVSWR = min(self.maxDisplayValue, math.ceil(maxVSWR))
         self.maxVSWR = maxVSWR
         span = maxVSWR-minVSWR
         self.span = span
         ticksize = 1
-        if span > 10 and span % 5 == 0:
+        if span > 15 and span % 7 == 0:
+            ticksize = 7
+        elif span > 10 and span % 5 == 0:
             ticksize = 5
         elif span > 12 and span % 4 == 0:
             ticksize = 4
@@ -464,21 +636,9 @@ class VSWRChart(Chart):
         _, _, vswr = NanoVNASaver.vswr(d)
         return 30 + round((self.maxVSWR - vswr) / self.span * (self.chartHeight - 10))
 
-    def mouseMoveEvent(self, a0: QtGui.QMouseEvent) -> None:
-        x = a0.x()
-        absx = x - self.leftMargin
-        if absx < 0 or absx > self.chartWidth:
-            a0.ignore()
-            return
-        a0.accept()
-        if self.fstop - self.fstart > 0:
-            m = self.getActiveMarker(a0)
-            span = self.fstop - self.fstart
-            step = span/self.chartWidth
-            f = self.fstart + absx * step
-            m.setFrequency(str(round(f)))
-            m.frequencyInput.setText(str(round(f)))
-        return
+    def resetDisplayLimits(self):
+        self.maxDisplayValue = 25
+        super().resetDisplayLimits()
 
 
 class PolarChart(SquareChart):
@@ -746,14 +906,14 @@ class SmithChart(SquareChart):
         return
 
 
-class LogMagChart(Chart):
+class LogMagChart(FrequencyChart):
     def __init__(self, name=""):
         super().__init__(name)
         self.leftMargin = 30
         self.chartWidth = 250
         self.chartHeight = 250
-        self.fstart = 0
-        self.fstop = 0
+        self.minDisplayValue = -80
+        self.maxDisplayValue = 10
 
         self.setMinimumSize(self.chartWidth + 20 + self.leftMargin, self.chartHeight + 40)
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding))
@@ -790,36 +950,46 @@ class LogMagChart(Chart):
         line_pen.setWidth(1)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(1)
-        if len(self.data) > 0:
-            fstart = self.data[0].freq
-            fstop = self.data[len(self.data)-1].freq
+        if not self.fixedSpan:
+            if len(self.data) > 0:
+                fstart = self.data[0].freq
+                fstop = self.data[len(self.data)-1].freq
+            else:
+                fstart = self.reference[0].freq
+                fstop = self.reference[len(self.reference) - 1].freq
+            self.fstart = fstart
+            self.fstop = fstop
         else:
-            fstart = self.reference[0].freq
-            fstop = self.reference[len(self.reference) - 1].freq
-        self.fstart = fstart
-        self.fstop = fstop
-        fspan = fstop-fstart
-        # Find scaling
-        minValue = 100
-        maxValue = 0
-        for d in self.data:
-            logmag = self.logMag(d)
-            if logmag > maxValue:
-                maxValue = logmag
-            if logmag < minValue:
-                minValue = logmag
-        for d in self.reference:  # Also check min/max for the reference sweep
-            if d.freq < fstart or d.freq > fstop:
-                continue
-            logmag = self.logMag(d)
-            if logmag > maxValue:
-                maxValue = logmag
-            if logmag < minValue:
-                minValue = logmag
+            self.fstart = self.minFrequency
+            self.fstop = self.maxFrequency
+        fspan = self.fstop - self.fstart
+        if self.fixedValues:
+            maxValue = -self.minDisplayValue  # These are negative, because the entire logmag chart is
+            minValue = -self.maxDisplayValue  # upside down.
+        else:
+            # Find scaling
+            minValue = 100
+            maxValue = 0
+            for d in self.data:
+                logmag = self.logMag(d)
+                if logmag > maxValue:
+                    maxValue = logmag
+                if logmag < minValue:
+                    minValue = logmag
+            for d in self.reference:  # Also check min/max for the reference sweep
+                if d.freq < self.fstart or d.freq > self.fstop:
+                    continue
+                logmag = self.logMag(d)
+                if logmag > maxValue:
+                    maxValue = logmag
+                if logmag < minValue:
+                    minValue = logmag
 
-        minValue = 10*math.floor(minValue/10)
-        self.minValue = minValue
-        maxValue = 10*math.ceil(maxValue/10)
+            minValue = 10*math.floor(minValue/10)
+            self.minValue = minValue
+            maxValue = 10*math.ceil(maxValue/10)
+            self.maxValue = maxValue
+
         span = maxValue-minValue
         self.span = span
         for i in range(minValue, maxValue, 10):
@@ -832,25 +1002,28 @@ class LogMagChart(Chart):
         qp.setPen(self.textColor)
         qp.drawText(3, 35, str(-minValue))
         qp.drawText(3, self.chartHeight+20, str(-maxValue))
-        # At least 100 px between ticks
-        qp.drawText(self.leftMargin-20, 20 + self.chartHeight + 15, LogMagChart.shortenFrequency(fstart))
+
+        # Frequency ticks
+        qp.drawText(self.leftMargin-20, 20 + self.chartHeight + 15, Chart.shortenFrequency(self.fstart))
         ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
         for i in range(ticks):
             x = self.leftMargin + round((i+1)*self.chartWidth/ticks)
             qp.setPen(QtGui.QPen(self.foregroundColor))
             qp.drawLine(x, 20, x, 20+self.chartHeight+5)
             qp.setPen(self.textColor)
-            qp.drawText(x-20, 20+self.chartHeight+15, LogMagChart.shortenFrequency(round(fspan/ticks*(i+1) + fstart)))
+            qp.drawText(x-20, 20+self.chartHeight+15, LogMagChart.shortenFrequency(round(fspan/ticks*(i+1) + self.fstart)))
 
         qp.setPen(pen)
         for i in range(len(self.data)):
+            if self.data[i].freq < self.fstart or self.data[i].freq > self.fstop:
+                continue
             logmag = self.logMag(self.data[i])
-            x = self.leftMargin + 1 + round(self.chartWidth/len(self.data) * i)
+            x = self.getXPosition(self.data[i])
             y = 30 + round((logmag-minValue)/span*(self.chartHeight-10))
             qp.drawPoint(int(x), int(y))
             if self.drawLines and i > 0:
                 logmag = self.logMag(self.data[i-1])
-                prevx = self.leftMargin + 1 + round(self.chartWidth / len(self.data) * (i-1))
+                prevx = self.getXPosition(self.data[i-1])
                 prevy = 30 + round((logmag - minValue) / span * (self.chartHeight - 10))
                 qp.setPen(line_pen)
                 qp.drawLine(x, y, prevx, prevy)
@@ -859,15 +1032,15 @@ class LogMagChart(Chart):
         line_pen.setColor(self.referenceColor)
         qp.setPen(pen)
         for i in range(len(self.reference)):
-            if self.reference[i].freq < fstart or self.reference[i].freq > fstop:
+            if self.reference[i].freq < self.fstart or self.reference[i].freq > self.fstop:
                 continue
             logmag = self.logMag(self.reference[i])
-            x = self.leftMargin + 1 + round(self.chartWidth*(self.reference[i].freq - fstart)/fspan)
+            x = self.getXPosition(self.reference[i])
             y = 30 + round((logmag-minValue)/span*(self.chartHeight-10))
             qp.drawPoint(int(x), int(y))
             if self.drawLines and i > 0:
                 logmag = self.logMag(self.reference[i-1])
-                prevx = self.leftMargin + 1 + round(self.chartWidth*(self.reference[i-1].freq - fstart)/fspan)
+                prevx = self.getXPosition(self.reference[i-1])
                 prevy = 30 + round((logmag - minValue) / span * (self.chartHeight - 10))
                 qp.setPen(line_pen)
                 qp.drawLine(x, y, prevx, prevy)
@@ -875,38 +1048,20 @@ class LogMagChart(Chart):
         # Now draw the markers
         for m in self.markers:
             if m.location != -1:
+                if self.data[m.location].freq > self.fstop or self.data[m.location].freq < self.fstart:
+                    continue
                 highlighter.setColor(m.color)
                 qp.setPen(highlighter)
                 logmag = self.logMag(self.data[m.location])
-                x = self.leftMargin + 1 + round(self.chartWidth/len(self.data) * m.location)
+                x = self.getXPosition(self.data[m.location])
                 y = 30 + round((logmag - minValue) / span * (self.chartHeight - 10))
                 qp.drawLine(int(x), int(y) + 3, int(x) - 3, int(y) - 3)
                 qp.drawLine(int(x), int(y) + 3, int(x) + 3, int(y) - 3)
                 qp.drawLine(int(x) - 3, int(y) - 3, int(x) + 3, int(y) - 3)
 
-    def getXPosition(self, d: Datapoint) -> int:
-        span = self.fstop - self.fstart
-        return self.leftMargin + 1 + round(self.chartWidth * (d.freq - self.fstart) / span)
-
     def getYPosition(self, d: Datapoint) -> int:
         logMag = self.logMag(d)
         return 30 + round((logMag - self.minValue) / self.span * (self.chartHeight - 10))
-
-    def mouseMoveEvent(self, a0: QtGui.QMouseEvent) -> None:
-        x = a0.x()
-        absx = x - self.leftMargin
-        if absx < 0 or absx > self.chartWidth:
-            a0.ignore()
-            return
-        a0.accept()
-        if self.fstop - self.fstart > 0:
-            m = self.getActiveMarker(a0)
-            span = self.fstop - self.fstart
-            step = span/self.chartWidth
-            f = self.fstart + absx * step
-            m.setFrequency(str(round(f)))
-            m.frequencyInput.setText(str(round(f)))
-        return
 
     @staticmethod
     def logMag(p: Datapoint) -> float:
@@ -919,7 +1074,7 @@ class LogMagChart(Chart):
         return -20 * math.log10(mag)
 
 
-class QualityFactorChart(Chart):
+class QualityFactorChart(FrequencyChart):
     def __init__(self, name=""):
         super().__init__(name)
         self.leftMargin = 35
@@ -930,6 +1085,8 @@ class QualityFactorChart(Chart):
         self.minQ = 0
         self.maxQ = 0
         self.span = 0
+        self.minDisplayValue = 0
+        self.maxDisplayValue = 100
 
         self.setMinimumSize(self.chartWidth + 20 + self.leftMargin, self.chartHeight + 40)
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding))
@@ -959,14 +1116,20 @@ class QualityFactorChart(Chart):
         maxQ = 0
 
         # Make up some sensible scaling here
-        for d in self.data:
-            Q = NanoVNASaver.qualifyFactor(d)
-            if Q > maxQ:
-                maxQ = Q
+        if self.fixedValues:
+            maxQ = self.maxDisplayValue
+            minQ = self.minDisplayValue
+        else:
+            minQ = 0
+            for d in self.data:
+                Q = NanoVNASaver.qualifyFactor(d)
+                if Q > maxQ:
+                    maxQ = Q
         scale = 0
         if maxQ > 0:
             scale = max(scale, math.floor(math.log10(maxQ)))
 
+        self.minQ = minQ
         self.maxQ = math.ceil(maxQ/10**scale) * 10**scale
         self.span = self.maxQ - self.minQ
         step = math.floor(self.span / 10)
@@ -996,12 +1159,16 @@ class QualityFactorChart(Chart):
         line_pen.setWidth(1)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(1)
-        if len(self.data) > 0:
-            fstart = self.data[0].freq
-            fstop = self.data[len(self.data)-1].freq
+        if self.fixedSpan:
+            fstart = self.minFrequency
+            fstop = self.maxFrequency
         else:
-            fstart = self.reference[0].freq
-            fstop = self.reference[len(self.reference) - 1].freq
+            if len(self.data) > 0:
+                fstart = self.data[0].freq
+                fstop = self.data[len(self.data)-1].freq
+            else:
+                fstart = self.reference[0].freq
+                fstop = self.reference[len(self.reference) - 1].freq
         self.fstart = fstart
         self.fstop = fstop
         fspan = fstop-fstart
@@ -1039,7 +1206,7 @@ class QualityFactorChart(Chart):
             qp.drawPoint(int(x), int(y))
             if self.drawLines and i > 0:
                 Q = NanoVNASaver.qualifyFactor(self.reference[i-1])
-                prevx = x = self.leftMargin + 1 + round(self.chartWidth*(self.reference[i-1].freq - fstart)/fspan)
+                prevx = self.leftMargin + 1 + round(self.chartWidth*(self.reference[i-1].freq - fstart)/fspan)
                 prevy = 30 + round((self.maxQ - Q) / self.span * (self.chartHeight - 10))
                 qp.setPen(line_pen)
                 qp.drawLine(x, y, prevx, prevy)
@@ -1064,22 +1231,6 @@ class QualityFactorChart(Chart):
         from NanoVNASaver.NanoVNASaver import NanoVNASaver
         Q = NanoVNASaver.qualifyFactor(d)
         return 30 + round((self.maxQ - Q) / self.span * (self.chartHeight - 10))
-
-    def mouseMoveEvent(self, a0: QtGui.QMouseEvent) -> None:
-        x = a0.x()
-        absx = x - self.leftMargin
-        if absx < 0 or absx > self.chartWidth:
-            a0.ignore()
-            return
-        a0.accept()
-        if self.fstop - self.fstart > 0:
-            m = self.getActiveMarker(a0)
-            span = self.fstop - self.fstart
-            step = span/self.chartWidth
-            f = self.fstart + absx * step
-            m.setFrequency(str(round(f)))
-            m.frequencyInput.setText(str(round(f)))
-        return
 
     @staticmethod
     def angle(d: Datapoint) -> float:
@@ -1142,7 +1293,7 @@ class TDRChart(Chart):
         qp.end()
 
 
-class RealImaginaryChart(Chart):
+class RealImaginaryChart(FrequencyChart):
     def __init__(self, name=""):
         super().__init__(name)
         self.leftMargin = 45
@@ -1155,6 +1306,53 @@ class RealImaginaryChart(Chart):
         self.span_imag = 0
         self.max_real = 0
         self.max_imag = 0
+
+        self.maxDisplayReal = 100
+        self.maxDisplayImag = 100
+        self.minDisplayReal = 0
+        self.minDisplayImag = -100
+
+        #
+        #  Build the context menu
+        #
+
+        self.y_menu.clear()
+
+        self.y_action_automatic = QtWidgets.QAction("Automatic")
+        self.y_action_automatic.setCheckable(True)
+        self.y_action_automatic.setChecked(True)
+        self.y_action_automatic.changed.connect(lambda: self.setFixedValues(self.y_action_fixed_span.isChecked()))
+        self.y_action_fixed_span = QtWidgets.QAction("Fixed span")
+        self.y_action_fixed_span.setCheckable(True)
+        self.y_action_fixed_span.changed.connect(lambda: self.setFixedValues(self.y_action_fixed_span.isChecked()))
+        mode_group = QtWidgets.QActionGroup(self)
+        mode_group.addAction(self.y_action_automatic)
+        mode_group.addAction(self.y_action_fixed_span)
+        self.y_menu.addAction(self.y_action_automatic)
+        self.y_menu.addAction(self.y_action_fixed_span)
+        self.y_menu.addSeparator()
+
+        self.action_set_fixed_maximum_real = QtWidgets.QAction("Maximum R (" + str(self.maxDisplayReal) + ")")
+        self.action_set_fixed_maximum_real.triggered.connect(self.setMaximumRealValue)
+
+        self.action_set_fixed_minimum_real = QtWidgets.QAction("Minimum R (" + str(self.minDisplayReal) + ")")
+        self.action_set_fixed_minimum_real.triggered.connect(self.setMinimumRealValue)
+
+        self.action_set_fixed_maximum_imag = QtWidgets.QAction("Maximum jX (" + str(self.maxDisplayImag) + ")")
+        self.action_set_fixed_maximum_imag.triggered.connect(self.setMaximumImagValue)
+
+        self.action_set_fixed_minimum_imag = QtWidgets.QAction("Minimum jX (" + str(self.minDisplayImag) + ")")
+        self.action_set_fixed_minimum_imag.triggered.connect(self.setMinimumImagValue)
+
+        self.y_menu.addAction(self.action_set_fixed_maximum_real)
+        self.y_menu.addAction(self.action_set_fixed_minimum_real)
+        self.y_menu.addSeparator()
+        self.y_menu.addAction(self.action_set_fixed_maximum_imag)
+        self.y_menu.addAction(self.action_set_fixed_minimum_imag)
+
+        #
+        # Set up size policy and palette
+        #
 
         self.setMinimumSize(self.chartWidth + self.leftMargin + self.rightMargin, self.chartHeight + 40)
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding))
@@ -1170,7 +1368,6 @@ class RealImaginaryChart(Chart):
 
     def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
         qp = QtGui.QPainter(self)
-        #qp.begin(self)  # Apparently not needed?
         self.drawChart(qp)
         self.drawValues(qp)
         qp.end()
@@ -1194,52 +1391,83 @@ class RealImaginaryChart(Chart):
         line_pen.setWidth(1)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(1)
-        if len(self.data) > 0:
-            fstart = self.data[0].freq
-            fstop = self.data[len(self.data)-1].freq
+        if self.fixedSpan:
+            fstart = self.minFrequency
+            fstop = self.maxFrequency
         else:
-            fstart = self.reference[0].freq
-            fstop = self.reference[len(self.reference) - 1].freq
+            if len(self.data) > 0:
+                fstart = self.data[0].freq
+                fstop = self.data[len(self.data)-1].freq
+            else:
+                fstart = self.reference[0].freq
+                fstop = self.reference[len(self.reference) - 1].freq
         self.fstart = fstart
         self.fstop = fstop
         fspan = fstop-fstart
         # Find scaling
-        min_real = 1000
-        min_imag = 1000
-        max_real = 0
-        max_imag = -1000
-        for d in self.data:
-            re, im = NanoVNASaver.normalize50(d)
-            if re > max_real:
-                max_real = re
-            if re < min_real:
-                min_real = re
-            if im > max_imag:
-                max_imag = im
-            if im < min_imag:
-                min_imag = im
-        for d in self.reference:  # Also check min/max for the reference sweep
-            if d.freq < fstart or d.freq > fstop:
-                continue
-            re, im = NanoVNASaver.normalize50(d)
-            if re > max_real:
-                max_real = re
-            if re < min_real:
-                min_real = re
-            if im > max_imag:
-                max_imag = im
-            if im < min_imag:
-                min_imag = im
+        if self.fixedValues:
+            min_real = self.minDisplayReal
+            max_real = self.maxDisplayReal
+            min_imag = self.minDisplayImag
+            max_imag = self.maxDisplayImag
+        else:
+            min_real = 1000
+            min_imag = 1000
+            max_real = 0
+            max_imag = -1000
+            for d in self.data:
+                re, im = NanoVNASaver.normalize50(d)
+                if re > max_real:
+                    max_real = re
+                if re < min_real:
+                    min_real = re
+                if im > max_imag:
+                    max_imag = im
+                if im < min_imag:
+                    min_imag = im
+            for d in self.reference:  # Also check min/max for the reference sweep
+                if d.freq < fstart or d.freq > fstop:
+                    continue
+                re, im = NanoVNASaver.normalize50(d)
+                if re > max_real:
+                    max_real = re
+                if re < min_real:
+                    min_real = re
+                if im > max_imag:
+                    max_imag = im
+                if im < min_imag:
+                    min_imag = im
 
-        max_real = max(8, math.ceil(max_real))   # Always have at least 8 numbered horizontal lines
-        min_real = max(0, math.floor(min_real))  # Negative real resistance? No.
-        max_imag = math.ceil(max_imag)
-        min_imag = math.floor(min_imag)
+            max_real = max(8, math.ceil(max_real))   # Always have at least 8 numbered horizontal lines
+            min_real = max(0, math.floor(min_real))  # Negative real resistance? No.
+            max_imag = math.ceil(max_imag)
+            min_imag = math.floor(min_imag)
 
-        if max_imag - min_imag < 8:
-            missing = 8 - (max_imag - min_imag)
-            max_imag += math.ceil(missing/2)
-            min_imag -= math.floor(missing/2)
+            if max_imag - min_imag < 8:
+                missing = 8 - (max_imag - min_imag)
+                max_imag += math.ceil(missing/2)
+                min_imag -= math.floor(missing/2)
+
+            if 0 > max_imag > -2:
+                max_imag = 0
+            if 0 < min_imag < 2:
+                min_imag = 0
+
+            if (max_imag - min_imag) > 8 and min_imag < 0 < max_imag:
+                # We should show a "0" line for the reactive part
+                span = max_imag - min_imag
+                step_size = span / 8
+                if max_imag < step_size:
+                    # The 0 line is the first step after the top. Scale accordingly.
+                    max_imag = -min_imag/7
+                elif -min_imag < step_size:
+                    # The 0 line is the last step before the bottom. Scale accordingly.
+                    min_imag = -max_imag/7
+                else:
+                    # Scale max_imag to be a whole factor of min_imag
+                    num_min = math.floor(min_imag/step_size * -1)
+                    num_max = 8 - num_min
+                    max_imag = num_max * (min_imag / num_min) * -1
 
         self.max_real = max_real
         self.max_imag = max_imag
@@ -1267,14 +1495,14 @@ class RealImaginaryChart(Chart):
         qp.drawText(3, self.chartHeight + 20, str(round(min_real, 1)))
         qp.drawText(self.leftMargin + self.chartWidth + 8, self.chartHeight + 20, str(round(min_imag, 1)))
 
-        qp.drawText(self.leftMargin-20, 20 + self.chartHeight + 15, LogMagChart.shortenFrequency(fstart))
+        qp.drawText(self.leftMargin-20, 20 + self.chartHeight + 15, Chart.shortenFrequency(fstart))
         ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
         for i in range(ticks):
             x = self.leftMargin + round((i+1)*self.chartWidth/ticks)
             qp.setPen(QtGui.QPen(self.foregroundColor))
             qp.drawLine(x, 20, x, 20+self.chartHeight+5)
             qp.setPen(self.textColor)
-            qp.drawText(x-20, 20+self.chartHeight+15, LogMagChart.shortenFrequency(round(fspan/ticks*(i+1) + fstart)))
+            qp.drawText(x-20, 20+self.chartHeight+15, Chart.shortenFrequency(round(fspan/ticks*(i+1) + fstart)))
 
         primary_pen = pen
         secondary_pen = QtGui.QPen(self.secondarySweepColor)
@@ -1343,13 +1571,19 @@ class RealImaginaryChart(Chart):
             qp.setPen(secondary_pen)
             qp.drawPoint(int(x), int(y_im))
 
-            # if self.drawLines and i > 0:
-            #     logmag = self.logMag(self.reference[i-1])
-            #     prevx = self.leftMargin + 1 + round(self.chartWidth*(self.reference[i-1].freq - fstart)/fspan)
-            #     prevy = 30 + round((logmag - minValue) / span * (self.chartHeight - 10))
-            #     qp.setPen(line_pen)
-            #     qp.drawLine(x, y, prevx, prevy)
-            #     qp.setPen(pen)
+            if self.drawLines and i > 0:
+                new_re, new_im = NanoVNASaver.normalize50(self.reference[i-1])
+                prev_x = self.getXPosition(self.reference[i-1])
+                prev_y_re = 30 + round((max_real - new_re) / span_real * (self.chartHeight - 10))
+                prev_y_im = 30 + round((max_imag - new_im) / span_imag * (self.chartHeight - 10))
+
+                if re > 0 and new_re > 0:
+                    line_pen.setColor(self.referenceColor)
+                    qp.setPen(line_pen)
+                    qp.drawLine(x, y_re, prev_x, prev_y_re)
+
+                qp.drawLine(x, y_im, prev_x, prev_y_im)
+
         # Now draw the markers
         for m in self.markers:
             if m.location != -1:
@@ -1359,7 +1593,7 @@ class RealImaginaryChart(Chart):
                 x = self.getXPosition(self.data[m.location])
                 y_re = 30 + round((max_real - re) / span_real * (self.chartHeight - 10))
                 y_im = 30 + round((max_imag - im) / span_imag * (self.chartHeight - 10))
-                
+
                 qp.drawLine(int(x), int(y_re) + 3, int(x) - 3, int(y_re) - 3)
                 qp.drawLine(int(x), int(y_re) + 3, int(x) + 3, int(y_re) - 3)
                 qp.drawLine(int(x) - 3, int(y_re) - 3, int(x) + 3, int(y_re) - 3)
@@ -1399,18 +1633,48 @@ class RealImaginaryChart(Chart):
                 nearest = m
         return nearest
 
-    def mouseMoveEvent(self, a0: QtGui.QMouseEvent) -> None:
-        x = a0.x()
-        absx = x - self.leftMargin
-        if absx < 0 or absx > self.chartWidth:
-            a0.ignore()
+    def setMinimumRealValue(self):
+        min_val, selected = QtWidgets.QInputDialog.getInt(self, "Minimum real value",
+                                                          "Set minimum real value", value=self.minDisplayReal)
+        if not selected:
             return
-        a0.accept()
-        if self.fstop - self.fstart > 0:
-            m = self.getActiveMarker(a0)
-            span = self.fstop - self.fstart
-            step = span/self.chartWidth
-            f = self.fstart + absx * step
-            m.setFrequency(str(round(f)))
-            m.frequencyInput.setText(str(round(f)))
-        return
+        self.minDisplayValue = min_val
+        if self.fixedValues:
+            self.update()
+
+    def setMaximumRealValue(self):
+        max_val, selected = QtWidgets.QInputDialog.getInt(self, "Maximum real value",
+                                                          "Set maximum real value", value=self.maxDisplayReal)
+        if not selected:
+            return
+        self.maxDisplayValue = max_val
+        if self.fixedValues:
+            self.update()
+
+    def setMinimumImagValue(self):
+        min_val, selected = QtWidgets.QInputDialog.getInt(self, "Minimum imaginary value",
+                                                          "Set minimum imaginary value", value=self.minDisplayImag)
+        if not selected:
+            return
+        self.minDisplayValue = min_val
+        if self.fixedValues:
+            self.update()
+
+    def setMaximumImagValue(self):
+        max_val, selected = QtWidgets.QInputDialog.getInt(self, "Maximum imaginary value",
+                                                          "Set maximum imaginary value", value=self.maxDisplayImag)
+        if not selected:
+            return
+        self.maxDisplayValue = max_val
+        if self.fixedValues:
+            self.update()
+
+    def contextMenuEvent(self, event):
+        self.action_set_fixed_start.setText("Start (" + Chart.shortenFrequency(self.minFrequency) + ")")
+        self.action_set_fixed_stop.setText("Stop (" + Chart.shortenFrequency(self.maxFrequency) + ")")
+        self.action_set_fixed_minimum_real.setText("Minimum R (" + str(self.minDisplayReal) + ")")
+        self.action_set_fixed_maximum_real.setText("Maximum R (" + str(self.maxDisplayReal) + ")")
+        self.action_set_fixed_minimum_imag.setText("Minimum jX (" + str(self.minDisplayImag) + ")")
+        self.action_set_fixed_maximum_imag.setText("Maximum jX (" + str(self.maxDisplayImag) + ")")
+
+        self.menu.exec_(event.globalPos())
