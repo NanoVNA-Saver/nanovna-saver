@@ -1467,9 +1467,9 @@ class TDRWindow(QtWidgets.QWidget):
 
         windowed_s11 = window * s11
 
-        self.td = np.abs(np.fft.ifft(windowed_s11, 2**14))
+        self.td = np.abs(np.fft.ifft(windowed_s11, 2**16))
 
-        time_axis = np.linspace(0, 1/step_size, 2**14)
+        time_axis = np.linspace(0, 1/step_size, 2**16)
         self.distance_axis = time_axis * v * c
 
         # peak = np.max(td)  # We should check that this is an actual *peak*, and not just a vague maximum
