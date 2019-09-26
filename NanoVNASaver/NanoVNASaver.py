@@ -75,7 +75,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.markers = []
 
         self.serialPort = self.getPort()
-        # self.serialSpeed = "115200"
 
         logger.debug("Building user interface")
 
@@ -214,13 +213,13 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.btnStopSweep = QtWidgets.QPushButton("Stop")
         self.btnStopSweep.clicked.connect(self.stopSweep)
         self.btnStopSweep.setDisabled(True)
-        btnLayout = QtWidgets.QHBoxLayout()
-        btnLayout.addWidget(self.btnSweep)
-        btnLayout.addWidget(self.btnStopSweep)
-        btnLayout.setContentsMargins(0, 0, 0, 0)
-        btnLayoutWidget = QtWidgets.QWidget()
-        btnLayoutWidget.setLayout(btnLayout)
-        sweep_control_layout.addRow(btnLayoutWidget)
+        btn_layout = QtWidgets.QHBoxLayout()
+        btn_layout.addWidget(self.btnSweep)
+        btn_layout.addWidget(self.btnStopSweep)
+        btn_layout.setContentsMargins(0, 0, 0, 0)
+        btn_layout_widget = QtWidgets.QWidget()
+        btn_layout_widget.setLayout(btn_layout)
+        sweep_control_layout.addRow(btn_layout_widget)
 
         left_column.addWidget(sweep_control_box)
 
@@ -266,7 +265,6 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         for c in self.charts:
             c.setMarkers(self.markers)
-        #marker3.frequencyInput.setDisabled(True)
         left_column.addWidget(marker_control_box)
 
         marker_column.addWidget(self.markers[0].getGroupBox())
@@ -390,36 +388,36 @@ class NanoVNASaver(QtWidgets.QWidget):
         reference_file_control_box = QtWidgets.QGroupBox("Import file")
         reference_file_control_layout = QtWidgets.QFormLayout(reference_file_control_box)
         self.referenceFileNameInput = QtWidgets.QLineEdit("")
-        btnReferenceFilePicker = QtWidgets.QPushButton("...")
-        btnReferenceFilePicker.setMaximumWidth(25)
-        btnReferenceFilePicker.clicked.connect(self.pickReferenceFile)
-        referenceFileNameLayout = QtWidgets.QHBoxLayout()
-        referenceFileNameLayout.addWidget(self.referenceFileNameInput)
-        referenceFileNameLayout.addWidget(btnReferenceFilePicker)
+        btn_reference_file_picker = QtWidgets.QPushButton("...")
+        btn_reference_file_picker.setMaximumWidth(25)
+        btn_reference_file_picker.clicked.connect(self.pickReferenceFile)
+        reference_file_name_layout = QtWidgets.QHBoxLayout()
+        reference_file_name_layout.addWidget(self.referenceFileNameInput)
+        reference_file_name_layout.addWidget(btn_reference_file_picker)
 
-        reference_file_control_layout.addRow(QtWidgets.QLabel("Filename"), referenceFileNameLayout)
+        reference_file_control_layout.addRow(QtWidgets.QLabel("Filename"), reference_file_name_layout)
         file_window_layout.addWidget(reference_file_control_box)
 
-        btnLoadReference = QtWidgets.QPushButton("Load reference")
-        btnLoadReference.clicked.connect(self.loadReferenceFile)
-        btnLoadSweep = QtWidgets.QPushButton("Load as sweep")
-        btnLoadSweep.clicked.connect(self.loadSweepFile)
-        reference_file_control_layout.addRow(btnLoadReference)
-        reference_file_control_layout.addRow(btnLoadSweep)
+        btn_load_reference = QtWidgets.QPushButton("Load reference")
+        btn_load_reference.clicked.connect(self.loadReferenceFile)
+        btn_load_sweep = QtWidgets.QPushButton("Load as sweep")
+        btn_load_sweep.clicked.connect(self.loadSweepFile)
+        reference_file_control_layout.addRow(btn_load_reference)
+        reference_file_control_layout.addRow(btn_load_sweep)
 
         file_control_box = QtWidgets.QGroupBox()
         file_control_box.setTitle("Export file")
         file_control_box.setMaximumWidth(300)
         file_control_layout = QtWidgets.QFormLayout(file_control_box)
         self.fileNameInput = QtWidgets.QLineEdit("")
-        btnFilePicker = QtWidgets.QPushButton("...")
-        btnFilePicker.setMaximumWidth(25)
-        btnFilePicker.clicked.connect(self.pickFile)
-        fileNameLayout = QtWidgets.QHBoxLayout()
-        fileNameLayout.addWidget(self.fileNameInput)
-        fileNameLayout.addWidget(btnFilePicker)
+        btn_file_picker = QtWidgets.QPushButton("...")
+        btn_file_picker.setMaximumWidth(25)
+        btn_file_picker.clicked.connect(self.pickFile)
+        file_name_layout = QtWidgets.QHBoxLayout()
+        file_name_layout.addWidget(self.fileNameInput)
+        file_name_layout.addWidget(btn_file_picker)
 
-        file_control_layout.addRow(QtWidgets.QLabel("Filename"), fileNameLayout)
+        file_control_layout.addRow(QtWidgets.QLabel("Filename"), file_name_layout)
 
         self.btnExportFile = QtWidgets.QPushButton("Export data S1P")
         self.btnExportFile.clicked.connect(self.exportFileS1P)
@@ -431,8 +429,8 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         file_window_layout.addWidget(file_control_box)
 
-        btnOpenFileWindow = QtWidgets.QPushButton("Files ...")
-        btnOpenFileWindow.clicked.connect(self.displayFileWindow)
+        btn_open_file_window = QtWidgets.QPushButton("Files ...")
+        btn_open_file_window.clicked.connect(self.displayFileWindow)
 
         ################################################################################################################
         #  Calibration
@@ -459,28 +457,18 @@ class NanoVNASaver(QtWidgets.QWidget):
                                                                       "\n\n\N{COPYRIGHT SIGN} Copyright 2019 Rune B. Broberg\n" +
                                                                       "This program comes with ABSOLUTELY NO WARRANTY\n" +
                                                                       "This program is licensed under the GNU General Public License version 3\n\n" +
-                                                                      "See https://github.com/mihtjel/nanovna-saver for further details"))
+                                                                      "See https://mihtjel.github.io/nanovna-saver/ for further details"))
 
         button_grid = QtWidgets.QGridLayout()
-        button_grid.addWidget(btnOpenFileWindow, 0, 0)
+        button_grid.addWidget(btn_open_file_window, 0, 0)
         button_grid.addWidget(btnOpenCalibrationWindow, 0, 1)
         button_grid.addWidget(btn_display_setup, 1, 0)
         button_grid.addWidget(btn_about, 1, 1)
         left_column.addLayout(button_grid)
-        #left_column.addWidget(btnOpenFileWindow)
-        #left_column.addWidget(btnOpenCalibrationWindow)
-        #left_column.addWidget(btn_display_setup)
-        #left_column.addWidget(btn_about)
 
         ################################################################################################################
         #  Right side
         ################################################################################################################
-
-        self.lister = QtWidgets.QPlainTextEdit()
-        self.lister.setFixedHeight(200)
-        self.lister.setMaximumWidth(350)
-        # The lister doesn't really need to be visible for now. Maybe put it in a separate window?
-        #marker_column.addWidget(self.lister)
 
         self.worker.signals.updated.connect(self.dataUpdated)
         self.worker.signals.finished.connect(self.sweepFinished)
@@ -1357,7 +1345,7 @@ class TDRWindow(QtWidgets.QWidget):
         self.tdr_velocity_dropdown.addItem("Semi-solid PE (SSPE) (0.84)", 0.84)
         self.tdr_velocity_dropdown.addItem("Air (Helical spacers) (0.94)", 0.94)
         self.tdr_velocity_dropdown.insertSeparator(self.tdr_velocity_dropdown.count())
-        # Lots of table types added by Larry Goga, AE5CZ
+        # Lots of cable types added by Larry Goga, AE5CZ
         self.tdr_velocity_dropdown.addItem("RG-6/U PE 75\N{OHM SIGN} (Belden 8215) (0.66)", 0.66)
         self.tdr_velocity_dropdown.addItem("RG-6/U Foam 75\N{OHM SIGN} (Belden 9290) (0.81)", 0.81)
         self.tdr_velocity_dropdown.addItem("RG-8/U PE 50\N{OHM SIGN} (Belden 8237) (0.66)", 0.66)
