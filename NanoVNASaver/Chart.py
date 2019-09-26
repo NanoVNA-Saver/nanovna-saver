@@ -1455,7 +1455,6 @@ class RealImaginaryChart(FrequencyChart):
 
             if (max_imag - min_imag) > 8 and min_imag < 0 < max_imag:
                 # We should show a "0" line for the reactive part
-                logger.debug("Scaling RealImaginary from %s - %s", min_imag, max_imag)
                 span = max_imag - min_imag
                 step_size = span / 8
                 if max_imag < step_size:
@@ -1468,10 +1467,7 @@ class RealImaginaryChart(FrequencyChart):
                     # Scale max_imag to be a whole factor of min_imag
                     num_min = math.floor(min_imag/step_size * -1)
                     num_max = 8 - num_min
-                    logger.debug("Scaling max_imag to be %s times -min_imag", num_max)
                     max_imag = num_max * (min_imag / num_min) * -1
-
-                logger.debug("Scaled RealImaginary to %s - %s", min_imag, max_imag)
 
         self.max_real = max_real
         self.max_imag = max_imag
