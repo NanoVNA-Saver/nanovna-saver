@@ -472,6 +472,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.worker.signals.updated.connect(self.dataUpdated)
         self.worker.signals.finished.connect(self.sweepFinished)
+        self.worker.signals.sweepError.connect(self.showSweepError)
 
         logger.debug("Finished building interface")
 
@@ -855,10 +856,12 @@ class NanoVNASaver(QtWidgets.QWidget):
         if self.sweepCountInput.text().isdigit():
             segments = int(self.sweepCountInput.text())
             fstep = fspan / (segments * 101)
-            self.sweepStepLabel.setText(self.formatFrequency(fstep) + "/step")
+            self.sweepStepLabel.setText(self.formatShortFrequency(fstep) + "/step")
 
     @staticmethod
     def formatFrequency(freq):
+        if freq < 1:
+            return "- Hz"
         if math.log10(freq) < 3:
             return str(round(freq)) + " Hz"
         elif math.log10(freq) < 7:
@@ -867,6 +870,25 @@ class NanoVNASaver(QtWidgets.QWidget):
             return "{:.4f}".format(freq/1000000) + " MHz"
         else:
             return "{:.3f}".format(freq/1000000) + " MHz"
+
+    @staticmethod
+    def formatShortFrequency(freq):
+        if freq < 1:
+            return "- Hz"
+        if math.log10(freq) < 3:
+            return str(round(freq)) + " Hz"
+        elif math.log10(freq) < 5:
+            return "{:.3f}".format(freq/1000) + " kHz"
+        elif math.log10(freq) < 6:
+            return "{:.2f}".format(freq/1000) + " kHz"
+        elif math.log10(freq) < 7:
+            return "{:.1f}".format(freq/1000) + " kHz"
+        elif math.log10(freq) < 8:
+            return "{:.3f}".format(freq/1000000) + " MHz"
+        elif math.log10(freq) < 9:
+            return "{:.2f}".format(freq/1000000) + " MHz"
+        else:
+            return "{:.1f}".format(freq/1000000) + " MHz"
 
     @staticmethod
     def parseFrequency(freq: str):
@@ -989,7 +1011,11 @@ class NanoVNASaver(QtWidgets.QWidget):
         QtWidgets.QApplication.setActiveWindow(self.tdr_window)
 
     def showError(self, text):
-        QtWidgets.QErrorMessage.showMessage(text)
+        error_message = QtWidgets.QErrorMessage(self)
+        error_message.showMessage(text)
+
+    def showSweepError(self):
+        self.showError(self.worker.error_message)
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
         self.worker.stopped = True

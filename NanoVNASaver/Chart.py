@@ -1468,7 +1468,7 @@ class RealImaginaryChart(FrequencyChart):
                     # Scale max_imag to be a whole factor of min_imag
                     num_min = math.floor(min_imag/step_size * -1)
                     num_max = 8 - num_min
-                    logger.debug("Scaling max_imag to be %s times num_min", num_max)
+                    logger.debug("Scaling max_imag to be %s times -min_imag", num_max)
                     max_imag = num_max * (min_imag / num_min) * -1
 
                 logger.debug("Scaled RealImaginary to %s - %s", min_imag, max_imag)
@@ -1575,13 +1575,19 @@ class RealImaginaryChart(FrequencyChart):
             qp.setPen(secondary_pen)
             qp.drawPoint(int(x), int(y_im))
 
-            # if self.drawLines and i > 0:
-            #     logmag = self.logMag(self.reference[i-1])
-            #     prevx = self.leftMargin + 1 + round(self.chartWidth*(self.reference[i-1].freq - fstart)/fspan)
-            #     prevy = 30 + round((logmag - minValue) / span * (self.chartHeight - 10))
-            #     qp.setPen(line_pen)
-            #     qp.drawLine(x, y, prevx, prevy)
-            #     qp.setPen(pen)
+            if self.drawLines and i > 0:
+                new_re, new_im = NanoVNASaver.normalize50(self.reference[i-1])
+                prev_x = self.getXPosition(self.reference[i-1])
+                prev_y_re = 30 + round((max_real - new_re) / span_real * (self.chartHeight - 10))
+                prev_y_im = 30 + round((max_imag - new_im) / span_imag * (self.chartHeight - 10))
+
+                if re > 0 and new_re > 0:
+                    line_pen.setColor(self.referenceColor)
+                    qp.setPen(line_pen)
+                    qp.drawLine(x, y_re, prev_x, prev_y_re)
+
+                qp.drawLine(x, y_im, prev_x, prev_y_im)
+
         # Now draw the markers
         for m in self.markers:
             if m.location != -1:
