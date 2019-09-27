@@ -354,7 +354,7 @@ class CalibrationWindow(QtWidgets.QWidget):
                                                   "The required steps for a 1-port calibration are now complete.\n\n" +
                                                   "If you wish to continue and perform a 2-port calibration, press " +
                                                   "\"Yes\".  To apply the 1-port calibration and stop, press \"Apply\"",
-                                                  QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Apply |
+                                                  QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Apply |
                                                   QtWidgets.QMessageBox.Cancel)
 
             response = continue_step.exec()
@@ -364,7 +364,7 @@ class CalibrationWindow(QtWidgets.QWidget):
                 self.app.worker.signals.finished.disconnect(self.automaticCalibrationStep)
                 self.btn_automatic.setDisabled(False)
                 return
-            elif response != QtWidgets.QMessageBox.Ok:
+            elif response != QtWidgets.QMessageBox.Yes:
                 self.btn_automatic.setDisabled(False)
                 self.nextStep = -1
                 self.app.worker.signals.finished.disconnect(self.automaticCalibrationStep)
@@ -426,6 +426,8 @@ class CalibrationWindow(QtWidgets.QWidget):
             else:
                 self.calculate()
                 self.btn_automatic.setDisabled(False)
+                self.nextStep = -1
+                self.app.worker.signals.finished.disconnect(self.automaticCalibrationStep)
                 return
         return
 
