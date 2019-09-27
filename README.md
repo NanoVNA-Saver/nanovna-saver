@@ -1,4 +1,5 @@
 
+
 NanoVNASaver
 ============
 A multiplatform tool to save Touchstone files from the NanoVNA, sweep frequency spans in segments to gain more than
@@ -37,16 +38,16 @@ You can find binary (.exe) releases for Windows at https://github.com/mihtjel/na
 
 1. Clone repo and cd into the directory
 
-	   git clone https://github.com/mihtjel/nanovna-saver
-	   cd nanovna-saver
+        git clone https://github.com/mihtjel/nanovna-saver
+        cd nanovna-saver
 
 3. Run the pip installation
 
-		pip3 install .
+        pip3 install .
 
 4. Once completed run with the following command
 
-		NanoVNASaver
+        NanoVNASaver
 
 ### Linux
 
@@ -59,20 +60,20 @@ In order to run this app in Linux environment, you'll need the following package
 #### Installation and Use with pip
 1. Install python3.7 and pip
 
-		sudo apt install python3.7 python3-pip
+        sudo apt install python3.7 python3-pip
 
 3. Clone repo and cd into the directory 
 		
-		git clone https://github.com/mihtjel/nanovna-saver
-		cd nanovna-saver
+        git clone https://github.com/mihtjel/nanovna-saver
+        cd nanovna-saver
 
 4. Run the pip installation
 
-		python3.7 -m pip install .
+        python3.7 -m pip install .
     
 5. Once completed run with the following command
 
-		python3.7 nanovna-saver.py
+        python3.7 nanovna-saver.py
     
     
 ### Mac OS:
@@ -80,17 +81,23 @@ In order to run this app in Linux environment, you'll need the following package
 1. Install Homebrew
 		From : https://brew.sh/
 
-	    $ /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+	     /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 
 2. Python :
 
-	    $ brew install python
+        brew install python
 
 3. NanoVNASaver Installation
 
-	    $ git clone https://github.com/mihtjel/nanovna-saver && cd nanovna-saver
-	    $ python3 setup.py install
-	    $ NanoVNASaver
+        git clone https://github.com/mihtjel/nanovna-saver && cd nanovna-saver
+        
+4. Change PyQt restriction in setup.py
+			`PyQt5==5.11.2` to `PyQt5`
+			        
+5. Install local pip packages
+
+        python3 -m pip install .
+        NanoVNASaver
 
 ## Using the software
 
