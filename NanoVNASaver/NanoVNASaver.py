@@ -1138,6 +1138,8 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         layout.addWidget(font_options_box)
 
+        # TODO: Make a separate window for managing the bands, including a button to reset to ham bands
+
         bands_box = QtWidgets.QGroupBox("Bands")
         bands_layout = QtWidgets.QFormLayout(bands_box)
 
@@ -1526,7 +1528,7 @@ class SweepSettingsWindow(QtWidgets.QWidget):
 
 class BandsModel(QtCore.QAbstractTableModel):
     bands: List[Tuple[str, int, int]] = []
-    enabled = True
+    enabled = False
 
     def __init__(self):
         super().__init__()
@@ -1534,10 +1536,17 @@ class BandsModel(QtCore.QAbstractTableModel):
                                          QtCore.QSettings.UserScope,
                                          "NanoVNASaver", "Bands")
         self.settings.setIniCodec("UTF-8")
-        self.bands = self.settings.value("bands", [])
+        stored_bands: List[str] = self.settings.value("bands", [])
+        if stored_bands:
+            for b in stored_bands:
+                (name, start, end) = b.split(";")
+                self.bands.append((name, int(start), int(end)))
 
     def saveSettings(self):
-        self.settings.setValue("bands", self.bands)
+        stored_bands = []
+        for b in self.bands:
+            stored_bands.append(b[0] + ";" + str(b[1]) + ";" + str(b[2]))
+        self.settings.setValue("bands", stored_bands)
         self.settings.sync()
 
     def columnCount(self, parent: QModelIndex = ...) -> int:
