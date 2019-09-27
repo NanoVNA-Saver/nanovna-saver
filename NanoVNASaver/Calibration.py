@@ -267,7 +267,10 @@ class CalibrationWindow(QtWidgets.QWidget):
                                              "connected.\n\n" +
                                              "If you want a 2-port calibration, also have a \"through\" connector " +
                                              "to hand.\n\n" +
-                                             "Once you are ready to process, press Ok",
+                                             "The best results are achieved by having the NanoVNA calibrated " +
+                                             "on-device for the full span of interest and saved to save slot 0 " +
+                                             "before starting.\n\n" +
+                                             "Once you are ready to proceed, press Ok",
                                              QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
         response = introduction.exec()
         if response != QtWidgets.QMessageBox.Ok:
