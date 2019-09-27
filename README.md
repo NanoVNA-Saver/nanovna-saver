@@ -138,3 +138,7 @@ TDR cable types by Larry Goga.
 Bugfixes and Python installation work by Ohan Smit
 
 Thanks to everyone who have tested, commented and inspired.
+
+This software is available free of charge. If you read all this way, and you *still* want to support it, you may donate to the developer using the button below:
+
+[![Paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=T8KTGVDQF5K6E&item_name=NanoVNASaver+Development&currency_code=EUR&source=url)
