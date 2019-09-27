@@ -1688,7 +1688,7 @@ class RealImaginaryChart(FrequencyChart):
                                                           "Set minimum real value", value=self.minDisplayReal)
         if not selected:
             return
-        self.minDisplayValue = min_val
+        self.minDisplayReal = min_val
         if self.fixedValues:
             self.update()
 
@@ -1697,7 +1697,7 @@ class RealImaginaryChart(FrequencyChart):
                                                           "Set maximum real value", value=self.maxDisplayReal)
         if not selected:
             return
-        self.maxDisplayValue = max_val
+        self.maxDisplayReal = max_val
         if self.fixedValues:
             self.update()
 
@@ -1706,7 +1706,7 @@ class RealImaginaryChart(FrequencyChart):
                                                           "Set minimum imaginary value", value=self.minDisplayImag)
         if not selected:
             return
-        self.minDisplayValue = min_val
+        self.minDisplayImag = min_val
         if self.fixedValues:
             self.update()
 
@@ -1715,7 +1715,7 @@ class RealImaginaryChart(FrequencyChart):
                                                           "Set maximum imaginary value", value=self.maxDisplayImag)
         if not selected:
             return
-        self.maxDisplayValue = max_val
+        self.maxDisplayImag = max_val
         if self.fixedValues:
             self.update()
 
