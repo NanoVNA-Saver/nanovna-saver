@@ -613,14 +613,14 @@ class VSWRChart(FrequencyChart):
         qp.setPen(pen)
         for i in range(len(self.data)):
             _, _, vswr = NanoVNASaver.vswr(self.data[i])
-            x = self.leftMargin + 1 + round(self.chartWidth/len(self.data) * i)
+            x = self.getXPosition(self.data[i])
             y = 30 + round((maxVSWR-vswr)/span*(self.chartHeight-10))
             if y < 30:
                 continue
             qp.drawPoint(int(x), int(y))
             if self.drawLines and i > 0:
                 _, _, vswr = NanoVNASaver.vswr(self.data[i-1])
-                prevx = self.leftMargin + 1 + round(self.chartWidth / len(self.data) * (i-1))
+                prevx = self.getXPosition(self.data[i-1])
                 prevy = 30 + round((maxVSWR - vswr) / span * (self.chartHeight - 10))
                 if prevy < 30:
                     continue
@@ -634,14 +634,14 @@ class VSWRChart(FrequencyChart):
             if self.reference[i].freq < fstart or self.reference[i].freq > fstop:
                 continue
             _, _, vswr = NanoVNASaver.vswr(self.reference[i])
-            x = self.leftMargin + 1 + round(self.chartWidth*(self.reference[i].freq - fstart)/fspan)
+            x = self.getXPosition(self.reference[i])
             y = 30 + round((maxVSWR - vswr) / span * (self.chartHeight - 10))
             if y < 30:
                 continue
             qp.drawPoint(int(x), int(y))
             if self.drawLines and i > 0:
                 _, _, vswr = NanoVNASaver.vswr(self.reference[i-1])
-                prevx = self.leftMargin + 1 + round(self.chartWidth*(self.reference[i-1].freq - fstart)/fspan)
+                prevx = self.getXPosition(self.reference[i-1])
                 prevy = 30 + round((maxVSWR - vswr) / span * (self.chartHeight - 10))
                 if prevy < 30:
                     continue
@@ -654,7 +654,7 @@ class VSWRChart(FrequencyChart):
                 highlighter.setColor(m.color)
                 qp.setPen(highlighter)
                 _, _, vswr = NanoVNASaver.vswr(self.data[m.location])
-                x = self.leftMargin + 1 + round(self.chartWidth/len(self.data) * m.location)
+                x = self.getXPosition(self.data[m.location])
                 y = 30 + round((maxVSWR-vswr) / span * (self.chartHeight - 10))
                 if y < 30:
                     continue
