@@ -1138,22 +1138,19 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         layout.addWidget(font_options_box)
 
-        # TODO: Make a separate window for managing the bands, including a button to reset to ham bands
-
         bands_box = QtWidgets.QGroupBox("Bands")
         bands_layout = QtWidgets.QFormLayout(bands_box)
 
         self.show_bands = QtWidgets.QCheckBox("Show bands")
+        self.show_bands.stateChanged.connect(lambda: self.setShowBands(self.show_bands.isChecked()))
         bands_layout.addRow(self.show_bands)
 
         self.btn_manage_bands = QtWidgets.QPushButton("Manage bands")
-        self.btn_manage_bands.clicked.connect(self.app.bands.addRow)
+
+        self.bandsWindow = BandsWindow(self.app)
+        self.btn_manage_bands.clicked.connect(self.displayBandsWindow)
+
         bands_layout.addRow(self.btn_manage_bands)
-
-        bands_table = QtWidgets.QTableView()
-        bands_table.setModel(self.app.bands)
-
-        bands_layout.addRow(bands_table)
 
         layout.addWidget(bands_box)
 
@@ -1363,6 +1360,13 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             for c in self.app.charts:
                 c.setReferenceColor(color)
 
+    def setShowBands(self, show_bands):
+        self.app.bands.enabled = show_bands
+        self.app.bands.settings.setValue("ShowBands", show_bands)
+        self.app.bands.settings.sync()
+        for c in self.app.charts:
+            c.update()
+
     def changeFont(self):
         font_size = self.font_dropdown.currentText()
         self.app.settings.setValue("FontSize", font_size)
@@ -1370,6 +1374,10 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         font = app.font()
         font.setPointSize(int(font_size))
         app.setFont(font)
+
+    def displayBandsWindow(self):
+        self.bandsWindow.show()
+        QtWidgets.QApplication.setActiveWindow(self.bandsWindow)
 
 
 class TDRWindow(QtWidgets.QWidget):
@@ -1526,9 +1534,74 @@ class SweepSettingsWindow(QtWidgets.QWidget):
                                      self.truncates.text())
 
 
+class BandsWindow(QtWidgets.QWidget):
+    def __init__(self, app):
+        super().__init__()
+
+        self.app: NanoVNASaver = app
+        self.setWindowTitle("Manage bands")
+
+        shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
+
+        layout = QtWidgets.QVBoxLayout()
+        self.setLayout(layout)
+        self.setMinimumSize(500, 300)
+
+        self.bands_table = QtWidgets.QTableView()
+        self.bands_table.setModel(self.app.bands)
+        self.bands_table.horizontalHeader().setStretchLastSection(True)
+
+        layout.addWidget(self.bands_table)
+
+        btn_add_row = QtWidgets.QPushButton("Add row")
+        btn_delete_row = QtWidgets.QPushButton("Delete row")
+        btn_reset_bands = QtWidgets.QPushButton("Reset bands")
+        btn_layout = QtWidgets.QHBoxLayout()
+        btn_layout.addWidget(btn_add_row)
+        btn_layout.addWidget(btn_delete_row)
+        btn_layout.addWidget(btn_reset_bands)
+        layout.addLayout(btn_layout)
+
+        btn_add_row.clicked.connect(self.app.bands.addRow)
+        btn_delete_row.clicked.connect(self.deleteRows)
+        btn_reset_bands.clicked.connect(self.resetBands)
+
+    def deleteRows(self):
+        rows = self.bands_table.selectedIndexes()
+        for row in rows:
+            self.app.bands.removeRow(row.row())
+
+    def resetBands(self):
+        confirm = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Warning,
+                                        "Confirm reset",
+                                        "Are you sure you want to reset the bands to default?",
+                                        QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Cancel).exec()
+        if confirm == QtWidgets.QMessageBox.Yes:
+            self.app.bands.resetBands()
+
+
 class BandsModel(QtCore.QAbstractTableModel):
     bands: List[Tuple[str, int, int]] = []
     enabled = False
+
+    # These bands correspond broadly to the Danish Amateur Radio allocation
+    default_bands = ["2200m;135700;137800",
+                     "630m;472000;479000",
+                     "160m;1800000;2000000",
+                     "80m;3500000;3800000",
+                     "60m;5250000;5450000",
+                     "40m;7000000;7200000",
+                     "30m;10100000;10150000",
+                     "20m;14000000;14350000",
+                     "17m;18068000;18168000",
+                     "15m;21000000;21450000",
+                     "12m;24890000;24990000",
+                     "10m;28000000;29700000",
+                     "6m;50000000;52000000",
+                     "4m;69887500;70512500",
+                     "2m;144000000;146000000",
+                     "70cm;432000000;438000000",
+                     "23cm;1240000000;1300000000"]
 
     def __init__(self):
         super().__init__()
@@ -1536,7 +1609,9 @@ class BandsModel(QtCore.QAbstractTableModel):
                                          QtCore.QSettings.UserScope,
                                          "NanoVNASaver", "Bands")
         self.settings.setIniCodec("UTF-8")
-        stored_bands: List[str] = self.settings.value("bands", [])
+        self.enabled = self.settings.value("ShowBands", False)
+
+        stored_bands: List[str] = self.settings.value("bands", self.default_bands)
         if stored_bands:
             for b in stored_bands:
                 (name, start, end) = b.split(";")
@@ -1548,6 +1623,14 @@ class BandsModel(QtCore.QAbstractTableModel):
             stored_bands.append(b[0] + ";" + str(b[1]) + ";" + str(b[2]))
         self.settings.setValue("bands", stored_bands)
         self.settings.sync()
+
+    def resetBands(self):
+        self.bands = []
+        for b in self.default_bands:
+            (name, start, end) = b.split(";")
+            self.bands.append((name, int(start), int(end)))
+        self.layoutChanged.emit()
+        self.saveSettings()
 
     def columnCount(self, parent: QModelIndex = ...) -> int:
         return 3
@@ -1562,7 +1645,7 @@ class BandsModel(QtCore.QAbstractTableModel):
             if index.column() == 0:
                 return QtCore.QVariant(QtCore.Qt.AlignCenter)
             else:
-                return QtCore.QVariant(QtCore.Qt.AlignRight)
+                return QtCore.QVariant(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         else:
             return QtCore.QVariant()
 
@@ -1580,6 +1663,7 @@ class BandsModel(QtCore.QAbstractTableModel):
                 end = value
             self.bands[index.row()] = (name, start, end)
             self.dataChanged.emit(index, index)
+            self.saveSettings()
             return True
         return False
 
@@ -1594,6 +1678,7 @@ class BandsModel(QtCore.QAbstractTableModel):
     def removeRow(self, row: int, parent: QModelIndex = ...) -> bool:
         self.bands.remove(self.bands[row])
         self.layoutChanged.emit()
+        self.saveSettings()
         return True
 
     def headerData(self, section: int, orientation: QtCore.Qt.Orientation, role: int = ...):
