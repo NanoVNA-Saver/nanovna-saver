@@ -1142,8 +1142,15 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         bands_layout = QtWidgets.QFormLayout(bands_box)
 
         self.show_bands = QtWidgets.QCheckBox("Show bands")
+        self.show_bands.setChecked(self.app.bands.enabled)
         self.show_bands.stateChanged.connect(lambda: self.setShowBands(self.show_bands.isChecked()))
         bands_layout.addRow(self.show_bands)
+
+        self.btn_bands_picker = QtWidgets.QPushButton("█")
+        self.btn_bands_picker.setFixedWidth(20)
+        self.btn_bands_picker.clicked.connect(lambda: self.setColor("bands", QtWidgets.QColorDialog.getColor(self.bandsColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
+
+        bands_layout.addRow("Chart bands", self.btn_bands_picker)
 
         self.btn_manage_bands = QtWidgets.QPushButton("Manage bands")
 
@@ -1226,6 +1233,9 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
                                                        type=QtGui.QColor)
         self.textColor = self.app.settings.value("TextColor", defaultValue=QtGui.QColor("black"),
                                                  type=QtGui.QColor)
+        self.bandsColor = self.app.settings.value("BandsColor", defaultValue=QtGui.QColor(128, 128, 128, 48),
+                                                  type=QtGui.QColor)
+        self.app.bands.color = self.bandsColor
 
         if self.app.settings.value("UseCustomColors", defaultValue=False, type=bool):
             self.dark_mode_option.setDisabled(True)
@@ -1247,6 +1257,10 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         p = self.btn_text_picker.palette()
         p.setColor(QtGui.QPalette.ButtonText, self.textColor)
         self.btn_text_picker.setPalette(p)
+
+        p = self.btn_bands_picker.palette()
+        p.setColor(QtGui.QPalette.ButtonText, self.bandsColor)
+        self.btn_bands_picker.setPalette(p)
 
     def changeChart(self, x, y, chart):
         found = None
@@ -1324,6 +1338,13 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self.btn_text_picker.setPalette(p)
             self.textColor = color
             self.app.settings.setValue("TextColor", color)
+        elif name == "bands":
+            p = self.btn_bands_picker.palette()
+            p.setColor(QtGui.QPalette.ButtonText, color)
+            self.btn_bands_picker.setPalette(p)
+            self.bandsColor = color
+            self.app.settings.setValue("BandsColor", color)
+            self.app.bands.setColor(color)
         self.changeCustomColors()
 
     def setSweepColor(self, color: QtGui.QColor):
@@ -1583,6 +1604,7 @@ class BandsWindow(QtWidgets.QWidget):
 class BandsModel(QtCore.QAbstractTableModel):
     bands: List[Tuple[str, int, int]] = []
     enabled = False
+    color = QtGui.QColor(128, 128, 128, 48)
 
     # These bands correspond broadly to the Danish Amateur Radio allocation
     default_bands = ["2200m;135700;137800",
@@ -1609,7 +1631,7 @@ class BandsModel(QtCore.QAbstractTableModel):
                                          QtCore.QSettings.UserScope,
                                          "NanoVNASaver", "Bands")
         self.settings.setIniCodec("UTF-8")
-        self.enabled = self.settings.value("ShowBands", False)
+        self.enabled = self.settings.value("ShowBands", False, bool)
 
         stored_bands: List[str] = self.settings.value("bands", self.default_bands)
         if stored_bands:
@@ -1699,3 +1721,6 @@ class BandsModel(QtCore.QAbstractTableModel):
             return QtCore.Qt.ItemFlags(QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable)
         else:
             super().flags(index)
+
+    def setColor(self, color):
+        self.color = color

@@ -317,8 +317,8 @@ class FrequencyChart(Chart):
         return
 
     def drawBands(self, qp, fstart, fstop):
-        qp.setBrush(QtGui.QColor(128, 128, 128, 48))
-        qp.setPen(QtGui.QColor(128, 128, 128, 0))
+        qp.setBrush(self.bands.color)
+        qp.setPen(QtGui.QColor(128, 128, 128, 0))  # Don't outline the bands
         for (name, start, end) in self.bands.bands:
             if fstart < start < fstop and fstart < end < fstop:
                 # The band is entirely within the chart
