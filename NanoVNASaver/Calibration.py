@@ -392,11 +392,11 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.saveIsolation()
             self.nextStep = 4
             through_step = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Information,
-                                              "Calibrate through",
-                                              "Please connect the \"through\" standard between port 0 and port 1 " +
-                                              "of the NanoVNA.\n\n" +
-                                              "Press Ok when you are ready to continue.",
-                                              QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
+                                                 "Calibrate through",
+                                                 "Please connect the \"through\" standard between port 0 and port 1 " +
+                                                 "of the NanoVNA.\n\n" +
+                                                 "Press Ok when you are ready to continue.",
+                                                 QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
 
             response = through_step.exec()
             if response != QtWidgets.QMessageBox.Ok:
@@ -412,10 +412,10 @@ class CalibrationWindow(QtWidgets.QWidget):
             # Done
             self.saveThrough()
             apply_step = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Information,
-                                              "Calibrate complete",
-                                              "The calibration process is now complete.  Press \"Apply\" to apply the " +
-                                              "calibration parameters.",
-                                              QtWidgets.QMessageBox.Apply | QtWidgets.QMessageBox.Cancel)
+                                               "Calibrate complete",
+                                               "The calibration process is now complete.  Press \"Apply\" to apply " +
+                                               "the calibration parameters.",
+                                               QtWidgets.QMessageBox.Apply | QtWidgets.QMessageBox.Cancel)
 
             response = apply_step.exec()
             if response != QtWidgets.QMessageBox.Apply:
