@@ -29,6 +29,8 @@ Datapoint = collections.namedtuple('Datapoint', 'freq re im')
 
 
 class CalibrationWindow(QtWidgets.QWidget):
+    nextStep = -1
+
     def __init__(self, app):
         super().__init__()
 
@@ -98,6 +100,10 @@ class CalibrationWindow(QtWidgets.QWidget):
         calibration_control_layout.addRow(btn_cal_isolation, self.cal_isolation_label)
 
         calibration_control_layout.addRow(QtWidgets.QLabel(""))
+
+        self.btn_automatic = QtWidgets.QPushButton("Calibration assistant")
+        calibration_control_layout.addRow(self.btn_automatic)
+        self.btn_automatic.clicked.connect(self.automaticCalibration)
 
         btn_apply = QtWidgets.QPushButton("Apply")
         calibration_control_layout.addRow(btn_apply)
@@ -248,6 +254,177 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.cal_short_box.setDisabled(self.use_ideal_values.isChecked())
         self.cal_open_box.setDisabled(self.use_ideal_values.isChecked())
         self.cal_load_box.setDisabled(self.use_ideal_values.isChecked())
+
+    def automaticCalibration(self):
+        self.btn_automatic.setDisabled(True)
+        introduction = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Information,
+                                             "Calibration assistant",
+                                             "This calibration assistant will help you create a calibration in the " +
+                                             "NanoVNASaver application.  It will sweep the standards for you, and "+
+                                             "guide you through the process.\n\n" +
+                                             "Before starting, ensure you have Open, Short and Load standards " +
+                                             "available, and the cables you wish to have calibrated with the device " +
+                                             "connected.\n\n" +
+                                             "If you want a 2-port calibration, also have a \"through\" connector " +
+                                             "to hand.\n\n" +
+                                             "Once you are ready to process, press Ok",
+                                             QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
+        response = introduction.exec()
+        if response != QtWidgets.QMessageBox.Ok:
+            self.btn_automatic.setDisabled(False)
+            return
+        logger.info("Starting automatic calibration assistant.")
+
+        if not self.app.serial.is_open:
+            QtWidgets.QMessageBox(QtWidgets.QMessageBox.Information, "NanoVNA not connected",
+                                  "Please ensure the NanoVNA is connected before attempting calibration.").exec()
+            self.btn_automatic.setDisabled(False)
+            return
+
+        open_step = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Information,
+                                          "Calibrate open",
+                                          "Please connect the \"open\" standard to port 0 of the NanoVNA.\n\n" +
+                                          "Either use a supplied open, or leave the end of the cable unconnected " +
+                                          "if desired.\n\n" +
+                                          "Press Ok when you are ready to continue.",
+                                          QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
+
+        response = open_step.exec()
+        if response != QtWidgets.QMessageBox.Ok:
+            self.btn_automatic.setDisabled(False)
+            return
+        self.reset()
+        self.nextStep = 0
+        self.app.worker.signals.finished.connect(self.automaticCalibrationStep)
+        self.app.sweep()
+        return
+
+    def automaticCalibrationStep(self):
+        if self.nextStep == -1:
+            self.app.worker.signals.finished.disconnect(self.automaticCalibrationStep)
+        if self.nextStep == 0:
+            # Open
+            self.saveOpen()
+            self.nextStep = 1
+            short_step = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Information,
+                                               "Calibrate short",
+                                               "Please connect the \"short\" standard to port 0 of the NanoVNA.\n\n" +
+                                               "Press Ok when you are ready to continue.",
+                                               QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
+
+            response = short_step.exec()
+            if response != QtWidgets.QMessageBox.Ok:
+                self.nextStep = -1
+                self.btn_automatic.setDisabled(False)
+                self.app.worker.signals.finished.disconnect(self.automaticCalibrationStep)
+                return
+            else:
+                self.app.sweep()
+                return
+
+        elif self.nextStep == 1:
+            # Short
+            self.saveShort()
+            self.nextStep = 2
+            load_step = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Information,
+                                              "Calibrate load",
+                                              "Please connect the \"load\" standard to port 0 of the NanoVNA.\n\n" +
+                                              "Press Ok when you are ready to continue.",
+                                              QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
+
+            response = load_step.exec()
+            if response != QtWidgets.QMessageBox.Ok:
+                self.btn_automatic.setDisabled(False)
+                self.nextStep = -1
+                self.app.worker.signals.finished.disconnect(self.automaticCalibrationStep)
+                return
+            else:
+                self.app.sweep()
+                return
+
+        if self.nextStep == 2:
+            # Load
+            self.saveLoad()
+            self.nextStep = 3
+            continue_step = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Information,
+                                                  "1-port calibration complete",
+                                                  "The required steps for a 1-port calibration are now complete.\n\n" +
+                                                  "If you wish to continue and perform a 2-port calibration, press " +
+                                                  "\"Yes\".  To apply the 1-port calibration and stop, press \"Apply\"",
+                                                  QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Apply |
+                                                  QtWidgets.QMessageBox.Cancel)
+
+            response = continue_step.exec()
+            if response == QtWidgets.QMessageBox.Apply:
+                self.calculate()
+                self.nextStep = -1
+                self.app.worker.signals.finished.disconnect(self.automaticCalibrationStep)
+                self.btn_automatic.setDisabled(False)
+                return
+            elif response != QtWidgets.QMessageBox.Ok:
+                self.btn_automatic.setDisabled(False)
+                self.nextStep = -1
+                self.app.worker.signals.finished.disconnect(self.automaticCalibrationStep)
+                return
+            else:
+                isolation_step = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Information,
+                                                       "Calibrate isolation",
+                                                       "Please connect the \"load\" standard to port 1 of the NanoVNA.\n\n" +
+                                                       "If available, also connect a load standard to port 0.\n\n" +
+                                                       "Press Ok when you are ready to continue.",
+                                                       QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
+
+                response = isolation_step.exec()
+                if response != QtWidgets.QMessageBox.Ok:
+                    self.btn_automatic.setDisabled(False)
+                    self.nextStep = -1
+                    self.app.worker.signals.finished.disconnect(self.automaticCalibrationStep)
+                    return
+                else:
+                    self.app.sweep()
+                    return
+
+        elif self.nextStep == 3:
+            # Isolation
+            self.saveIsolation()
+            self.nextStep = 4
+            through_step = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Information,
+                                              "Calibrate through",
+                                              "Please connect the \"through\" standard between port 0 and port 1 " +
+                                              "of the NanoVNA.\n\n" +
+                                              "Press Ok when you are ready to continue.",
+                                              QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
+
+            response = through_step.exec()
+            if response != QtWidgets.QMessageBox.Ok:
+                self.btn_automatic.setDisabled(False)
+                self.nextStep = -1
+                self.app.worker.signals.finished.disconnect(self.automaticCalibrationStep)
+                return
+            else:
+                self.app.sweep()
+                return
+
+        elif self.nextStep == 4:
+            # Done
+            self.saveThrough()
+            apply_step = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Information,
+                                              "Calibrate complete",
+                                              "The calibration process is now complete.  Press \"Apply\" to apply the " +
+                                              "calibration parameters.",
+                                              QtWidgets.QMessageBox.Apply | QtWidgets.QMessageBox.Cancel)
+
+            response = apply_step.exec()
+            if response != QtWidgets.QMessageBox.Apply:
+                self.btn_automatic.setDisabled(False)
+                self.nextStep = -1
+                self.app.worker.signals.finished.disconnect(self.automaticCalibrationStep)
+                return
+            else:
+                self.calculate()
+                self.btn_automatic.setDisabled(False)
+                return
+        return
 
 
 class Calibration:
