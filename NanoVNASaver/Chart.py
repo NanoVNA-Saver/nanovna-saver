@@ -48,6 +48,11 @@ class Chart(QtWidgets.QWidget):
         super().__init__()
         self.name = name
 
+        self.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
+        self.action_save_screenshot = QtWidgets.QAction("Save image")
+        self.action_save_screenshot.triggered.connect(self.saveScreenshot)
+        self.addAction(self.action_save_screenshot)
+
     def setSweepColor(self, color : QtGui.QColor):
         self.sweepColor = color
         self.update()
@@ -148,6 +153,15 @@ class Chart(QtWidgets.QWidget):
     def mouseReleaseEvent(self, a0: QtGui.QMouseEvent) -> None:
         self.draggedMarker = None
 
+    def saveScreenshot(self):
+        logger.info("Saving %s to file...", self.name)
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(parent=self, caption="Save image",
+                                                            filter="PNG (*.png);;All files (*.*)")
+
+        logger.debug("Filename: %s", filename)
+        if filename != "":
+            self.grab().save(filename)
+
 
 class FrequencyChart(Chart):
     fstart = 0
@@ -176,6 +190,7 @@ class FrequencyChart(Chart):
     def __init__(self, name):
         super().__init__(name)
 
+        self.setContextMenuPolicy(QtCore.Qt.DefaultContextMenu)
         mode_group = QtWidgets.QActionGroup(self)
         self.menu = QtWidgets.QMenu()
 
@@ -232,6 +247,8 @@ class FrequencyChart(Chart):
 
         self.menu.addMenu(self.x_menu)
         self.menu.addMenu(self.y_menu)
+        self.menu.addSeparator()
+        self.menu.addAction(self.action_save_screenshot)
 
     def contextMenuEvent(self, event):
         self.action_set_fixed_start.setText("Start (" + Chart.shortenFrequency(self.minFrequency) + ")")
