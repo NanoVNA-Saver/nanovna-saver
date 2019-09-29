@@ -764,6 +764,9 @@ class PolarChart(SquareChart):
         return self.height()/2 + d.im * -1 * self.chartHeight/2
 
     def mouseMoveEvent(self, a0: QtGui.QMouseEvent) -> None:
+        if a0.buttons() == QtCore.Qt.RightButton:
+            a0.ignore()
+            return
         x = a0.x()
         y = a0.y()
         absx = x - (self.width() - self.chartWidth) / 2
@@ -901,6 +904,9 @@ class SmithChart(SquareChart):
         return a0
 
     def mouseMoveEvent(self, a0: QtGui.QMouseEvent) -> None:
+        if a0.buttons() == QtCore.Qt.RightButton:
+            a0.ignore()
+            return
         x = a0.x()
         y = a0.y()
         absx = x - (self.width() - self.chartWidth) / 2
