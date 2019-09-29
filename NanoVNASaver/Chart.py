@@ -165,6 +165,14 @@ class FrequencyChart(Chart):
     linear = True
     logarithmic = False
 
+    chartWidth = Chart.minChartWidth
+    chartHeight = Chart.minChartHeight
+
+    leftMargin = 30
+    rightMargin = 20
+    lowerMargin = 20
+    topMargin = 30
+
     def __init__(self, name):
         super().__init__(name)
 
@@ -316,6 +324,11 @@ class FrequencyChart(Chart):
             m.frequencyInput.setText(str(round(f)))
         return
 
+    def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
+        self.chartWidth = a0.size().width()-self.rightMargin-self.leftMargin
+        self.chartHeight = a0.size().height()-self.lowerMargin-self.topMargin
+        self.update()
+
     def drawBands(self, qp, fstart, fstop):
         qp.setBrush(self.bands.color)
         qp.setPen(QtGui.QColor(128, 128, 128, 0))  # Don't outline the bands
@@ -336,6 +349,10 @@ class FrequencyChart(Chart):
             elif start < fstart < fstop < end:
                 # All the chart is in a band, we won't show it(?)
                 pass
+
+    def isPlotable(self, x, y):
+        return self.leftMargin < x <= self.leftMargin + self.chartWidth and \
+               self.topMargin < y <= self.topMargin + self.chartHeight
 
 
 class SquareChart(Chart):
@@ -360,6 +377,7 @@ class PhaseChart(FrequencyChart):
         self.fstart = 0
         self.fstop = 0
         self.minAngle = 0
+        self.maxAngle = 0
         self.span = 0
 
         self.minDisplayValue = -180
@@ -371,11 +389,6 @@ class PhaseChart(FrequencyChart):
         pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
-
-    def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
-        self.chartWidth = a0.size().width()-20-self.leftMargin
-        self.chartHeight = a0.size().height()-40
-        self.update()
 
     def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
         qp = QtGui.QPainter(self)
@@ -397,17 +410,21 @@ class PhaseChart(FrequencyChart):
             maxAngle = 180
         span = maxAngle-minAngle
         self.minAngle = minAngle
+        self.maxAngle = maxAngle
         self.span = span
-        for i in range(minAngle, maxAngle, 90):
-            y = 30 + round((i-minAngle)/span*(self.chartHeight-10))
-            if i != minAngle and i != maxAngle:
+        step = math.floor(span/4)
+        for i in range(minAngle, maxAngle, step):
+            y = 30 + round((maxAngle - i)/span*(self.chartHeight-10))
+            logger.debug("Plotting %d at y = %d", i, y)
+            if i != minAngle and i != maxAngle and (maxAngle - i) > step / 2:
                 qp.setPen(QtGui.QPen(self.textColor))
-                qp.drawText(3, y+3, str(-i) + "°")
-            qp.setPen(QtGui.QPen(self.foregroundColor))
-            qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.chartWidth, y)
+                qp.drawText(3, y+3, str(i) + "°")
+                qp.setPen(QtGui.QPen(self.foregroundColor))
+                qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.chartWidth, y)
+        qp.drawLine(self.leftMargin - 5, 30, self.leftMargin + self.chartWidth, 30)
         qp.setPen(self.textColor)
-        qp.drawText(3, 35, str(-minAngle) + "°")
-        qp.drawText(3, self.chartHeight+20, str(-maxAngle) + "°")
+        qp.drawText(3, 35, str(maxAngle) + "°")
+        qp.drawText(3, self.chartHeight+20, str(minAngle) + "°")
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
@@ -454,44 +471,47 @@ class PhaseChart(FrequencyChart):
 
         qp.setPen(pen)
         for i in range(len(self.data)):
-            angle = self.angle(self.data[i])
-            x = self.getXPosition(self.data[i])
-            y = 30 + round((angle-minAngle)/span*(self.chartHeight-10))
-            qp.drawPoint(int(x), int(y))
+            x, y = self.getPosition(self.data[i])
+            if self.isPlotable(x, y):
+                qp.drawPoint(int(x), int(y))
             if self.drawLines and i > 0:
-                angle = self.angle(self.data[i-1])
-                prevx = self.getXPosition(self.data[i-1])
-                prevy = 30 + round((angle - minAngle) / span * (self.chartHeight - 10))
+                prevx, prevy = self.getPosition(self.data[i-1])
                 qp.setPen(line_pen)
-                qp.drawLine(x, y, prevx, prevy)
+                if self.isPlotable(x, y) and self.isPlotable(prevx, prevy):
+                    qp.drawLine(x, y, prevx, prevy)
+                elif self.isPlotable(x, y) and not self.isPlotable(prevx, prevy):
+                    pass  # TODO: Find a plotable line that goes in the right direction, but stops before leaving.
+                elif not self.isPlotable(x, y) and self.isPlotable(prevx, prevy):
+                    pass
                 qp.setPen(pen)
         pen.setColor(self.referenceColor)
         qp.setPen(pen)
         for i in range(len(self.reference)):
             if self.reference[i].freq < fstart or self.reference[i].freq > fstop:
                 continue
-            angle = self.angle(self.reference[i])
-            x = self.getXPosition(self.reference[i])
-            y = 30 + round((angle-minAngle)/span*(self.chartHeight-10))
-            qp.drawPoint(int(x), int(y))
+            x, y = self.getPosition(self.reference[i])
+            if self.isPlotable(x, y):
+                qp.drawPoint(int(x), int(y))
             if self.drawLines and i > 0:
-                angle = self.angle(self.reference[i-1])
-                prevx = self.getXPosition(self.reference[i-1])
-                prevy = 30 + round((angle - minAngle) / span * (self.chartHeight - 10))
+                prevx, prevy = self.getPosition(self.reference[i-1])
                 qp.setPen(line_pen)
-                qp.drawLine(x, y, prevx, prevy)
+                if self.isPlotable(x, y) and self.isPlotable(prevx, prevy):
+                    qp.drawLine(x, y, prevx, prevy)
+                elif self.isPlotable(x, y) and not self.isPlotable(prevx, prevy):
+                    pass
+                elif not self.isPlotable(x, y) and self.isPlotable(prevx, prevy):
+                    pass
                 qp.setPen(pen)
         # Now draw the markers
         for m in self.markers:
             if m.location != -1:
                 highlighter.setColor(m.color)
                 qp.setPen(highlighter)
-                angle = self.angle(self.data[m.location])
-                x = self.getXPosition(self.data[m.location])
-                y = 30 + round((angle - minAngle) / span * (self.chartHeight - 10))
-                qp.drawLine(int(x), int(y) + 3, int(x) - 3, int(y) - 3)
-                qp.drawLine(int(x), int(y) + 3, int(x) + 3, int(y) - 3)
-                qp.drawLine(int(x) - 3, int(y) - 3, int(x) + 3, int(y) - 3)
+                x, y = self.getPosition(self.data[m.location])
+                if self.isPlotable(x, y):
+                    qp.drawLine(int(x), int(y) + 3, int(x) - 3, int(y) - 3)
+                    qp.drawLine(int(x), int(y) + 3, int(x) + 3, int(y) - 3)
+                    qp.drawLine(int(x) - 3, int(y) - 3, int(x) + 3, int(y) - 3)
 
     def getXPosition(self, d: Datapoint) -> int:
         span = self.fstop - self.fstart
@@ -499,13 +519,13 @@ class PhaseChart(FrequencyChart):
 
     def getYPosition(self, d: Datapoint) -> int:
         angle = self.angle(d)
-        return 30 + round((angle - self.minAngle) / self.span * (self.chartHeight - 10))
+        return 30 + round((self.maxAngle - angle) / self.span * (self.chartHeight - 10))
 
     @staticmethod
     def angle(d: Datapoint) -> float:
         re = d.re
         im = d.im
-        return -math.degrees(math.atan2(im, re))
+        return math.degrees(math.atan2(im, re))
 
 
 class VSWRChart(FrequencyChart):
@@ -525,11 +545,6 @@ class VSWRChart(FrequencyChart):
         pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
-
-    def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
-        self.chartWidth = a0.size().width()-20-self.leftMargin
-        self.chartHeight = a0.size().height()-40
-        self.update()
 
     def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
         qp = QtGui.QPainter(self)
@@ -965,11 +980,6 @@ class LogMagChart(FrequencyChart):
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
-    def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
-        self.chartWidth = a0.size().width()-20-self.leftMargin
-        self.chartHeight = a0.size().height()-40
-        self.update()
-
     def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
         qp = QtGui.QPainter(self)
         #qp.begin(self)  # Apparently not needed?
@@ -1142,11 +1152,6 @@ class QualityFactorChart(FrequencyChart):
         pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
-
-    def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
-        self.chartWidth = a0.size().width()-20-self.leftMargin
-        self.chartHeight = a0.size().height()-40
-        self.update()
 
     def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
         qp = QtGui.QPainter(self)
@@ -1413,11 +1418,6 @@ class RealImaginaryChart(FrequencyChart):
         pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
-
-    def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
-        self.chartWidth = a0.size().width()-self.leftMargin-self.rightMargin
-        self.chartHeight = a0.size().height()-40
-        self.update()
 
     def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
         qp = QtGui.QPainter(self)

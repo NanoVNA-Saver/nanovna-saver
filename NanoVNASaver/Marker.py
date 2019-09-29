@@ -201,9 +201,9 @@ class Marker(QtCore.QObject):
             self.vswr_label.setText(str(vswr))
             self.quality_factor_label.setText(str(round(NanoVNASaver.qualifyFactor(s11data[self.location]), 1)))
             self.s11_phase_label.setText(
-                str(round(-PhaseChart.angle(s11data[self.location]), 2)) + "\N{DEGREE SIGN}")
+                str(round(PhaseChart.angle(s11data[self.location]), 2)) + "\N{DEGREE SIGN}")
             if len(s21data) == len(s11data):
                 _, _, vswr = NanoVNASaver.vswr(s21data[self.location])
                 self.gain_label.setText(str(round(20 * math.log10((vswr - 1) / (vswr + 1)), 3)) + " dB")
                 self.s21_phase_label.setText(
-                    str(round(-PhaseChart.angle(s21data[self.location]), 2)) + "\N{DEGREE SIGN}")
+                    str(round(PhaseChart.angle(s21data[self.location]), 2)) + "\N{DEGREE SIGN}")
