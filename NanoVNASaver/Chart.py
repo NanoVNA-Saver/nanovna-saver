@@ -362,7 +362,8 @@ class PhaseChart(FrequencyChart):
         self.minAngle = 0
         self.span = 0
 
-        self.y_menu.setDisabled(True)
+        self.minDisplayValue = -180
+        self.maxDisplayValue = 180
 
         self.setMinimumSize(self.chartWidth + 20 + self.leftMargin, self.chartHeight + 40)
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding))
@@ -388,8 +389,12 @@ class PhaseChart(FrequencyChart):
         qp.setPen(QtGui.QPen(self.foregroundColor))
         qp.drawLine(self.leftMargin, 20, self.leftMargin, 20+self.chartHeight+5)
         qp.drawLine(self.leftMargin-5, 20+self.chartHeight, self.leftMargin+self.chartWidth, 20 + self.chartHeight)
-        minAngle = -180
-        maxAngle = 180
+        if self.fixedValues:
+            minAngle = self.minDisplayValue
+            maxAngle = self.maxDisplayValue
+        else:
+            minAngle = -180
+            maxAngle = 180
         span = maxAngle-minAngle
         self.minAngle = minAngle
         self.span = span
@@ -431,8 +436,12 @@ class PhaseChart(FrequencyChart):
         if self.bands.enabled:
             self.drawBands(qp, fstart, fstop)
 
-        minAngle = -180
-        maxAngle = 180
+        if self.fixedValues:
+            minAngle = self.minDisplayValue
+            maxAngle = self.maxDisplayValue
+        else:
+            minAngle = -180
+            maxAngle = 180
         span = maxAngle-minAngle
         qp.drawText(self.leftMargin-20, 20 + self.chartHeight + 15, Chart.shortenFrequency(self.fstart))
         ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
@@ -446,12 +455,12 @@ class PhaseChart(FrequencyChart):
         qp.setPen(pen)
         for i in range(len(self.data)):
             angle = self.angle(self.data[i])
-            x = self.leftMargin + 1 + round(self.chartWidth/len(self.data) * i)
+            x = self.getXPosition(self.data[i])
             y = 30 + round((angle-minAngle)/span*(self.chartHeight-10))
             qp.drawPoint(int(x), int(y))
             if self.drawLines and i > 0:
                 angle = self.angle(self.data[i-1])
-                prevx = self.leftMargin + 1 + round(self.chartWidth / len(self.data) * (i-1))
+                prevx = self.getXPosition(self.data[i-1])
                 prevy = 30 + round((angle - minAngle) / span * (self.chartHeight - 10))
                 qp.setPen(line_pen)
                 qp.drawLine(x, y, prevx, prevy)
@@ -462,12 +471,12 @@ class PhaseChart(FrequencyChart):
             if self.reference[i].freq < fstart or self.reference[i].freq > fstop:
                 continue
             angle = self.angle(self.reference[i])
-            x = self.leftMargin + 1 + round(self.chartWidth*(self.reference[i].freq - fstart)/fspan)
+            x = self.getXPosition(self.reference[i])
             y = 30 + round((angle-minAngle)/span*(self.chartHeight-10))
             qp.drawPoint(int(x), int(y))
             if self.drawLines and i > 0:
                 angle = self.angle(self.reference[i-1])
-                prevx = self.leftMargin + 1 + round(self.chartWidth*(self.reference[i-1].freq - fstart)/fspan)
+                prevx = self.getXPosition(self.reference[i-1])
                 prevy = 30 + round((angle - minAngle) / span * (self.chartHeight - 10))
                 qp.setPen(line_pen)
                 qp.drawLine(x, y, prevx, prevy)
@@ -478,7 +487,7 @@ class PhaseChart(FrequencyChart):
                 highlighter.setColor(m.color)
                 qp.setPen(highlighter)
                 angle = self.angle(self.data[m.location])
-                x = self.leftMargin + 1 + round(self.chartWidth/len(self.data) * m.location)
+                x = self.getXPosition(self.data[m.location])
                 y = 30 + round((angle - minAngle) / span * (self.chartHeight - 10))
                 qp.drawLine(int(x), int(y) + 3, int(x) - 3, int(y) - 3)
                 qp.drawLine(int(x), int(y) + 3, int(x) + 3, int(y) - 3)
@@ -726,11 +735,11 @@ class PolarChart(SquareChart):
         highlighter.setWidth(1)
         qp.setPen(pen)
         for i in range(len(self.data)):
-            x = self.width()/2 + self.data[i].re * self.chartWidth/2
+            x = self.getXPosition(self.data[i])
             y = self.height()/2 + self.data[i].im * -1 * self.chartHeight/2
             qp.drawPoint(int(x), int(y))
             if self.drawLines and i > 0:
-                prevx = self.width() / 2 + self.data[i-1].re * self.chartWidth / 2
+                prevx = self.getXPosition(self.data[i-1])
                 prevy = self.height() / 2 + self.data[i-1].im * -1 * self.chartHeight / 2
                 qp.setPen(line_pen)
                 qp.drawLine(x, y, prevx, prevy)
@@ -748,11 +757,11 @@ class PolarChart(SquareChart):
             data = self.reference[i]
             if data.freq < fstart or data.freq > fstop:
                 continue
-            x = self.width()/2 + data.re * self.chartWidth/2
+            x = self.getXPosition(self.reference[i])
             y = self.height()/2 + data.im * -1 * self.chartHeight/2
             qp.drawPoint(int(x), int(y))
             if self.drawLines and i > 0:
-                prevx = self.width() / 2 + self.reference[i-1].re * self.chartWidth / 2
+                prevx = self.getXPosition(self.reference[i-1])
                 prevy = self.height() / 2 + self.reference[i-1].im * -1 * self.chartHeight / 2
                 qp.setPen(line_pen)
                 qp.drawLine(x, y, prevx, prevy)
@@ -762,7 +771,7 @@ class PolarChart(SquareChart):
             if m.location != -1:
                 highlighter.setColor(m.color)
                 qp.setPen(highlighter)
-                x = self.width() / 2 + self.data[m.location].re * self.chartWidth / 2
+                x = self.getXPosition(self.data[m.location])
                 y = self.height() / 2 + self.data[m.location].im * -1 * self.chartHeight / 2
                 qp.drawLine(int(x), int(y) + 3, int(x) - 3, int(y) - 3)
                 qp.drawLine(int(x), int(y) + 3, int(x) + 3, int(y) - 3)
@@ -861,11 +870,11 @@ class SmithChart(SquareChart):
         highlighter.setWidth(1)
         qp.setPen(pen)
         for i in range(len(self.data)):
-            x = self.width()/2 + self.data[i].re * self.chartWidth/2
+            x = self.getXPosition(self.data[i])
             y = self.height()/2 + self.data[i].im * -1 * self.chartHeight/2
             qp.drawPoint(int(x), int(y))
             if self.drawLines and i > 0:
-                prevx = self.width() / 2 + self.data[i-1].re * self.chartWidth / 2
+                prevx = self.getXPosition(self.data[i-1])
                 prevy = self.height() / 2 + self.data[i-1].im * -1 * self.chartHeight / 2
                 qp.setPen(line_pen)
                 qp.drawLine(x, y, prevx, prevy)
@@ -883,11 +892,11 @@ class SmithChart(SquareChart):
             data = self.reference[i]
             if data.freq < fstart or data.freq > fstop:
                 continue
-            x = self.width()/2 + data.re * self.chartWidth/2
+            x = self.getXPosition(data)
             y = self.height()/2 + data.im * -1 * self.chartHeight/2
             qp.drawPoint(int(x), int(y))
             if self.drawLines and i > 0:
-                prevx = self.width() / 2 + self.reference[i-1].re * self.chartWidth / 2
+                prevx = self.getXPosition(self.reference[i-1])
                 prevy = self.height() / 2 + self.reference[i-1].im * -1 * self.chartHeight / 2
                 qp.setPen(line_pen)
                 qp.drawLine(x, y, prevx, prevy)
@@ -897,12 +906,11 @@ class SmithChart(SquareChart):
             if m.location != -1:
                 highlighter.setColor(m.color)
                 qp.setPen(highlighter)
-                x = self.width() / 2 + self.data[m.location].re * self.chartWidth / 2
+                x = self.getXPosition(self.data[m.location])
                 y = self.height() / 2 + self.data[m.location].im * -1 * self.chartHeight / 2
                 qp.drawLine(int(x), int(y) + 3, int(x) - 3, int(y) - 3)
                 qp.drawLine(int(x), int(y) + 3, int(x) + 3, int(y) - 3)
                 qp.drawLine(int(x) - 3, int(y) - 3, int(x) + 3, int(y) - 3)
-                #qp.drawPoint(int(x), int(y))
 
     def getXPosition(self, d: Datapoint) -> int:
         return self.width()/2 + d.re * self.chartWidth/2
@@ -1230,12 +1238,12 @@ class QualityFactorChart(FrequencyChart):
         for i in range(len(self.data)):
             Q = NanoVNASaver.qualifyFactor(self.data[i])
 
-            x = self.leftMargin + 1 + round(self.chartWidth/len(self.data) * i)
+            x = self.getXPosition(self.data[i])
             y = 30 + round((self.maxQ - Q)/ self.span *(self.chartHeight-10))
             qp.drawPoint(int(x), int(y))
             if self.drawLines and i > 0:
                 Q = NanoVNASaver.qualifyFactor(self.data[i-1])
-                prevx = self.leftMargin + 1 + round(self.chartWidth / len(self.data) * (i-1))
+                prevx = self.getXPosition(self.data[i-1])
                 prevy = 30 + round((self.maxQ - Q) / self.span * (self.chartHeight - 10))
                 qp.setPen(line_pen)
                 qp.drawLine(x, y, prevx, prevy)
@@ -1246,12 +1254,12 @@ class QualityFactorChart(FrequencyChart):
             if self.reference[i].freq < fstart or self.reference[i].freq > fstop:
                 continue
             Q = NanoVNASaver.qualifyFactor(self.reference[i])
-            x = self.leftMargin + 1 + round(self.chartWidth*(self.reference[i].freq - fstart)/fspan)
+            x = self.getXPosition(self.reference[i])
             y = 30 + round((self.maxQ - Q)/self.span*(self.chartHeight-10))
             qp.drawPoint(int(x), int(y))
             if self.drawLines and i > 0:
                 Q = NanoVNASaver.qualifyFactor(self.reference[i-1])
-                prevx = self.leftMargin + 1 + round(self.chartWidth*(self.reference[i-1].freq - fstart)/fspan)
+                prevx = self.getXPosition(self.reference[i-1])
                 prevy = 30 + round((self.maxQ - Q) / self.span * (self.chartHeight - 10))
                 qp.setPen(line_pen)
                 qp.drawLine(x, y, prevx, prevy)
@@ -1262,7 +1270,7 @@ class QualityFactorChart(FrequencyChart):
                 highlighter.setColor(m.color)
                 qp.setPen(highlighter)
                 Q = NanoVNASaver.qualifyFactor(self.data[m.location])
-                x = self.leftMargin + 1 + round(self.chartWidth/len(self.data) * m.location)
+                x = self.getXPosition(self.data[m.location])
                 y = 30 + round((self.maxQ - Q) / self.span * (self.chartHeight - 10))
                 qp.drawLine(int(x), int(y) + 3, int(x) - 3, int(y) - 3)
                 qp.drawLine(int(x), int(y) + 3, int(x) + 3, int(y) - 3)
