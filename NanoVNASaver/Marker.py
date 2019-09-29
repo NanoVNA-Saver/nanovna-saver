@@ -179,7 +179,7 @@ class Marker(QtCore.QObject):
                 im50str = " -j" + str(-1 * im50)
             else:
                 im50str = " +j" + str(im50)
-            im50str += "\N{OHM SIGN}"
+            im50str += " \N{OHM SIGN}"
 
             if xp < 0:
                 xpstr = NanoVNASaver.capacitanceEquivalent(xp, s11data[self.location].freq)
@@ -188,7 +188,7 @@ class Marker(QtCore.QObject):
 
             self.frequency_label.setText(NanoVNASaver.formatFrequency(s11data[self.location].freq))
             self.impedance_label.setText(str(re50) + im50str)
-            self.parallel_r_label.setText(str(rp) + "\N{OHM SIGN}")
+            self.parallel_r_label.setText(str(rp) + " \N{OHM SIGN}")
             self.parallel_x_label.setText(xpstr)
             self.returnloss_label.setText(str(round(20 * math.log10((vswr - 1) / (vswr + 1)), 3)) + " dB")
             capacitance = NanoVNASaver.capacitanceEquivalent(im50, s11data[self.location].freq)

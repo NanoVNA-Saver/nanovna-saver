@@ -332,7 +332,7 @@ class FrequencyChart(Chart):
             elif fstart < end < fstop:
                 # Only the end of the band is within the chart
                 x_end = self.getXPosition(Datapoint(end, 0, 0))
-                qp.drawRect(self.leftMargin + 1, 30, x_end - (self.leftmargin + 1), self.chartHeight - 10)
+                qp.drawRect(self.leftMargin + 1, 30, x_end - (self.leftMargin + 1), self.chartHeight - 10)
             elif start < fstart < fstop < end:
                 # All the chart is in a band, we won't show it(?)
                 pass

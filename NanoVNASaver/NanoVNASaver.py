@@ -793,14 +793,28 @@ class NanoVNASaver(QtWidgets.QWidget):
         if im50 == 0 or freq == 0:
             return "- pF"
         capacitance = 10**12/(freq * 2 * math.pi * im50)
-        return str(round(-capacitance, 3)) + " pF"
+        if abs(capacitance) > 10000:
+            return str(round(-capacitance/1000, 2)) + " nF"
+        elif abs(capacitance) > 1000:
+            return str(round(-capacitance/1000, 3)) + " nF"
+        elif abs(capacitance) > 10:
+            return str(round(-capacitance, 2)) + " pF"
+        else:
+            return str(round(-capacitance, 3)) + " pF"
 
     @staticmethod
     def inductanceEquivalent(im50, freq) -> str:
         if freq == 0:
             return "- nH"
-        inductance = im50 / (freq * 2 * math.pi)
-        return str(round(inductance * 1000000000, 3)) + " nH"
+        inductance = im50 * 1000000000/ (freq * 2 * math.pi)
+        if abs(inductance) > 10000:
+            return str(round(inductance / 1000, 2)) + " μH"
+        elif abs(inductance) > 1000:
+            return str(round(inductance/1000, 3)) + " μH"
+        elif abs(inductance) > 10:
+            return str(round(inductance, 2)) + " nH"
+        else:
+            return str(round(inductance, 3)) + " nH"
 
     @staticmethod
     def gain(data: Datapoint):
@@ -1607,23 +1621,23 @@ class BandsModel(QtCore.QAbstractTableModel):
     color = QtGui.QColor(128, 128, 128, 48)
 
     # These bands correspond broadly to the Danish Amateur Radio allocation
-    default_bands = ["2200m;135700;137800",
-                     "630m;472000;479000",
-                     "160m;1800000;2000000",
-                     "80m;3500000;3800000",
-                     "60m;5250000;5450000",
-                     "40m;7000000;7200000",
-                     "30m;10100000;10150000",
-                     "20m;14000000;14350000",
-                     "17m;18068000;18168000",
-                     "15m;21000000;21450000",
-                     "12m;24890000;24990000",
-                     "10m;28000000;29700000",
-                     "6m;50000000;52000000",
-                     "4m;69887500;70512500",
-                     "2m;144000000;146000000",
-                     "70cm;432000000;438000000",
-                     "23cm;1240000000;1300000000"]
+    default_bands = ["2200 m;135700;137800",
+                     "630 m;472000;479000",
+                     "160 m;1800000;2000000",
+                     "80 m;3500000;3800000",
+                     "60 m;5250000;5450000",
+                     "40 m;7000000;7200000",
+                     "30 m;10100000;10150000",
+                     "20 m;14000000;14350000",
+                     "17 m;18068000;18168000",
+                     "15 m;21000000;21450000",
+                     "12 m;24890000;24990000",
+                     "10 m;28000000;29700000",
+                     "6 m;50000000;52000000",
+                     "4 m;69887500;70512500",
+                     "2 m;144000000;146000000",
+                     "70 cm;432000000;438000000",
+                     "23 cm;1240000000;1300000000"]
 
     def __init__(self):
         super().__init__()
