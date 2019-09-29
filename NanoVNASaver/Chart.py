@@ -329,6 +329,12 @@ class FrequencyChart(Chart):
         self.chartHeight = a0.size().height()-self.lowerMargin-self.topMargin
         self.update()
 
+    def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
+        qp = QtGui.QPainter(self)
+        self.drawChart(qp)
+        self.drawValues(qp)
+        qp.end()
+
     def drawBands(self, qp, fstart, fstop):
         qp.setBrush(self.bands.color)
         qp.setPen(QtGui.QColor(128, 128, 128, 0))  # Don't outline the bands
@@ -350,9 +356,64 @@ class FrequencyChart(Chart):
                 # All the chart is in a band, we won't show it(?)
                 pass
 
+    def drawData(self, qp: QtGui.QPainter, data: List[Datapoint], color: QtGui.QColor):
+        pen = QtGui.QPen(color)
+        pen.setWidth(2)
+        line_pen = QtGui.QPen(color)
+        line_pen.setWidth(1)
+        qp.setPen(pen)
+        for i in range(len(data)):
+            x, y = self.getPosition(data[i])
+            if self.isPlotable(x, y):
+                qp.drawPoint(int(x), int(y))
+            if self.drawLines and i > 0:
+                prevx, prevy = self.getPosition(data[i - 1])
+                qp.setPen(line_pen)
+                if self.isPlotable(x, y) and self.isPlotable(prevx, prevy):
+                    qp.drawLine(x, y, prevx, prevy)
+                elif self.isPlotable(x, y) and not self.isPlotable(prevx, prevy):
+                    new_x, new_y = self.getPlotable(x, y, prevx, prevy)
+                    qp.drawLine(x, y, new_x, new_y)
+                elif not self.isPlotable(x, y) and self.isPlotable(prevx, prevy):
+                    new_x, new_y = self.getPlotable(prevx, prevy, x, y)
+                    qp.drawLine(prevx, prevy, new_x, new_y)
+                qp.setPen(pen)
+
+    def drawMarkers(self, qp):
+        highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
+        highlighter.setWidth(1)
+        for m in self.markers:
+            if m.location != -1:
+                highlighter.setColor(m.color)
+                qp.setPen(highlighter)
+                x, y = self.getPosition(self.data[m.location])
+                if self.isPlotable(x, y):
+                    qp.drawLine(int(x), int(y) + 3, int(x) - 3, int(y) - 3)
+                    qp.drawLine(int(x), int(y) + 3, int(x) + 3, int(y) - 3)
+                    qp.drawLine(int(x) - 3, int(y) - 3, int(x) + 3, int(y) - 3)
+
     def isPlotable(self, x, y):
         return self.leftMargin < x <= self.leftMargin + self.chartWidth and \
                self.topMargin < y <= self.topMargin + self.chartHeight
+
+    def getPlotable(self, x, y, distantx, distanty):
+        p1 = np.array([x, y])
+        p2 = np.array([distantx, distanty])
+        # First check the top line
+        p3 = np.array([self.leftMargin, self.topMargin])
+        p4 = np.array([self.leftMargin + self.chartWidth, self.topMargin])
+
+        da = p2 - p1
+        db = p4 - p3
+        dp = p1 - p3
+        dap = np.array([-da[1], da[0]])
+        denom = np.dot(dap, db)
+        if denom != 0:
+            num = np.dot(dap, dp)
+            result = (num / denom.astype(float)) * db + p3
+            return result[0], result[1]
+        else:
+            return x, y
 
 
 class SquareChart(Chart):
@@ -389,12 +450,6 @@ class PhaseChart(FrequencyChart):
         pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
-
-    def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
-        qp = QtGui.QPainter(self)
-        self.drawChart(qp)
-        self.drawValues(qp)
-        qp.end()
 
     def drawChart(self, qp: QtGui.QPainter):
         qp.setPen(QtGui.QPen(self.textColor))
@@ -433,8 +488,7 @@ class PhaseChart(FrequencyChart):
         pen.setWidth(2)
         line_pen = QtGui.QPen(self.sweepColor)
         line_pen.setWidth(1)
-        highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
-        highlighter.setWidth(1)
+
         if self.fixedSpan:
             fstart = self.minFrequency
             fstop = self.maxFrequency
@@ -453,13 +507,7 @@ class PhaseChart(FrequencyChart):
         if self.bands.enabled:
             self.drawBands(qp, fstart, fstop)
 
-        if self.fixedValues:
-            minAngle = self.minDisplayValue
-            maxAngle = self.maxDisplayValue
-        else:
-            minAngle = -180
-            maxAngle = 180
-        span = maxAngle-minAngle
+        qp.setPen(self.textColor)
         qp.drawText(self.leftMargin-20, 20 + self.chartHeight + 15, Chart.shortenFrequency(self.fstart))
         ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
         for i in range(ticks):
@@ -469,53 +517,9 @@ class PhaseChart(FrequencyChart):
             qp.setPen(self.textColor)
             qp.drawText(x-20, 20+self.chartHeight+15, Chart.shortenFrequency(round(fspan/ticks*(i+1) + self.fstart)))
 
-        qp.setPen(pen)
-        for i in range(len(self.data)):
-            x, y = self.getPosition(self.data[i])
-            if self.isPlotable(x, y):
-                qp.drawPoint(int(x), int(y))
-            if self.drawLines and i > 0:
-                prevx, prevy = self.getPosition(self.data[i-1])
-                qp.setPen(line_pen)
-                if self.isPlotable(x, y) and self.isPlotable(prevx, prevy):
-                    qp.drawLine(x, y, prevx, prevy)
-                elif self.isPlotable(x, y) and not self.isPlotable(prevx, prevy):
-                    pass  # TODO: Find a plotable line that goes in the right direction, but stops before leaving.
-                elif not self.isPlotable(x, y) and self.isPlotable(prevx, prevy):
-                    pass
-                qp.setPen(pen)
-        pen.setColor(self.referenceColor)
-        qp.setPen(pen)
-        for i in range(len(self.reference)):
-            if self.reference[i].freq < fstart or self.reference[i].freq > fstop:
-                continue
-            x, y = self.getPosition(self.reference[i])
-            if self.isPlotable(x, y):
-                qp.drawPoint(int(x), int(y))
-            if self.drawLines and i > 0:
-                prevx, prevy = self.getPosition(self.reference[i-1])
-                qp.setPen(line_pen)
-                if self.isPlotable(x, y) and self.isPlotable(prevx, prevy):
-                    qp.drawLine(x, y, prevx, prevy)
-                elif self.isPlotable(x, y) and not self.isPlotable(prevx, prevy):
-                    pass
-                elif not self.isPlotable(x, y) and self.isPlotable(prevx, prevy):
-                    pass
-                qp.setPen(pen)
-        # Now draw the markers
-        for m in self.markers:
-            if m.location != -1:
-                highlighter.setColor(m.color)
-                qp.setPen(highlighter)
-                x, y = self.getPosition(self.data[m.location])
-                if self.isPlotable(x, y):
-                    qp.drawLine(int(x), int(y) + 3, int(x) - 3, int(y) - 3)
-                    qp.drawLine(int(x), int(y) + 3, int(x) + 3, int(y) - 3)
-                    qp.drawLine(int(x) - 3, int(y) - 3, int(x) + 3, int(y) - 3)
-
-    def getXPosition(self, d: Datapoint) -> int:
-        span = self.fstop - self.fstart
-        return self.leftMargin + 1 + round(self.chartWidth * (d.freq - self.fstart) / span)
+        self.drawData(qp, self.data, self.sweepColor)
+        self.drawData(qp, self.reference, self.referenceColor)
+        self.drawMarkers(qp)
 
     def getYPosition(self, d: Datapoint) -> int:
         angle = self.angle(d)
@@ -545,12 +549,6 @@ class VSWRChart(FrequencyChart):
         pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
-
-    def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
-        qp = QtGui.QPainter(self)
-        self.drawChart(qp)
-        self.drawValues(qp)
-        qp.end()
 
     def drawChart(self, qp: QtGui.QPainter):
         qp.setPen(QtGui.QPen(self.textColor))
@@ -625,6 +623,7 @@ class VSWRChart(FrequencyChart):
         qp.drawText(3, 35, str(maxVSWR))
         qp.drawText(3, self.chartHeight+20, str(minVSWR))
         # At least 100 px between ticks
+
         qp.drawText(self.leftMargin-20, 20 + self.chartHeight + 15, Chart.shortenFrequency(fstart))
         ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
         for i in range(ticks):
@@ -634,61 +633,9 @@ class VSWRChart(FrequencyChart):
             qp.setPen(self.textColor)
             qp.drawText(x-20, 20+self.chartHeight+15, Chart.shortenFrequency(round(fspan/ticks*(i+1) + fstart)))
 
-        qp.setPen(pen)
-        for i in range(len(self.data)):
-            _, _, vswr = NanoVNASaver.vswr(self.data[i])
-            x = self.getXPosition(self.data[i])
-            y = 30 + round((maxVSWR-vswr)/span*(self.chartHeight-10))
-            if y < 30:
-                continue
-            qp.drawPoint(int(x), int(y))
-            if self.drawLines and i > 0:
-                _, _, vswr = NanoVNASaver.vswr(self.data[i-1])
-                prevx = self.getXPosition(self.data[i-1])
-                prevy = 30 + round((maxVSWR - vswr) / span * (self.chartHeight - 10))
-                if prevy < 30:
-                    continue
-                qp.setPen(line_pen)
-                qp.drawLine(x, y, prevx, prevy)
-                qp.setPen(pen)
-        pen.setColor(self.referenceColor)
-        line_pen.setColor(self.referenceColor)
-        qp.setPen(pen)
-        for i in range(len(self.reference)):
-            if self.reference[i].freq < fstart or self.reference[i].freq > fstop:
-                continue
-            _, _, vswr = NanoVNASaver.vswr(self.reference[i])
-            x = self.getXPosition(self.reference[i])
-            y = 30 + round((maxVSWR - vswr) / span * (self.chartHeight - 10))
-            if y < 30:
-                continue
-            qp.drawPoint(int(x), int(y))
-            if self.drawLines and i > 0:
-                _, _, vswr = NanoVNASaver.vswr(self.reference[i-1])
-                prevx = self.getXPosition(self.reference[i-1])
-                prevy = 30 + round((maxVSWR - vswr) / span * (self.chartHeight - 10))
-                if prevy < 30:
-                    continue
-                qp.setPen(line_pen)
-                qp.drawLine(x, y, prevx, prevy)
-                qp.setPen(pen)
-        # Now draw the markers
-        for m in self.markers:
-            if m.location != -1:
-                highlighter.setColor(m.color)
-                qp.setPen(highlighter)
-                _, _, vswr = NanoVNASaver.vswr(self.data[m.location])
-                x = self.getXPosition(self.data[m.location])
-                y = 30 + round((maxVSWR-vswr) / span * (self.chartHeight - 10))
-                if y < 30:
-                    continue
-                qp.drawLine(int(x), int(y) + 3, int(x) - 3, int(y) - 3)
-                qp.drawLine(int(x), int(y) + 3, int(x) + 3, int(y) - 3)
-                qp.drawLine(int(x) - 3, int(y) - 3, int(x) + 3, int(y) - 3)
-
-    def getXPosition(self, d: Datapoint) -> int:
-        span = self.fstop - self.fstart
-        return self.leftMargin + 1 + round(self.chartWidth * (d.freq - self.fstart) / span)
+        self.drawData(qp, self.data, self.sweepColor)
+        self.drawData(qp, self.reference, self.referenceColor)
+        self.drawMarkers(qp)
 
     def getYPosition(self, d: Datapoint) -> int:
         from NanoVNASaver.NanoVNASaver import NanoVNASaver
@@ -982,7 +929,6 @@ class LogMagChart(FrequencyChart):
 
     def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
         qp = QtGui.QPainter(self)
-        #qp.begin(self)  # Apparently not needed?
         self.drawChart(qp)
         self.drawValues(qp)
         qp.end()
@@ -1024,6 +970,8 @@ class LogMagChart(FrequencyChart):
         if self.fixedValues:
             maxValue = -self.minDisplayValue  # These are negative, because the entire logmag chart is
             minValue = -self.maxDisplayValue  # upside down.
+            self.maxValue = maxValue
+            self.minValue = minValue
         else:
             # Find scaling
             minValue = 100
@@ -1071,51 +1019,9 @@ class LogMagChart(FrequencyChart):
             qp.setPen(self.textColor)
             qp.drawText(x-20, 20+self.chartHeight+15, LogMagChart.shortenFrequency(round(fspan/ticks*(i+1) + self.fstart)))
 
-        qp.setPen(pen)
-        for i in range(len(self.data)):
-            if self.data[i].freq < self.fstart or self.data[i].freq > self.fstop:
-                continue
-            logmag = self.logMag(self.data[i])
-            x = self.getXPosition(self.data[i])
-            y = 30 + round((logmag-minValue)/span*(self.chartHeight-10))
-            qp.drawPoint(int(x), int(y))
-            if self.drawLines and i > 0:
-                logmag = self.logMag(self.data[i-1])
-                prevx = self.getXPosition(self.data[i-1])
-                prevy = 30 + round((logmag - minValue) / span * (self.chartHeight - 10))
-                qp.setPen(line_pen)
-                qp.drawLine(x, y, prevx, prevy)
-                qp.setPen(pen)
-        pen.setColor(self.referenceColor)
-        line_pen.setColor(self.referenceColor)
-        qp.setPen(pen)
-        for i in range(len(self.reference)):
-            if self.reference[i].freq < self.fstart or self.reference[i].freq > self.fstop:
-                continue
-            logmag = self.logMag(self.reference[i])
-            x = self.getXPosition(self.reference[i])
-            y = 30 + round((logmag-minValue)/span*(self.chartHeight-10))
-            qp.drawPoint(int(x), int(y))
-            if self.drawLines and i > 0:
-                logmag = self.logMag(self.reference[i-1])
-                prevx = self.getXPosition(self.reference[i-1])
-                prevy = 30 + round((logmag - minValue) / span * (self.chartHeight - 10))
-                qp.setPen(line_pen)
-                qp.drawLine(x, y, prevx, prevy)
-                qp.setPen(pen)
-        # Now draw the markers
-        for m in self.markers:
-            if m.location != -1:
-                if self.data[m.location].freq > self.fstop or self.data[m.location].freq < self.fstart:
-                    continue
-                highlighter.setColor(m.color)
-                qp.setPen(highlighter)
-                logmag = self.logMag(self.data[m.location])
-                x = self.getXPosition(self.data[m.location])
-                y = 30 + round((logmag - minValue) / span * (self.chartHeight - 10))
-                qp.drawLine(int(x), int(y) + 3, int(x) - 3, int(y) - 3)
-                qp.drawLine(int(x), int(y) + 3, int(x) + 3, int(y) - 3)
-                qp.drawLine(int(x) - 3, int(y) - 3, int(x) + 3, int(y) - 3)
+        self.drawData(qp, self.data, self.sweepColor)
+        self.drawData(qp, self.reference, self.referenceColor)
+        self.drawMarkers(qp)
 
     def getYPosition(self, d: Datapoint) -> int:
         logMag = self.logMag(d)
@@ -1152,12 +1058,6 @@ class QualityFactorChart(FrequencyChart):
         pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
-
-    def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
-        qp = QtGui.QPainter(self)
-        self.drawChart(qp)
-        self.drawValues(qp)
-        qp.end()
 
     def drawChart(self, qp: QtGui.QPainter):
         from NanoVNASaver.NanoVNASaver import NanoVNASaver
@@ -1230,6 +1130,7 @@ class QualityFactorChart(FrequencyChart):
         if self.bands.enabled:
             self.drawBands(qp, fstart, fstop)
 
+        qp.setPen(self.textColor)
         qp.drawText(self.leftMargin-20, 20 + self.chartHeight + 15, Chart.shortenFrequency(fstart))
         ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
         for i in range(ticks):
@@ -1239,62 +1140,14 @@ class QualityFactorChart(FrequencyChart):
             qp.setPen(self.textColor)
             qp.drawText(x-20, 20+self.chartHeight+15, Chart.shortenFrequency(round(fspan/ticks*(i+1) + fstart)))
 
-        qp.setPen(pen)
-        for i in range(len(self.data)):
-            Q = NanoVNASaver.qualifyFactor(self.data[i])
-
-            x = self.getXPosition(self.data[i])
-            y = 30 + round((self.maxQ - Q)/ self.span *(self.chartHeight-10))
-            qp.drawPoint(int(x), int(y))
-            if self.drawLines and i > 0:
-                Q = NanoVNASaver.qualifyFactor(self.data[i-1])
-                prevx = self.getXPosition(self.data[i-1])
-                prevy = 30 + round((self.maxQ - Q) / self.span * (self.chartHeight - 10))
-                qp.setPen(line_pen)
-                qp.drawLine(x, y, prevx, prevy)
-                qp.setPen(pen)
-        pen.setColor(self.referenceColor)
-        qp.setPen(pen)
-        for i in range(len(self.reference)):
-            if self.reference[i].freq < fstart or self.reference[i].freq > fstop:
-                continue
-            Q = NanoVNASaver.qualifyFactor(self.reference[i])
-            x = self.getXPosition(self.reference[i])
-            y = 30 + round((self.maxQ - Q)/self.span*(self.chartHeight-10))
-            qp.drawPoint(int(x), int(y))
-            if self.drawLines and i > 0:
-                Q = NanoVNASaver.qualifyFactor(self.reference[i-1])
-                prevx = self.getXPosition(self.reference[i-1])
-                prevy = 30 + round((self.maxQ - Q) / self.span * (self.chartHeight - 10))
-                qp.setPen(line_pen)
-                qp.drawLine(x, y, prevx, prevy)
-                qp.setPen(pen)
-        # Now draw the markers
-        for m in self.markers:
-            if m.location != -1:
-                highlighter.setColor(m.color)
-                qp.setPen(highlighter)
-                Q = NanoVNASaver.qualifyFactor(self.data[m.location])
-                x = self.getXPosition(self.data[m.location])
-                y = 30 + round((self.maxQ - Q) / self.span * (self.chartHeight - 10))
-                qp.drawLine(int(x), int(y) + 3, int(x) - 3, int(y) - 3)
-                qp.drawLine(int(x), int(y) + 3, int(x) + 3, int(y) - 3)
-                qp.drawLine(int(x) - 3, int(y) - 3, int(x) + 3, int(y) - 3)
-
-    def getXPosition(self, d: Datapoint) -> int:
-        span = self.fstop - self.fstart
-        return self.leftMargin + 1 + round(self.chartWidth * (d.freq - self.fstart) / span)
+        self.drawData(qp, self.data, self.sweepColor)
+        self.drawData(qp, self.reference, self.referenceColor)
+        self.drawMarkers(qp)
 
     def getYPosition(self, d: Datapoint) -> int:
         from NanoVNASaver.NanoVNASaver import NanoVNASaver
         Q = NanoVNASaver.qualifyFactor(d)
         return 30 + round((self.maxQ - Q) / self.span * (self.chartHeight - 10))
-
-    @staticmethod
-    def angle(d: Datapoint) -> float:
-        re = d.re
-        im = d.im
-        return -math.degrees(math.atan2(im, re))
 
 
 class TDRChart(Chart):
@@ -1419,12 +1272,6 @@ class RealImaginaryChart(FrequencyChart):
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
-    def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
-        qp = QtGui.QPainter(self)
-        self.drawChart(qp)
-        self.drawValues(qp)
-        qp.end()
-
     def drawChart(self, qp: QtGui.QPainter):
         qp.setPen(QtGui.QPen(self.textColor))
         qp.drawText(self.leftMargin + 5, 15, self.name + " (\N{OHM SIGN})")
@@ -1539,7 +1386,6 @@ class RealImaginaryChart(FrequencyChart):
         # We want one horizontal tick per 50 pixels, at most
         horizontal_ticks = math.floor(self.chartHeight/50)
 
-        # TODO: Find a way to always have a line at X=0
         for i in range(horizontal_ticks):
             y = 30 + round(i * (self.chartHeight-10) / horizontal_ticks)
             qp.setPen(QtGui.QPen(self.foregroundColor))
@@ -1659,10 +1505,6 @@ class RealImaginaryChart(FrequencyChart):
                 qp.drawLine(int(x), int(y_im) + 3, int(x) - 3, int(y_im) - 3)
                 qp.drawLine(int(x), int(y_im) + 3, int(x) + 3, int(y_im) - 3)
                 qp.drawLine(int(x) - 3, int(y_im) - 3, int(x) + 3, int(y_im) - 3)
-
-    def getXPosition(self, d: Datapoint) -> int:
-        span = self.fstop - self.fstart
-        return self.leftMargin + 1 + round(self.chartWidth * (d.freq - self.fstart) / span)
 
     def getImYPosition(self, d: Datapoint) -> int:
         from NanoVNASaver.NanoVNASaver import NanoVNASaver
