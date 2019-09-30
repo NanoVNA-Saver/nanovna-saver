@@ -179,6 +179,28 @@ class CalibrationWindow(QtWidgets.QWidget):
         cal_standard_layout.addWidget(self.cal_open_box)
         cal_standard_layout.addWidget(self.cal_load_box)
         cal_standard_layout.addWidget(self.cal_through_box)
+
+        self.cal_standard_save_box = QtWidgets.QGroupBox("Saved settings")
+        cal_standard_save_layout = QtWidgets.QVBoxLayout(self.cal_standard_save_box)
+        self.cal_standard_save_box.setDisabled(True)
+
+        self.cal_standard_save_selector = QtWidgets.QComboBox()
+        self.listCalibrationStandards()
+        cal_standard_save_layout.addWidget(self.cal_standard_save_selector)
+        cal_standard_save_button_layout = QtWidgets.QHBoxLayout()
+        btn_save_standard = QtWidgets.QPushButton("Save")
+        btn_save_standard.clicked.connect(self.saveCalibrationStandard)
+        btn_load_standard = QtWidgets.QPushButton("Load")
+        btn_load_standard.clicked.connect(self.loadCalibrationStandard)
+        btn_delete_standard = QtWidgets.QPushButton("Delete")
+        btn_delete_standard.clicked.connect(self.deleteCalibrationStandard)
+        btn_delete_standard.setDisabled(True)
+        cal_standard_save_button_layout.addWidget(btn_load_standard)
+        cal_standard_save_button_layout.addWidget(btn_save_standard)
+        cal_standard_save_button_layout.addWidget(btn_delete_standard)
+        cal_standard_save_layout.addLayout(cal_standard_save_button_layout)
+
+        cal_standard_layout.addWidget(self.cal_standard_save_box)
         right_layout.addWidget(cal_standard_box)
 
     def saveShort(self):
@@ -200,6 +222,132 @@ class CalibrationWindow(QtWidgets.QWidget):
     def saveThrough(self):
         self.app.calibration.s21through = self.app.data21
         self.cal_through_label.setText("Calibrated (" + str(len(self.app.calibration.s21through)) + " points)")
+
+    def listCalibrationStandards(self):
+        self.cal_standard_save_selector.clear()
+        num_standards = self.app.settings.beginReadArray("CalibrationStandards")
+        for i in range(num_standards):
+            self.app.settings.setArrayIndex(i)
+            name = self.app.settings.value("Name", defaultValue="INVALID NAME")
+            self.cal_standard_save_selector.addItem(name, userData=i)
+        self.app.settings.endArray()
+        self.cal_standard_save_selector.addItem("New", userData=-1)
+        self.cal_standard_save_selector.setCurrentText("New")
+
+    def saveCalibrationStandard(self):
+        if self.cal_standard_save_selector.currentData() == -1:
+            # New cal standard
+            # Get a name
+            name, selected = QtWidgets.QInputDialog.getText(self, "Calibration standard name", "Enter name to save as")
+            if not selected or not name:
+                return
+        num_standards = self.app.settings.beginReadArray("CalibrationStandards")
+        logger.debug("Number of standards known: %d", num_standards)
+        self.app.settings.endArray()
+
+        if self.cal_standard_save_selector.currentData() == -1:
+            write_num = num_standards
+            num_standards += 1
+        else:
+            write_num = self.cal_standard_save_selector.currentData()
+            name = self.cal_standard_save_selector.currentText()
+
+        self.app.settings.beginWriteArray("CalibrationStandards", num_standards)
+        self.app.settings.setArrayIndex(write_num)
+        self.app.settings.setValue("Name", name)
+
+        self.app.settings.setValue("ShortL0", self.short_l0_input.text())
+        self.app.settings.setValue("ShortL1", self.short_l1_input.text())
+        self.app.settings.setValue("ShortL2", self.short_l2_input.text())
+        self.app.settings.setValue("ShortL3", self.short_l3_input.text())
+        self.app.settings.setValue("ShortDelay", self.short_length.text())
+
+        self.app.settings.setValue("OpenC0", self.open_c0_input.text())
+        self.app.settings.setValue("OpenC1", self.open_c1_input.text())
+        self.app.settings.setValue("OpenC2", self.open_c2_input.text())
+        self.app.settings.setValue("OpenC3", self.open_c3_input.text())
+        self.app.settings.setValue("OpenDelay", self.open_length.text())
+
+        self.app.settings.setValue("LoadR", self.load_resistance.text())
+        self.app.settings.setValue("LoadL", self.load_inductance.text())
+        self.app.settings.setValue("LoadC", self.load_capacitance.text())
+        self.app.settings.setValue("LoadDelay", self.load_length.text())
+
+        self.app.settings.setValue("ThroughDelay", self.through_length.text())
+
+        self.app.settings.endArray()
+        self.app.settings.sync()
+        self.listCalibrationStandards()
+        self.cal_standard_save_selector.setCurrentText(name)
+
+    def loadCalibrationStandard(self):
+        if self.cal_standard_save_selector.currentData() == -1:
+            return
+        read_num = self.cal_standard_save_selector.currentData()
+        logger.debug("Loading calibration no %d", read_num)
+        self.app.settings.beginReadArray("CalibrationStandards")
+        self.app.settings.setArrayIndex(read_num)
+
+        name = self.app.settings.value("Name")
+        logger.info("Loading: %s", name)
+
+        self.short_l0_input.setText(str(self.app.settings.value("ShortL0", 0)))
+        self.short_l1_input.setText(str(self.app.settings.value("ShortL1", 0)))
+        self.short_l2_input.setText(str(self.app.settings.value("ShortL2", 0)))
+        self.short_l3_input.setText(str(self.app.settings.value("ShortL3", 0)))
+        self.short_length.setText(str(self.app.settings.value("ShortDelay", 0)))
+
+        self.open_c0_input.setText(str(self.app.settings.value("OpenC0", 50)))
+        self.open_c1_input.setText(str(self.app.settings.value("OpenC1", 0)))
+        self.open_c2_input.setText(str(self.app.settings.value("OpenC2", 0)))
+        self.open_c3_input.setText(str(self.app.settings.value("OpenC3", 0)))
+        self.open_length.setText(str(self.app.settings.value("OpenDelay", 0)))
+
+        self.load_resistance.setText(str(self.app.settings.value("LoadR", 50)))
+        self.load_inductance.setText(str(self.app.settings.value("LoadL", 0)))
+        self.load_capacitance.setText(str(self.app.settings.value("LoadC", 0)))
+        self.load_length.setText(str(self.app.settings.value("LoadDelay", 0)))
+
+        self.through_length.setText(str(self.app.settings.value("ThroughDelay", 0)))
+        
+        self.app.settings.endArray()
+        
+    def deleteCalibrationStandard(self):
+        # TODO: This does not currently work. We need to re-write all the settings in the array so they get renumbered.
+        if self.cal_standard_save_selector.currentData() == -1:
+            return
+        write_num = self.cal_standard_save_selector.currentData()
+        logger.debug("Deleting calibration no %d", write_num)
+        num_standards = self.app.settings.beginReadArray("CalibrationStandards")
+        logger.debug("Number of standards known: %d", num_standards)
+        self.app.settings.endArray()
+    
+        self.app.settings.beginWriteArray("CalibrationStandards", num_standards-1)
+        self.app.settings.setArrayIndex(write_num)
+        self.app.settings.remove("Name")
+    
+        self.app.settings.remove("ShortL0")
+        self.app.settings.remove("ShortL1")
+        self.app.settings.remove("ShortL2")
+        self.app.settings.remove("ShortL3")
+        self.app.settings.remove("ShortDelay")
+    
+        self.app.settings.remove("OpenC0")
+        self.app.settings.remove("OpenC1")
+        self.app.settings.remove("OpenC2")
+        self.app.settings.remove("OpenC3")
+        self.app.settings.remove("OpenDelay")
+    
+        self.app.settings.remove("LoadR")
+        self.app.settings.remove("LoadL")
+        self.app.settings.remove("LoadC")
+        self.app.settings.remove("LoadDelay")
+    
+        self.app.settings.remove("ThroughDelay")
+    
+        self.app.settings.endArray()
+        self.app.settings.sync()
+        self.listCalibrationStandards()
 
     def reset(self):
         self.app.calibration = Calibration()
@@ -280,6 +428,7 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.cal_open_box.setDisabled(self.use_ideal_values.isChecked())
         self.cal_load_box.setDisabled(self.use_ideal_values.isChecked())
         self.cal_through_box.setDisabled(self.use_ideal_values.isChecked())
+        self.cal_standard_save_box.setDisabled(self.use_ideal_values.isChecked())
 
     def automaticCalibration(self):
         self.btn_automatic.setDisabled(True)
