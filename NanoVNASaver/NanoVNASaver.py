@@ -742,7 +742,11 @@ class NanoVNASaver(QtWidgets.QWidget):
 
             if minVSWRfreq > -1:
                 self.s11_min_swr_label.setText(str(round(minVSWR, 3)) + " @ " + self.formatFrequency(minVSWRfreq))
-                self.s11_min_rl_label.setText(str(round(20*math.log10((minVSWR-1)/(minVSWR+1)), 3)) + " dB")
+                if minVSWR > 1:
+                    self.s11_min_rl_label.setText(str(round(20*math.log10((minVSWR-1)/(minVSWR+1)), 3)) + " dB")
+                else:
+                    # Infinite return loss?
+                    self.s11_min_rl_label.setText("\N{INFINITY} dB")
             else:
                 self.s11_min_swr_label.setText("")
                 self.s11_min_rl_label.setText("")
@@ -774,9 +778,11 @@ class NanoVNASaver(QtWidgets.QWidget):
     @staticmethod
     def vswr(data: Datapoint):
         re50, im50 = NanoVNASaver.normalize50(data)
-        mag = math.sqrt((re50 - 50) * (re50 - 50) + im50 * im50) / math.sqrt((re50 + 50) * (re50 + 50) + im50 * im50)
-        # mag = math.sqrt(re * re + im * im)  # Is this even right?
-        vswr = (1 + mag) / (1 - mag)
+        try:
+            mag = math.sqrt((re50 - 50) * (re50 - 50) + im50 * im50) / math.sqrt((re50 + 50) * (re50 + 50) + im50 * im50)
+            vswr = (1 + mag) / (1 - mag)
+        except ZeroDivisionError as e:
+            vswr = 1
         return im50, re50, vswr
 
     @staticmethod
@@ -822,7 +828,10 @@ class NanoVNASaver(QtWidgets.QWidget):
         # Calculate the gain / reflection coefficient
         mag = math.sqrt((re50 - 50) * (re50 - 50) + im50 * im50) / math.sqrt(
             (re50 + 50) * (re50 + 50) + im50 * im50)
-        return 20 * math.log10(mag)
+        if mag > 0:
+            return 20 * math.log10(mag)
+        else:
+            return 0
 
     @staticmethod
     def normalize50(data):

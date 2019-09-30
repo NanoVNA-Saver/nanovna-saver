@@ -53,7 +53,7 @@ class Touchstone:
                     logger.info(line)
                     continue
                 if line.startswith("#") and not parsed_header:
-                    pattern = "^# (.?HZ) S RI R 50$"
+                    pattern = "^# (.?HZ) (S )?RI( R 50)?$"
                     match = re.match(pattern, line.upper())
                     if match:
                         logger.debug("Found header for RealImaginary and %s", match.group(1))
@@ -72,7 +72,7 @@ class Touchstone:
                             factor = 10**9  # Default Touchstone frequency unit is GHz
                         continue
 
-                    pattern = "^# (.?HZ) S MA R 50$"
+                    pattern = "^# (.?HZ) (S )?MA( R 50)?$"
                     match = re.match(pattern, line.upper())
                     if match:
                         logger.debug("Found header for MagnitudeAngle and %s", match.group(1))

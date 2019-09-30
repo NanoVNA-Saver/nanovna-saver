@@ -410,8 +410,8 @@ class FrequencyChart(Chart):
                     qp.drawLine(int(x) - 3, int(y) - 3, int(x) + 3, int(y) - 3)
 
     def isPlotable(self, x, y):
-        return self.leftMargin < x <= self.leftMargin + self.chartWidth and \
-               self.topMargin < y <= self.topMargin + self.chartHeight
+        return self.leftMargin <= x <= self.leftMargin + self.chartWidth and \
+               self.topMargin <= y <= self.topMargin + self.chartHeight
 
     def getPlotable(self, x, y, distantx, distanty):
         p1 = np.array([x, y])

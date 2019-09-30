@@ -190,7 +190,8 @@ class Marker(QtCore.QObject):
             self.impedance_label.setText(str(re50) + im50str)
             self.parallel_r_label.setText(str(rp) + " \N{OHM SIGN}")
             self.parallel_x_label.setText(xpstr)
-            self.returnloss_label.setText(str(round(20 * math.log10((vswr - 1) / (vswr + 1)), 3)) + " dB")
+            #self.returnloss_label.setText(str(round(20 * math.log10((vswr - 1) / (vswr + 1)), 3)) + " dB")
+            self.returnloss_label.setText(str(round(NanoVNASaver.gain(s11data[self.location]), 3)) + " dB")
             capacitance = NanoVNASaver.capacitanceEquivalent(im50, s11data[self.location].freq)
             inductance = NanoVNASaver.inductanceEquivalent(im50, s11data[self.location].freq)
             self.inductance_label.setText(inductance)
@@ -204,6 +205,6 @@ class Marker(QtCore.QObject):
                 str(round(PhaseChart.angle(s11data[self.location]), 2)) + "\N{DEGREE SIGN}")
             if len(s21data) == len(s11data):
                 _, _, vswr = NanoVNASaver.vswr(s21data[self.location])
-                self.gain_label.setText(str(round(20 * math.log10((vswr - 1) / (vswr + 1)), 3)) + " dB")
+                self.gain_label.setText(str(round(NanoVNASaver.gain(s21data[self.location]), 3)) + " dB")
                 self.s21_phase_label.setText(
                     str(round(PhaseChart.angle(s21data[self.location]), 2)) + "\N{DEGREE SIGN}")
