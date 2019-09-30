@@ -38,7 +38,7 @@ class CalibrationWindow(QtWidgets.QWidget):
 
         self.app: NanoVNASaver = app
 
-        self.setMinimumSize(600, 320)
+        self.setMinimumSize(450, 600)
         self.setWindowTitle("Calibration")
 
         shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
@@ -56,18 +56,6 @@ class CalibrationWindow(QtWidgets.QWidget):
         calibration_status_layout.addRow("Calibration active:", self.calibration_status_label)
         calibration_status_group.setLayout(calibration_status_layout)
         left_layout.addWidget(calibration_status_group)
-
-        calibration_instructions_group = QtWidgets.QGroupBox("Instructions")
-        calibration_instructions_layout = QtWidgets.QVBoxLayout(calibration_instructions_group)
-        calibration_instructions_layout.addWidget(QtWidgets.QLabel("Instructions for use"))
-        instructions = QtWidgets.QLabel("For each calibration standard, first sweep in the main application window, " +
-                                        "then press the relevant button in this window. Short, open and load are " +
-                                        "sufficient for 1-port calibration.  Sweep all standards with the same sweep " +
-                                        "count.")
-        instructions.setWordWrap(True)
-        calibration_instructions_layout.addWidget(instructions)
-
-        left_layout.addWidget(calibration_instructions_group)
 
         calibration_control_group = QtWidgets.QGroupBox("Calibrate")
         calibration_control_layout = QtWidgets.QFormLayout(calibration_control_group)
@@ -115,15 +103,20 @@ class CalibrationWindow(QtWidgets.QWidget):
 
         left_layout.addWidget(calibration_control_group)
 
-        file_box = QtWidgets.QGroupBox()
+        calibration_notes_group = QtWidgets.QGroupBox("Notes")
+        calibration_notes_layout = QtWidgets.QVBoxLayout(calibration_notes_group)
+        self.notes_textedit = QtWidgets.QPlainTextEdit()
+        calibration_notes_layout.addWidget(self.notes_textedit)
+
+        left_layout.addWidget(calibration_notes_group)
+
+        file_box = QtWidgets.QGroupBox("Files")
         file_layout = QtWidgets.QFormLayout(file_box)
-        filename_input = QtWidgets.QLineEdit(self.app.settings.value("CalibrationFile", ""))
-        file_layout.addRow("Filename", filename_input)
         btn_save_file = QtWidgets.QPushButton("Save calibration")
-        btn_save_file.clicked.connect(lambda: self.saveCalibration(filename_input.text()))
+        btn_save_file.clicked.connect(lambda: self.saveCalibration())
         file_layout.addRow(btn_save_file)
         btn_load_file = QtWidgets.QPushButton("Load calibration")
-        btn_load_file.clicked.connect(lambda: self.loadFile(filename_input.text()))
+        btn_load_file.clicked.connect(lambda: self.loadCalibration())
         file_layout.addRow(btn_load_file)
 
         left_layout.addWidget(file_box)
@@ -168,12 +161,24 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.cal_load_box.setDisabled(True)
         self.load_resistance = QtWidgets.QLineEdit("50")
         self.load_inductance = QtWidgets.QLineEdit("0")
+        self.load_capacitance = QtWidgets.QLineEdit("0")
+        self.load_capacitance.setDisabled(True)  # Not yet implemented
+        self.load_length = QtWidgets.QLineEdit("0")
         cal_load_form.addRow("Resistance (\N{OHM SIGN})", self.load_resistance)
-        cal_load_form.addRow("Inductance (H(e-12)", self.load_inductance)
+        cal_load_form.addRow("Inductance (H(e-12))", self.load_inductance)
+        cal_load_form.addRow("Capacitance (F(e-12))", self.load_capacitance)
+        cal_load_form.addRow("Delay (ps)", self.load_length)
 
+        self.cal_through_box = QtWidgets.QGroupBox("Through")
+        cal_through_form = QtWidgets.QFormLayout(self.cal_through_box)
+        self.cal_through_box.setDisabled(True)
+        self.through_length = QtWidgets.QLineEdit("0")
+        cal_through_form.addRow("Delay (ps)", self.through_length)
+        
         cal_standard_layout.addWidget(self.cal_short_box)
         cal_standard_layout.addWidget(self.cal_open_box)
         cal_standard_layout.addWidget(self.cal_load_box)
+        cal_standard_layout.addWidget(self.cal_through_box)
         right_layout.addWidget(cal_standard_box)
 
     def saveShort(self):
@@ -204,6 +209,7 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.cal_through_label.setText("Uncalibrated")
         self.cal_isolation_label.setText("Uncalibrated")
         self.calibration_status_label.setText("Device calibration")
+        self.notes_textedit.clear()
 
     def calculate(self):
         # TODO: Error handling for all the fields.
@@ -229,31 +235,51 @@ class CalibrationWindow(QtWidgets.QWidget):
 
             self.app.calibration.loadR = float(self.load_resistance.text())
             self.app.calibration.loadL = float(self.load_inductance.text())/10**12
+            self.app.calibration.loadC = float(self.load_capacitance.text()) / 10 ** 12
+            self.app.calibration.loadLength = float(self.load_length.text())/10**12
             self.app.calibration.useIdealLoad = False
+
+            self.app.calibration.throughLength = float(self.through_length.text())/10**12
+            self.app.calibration.useIdealThrough = False
 
         if self.app.calibration.calculateCorrections():
             self.calibration_status_label.setText("Application calibration (" + str(len(self.app.calibration.s11short)) + " points)")
 
-    def loadFile(self, filename):
-        self.app.calibration.loadCalibration(filename)
-        if self.app.calibration.isValid1Port():
-            self.cal_short_label.setText("Loaded (" + str(len(self.app.calibration.s11short)) + ")")
-            self.cal_open_label.setText("Loaded (" + str(len(self.app.calibration.s11open)) + ")")
-            self.cal_load_label.setText("Loaded (" + str(len(self.app.calibration.s11load)) + ")")
-            if self.app.calibration.isValid2Port():
-                self.cal_through_label.setText("Loaded (" + str(len(self.app.calibration.s21through)) + ")")
-                self.cal_isolation_label.setText("Loaded (" + str(len(self.app.calibration.s21isolation)) + ")")
-            self.calculate()
-            self.app.settings.setValue("CalibrationFile", filename)
+    def loadCalibration(self):
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(filter="Calibration Files (*.cal);;All files (*.*)")
+        if filename:
+            self.app.calibration.loadCalibration(filename)
+            if self.app.calibration.isValid1Port():
+                self.cal_short_label.setText("Loaded (" + str(len(self.app.calibration.s11short)) + ")")
+                self.cal_open_label.setText("Loaded (" + str(len(self.app.calibration.s11open)) + ")")
+                self.cal_load_label.setText("Loaded (" + str(len(self.app.calibration.s11load)) + ")")
+                if self.app.calibration.isValid2Port():
+                    self.cal_through_label.setText("Loaded (" + str(len(self.app.calibration.s21through)) + ")")
+                    self.cal_isolation_label.setText("Loaded (" + str(len(self.app.calibration.s21isolation)) + ")")
+                self.calculate()
+                self.notes_textedit.clear()
+                for note in self.app.calibration.notes:
+                    self.notes_textedit.appendPlainText(note)
+                self.app.settings.setValue("CalibrationFile", filename)
 
-    def saveCalibration(self, filename):
-        if self.app.calibration.saveCalibration(filename):
+    def saveCalibration(self):
+        if not self.app.calibration.isCalculated:
+            logger.debug("Attempted to save an uncalculated calibration.")
+            self.app.showError("Cannot save an unapplied calibration state.")
+            return
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(filter="Calibration Files (*.cal);;All files (*.*)")
+        self.app.calibration.notes = self.notes_textedit.toPlainText().splitlines()
+        if filename and self.app.calibration.saveCalibration(filename):
             self.app.settings.setValue("CalibrationFile", filename)
+        else:
+            logger.error("Calibration save failed!")
+            self.app.showError("Calibration save failed.")
 
     def idealCheckboxChanged(self):
         self.cal_short_box.setDisabled(self.use_ideal_values.isChecked())
         self.cal_open_box.setDisabled(self.use_ideal_values.isChecked())
         self.cal_load_box.setDisabled(self.use_ideal_values.isChecked())
+        self.cal_through_box.setDisabled(self.use_ideal_values.isChecked())
 
     def automaticCalibration(self):
         self.btn_automatic.setDisabled(True)
@@ -433,6 +459,7 @@ class CalibrationWindow(QtWidgets.QWidget):
 
 
 class Calibration:
+    notes = []
     s11short: List[Datapoint] = []
     s11open: List[Datapoint] = []
     s11load: List[Datapoint] = []
@@ -470,7 +497,12 @@ class Calibration:
     useIdealLoad = True
     loadR = 25
     loadL = 0
+    loadC = 0
+    loadLength = 0
     loadIdeal = np.complex(0, 0)
+
+    useIdealThrough = True
+    throughLength = 0
 
     isCalculated = False
 
@@ -522,6 +554,7 @@ class Calibration:
             else:
                 Zl = self.loadR + 2 * math.pi * f * self.loadL
                 g3 = ((Zl/50)-1) / ((Zl/50)+1)
+                g3 = g3 * np.exp(np.complex(0, 1) * 2 * 2 * math.pi * f * self.loadLength * -1)
 
             gm1 = np.complex(self.s11short[i].re, self.s11short[i].im)
             gm2 = np.complex(self.s11open[i].re, self.s11open[i].im)
@@ -540,6 +573,9 @@ class Calibration:
             if self.isValid2Port():
                 self.e30[i] = np.complex(self.s21isolation[i].re, self.s21isolation[i].im)
                 s21m = np.complex(self.s21through[i].re, self.s21through[i].im)
+                if not self.useIdealThrough:
+                    gammaThrough = math.exp(np.complex(0, 1) * 2 * 2 * math.pi * self.throughLength * f * -1)
+                    s21m = s21m / gammaThrough
                 self.e10e32[i] = (s21m - self.e30[i]) * (1 - (self.e11[i]*self.e11[i]))
 
         self.isCalculated = True
@@ -576,6 +612,8 @@ class Calibration:
         try:
             file = open(filename, "w+")
             file.write("# Calibration data for NanoVNA-Saver\n")
+            for note in self.notes:
+                file.write("! " + note + "\n")
             file.write("# Hz ShortR ShortI OpenR OpenI LoadR LoadI ThroughR ThroughI IsolationR IsolationI\n")
             for i in range(len(self.s11short)):
                 freq = str(self.s11short[i].freq)
@@ -605,19 +643,23 @@ class Calibration:
             return
 
         self.s11short = []
-        self.s11open  = []
-        self.s11load  = []
+        self.s11open = []
+        self.s11load = []
 
-        self.s21through   = []
+        self.s21through = []
         self.s21isolation = []
+        self.notes = []
 
         try:
             file = open(filename, "r")
             lines = file.readlines()
             parsed_header = False
+
             for l in lines:
                 l = l.strip()
                 if l.startswith("!"):
+                    note = l[2:]
+                    self.notes.append(note)
                     continue
                 if l.startswith("#") and not parsed_header:
                     # Check that this is a valid header
