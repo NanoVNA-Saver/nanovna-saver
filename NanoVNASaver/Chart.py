@@ -260,10 +260,18 @@ class FrequencyChart(Chart):
 
     def setFixedSpan(self, fixed_span: bool):
         self.fixedSpan = fixed_span
+        if fixed_span and self.minFrequency >= self.maxFrequency:
+            self.fixedSpan = False
+            self.action_automatic.setChecked(True)
+            self.action_fixed_span.setChecked(False)
         self.update()
 
     def setFixedValues(self, fixed_values: bool):
         self.fixedValues = fixed_values
+        if fixed_values and self.minDisplayValue >= self.maxDisplayValue:
+            self.fixedValues = False
+            self.y_action_automatic.setChecked(True)
+            self.y_action_fixed_span.setChecked(False)
         self.update()
 
     def setMinimumFrequency(self):
@@ -273,7 +281,7 @@ class FrequencyChart(Chart):
         if not selected:
             return
         min_freq = NanoVNASaver.parseFrequency(min_freq_str)
-        if min_freq > 0:
+        if min_freq > 0 and not (self.fixedSpan and min_freq >= self.maxFrequency):
             self.minFrequency = min_freq
         if self.fixedSpan:
             self.update()
@@ -285,7 +293,7 @@ class FrequencyChart(Chart):
         if not selected:
             return
         max_freq = NanoVNASaver.parseFrequency(max_freq_str)
-        if max_freq > 0:
+        if max_freq > 0 and not (self.fixedSpan and max_freq <= self.minFrequency):
             self.maxFrequency = max_freq
         if self.fixedSpan:
             self.update()
@@ -295,7 +303,8 @@ class FrequencyChart(Chart):
                                                           "Set minimum value", value=self.minDisplayValue)
         if not selected:
             return
-        self.minDisplayValue = min_val
+        if not (self.fixedValues and min_val >= self.maxDisplayValue):
+            self.minDisplayValue = min_val
         if self.fixedValues:
             self.update()
 
@@ -304,7 +313,8 @@ class FrequencyChart(Chart):
                                                           "Set maximum value", value=self.maxDisplayValue)
         if not selected:
             return
-        self.maxDisplayValue = max_val
+        if not (self.fixedValues and max_val <= self.minDisplayValue):
+            self.maxDisplayValue = max_val
         if self.fixedValues:
             self.update()
 
@@ -350,8 +360,9 @@ class FrequencyChart(Chart):
         qp = QtGui.QPainter(self)
         self.drawChart(qp)
         self.drawValues(qp)
-        if len(self.data) > 0 and (self.data[0].freq < self.fstart or self.data[len(self.data)-1].freq > self.fstop) \
-                and (len(self.reference) == 0 or self.reference[0].freq < self.fstart or self.reference[len(self.reference)-1].freq > self.fstop):
+        if len(self.data) > 0\
+                and (self.data[0].freq > self.fstop or self.data[len(self.data)-1].freq < self.fstart) \
+                and (len(self.reference) == 0 or self.reference[0].freq > self.fstop or self.reference[len(self.reference)-1].freq < self.fstart):
             # Data outside frequency range
             qp.setBackgroundMode(QtCore.Qt.OpaqueMode)
             qp.setBackground(self.backgroundColor)
@@ -1598,7 +1609,8 @@ class RealImaginaryChart(FrequencyChart):
                                                           "Set minimum real value", value=self.minDisplayReal)
         if not selected:
             return
-        self.minDisplayReal = min_val
+        if not (self.fixedValues and min_val >= self.maxDisplayReal):
+            self.minDisplayReal = min_val
         if self.fixedValues:
             self.update()
 
@@ -1607,7 +1619,8 @@ class RealImaginaryChart(FrequencyChart):
                                                           "Set maximum real value", value=self.maxDisplayReal)
         if not selected:
             return
-        self.maxDisplayReal = max_val
+        if not (self.fixedValues and max_val <= self.minDisplayReal):
+            self.maxDisplayReal = max_val
         if self.fixedValues:
             self.update()
 
@@ -1616,7 +1629,8 @@ class RealImaginaryChart(FrequencyChart):
                                                           "Set minimum imaginary value", value=self.minDisplayImag)
         if not selected:
             return
-        self.minDisplayImag = min_val
+        if not (self.fixedValues and min_val >= self.maxDisplayImag):
+            self.minDisplayImag = min_val
         if self.fixedValues:
             self.update()
 
@@ -1625,9 +1639,18 @@ class RealImaginaryChart(FrequencyChart):
                                                           "Set maximum imaginary value", value=self.maxDisplayImag)
         if not selected:
             return
-        self.maxDisplayImag = max_val
+        if not (self.fixedValues and max_val <= self.minDisplayImag):
+            self.maxDisplayImag = max_val
         if self.fixedValues:
             self.update()
+
+    def setFixedValues(self, fixed_values: bool):
+        self.fixedValues = fixed_values
+        if fixed_values and (self.minDisplayReal >= self.maxDisplayReal or self.minDisplayImag > self.maxDisplayImag):
+            self.fixedValues = False
+            self.y_action_automatic.setChecked(True)
+            self.y_action_fixed_span.setChecked(False)
+        self.update()
 
     def contextMenuEvent(self, event):
         self.action_set_fixed_start.setText("Start (" + Chart.shortenFrequency(self.minFrequency) + ")")
