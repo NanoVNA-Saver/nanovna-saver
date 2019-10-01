@@ -413,7 +413,9 @@ class CalibrationWindow(QtWidgets.QWidget):
             logger.debug("Attempted to save an uncalculated calibration.")
             self.app.showError("Cannot save an unapplied calibration state.")
             return
-        filename, _ = QtWidgets.QFileDialog.getSaveFileName(filter="Calibration Files (*.cal);;All files (*.*)")
+        filedialog = QtWidgets.QFileDialog(self)
+        filedialog.setDefaultSuffix("cal")
+        filename, _ = filedialog.getSaveFileName(filter="Calibration Files (*.cal);;All files (*.*)")
         self.app.calibration.notes = self.notes_textedit.toPlainText().splitlines()
         if filename and self.app.calibration.saveCalibration(filename):
             self.app.settings.setValue("CalibrationFile", filename)
