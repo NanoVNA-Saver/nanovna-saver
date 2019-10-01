@@ -360,15 +360,15 @@ class FrequencyChart(Chart):
                 # The band is entirely within the chart
                 x_start = self.getXPosition(Datapoint(start, 0, 0))
                 x_end = self.getXPosition(Datapoint(end, 0, 0))
-                qp.drawRect(x_start, 30, x_end - x_start, self.chartHeight - 10)
+                qp.drawRect(x_start, self.topMargin, x_end - x_start, self.chartHeight)
             elif fstart < start < fstop:
                 # Only the start of the band is within the chart
                 x_start = self.getXPosition(Datapoint(start, 0, 0))
-                qp.drawRect(x_start, 30, self.leftMargin + self.chartWidth - x_start, self.chartHeight - 10)
+                qp.drawRect(x_start, self.topMargin, self.leftMargin + self.chartWidth - x_start, self.chartHeight)
             elif fstart < end < fstop:
                 # Only the end of the band is within the chart
                 x_end = self.getXPosition(Datapoint(end, 0, 0))
-                qp.drawRect(self.leftMargin + 1, 30, x_end - (self.leftMargin + 1), self.chartHeight - 10)
+                qp.drawRect(self.leftMargin + 1, self.topMargin, x_end - (self.leftMargin + 1), self.chartHeight)
             elif start < fstart < fstop < end:
                 # All the chart is in a band, we won't show it(?)
                 pass
@@ -417,9 +417,11 @@ class FrequencyChart(Chart):
         p1 = np.array([x, y])
         p2 = np.array([distantx, distanty])
         # First check the top line
-        p3 = np.array([self.leftMargin, self.topMargin])
-        p4 = np.array([self.leftMargin + self.chartWidth, self.topMargin])
-
+        if distanty < self.topMargin:
+            p3 = np.array([self.leftMargin, self.topMargin])
+            p4 = np.array([self.leftMargin + self.chartWidth, self.topMargin])
+        else:
+            return x, y
         da = p2 - p1
         db = p4 - p3
         dp = p1 - p3
@@ -461,7 +463,7 @@ class PhaseChart(FrequencyChart):
         self.minDisplayValue = -180
         self.maxDisplayValue = 180
 
-        self.setMinimumSize(self.chartWidth + 20 + self.leftMargin, self.chartHeight + 40)
+        self.setMinimumSize(self.chartWidth + self.rightMargin + self.leftMargin, self.chartHeight + self.topMargin + self.lowerMargin)
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding))
         pal = QtGui.QPalette()
         pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
@@ -472,8 +474,8 @@ class PhaseChart(FrequencyChart):
         qp.setPen(QtGui.QPen(self.textColor))
         qp.drawText(3, 15, self.name)
         qp.setPen(QtGui.QPen(self.foregroundColor))
-        qp.drawLine(self.leftMargin, 20, self.leftMargin, 20+self.chartHeight+5)
-        qp.drawLine(self.leftMargin-5, 20+self.chartHeight, self.leftMargin+self.chartWidth, 20 + self.chartHeight)
+        qp.drawLine(self.leftMargin, 20, self.leftMargin, self.topMargin+self.chartHeight+5)
+        qp.drawLine(self.leftMargin-5, self.topMargin+self.chartHeight, self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)
         if self.fixedValues:
             minAngle = self.minDisplayValue
             maxAngle = self.maxDisplayValue
@@ -486,17 +488,16 @@ class PhaseChart(FrequencyChart):
         self.span = span
         step = math.floor(span/4)
         for i in range(minAngle, maxAngle, step):
-            y = 30 + round((maxAngle - i)/span*(self.chartHeight-10))
-            logger.debug("Plotting %d at y = %d", i, y)
+            y = self.topMargin + round((maxAngle - i)/span*self.chartHeight)
             if i != minAngle and i != maxAngle and (maxAngle - i) > step / 2:
                 qp.setPen(QtGui.QPen(self.textColor))
                 qp.drawText(3, y+3, str(i) + "°")
                 qp.setPen(QtGui.QPen(self.foregroundColor))
                 qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.chartWidth, y)
-        qp.drawLine(self.leftMargin - 5, 30, self.leftMargin + self.chartWidth, 30)
+        qp.drawLine(self.leftMargin - 5, self.topMargin, self.leftMargin + self.chartWidth, self.topMargin)
         qp.setPen(self.textColor)
         qp.drawText(3, 35, str(maxAngle) + "°")
-        qp.drawText(3, self.chartHeight+20, str(minAngle) + "°")
+        qp.drawText(3, self.chartHeight+self.topMargin, str(minAngle) + "°")
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
@@ -525,14 +526,14 @@ class PhaseChart(FrequencyChart):
             self.drawBands(qp, fstart, fstop)
 
         qp.setPen(self.textColor)
-        qp.drawText(self.leftMargin-20, 20 + self.chartHeight + 15, Chart.shortenFrequency(self.fstart))
+        qp.drawText(self.leftMargin-20, self.topMargin + self.chartHeight + 15, Chart.shortenFrequency(self.fstart))
         ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
         for i in range(ticks):
             x = self.leftMargin + round((i+1)*self.chartWidth/ticks)
             qp.setPen(QtGui.QPen(self.foregroundColor))
             qp.drawLine(x, 20, x, 20+self.chartHeight+5)
             qp.setPen(self.textColor)
-            qp.drawText(x-20, 20+self.chartHeight+15, Chart.shortenFrequency(round(fspan/ticks*(i+1) + self.fstart)))
+            qp.drawText(x-20, self.topMargin+self.chartHeight+15, Chart.shortenFrequency(round(fspan/ticks*(i+1) + self.fstart)))
 
         self.drawData(qp, self.data, self.sweepColor)
         self.drawData(qp, self.reference, self.referenceColor)
@@ -540,7 +541,7 @@ class PhaseChart(FrequencyChart):
 
     def getYPosition(self, d: Datapoint) -> int:
         angle = self.angle(d)
-        return 30 + round((self.maxAngle - angle) / self.span * (self.chartHeight - 10))
+        return 30 + round((self.maxAngle - angle) / self.span * self.chartHeight)
 
     @staticmethod
     def angle(d: Datapoint) -> float:
@@ -943,7 +944,7 @@ class LogMagChart(FrequencyChart):
         self.minDisplayValue = -80
         self.maxDisplayValue = 10
 
-        self.setMinimumSize(self.chartWidth + 20 + self.leftMargin, self.chartHeight + 40)
+        self.setMinimumSize(self.chartWidth + self.rightMargin + self.leftMargin, self.chartHeight + self.topMargin + self.lowerMargin)
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding))
         pal = QtGui.QPalette()
         pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
@@ -960,8 +961,8 @@ class LogMagChart(FrequencyChart):
         qp.setPen(QtGui.QPen(self.textColor))
         qp.drawText(3, 15, self.name + " (dB)")
         qp.setPen(QtGui.QPen(self.foregroundColor))
-        qp.drawLine(self.leftMargin, 20, self.leftMargin, 20+self.chartHeight+5)
-        qp.drawLine(self.leftMargin-5, 20+self.chartHeight, self.leftMargin+self.chartWidth, 20 + self.chartHeight)
+        qp.drawLine(self.leftMargin, 20, self.leftMargin, self.topMargin+self.chartHeight+5)
+        qp.drawLine(self.leftMargin-5, self.topMargin+self.chartHeight, self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
@@ -1022,7 +1023,7 @@ class LogMagChart(FrequencyChart):
         span = maxValue-minValue
         self.span = span
         for i in range(minValue, maxValue, 10):
-            y = 30 + round((i-minValue)/span*(self.chartHeight-10))
+            y = self.topMargin + round((i-minValue)/span*(self.chartHeight-10))
             qp.setPen(QtGui.QPen(self.foregroundColor))
             qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.chartWidth, y)
             if i > minValue:
@@ -1030,17 +1031,17 @@ class LogMagChart(FrequencyChart):
                 qp.drawText(3, y + 4, str(-i))
         qp.setPen(self.textColor)
         qp.drawText(3, 35, str(-minValue))
-        qp.drawText(3, self.chartHeight+20, str(-maxValue))
+        qp.drawText(3, self.chartHeight+self.topMargin, str(-maxValue))
 
         # Frequency ticks
-        qp.drawText(self.leftMargin-20, 20 + self.chartHeight + 15, Chart.shortenFrequency(self.fstart))
+        qp.drawText(self.leftMargin-20, self.topMargin + self.chartHeight + 15, Chart.shortenFrequency(self.fstart))
         ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
         for i in range(ticks):
             x = self.leftMargin + round((i+1)*self.chartWidth/ticks)
             qp.setPen(QtGui.QPen(self.foregroundColor))
-            qp.drawLine(x, 20, x, 20+self.chartHeight+5)
+            qp.drawLine(x, 20, x, self.topMargin+self.chartHeight+5)
             qp.setPen(self.textColor)
-            qp.drawText(x-20, 20+self.chartHeight+15, LogMagChart.shortenFrequency(round(fspan/ticks*(i+1) + self.fstart)))
+            qp.drawText(x-20, self.topMargin+self.chartHeight+15, LogMagChart.shortenFrequency(round(fspan/ticks*(i+1) + self.fstart)))
 
         self.drawData(qp, self.data, self.sweepColor)
         self.drawData(qp, self.reference, self.referenceColor)
@@ -1048,7 +1049,7 @@ class LogMagChart(FrequencyChart):
 
     def getYPosition(self, d: Datapoint) -> int:
         logMag = self.logMag(d)
-        return 30 + round((logMag - self.minValue) / self.span * (self.chartHeight - 10))
+        return self.topMargin + round((logMag - self.minValue) / self.span * self.chartHeight)
 
     @staticmethod
     def logMag(p: Datapoint) -> float:
