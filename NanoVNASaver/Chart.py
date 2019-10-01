@@ -1132,7 +1132,6 @@ class QualityFactorChart(FrequencyChart):
         qp.drawText(3, 35, str(self.maxQ))
 
     def drawValues(self, qp: QtGui.QPainter):
-        from NanoVNASaver.NanoVNASaver import NanoVNASaver
         if len(self.data) == 0 and len(self.reference) == 0:
             return
         if self.span == 0:

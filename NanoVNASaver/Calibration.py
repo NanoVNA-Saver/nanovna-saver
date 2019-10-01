@@ -802,33 +802,33 @@ class Calibration:
             lines = file.readlines()
             parsed_header = False
 
-            for l in lines:
-                l = l.strip()
-                if l.startswith("!"):
-                    note = l[2:]
+            for line in lines:
+                line = line.strip()
+                if line.startswith("!"):
+                    note = line[2:]
                     self.notes.append(note)
                     continue
-                if l.startswith("#") and not parsed_header:
+                if line.startswith("#") and not parsed_header:
                     # Check that this is a valid header
-                    if l == "# Hz ShortR ShortI OpenR OpenI LoadR LoadI ThroughR ThroughI IsolationR IsolationI":
+                    if line == "# Hz ShortR ShortI OpenR OpenI LoadR LoadI ThroughR ThroughI IsolationR IsolationI":
                         parsed_header = True
                         continue
                     else:
                         # This is some other comment line
                         continue
                 if not parsed_header:
-                    logger.warning("Warning: Read line without having read header: %s", l)
+                    logger.warning("Warning: Read line without having read header: %s", line)
                     continue
 
                 try:
-                    if l.count(" ") == 6:
-                        freq, shortr, shorti, openr, openi, loadr, loadi = l.split(" ")
+                    if line.count(" ") == 6:
+                        freq, shortr, shorti, openr, openi, loadr, loadi = line.split(" ")
                         self.s11short.append(Datapoint(int(freq), float(shortr), float(shorti)))
                         self.s11open.append(Datapoint(int(freq), float(openr), float(openi)))
                         self.s11load.append(Datapoint(int(freq), float(loadr), float(loadi)))
 
                     else:
-                        freq, shortr, shorti, openr, openi, loadr, loadi, throughr, throughi, isolationr, isolationi = l.split(" ")
+                        freq, shortr, shorti, openr, openi, loadr, loadi, throughr, throughi, isolationr, isolationi = line.split(" ")
                         self.s11short.append(Datapoint(int(freq), float(shortr), float(shorti)))
                         self.s11open.append(Datapoint(int(freq), float(openr), float(openi)))
                         self.s11load.append(Datapoint(int(freq), float(loadr), float(loadi)))
@@ -836,7 +836,7 @@ class Calibration:
                         self.s21isolation.append(Datapoint(int(freq), float(isolationr), float(isolationi)))
 
                 except ValueError as e:
-                    logger.exception("Error parsing calibration data \"%s\": %s", l, e)
+                    logger.exception("Error parsing calibration data \"%s\": %s", line, e)
             file.close()
         except Exception as e:
             logger.exception("Failed loading calibration data: %s", e)

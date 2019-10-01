@@ -595,13 +595,17 @@ class NanoVNASaver(QtWidgets.QWidget):
             logger.info(self.readFirmware())
 
             frequencies = self.readValues("frequencies")
-            logger.info("Read starting frequency %s and end frequency %s", frequencies[0], frequencies[100])
-            if int(frequencies[0]) == int(frequencies[100]) and (self.sweepStartInput.text() == "" or self.sweepEndInput.text() == ""):
-                self.sweepStartInput.setText(frequencies[0])
-                self.sweepEndInput.setText(str(int(frequencies[100]) + 100000))
-            elif self.sweepStartInput.text() == "" or self.sweepEndInput.text() == "":
-                self.sweepStartInput.setText(frequencies[0])
-                self.sweepEndInput.setText(frequencies[100])
+            if frequencies:
+                logger.info("Read starting frequency %s and end frequency %s", frequencies[0], frequencies[100])
+                if int(frequencies[0]) == int(frequencies[100]) and (self.sweepStartInput.text() == "" or self.sweepEndInput.text() == ""):
+                    self.sweepStartInput.setText(frequencies[0])
+                    self.sweepEndInput.setText(str(int(frequencies[100]) + 100000))
+                elif self.sweepStartInput.text() == "" or self.sweepEndInput.text() == "":
+                    self.sweepStartInput.setText(frequencies[0])
+                    self.sweepEndInput.setText(frequencies[100])
+            else:
+                logger.warning("No frequencies read")
+                return
 
             logger.debug("Starting initial sweep")
             self.sweep()
@@ -696,6 +700,8 @@ class NanoVNASaver(QtWidgets.QWidget):
                 values = result.split("\r\n")
             except serial.SerialException as exc:
                 logger.exception("Exception while reading %s: %s", value, exc)
+                self.serialLock.release()
+                return
 
             self.serialLock.release()
             return values[1:102]
