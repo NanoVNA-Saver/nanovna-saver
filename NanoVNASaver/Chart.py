@@ -1060,8 +1060,8 @@ class LogMagChart(FrequencyChart):
 
     @staticmethod
     def logMag(p: Datapoint) -> float:
-        from NanoVNASaver.NanoVNASaver import  NanoVNASaver
-        return NanoVNASaver.gain(p)
+        from NanoVNASaver.NanoVNASaver import NanoVNASaver
+        return -NanoVNASaver.gain(p)
 
 
 class QualityFactorChart(FrequencyChart):
