@@ -140,7 +140,7 @@ class CalibrationWindow(QtWidgets.QWidget):
         cal_short_form.addRow("L1 (F(e-24))", self.short_l1_input)
         cal_short_form.addRow("L2 (F(e-33))", self.short_l2_input)
         cal_short_form.addRow("L3 (F(e-42))", self.short_l3_input)
-        cal_short_form.addRow("Delay (ps)", self.short_length)
+        cal_short_form.addRow("Offset Delay (ps)", self.short_length)
 
         self.cal_open_box = QtWidgets.QGroupBox("Open")
         cal_open_form = QtWidgets.QFormLayout(self.cal_open_box)
@@ -154,7 +154,7 @@ class CalibrationWindow(QtWidgets.QWidget):
         cal_open_form.addRow("C1 (H(e-27))", self.open_c1_input)
         cal_open_form.addRow("C2 (H(e-36))", self.open_c2_input)
         cal_open_form.addRow("C3 (H(e-45))", self.open_c3_input)
-        cal_open_form.addRow("Delay (ps)", self.open_length)
+        cal_open_form.addRow("Offset Delay (ps)", self.open_length)
 
         self.cal_load_box = QtWidgets.QGroupBox("Load")
         cal_load_form = QtWidgets.QFormLayout(self.cal_load_box)
@@ -167,13 +167,13 @@ class CalibrationWindow(QtWidgets.QWidget):
         cal_load_form.addRow("Resistance (\N{OHM SIGN})", self.load_resistance)
         cal_load_form.addRow("Inductance (H(e-12))", self.load_inductance)
         cal_load_form.addRow("Capacitance (F(e-12))", self.load_capacitance)
-        cal_load_form.addRow("Delay (ps)", self.load_length)
+        cal_load_form.addRow("Offset Delay (ps)", self.load_length)
 
         self.cal_through_box = QtWidgets.QGroupBox("Through")
         cal_through_form = QtWidgets.QFormLayout(self.cal_through_box)
         self.cal_through_box.setDisabled(True)
         self.through_length = QtWidgets.QLineEdit("0")
-        cal_through_form.addRow("Delay (ps)", self.through_length)
+        cal_through_form.addRow("Offset Delay (ps)", self.through_length)
         
         cal_standard_layout.addWidget(self.cal_short_box)
         cal_standard_layout.addWidget(self.cal_open_box)
@@ -235,17 +235,15 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.cal_standard_save_selector.setCurrentText("New")
 
     def saveCalibrationStandard(self):
+        num_standards = self.app.settings.beginReadArray("CalibrationStandards")
+        self.app.settings.endArray()
+
         if self.cal_standard_save_selector.currentData() == -1:
             # New cal standard
             # Get a name
             name, selected = QtWidgets.QInputDialog.getText(self, "Calibration standard name", "Enter name to save as")
             if not selected or not name:
                 return
-        num_standards = self.app.settings.beginReadArray("CalibrationStandards")
-        logger.debug("Number of standards known: %d", num_standards)
-        self.app.settings.endArray()
-
-        if self.cal_standard_save_selector.currentData() == -1:
             write_num = num_standards
             num_standards += 1
         else:
