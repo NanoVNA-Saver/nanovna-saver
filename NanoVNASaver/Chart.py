@@ -1057,13 +1057,8 @@ class LogMagChart(FrequencyChart):
 
     @staticmethod
     def logMag(p: Datapoint) -> float:
-        re = p.re
-        im = p.im
-        re50 = 50 * (1 - re * re - im * im) / (1 + re * re + im * im - 2 * re)
-        im50 = 50 * (2 * im) / (1 + re * re + im * im - 2 * re)
-        # Calculate the reflection coefficient
-        mag = math.sqrt((re50 - 50) * (re50 - 50) + im50 * im50) / math.sqrt((re50 + 50) * (re50 + 50) + im50 * im50)
-        return -20 * math.log10(mag)
+        from NanoVNASaver.NanoVNASaver import  NanoVNASaver
+        return NanoVNASaver.gain(p)
 
 
 class QualityFactorChart(FrequencyChart):

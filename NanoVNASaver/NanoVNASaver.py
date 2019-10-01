@@ -795,10 +795,10 @@ class NanoVNASaver(QtWidgets.QWidget):
     def qualifyFactor(data: Datapoint):
         im50, re50, _ = NanoVNASaver.vswr(data)
         if re50 != 0:
-            Q = im50 / re50
+            Q = abs(im50 / re50)
         else:
-            Q = 0
-        return abs(Q)
+            Q = -1
+        return Q
 
     @staticmethod
     def capacitanceEquivalent(im50, freq) -> str:
@@ -818,7 +818,7 @@ class NanoVNASaver(QtWidgets.QWidget):
     def inductanceEquivalent(im50, freq) -> str:
         if freq == 0:
             return "- nH"
-        inductance = im50 * 1000000000/ (freq * 2 * math.pi)
+        inductance = im50 * 1000000000 / (freq * 2 * math.pi)
         if abs(inductance) > 10000:
             return str(round(inductance / 1000, 2)) + " μH"
         elif abs(inductance) > 1000:
