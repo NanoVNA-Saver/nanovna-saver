@@ -350,6 +350,14 @@ class FrequencyChart(Chart):
         qp = QtGui.QPainter(self)
         self.drawChart(qp)
         self.drawValues(qp)
+        if len(self.data) > 0 and (self.data[0].freq < self.fstart or self.data[len(self.data)-1].freq > self.fstop) \
+                and (len(self.reference) == 0 or self.reference[0].freq < self.fstart or self.reference[len(self.reference)-1].freq > self.fstop):
+            # Data outside frequency range
+            qp.setBackgroundMode(QtCore.Qt.OpaqueMode)
+            qp.setBackground(self.backgroundColor)
+            qp.setPen(self.textColor)
+            qp.drawText(self.leftMargin + self.chartWidth/2 - 70, self.topMargin + self.chartHeight/2 - 20,
+                        "Data outside frequency span")
         qp.end()
 
     def drawBands(self, qp, fstart, fstop):
@@ -957,12 +965,6 @@ class LogMagChart(FrequencyChart):
         pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
-
-    def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
-        qp = QtGui.QPainter(self)
-        self.drawChart(qp)
-        self.drawValues(qp)
-        qp.end()
 
     def drawChart(self, qp: QtGui.QPainter):
         qp.setPen(QtGui.QPen(self.textColor))
