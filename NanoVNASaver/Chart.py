@@ -420,6 +420,9 @@ class FrequencyChart(Chart):
         if distanty < self.topMargin:
             p3 = np.array([self.leftMargin, self.topMargin])
             p4 = np.array([self.leftMargin + self.chartWidth, self.topMargin])
+        elif distanty > self.topMargin + self.chartHeight:
+            p3 = np.array([self.leftMargin, self.topMargin + self.chartHeight])
+            p4 = np.array([self.leftMargin + self.chartWidth, self.topMargin + self.chartHeight])
         else:
             return x, y
         da = p2 - p1
