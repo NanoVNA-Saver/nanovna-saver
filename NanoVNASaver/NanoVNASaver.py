@@ -49,7 +49,12 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def __init__(self):
         super().__init__()
-        self.setWindowIcon(QtGui.QIcon("icon_48x48.png"))
+        if getattr(sys, 'frozen', False):
+            logger.debug("Running from pyinstaller bundle")
+            self.icon = QtGui.QIcon(sys._MEIPASS + "/icon_48x48.png")
+        else:
+            self.icon = QtGui.QIcon("icon_48x48.png")
+        self.setWindowIcon(self.icon)
 
         self.settings = QtCore.QSettings(QtCore.QSettings.IniFormat,
                                          QtCore.QSettings.UserScope,
@@ -386,6 +391,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.fileWindow = QtWidgets.QWidget()
         self.fileWindow.setWindowTitle("Files")
+        self.fileWindow.setWindowIcon(self.icon)
         shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self.fileWindow, self.fileWindow.hide)
         file_window_layout = QtWidgets.QVBoxLayout()
         self.fileWindow.setLayout(file_window_layout)
@@ -1072,6 +1078,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         self.app = app
         self.setWindowTitle("Display settings")
+        self.setWindowIcon(self.app.icon)
 
         shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
@@ -1439,6 +1446,7 @@ class TDRWindow(QtWidgets.QWidget):
         self.distance_axis = []
 
         self.setWindowTitle("TDR")
+        self.setWindowIcon(self.app.icon)
 
         shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
@@ -1550,6 +1558,7 @@ class SweepSettingsWindow(QtWidgets.QWidget):
 
         self.app = app
         self.setWindowTitle("Sweep settings")
+        self.setWindowIcon(self.app.icon)
 
         shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
@@ -1590,6 +1599,7 @@ class BandsWindow(QtWidgets.QWidget):
 
         self.app: NanoVNASaver = app
         self.setWindowTitle("Manage bands")
+        self.setWindowIcon(self.app.icon)
 
         shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
