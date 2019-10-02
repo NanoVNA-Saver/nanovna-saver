@@ -184,7 +184,7 @@ class FrequencyChart(Chart):
 
     leftMargin = 30
     rightMargin = 20
-    lowerMargin = 20
+    bottomMargin = 20
     topMargin = 30
 
     def __init__(self, name):
@@ -260,10 +260,18 @@ class FrequencyChart(Chart):
 
     def setFixedSpan(self, fixed_span: bool):
         self.fixedSpan = fixed_span
+        if fixed_span and self.minFrequency >= self.maxFrequency:
+            self.fixedSpan = False
+            self.action_automatic.setChecked(True)
+            self.action_fixed_span.setChecked(False)
         self.update()
 
     def setFixedValues(self, fixed_values: bool):
         self.fixedValues = fixed_values
+        if fixed_values and self.minDisplayValue >= self.maxDisplayValue:
+            self.fixedValues = False
+            self.y_action_automatic.setChecked(True)
+            self.y_action_fixed_span.setChecked(False)
         self.update()
 
     def setMinimumFrequency(self):
@@ -273,7 +281,7 @@ class FrequencyChart(Chart):
         if not selected:
             return
         min_freq = NanoVNASaver.parseFrequency(min_freq_str)
-        if min_freq > 0:
+        if min_freq > 0 and not (self.fixedSpan and min_freq >= self.maxFrequency):
             self.minFrequency = min_freq
         if self.fixedSpan:
             self.update()
@@ -285,7 +293,7 @@ class FrequencyChart(Chart):
         if not selected:
             return
         max_freq = NanoVNASaver.parseFrequency(max_freq_str)
-        if max_freq > 0:
+        if max_freq > 0 and not (self.fixedSpan and max_freq <= self.minFrequency):
             self.maxFrequency = max_freq
         if self.fixedSpan:
             self.update()
@@ -295,7 +303,8 @@ class FrequencyChart(Chart):
                                                           "Set minimum value", value=self.minDisplayValue)
         if not selected:
             return
-        self.minDisplayValue = min_val
+        if not (self.fixedValues and min_val >= self.maxDisplayValue):
+            self.minDisplayValue = min_val
         if self.fixedValues:
             self.update()
 
@@ -304,7 +313,8 @@ class FrequencyChart(Chart):
                                                           "Set maximum value", value=self.maxDisplayValue)
         if not selected:
             return
-        self.maxDisplayValue = max_val
+        if not (self.fixedValues and max_val <= self.minDisplayValue):
+            self.maxDisplayValue = max_val
         if self.fixedValues:
             self.update()
 
@@ -343,13 +353,22 @@ class FrequencyChart(Chart):
 
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
         self.chartWidth = a0.size().width()-self.rightMargin-self.leftMargin
-        self.chartHeight = a0.size().height()-self.lowerMargin-self.topMargin
+        self.chartHeight = a0.size().height() - self.bottomMargin - self.topMargin
         self.update()
 
     def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
         qp = QtGui.QPainter(self)
         self.drawChart(qp)
         self.drawValues(qp)
+        if len(self.data) > 0\
+                and (self.data[0].freq > self.fstop or self.data[len(self.data)-1].freq < self.fstart) \
+                and (len(self.reference) == 0 or self.reference[0].freq > self.fstop or self.reference[len(self.reference)-1].freq < self.fstart):
+            # Data outside frequency range
+            qp.setBackgroundMode(QtCore.Qt.OpaqueMode)
+            qp.setBackground(self.backgroundColor)
+            qp.setPen(self.textColor)
+            qp.drawText(self.leftMargin + self.chartWidth/2 - 70, self.topMargin + self.chartHeight/2 - 20,
+                        "Data outside frequency span")
         qp.end()
 
     def drawBands(self, qp, fstart, fstop):
@@ -360,15 +379,15 @@ class FrequencyChart(Chart):
                 # The band is entirely within the chart
                 x_start = self.getXPosition(Datapoint(start, 0, 0))
                 x_end = self.getXPosition(Datapoint(end, 0, 0))
-                qp.drawRect(x_start, 30, x_end - x_start, self.chartHeight - 10)
+                qp.drawRect(x_start, self.topMargin, x_end - x_start, self.chartHeight)
             elif fstart < start < fstop:
                 # Only the start of the band is within the chart
                 x_start = self.getXPosition(Datapoint(start, 0, 0))
-                qp.drawRect(x_start, 30, self.leftMargin + self.chartWidth - x_start, self.chartHeight - 10)
+                qp.drawRect(x_start, self.topMargin, self.leftMargin + self.chartWidth - x_start, self.chartHeight)
             elif fstart < end < fstop:
                 # Only the end of the band is within the chart
                 x_end = self.getXPosition(Datapoint(end, 0, 0))
-                qp.drawRect(self.leftMargin + 1, 30, x_end - (self.leftMargin + 1), self.chartHeight - 10)
+                qp.drawRect(self.leftMargin + 1, self.topMargin, x_end - (self.leftMargin + 1), self.chartHeight)
             elif start < fstart < fstop < end:
                 # All the chart is in a band, we won't show it(?)
                 pass
@@ -417,9 +436,14 @@ class FrequencyChart(Chart):
         p1 = np.array([x, y])
         p2 = np.array([distantx, distanty])
         # First check the top line
-        p3 = np.array([self.leftMargin, self.topMargin])
-        p4 = np.array([self.leftMargin + self.chartWidth, self.topMargin])
-
+        if distanty < self.topMargin:
+            p3 = np.array([self.leftMargin, self.topMargin])
+            p4 = np.array([self.leftMargin + self.chartWidth, self.topMargin])
+        elif distanty > self.topMargin + self.chartHeight:
+            p3 = np.array([self.leftMargin, self.topMargin + self.chartHeight])
+            p4 = np.array([self.leftMargin + self.chartWidth, self.topMargin + self.chartHeight])
+        else:
+            return x, y
         da = p2 - p1
         db = p4 - p3
         dp = p1 - p3
@@ -461,7 +485,7 @@ class PhaseChart(FrequencyChart):
         self.minDisplayValue = -180
         self.maxDisplayValue = 180
 
-        self.setMinimumSize(self.chartWidth + 20 + self.leftMargin, self.chartHeight + 40)
+        self.setMinimumSize(self.chartWidth + self.rightMargin + self.leftMargin, self.chartHeight + self.topMargin + self.bottomMargin)
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding))
         pal = QtGui.QPalette()
         pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
@@ -472,8 +496,8 @@ class PhaseChart(FrequencyChart):
         qp.setPen(QtGui.QPen(self.textColor))
         qp.drawText(3, 15, self.name)
         qp.setPen(QtGui.QPen(self.foregroundColor))
-        qp.drawLine(self.leftMargin, 20, self.leftMargin, 20+self.chartHeight+5)
-        qp.drawLine(self.leftMargin-5, 20+self.chartHeight, self.leftMargin+self.chartWidth, 20 + self.chartHeight)
+        qp.drawLine(self.leftMargin, 20, self.leftMargin, self.topMargin+self.chartHeight+5)
+        qp.drawLine(self.leftMargin-5, self.topMargin+self.chartHeight, self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)
         if self.fixedValues:
             minAngle = self.minDisplayValue
             maxAngle = self.maxDisplayValue
@@ -486,17 +510,16 @@ class PhaseChart(FrequencyChart):
         self.span = span
         step = math.floor(span/4)
         for i in range(minAngle, maxAngle, step):
-            y = 30 + round((maxAngle - i)/span*(self.chartHeight-10))
-            logger.debug("Plotting %d at y = %d", i, y)
+            y = self.topMargin + round((maxAngle - i)/span*self.chartHeight)
             if i != minAngle and i != maxAngle and (maxAngle - i) > step / 2:
                 qp.setPen(QtGui.QPen(self.textColor))
                 qp.drawText(3, y+3, str(i) + "°")
                 qp.setPen(QtGui.QPen(self.foregroundColor))
                 qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.chartWidth, y)
-        qp.drawLine(self.leftMargin - 5, 30, self.leftMargin + self.chartWidth, 30)
+        qp.drawLine(self.leftMargin - 5, self.topMargin, self.leftMargin + self.chartWidth, self.topMargin)
         qp.setPen(self.textColor)
         qp.drawText(3, 35, str(maxAngle) + "°")
-        qp.drawText(3, self.chartHeight+20, str(minAngle) + "°")
+        qp.drawText(3, self.chartHeight+self.topMargin, str(minAngle) + "°")
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
@@ -525,14 +548,14 @@ class PhaseChart(FrequencyChart):
             self.drawBands(qp, fstart, fstop)
 
         qp.setPen(self.textColor)
-        qp.drawText(self.leftMargin-20, 20 + self.chartHeight + 15, Chart.shortenFrequency(self.fstart))
+        qp.drawText(self.leftMargin-20, self.topMargin + self.chartHeight + 15, Chart.shortenFrequency(self.fstart))
         ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
         for i in range(ticks):
             x = self.leftMargin + round((i+1)*self.chartWidth/ticks)
             qp.setPen(QtGui.QPen(self.foregroundColor))
             qp.drawLine(x, 20, x, 20+self.chartHeight+5)
             qp.setPen(self.textColor)
-            qp.drawText(x-20, 20+self.chartHeight+15, Chart.shortenFrequency(round(fspan/ticks*(i+1) + self.fstart)))
+            qp.drawText(x-20, self.topMargin+self.chartHeight+15, Chart.shortenFrequency(round(fspan/ticks*(i+1) + self.fstart)))
 
         self.drawData(qp, self.data, self.sweepColor)
         self.drawData(qp, self.reference, self.referenceColor)
@@ -540,7 +563,7 @@ class PhaseChart(FrequencyChart):
 
     def getYPosition(self, d: Datapoint) -> int:
         angle = self.angle(d)
-        return 30 + round((self.maxAngle - angle) / self.span * (self.chartHeight - 10))
+        return 30 + round((self.maxAngle - angle) / self.span * self.chartHeight)
 
     @staticmethod
     def angle(d: Datapoint) -> float:
@@ -560,8 +583,10 @@ class VSWRChart(FrequencyChart):
         self.maxDisplayValue = 25
         self.minDisplayValue = 1
 
-        self.setMinimumSize(self.chartWidth + 20 + self.leftMargin, self.chartHeight + 40)
-        self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding))
+        self.setMinimumSize(self.chartWidth + self.rightMargin + self.leftMargin,
+                            self.chartHeight + self.topMargin + self.bottomMargin)
+        self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
+                                                 QtWidgets.QSizePolicy.MinimumExpanding))
         pal = QtGui.QPalette()
         pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
         self.setPalette(pal)
@@ -571,8 +596,10 @@ class VSWRChart(FrequencyChart):
         qp.setPen(QtGui.QPen(self.textColor))
         qp.drawText(3, 15, self.name)
         qp.setPen(QtGui.QPen(self.foregroundColor))
-        qp.drawLine(self.leftMargin, 20, self.leftMargin, 20+self.chartHeight+5)
-        qp.drawLine(self.leftMargin-5, 20+self.chartHeight, self.leftMargin+self.chartWidth, 20 + self.chartHeight)
+        qp.drawLine(self.leftMargin, self.topMargin - 5,
+                    self.leftMargin, self.topMargin + self.chartHeight + 5)
+        qp.drawLine(self.leftMargin-5, self.topMargin + self.chartHeight,
+                    self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)
 
     def drawValues(self, qp: QtGui.QPainter):
         from NanoVNASaver.NanoVNASaver import NanoVNASaver
@@ -629,26 +656,26 @@ class VSWRChart(FrequencyChart):
             ticksize = 2
 
         for i in range(minVSWR, maxVSWR, ticksize):
-            y = 30 + round((maxVSWR-i)/span*(self.chartHeight-10))
+            y = self.topMargin + round((maxVSWR-i)/span*self.chartHeight)
             if i != minVSWR and i != maxVSWR:
                 qp.setPen(self.textColor)
                 qp.drawText(3, y+3, str(i))
             qp.setPen(QtGui.QPen(self.foregroundColor))
             qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.chartWidth, y)
-        qp.drawLine(self.leftMargin - 5, 30, self.leftMargin + self.chartWidth, 30)
+        qp.drawLine(self.leftMargin - 5, self.topMargin, self.leftMargin + self.chartWidth, self.topMargin)
         qp.setPen(self.textColor)
         qp.drawText(3, 35, str(maxVSWR))
-        qp.drawText(3, self.chartHeight+20, str(minVSWR))
+        qp.drawText(3, self.chartHeight + self.topMargin, str(minVSWR))
         # At least 100 px between ticks
 
-        qp.drawText(self.leftMargin-20, 20 + self.chartHeight + 15, Chart.shortenFrequency(fstart))
+        qp.drawText(self.leftMargin-20, self.topMargin + self.chartHeight + 15, Chart.shortenFrequency(fstart))
         ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
         for i in range(ticks):
             x = self.leftMargin + round((i+1)*self.chartWidth/ticks)
             qp.setPen(QtGui.QPen(self.foregroundColor))
-            qp.drawLine(x, 20, x, 20+self.chartHeight+5)
+            qp.drawLine(x, self.topMargin, x, self.topMargin + self.chartHeight + 5)
             qp.setPen(self.textColor)
-            qp.drawText(x-20, 20+self.chartHeight+15, Chart.shortenFrequency(round(fspan/ticks*(i+1) + fstart)))
+            qp.drawText(x-20, self.topMargin + self.chartHeight + 15, Chart.shortenFrequency(round(fspan/ticks*(i+1) + fstart)))
 
         self.drawData(qp, self.data, self.sweepColor)
         self.drawData(qp, self.reference, self.referenceColor)
@@ -657,7 +684,7 @@ class VSWRChart(FrequencyChart):
     def getYPosition(self, d: Datapoint) -> int:
         from NanoVNASaver.NanoVNASaver import NanoVNASaver
         _, _, vswr = NanoVNASaver.vswr(d)
-        return 30 + round((self.maxVSWR - vswr) / self.span * (self.chartHeight - 10))
+        return self.topMargin + round((self.maxVSWR - vswr) / self.span * self.chartHeight)
 
     def resetDisplayLimits(self):
         self.maxDisplayValue = 25
@@ -943,25 +970,19 @@ class LogMagChart(FrequencyChart):
         self.minDisplayValue = -80
         self.maxDisplayValue = 10
 
-        self.setMinimumSize(self.chartWidth + 20 + self.leftMargin, self.chartHeight + 40)
+        self.setMinimumSize(self.chartWidth + self.rightMargin + self.leftMargin, self.chartHeight + self.topMargin + self.bottomMargin)
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding))
         pal = QtGui.QPalette()
         pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
-    def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
-        qp = QtGui.QPainter(self)
-        self.drawChart(qp)
-        self.drawValues(qp)
-        qp.end()
-
     def drawChart(self, qp: QtGui.QPainter):
         qp.setPen(QtGui.QPen(self.textColor))
         qp.drawText(3, 15, self.name + " (dB)")
         qp.setPen(QtGui.QPen(self.foregroundColor))
-        qp.drawLine(self.leftMargin, 20, self.leftMargin, 20+self.chartHeight+5)
-        qp.drawLine(self.leftMargin-5, 20+self.chartHeight, self.leftMargin+self.chartWidth, 20 + self.chartHeight)
+        qp.drawLine(self.leftMargin, 20, self.leftMargin, self.topMargin+self.chartHeight+5)
+        qp.drawLine(self.leftMargin-5, self.topMargin+self.chartHeight, self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
@@ -1022,7 +1043,7 @@ class LogMagChart(FrequencyChart):
         span = maxValue-minValue
         self.span = span
         for i in range(minValue, maxValue, 10):
-            y = 30 + round((i-minValue)/span*(self.chartHeight-10))
+            y = self.topMargin + round((i-minValue)/span*(self.chartHeight-10))
             qp.setPen(QtGui.QPen(self.foregroundColor))
             qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.chartWidth, y)
             if i > minValue:
@@ -1030,17 +1051,17 @@ class LogMagChart(FrequencyChart):
                 qp.drawText(3, y + 4, str(-i))
         qp.setPen(self.textColor)
         qp.drawText(3, 35, str(-minValue))
-        qp.drawText(3, self.chartHeight+20, str(-maxValue))
+        qp.drawText(3, self.chartHeight+self.topMargin, str(-maxValue))
 
         # Frequency ticks
-        qp.drawText(self.leftMargin-20, 20 + self.chartHeight + 15, Chart.shortenFrequency(self.fstart))
+        qp.drawText(self.leftMargin-20, self.topMargin + self.chartHeight + 15, Chart.shortenFrequency(self.fstart))
         ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
         for i in range(ticks):
             x = self.leftMargin + round((i+1)*self.chartWidth/ticks)
             qp.setPen(QtGui.QPen(self.foregroundColor))
-            qp.drawLine(x, 20, x, 20+self.chartHeight+5)
+            qp.drawLine(x, 20, x, self.topMargin+self.chartHeight+5)
             qp.setPen(self.textColor)
-            qp.drawText(x-20, 20+self.chartHeight+15, LogMagChart.shortenFrequency(round(fspan/ticks*(i+1) + self.fstart)))
+            qp.drawText(x-20, self.topMargin+self.chartHeight+15, LogMagChart.shortenFrequency(round(fspan/ticks*(i+1) + self.fstart)))
 
         self.drawData(qp, self.data, self.sweepColor)
         self.drawData(qp, self.reference, self.referenceColor)
@@ -1048,17 +1069,12 @@ class LogMagChart(FrequencyChart):
 
     def getYPosition(self, d: Datapoint) -> int:
         logMag = self.logMag(d)
-        return 30 + round((logMag - self.minValue) / self.span * (self.chartHeight - 10))
+        return self.topMargin + round((logMag - self.minValue) / self.span * self.chartHeight)
 
     @staticmethod
     def logMag(p: Datapoint) -> float:
-        re = p.re
-        im = p.im
-        re50 = 50 * (1 - re * re - im * im) / (1 + re * re + im * im - 2 * re)
-        im50 = 50 * (2 * im) / (1 + re * re + im * im - 2 * re)
-        # Calculate the reflection coefficient
-        mag = math.sqrt((re50 - 50) * (re50 - 50) + im50 * im50) / math.sqrt((re50 + 50) * (re50 + 50) + im50 * im50)
-        return -20 * math.log10(mag)
+        from NanoVNASaver.NanoVNASaver import NanoVNASaver
+        return -NanoVNASaver.gain(p)
 
 
 class QualityFactorChart(FrequencyChart):
@@ -1075,8 +1091,10 @@ class QualityFactorChart(FrequencyChart):
         self.minDisplayValue = 0
         self.maxDisplayValue = 100
 
-        self.setMinimumSize(self.chartWidth + 20 + self.leftMargin, self.chartHeight + 40)
-        self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding))
+        self.setMinimumSize(self.chartWidth + self.rightMargin + self.leftMargin,
+                            self.chartHeight + self.topMargin + self.bottomMargin)
+        self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
+                                                 QtWidgets.QSizePolicy.MinimumExpanding))
         pal = QtGui.QPalette()
         pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
         self.setPalette(pal)
@@ -1087,8 +1105,9 @@ class QualityFactorChart(FrequencyChart):
         qp.setPen(QtGui.QPen(self.textColor))
         qp.drawText(3, 15, self.name)
         qp.setPen(QtGui.QPen(self.foregroundColor))
-        qp.drawLine(self.leftMargin, 20, self.leftMargin, 20+self.chartHeight+5)
-        qp.drawLine(self.leftMargin-5, 20+self.chartHeight, self.leftMargin+self.chartWidth, 20 + self.chartHeight)
+        qp.drawLine(self.leftMargin, self.topMargin - 5, self.leftMargin, self.topMargin + self.chartHeight + 5)
+        qp.drawLine(self.leftMargin-5, self.topMargin + self.chartHeight,
+                    self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)
         maxQ = 0
 
         # Make up some sensible scaling here
@@ -1114,17 +1133,16 @@ class QualityFactorChart(FrequencyChart):
         if self.span == 0:
             return  # No data to draw the graph from
         for i in range(self.minQ, self.maxQ, step):
-            y = 30 + round((self.maxQ - i) / self.span * (self.chartHeight-10))
+            y = self.topMargin + round((self.maxQ - i) / self.span * self.chartHeight)
             qp.setPen(QtGui.QPen(self.textColor))
             qp.drawText(3, y+3, str(i))
             qp.setPen(QtGui.QPen(self.foregroundColor))
-            qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.chartWidth, y)
-        qp.drawLine(self.leftMargin - 5, 30, self.leftMargin + self.chartWidth, 30)
+            qp.drawLine(self.leftMargin-5, y, self.leftMargin + self.chartWidth, y)
+        qp.drawLine(self.leftMargin - 5, self.topMargin, self.leftMargin + self.chartWidth, self.topMargin)
         qp.setPen(self.textColor)
         qp.drawText(3, 35, str(self.maxQ))
 
     def drawValues(self, qp: QtGui.QPainter):
-        from NanoVNASaver.NanoVNASaver import NanoVNASaver
         if len(self.data) == 0 and len(self.reference) == 0:
             return
         if self.span == 0:
@@ -1154,14 +1172,15 @@ class QualityFactorChart(FrequencyChart):
             self.drawBands(qp, fstart, fstop)
 
         qp.setPen(self.textColor)
-        qp.drawText(self.leftMargin-20, 20 + self.chartHeight + 15, Chart.shortenFrequency(fstart))
+        qp.drawText(self.leftMargin-20, self.topMargin + self.chartHeight + 15, Chart.shortenFrequency(fstart))
         ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
         for i in range(ticks):
             x = self.leftMargin + round((i+1)*self.chartWidth/ticks)
             qp.setPen(QtGui.QPen(self.foregroundColor))
-            qp.drawLine(x, 20, x, 20+self.chartHeight+5)
+            qp.drawLine(x, self.topMargin - 5, x, self.topMargin + self.chartHeight + 5)
             qp.setPen(self.textColor)
-            qp.drawText(x-20, 20+self.chartHeight+15, Chart.shortenFrequency(round(fspan/ticks*(i+1) + fstart)))
+            qp.drawText(x - 20, self.topMargin + self.chartHeight + 15,
+                        Chart.shortenFrequency(round(fspan/ticks*(i+1) + fstart)))
 
         self.drawData(qp, self.data, self.sweepColor)
         self.drawData(qp, self.reference, self.referenceColor)
@@ -1170,7 +1189,7 @@ class QualityFactorChart(FrequencyChart):
     def getYPosition(self, d: Datapoint) -> int:
         from NanoVNASaver.NanoVNASaver import NanoVNASaver
         Q = NanoVNASaver.qualifyFactor(d)
-        return 30 + round((self.maxQ - Q) / self.span * (self.chartHeight - 10))
+        return self.topMargin + round((self.maxQ - Q) / self.span * self.chartHeight)
 
 
 class TDRChart(Chart):
@@ -1179,7 +1198,7 @@ class TDRChart(Chart):
         self.tdrWindow = None
         self.leftMargin = 20
         self.rightMargin = 20
-        self.lowerMargin = 35
+        self.bottomMargin = 35
         self.setMinimumSize(250, 250)
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding))
         pal = QtGui.QPalette()
@@ -1193,12 +1212,12 @@ class TDRChart(Chart):
         qp.drawText(3, 15, self.name)
 
         width = self.width() - self.leftMargin - self.rightMargin
-        height = self.height() - self.lowerMargin
+        height = self.height() - self.bottomMargin
 
         qp.setPen(QtGui.QPen(self.foregroundColor))
-        qp.drawLine(self.leftMargin - 5, self.height() - self.lowerMargin, self.width() - self.rightMargin,
-                    self.height() - self.lowerMargin)
-        qp.drawLine(self.leftMargin, 20, self.leftMargin, self.height() - self.lowerMargin + 5)
+        qp.drawLine(self.leftMargin - 5, self.height() - self.bottomMargin, self.width() - self.rightMargin,
+                    self.height() - self.bottomMargin)
+        qp.drawLine(self.leftMargin, 20, self.leftMargin, self.height() - self.bottomMargin + 5)
 
         ticks = math.floor((self.width() - self.leftMargin)/100)  # Number of ticks does not include the origin
 
@@ -1301,8 +1320,9 @@ class RealImaginaryChart(FrequencyChart):
         qp.drawText(10, 15, "R")
         qp.drawText(self.leftMargin + self.chartWidth + 10, 15, "X")
         qp.setPen(QtGui.QPen(self.foregroundColor))
-        qp.drawLine(self.leftMargin, 20, self.leftMargin, 20+self.chartHeight+5)
-        qp.drawLine(self.leftMargin-5, 20+self.chartHeight, self.leftMargin+self.chartWidth+5, 20 + self.chartHeight)
+        qp.drawLine(self.leftMargin, self.topMargin - 5, self.leftMargin, self.topMargin + self.chartHeight + 5)
+        qp.drawLine(self.leftMargin-5, self.topMargin + self.chartHeight,
+                    self.leftMargin + self.chartWidth + 5, self.topMargin + self.chartHeight)
 
     def drawValues(self, qp: QtGui.QPainter):
         from NanoVNASaver.NanoVNASaver import NanoVNASaver
@@ -1410,7 +1430,7 @@ class RealImaginaryChart(FrequencyChart):
         horizontal_ticks = math.floor(self.chartHeight/50)
 
         for i in range(horizontal_ticks):
-            y = 30 + round(i * (self.chartHeight-10) / horizontal_ticks)
+            y = self.topMargin + round(i * self.chartHeight / horizontal_ticks)
             qp.setPen(QtGui.QPen(self.foregroundColor))
             qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.chartWidth + 5, y)
             qp.setPen(QtGui.QPen(self.textColor))
@@ -1419,17 +1439,17 @@ class RealImaginaryChart(FrequencyChart):
             qp.drawText(3, y + 4, str(round(re, 1)))
             qp.drawText(self.leftMargin + self.chartWidth + 8, y + 4, str(round(im, 1)))
 
-        qp.drawText(3, self.chartHeight + 20, str(round(min_real, 1)))
-        qp.drawText(self.leftMargin + self.chartWidth + 8, self.chartHeight + 20, str(round(min_imag, 1)))
+        qp.drawText(3, self.chartHeight + self.topMargin, str(round(min_real, 1)))
+        qp.drawText(self.leftMargin + self.chartWidth + 8, self.chartHeight + self.topMargin, str(round(min_imag, 1)))
 
-        qp.drawText(self.leftMargin-20, 20 + self.chartHeight + 15, Chart.shortenFrequency(fstart))
+        qp.drawText(self.leftMargin-20, self.topMargin + self.chartHeight + 15, Chart.shortenFrequency(fstart))
         ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
         for i in range(ticks):
             x = self.leftMargin + round((i+1)*self.chartWidth/ticks)
             qp.setPen(QtGui.QPen(self.foregroundColor))
-            qp.drawLine(x, 20, x, 20+self.chartHeight+5)
+            qp.drawLine(x, self.topMargin - 5, x, self.topMargin + self.chartHeight + 5)
             qp.setPen(self.textColor)
-            qp.drawText(x-20, 20+self.chartHeight+15, Chart.shortenFrequency(round(fspan/ticks*(i+1) + fstart)))
+            qp.drawText(x-20, self.topMargin + self.chartHeight + 15, Chart.shortenFrequency(round(fspan/ticks*(i+1) + fstart)))
 
         primary_pen = pen
         secondary_pen = QtGui.QPen(self.secondarySweepColor)
@@ -1448,29 +1468,43 @@ class RealImaginaryChart(FrequencyChart):
             qp.drawLine(self.leftMargin + self.chartWidth, 9, self.leftMargin + self.chartWidth + 5, 9)
 
         for i in range(len(self.data)):
-            re, im = NanoVNASaver.normalize50(self.data[i])
             x = self.getXPosition(self.data[i])
-            y_re = 30 + round((max_real - re) / span_real * (self.chartHeight - 10))
-            y_im = 30 + round((max_imag - im) / span_imag * (self.chartHeight - 10))
+            y_re = self.getReYPosition(self.data[i])
+            y_im = self.getImYPosition(self.data[i])
             qp.setPen(primary_pen)
-            if re > 0:
-                qp.drawPoint(int(x), int(y_re))
+            if self.isPlotable(x, y_re):
+                qp.drawPoint(x, y_re)
             qp.setPen(secondary_pen)
-            qp.drawPoint(int(x), int(y_im))
+            if self.isPlotable(x, y_im):
+                qp.drawPoint(x, y_im)
             if self.drawLines and i > 0:
-                new_re, new_im = NanoVNASaver.normalize50(self.data[i-1])
-                prev_x = self.getXPosition(self.data[i-1])
-                prev_y_re = 30 + round((max_real - new_re) / span_real * (self.chartHeight - 10))
-                prev_y_im = 30 + round((max_imag - new_im) / span_imag * (self.chartHeight - 10))
+                prev_x = self.getXPosition(self.data[i - 1])
+                prev_y_re = self.getReYPosition(self.data[i-1])
+                prev_y_im = self.getImYPosition(self.data[i-1])
 
-                if re > 0 and new_re > 0:
+                # Real part first
+                if self.isPlotable(x, y_re) and self.isPlotable(prev_x, prev_y_re):
                     line_pen.setColor(self.sweepColor)
                     qp.setPen(line_pen)
                     qp.drawLine(x, y_re, prev_x, prev_y_re)
+                elif self.isPlotable(x, y_re) and not self.isPlotable(prev_x, prev_y_re):
+                    new_x, new_y = self.getPlotable(x, y_re, prev_x, prev_y_re)
+                    qp.drawLine(x, y_re, new_x, new_y)
+                elif not self.isPlotable(x, y_re) and self.isPlotable(prev_x, prev_y_re):
+                    new_x, new_y = self.getPlotable(prev_x, prev_y_re, x, y_re)
+                    qp.drawLine(prev_x, prev_y_re, new_x, new_y)
 
-                line_pen.setColor(self.secondarySweepColor)
-                qp.setPen(line_pen)
-                qp.drawLine(x, y_im, prev_x, prev_y_im)
+                # Imag part first
+                if self.isPlotable(x, y_im) and self.isPlotable(prev_x, prev_y_im):
+                    line_pen.setColor(self.secondarySweepColor)
+                    qp.setPen(line_pen)
+                    qp.drawLine(x, y_im, prev_x, prev_y_im)
+                elif self.isPlotable(x, y_im) and not self.isPlotable(prev_x, prev_y_im):
+                    new_x, new_y = self.getPlotable(x, y_im, prev_x, prev_y_im)
+                    qp.drawLine(x, y_im, new_x, new_y)
+                elif not self.isPlotable(x, y_im) and self.isPlotable(prev_x, prev_y_im):
+                    new_x, new_y = self.getPlotable(prev_x, prev_y_im, x, y_im)
+                    qp.drawLine(prev_x, prev_y_im, new_x, new_y)
 
         primary_pen.setColor(self.referenceColor)
         line_pen.setColor(self.referenceColor)
@@ -1488,38 +1522,52 @@ class RealImaginaryChart(FrequencyChart):
         for i in range(len(self.reference)):
             if self.reference[i].freq < fstart or self.reference[i].freq > fstop:
                 continue
-            re, im = NanoVNASaver.normalize50(self.reference[i])
             x = self.getXPosition(self.reference[i])
-            y_re = 30 + round((max_real - re) / span_real * (self.chartHeight - 10))
-            y_im = 30 + round((max_imag - im) / span_imag * (self.chartHeight - 10))
+            y_re = self.getReYPosition(self.reference[i])
+            y_im = self.getImYPosition(self.reference[i])
             qp.setPen(primary_pen)
-            if re > 0:
-                qp.drawPoint(int(x), int(y_re))
+            if self.isPlotable(x, y_re):
+                qp.drawPoint(x, y_re)
             qp.setPen(secondary_pen)
-            qp.drawPoint(int(x), int(y_im))
-
+            if self.isPlotable(x, y_im):
+                qp.drawPoint(x, y_im)
             if self.drawLines and i > 0:
-                new_re, new_im = NanoVNASaver.normalize50(self.reference[i-1])
-                prev_x = self.getXPosition(self.reference[i-1])
-                prev_y_re = 30 + round((max_real - new_re) / span_real * (self.chartHeight - 10))
-                prev_y_im = 30 + round((max_imag - new_im) / span_imag * (self.chartHeight - 10))
+                prev_x = self.getXPosition(self.reference[i - 1])
+                prev_y_re = self.getReYPosition(self.reference[i-1])
+                prev_y_im = self.getImYPosition(self.reference[i-1])
 
-                if re > 0 and new_re > 0:
-                    line_pen.setColor(self.referenceColor)
+                # Real part first
+                if self.isPlotable(x, y_re) and self.isPlotable(prev_x, prev_y_re):
+                    line_pen.setColor(self.sweepColor)
                     qp.setPen(line_pen)
                     qp.drawLine(x, y_re, prev_x, prev_y_re)
+                elif self.isPlotable(x, y_re) and not self.isPlotable(prev_x, prev_y_re):
+                    new_x, new_y = self.getPlotable(x, y_re, prev_x, prev_y_re)
+                    qp.drawLine(x, y_re, new_x, new_y)
+                elif not self.isPlotable(x, y_re) and self.isPlotable(prev_x, prev_y_re):
+                    new_x, new_y = self.getPlotable(prev_x, prev_y_re, x, y_re)
+                    qp.drawLine(prev_x, prev_y_re, new_x, new_y)
 
-                qp.drawLine(x, y_im, prev_x, prev_y_im)
+                # Imag part first
+                if self.isPlotable(x, y_im) and self.isPlotable(prev_x, prev_y_im):
+                    line_pen.setColor(self.secondarySweepColor)
+                    qp.setPen(line_pen)
+                    qp.drawLine(x, y_im, prev_x, prev_y_im)
+                elif self.isPlotable(x, y_im) and not self.isPlotable(prev_x, prev_y_im):
+                    new_x, new_y = self.getPlotable(x, y_im, prev_x, prev_y_im)
+                    qp.drawLine(x, y_im, new_x, new_y)
+                elif not self.isPlotable(x, y_im) and self.isPlotable(prev_x, prev_y_im):
+                    new_x, new_y = self.getPlotable(prev_x, prev_y_im, x, y_im)
+                    qp.drawLine(prev_x, prev_y_im, new_x, new_y)
 
         # Now draw the markers
         for m in self.markers:
             if m.location != -1:
                 highlighter.setColor(m.color)
                 qp.setPen(highlighter)
-                re, im = NanoVNASaver.normalize50(self.data[m.location])
                 x = self.getXPosition(self.data[m.location])
-                y_re = 30 + round((max_real - re) / span_real * (self.chartHeight - 10))
-                y_im = 30 + round((max_imag - im) / span_imag * (self.chartHeight - 10))
+                y_re = self.getReYPosition(self.data[m.location])
+                y_im = self.getImYPosition(self.data[m.location])
 
                 qp.drawLine(int(x), int(y_re) + 3, int(x) - 3, int(y_re) - 3)
                 qp.drawLine(int(x), int(y_re) + 3, int(x) + 3, int(y_re) - 3)
@@ -1531,13 +1579,13 @@ class RealImaginaryChart(FrequencyChart):
 
     def getImYPosition(self, d: Datapoint) -> int:
         from NanoVNASaver.NanoVNASaver import NanoVNASaver
-        re, im = NanoVNASaver.normalize50(d)
-        return 30 + round((self.max_imag - im) / self.span_imag * (self.chartHeight - 10))
+        _, im = NanoVNASaver.normalize50(d)
+        return self.topMargin + round((self.max_imag - im) / self.span_imag * self.chartHeight)
 
     def getReYPosition(self, d: Datapoint) -> int:
         from NanoVNASaver.NanoVNASaver import NanoVNASaver
-        re, im = NanoVNASaver.normalize50(d)
-        return 30 + round((self.max_real - re) / self.span_real * (self.chartHeight - 10))
+        re, _ = NanoVNASaver.normalize50(d)
+        return self.topMargin + round((self.max_real - re) / self.span_real * self.chartHeight)
 
     def getNearestMarker(self, x, y) -> Marker:
         if len(self.data) == 0:
@@ -1561,7 +1609,8 @@ class RealImaginaryChart(FrequencyChart):
                                                           "Set minimum real value", value=self.minDisplayReal)
         if not selected:
             return
-        self.minDisplayReal = min_val
+        if not (self.fixedValues and min_val >= self.maxDisplayReal):
+            self.minDisplayReal = min_val
         if self.fixedValues:
             self.update()
 
@@ -1570,7 +1619,8 @@ class RealImaginaryChart(FrequencyChart):
                                                           "Set maximum real value", value=self.maxDisplayReal)
         if not selected:
             return
-        self.maxDisplayReal = max_val
+        if not (self.fixedValues and max_val <= self.minDisplayReal):
+            self.maxDisplayReal = max_val
         if self.fixedValues:
             self.update()
 
@@ -1579,7 +1629,8 @@ class RealImaginaryChart(FrequencyChart):
                                                           "Set minimum imaginary value", value=self.minDisplayImag)
         if not selected:
             return
-        self.minDisplayImag = min_val
+        if not (self.fixedValues and min_val >= self.maxDisplayImag):
+            self.minDisplayImag = min_val
         if self.fixedValues:
             self.update()
 
@@ -1588,9 +1639,18 @@ class RealImaginaryChart(FrequencyChart):
                                                           "Set maximum imaginary value", value=self.maxDisplayImag)
         if not selected:
             return
-        self.maxDisplayImag = max_val
+        if not (self.fixedValues and max_val <= self.minDisplayImag):
+            self.maxDisplayImag = max_val
         if self.fixedValues:
             self.update()
+
+    def setFixedValues(self, fixed_values: bool):
+        self.fixedValues = fixed_values
+        if fixed_values and (self.minDisplayReal >= self.maxDisplayReal or self.minDisplayImag > self.maxDisplayImag):
+            self.fixedValues = False
+            self.y_action_automatic.setChecked(True)
+            self.y_action_fixed_span.setChecked(False)
+        self.update()
 
     def contextMenuEvent(self, event):
         self.action_set_fixed_start.setText("Start (" + Chart.shortenFrequency(self.minFrequency) + ")")

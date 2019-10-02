@@ -18,7 +18,7 @@ import logging
 import math
 import sys
 import threading
-from time import sleep, strftime, gmtime
+from time import sleep, strftime, localtime
 from typing import List, Tuple
 
 import numpy as np
@@ -49,7 +49,12 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def __init__(self):
         super().__init__()
-        self.setWindowIcon(QtGui.QIcon("icon_48x48.png"))
+        if getattr(sys, 'frozen', False):
+            logger.debug("Running from pyinstaller bundle")
+            self.icon = QtGui.QIcon(sys._MEIPASS + "/icon_48x48.png")
+        else:
+            self.icon = QtGui.QIcon("icon_48x48.png")
+        self.setWindowIcon(self.icon)
 
         self.settings = QtCore.QSettings(QtCore.QSettings.IniFormat,
                                          QtCore.QSettings.UserScope,
@@ -386,6 +391,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.fileWindow = QtWidgets.QWidget()
         self.fileWindow.setWindowTitle("Files")
+        self.fileWindow.setWindowIcon(self.icon)
         shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self.fileWindow, self.fileWindow.hide)
         file_window_layout = QtWidgets.QVBoxLayout()
         self.fileWindow.setLayout(file_window_layout)
@@ -595,13 +601,17 @@ class NanoVNASaver(QtWidgets.QWidget):
             logger.info(self.readFirmware())
 
             frequencies = self.readValues("frequencies")
-            logger.info("Read starting frequency %s and end frequency %s", frequencies[0], frequencies[100])
-            if int(frequencies[0]) == int(frequencies[100]) and (self.sweepStartInput.text() == "" or self.sweepEndInput.text() == ""):
-                self.sweepStartInput.setText(frequencies[0])
-                self.sweepEndInput.setText(str(int(frequencies[100]) + 100000))
-            elif self.sweepStartInput.text() == "" or self.sweepEndInput.text() == "":
-                self.sweepStartInput.setText(frequencies[0])
-                self.sweepEndInput.setText(frequencies[100])
+            if frequencies:
+                logger.info("Read starting frequency %s and end frequency %s", frequencies[0], frequencies[100])
+                if int(frequencies[0]) == int(frequencies[100]) and (self.sweepStartInput.text() == "" or self.sweepEndInput.text() == ""):
+                    self.sweepStartInput.setText(frequencies[0])
+                    self.sweepEndInput.setText(str(int(frequencies[100]) + 100000))
+                elif self.sweepStartInput.text() == "" or self.sweepEndInput.text() == "":
+                    self.sweepStartInput.setText(frequencies[0])
+                    self.sweepEndInput.setText(frequencies[100])
+            else:
+                logger.warning("No frequencies read")
+                return
 
             logger.debug("Starting initial sweep")
             self.sweep()
@@ -696,6 +706,8 @@ class NanoVNASaver(QtWidgets.QWidget):
                 values = result.split("\r\n")
             except serial.SerialException as exc:
                 logger.exception("Exception while reading %s: %s", value, exc)
+                self.serialLock.release()
+                return
 
             self.serialLock.release()
             return values[1:102]
@@ -713,7 +725,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         if source is not None:
             self.sweepSource = source
         else:
-            self.sweepSource = strftime("%Y-%m-%d %H:%M:%S", gmtime())
+            self.sweepSource = strftime("%Y-%m-%d %H:%M:%S", localtime())
 
     def dataUpdated(self):
         if self.dataLock.acquire(blocking=True):
@@ -789,10 +801,10 @@ class NanoVNASaver(QtWidgets.QWidget):
     def qualifyFactor(data: Datapoint):
         im50, re50, _ = NanoVNASaver.vswr(data)
         if re50 != 0:
-            Q = im50 / re50
+            Q = abs(im50 / re50)
         else:
-            Q = 0
-        return abs(Q)
+            Q = -1
+        return Q
 
     @staticmethod
     def capacitanceEquivalent(im50, freq) -> str:
@@ -812,7 +824,7 @@ class NanoVNASaver(QtWidgets.QWidget):
     def inductanceEquivalent(im50, freq) -> str:
         if freq == 0:
             return "- nH"
-        inductance = im50 * 1000000000/ (freq * 2 * math.pi)
+        inductance = im50 * 1000000000 / (freq * 2 * math.pi)
         if abs(inductance) > 10000:
             return str(round(inductance / 1000, 2)) + " μH"
         elif abs(inductance) > 1000:
@@ -1066,6 +1078,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         self.app = app
         self.setWindowTitle("Display settings")
+        self.setWindowIcon(self.app.icon)
 
         shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
@@ -1433,6 +1446,7 @@ class TDRWindow(QtWidgets.QWidget):
         self.distance_axis = []
 
         self.setWindowTitle("TDR")
+        self.setWindowIcon(self.app.icon)
 
         shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
@@ -1544,6 +1558,7 @@ class SweepSettingsWindow(QtWidgets.QWidget):
 
         self.app = app
         self.setWindowTitle("Sweep settings")
+        self.setWindowIcon(self.app.icon)
 
         shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
@@ -1584,6 +1599,7 @@ class BandsWindow(QtWidgets.QWidget):
 
         self.app: NanoVNASaver = app
         self.setWindowTitle("Manage bands")
+        self.setWindowIcon(self.app.icon)
 
         shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 

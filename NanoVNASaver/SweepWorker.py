@@ -295,6 +295,9 @@ class SweepWorker(QtCore.QRunnable):
             done = True
             returndata = []
             tmpdata = self.app.readValues(data)
+            if not tmpdata:
+                logger.warning("Read no values")
+                raise NanoVNAValueException("Failed reading data: Returned no values.")
             logger.debug("Read %d values", len(tmpdata))
             for d in tmpdata:
                 a, b = d.split(" ")
@@ -334,6 +337,9 @@ class SweepWorker(QtCore.QRunnable):
             done = True
             returnfreq = []
             tmpfreq = self.app.readValues("frequencies")
+            if not tmpfreq:
+                logger.warning("Read no frequencies")
+                raise NanoVNAValueException("Failed reading frequencies: Returned no values.")
             for f in tmpfreq:
                 if not f.isdigit():
                     logger.warning("Got a non-digit frequency: %s", f)

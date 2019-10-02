@@ -21,6 +21,7 @@ import sys
 from PyQt5 import QtWidgets, QtCore
 
 from .NanoVNASaver import NanoVNASaver
+from .about import debug
 
 
 def main():
@@ -43,6 +44,9 @@ def main():
         elif sys.argv[i] == "-D":
             print("You must enter a file name when using -D")
             return
+
+    if debug:
+        console_log_level = logging.DEBUG
 
     logger = logging.getLogger("NanoVNASaver")
     logger.setLevel(logging.DEBUG)

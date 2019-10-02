@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 class Touchstone:
     s11data: List[Datapoint] = []
     s21data: List[Datapoint] = []
-
+    comments = []
     filename = ""
 
     def __init__(self, filename):
@@ -51,6 +51,7 @@ class Touchstone:
                 line = line.strip()
                 if line.startswith("!"):
                     logger.info(line)
+                    self.comments.append(line)
                     continue
                 if line.startswith("#") and not parsed_header:
                     pattern = "^# (.?HZ) (S )?RI( R 50)?$"

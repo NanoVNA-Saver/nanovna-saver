@@ -1,5 +1,3 @@
-
-
 NanoVNASaver
 ============
 A multiplatform tool to save Touchstone files from the NanoVNA, sweep frequency spans in segments to gain more than
@@ -13,17 +11,20 @@ This software connects to a NanoVNA and extracts the data for display on a compu
 Current features:
 - Reading data from a NanoVNA
 - Splitting a frequency range into multiple segments to increase resolution (tried up to >10k points)
+- Averaging data for better results particularly at higher frequencies
 - Displaying data on multiple chart types, such as Smith, LogMag, Phase and VSWR-charts, for both S11 and S21
-- Displaying markers, and the impedance, VSWR etc. at these locations
+- Displaying markers, and the impedance, VSWR, Q, equivalent capacitance/inductance etc. at these locations
+- Displaying customizable frequency bands as reference, for example amateur radio bands
 - Exporting and importing 1-port and 2-port Touchstone files
 - TDR function (measurement of cable length)
 - Display of both an active and a reference trace
 - Live updates of data from the NanoVNA, including for multi-segment sweeps
 - In-application calibration, including compensation for non-ideal calibration standards
-- Customizable display options
+- Customizable display options, including "dark mode"
+- Exporting images of plotted values
 
-0.0.10:
-![Screenshot of version 0.0.10](https://i.imgur.com/0pzMk8O.png)
+0.1.0:
+![Screenshot of version 0.1.0](https://i.imgur.com/OHlq9oW.png)
 
 ## Running the application
 
@@ -32,7 +33,11 @@ Current features:
 The software was written in Python on Windows, using Pycharm, and the modules PyQT5, numpy and pyserial.
 
 #### Binary releases
-You can find binary (.exe) releases for Windows at https://github.com/mihtjel/nanovna-saver/releases
+You can find the latest binary (.exe) release for Windows at https://github.com/mihtjel/nanovna-saver/releases/latest
+
+The downloadable executable runs directly, and requires no installation. For Windows 7, it does require Service Pack 1
+and [Microsoft VC++ Redistributable](https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads).
+For most users, this is already installed.
 
 #### Installation and Use with pip
 
@@ -57,7 +62,7 @@ In order to run this app in Linux environment, you'll need the following package
 * `python3-pyqt5`
 * `numpy`
 #### Ubuntu 18.04 & 19.04
-#### Installation and Use with pip
+##### Installation and Use with pip
 1. Install python3.7 and pip
 
         sudo apt install python3.7 python3-pip
@@ -89,7 +94,8 @@ In order to run this app in Linux environment, you'll need the following package
 
 3. NanoVNASaver Installation
 
-        git clone https://github.com/mihtjel/nanovna-saver && cd nanovna-saver
+        git clone https://github.com/mihtjel/nanovna-saver
+        cd nanovna-saver
         
 4. Change PyQt restriction in setup.py
 			`PyQt5==5.11.2` to `PyQt5`
@@ -102,28 +108,49 @@ In order to run this app in Linux environment, you'll need the following package
 ## Using the software
 
 Connect your NanoVNA to a serial port, and enter this serial port in the serial port box.  If the NanoVNA is
-connected before the application starts, it should be automatically detected. Click "Connect to NanoVNA" to connect.
+connected before the application starts, it should be automatically detected. Otherwise, click "Rescan". Click
+"Connect to NanoVNA" to connect.
 
 The app can collect multiple segments to get more accurate measurements. Enter the number of segments to be done in the
 "Segments" box. Each segment is 101 data points, and takes about 1.5 seconds to complete.
 
-Marker frequencies are entered in Hz, or suffixed with k or M.  Scientific notation (6.5e6 for 6.5MHz) also works.
-The marker readout boxes show the actual frequency where the values are taken.  Marker readouts can be hidden using the
-"hide data" button when not needed.
+Frequencies are entered in Hz, or suffixed with k or M.  Scientific notation (6.5e6 for 6.5MHz) also works.
+
+Markers can be manually entered, or controlled using the mouse. For mouse control, select the active marker using the
+radio buttons, or hold "shift" while clicking to drag the nearest marker. The marker readout boxes show the actual
+frequency where values are measured.  Marker readouts can be hidden using the "hide data" button when not needed.
 
 Display settings are available under "Display setup". These allow changing the chart colours, the application font size
 and which graphs are displayed.  The settings are saved between program starts.
 
-#### Calibration
-In-application calibration is available, either assuming ideal standards, or with relevant standard correction. To
-calibrate, sweep each standard in turn, and press the relevant button in the calibration window. After applying the
-calibration, you may save it by entering a file location and name, and pressing "Save calibration".  Conversely, a
-saved calibration can be loaded. The file location and name is saved between program starts.
-![Screenshot of Calibration Window](https://i.imgur.com/F5X2ECZ.png)
+### Calibration
+_Before using NanoVNA-Saver, please ensure that the device itself is in a reasonable calibration state._ A calibration
+of both ports across the entire frequency span, saved to save slot 0, is sufficient.  If the NanoVNA is completely
+uncalibrated, its readings may be outside the range accepted by the application.
 
-#### TDR
+In-application calibration is available, either assuming ideal standards, or with relevant standard correction. To
+manually calibrate, sweep each standard in turn, and press the relevant button in the calibration window. For assisted
+calibration, press the "Calibration assistant" button.  If desired, enter a note in the provided field describing the
+conditions under which the calibration was performed.
+
+Calibration results may be saved and loaded using the provided buttons at the bottom of the window.  Notes are saved
+and loaded along with the calibration data.
+
+![Screenshot of Calibration Window](https://i.imgur.com/k6sqAVd.png)
+
+Users of known characterized calibration standard sets can enter the data for these, and save the sets.and
+
+_Currently, load capacitance and deleting calibration sets is unsupported_
+
+### TDR
 To get accurate TDR measurements, calibrate the device, and attach the cable to be measured at the calibration plane -
-ie. at the same position where the calibration load would be attached.
+ie. at the same position where the calibration load would be attached.  Open the "Time Domain Reflectometry" window, and
+select the correct cable type, or manually enter a propagation factor.
+
+### Frequency bands
+Open the "Display setup" window to configure the display of frequency bands. By clicking "show bands", predefined
+frequency bands will be shown on the frequency-based charts.  Click manage bands to change which bands are shown, and
+the frequency limits of each.  Bands default and reset to European amateur radio band frequencies.
 
 ## License
 This software is licensed under version 3 of the GNU General Public License. It comes with NO WARRANTY.
@@ -141,10 +168,13 @@ changes back to the community.
 Original application by Rune B. Broberg (5Q5R)
 
 TDR inspiration shamelessly stolen from the work of Salil (VU2CWA) at https://nuclearrambo.com/wordpress/accurately-measuring-cable-length-with-nanovna/
-TDR cable types by Larry Goga.
-Bugfixes and Python installation work by Ohan Smit
 
-Thanks to everyone who have tested, commented and inspired.
+TDR cable types by Larry Goga.
+
+Bugfixes and Python installation work by Ohan Smit.
+
+Thanks to everyone who have tested, commented and inspired.  Particular thanks go to the alpha testing crew who suffer
+the early instability of new versions.
 
 This software is available free of charge. If you read all this way, and you *still* want to support it, you may donate to the developer using the button below:
 
