@@ -135,6 +135,7 @@ conditions under which the calibration was performed.
 
 Calibration results may be saved and loaded using the provided buttons at the bottom of the window.  Notes are saved
 and loaded along with the calibration data.
+
 ![Screenshot of Calibration Window](https://i.imgur.com/k6sqAVd.png)
 
 Users of known characterized calibration standard sets can enter the data for these, and save the sets.and
@@ -167,8 +168,10 @@ changes back to the community.
 Original application by Rune B. Broberg (5Q5R)
 
 TDR inspiration shamelessly stolen from the work of Salil (VU2CWA) at https://nuclearrambo.com/wordpress/accurately-measuring-cable-length-with-nanovna/
+
 TDR cable types by Larry Goga.
-Bugfixes and Python installation work by Ohan Smit
+
+Bugfixes and Python installation work by Ohan Smit.
 
 Thanks to everyone who have tested, commented and inspired.  Particular thanks go to the alpha testing crew who suffer
 the early instability of new versions.
