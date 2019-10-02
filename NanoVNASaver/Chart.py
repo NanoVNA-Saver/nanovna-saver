@@ -1043,7 +1043,7 @@ class LogMagChart(FrequencyChart):
         span = maxValue-minValue
         self.span = span
         for i in range(minValue, maxValue, 10):
-            y = self.topMargin + round((i-minValue)/span*(self.chartHeight-10))
+            y = self.topMargin + round((i-minValue)/span*self.chartHeight)
             qp.setPen(QtGui.QPen(self.foregroundColor))
             qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.chartWidth, y)
             if i > minValue:
