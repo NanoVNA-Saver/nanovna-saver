@@ -178,7 +178,7 @@ class Marker(QtCore.QObject):
                 rpstr = "- \N{OHM SIGN}"
                 re50 = 0
 
-            if im50 > 0:
+            if im50 != 0:
                 xp = (re50 ** 2 + im50 ** 2) / im50
                 xp = round(xp, 4 - max(0, math.floor(math.log10(abs(xp)))))
                 if xp < 0:
@@ -186,7 +186,7 @@ class Marker(QtCore.QObject):
                 else:
                     xpstr = NanoVNASaver.inductanceEquivalent(xp, s11data[self.location].freq)
             else:
-                xpstr = "- \N{OHM SIGN}"
+                xpstr = "-"
 
             if im50 != 0:
                 im50 = round(im50, 4 - max(0, math.floor(math.log10(abs(im50)))))
@@ -213,8 +213,14 @@ class Marker(QtCore.QObject):
             q = NanoVNASaver.qualifyFactor(s11data[self.location])
             if q > 10000 or q < 0:
                 q_str = "\N{INFINITY}"
-            else:
+            elif q > 1000:
+                q_str = str(round(q, 0))
+            elif q > 100:
                 q_str = str(round(q, 1))
+            elif q > 10:
+                q_str = str(round(q, 2))
+            else:
+                q_str = str(round(q, 3))
             self.quality_factor_label.setText(q_str)
             self.s11_phase_label.setText(
                 str(round(PhaseChart.angle(s11data[self.location]), 2)) + "\N{DEGREE SIGN}")

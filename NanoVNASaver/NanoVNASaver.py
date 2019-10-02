@@ -18,7 +18,7 @@ import logging
 import math
 import sys
 import threading
-from time import sleep, strftime, gmtime
+from time import sleep, strftime, localtime
 from typing import List, Tuple
 
 import numpy as np
@@ -719,7 +719,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         if source is not None:
             self.sweepSource = source
         else:
-            self.sweepSource = strftime("%Y-%m-%d %H:%M:%S", gmtime())
+            self.sweepSource = strftime("%Y-%m-%d %H:%M:%S", localtime())
 
     def dataUpdated(self):
         if self.dataLock.acquire(blocking=True):
