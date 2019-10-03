@@ -85,8 +85,8 @@ class CalibrationWindow(QtWidgets.QWidget):
         calibration_control_layout.addRow(btn_cal_short, self.cal_short_label)
         calibration_control_layout.addRow(btn_cal_open, self.cal_open_label)
         calibration_control_layout.addRow(btn_cal_load, self.cal_load_label)
-        calibration_control_layout.addRow(btn_cal_through, self.cal_through_label)
         calibration_control_layout.addRow(btn_cal_isolation, self.cal_isolation_label)
+        calibration_control_layout.addRow(btn_cal_through, self.cal_through_label)
 
         calibration_control_layout.addRow(QtWidgets.QLabel(""))
 
@@ -460,15 +460,13 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.btn_automatic.setDisabled(False)
             return
 
-        open_step = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Information,
-                                          "Calibrate open",
-                                          "Please connect the \"open\" standard to port 0 of the NanoVNA.\n\n" +
-                                          "Either use a supplied open, or leave the end of the cable unconnected " +
-                                          "if desired.\n\n" +
-                                          "Press Ok when you are ready to continue.",
-                                          QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
+        short_step = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Information,
+                                           "Calibrate short",
+                                           "Please connect the \"short\" standard to port 0 of the NanoVNA.\n\n" +
+                                           "Press Ok when you are ready to continue.",
+                                           QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
 
-        response = open_step.exec()
+        response = short_step.exec()
         if response != QtWidgets.QMessageBox.Ok:
             self.btn_automatic.setDisabled(False)
             return
@@ -482,16 +480,19 @@ class CalibrationWindow(QtWidgets.QWidget):
         if self.nextStep == -1:
             self.app.worker.signals.finished.disconnect(self.automaticCalibrationStep)
         if self.nextStep == 0:
-            # Open
-            self.saveOpen()
+            # Short
+            self.saveShort()
             self.nextStep = 1
-            short_step = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Information,
-                                               "Calibrate short",
-                                               "Please connect the \"short\" standard to port 0 of the NanoVNA.\n\n" +
-                                               "Press Ok when you are ready to continue.",
-                                               QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
 
-            response = short_step.exec()
+            open_step = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Information,
+                                              "Calibrate open",
+                                              "Please connect the \"open\" standard to port 0 of the NanoVNA.\n\n" +
+                                              "Either use a supplied open, or leave the end of the cable unconnected " +
+                                              "if desired.\n\n" +
+                                              "Press Ok when you are ready to continue.",
+                                              QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
+
+            response = open_step.exec()
             if response != QtWidgets.QMessageBox.Ok:
                 self.nextStep = -1
                 self.btn_automatic.setDisabled(False)
@@ -502,8 +503,8 @@ class CalibrationWindow(QtWidgets.QWidget):
                 return
 
         elif self.nextStep == 1:
-            # Short
-            self.saveShort()
+            # Open
+            self.saveOpen()
             self.nextStep = 2
             load_step = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Information,
                                               "Calibrate load",
