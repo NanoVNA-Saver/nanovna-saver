@@ -195,7 +195,6 @@ class CalibrationWindow(QtWidgets.QWidget):
         btn_load_standard.clicked.connect(self.loadCalibrationStandard)
         btn_delete_standard = QtWidgets.QPushButton("Delete")
         btn_delete_standard.clicked.connect(self.deleteCalibrationStandard)
-        btn_delete_standard.setDisabled(True)
         cal_standard_save_button_layout.addWidget(btn_load_standard)
         cal_standard_save_button_layout.addWidget(btn_save_standard)
         cal_standard_save_button_layout.addWidget(btn_delete_standard)
@@ -312,39 +311,97 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.app.settings.endArray()
         
     def deleteCalibrationStandard(self):
-        # TODO: This does not currently work. We need to re-write all the settings in the array so they get renumbered.
         if self.cal_standard_save_selector.currentData() == -1:
             return
-        write_num = self.cal_standard_save_selector.currentData()
-        logger.debug("Deleting calibration no %d", write_num)
+        delete_num = self.cal_standard_save_selector.currentData()
+        logger.debug("Deleting calibration no %d", delete_num)
         num_standards = self.app.settings.beginReadArray("CalibrationStandards")
+        self.app.settings.endArray()
+
         logger.debug("Number of standards known: %d", num_standards)
-        self.app.settings.endArray()
-    
-        self.app.settings.beginWriteArray("CalibrationStandards", num_standards-1)
-        self.app.settings.setArrayIndex(write_num)
-        self.app.settings.remove("Name")
-    
-        self.app.settings.remove("ShortL0")
-        self.app.settings.remove("ShortL1")
-        self.app.settings.remove("ShortL2")
-        self.app.settings.remove("ShortL3")
-        self.app.settings.remove("ShortDelay")
-    
-        self.app.settings.remove("OpenC0")
-        self.app.settings.remove("OpenC1")
-        self.app.settings.remove("OpenC2")
-        self.app.settings.remove("OpenC3")
-        self.app.settings.remove("OpenDelay")
-    
-        self.app.settings.remove("LoadR")
-        self.app.settings.remove("LoadL")
-        self.app.settings.remove("LoadC")
-        self.app.settings.remove("LoadDelay")
-    
-        self.app.settings.remove("ThroughDelay")
-    
-        self.app.settings.endArray()
+
+        if num_standards == 1:
+            logger.debug("Only one standard known")
+            self.app.settings.beginWriteArray("CalibrationStandards", 0)
+            self.app.settings.endArray()
+        else:
+            names = []
+
+            shortL0 = []
+            shortL1 = []
+            shortL2 = []
+            shortL3 = []
+            shortDelay = []
+
+            openC0 = []
+            openC1 = []
+            openC2 = []
+            openC3 = []
+            openDelay = []
+
+            loadR = []
+            loadL = []
+            loadC = []
+            loadDelay = []
+
+            throughDelay = []
+
+            self.app.settings.beginReadArray("CalibrationStandards")
+            for i in range(num_standards):
+                if i == delete_num:
+                    continue
+                self.app.settings.setArrayIndex(i)
+                names.append(self.app.settings.value("Name"))
+
+                shortL0.append(self.app.settings.value("ShortL0"))
+                shortL1.append(self.app.settings.value("ShortL1"))
+                shortL2.append(self.app.settings.value("ShortL2"))
+                shortL3.append(self.app.settings.value("ShortL3"))
+                shortDelay.append(self.app.settings.value("ShortDelay"))
+
+                openC0.append(self.app.settings.value("OpenC0"))
+                openC1.append(self.app.settings.value("OpenC1"))
+                openC2.append(self.app.settings.value("OpenC2"))
+                openC3.append(self.app.settings.value("OpenC3"))
+                openDelay.append(self.app.settings.value("OpenDelay"))
+
+                loadR.append(self.app.settings.value("LoadR"))
+                loadL.append(self.app.settings.value("LoadL"))
+                loadC.append(self.app.settings.value("LoadC"))
+                loadDelay.append(self.app.settings.value("LoadDelay"))
+
+                throughDelay.append(self.app.settings.value("ThroughDelay"))
+            self.app.settings.endArray()
+
+            self.app.settings.beginWriteArray("CalibrationStandards")
+            self.app.settings.remove("")
+            self.app.settings.endArray()
+
+            self.app.settings.beginWriteArray("CalibrationStandards", len(names))
+            for i in range(len(names)):
+                self.app.settings.setArrayIndex(i)
+                self.app.settings.setValue("Name", names[i])
+                
+                self.app.settings.setValue("ShortL0", shortL0[i])
+                self.app.settings.setValue("ShortL1", shortL1[i])
+                self.app.settings.setValue("ShortL2", shortL2[i])
+                self.app.settings.setValue("ShortL3", shortL3[i])
+                self.app.settings.setValue("ShortDelay", shortDelay[i])
+
+                self.app.settings.setValue("OpenL0", openC0[i])
+                self.app.settings.setValue("OpenL1", openC1[i])
+                self.app.settings.setValue("OpenL2", openC2[i])
+                self.app.settings.setValue("OpenL3", openC3[i])
+                self.app.settings.setValue("OpenDelay", openDelay[i])
+                
+                self.app.settings.setValue("LoadR", loadR[i])
+                self.app.settings.setValue("LoadL", loadL[i])
+                self.app.settings.setValue("LoadC", loadC[i])
+                self.app.settings.setValue("LoadDelay", loadDelay[i])
+
+                self.app.settings.setValue("ThroughDelay", throughDelay[i])
+            self.app.settings.endArray()
+
         self.app.settings.sync()
         self.listCalibrationStandards()
 
