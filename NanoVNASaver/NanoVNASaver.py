@@ -207,7 +207,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         sweep_control_layout.addRow(QtWidgets.QLabel("Segments"), segment_layout)
 
         self.sweepSettingsWindow = SweepSettingsWindow(self)
-        btn_sweep_settings_window = QtWidgets.QPushButton("Sweep settings")
+        btn_sweep_settings_window = QtWidgets.QPushButton("Sweep settings ...")
         btn_sweep_settings_window.clicked.connect(self.displaySweepSettingsWindow)
 
         sweep_control_layout.addRow(btn_sweep_settings_window)
@@ -1562,30 +1562,89 @@ class SweepSettingsWindow(QtWidgets.QWidget):
 
         shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
-        layout = QtWidgets.QFormLayout()
+        layout = QtWidgets.QVBoxLayout()
         self.setLayout(layout)
+
+        settings_box = QtWidgets.QGroupBox("Settings")
+        settings_layout = QtWidgets.QFormLayout(settings_box)
 
         self.single_sweep_radiobutton = QtWidgets.QRadioButton("Single sweep")
         self.continuous_sweep_radiobutton = QtWidgets.QRadioButton("Continuous sweep")
         self.averaged_sweep_radiobutton = QtWidgets.QRadioButton("Averaged sweep")
 
-        layout.addWidget(self.single_sweep_radiobutton)
+        settings_layout.addWidget(self.single_sweep_radiobutton)
         self.single_sweep_radiobutton.setChecked(True)
-        layout.addWidget(self.continuous_sweep_radiobutton)
-        layout.addWidget(self.averaged_sweep_radiobutton)
+        settings_layout.addWidget(self.continuous_sweep_radiobutton)
+        settings_layout.addWidget(self.averaged_sweep_radiobutton)
 
         self.averages = QtWidgets.QLineEdit("3")
         self.truncates = QtWidgets.QLineEdit("0")
 
-        layout.addRow("Number of measurements to average", self.averages)
-        layout.addRow("Number to discard", self.truncates)
-        layout.addRow(QtWidgets.QLabel("Averaging allows discarding outlying samples to get better averages."))
-        layout.addRow(QtWidgets.QLabel("Common values are 3/0, 5/2, 9/4 and 25/6."))
+        settings_layout.addRow("Number of measurements to average", self.averages)
+        settings_layout.addRow("Number to discard", self.truncates)
+        settings_layout.addRow(QtWidgets.QLabel("Averaging allows discarding outlying samples to get better averages."))
+        settings_layout.addRow(QtWidgets.QLabel("Common values are 3/0, 5/2, 9/4 and 25/6."))
 
         self.continuous_sweep_radiobutton.toggled.connect(lambda: self.app.worker.setContinuousSweep(self.continuous_sweep_radiobutton.isChecked()))
         self.averaged_sweep_radiobutton.toggled.connect(self.updateAveraging)
         self.averages.textEdited.connect(self.updateAveraging)
         self.truncates.textEdited.connect(self.updateAveraging)
+
+        layout.addWidget(settings_box)
+
+        band_sweep_box = QtWidgets.QGroupBox("Sweep band")
+        band_sweep_layout = QtWidgets.QFormLayout(band_sweep_box)
+
+        self.band_list = QtWidgets.QComboBox()
+        self.band_list.setModel(self.app.bands)
+        self.band_list.currentIndexChanged.connect(self.updateCurrentBand)
+
+        band_sweep_layout.addRow("Select band", self.band_list)
+
+        self.band_pad_limits = QtWidgets.QCheckBox("Pad band limits (10%)")
+        self.band_pad_limits.stateChanged.connect(self.updateCurrentBand)
+        band_sweep_layout.addRow(self.band_pad_limits)
+
+        self.band_limit_label = QtWidgets.QLabel()
+
+        band_sweep_layout.addRow(self.band_limit_label)
+
+        btn_set_band_sweep = QtWidgets.QPushButton("Set band sweep")
+        btn_set_band_sweep.clicked.connect(self.setBandSweep)
+        band_sweep_layout.addRow(btn_set_band_sweep)
+
+        self.updateCurrentBand()
+
+        layout.addWidget(band_sweep_box)
+
+    def updateCurrentBand(self):
+        index_start = self.band_list.model().index(self.band_list.currentIndex(), 1)
+        index_stop = self.band_list.model().index(self.band_list.currentIndex(), 2)
+        start = int(self.band_list.model().data(index_start, QtCore.Qt.ItemDataRole).value())
+        stop = int(self.band_list.model().data(index_stop, QtCore.Qt.ItemDataRole).value())
+
+        if self.band_pad_limits.isChecked():
+            span = stop - start
+            start -= round(span / 10)
+            stop += round(span / 10)
+
+        self.band_limit_label.setText("Sweep span: " + NanoVNASaver.formatShortFrequency(start) + " to " +
+                                      NanoVNASaver.formatShortFrequency(stop))
+
+    def setBandSweep(self):
+        index_start = self.band_list.model().index(self.band_list.currentIndex(), 1)
+        index_stop = self.band_list.model().index(self.band_list.currentIndex(), 2)
+        start = int(self.band_list.model().data(index_start, QtCore.Qt.ItemDataRole).value())
+        stop = int(self.band_list.model().data(index_stop, QtCore.Qt.ItemDataRole).value())
+
+        if self.band_pad_limits.isChecked():
+            span = stop - start
+            start -= round(span / 10)
+            stop += round(span / 10)
+
+        self.app.sweepStartInput.setText(str(start))
+        self.app.sweepEndInput.setText(str(stop))
+        self.app.sweepEndInput.textEdited.emit(self.app.sweepEndInput.text())
 
     def updateAveraging(self):
         self.app.worker.setAveraging(self.averaged_sweep_radiobutton.isChecked(),
