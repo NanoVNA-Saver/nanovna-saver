@@ -1626,6 +1626,7 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         if self.band_pad_limits.isChecked():
             span = stop - start
             start -= round(span / 10)
+            start = max(1, start)
             stop += round(span / 10)
 
         self.band_limit_label.setText("Sweep span: " + NanoVNASaver.formatShortFrequency(start) + " to " +
