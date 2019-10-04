@@ -664,6 +664,7 @@ class Calibration:
 
     def calculateCorrections(self):
         if not self.isValid1Port():
+            logger.warning("Tried to calibrate from insufficient data.")
             return False
         self.frequencies = [int] * len(self.s11short)
         self.e00 = [np.complex] * len(self.s11short)
@@ -671,6 +672,15 @@ class Calibration:
         self.deltaE = [np.complex] * len(self.s11short)
         self.e30 = [np.complex] * len(self.s11short)
         self.e10e32 = [np.complex] * len(self.s11short)
+        logger.debug("Calculating calibration for %d points.", len(self.s11short))
+        if self.useIdealShort:
+            logger.debug("Using ideal values.")
+        else:
+            logger.debug("Using calibration set values.")
+        if self.isValid2Port():
+            logger.debug("Calculating 2-port calibration.")
+        else:
+            logger.debug("Calculating 1-port calibration.")
         for i in range(len(self.s11short)):
             self.frequencies[i] = self.s11short[i].freq
             f = self.s11short[i].freq
@@ -718,7 +728,7 @@ class Calibration:
             except ZeroDivisionError:
                 self.isCalculated = False
                 logger.error("Division error - did you use the same measurement for two of short, open and load?")
-                return
+                return self.isCalculated
 
             if self.isValid2Port():
                 self.e30[i] = np.complex(self.s21isolation[i].re, self.s21isolation[i].im)
@@ -729,6 +739,7 @@ class Calibration:
                 self.e10e32[i] = (s21m - self.e30[i]) * (1 - (self.e11[i]*self.e11[i]))
 
         self.isCalculated = True
+        logger.debug("Calibration correctly calculated.")
         return self.isCalculated
 
     def correct11(self, re, im, freq):
