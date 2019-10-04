@@ -139,11 +139,30 @@ class Marker(QtCore.QObject):
             # Set the frequency before loading any data
             return
 
-        stepsize = data[1].freq-data[0].freq
+        min_freq = data[0].freq
+        max_freq = data[len(data)-1].freq
+        stepsize = data[1].freq - data[0].freq
+
+        if self.frequency + stepsize/2 < min_freq or self.frequency - stepsize/2 > max_freq:
+            return
+
         for i in range(len(data)):
-            if abs(data[i].freq-self.frequency) <= (stepsize/2):
+            if abs(data[i].freq - self.frequency) <= (stepsize/2):
                 self.location = i
                 return
+
+        # No position found, but we are within the span
+        min_distance = max_freq
+        for i in range(len(data)):
+            if abs(data[i].freq - self.frequency) < min_distance:
+                min_distance = abs(data[i].freq - self.frequency)
+            else:
+                # We have now started moving away from the nearest point
+                self.location = i-1
+                return
+        # If we still didn't find a best spot, it was the last value
+        self.location = len(data)-1
+        return
 
     def getGroupBox(self):
         return self.group_box

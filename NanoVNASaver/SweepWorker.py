@@ -271,7 +271,9 @@ class SweepWorker(QtCore.QRunnable):
     def readSegment(self, start, stop):
         logger.debug("Setting sweep range to %d to %d", start, stop)
         self.app.setSweep(start, stop)
-        sleep(0.3)
+        sleep(1)    # TODO This long delay seems to fix the weird data transitions we were seeing by getting partial
+                    #      sweeps.  Clearly something needs to be done, maybe at firmware level, to address this fully.
+
         # Let's check the frequencies first:
         frequencies = self.readFreq()
         #  TODO: Set up checks for getting the right frequencies. Challenge: We don't set frequency to single-Hz

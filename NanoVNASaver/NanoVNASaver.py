@@ -34,6 +34,7 @@ from .Calibration import CalibrationWindow, Calibration
 from .Marker import Marker
 from .SweepWorker import SweepWorker
 from .Touchstone import Touchstone
+from .Analysis import Analysis, LowPassAnalysis
 from .about import version as ver
 
 Datapoint = collections.namedtuple('Datapoint', 'freq re im')
@@ -311,6 +312,12 @@ class NanoVNASaver(QtWidgets.QWidget):
         marker_column.addWidget(s21_control_box)
 
         marker_column.addSpacerItem(QtWidgets.QSpacerItem(1, 1, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding))
+
+        self.analysis_window = AnalysisWindow(self)
+
+        btn_show_analysis = QtWidgets.QPushButton("Analysis ...")
+        btn_show_analysis.clicked.connect(self.displayAnalysisWindow)
+        marker_column.addWidget(btn_show_analysis)
 
         ################################################################################################################
         # TDR
@@ -1050,6 +1057,10 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.tdr_window.show()
         QtWidgets.QApplication.setActiveWindow(self.tdr_window)
 
+    def displayAnalysisWindow(self):
+        self.analysis_window.show()
+        QtWidgets.QApplication.setActiveWindow(self.analysis_window)
+
     def showError(self, text):
         error_message = QtWidgets.QErrorMessage(self)
         error_message.showMessage(text)
@@ -1641,6 +1652,7 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         if self.band_pad_limits.isChecked():
             span = stop - start
             start -= round(span / 10)
+            start = max(1, start)
             stop += round(span / 10)
 
         self.app.sweepStartInput.setText(str(start))
@@ -1823,3 +1835,48 @@ class BandsModel(QtCore.QAbstractTableModel):
 
     def setColor(self, color):
         self.color = color
+
+
+class AnalysisWindow(QtWidgets.QWidget):
+    analyses = []
+    analysis: Analysis = None
+
+    def __init__(self, app):
+        super().__init__()
+
+        self.app: NanoVNASaver = app
+        self.setWindowTitle("Sweep analysis")
+        self.setWindowIcon(self.app.icon)
+
+        self.setMinimumSize(400, 300)
+
+        shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
+
+        layout = QtWidgets.QVBoxLayout()
+        self.setLayout(layout)
+
+        select_analysis_box = QtWidgets.QGroupBox("Select analysis")
+        select_analysis_layout = QtWidgets.QFormLayout(select_analysis_box)
+        analysis_list = QtWidgets.QComboBox()
+        analysis_list.addItem("Low-pass filter")
+        analysis_list.addItem("Band-pass filter")
+        analysis_list.addItem("High-pass filter")
+        select_analysis_layout.addRow("Analysis type", analysis_list)
+
+        btn_run_analysis = QtWidgets.QPushButton("Run analysis")
+        btn_run_analysis.clicked.connect(self.runAnalysis)
+        select_analysis_layout.addRow(btn_run_analysis)
+
+        analysis_box = QtWidgets.QGroupBox("Analysis")
+        analysis_layout = QtWidgets.QVBoxLayout(analysis_box)
+
+        #### TEMPORARY ####
+        self.analysis = LowPassAnalysis(app)
+        analysis_layout.addWidget(self.analysis.widget())
+
+        layout.addWidget(select_analysis_box)
+        layout.addWidget(analysis_box)
+
+    def runAnalysis(self):
+        if self.analysis is not None:
+            self.analysis.runAnalysis()
