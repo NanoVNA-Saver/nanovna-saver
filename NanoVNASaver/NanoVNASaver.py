@@ -1848,9 +1848,9 @@ class AnalysisWindow(QtWidgets.QWidget):
         self.setWindowTitle("Sweep analysis")
         self.setWindowIcon(self.app.icon)
 
-        self.setMinimumSize(400, 600)
+        #self.setMinimumSize(400, 600)
 
-        self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
+        #self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
 
         shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
@@ -1875,11 +1875,10 @@ class AnalysisWindow(QtWidgets.QWidget):
 
         self.analysis_layout = QtWidgets.QVBoxLayout(analysis_box)
 
-        self.analysis = self.analysis_list.currentData()
-        self.analysis_layout.addWidget(self.analysis.widget())
-
         layout.addWidget(select_analysis_box)
         layout.addWidget(analysis_box)
+
+        self.updateSelection()
 
     def runAnalysis(self):
         if self.analysis is not None:
@@ -1887,8 +1886,12 @@ class AnalysisWindow(QtWidgets.QWidget):
 
     def updateSelection(self):
         self.analysis = self.analysis_list.currentData()
-        old_widget = self.analysis_layout.itemAt(0).widget()
-        self.analysis_layout.replaceWidget(old_widget, self.analysis.widget())
-        old_widget.hide()
+        old_item = self.analysis_layout.itemAt(0)
+        if old_item is not None:
+            old_widget = self.analysis_layout.itemAt(0).widget()
+            self.analysis_layout.replaceWidget(old_widget, self.analysis.widget())
+            old_widget.hide()
+        else:
+            self.analysis_layout.addWidget(self.analysis.widget())
         self.analysis.widget().show()
         self.update()

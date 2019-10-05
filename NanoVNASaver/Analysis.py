@@ -75,12 +75,15 @@ class LowPassAnalysis(Analysis):
         self.reset()
         pass_band_location = self.app.markers[0].location
         logger.debug("Pass band location: %d", pass_band_location)
-        if pass_band_location < 0:
-            logger.debug("No location for %s", self.app.markers[0].name)
-            return
 
         if len(self.app.data21) == 0:
             logger.debug("No data to analyse")
+            self.result_label.setText("No data to analyse.")
+            return
+
+        if pass_band_location < 0:
+            logger.debug("No location for %s", self.app.markers[0].name)
+            self.result_label.setText("Please place " + self.app.markers[0].name  + " in the passband.")
             return
 
         pass_band_db = NanoVNASaver.gain(self.app.data21[pass_band_location])
@@ -214,12 +217,15 @@ class HighPassAnalysis(Analysis):
         self.reset()
         pass_band_location = self.app.markers[0].location
         logger.debug("Pass band location: %d", pass_band_location)
-        if pass_band_location < 0:
-            logger.debug("No location for %s", self.app.markers[0].name)
-            return
 
         if len(self.app.data21) == 0:
             logger.debug("No data to analyse")
+            self.result_label.setText("No data to analyse.")
+            return
+
+        if pass_band_location < 0:
+            logger.debug("No location for %s", self.app.markers[0].name)
+            self.result_label.setText("Please place " + self.app.markers[0].name  + " in the passband.")
             return
 
         pass_band_db = NanoVNASaver.gain(self.app.data21[pass_band_location])
@@ -347,9 +353,9 @@ class BandPassAnalysis(Analysis):
         self.span_label = QtWidgets.QLabel()
         self.quality_label = QtWidgets.QLabel()
 
-        layout.addRow("Center frequency", self.center_frequency_label)
-        layout.addRow("Span", self.span_label)
-        layout.addRow("Quality factor", self.quality_label)
+        layout.addRow("Center frequency:", self.center_frequency_label)
+        layout.addRow("Span:", self.span_label)
+        layout.addRow("Quality factor:", self.quality_label)
 
         layout.addRow(QtWidgets.QLabel(""))
 
@@ -388,12 +394,15 @@ class BandPassAnalysis(Analysis):
         self.reset()
         pass_band_location = self.app.markers[0].location
         logger.debug("Pass band location: %d", pass_band_location)
-        if pass_band_location < 0:
-            logger.debug("No location for %s", self.app.markers[0].name)
-            return
 
         if len(self.app.data21) == 0:
             logger.debug("No data to analyse")
+            self.result_label.setText("No data to analyse.")
+            return
+
+        if pass_band_location < 0:
+            logger.debug("No location for %s", self.app.markers[0].name)
+            self.result_label.setText("Please place " + self.app.markers[0].name  + " in the passband.")
             return
 
         pass_band_db = NanoVNASaver.gain(self.app.data21[pass_band_location])
