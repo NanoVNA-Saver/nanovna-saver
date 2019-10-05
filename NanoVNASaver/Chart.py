@@ -1649,8 +1649,8 @@ class RealImaginaryChart(FrequencyChart):
         return nearest
 
     def setMinimumRealValue(self):
-        min_val, selected = QtWidgets.QInputDialog.getInt(self, "Minimum real value",
-                                                          "Set minimum real value", value=self.minDisplayReal)
+        min_val, selected = QtWidgets.QInputDialog.getDouble(self, "Minimum real value",
+                                                             "Set minimum real value", value=self.minDisplayReal)
         if not selected:
             return
         if not (self.fixedValues and min_val >= self.maxDisplayReal):
@@ -1659,8 +1659,8 @@ class RealImaginaryChart(FrequencyChart):
             self.update()
 
     def setMaximumRealValue(self):
-        max_val, selected = QtWidgets.QInputDialog.getInt(self, "Maximum real value",
-                                                          "Set maximum real value", value=self.maxDisplayReal)
+        max_val, selected = QtWidgets.QInputDialog.getDouble(self, "Maximum real value",
+                                                             "Set maximum real value", value=self.maxDisplayReal)
         if not selected:
             return
         if not (self.fixedValues and max_val <= self.minDisplayReal):
@@ -1669,8 +1669,8 @@ class RealImaginaryChart(FrequencyChart):
             self.update()
 
     def setMinimumImagValue(self):
-        min_val, selected = QtWidgets.QInputDialog.getInt(self, "Minimum imaginary value",
-                                                          "Set minimum imaginary value", value=self.minDisplayImag)
+        min_val, selected = QtWidgets.QInputDialog.getDouble(self, "Minimum imaginary value",
+                                                             "Set minimum imaginary value", value=self.minDisplayImag)
         if not selected:
             return
         if not (self.fixedValues and min_val >= self.maxDisplayImag):
@@ -1679,8 +1679,8 @@ class RealImaginaryChart(FrequencyChart):
             self.update()
 
     def setMaximumImagValue(self):
-        max_val, selected = QtWidgets.QInputDialog.getInt(self, "Maximum imaginary value",
-                                                          "Set maximum imaginary value", value=self.maxDisplayImag)
+        max_val, selected = QtWidgets.QInputDialog.getDouble(self, "Maximum imaginary value",
+                                                             "Set maximum imaginary value", value=self.maxDisplayImag)
         if not selected:
             return
         if not (self.fixedValues and max_val <= self.minDisplayImag):
