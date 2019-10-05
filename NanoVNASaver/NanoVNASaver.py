@@ -34,7 +34,7 @@ from .Calibration import CalibrationWindow, Calibration
 from .Marker import Marker
 from .SweepWorker import SweepWorker
 from .Touchstone import Touchstone
-from .Analysis import Analysis, LowPassAnalysis
+from .Analysis import Analysis, LowPassAnalysis, HighPassAnalysis, BandPassAnalysis
 from .about import version as ver
 
 Datapoint = collections.namedtuple('Datapoint', 'freq re im')
@@ -1848,7 +1848,9 @@ class AnalysisWindow(QtWidgets.QWidget):
         self.setWindowTitle("Sweep analysis")
         self.setWindowIcon(self.app.icon)
 
-        self.setMinimumSize(400, 300)
+        self.setMinimumSize(400, 600)
+
+        self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
 
         shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
@@ -1857,22 +1859,24 @@ class AnalysisWindow(QtWidgets.QWidget):
 
         select_analysis_box = QtWidgets.QGroupBox("Select analysis")
         select_analysis_layout = QtWidgets.QFormLayout(select_analysis_box)
-        analysis_list = QtWidgets.QComboBox()
-        analysis_list.addItem("Low-pass filter")
-        analysis_list.addItem("Band-pass filter")
-        analysis_list.addItem("High-pass filter")
-        select_analysis_layout.addRow("Analysis type", analysis_list)
+        self.analysis_list = QtWidgets.QComboBox()
+        self.analysis_list.addItem("Low-pass filter", LowPassAnalysis(self.app))
+        self.analysis_list.addItem("Band-pass filter", BandPassAnalysis(self.app))
+        self.analysis_list.addItem("High-pass filter", HighPassAnalysis(self.app))
+        select_analysis_layout.addRow("Analysis type", self.analysis_list)
+        self.analysis_list.currentIndexChanged.connect(self.updateSelection)
 
         btn_run_analysis = QtWidgets.QPushButton("Run analysis")
         btn_run_analysis.clicked.connect(self.runAnalysis)
         select_analysis_layout.addRow(btn_run_analysis)
 
         analysis_box = QtWidgets.QGroupBox("Analysis")
-        analysis_layout = QtWidgets.QVBoxLayout(analysis_box)
+        analysis_box.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
 
-        #### TEMPORARY ####
-        self.analysis = LowPassAnalysis(app)
-        analysis_layout.addWidget(self.analysis.widget())
+        self.analysis_layout = QtWidgets.QVBoxLayout(analysis_box)
+
+        self.analysis = self.analysis_list.currentData()
+        self.analysis_layout.addWidget(self.analysis.widget())
 
         layout.addWidget(select_analysis_box)
         layout.addWidget(analysis_box)
@@ -1880,3 +1884,11 @@ class AnalysisWindow(QtWidgets.QWidget):
     def runAnalysis(self):
         if self.analysis is not None:
             self.analysis.runAnalysis()
+
+    def updateSelection(self):
+        self.analysis = self.analysis_list.currentData()
+        old_widget = self.analysis_layout.itemAt(0).widget()
+        self.analysis_layout.replaceWidget(old_widget, self.analysis.widget())
+        old_widget.hide()
+        self.analysis.widget().show()
+        self.update()

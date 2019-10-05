@@ -1582,7 +1582,7 @@ class RealImaginaryChart(FrequencyChart):
 
                 # Real part first
                 if self.isPlotable(x, y_re) and self.isPlotable(prev_x, prev_y_re):
-                    line_pen.setColor(self.sweepColor)
+                    line_pen.setColor(self.referenceColor)
                     qp.setPen(line_pen)
                     qp.drawLine(x, y_re, prev_x, prev_y_re)
                 elif self.isPlotable(x, y_re) and not self.isPlotable(prev_x, prev_y_re):

@@ -41,6 +41,7 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.setMinimumSize(450, 600)
         self.setWindowTitle("Calibration")
         self.setWindowIcon(self.app.icon)
+        self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
 
         shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
