@@ -1018,6 +1018,8 @@ class LogMagChart(FrequencyChart):
         self.maxValue = 1
         self.span = 1
 
+        self.isInverted = False
+
         self.setMinimumSize(self.chartWidth + self.rightMargin + self.leftMargin, self.chartHeight + self.topMargin + self.bottomMargin)
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding))
         pal = QtGui.QPalette()
@@ -1060,8 +1062,8 @@ class LogMagChart(FrequencyChart):
             self.drawBands(qp, fstart, fstop)
 
         if self.fixedValues:
-            maxValue = -self.minDisplayValue  # These are negative, because the entire logmag chart is
-            minValue = -self.maxDisplayValue  # upside down.
+            maxValue = self.maxDisplayValue
+            minValue = self.minDisplayValue
             self.maxValue = maxValue
             self.minValue = minValue
         else:
@@ -1122,19 +1124,18 @@ class LogMagChart(FrequencyChart):
 
         for i in range(tick_count):
             db = first_tick + i * tick_step
-            y = self.topMargin + round((db-minValue)/span*self.chartHeight)
+            y = self.topMargin + round((maxValue - db)/span*self.chartHeight)
             qp.setPen(QtGui.QPen(self.foregroundColor))
             qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.chartWidth, y)
             if db > minValue:
                 qp.setPen(QtGui.QPen(self.textColor))
-                qp.drawText(3, y + 4, str(-db))
+                qp.drawText(3, y + 4, str(db))
 
-        qp.setPen(QtGui.QPen(self.foregroundColor))
-        qp.drawLine(self.leftMargin - 5, self.topMargin,
-                    self.leftMargin + self.chartWidth, self.topMargin)
+#        qp.setPen(QtGui.QPen(self.foregroundColor))
+#        qp.drawLine(self.leftMargin - 5, self.topMargin,
+#                    self.leftMargin + self.chartWidth, self.topMargin)
         qp.setPen(self.textColor)
-        qp.drawText(3, 35, str(-minValue))
-#        qp.drawText(3, self.chartHeight+self.topMargin, str(-maxValue))
+        qp.drawText(3, self.chartHeight+self.topMargin, str(minValue))
         # Frequency ticks
         qp.drawText(self.leftMargin-20, self.topMargin + self.chartHeight + 15, Chart.shortenFrequency(self.fstart))
         ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
@@ -1151,12 +1152,14 @@ class LogMagChart(FrequencyChart):
 
     def getYPosition(self, d: Datapoint) -> int:
         logMag = self.logMag(d)
-        return self.topMargin + round((logMag - self.minValue) / self.span * self.chartHeight)
+        return self.topMargin + round((self.maxValue - logMag) / self.span * self.chartHeight)
 
-    @staticmethod
-    def logMag(p: Datapoint) -> float:
+    def logMag(self, p: Datapoint) -> float:
         from NanoVNASaver.NanoVNASaver import NanoVNASaver
-        return -NanoVNASaver.gain(p)
+        if self.isInverted:
+            return -NanoVNASaver.gain(p)
+        else:
+            return NanoVNASaver.gain(p)
 
 
 class QualityFactorChart(FrequencyChart):

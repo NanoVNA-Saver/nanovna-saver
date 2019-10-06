@@ -1101,6 +1101,22 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         display_options_box = QtWidgets.QGroupBox("Options")
         display_options_layout = QtWidgets.QFormLayout(display_options_box)
 
+        returnloss_group = QtWidgets.QButtonGroup()
+        self.returnloss_is_negative = QtWidgets.QRadioButton("Negative")
+        self.returnloss_is_positive = QtWidgets.QRadioButton("Positive")
+        returnloss_group.addButton(self.returnloss_is_positive)
+        returnloss_group.addButton(self.returnloss_is_negative)
+
+        display_options_layout.addRow("Return loss is:", self.returnloss_is_negative)
+        display_options_layout.addRow("", self.returnloss_is_positive)
+
+        if self.app.settings.value("ReturnLossPositive", False):
+            self.returnloss_is_positive.setChecked(True)
+        else:
+            self.returnloss_is_negative.setChecked(True)
+
+        self.returnloss_is_positive.toggled.connect(self.changeReturnLoss)
+
         self.show_lines_option = QtWidgets.QCheckBox("Show lines")
         show_lines_label = QtWidgets.QLabel("Displays a thin line between data points")
         self.show_lines_option.stateChanged.connect(self.changeShowLines)
@@ -1328,6 +1344,16 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self.app.charts_layout.addWidget(found, x, y)
             if found.isHidden():
                 found.show()
+
+    def changeReturnLoss(self):
+        state = self.returnloss_is_positive.isChecked()
+        self.app.settings.setValue("ReturnLossPositive", state)
+
+        for m in self.app.markers:
+            m.returnloss_is_positive = state
+            m.updateLabels(self.app.data, self.app.data21)
+        self.app.s11LogMag.isInverted = state
+        self.app.s11LogMag.update()
 
     def changeShowLines(self):
         state = self.show_lines_option.isChecked()

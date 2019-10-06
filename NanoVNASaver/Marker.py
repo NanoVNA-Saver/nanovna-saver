@@ -29,6 +29,8 @@ class Marker(QtCore.QObject):
     color = QtGui.QColor()
     location = -1
 
+    returnloss_is_positive = False
+
     updated = pyqtSignal()
 
     def __init__(self, name, initialColor, frequency=""):
@@ -220,7 +222,11 @@ class Marker(QtCore.QObject):
             self.impedance_label.setText(str(re50) + im50str)
             self.parallel_r_label.setText(rpstr)
             self.parallel_x_label.setText(xpstr)
-            self.returnloss_label.setText(str(round(NanoVNASaver.gain(s11data[self.location]), 3)) + " dB")
+            if self.returnloss_is_positive:
+                returnloss = -round(NanoVNASaver.gain(s11data[self.location]), 3)
+            else:
+                returnloss = round(NanoVNASaver.gain(s11data[self.location]), 3)
+            self.returnloss_label.setText(str(returnloss) + " dB")
             capacitance = NanoVNASaver.capacitanceEquivalent(im50, s11data[self.location].freq)
             inductance = NanoVNASaver.inductanceEquivalent(im50, s11data[self.location].freq)
             self.inductance_label.setText(inductance)
