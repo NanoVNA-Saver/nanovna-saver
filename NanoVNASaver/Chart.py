@@ -299,8 +299,8 @@ class FrequencyChart(Chart):
             self.update()
 
     def setMinimumValue(self):
-        min_val, selected = QtWidgets.QInputDialog.getInt(self, "Minimum value",
-                                                          "Set minimum value", value=self.minDisplayValue)
+        min_val, selected = QtWidgets.QInputDialog.getDouble(self, "Minimum value",
+                                                             "Set minimum value", value=self.minDisplayValue)
         if not selected:
             return
         if not (self.fixedValues and min_val >= self.maxDisplayValue):
@@ -309,8 +309,8 @@ class FrequencyChart(Chart):
             self.update()
 
     def setMaximumValue(self):
-        max_val, selected = QtWidgets.QInputDialog.getInt(self, "Maximum value",
-                                                          "Set maximum value", value=self.maxDisplayValue)
+        max_val, selected = QtWidgets.QInputDialog.getDouble(self, "Maximum value",
+                                                             "Set maximum value", value=self.maxDisplayValue)
         if not selected:
             return
         if not (self.fixedValues and max_val <= self.minDisplayValue):
@@ -473,7 +473,7 @@ class SquareChart(Chart):
 class PhaseChart(FrequencyChart):
     def __init__(self, name=""):
         super().__init__(name)
-        self.leftMargin = 35
+        self.leftMargin = 40
         self.chartWidth = 250
         self.chartHeight = 250
         self.fstart = 0
@@ -550,19 +550,28 @@ class PhaseChart(FrequencyChart):
         self.minAngle = minAngle
         self.maxAngle = maxAngle
         self.span = span
-        step = math.floor(span / 4)
-        if step == 0:
-            step = 1
-        for i in range(minAngle, maxAngle, step):
-            y = self.topMargin + round((maxAngle - i) / span * self.chartHeight)
-            if i != minAngle and i != maxAngle and (maxAngle - i) > step / 2:
+
+        tickcount = math.floor(self.chartHeight / 60)
+
+        for i in range(tickcount):
+            angle = minAngle + span * i / tickcount
+            y = self.topMargin + round((self.maxAngle - angle) / self.span * self.chartHeight)
+            if angle != minAngle and angle != maxAngle:
                 qp.setPen(QtGui.QPen(self.textColor))
-                qp.drawText(3, y + 3, str(i) + "°")
+                if angle != 0:
+                    digits = max(0, min(2, math.floor(3 - math.log10(abs(angle)))))
+                    if digits == 0:
+                        anglestr = str(round(angle))
+                    else:
+                        anglestr = str(round(angle, digits))
+                else:
+                    anglestr = "0"
+                qp.drawText(3, y + 3, anglestr + "°")
                 qp.setPen(QtGui.QPen(self.foregroundColor))
                 qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.chartWidth, y)
         qp.drawLine(self.leftMargin - 5, self.topMargin, self.leftMargin + self.chartWidth, self.topMargin)
         qp.setPen(self.textColor)
-        qp.drawText(3, 35, str(maxAngle) + "°")
+        qp.drawText(3, self.topMargin + 5, str(maxAngle) + "°")
         qp.drawText(3, self.chartHeight + self.topMargin, str(minAngle) + "°")
 
         if self.fixedSpan:
@@ -607,7 +616,7 @@ class PhaseChart(FrequencyChart):
                 angle = self.angle(d)
         else:
             angle = self.angle(d)
-        return 30 + round((self.maxAngle - angle) / self.span * self.chartHeight)
+        return self.topMargin + round((self.maxAngle - angle) / self.span * self.chartHeight)
 
     @staticmethod
     def angle(d: Datapoint) -> float:
@@ -687,29 +696,20 @@ class VSWRChart(FrequencyChart):
         self.maxVSWR = maxVSWR
         span = maxVSWR-minVSWR
         self.span = span
-        ticksize = 1
-        if span > 15 and span % 7 == 0:
-            ticksize = 7
-        elif span > 10 and span % 5 == 0:
-            ticksize = 5
-        elif span > 12 and span % 4 == 0:
-            ticksize = 4
-        elif span > 8 and span % 3 == 0:
-            ticksize = 3
-        elif span > 7 and span % 2 == 0:
-            ticksize = 2
 
-        for i in range(minVSWR, maxVSWR, ticksize):
-            y = self.topMargin + round((maxVSWR-i)/span*self.chartHeight)
-            if i != minVSWR and i != maxVSWR:
-                qp.setPen(self.textColor)
-                qp.drawText(3, y+3, str(i))
+        target_ticks = math.floor(self.chartHeight / 60)
+
+        for i in range(target_ticks):
+            vswr = minVSWR + i/target_ticks * span
+            y = self.topMargin + round((self.maxVSWR - vswr) / self.span * self.chartHeight)
+            qp.setPen(self.textColor)
+            qp.drawText(3, y+3, str(round(vswr, 1)))
             qp.setPen(QtGui.QPen(self.foregroundColor))
             qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.chartWidth, y)
         qp.drawLine(self.leftMargin - 5, self.topMargin, self.leftMargin + self.chartWidth, self.topMargin)
         qp.setPen(self.textColor)
-        qp.drawText(3, 35, str(maxVSWR))
-        qp.drawText(3, self.chartHeight + self.topMargin, str(minVSWR))
+        qp.drawText(3, 35, str(round(maxVSWR, 1)))
+        # qp.drawText(3, self.chartHeight + self.topMargin, str(minVSWR))
         # At least 100 px between ticks
 
         qp.drawText(self.leftMargin-20, self.topMargin + self.chartHeight + 15, Chart.shortenFrequency(fstart))
@@ -1014,6 +1014,10 @@ class LogMagChart(FrequencyChart):
         self.minDisplayValue = -80
         self.maxDisplayValue = 10
 
+        self.minValue = 0
+        self.maxValue = 1
+        self.span = 1
+
         self.setMinimumSize(self.chartWidth + self.rightMargin + self.leftMargin, self.chartHeight + self.topMargin + self.bottomMargin)
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding))
         pal = QtGui.QPalette()
@@ -1086,17 +1090,51 @@ class LogMagChart(FrequencyChart):
 
         span = maxValue-minValue
         self.span = span
-        for i in range(minValue, maxValue, 10):
-            y = self.topMargin + round((i-minValue)/span*self.chartHeight)
+
+        if self.span >= 50:
+            # Ticks per 10dB step
+            tick_count = math.floor(self.span/10)
+            first_tick = math.ceil(self.minValue/10) * 10
+            tick_step = 10
+            if first_tick == minValue:
+                first_tick += 10
+        elif self.span >= 20:
+            # 5 dB ticks
+            tick_count = math.floor(self.span/5)
+            first_tick = math.ceil(self.minValue/5) * 5
+            tick_step = 5
+            if first_tick == minValue:
+                first_tick += 5
+        elif self.span >= 10:
+            # 2 dB ticks
+            tick_count = math.floor(self.span/2)
+            first_tick = math.ceil(self.minValue/2) * 2
+            tick_step = 2
+            if first_tick == minValue:
+                first_tick += 2
+        else:
+            # 1dB ticks
+            tick_count = math.floor(self.span)
+            first_tick = math.ceil(minValue)
+            tick_step = 1
+            if first_tick == minValue:
+                first_tick += 1
+
+        for i in range(tick_count):
+            db = first_tick + i * tick_step
+            y = self.topMargin + round((db-minValue)/span*self.chartHeight)
             qp.setPen(QtGui.QPen(self.foregroundColor))
             qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.chartWidth, y)
-            if i > minValue:
+            if db > minValue:
                 qp.setPen(QtGui.QPen(self.textColor))
-                qp.drawText(3, y + 4, str(-i))
+                qp.drawText(3, y + 4, str(-db))
+
+        qp.setPen(QtGui.QPen(self.foregroundColor))
+        qp.drawLine(self.leftMargin - 5, self.topMargin,
+                    self.leftMargin + self.chartWidth, self.topMargin)
         qp.setPen(self.textColor)
         qp.drawText(3, 35, str(-minValue))
-        qp.drawText(3, self.chartHeight+self.topMargin, str(-maxValue))
-
+#        qp.drawText(3, self.chartHeight+self.topMargin, str(-maxValue))
         # Frequency ticks
         qp.drawText(self.leftMargin-20, self.topMargin + self.chartHeight + 15, Chart.shortenFrequency(self.fstart))
         ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
@@ -1152,7 +1190,6 @@ class QualityFactorChart(FrequencyChart):
         qp.drawLine(self.leftMargin, self.topMargin - 5, self.leftMargin, self.topMargin + self.chartHeight + 5)
         qp.drawLine(self.leftMargin-5, self.topMargin + self.chartHeight,
                     self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)
-        maxQ = 0
 
         # Make up some sensible scaling here
         if self.fixedValues:
@@ -1160,26 +1197,32 @@ class QualityFactorChart(FrequencyChart):
             minQ = self.minDisplayValue
         else:
             minQ = 0
+            maxQ = 0
             for d in self.data:
                 Q = NanoVNASaver.qualifyFactor(d)
                 if Q > maxQ:
                     maxQ = Q
-        scale = 0
-        if maxQ > 0:
-            scale = max(scale, math.floor(math.log10(maxQ)))
-
+            scale = 0
+            if maxQ > 0:
+                scale = max(scale, math.floor(math.log10(maxQ)))
+                maxQ = math.ceil(maxQ / 10 ** scale) * 10 ** scale
         self.minQ = minQ
-        self.maxQ = math.ceil(maxQ/10**scale) * 10**scale
+        self.maxQ = maxQ
         self.span = self.maxQ - self.minQ
-        step = math.floor(self.span / 10)
-        if step == 0:
-            step = 1  # Always show at least one step of size 1
         if self.span == 0:
             return  # No data to draw the graph from
-        for i in range(self.minQ, self.maxQ, step):
-            y = self.topMargin + round((self.maxQ - i) / self.span * self.chartHeight)
+
+        tickcount = math.floor(self.chartHeight / 60)
+
+        for i in range(tickcount):
+            q = self.minQ + i * self.span / tickcount
+            y = self.topMargin + round((self.maxQ - q) / self.span * self.chartHeight)
+            if q < 20:
+                q = round(q, 1)
+            else:
+                q = round(q)
             qp.setPen(QtGui.QPen(self.textColor))
-            qp.drawText(3, y+3, str(i))
+            qp.drawText(3, y+3, str(q))
             qp.setPen(QtGui.QPen(self.foregroundColor))
             qp.drawLine(self.leftMargin-5, y, self.leftMargin + self.chartWidth, y)
         qp.drawLine(self.leftMargin - 5, self.topMargin, self.leftMargin + self.chartWidth, self.topMargin)

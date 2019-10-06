@@ -616,6 +616,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                 elif self.sweepStartInput.text() == "" or self.sweepEndInput.text() == "":
                     self.sweepStartInput.setText(frequencies[0])
                     self.sweepEndInput.setText(frequencies[100])
+                self.sweepStartInput.textChanged.emit(self.sweepStartInput.text())
             else:
                 logger.warning("No frequencies read")
                 return
@@ -1067,6 +1068,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def showSweepError(self):
         self.showError(self.worker.error_message)
+        self.stopSerial()
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
         self.worker.stopped = True
