@@ -389,10 +389,10 @@ class CalibrationWindow(QtWidgets.QWidget):
                 self.app.settings.setValue("ShortL3", shortL3[i])
                 self.app.settings.setValue("ShortDelay", shortDelay[i])
 
-                self.app.settings.setValue("OpenL0", openC0[i])
-                self.app.settings.setValue("OpenL1", openC1[i])
-                self.app.settings.setValue("OpenL2", openC2[i])
-                self.app.settings.setValue("OpenL3", openC3[i])
+                self.app.settings.setValue("OpenC0", openC0[i])
+                self.app.settings.setValue("OpenC1", openC1[i])
+                self.app.settings.setValue("OpenC2", openC2[i])
+                self.app.settings.setValue("OpenC3", openC3[i])
                 self.app.settings.setValue("OpenDelay", openDelay[i])
                 
                 self.app.settings.setValue("LoadR", loadR[i])
