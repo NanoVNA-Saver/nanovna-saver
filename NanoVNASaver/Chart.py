@@ -138,9 +138,12 @@ class Chart(QtWidgets.QWidget):
     def shortenFrequency(frequency: int) -> str:
         if frequency < 50000:
             return str(frequency)
-        if frequency < 5000000:
+        elif frequency < 5000000:
             return str(round(frequency / 1000)) + "k"
-        return str(round(frequency / 1000000, 1)) + "M"
+        elif frequency < 50000000:
+            return str(round(frequency / 1000000, 2)) + "M"
+        else:
+            return str(round(frequency / 1000000, 1)) + "M"
 
     def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
         if event.buttons() == QtCore.Qt.RightButton:
@@ -703,12 +706,23 @@ class VSWRChart(FrequencyChart):
             vswr = minVSWR + i/target_ticks * span
             y = self.topMargin + round((self.maxVSWR - vswr) / self.span * self.chartHeight)
             qp.setPen(self.textColor)
-            qp.drawText(3, y+3, str(round(vswr, 1)))
+            if vswr != 0:
+                digits = max(0, min(2, math.floor(3 - math.log10(abs(vswr)))))
+                if digits == 0:
+                    vswrstr = str(round(vswr))
+                else:
+                    vswrstr = str(round(vswr, digits))
+            qp.drawText(3, y+3, vswrstr)
             qp.setPen(QtGui.QPen(self.foregroundColor))
             qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.chartWidth, y)
         qp.drawLine(self.leftMargin - 5, self.topMargin, self.leftMargin + self.chartWidth, self.topMargin)
         qp.setPen(self.textColor)
-        qp.drawText(3, 35, str(round(maxVSWR, 1)))
+        digits = max(0, min(2, math.floor(3 - math.log10(abs(maxVSWR)))))
+        if digits == 0:
+            vswrstr = str(round(maxVSWR))
+        else:
+            vswrstr = str(round(maxVSWR, digits))
+        qp.drawText(3, 35, vswrstr)
         # qp.drawText(3, self.chartHeight + self.topMargin, str(minVSWR))
         # At least 100 px between ticks
 
@@ -1114,27 +1128,46 @@ class LogMagChart(FrequencyChart):
             tick_step = 2
             if first_tick == minValue:
                 first_tick += 2
-        else:
+        elif self.span >= 5:
             # 1dB ticks
             tick_count = math.floor(self.span)
             first_tick = math.ceil(minValue)
             tick_step = 1
             if first_tick == minValue:
                 first_tick += 1
+        elif self.span >= 2:
+            # .5 dB ticks
+            tick_count = math.floor(self.span*2)
+            first_tick = math.ceil(minValue*2) / 2
+            tick_step = .5
+            if first_tick == minValue:
+                first_tick += .5
+        else:
+            # .1 dB ticks
+            tick_count = math.floor(self.span*10)
+            first_tick = math.ceil(minValue*10) / 10
+            tick_step = .1
+            if first_tick == minValue:
+                first_tick += .1
 
         for i in range(tick_count):
             db = first_tick + i * tick_step
             y = self.topMargin + round((maxValue - db)/span*self.chartHeight)
             qp.setPen(QtGui.QPen(self.foregroundColor))
             qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.chartWidth, y)
-            if db > minValue:
+            if db > minValue and db != maxValue:
                 qp.setPen(QtGui.QPen(self.textColor))
-                qp.drawText(3, y + 4, str(db))
+                if tick_step < 1:
+                    dbstr = str(round(db, 1))
+                else:
+                    dbstr = str(db)
+                qp.drawText(3, y + 4, dbstr)
 
-#        qp.setPen(QtGui.QPen(self.foregroundColor))
-#        qp.drawLine(self.leftMargin - 5, self.topMargin,
-#                    self.leftMargin + self.chartWidth, self.topMargin)
+        qp.setPen(QtGui.QPen(self.foregroundColor))
+        qp.drawLine(self.leftMargin - 5, self.topMargin,
+                    self.leftMargin + self.chartWidth, self.topMargin)
         qp.setPen(self.textColor)
+        qp.drawText(3, self.topMargin + 4, str(maxValue))
         qp.drawText(3, self.chartHeight+self.topMargin, str(minValue))
         # Frequency ticks
         qp.drawText(self.leftMargin-20, self.topMargin + self.chartHeight + 15, Chart.shortenFrequency(self.fstart))
@@ -1220,7 +1253,9 @@ class QualityFactorChart(FrequencyChart):
         for i in range(tickcount):
             q = self.minQ + i * self.span / tickcount
             y = self.topMargin + round((self.maxQ - q) / self.span * self.chartHeight)
-            if q < 20:
+            if q < 10:
+                q = round(q, 2)
+            elif q < 20:
                 q = round(q, 1)
             else:
                 q = round(q)
@@ -1230,7 +1265,13 @@ class QualityFactorChart(FrequencyChart):
             qp.drawLine(self.leftMargin-5, y, self.leftMargin + self.chartWidth, y)
         qp.drawLine(self.leftMargin - 5, self.topMargin, self.leftMargin + self.chartWidth, self.topMargin)
         qp.setPen(self.textColor)
-        qp.drawText(3, 35, str(self.maxQ))
+        if maxQ < 10:
+            qstr = str(round(maxQ, 2))
+        elif maxQ < 20:
+            qstr = str(round(maxQ, 1))
+        else:
+            qstr = str(round(maxQ))
+        qp.drawText(3, 35, qstr)
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
