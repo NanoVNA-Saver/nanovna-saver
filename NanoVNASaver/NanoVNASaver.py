@@ -648,6 +648,13 @@ class NanoVNASaver(QtWidgets.QWidget):
     def setSweep(self, start, stop):
         self.writeSerial("sweep " + str(start) + " " + str(stop) + " 101")
 
+    def toggleSweepSettings(self, disabled):
+        self.sweepStartInput.setDisabled(disabled)
+        self.sweepEndInput.setDisabled(disabled)
+        self.sweepSpanInput.setDisabled(disabled)
+        self.sweepCenterInput.setDisabled(disabled)
+        self.sweepCountInput.setDisabled(disabled)
+
     def sweep(self):
         # Run the serial port update
         if not self.serial.is_open:
@@ -657,6 +664,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.sweepProgressBar.setValue(0)
         self.btnSweep.setDisabled(True)
         self.btnStopSweep.setDisabled(False)
+        self.toggleSweepSettings(True)
         for m in self.markers:
             m.resetLabels()
         self.s11_min_rl_label.setText("")
@@ -872,6 +880,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.sweepProgressBar.setValue(100)
         self.btnSweep.setDisabled(False)
         self.btnStopSweep.setDisabled(True)
+        self.toggleSweepSettings(True)
 
     def updateCenterSpan(self):
         fstart = self.parseFrequency(self.sweepStartInput.text())

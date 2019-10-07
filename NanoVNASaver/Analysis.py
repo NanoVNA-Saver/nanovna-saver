@@ -128,10 +128,14 @@ class LowPassAnalysis(Analysis):
                 break
 
         cutoff_frequency = self.app.data21[cutoff_location].freq
-
+        cutoff_gain = NanoVNASaver.gain(self.app.data21[cutoff_location]) - pass_band_db
+        if cutoff_gain < -4:
+            logger.debug("Cutoff frequency found at %f dB - insufficient data points for true -3 dB point.",
+                         cutoff_gain)
         logger.debug("Found true cutoff frequency at %d", cutoff_frequency)
 
-        self.cutoff_label.setText(NanoVNASaver.formatFrequency(cutoff_frequency))
+        self.cutoff_label.setText(NanoVNASaver.formatFrequency(cutoff_frequency) +
+                                  " (" + str(round(cutoff_gain, 1)) + " dB)")
         self.app.markers[1].setFrequency(str(cutoff_frequency))
 
         six_db_location = -1
@@ -270,10 +274,15 @@ class HighPassAnalysis(Analysis):
                 break
 
         cutoff_frequency = self.app.data21[cutoff_location].freq
+        cutoff_gain = NanoVNASaver.gain(self.app.data21[cutoff_location]) - pass_band_db
+        if cutoff_gain < -4:
+            logger.debug("Cutoff frequency found at %f dB - insufficient data points for true -3 dB point.",
+                         cutoff_gain)
 
         logger.debug("Found true cutoff frequency at %d", cutoff_frequency)
 
-        self.cutoff_label.setText(NanoVNASaver.formatFrequency(cutoff_frequency))
+        self.cutoff_label.setText(NanoVNASaver.formatFrequency(cutoff_frequency) +
+                                  " (" + str(round(cutoff_gain, 1)) + " dB)")
         self.app.markers[1].setFrequency(str(cutoff_frequency))
 
         six_db_location = -1
@@ -463,10 +472,17 @@ class BandPassAnalysis(Analysis):
                 break
 
         lower_cutoff_frequency = self.app.data21[lower_cutoff_location].freq
+        lower_cutoff_gain = NanoVNASaver.gain(self.app.data21[lower_cutoff_location]) - pass_band_db
+
+        if lower_cutoff_gain < -4:
+            logger.debug("Lower cutoff frequency found at %f dB - insufficient data points for true -3 dB point.",
+                         lower_cutoff_gain)
 
         logger.debug("Found true lower cutoff frequency at %d", lower_cutoff_frequency)
 
-        self.lower_cutoff_label.setText(NanoVNASaver.formatFrequency(lower_cutoff_frequency))
+        self.lower_cutoff_label.setText(NanoVNASaver.formatFrequency(lower_cutoff_frequency) +
+                                        " (" + str(round(lower_cutoff_gain, 1)) + " dB)")
+
         self.app.markers[1].setFrequency(str(lower_cutoff_frequency))
 
         upper_cutoff_location = -1
@@ -479,14 +495,19 @@ class BandPassAnalysis(Analysis):
                 break
 
         upper_cutoff_frequency = self.app.data21[upper_cutoff_location].freq
+        upper_cutoff_gain = NanoVNASaver.gain(self.app.data21[upper_cutoff_location]) - pass_band_db
+        if upper_cutoff_gain < -4:
+            logger.debug("Upper cutoff frequency found at %f dB - insufficient data points for true -3 dB point.",
+                         upper_cutoff_gain)
 
         logger.debug("Found true upper cutoff frequency at %d", upper_cutoff_frequency)
 
-        self.upper_cutoff_label.setText(NanoVNASaver.formatFrequency(upper_cutoff_frequency))
+        self.upper_cutoff_label.setText(NanoVNASaver.formatFrequency(upper_cutoff_frequency) +
+                                        " (" + str(round(upper_cutoff_gain, 1)) + " dB)")
         self.app.markers[2].setFrequency(str(upper_cutoff_frequency))
 
         span = upper_cutoff_frequency - lower_cutoff_frequency
-        center_frequency = lower_cutoff_frequency + span/2
+        center_frequency = math.sqrt(lower_cutoff_frequency * upper_cutoff_frequency)
         q = center_frequency / span
 
         self.span_label.setText(NanoVNASaver.formatFrequency(span))
@@ -585,4 +606,8 @@ class BandPassAnalysis(Analysis):
             upper_sixty_db_cutoff_frequency = self.app.data21[upper_sixty_db_location].freq
             self.upper_sixty_db_label.setText(NanoVNASaver.formatFrequency(upper_sixty_db_cutoff_frequency))
 
-        self.result_label.setText("Analysis complete (" + str(len(self.app.data)) + " points)")
+        if upper_cutoff_gain < -4 or lower_cutoff_gain < -4:
+            self.result_label.setText("Analysis complete (" + str(len(self.app.data)) + " points)\n" +
+                                      "Insufficient data for analysis. Increase segment count.")
+        else:
+            self.result_label.setText("Analysis complete (" + str(len(self.app.data)) + " points)")
