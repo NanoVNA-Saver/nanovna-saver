@@ -24,6 +24,8 @@ from PyQt5.QtCore import pyqtSlot, pyqtSignal
 import NanoVNASaver
 import logging
 
+from NanoVNASaver.Hardware import VNA
+
 logger = logging.getLogger(__name__)
 
 Datapoint = collections.namedtuple('Datapoint', 'freq re im')
@@ -36,11 +38,12 @@ class WorkerSignals(QtCore.QObject):
 
 
 class SweepWorker(QtCore.QRunnable):
-    def __init__(self, app: NanoVNASaver):
+    def __init__(self, app: NanoVNASaver, vna: VNA):
         super().__init__()
         logger.info("Initializing SweepWorker")
         self.signals = WorkerSignals()
         self.app = app
+        self.vna = vna
         self.noSweeps = 1
         self.setAutoDelete(False)
         self.percentage = 0
@@ -156,7 +159,7 @@ class SweepWorker(QtCore.QRunnable):
         logger.debug("Resetting NanoVNA sweep to full range: %d to %d",
                      NanoVNASaver.parseFrequency(self.app.sweepStartInput.text()),
                      NanoVNASaver.parseFrequency(self.app.sweepEndInput.text()))
-        self.app.setSweep(NanoVNASaver.parseFrequency(self.app.sweepStartInput.text()), NanoVNASaver.parseFrequency(self.app.sweepEndInput.text()))
+        self.vna.setSweep(NanoVNASaver.parseFrequency(self.app.sweepStartInput.text()), NanoVNASaver.parseFrequency(self.app.sweepEndInput.text()))
 
         self.percentage = 100
         logger.debug("Sending \"finished\" signal")
@@ -270,7 +273,7 @@ class SweepWorker(QtCore.QRunnable):
 
     def readSegment(self, start, stop):
         logger.debug("Setting sweep range to %d to %d", start, stop)
-        self.app.setSweep(start, stop)
+        self.vna.setSweep(start, stop)
         sleep(1)    # TODO This long delay seems to fix the weird data transitions we were seeing by getting partial
                     #      sweeps.  Clearly something needs to be done, maybe at firmware level, to address this fully.
 
@@ -296,7 +299,7 @@ class SweepWorker(QtCore.QRunnable):
         while not done:
             done = True
             returndata = []
-            tmpdata = self.app.readValues(data)
+            tmpdata = self.vna.readValues(data)
             if not tmpdata:
                 logger.warning("Read no values")
                 raise NanoVNAValueException("Failed reading data: Returned no values.")
@@ -338,7 +341,7 @@ class SweepWorker(QtCore.QRunnable):
         while not done:
             done = True
             returnfreq = []
-            tmpfreq = self.app.readValues("frequencies")
+            tmpfreq = self.vna.readValues("frequencies")
             if not tmpfreq:
                 logger.warning("Read no frequencies")
                 raise NanoVNAValueException("Failed reading frequencies: Returned no values.")

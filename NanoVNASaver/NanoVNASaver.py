@@ -28,6 +28,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import QModelIndex
 from serial.tools import list_ports
 
+from NanoVNASaver.Hardware import VNA, InvalidVNA
 from .Chart import Chart, PhaseChart, VSWRChart, PolarChart, SmithChart, LogMagChart, QualityFactorChart, TDRChart, \
     RealImaginaryChart
 from .Calibration import CalibrationWindow, Calibration
@@ -62,7 +63,8 @@ class NanoVNASaver(QtWidgets.QWidget):
                                          "NanoVNASaver", "NanoVNASaver")
         print("Settings: " + self.settings.fileName())
         self.threadpool = QtCore.QThreadPool()
-        self.worker = SweepWorker(self)
+        self.vna = InvalidVNA()
+        self.worker = SweepWorker(self, self.vna)
 
         self.bands = BandsModel()
 
@@ -488,10 +490,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         #  Right side
         ################################################################################################################
 
-        self.worker.signals.updated.connect(self.dataUpdated)
-        self.worker.signals.finished.connect(self.sweepFinished)
-        self.worker.signals.sweepError.connect(self.showSweepError)
-
         logger.debug("Finished building interface")
 
     def rescanSerialPort(self):
@@ -577,15 +575,6 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.startSerial()
         return
 
-    def flushSerialBuffers(self):
-        if self.serialLock.acquire():
-            self.serial.write(b"\r\n\r\n")
-            sleep(0.1)
-            self.serial.reset_input_buffer()
-            self.serial.reset_output_buffer()
-            sleep(0.1)
-            self.serialLock.release()
-
     def startSerial(self):
         if self.serialLock.acquire():
             self.serialPort = self.serialPortInput.text()
@@ -602,12 +591,16 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.serialLock.release()
             sleep(0.05)
 
-            self.flushSerialBuffers()
-            sleep(0.05)
+            self.vna = VNA.getVNA(self, self.serial)
+            self.worker = SweepWorker(self, self.vna)
 
-            logger.info(self.readFirmware())
+            self.worker.signals.updated.connect(self.dataUpdated)
+            self.worker.signals.finished.connect(self.sweepFinished)
+            self.worker.signals.sweepError.connect(self.showSweepError)
 
-            frequencies = self.readValues("frequencies")
+            logger.info(self.vna.readFirmware())
+
+            frequencies = self.vna.readFrequencies()
             if frequencies:
                 logger.info("Read starting frequency %s and end frequency %s", frequencies[0], frequencies[100])
                 if int(frequencies[0]) == int(frequencies[100]) and (self.sweepStartInput.text() == "" or self.sweepEndInput.text() == ""):
@@ -620,7 +613,6 @@ class NanoVNASaver(QtWidgets.QWidget):
             else:
                 logger.warning("No frequencies read")
                 return
-
             logger.debug("Starting initial sweep")
             self.sweep()
             return
@@ -631,22 +623,6 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.serial.close()
             self.serialLock.release()
             self.btnSerialToggle.setText("Connect to NanoVNA")
-
-    def writeSerial(self, command):
-        if not self.serial.is_open:
-            logger.warning("Writing without serial port being opened (%s)", command)
-            return
-        if self.serialLock.acquire():
-            try:
-                self.serial.write(str(command + "\r").encode('ascii'))
-                self.serial.readline()
-            except serial.SerialException as exc:
-                logger.exception("Exception while writing to serial port (%s): %s", command, exc)
-            self.serialLock.release()
-        return
-
-    def setSweep(self, start, stop):
-        self.writeSerial("sweep " + str(start) + " " + str(stop) + " 101")
 
     def toggleSweepSettings(self, disabled):
         self.sweepStartInput.setDisabled(disabled)
@@ -676,60 +652,11 @@ class NanoVNASaver(QtWidgets.QWidget):
         if self.sweepCountInput.text().isdigit():
             self.settings.setValue("Segments", self.sweepCountInput.text())
 
+        logger.debug("Starting worker thread")
         self.threadpool.start(self.worker)
 
     def stopSweep(self):
         self.worker.stopped = True
-
-    def readFirmware(self):
-        if self.serialLock.acquire():
-            result = ""
-            try:
-                data = "a"
-                while data != "":
-                    data = self.serial.readline().decode('ascii')
-                #  Then send the command to read data
-                self.serial.write("info\r".encode('ascii'))
-                result = ""
-                data = ""
-                sleep(0.01)
-                while "ch>" not in data:
-                    data = self.serial.readline().decode('ascii')
-                    result += data
-            except serial.SerialException as exc:
-                logger.exception("Exception while reading firmware data: %s", exc)
-            self.serialLock.release()
-            return result
-        else:
-            logger.error("Unable to acquire serial lock to read firmware.")
-            return ""
-
-    def readValues(self, value):
-        if self.serialLock.acquire():
-            try:
-                data = "a"
-                while data != "":
-                    data = self.serial.readline().decode('ascii')
-
-                #  Then send the command to read data
-                self.serial.write(str(value + "\r").encode('ascii'))
-                result = ""
-                data = ""
-                sleep(0.05)
-                while "ch>" not in data:
-                    data = self.serial.readline().decode('ascii')
-                    result += data
-                values = result.split("\r\n")
-            except serial.SerialException as exc:
-                logger.exception("Exception while reading %s: %s", value, exc)
-                self.serialLock.release()
-                return
-
-            self.serialLock.release()
-            return values[1:102]
-        else:
-            logger.error("Unable to acquire serial lock to read %s", value)
-            return
 
     def saveData(self, data, data12, source=None):
         if self.dataLock.acquire(blocking=True):
