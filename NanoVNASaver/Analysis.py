@@ -117,6 +117,7 @@ class LowPassAnalysis(Analysis):
         logger.debug("Found peak of %f at %d", peak_db, self.app.data[peak_location].freq)
 
         self.app.markers[0].setFrequency(str(self.app.data21[peak_location].freq))
+        self.app.markers[0].frequencyInput.setText(str(self.app.data21[peak_location].freq))
 
         cutoff_location = -1
         pass_band_db = peak_db
@@ -137,6 +138,7 @@ class LowPassAnalysis(Analysis):
         self.cutoff_label.setText(NanoVNASaver.formatFrequency(cutoff_frequency) +
                                   " (" + str(round(cutoff_gain, 1)) + " dB)")
         self.app.markers[1].setFrequency(str(cutoff_frequency))
+        self.app.markers[1].frequencyInput.setText(str(cutoff_frequency))
 
         six_db_location = -1
         for i in range(cutoff_location, len(self.app.data21)):
@@ -263,6 +265,7 @@ class HighPassAnalysis(Analysis):
         logger.debug("Found peak of %f at %d", peak_db, self.app.data[peak_location].freq)
 
         self.app.markers[0].setFrequency(str(self.app.data21[peak_location].freq))
+        self.app.markers[0].frequencyInput.setText(str(self.app.data21[peak_location].freq))
 
         cutoff_location = -1
         pass_band_db = peak_db
@@ -284,6 +287,7 @@ class HighPassAnalysis(Analysis):
         self.cutoff_label.setText(NanoVNASaver.formatFrequency(cutoff_frequency) +
                                   " (" + str(round(cutoff_gain, 1)) + " dB)")
         self.app.markers[1].setFrequency(str(cutoff_frequency))
+        self.app.markers[1].frequencyInput.setText(str(cutoff_frequency))
 
         six_db_location = -1
         for i in range(cutoff_location, -1, -1):
@@ -461,6 +465,7 @@ class BandPassAnalysis(Analysis):
         logger.debug("Found peak of %f at %d", peak_db, self.app.data[peak_location].freq)
 
         self.app.markers[0].setFrequency(str(self.app.data21[peak_location].freq))
+        self.app.markers[0].frequencyInput.setText(str(self.app.data21[peak_location].freq))
 
         lower_cutoff_location = -1
         pass_band_db = peak_db
@@ -484,6 +489,7 @@ class BandPassAnalysis(Analysis):
                                         " (" + str(round(lower_cutoff_gain, 1)) + " dB)")
 
         self.app.markers[1].setFrequency(str(lower_cutoff_frequency))
+        self.app.markers[1].frequencyInput.setText(str(lower_cutoff_frequency))
 
         upper_cutoff_location = -1
         pass_band_db = peak_db
@@ -505,6 +511,7 @@ class BandPassAnalysis(Analysis):
         self.upper_cutoff_label.setText(NanoVNASaver.formatFrequency(upper_cutoff_frequency) +
                                         " (" + str(round(upper_cutoff_gain, 1)) + " dB)")
         self.app.markers[2].setFrequency(str(upper_cutoff_frequency))
+        self.app.markers[2].frequencyInput.setText(str(upper_cutoff_frequency))
 
         span = upper_cutoff_frequency - lower_cutoff_frequency
         center_frequency = math.sqrt(lower_cutoff_frequency * upper_cutoff_frequency)
