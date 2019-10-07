@@ -880,7 +880,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.sweepProgressBar.setValue(100)
         self.btnSweep.setDisabled(False)
         self.btnStopSweep.setDisabled(True)
-        self.toggleSweepSettings(True)
+        self.toggleSweepSettings(False)
 
     def updateCenterSpan(self):
         fstart = self.parseFrequency(self.sweepStartInput.text())
