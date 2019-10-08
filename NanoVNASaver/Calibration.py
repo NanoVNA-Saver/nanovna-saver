@@ -41,6 +41,7 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.setMinimumSize(450, 600)
         self.setWindowTitle("Calibration")
         self.setWindowIcon(self.app.icon)
+        self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
 
         shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
@@ -85,8 +86,8 @@ class CalibrationWindow(QtWidgets.QWidget):
         calibration_control_layout.addRow(btn_cal_short, self.cal_short_label)
         calibration_control_layout.addRow(btn_cal_open, self.cal_open_label)
         calibration_control_layout.addRow(btn_cal_load, self.cal_load_label)
-        calibration_control_layout.addRow(btn_cal_through, self.cal_through_label)
         calibration_control_layout.addRow(btn_cal_isolation, self.cal_isolation_label)
+        calibration_control_layout.addRow(btn_cal_through, self.cal_through_label)
 
         calibration_control_layout.addRow(QtWidgets.QLabel(""))
 
@@ -195,7 +196,6 @@ class CalibrationWindow(QtWidgets.QWidget):
         btn_load_standard.clicked.connect(self.loadCalibrationStandard)
         btn_delete_standard = QtWidgets.QPushButton("Delete")
         btn_delete_standard.clicked.connect(self.deleteCalibrationStandard)
-        btn_delete_standard.setDisabled(True)
         cal_standard_save_button_layout.addWidget(btn_load_standard)
         cal_standard_save_button_layout.addWidget(btn_save_standard)
         cal_standard_save_button_layout.addWidget(btn_delete_standard)
@@ -312,39 +312,97 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.app.settings.endArray()
         
     def deleteCalibrationStandard(self):
-        # TODO: This does not currently work. We need to re-write all the settings in the array so they get renumbered.
         if self.cal_standard_save_selector.currentData() == -1:
             return
-        write_num = self.cal_standard_save_selector.currentData()
-        logger.debug("Deleting calibration no %d", write_num)
+        delete_num = self.cal_standard_save_selector.currentData()
+        logger.debug("Deleting calibration no %d", delete_num)
         num_standards = self.app.settings.beginReadArray("CalibrationStandards")
+        self.app.settings.endArray()
+
         logger.debug("Number of standards known: %d", num_standards)
-        self.app.settings.endArray()
-    
-        self.app.settings.beginWriteArray("CalibrationStandards", num_standards-1)
-        self.app.settings.setArrayIndex(write_num)
-        self.app.settings.remove("Name")
-    
-        self.app.settings.remove("ShortL0")
-        self.app.settings.remove("ShortL1")
-        self.app.settings.remove("ShortL2")
-        self.app.settings.remove("ShortL3")
-        self.app.settings.remove("ShortDelay")
-    
-        self.app.settings.remove("OpenC0")
-        self.app.settings.remove("OpenC1")
-        self.app.settings.remove("OpenC2")
-        self.app.settings.remove("OpenC3")
-        self.app.settings.remove("OpenDelay")
-    
-        self.app.settings.remove("LoadR")
-        self.app.settings.remove("LoadL")
-        self.app.settings.remove("LoadC")
-        self.app.settings.remove("LoadDelay")
-    
-        self.app.settings.remove("ThroughDelay")
-    
-        self.app.settings.endArray()
+
+        if num_standards == 1:
+            logger.debug("Only one standard known")
+            self.app.settings.beginWriteArray("CalibrationStandards", 0)
+            self.app.settings.endArray()
+        else:
+            names = []
+
+            shortL0 = []
+            shortL1 = []
+            shortL2 = []
+            shortL3 = []
+            shortDelay = []
+
+            openC0 = []
+            openC1 = []
+            openC2 = []
+            openC3 = []
+            openDelay = []
+
+            loadR = []
+            loadL = []
+            loadC = []
+            loadDelay = []
+
+            throughDelay = []
+
+            self.app.settings.beginReadArray("CalibrationStandards")
+            for i in range(num_standards):
+                if i == delete_num:
+                    continue
+                self.app.settings.setArrayIndex(i)
+                names.append(self.app.settings.value("Name"))
+
+                shortL0.append(self.app.settings.value("ShortL0"))
+                shortL1.append(self.app.settings.value("ShortL1"))
+                shortL2.append(self.app.settings.value("ShortL2"))
+                shortL3.append(self.app.settings.value("ShortL3"))
+                shortDelay.append(self.app.settings.value("ShortDelay"))
+
+                openC0.append(self.app.settings.value("OpenC0"))
+                openC1.append(self.app.settings.value("OpenC1"))
+                openC2.append(self.app.settings.value("OpenC2"))
+                openC3.append(self.app.settings.value("OpenC3"))
+                openDelay.append(self.app.settings.value("OpenDelay"))
+
+                loadR.append(self.app.settings.value("LoadR"))
+                loadL.append(self.app.settings.value("LoadL"))
+                loadC.append(self.app.settings.value("LoadC"))
+                loadDelay.append(self.app.settings.value("LoadDelay"))
+
+                throughDelay.append(self.app.settings.value("ThroughDelay"))
+            self.app.settings.endArray()
+
+            self.app.settings.beginWriteArray("CalibrationStandards")
+            self.app.settings.remove("")
+            self.app.settings.endArray()
+
+            self.app.settings.beginWriteArray("CalibrationStandards", len(names))
+            for i in range(len(names)):
+                self.app.settings.setArrayIndex(i)
+                self.app.settings.setValue("Name", names[i])
+                
+                self.app.settings.setValue("ShortL0", shortL0[i])
+                self.app.settings.setValue("ShortL1", shortL1[i])
+                self.app.settings.setValue("ShortL2", shortL2[i])
+                self.app.settings.setValue("ShortL3", shortL3[i])
+                self.app.settings.setValue("ShortDelay", shortDelay[i])
+
+                self.app.settings.setValue("OpenC0", openC0[i])
+                self.app.settings.setValue("OpenC1", openC1[i])
+                self.app.settings.setValue("OpenC2", openC2[i])
+                self.app.settings.setValue("OpenC3", openC3[i])
+                self.app.settings.setValue("OpenDelay", openDelay[i])
+                
+                self.app.settings.setValue("LoadR", loadR[i])
+                self.app.settings.setValue("LoadL", loadL[i])
+                self.app.settings.setValue("LoadC", loadC[i])
+                self.app.settings.setValue("LoadDelay", loadDelay[i])
+
+                self.app.settings.setValue("ThroughDelay", throughDelay[i])
+            self.app.settings.endArray()
+
         self.app.settings.sync()
         self.listCalibrationStandards()
 
@@ -389,6 +447,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.app.calibration.throughLength = float(self.through_length.text())/10**12
             self.app.calibration.useIdealThrough = False
 
+        logger.debug("Attempting calibration calculation.")
         if self.app.calibration.calculateCorrections():
             self.calibration_status_label.setText("Application calibration (" + str(len(self.app.calibration.s11short)) + " points)")
 
@@ -460,15 +519,13 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.btn_automatic.setDisabled(False)
             return
 
-        open_step = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Information,
-                                          "Calibrate open",
-                                          "Please connect the \"open\" standard to port 0 of the NanoVNA.\n\n" +
-                                          "Either use a supplied open, or leave the end of the cable unconnected " +
-                                          "if desired.\n\n" +
-                                          "Press Ok when you are ready to continue.",
-                                          QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
+        short_step = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Information,
+                                           "Calibrate short",
+                                           "Please connect the \"short\" standard to port 0 of the NanoVNA.\n\n" +
+                                           "Press Ok when you are ready to continue.",
+                                           QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
 
-        response = open_step.exec()
+        response = short_step.exec()
         if response != QtWidgets.QMessageBox.Ok:
             self.btn_automatic.setDisabled(False)
             return
@@ -482,16 +539,19 @@ class CalibrationWindow(QtWidgets.QWidget):
         if self.nextStep == -1:
             self.app.worker.signals.finished.disconnect(self.automaticCalibrationStep)
         if self.nextStep == 0:
-            # Open
-            self.saveOpen()
+            # Short
+            self.saveShort()
             self.nextStep = 1
-            short_step = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Information,
-                                               "Calibrate short",
-                                               "Please connect the \"short\" standard to port 0 of the NanoVNA.\n\n" +
-                                               "Press Ok when you are ready to continue.",
-                                               QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
 
-            response = short_step.exec()
+            open_step = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Information,
+                                              "Calibrate open",
+                                              "Please connect the \"open\" standard to port 0 of the NanoVNA.\n\n" +
+                                              "Either use a supplied open, or leave the end of the cable unconnected " +
+                                              "if desired.\n\n" +
+                                              "Press Ok when you are ready to continue.",
+                                              QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
+
+            response = open_step.exec()
             if response != QtWidgets.QMessageBox.Ok:
                 self.nextStep = -1
                 self.btn_automatic.setDisabled(False)
@@ -502,8 +562,8 @@ class CalibrationWindow(QtWidgets.QWidget):
                 return
 
         elif self.nextStep == 1:
-            # Short
-            self.saveShort()
+            # Open
+            self.saveOpen()
             self.nextStep = 2
             load_step = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Information,
                                               "Calibrate load",

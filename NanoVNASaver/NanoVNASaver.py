@@ -34,6 +34,7 @@ from .Calibration import CalibrationWindow, Calibration
 from .Marker import Marker
 from .SweepWorker import SweepWorker
 from .Touchstone import Touchstone
+from .Analysis import Analysis, LowPassAnalysis, HighPassAnalysis, BandPassAnalysis
 from .about import version as ver
 
 Datapoint = collections.namedtuple('Datapoint', 'freq re im')
@@ -207,7 +208,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         sweep_control_layout.addRow(QtWidgets.QLabel("Segments"), segment_layout)
 
         self.sweepSettingsWindow = SweepSettingsWindow(self)
-        btn_sweep_settings_window = QtWidgets.QPushButton("Sweep settings")
+        btn_sweep_settings_window = QtWidgets.QPushButton("Sweep settings ...")
         btn_sweep_settings_window.clicked.connect(self.displaySweepSettingsWindow)
 
         sweep_control_layout.addRow(btn_sweep_settings_window)
@@ -311,6 +312,12 @@ class NanoVNASaver(QtWidgets.QWidget):
         marker_column.addWidget(s21_control_box)
 
         marker_column.addSpacerItem(QtWidgets.QSpacerItem(1, 1, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding))
+
+        self.analysis_window = AnalysisWindow(self)
+
+        btn_show_analysis = QtWidgets.QPushButton("Analysis ...")
+        btn_show_analysis.clicked.connect(self.displayAnalysisWindow)
+        marker_column.addWidget(btn_show_analysis)
 
         ################################################################################################################
         # TDR
@@ -609,6 +616,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                 elif self.sweepStartInput.text() == "" or self.sweepEndInput.text() == "":
                     self.sweepStartInput.setText(frequencies[0])
                     self.sweepEndInput.setText(frequencies[100])
+                self.sweepStartInput.textChanged.emit(self.sweepStartInput.text())
             else:
                 logger.warning("No frequencies read")
                 return
@@ -640,6 +648,13 @@ class NanoVNASaver(QtWidgets.QWidget):
     def setSweep(self, start, stop):
         self.writeSerial("sweep " + str(start) + " " + str(stop) + " 101")
 
+    def toggleSweepSettings(self, disabled):
+        self.sweepStartInput.setDisabled(disabled)
+        self.sweepEndInput.setDisabled(disabled)
+        self.sweepSpanInput.setDisabled(disabled)
+        self.sweepCenterInput.setDisabled(disabled)
+        self.sweepCountInput.setDisabled(disabled)
+
     def sweep(self):
         # Run the serial port update
         if not self.serial.is_open:
@@ -649,6 +664,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.sweepProgressBar.setValue(0)
         self.btnSweep.setDisabled(True)
         self.btnStopSweep.setDisabled(False)
+        self.toggleSweepSettings(True)
         for m in self.markers:
             m.resetLabels()
         self.s11_min_rl_label.setText("")
@@ -864,6 +880,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.sweepProgressBar.setValue(100)
         self.btnSweep.setDisabled(False)
         self.btnStopSweep.setDisabled(True)
+        self.toggleSweepSettings(False)
 
     def updateCenterSpan(self):
         fstart = self.parseFrequency(self.sweepStartInput.text())
@@ -1050,12 +1067,17 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.tdr_window.show()
         QtWidgets.QApplication.setActiveWindow(self.tdr_window)
 
+    def displayAnalysisWindow(self):
+        self.analysis_window.show()
+        QtWidgets.QApplication.setActiveWindow(self.analysis_window)
+
     def showError(self, text):
         error_message = QtWidgets.QErrorMessage(self)
         error_message.showMessage(text)
 
     def showSweepError(self):
         self.showError(self.worker.error_message)
+        self.stopSerial()
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
         self.worker.stopped = True
@@ -1087,6 +1109,22 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         display_options_box = QtWidgets.QGroupBox("Options")
         display_options_layout = QtWidgets.QFormLayout(display_options_box)
+
+        returnloss_group = QtWidgets.QButtonGroup()
+        self.returnloss_is_negative = QtWidgets.QRadioButton("Negative")
+        self.returnloss_is_positive = QtWidgets.QRadioButton("Positive")
+        returnloss_group.addButton(self.returnloss_is_positive)
+        returnloss_group.addButton(self.returnloss_is_negative)
+
+        display_options_layout.addRow("Return loss is:", self.returnloss_is_negative)
+        display_options_layout.addRow("", self.returnloss_is_positive)
+
+        if self.app.settings.value("ReturnLossPositive", False):
+            self.returnloss_is_positive.setChecked(True)
+        else:
+            self.returnloss_is_negative.setChecked(True)
+
+        self.returnloss_is_positive.toggled.connect(self.changeReturnLoss)
 
         self.show_lines_option = QtWidgets.QCheckBox("Show lines")
         show_lines_label = QtWidgets.QLabel("Displays a thin line between data points")
@@ -1315,6 +1353,16 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self.app.charts_layout.addWidget(found, x, y)
             if found.isHidden():
                 found.show()
+
+    def changeReturnLoss(self):
+        state = self.returnloss_is_positive.isChecked()
+        self.app.settings.setValue("ReturnLossPositive", state)
+
+        for m in self.app.markers:
+            m.returnloss_is_positive = state
+            m.updateLabels(self.app.data, self.app.data21)
+        self.app.s11LogMag.isInverted = state
+        self.app.s11LogMag.update()
 
     def changeShowLines(self):
         state = self.show_lines_option.isChecked()
@@ -1562,30 +1610,91 @@ class SweepSettingsWindow(QtWidgets.QWidget):
 
         shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
-        layout = QtWidgets.QFormLayout()
+        layout = QtWidgets.QVBoxLayout()
         self.setLayout(layout)
+
+        settings_box = QtWidgets.QGroupBox("Settings")
+        settings_layout = QtWidgets.QFormLayout(settings_box)
 
         self.single_sweep_radiobutton = QtWidgets.QRadioButton("Single sweep")
         self.continuous_sweep_radiobutton = QtWidgets.QRadioButton("Continuous sweep")
         self.averaged_sweep_radiobutton = QtWidgets.QRadioButton("Averaged sweep")
 
-        layout.addWidget(self.single_sweep_radiobutton)
+        settings_layout.addWidget(self.single_sweep_radiobutton)
         self.single_sweep_radiobutton.setChecked(True)
-        layout.addWidget(self.continuous_sweep_radiobutton)
-        layout.addWidget(self.averaged_sweep_radiobutton)
+        settings_layout.addWidget(self.continuous_sweep_radiobutton)
+        settings_layout.addWidget(self.averaged_sweep_radiobutton)
 
         self.averages = QtWidgets.QLineEdit("3")
         self.truncates = QtWidgets.QLineEdit("0")
 
-        layout.addRow("Number of measurements to average", self.averages)
-        layout.addRow("Number to discard", self.truncates)
-        layout.addRow(QtWidgets.QLabel("Averaging allows discarding outlying samples to get better averages."))
-        layout.addRow(QtWidgets.QLabel("Common values are 3/0, 5/2, 9/4 and 25/6."))
+        settings_layout.addRow("Number of measurements to average", self.averages)
+        settings_layout.addRow("Number to discard", self.truncates)
+        settings_layout.addRow(QtWidgets.QLabel("Averaging allows discarding outlying samples to get better averages."))
+        settings_layout.addRow(QtWidgets.QLabel("Common values are 3/0, 5/2, 9/4 and 25/6."))
 
         self.continuous_sweep_radiobutton.toggled.connect(lambda: self.app.worker.setContinuousSweep(self.continuous_sweep_radiobutton.isChecked()))
         self.averaged_sweep_radiobutton.toggled.connect(self.updateAveraging)
         self.averages.textEdited.connect(self.updateAveraging)
         self.truncates.textEdited.connect(self.updateAveraging)
+
+        layout.addWidget(settings_box)
+
+        band_sweep_box = QtWidgets.QGroupBox("Sweep band")
+        band_sweep_layout = QtWidgets.QFormLayout(band_sweep_box)
+
+        self.band_list = QtWidgets.QComboBox()
+        self.band_list.setModel(self.app.bands)
+        self.band_list.currentIndexChanged.connect(self.updateCurrentBand)
+
+        band_sweep_layout.addRow("Select band", self.band_list)
+
+        self.band_pad_limits = QtWidgets.QCheckBox("Pad band limits (10%)")
+        self.band_pad_limits.stateChanged.connect(self.updateCurrentBand)
+        band_sweep_layout.addRow(self.band_pad_limits)
+
+        self.band_limit_label = QtWidgets.QLabel()
+
+        band_sweep_layout.addRow(self.band_limit_label)
+
+        btn_set_band_sweep = QtWidgets.QPushButton("Set band sweep")
+        btn_set_band_sweep.clicked.connect(self.setBandSweep)
+        band_sweep_layout.addRow(btn_set_band_sweep)
+
+        self.updateCurrentBand()
+
+        layout.addWidget(band_sweep_box)
+
+    def updateCurrentBand(self):
+        index_start = self.band_list.model().index(self.band_list.currentIndex(), 1)
+        index_stop = self.band_list.model().index(self.band_list.currentIndex(), 2)
+        start = int(self.band_list.model().data(index_start, QtCore.Qt.ItemDataRole).value())
+        stop = int(self.band_list.model().data(index_stop, QtCore.Qt.ItemDataRole).value())
+
+        if self.band_pad_limits.isChecked():
+            span = stop - start
+            start -= round(span / 10)
+            start = max(1, start)
+            stop += round(span / 10)
+
+        self.band_limit_label.setText("Sweep span: " + NanoVNASaver.formatShortFrequency(start) + " to " +
+                                      NanoVNASaver.formatShortFrequency(stop))
+
+    def setBandSweep(self):
+        index_start = self.band_list.model().index(self.band_list.currentIndex(), 1)
+        index_stop = self.band_list.model().index(self.band_list.currentIndex(), 2)
+        start = int(self.band_list.model().data(index_start, QtCore.Qt.ItemDataRole).value())
+        stop = int(self.band_list.model().data(index_stop, QtCore.Qt.ItemDataRole).value())
+
+        if self.band_pad_limits.isChecked():
+            span = stop - start
+            start -= round(span / 10)
+            start = max(1, start)
+            stop += round(span / 10)
+
+        self.app.sweepStartInput.setText(str(start))
+        self.app.sweepEndInput.setText(str(stop))
+        self.app.sweepEndInput.textEdited.emit(self.app.sweepEndInput.text())
 
     def updateAveraging(self):
         self.app.worker.setAveraging(self.averaged_sweep_radiobutton.isChecked(),
@@ -1763,3 +1872,63 @@ class BandsModel(QtCore.QAbstractTableModel):
 
     def setColor(self, color):
         self.color = color
+
+
+class AnalysisWindow(QtWidgets.QWidget):
+    analyses = []
+    analysis: Analysis = None
+
+    def __init__(self, app):
+        super().__init__()
+
+        self.app: NanoVNASaver = app
+        self.setWindowTitle("Sweep analysis")
+        self.setWindowIcon(self.app.icon)
+
+        #self.setMinimumSize(400, 600)
+
+        #self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
+
+        shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
+
+        layout = QtWidgets.QVBoxLayout()
+        self.setLayout(layout)
+
+        select_analysis_box = QtWidgets.QGroupBox("Select analysis")
+        select_analysis_layout = QtWidgets.QFormLayout(select_analysis_box)
+        self.analysis_list = QtWidgets.QComboBox()
+        self.analysis_list.addItem("Low-pass filter", LowPassAnalysis(self.app))
+        self.analysis_list.addItem("Band-pass filter", BandPassAnalysis(self.app))
+        self.analysis_list.addItem("High-pass filter", HighPassAnalysis(self.app))
+        select_analysis_layout.addRow("Analysis type", self.analysis_list)
+        self.analysis_list.currentIndexChanged.connect(self.updateSelection)
+
+        btn_run_analysis = QtWidgets.QPushButton("Run analysis")
+        btn_run_analysis.clicked.connect(self.runAnalysis)
+        select_analysis_layout.addRow(btn_run_analysis)
+
+        analysis_box = QtWidgets.QGroupBox("Analysis")
+        analysis_box.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
+
+        self.analysis_layout = QtWidgets.QVBoxLayout(analysis_box)
+
+        layout.addWidget(select_analysis_box)
+        layout.addWidget(analysis_box)
+
+        self.updateSelection()
+
+    def runAnalysis(self):
+        if self.analysis is not None:
+            self.analysis.runAnalysis()
+
+    def updateSelection(self):
+        self.analysis = self.analysis_list.currentData()
+        old_item = self.analysis_layout.itemAt(0)
+        if old_item is not None:
+            old_widget = self.analysis_layout.itemAt(0).widget()
+            self.analysis_layout.replaceWidget(old_widget, self.analysis.widget())
+            old_widget.hide()
+        else:
+            self.analysis_layout.addWidget(self.analysis.widget())
+        self.analysis.widget().show()
+        self.update()
