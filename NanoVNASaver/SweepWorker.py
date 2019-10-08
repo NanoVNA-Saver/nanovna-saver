@@ -252,10 +252,10 @@ class SweepWorker(QtCore.QRunnable):
 
         for valueset in values:
             avg = np.average(valueset, 0)  # avg becomes a 2-value array of the location of the average
+            new_valueset = valueset
             for n in range(count):
                 max_deviance = 0
                 max_idx = -1
-                new_valueset = valueset
                 for i in range(len(new_valueset)):
                     deviance = abs(new_valueset[i][0] - avg[0])**2 + abs(new_valueset[i][1] - avg[1])**2
                     if deviance > max_deviance:
