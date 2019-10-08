@@ -839,8 +839,9 @@ class NanoVNASaver(QtWidgets.QWidget):
             return
         if self.sweepCountInput.text().isdigit():
             segments = int(self.sweepCountInput.text())
-            fstep = fspan / (segments * 101)
-            self.sweepStepLabel.setText(self.formatShortFrequency(fstep) + "/step")
+            if segments > 0:
+                fstep = fspan / (segments * 101)
+                self.sweepStepLabel.setText(self.formatShortFrequency(fstep) + "/step")
 
     @staticmethod
     def formatFrequency(freq):
