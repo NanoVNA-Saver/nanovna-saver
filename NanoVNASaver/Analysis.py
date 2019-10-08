@@ -464,9 +464,6 @@ class BandPassAnalysis(Analysis):
 
         logger.debug("Found peak of %f at %d", peak_db, self.app.data[peak_location].freq)
 
-        self.app.markers[0].setFrequency(str(self.app.data21[peak_location].freq))
-        self.app.markers[0].frequencyInput.setText(str(self.app.data21[peak_location].freq))
-
         lower_cutoff_location = -1
         pass_band_db = peak_db
         for i in range(peak_location, -1, -1):
@@ -520,6 +517,9 @@ class BandPassAnalysis(Analysis):
         self.span_label.setText(NanoVNASaver.formatFrequency(span))
         self.center_frequency_label.setText(NanoVNASaver.formatFrequency(center_frequency))
         self.quality_label.setText(str(round(q, 2)))
+
+        self.app.markers[0].setFrequency(str(round(center_frequency)))
+        self.app.markers[0].frequencyInput.setText(str(round(center_frequency)))
 
         # Lower roll-off
 
