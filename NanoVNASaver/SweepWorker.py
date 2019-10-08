@@ -159,7 +159,8 @@ class SweepWorker(QtCore.QRunnable):
         logger.debug("Resetting NanoVNA sweep to full range: %d to %d",
                      NanoVNASaver.parseFrequency(self.app.sweepStartInput.text()),
                      NanoVNASaver.parseFrequency(self.app.sweepEndInput.text()))
-        self.vna.setSweep(NanoVNASaver.parseFrequency(self.app.sweepStartInput.text()), NanoVNASaver.parseFrequency(self.app.sweepEndInput.text()))
+        self.vna.resetSweep(NanoVNASaver.parseFrequency(self.app.sweepStartInput.text()),
+                            NanoVNASaver.parseFrequency(self.app.sweepEndInput.text()))
 
         self.percentage = 100
         logger.debug("Sending \"finished\" signal")
@@ -274,8 +275,6 @@ class SweepWorker(QtCore.QRunnable):
     def readSegment(self, start, stop):
         logger.debug("Setting sweep range to %d to %d", start, stop)
         self.vna.setSweep(start, stop)
-        sleep(1)    # TODO This long delay seems to fix the weird data transitions we were seeing by getting partial
-                    #      sweeps.  Clearly something needs to be done, maybe at firmware level, to address this fully.
 
         # Let's check the frequencies first:
         frequencies = self.readFreq()
@@ -341,7 +340,7 @@ class SweepWorker(QtCore.QRunnable):
         while not done:
             done = True
             returnfreq = []
-            tmpfreq = self.vna.readValues("frequencies")
+            tmpfreq = self.vna.readFrequencies()
             if not tmpfreq:
                 logger.warning("Read no frequencies")
                 raise NanoVNAValueException("Failed reading frequencies: Returned no values.")

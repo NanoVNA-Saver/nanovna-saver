@@ -74,7 +74,7 @@ class VNA:
                 result = ""
                 data = ""
                 sleep(0.01)
-                while "ch>" not in data:
+                while data != "ch> ":
                     data = self.serial.readline().decode('ascii')
                     result += data
             except serial.SerialException as exc:
@@ -87,6 +87,7 @@ class VNA:
             return ""
 
     def readValues(self, value) -> List[str]:
+        logger.debug("VNA reading %s", value)
         if self.app.serialLock.acquire():
             try:
                 data = "a"
@@ -98,7 +99,7 @@ class VNA:
                 result = ""
                 data = ""
                 sleep(0.05)
-                while "ch>" not in data:
+                while data != "ch> ":
                     data = self.serial.readline().decode('ascii')
                     result += data
                 values = result.split("\r\n")
@@ -107,7 +108,7 @@ class VNA:
                 return []
             finally:
                 self.app.serialLock.release()
-            return values[1:102]
+            return values[1:-1]
         else:
             logger.error("Unable to acquire serial lock to read %s", value)
             return []
@@ -122,7 +123,8 @@ class VNA:
                 self.serial.readline()
             except serial.SerialException as exc:
                 logger.exception("Exception while writing to serial port (%s): %s", command, exc)
-            self.app.serialLock.release()
+            finally:
+                self.app.serialLock.release()
         return
 
     def setSweep(self, start, stop):
@@ -164,6 +166,15 @@ class InvalidVNA(VNA):
 class NanoVNA(VNA):
     def __init__(self, app, serialPort):
         super().__init__(app, serialPort)
+        self.version = Version(self.readVersion())
+
+        logger.debug("Testing against 0.2.0")
+        if self.version > Version("0.2.0"):
+            logger.debug("Newer than 0.2.0, using new scan command.")
+            self.useScan = True
+        else:
+            logger.debug("Older than 0.2.0, using old sweep command.")
+            self.useScan = False
 
     def readFrequencies(self) -> List[str]:
         return self.readValues("frequencies")
@@ -175,7 +186,40 @@ class NanoVNA(VNA):
         return self.readValues("data 1")
 
     def resetSweep(self, start: int, stop: int):
-        self.setSweep(start, stop)
+        self.writeSerial("sweep " + str(start) + " " + str(stop) + " 101")
+        self.writeSerial("resume")
+
+    def readVersion(self):
+        logger.debug("Reading version info.")
+        if not self.serial.is_open:
+            return
+        if self.app.serialLock.acquire():
+            try:
+                data = "a"
+                while data != "":
+                    data = self.serial.readline().decode('ascii')
+                self.serial.write("version\r".encode('ascii'))
+                result = ""
+                data = ""
+                sleep(0.1)
+                while "ch>" not in data:
+                    data = self.serial.readline().decode('ascii')
+                    result += data
+                values = result.splitlines()
+                logger.debug("Found version info: %s", values[1])
+                return values[1]
+            except serial.SerialException as exc:
+                logger.exception("Exception while reading firmware version: %s", exc)
+            finally:
+                self.app.serialLock.release()
+        return
+
+    def setSweep(self, start, stop):
+        if self.useScan:
+            self.writeSerial("scan " + str(start) + " " + str(stop) + " 101")
+        else:
+            self.writeSerial("sweep " + str(start) + " " + str(stop) + " 101")
+            sleep(1)
 
 
 class NanoVNA_F(NanoVNA):
@@ -185,8 +229,18 @@ class NanoVNA_F(NanoVNA):
 class Version:
     def __init__(self, version_string):
         self.version_string = version_string
-        results = re.match(r"(version )?(\d+)\.(\d+)\.(\d+\w+)", version_string)
+        results = re.match(r"(\D+)?\s*(\d+)\.(\d+)\.(\d+)(\w*)", version_string)
         if results:
-            self.major = results.group(1)
-            self.minor = results.group(2)
-            self.revision = results.group(3)
+            self.major = int(results.group(2))
+            self.minor = int(results.group(3))
+            self.revision = int(results.group(4))
+            self.note = results.group(5)
+            logger.debug("Parsed version as %d.%d.%d%s", self.major, self.minor, self.revision, self.note)
+
+    @staticmethod
+    def getVersion(major: int, minor: int, revision: int, note=""):
+        return Version(str(major) + "." + str(minor) + "." + str(revision) + note)
+
+    def __gt__(self, other: "Version"):
+        return self.major > other.major or self.major == other.major and self.minor > other.minor or \
+               self.major == other.major and self.minor == other.minor and self.revision > other.revision
