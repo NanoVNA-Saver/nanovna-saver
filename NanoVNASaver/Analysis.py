@@ -577,10 +577,11 @@ class BandPassAnalysis(Analysis):
         self.upper_six_db_label.setText(NanoVNASaver.formatFrequency(upper_six_db_cutoff_frequency))
 
         upper_six_db_attenuation = NanoVNASaver.gain(self.app.data21[upper_six_db_location])
-        upper_max_attenuation = NanoVNASaver.gain(self.app.data21[0])
-        frequency_factor = self.app.data21[0].freq / upper_six_db_cutoff_frequency
+        upper_max_attenuation = NanoVNASaver.gain(self.app.data21[len(self.app.data21)-1])
+        frequency_factor = upper_six_db_cutoff_frequency / self.app.data21[len(self.app.data21)-1].freq
         upper_attenuation = (upper_max_attenuation - upper_six_db_attenuation)
-        logger.debug("Measured points: %d Hz and %d Hz", upper_six_db_cutoff_frequency, self.app.data21[0].freq)
+        logger.debug("Measured points: %d Hz and %d Hz", upper_six_db_cutoff_frequency,
+                     self.app.data21[len(self.app.data21)-1].freq)
         logger.debug("%d dB over %f factor", upper_attenuation, frequency_factor)
         octave_attenuation = upper_attenuation / (math.log10(frequency_factor) / math.log10(2))
         self.upper_db_per_octave_label.setText(str(round(octave_attenuation, 3)) + " dB / octave")
