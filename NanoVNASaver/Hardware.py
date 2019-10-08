@@ -15,6 +15,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import collections
 import logging
+import re
 from time import sleep
 from typing import List
 
@@ -44,10 +45,13 @@ class VNA:
     def readFrequencies(self) -> List[str]:
         pass
 
-    def readValues11(self) -> List[Datapoint]:
+    def readValues11(self) -> List[str]:
         pass
 
-    def readValues21(self) -> List[Datapoint]:
+    def readValues21(self) -> List[str]:
+        pass
+
+    def resetSweep(self, start: int, stop: int):
         pass
 
     def flushSerialBuffers(self):
@@ -59,7 +63,7 @@ class VNA:
             sleep(0.1)
             self.app.serialLock.release()
 
-    def readFirmware(self):
+    def readFirmware(self) -> str:
         if self.app.serialLock.acquire():
             result = ""
             try:
@@ -82,7 +86,7 @@ class VNA:
             logger.error("Unable to acquire serial lock to read firmware.")
             return ""
 
-    def readValues(self, value):
+    def readValues(self, value) -> List[str]:
         if self.app.serialLock.acquire():
             try:
                 data = "a"
@@ -100,13 +104,13 @@ class VNA:
                 values = result.split("\r\n")
             except serial.SerialException as exc:
                 logger.exception("Exception while reading %s: %s", value, exc)
-                return
+                return []
             finally:
                 self.app.serialLock.release()
             return values[1:102]
         else:
             logger.error("Unable to acquire serial lock to read %s", value)
-            return
+            return []
 
     def writeSerial(self, command):
         if not self.serial.is_open:
@@ -132,6 +136,9 @@ class InvalidVNA(VNA):
     def setSweep(self, start, stop):
         return
 
+    def resetSweep(self, start, stop):
+        return
+
     def writeSerial(self, command):
         return
 
@@ -141,10 +148,10 @@ class InvalidVNA(VNA):
     def readFrequencies(self) -> List[int]:
         return []
 
-    def readValues11(self) -> List[Datapoint]:
+    def readValues11(self) -> List[str]:
         return []
 
-    def readValues21(self) -> List[Datapoint]:
+    def readValues21(self) -> List[str]:
         return []
 
     def readValues(self, value):
@@ -161,5 +168,25 @@ class NanoVNA(VNA):
     def readFrequencies(self) -> List[str]:
         return self.readValues("frequencies")
 
+    def readValues11(self) -> List[str]:
+        return self.readValues("data 1")
+
+    def readValues21(self) -> List[str]:
+        return self.readValues("data 1")
+
+    def resetSweep(self, start: int, stop: int):
+        self.setSweep(start, stop)
+
+
 class NanoVNA_F(NanoVNA):
     pass
+
+
+class Version:
+    def __init__(self, version_string):
+        self.version_string = version_string
+        results = re.match(r"(version )?(\d+)\.(\d+)\.(\d+\w+)", version_string)
+        if results:
+            self.major = results.group(1)
+            self.minor = results.group(2)
+            self.revision = results.group(3)
