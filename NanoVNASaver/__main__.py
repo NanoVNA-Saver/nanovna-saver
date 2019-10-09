@@ -20,8 +20,6 @@ import sys
 from PyQt5 import QtWidgets, QtCore
 from .NanoVNASaver import NanoVNASaver
 from .about import debug
-import os
-from .skins import Skins
 
 
 def main():
@@ -70,9 +68,6 @@ def main():
 
     QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
     app = QtWidgets.QApplication(sys.argv)
-
-    path = os.path.dirname(os.path.abspath(__file__))
-    Skins.light(app)
     window = NanoVNASaver()
     window.show()
     app.exec_()
