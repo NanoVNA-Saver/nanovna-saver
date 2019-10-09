@@ -44,8 +44,9 @@ from PyQt5.QtWidgets import QApplication, QPushButton, QDesktopWidget
 #
 ##*****************************************************
 import os
-import qtmodern.styles
-import qtmodern.windows
+# import qtmodern.styles
+# import qtmodern.windows
+from .skins import Skins
 app = QtWidgets.QApplication(sys.argv)
 ##*****************************************************
 ##*****************************************************
@@ -1403,7 +1404,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.app.settings.setValue("DarkMode", state)
         path = os.path.dirname(os.path.abspath(__file__))
         if state:
-            qtmodern.styles.dark(app)
+            Skins.dark(app)
             if self.color_mode_option.isChecked():
                 app.setStyleSheet( "file:///" + os.path.join(path, 'dark-colored.css'))
             else:
@@ -1413,7 +1414,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
                 c.setForegroundColor(QtGui.QColor(QtCore.Qt.lightGray))
                 c.setTextColor(QtGui.QColor(QtCore.Qt.white))
         else:
-            qtmodern.styles.light(app)
+            Skins.light(app)
             if self.color_mode_option.isChecked():
                 app.setStyleSheet( "file:///" + os.path.join(path, 'light-colored.css'))
             else:

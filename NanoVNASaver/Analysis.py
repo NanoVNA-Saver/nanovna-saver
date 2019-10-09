@@ -352,7 +352,7 @@ class BandPassAnalysis(Analysis):
         self.lower_sixty_db_label = QtWidgets.QLabel()
         self.lower_db_per_octave_label = QtWidgets.QLabel()
         self.lower_db_per_decade_label = QtWidgets.QLabel()
-        
+
         self.upper_cutoff_label = QtWidgets.QLabel()
         self.upper_six_db_label = QtWidgets.QLabel()
         self.upper_sixty_db_label = QtWidgets.QLabel()

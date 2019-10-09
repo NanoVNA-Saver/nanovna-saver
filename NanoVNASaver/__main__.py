@@ -29,8 +29,8 @@ from .about import debug
 #
 ##*****************************************************
 import os
-import qtmodern.styles
-import qtmodern.windows
+# import qtmodern.styles
+from .skins import Skins
 ##*****************************************************
 ##*****************************************************
 def main():
@@ -86,7 +86,7 @@ def main():
     #
     ##*****************************************************
     path = os.path.dirname(os.path.abspath(__file__))
-    qtmodern.styles.light(app)
+    Skins.light(app)
     # app.setStyleSheet( "file:///" + os.path.join(path, 'light-colored.css'))
     window = NanoVNASaver()
     window.show()

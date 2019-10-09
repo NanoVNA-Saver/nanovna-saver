@@ -9,7 +9,6 @@ verify_ssl = true
 pyserial = "*"
 pyqt5 = "*"
 numpy = "*"
-qtmodern = { git = 'https://github.com/gmarull/qtmodern.git', ref = '0.1.4', editable = false }
 
 [requires]
 python_version = "3.7"
