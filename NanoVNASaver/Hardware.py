@@ -183,7 +183,10 @@ class NanoVNA(VNA):
         self.version = Version(self.readVersion())
 
         logger.debug("Testing against 0.2.0")
-        if self.version >= Version("0.2.0"):
+        if self.version.version_string.find("extended with scan") > 0:
+            logger.debug("Incompatible scan command detected.")
+            self.useScan = False
+        elif self.version >= Version("0.2.0"):
             logger.debug("Newer than 0.2.0, using new scan command.")
             self.useScan = True
         else:
