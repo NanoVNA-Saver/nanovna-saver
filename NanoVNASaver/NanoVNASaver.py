@@ -471,10 +471,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         button_grid.addWidget(btn_about, 1, 1)
         left_column.addLayout(button_grid)
 
-        ################################################################################################################
-        #  Right side
-        ################################################################################################################
-
         logger.debug("Finished building interface")
 
     def rescanSerialPort(self):
@@ -1444,6 +1440,35 @@ class AboutWindow(QtWidgets.QWidget):
 
         layout.addStretch()
 
+        btn_check_version = QtWidgets.QPushButton("Check for updates")
+        btn_check_version.clicked.connect(self.findUpdates)
+
+        self.updateLabel = QtWidgets.QLabel("Last checked: ")
+        self.updateCheckBox = QtWidgets.QCheckBox("Check for updates on startup")
+
+        self.updateCheckBox.toggled.connect(self.updateSettings)
+
+        check_for_updates = self.app.settings.value("CheckForUpdates", "Ask")
+        if check_for_updates == "Yes":
+            self.updateCheckBox.setChecked(True)
+            self.findUpdates(automatic = True)
+        elif check_for_updates == "No":
+            self.updateCheckBox.setChecked(False)
+        else:
+            logger.debug("Starting timer")
+            QtCore.QTimer.singleShot(2000, self.askAboutUpdates)
+
+        update_hbox = QtWidgets.QHBoxLayout()
+        update_hbox.addWidget(btn_check_version)
+        update_form = QtWidgets.QFormLayout()
+        update_hbox.addLayout(update_form)
+        update_hbox.addStretch()
+        update_form.addRow(self.updateLabel)
+        update_form.addRow(self.updateCheckBox)
+        layout.addLayout(update_hbox)
+
+        layout.addStretch()
+
         btn_ok = QtWidgets.QPushButton("Ok")
         btn_ok.clicked.connect(lambda: self.close())
         layout.addWidget(btn_ok)
@@ -1457,6 +1482,68 @@ class AboutWindow(QtWidgets.QWidget):
             logger.debug("Valid VNA")
             v: Version = self.app.vna.version
             self.versionLabel.setText("NanoVNA Firmware Version: " + self.app.vna.name + " " + v.version_string)
+
+    def updateSettings(self):
+        if self.updateCheckBox.isChecked():
+            self.app.settings.setValue("CheckForUpdates", "Yes")
+        else:
+            self.app.settings.setValue("CheckForUpdates", "No")
+
+    def askAboutUpdates(self):
+        logger.debug("Asking about automatic update checks")
+        selection = QtWidgets.QMessageBox.question(self.app, "Enable checking for updates?",
+                                                   "Would you like NanoVNA-Saver to check for updates automatically?")
+        if selection == QtWidgets.QMessageBox.Yes:
+            self.updateCheckBox.setChecked(True)
+            self.app.settings.setValue("CheckForUpdates", "Yes")
+            self.findUpdates()
+        elif selection == QtWidgets.QMessageBox.No:
+            self.updateCheckBox.setChecked(False)
+            self.app.settings.setValue("CheckForUpdates", "No")
+            QtWidgets.QMessageBox.information(self.app, "Checking for updates disabled",
+                                              "You can check for updates using the \"About\" window.")
+        else:
+            self.app.settings.setValue("CheckForUpdates", "Ask")
+
+    def findUpdates(self, automatic = False):
+        from urllib import request, error
+        import json
+        update_url = "http://mihtjel.dk/nanovna-saver/latest.json"
+
+        try:
+            updates = json.load(request.urlopen(update_url, timeout=3))
+            latest_version = Version(updates['version'])
+            latest_url = updates['url']
+        except error.HTTPError as e:
+            logger.exception("Checking for updates produced an HTTP exception: %s", e)
+            return
+        except json.JSONDecodeError as e:
+            logger.exception("Checking for updates provided an unparseable file: %s", e)
+            return
+
+        logger.info("Latest version is " + latest_version.version_string)
+        this_version = Version(NanoVNASaver.version)
+        logger.info("This is " + this_version.version_string)
+        if latest_version > this_version:
+            logger.info("New update available: %s!", latest_version)
+            if automatic:
+                QtWidgets.QMessageBox.information(self, "Updates available",
+                                                  "There is a new update for NanoVNA-Saver available!\n" +
+                                                  "Version " + latest_version.version_string + "\n\n" +
+                                                  "Press \"About\" to find the update.")
+            else:
+                QtWidgets.QMessageBox.information(self, "Updates available",
+                                                  "There is a new update for NanoVNA-Saver available!")
+            self.updateLabel.setText("<a href=\"" + latest_url + "\">New version available</a>.")
+            self.updateLabel.setOpenExternalLinks(True)
+        else:
+            # Probably don't show a message box, just update the screen?
+            # Maybe consider showing it if the user has automatic updates turned off.
+            #
+            # QtWidgets.QMessageBox.information(self, "No updates available", "There are no new updates available.")
+            #
+            self.updateLabel.setText("Last checked: " + strftime("%Y-%m-%d %H:%M:%S", localtime()))
+        return
 
 
 class TDRWindow(QtWidgets.QWidget):
