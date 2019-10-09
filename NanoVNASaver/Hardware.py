@@ -265,3 +265,16 @@ class Version:
     def __gt__(self, other: "Version"):
         return self.major > other.major or self.major == other.major and self.minor > other.minor or \
                self.major == other.major and self.minor == other.minor and self.revision > other.revision
+
+    def __lt__(self, other: "Version"):
+        return other > self
+
+    def __ge__(self, other: "Version"):
+        return self > other or self == other
+
+    def __le__(self, other: "Version"):
+        return self < other or self == other
+
+    def __eq__(self, other: "Version"):
+        return self.major == other.major and self.minor == other.minor and self.revision == other.revision and \
+               self.note == other.note
