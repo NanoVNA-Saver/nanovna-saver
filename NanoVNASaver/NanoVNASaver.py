@@ -1456,7 +1456,7 @@ class AboutWindow(QtWidgets.QWidget):
         if self.app.vna.isValid():
             logger.debug("Valid VNA")
             v: Version = self.app.vna.version
-            self.versionLabel.setText("NanoVNA Firmware Version: " + v.version_string)
+            self.versionLabel.setText("NanoVNA Firmware Version: " + self.app.vna.name + " " + v.version_string)
 
 
 class TDRWindow(QtWidgets.QWidget):

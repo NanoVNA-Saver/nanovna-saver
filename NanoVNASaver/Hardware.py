@@ -27,6 +27,8 @@ logger = logging.getLogger(__name__)
 
 
 class VNA:
+    name = "VNA"
+
     def __init__(self, app, serialPort: serial.Serial):
         from NanoVNASaver.NanoVNASaver import NanoVNASaver
         self.app: NanoVNASaver = app
@@ -39,7 +41,11 @@ class VNA:
         tmp_vna = VNA(app, serialPort)
         tmp_vna.flushSerialBuffers()
         firmware = tmp_vna.readFirmware()
-        if firmware.find("NanoVNA") > 0:
+        if firmware.find("NanoVNA-H") > 0:
+            return NanoVNA_H(app, serialPort)
+        if firmware.find("NanoVNA-F") > 0:
+            return NanoVNA_F(app, serialPort)
+        elif firmware.find("NanoVNA") > 0:
             return NanoVNA(app, serialPort)
         return InvalidVNA(app, serialPort)
 
@@ -136,6 +142,8 @@ class VNA:
 
 
 class InvalidVNA(VNA):
+    name = "Invalid"
+
     def __init__(self):
         pass
 
@@ -168,6 +176,8 @@ class InvalidVNA(VNA):
 
 
 class NanoVNA(VNA):
+    name = "NanoVNA"
+
     def __init__(self, app, serialPort):
         super().__init__(app, serialPort)
         self.version = Version(self.readVersion())
@@ -229,8 +239,12 @@ class NanoVNA(VNA):
             sleep(1)
 
 
+class NanoVNA_H(NanoVNA):
+    name = "NanoVNA-H"
+
+
 class NanoVNA_F(NanoVNA):
-    pass
+    name = "NanoVNA-F"
 
 
 class Version:
