@@ -36,6 +36,20 @@ from .SweepWorker import SweepWorker
 from .Touchstone import Touchstone
 from .Analysis import Analysis, LowPassAnalysis, HighPassAnalysis, BandPassAnalysis
 from .about import version as ver
+from PyQt5.QtWidgets import QApplication, QPushButton, QDesktopWidget
+
+##*****************************************************
+#
+#                    Modif Carl
+#
+##*****************************************************
+import os
+import qtmodern.styles
+import qtmodern.windows
+app = QtWidgets.QApplication(sys.argv)
+##*****************************************************
+##*****************************************************
+
 
 Datapoint = collections.namedtuple('Datapoint', 'freq re im')
 
@@ -89,6 +103,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         logger.debug("Building user interface")
 
         self.baseTitle = "NanoVNA Saver " + NanoVNASaver.version
+
+        self.setProperty("cssClass", "mainWindow")
         self.updateTitle()
         layout = QtWidgets.QGridLayout()
         scrollarea = QtWidgets.QScrollArea()
@@ -247,6 +263,9 @@ class NanoVNASaver(QtWidgets.QWidget):
         marker1.updated.connect(self.dataUpdated)
         label, layout = marker1.getRow()
         marker_control_layout.addRow(label, layout)
+
+
+
         self.markers.append(marker1)
         marker1.isMouseControlledRadioButton.setChecked(True)
 
@@ -262,7 +281,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         marker3.updated.connect(self.dataUpdated)
         label, layout = marker3.getRow()
         marker_control_layout.addRow(label, layout)
-
         self.markers.append(marker3)
 
         self.showMarkerButton = QtWidgets.QPushButton()
@@ -290,10 +308,12 @@ class NanoVNASaver(QtWidgets.QWidget):
         s11_control_box.setTitle("S11")
         s11_control_layout = QtWidgets.QFormLayout()
         s11_control_box.setLayout(s11_control_layout)
-
+        s11_control_box.setProperty("cssClass", "s11_control_box")
         self.s11_min_swr_label = QtWidgets.QLabel()
+        self.s11_min_swr_label.setProperty("cssClass", "s11_min_swr_label")
         s11_control_layout.addRow("Min VSWR:", self.s11_min_swr_label)
         self.s11_min_rl_label = QtWidgets.QLabel()
+        self.s11_min_rl_label.setProperty("cssClass", "s11_min_rl_label")
         s11_control_layout.addRow("Return loss:", self.s11_min_rl_label)
 
         marker_column.addWidget(s11_control_box)
@@ -302,11 +322,13 @@ class NanoVNASaver(QtWidgets.QWidget):
         s21_control_box.setTitle("S21")
         s21_control_layout = QtWidgets.QFormLayout()
         s21_control_box.setLayout(s21_control_layout)
-
+        s21_control_box.setProperty("cssClass", "s21_control_box")
         self.s21_min_gain_label = QtWidgets.QLabel()
+        self.s21_min_gain_label.setProperty("cssClass", "s21_min_gain_label")
         s21_control_layout.addRow("Min gain:", self.s21_min_gain_label)
 
         self.s21_max_gain_label = QtWidgets.QLabel()
+        self.s21_max_gain_label.setProperty("cssClass", "s21_max_gain_label")
         s21_control_layout.addRow("Max gain:", self.s21_max_gain_label)
 
         marker_column.addWidget(s21_control_box)
@@ -333,6 +355,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         tdr_control_box.setMaximumWidth(250)
 
         self.tdr_result_label = QtWidgets.QLabel()
+        self.tdr_result_label.setProperty("cssClass", "tdr_result_label")
         tdr_control_layout.addRow("Estimated cable length:", self.tdr_result_label)
 
         self.tdr_button = QtWidgets.QPushButton("Time Domain Reflectometry ...")
@@ -1132,9 +1155,13 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         display_options_layout.addRow(self.show_lines_option, show_lines_label)
 
         self.dark_mode_option = QtWidgets.QCheckBox("Dark mode")
+        self.color_mode_option = QtWidgets.QCheckBox("Color mode")
         dark_mode_label = QtWidgets.QLabel("Black background with white text")
+        color_mode_label = QtWidgets.QLabel("Values and menus colored (May need restart)")
         self.dark_mode_option.stateChanged.connect(self.changeDarkMode)
+        self.color_mode_option.stateChanged.connect(self.changeColorMode)
         display_options_layout.addRow(self.dark_mode_option, dark_mode_label)
+        display_options_layout.addRow(self.color_mode_option, color_mode_label)
 
         self.btnColorPicker = QtWidgets.QPushButton("█")
         self.btnColorPicker.setFixedWidth(20)
@@ -1299,6 +1326,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         layout.addWidget(charts_box)
         self.dark_mode_option.setChecked(self.app.settings.value("DarkMode", False, bool))
+        self.color_mode_option.setChecked(self.app.settings.value("ColorMode", False, bool))
         self.show_lines_option.setChecked(self.app.settings.value("ShowLines", False, bool))
 
         self.backgroundColor = self.app.settings.value("BackgroundColor", defaultValue=QtGui.QColor("white"),
@@ -1373,16 +1401,57 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
     def changeDarkMode(self):
         state = self.dark_mode_option.isChecked()
         self.app.settings.setValue("DarkMode", state)
+        path = os.path.dirname(os.path.abspath(__file__))
         if state:
+            qtmodern.styles.dark(app)
+            if self.color_mode_option.isChecked():
+                app.setStyleSheet( "file:///" + os.path.join(path, 'dark-colored.css'))
+            else:
+                app.setStyleSheet( "")
             for c in self.app.charts:
                 c.setBackgroundColor(QtGui.QColor(QtCore.Qt.black))
                 c.setForegroundColor(QtGui.QColor(QtCore.Qt.lightGray))
                 c.setTextColor(QtGui.QColor(QtCore.Qt.white))
         else:
+            qtmodern.styles.light(app)
+            if self.color_mode_option.isChecked():
+                app.setStyleSheet( "file:///" + os.path.join(path, 'light-colored.css'))
+            else:
+                app.setStyleSheet( "")
             for c in self.app.charts:
                 c.setBackgroundColor(QtGui.QColor(QtCore.Qt.white))
                 c.setForegroundColor(QtGui.QColor(QtCore.Qt.lightGray))
                 c.setTextColor(QtGui.QColor(QtCore.Qt.black))
+
+    def changeColorMode(self):
+        state = self.color_mode_option.isChecked()
+        self.app.settings.setValue("ColorMode", state)
+        path = os.path.dirname(os.path.abspath(__file__))
+        if state:
+            if self.dark_mode_option.isChecked():
+                app.setStyleSheet( "file:///" + os.path.join(path, 'dark-colored.css'))
+                for c in self.app.charts:
+                    c.setBackgroundColor(QtGui.QColor(QtCore.Qt.black))
+                    c.setForegroundColor(QtGui.QColor(QtCore.Qt.lightGray))
+                    c.setTextColor(QtGui.QColor(QtCore.Qt.white))
+            else:
+                app.setStyleSheet( "file:///" + os.path.join(path, 'light-colored.css'))
+                for c in self.app.charts:
+                    c.setBackgroundColor(QtGui.QColor(QtCore.Qt.white))
+                    c.setForegroundColor(QtGui.QColor(QtCore.Qt.lightGray))
+                    c.setTextColor(QtGui.QColor(QtCore.Qt.black))
+        else:
+                app.setStyleSheet( "")
+                if self.dark_mode_option.isChecked():
+                    for c in self.app.charts:
+                        c.setBackgroundColor(QtGui.QColor(QtCore.Qt.black))
+                        c.setForegroundColor(QtGui.QColor(QtCore.Qt.lightGray))
+                        c.setTextColor(QtGui.QColor(QtCore.Qt.white))
+                else:
+                    for c in self.app.charts:
+                        c.setBackgroundColor(QtGui.QColor(QtCore.Qt.white))
+                        c.setForegroundColor(QtGui.QColor(QtCore.Qt.lightGray))
+                        c.setTextColor(QtGui.QColor(QtCore.Qt.black))
 
     def changeCustomColors(self):
         self.app.settings.setValue("UseCustomColors", self.use_custom_colors.isChecked())
@@ -1549,6 +1618,7 @@ class TDRWindow(QtWidgets.QWidget):
         layout.addRow("Velocity factor", self.tdr_velocity_input)
 
         self.tdr_result_label = QtWidgets.QLabel()
+        self.tdr_result_label.setProperty("cssClass", "tdr_result_label")
         layout.addRow("Estimated cable length:", self.tdr_result_label)
 
         layout.addRow(self.app.tdr_chart)
