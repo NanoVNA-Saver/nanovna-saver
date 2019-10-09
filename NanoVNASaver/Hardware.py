@@ -229,7 +229,7 @@ class NanoVNA_F(NanoVNA):
 class Version:
     def __init__(self, version_string):
         self.version_string = version_string
-        results = re.match(r"(\D+)?\s*(\d+)\.(\d+)\.(\d+)(\w*)", version_string)
+        results = re.match(r"(\D+)?\s*(\d+)\.(\d+)\.(\d+)(.*)", version_string)
         if results:
             self.major = int(results.group(2))
             self.minor = int(results.group(3))
