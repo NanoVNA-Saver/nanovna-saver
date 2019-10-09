@@ -401,53 +401,37 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.fileWindow = QtWidgets.QWidget()
         self.fileWindow.setWindowTitle("Files")
         self.fileWindow.setWindowIcon(self.icon)
+        self.fileWindow.setMinimumWidth(200)
         shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self.fileWindow, self.fileWindow.hide)
         file_window_layout = QtWidgets.QVBoxLayout()
         self.fileWindow.setLayout(file_window_layout)
 
-        reference_file_control_box = QtWidgets.QGroupBox("Import file")
-        reference_file_control_layout = QtWidgets.QFormLayout(reference_file_control_box)
-        self.referenceFileNameInput = QtWidgets.QLineEdit("")
-        btn_reference_file_picker = QtWidgets.QPushButton("...")
-        btn_reference_file_picker.setMaximumWidth(25)
-        btn_reference_file_picker.clicked.connect(self.pickReferenceFile)
-        reference_file_name_layout = QtWidgets.QHBoxLayout()
-        reference_file_name_layout.addWidget(self.referenceFileNameInput)
-        reference_file_name_layout.addWidget(btn_reference_file_picker)
+        load_file_control_box = QtWidgets.QGroupBox("Import file")
+        load_file_control_box.setMaximumWidth(300)
+        load_file_control_layout = QtWidgets.QFormLayout(load_file_control_box)
 
-        reference_file_control_layout.addRow(QtWidgets.QLabel("Filename"), reference_file_name_layout)
-        file_window_layout.addWidget(reference_file_control_box)
-
-        btn_load_reference = QtWidgets.QPushButton("Load reference")
-        btn_load_reference.clicked.connect(self.loadReferenceFile)
         btn_load_sweep = QtWidgets.QPushButton("Load as sweep")
         btn_load_sweep.clicked.connect(self.loadSweepFile)
-        reference_file_control_layout.addRow(btn_load_reference)
-        reference_file_control_layout.addRow(btn_load_sweep)
+        btn_load_reference = QtWidgets.QPushButton("Load reference")
+        btn_load_reference.clicked.connect(self.loadReferenceFile)
+        load_file_control_layout.addRow(btn_load_sweep)
+        load_file_control_layout.addRow(btn_load_reference)
 
-        file_control_box = QtWidgets.QGroupBox()
-        file_control_box.setTitle("Export file")
-        file_control_box.setMaximumWidth(300)
-        file_control_layout = QtWidgets.QFormLayout(file_control_box)
-        self.fileNameInput = QtWidgets.QLineEdit("")
-        btn_file_picker = QtWidgets.QPushButton("...")
-        btn_file_picker.setMaximumWidth(25)
-        btn_file_picker.clicked.connect(self.pickFile)
-        file_name_layout = QtWidgets.QHBoxLayout()
-        file_name_layout.addWidget(self.fileNameInput)
-        file_name_layout.addWidget(btn_file_picker)
+        file_window_layout.addWidget(load_file_control_box)
 
-        file_control_layout.addRow(QtWidgets.QLabel("Filename"), file_name_layout)
+        save_file_control_box = QtWidgets.QGroupBox("Export file")
+        save_file_control_box.setMaximumWidth(300)
+        save_file_control_layout = QtWidgets.QFormLayout(save_file_control_box)
 
-        self.btnExportFile = QtWidgets.QPushButton("Export data S1P")
-        self.btnExportFile.clicked.connect(self.exportFileS1P)
-        file_control_layout.addRow(self.btnExportFile)
+        btnExportFile = QtWidgets.QPushButton("Save file (S1P)")
+        btnExportFile.clicked.connect(self.exportFileS1P)
+        save_file_control_layout.addRow(btnExportFile)
 
-        self.btnExportFile = QtWidgets.QPushButton("Export data S2P")
-        self.btnExportFile.clicked.connect(self.exportFileS2P)
-        file_control_layout.addRow(self.btnExportFile)
+        btnExportFile = QtWidgets.QPushButton("Save file (S2P)")
+        btnExportFile.clicked.connect(self.exportFileS2P)
+        save_file_control_layout.addRow(btnExportFile)
 
-        file_window_layout.addWidget(file_control_box)
+        file_window_layout.addWidget(save_file_control_box)
 
         btn_open_file_window = QtWidgets.QPushButton("Files ...")
         btn_open_file_window.clicked.connect(self.displayFileWindow)
@@ -509,26 +493,22 @@ class NanoVNASaver(QtWidgets.QWidget):
                 return port
         return ""
 
-    def pickReferenceFile(self):
-        filename, _ = QtWidgets.QFileDialog.getOpenFileName(directory=self.referenceFileNameInput.text(),
-                                                            filter="Touchstone Files (*.s1p *.s2p);;All files (*.*)")
-        if filename != "":
-            self.referenceFileNameInput.setText(filename)
-
-    def pickFile(self):
-        filename, _ = QtWidgets.QFileDialog.getSaveFileName(directory=self.fileNameInput.text(),
-                                                            filter="Touchstone Files (*.s1p *.s2p);;All files (*.*)")
-        if filename != "":
-            self.fileNameInput.setText(filename)
-
     def exportFileS1P(self):
-        logger.debug("Save S1P file to %s", self.fileNameInput.text())
+        filedialog = QtWidgets.QFileDialog(self)
+        filedialog.setDefaultSuffix("s1p")
+        filedialog.setNameFilter("Touchstone Files (*.s1p *.s2p);;All files (*.*)")
+        filedialog.setAcceptMode(QtWidgets.QFileDialog.AcceptSave)
+        selected = filedialog.exec()
+        if selected:
+            filename = filedialog.selectedFiles()[0]
+        else:
+            return
+        if filename == "":
+            logger.debug("No file name selected.")
+            return
+        logger.debug("Save S1P file to %s", filename)
         if len(self.data) == 0:
             logger.warning("No data stored, nothing written.")
-            return
-        filename = self.fileNameInput.text()
-        if filename == "":
-            logger.warning("No filename entered, nothing saved.")
             return
         try:
             logger.debug("Opening %s for writing", filename)
@@ -545,13 +525,21 @@ class NanoVNASaver(QtWidgets.QWidget):
             return
 
     def exportFileS2P(self):
-        logger.debug("Save S2P file to %s", self.fileNameInput.text())
+        filedialog = QtWidgets.QFileDialog(self)
+        filedialog.setDefaultSuffix("s2p")
+        filedialog.setNameFilter("Touchstone Files (*.s1p *.s2p);;All files (*.*)")
+        filedialog.setAcceptMode(QtWidgets.QFileDialog.AcceptSave)
+        selected = filedialog.exec()
+        if selected:
+            filename = filedialog.selectedFiles()[0]
+        else:
+            return
+        if filename == "":
+            logger.debug("No file name selected.")
+            return
+        logger.debug("Save S2P file to %s", filename)
         if len(self.data) == 0 or len(self.data21) == 0:
             logger.warning("No data stored, nothing written.")
-            return
-        filename = self.fileNameInput.text()
-        if filename == "":
-            logger.warning("No filename entered, nothing saved.")
             return
         try:
             logger.debug("Opening %s for writing", filename)
@@ -955,16 +943,16 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.btnResetReference.setDisabled(True)
 
     def loadReferenceFile(self):
-        filename = self.referenceFileNameInput.text()
-        if filename is not "":
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(filter="Touchstone Files (*.s1p *.s2p);;All files (*.*)")
+        if filename != "":
             self.resetReference()
             t = Touchstone(filename)
             t.load()
             self.setReference(t.s11data, t.s21data, filename)
 
     def loadSweepFile(self):
-        filename = self.referenceFileNameInput.text()
-        if filename is not "":
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(filter="Touchstone Files (*.s1p *.s2p);;All files (*.*)")
+        if filename != "":
             self.data = []
             self.data21 = []
             t = Touchstone(filename)
