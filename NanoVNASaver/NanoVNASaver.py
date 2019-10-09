@@ -35,7 +35,7 @@ from .Calibration import CalibrationWindow, Calibration
 from .Marker import Marker
 from .SweepWorker import SweepWorker
 from .Touchstone import Touchstone
-from .Analysis import Analysis, LowPassAnalysis, HighPassAnalysis, BandPassAnalysis
+from .Analysis import Analysis, LowPassAnalysis, HighPassAnalysis, BandPassAnalysis, BandStopAnalysis
 from .about import version as ver
 
 Datapoint = collections.namedtuple('Datapoint', 'freq re im')
@@ -1874,6 +1874,7 @@ class AnalysisWindow(QtWidgets.QWidget):
         self.analysis_list.addItem("Low-pass filter", LowPassAnalysis(self.app))
         self.analysis_list.addItem("Band-pass filter", BandPassAnalysis(self.app))
         self.analysis_list.addItem("High-pass filter", HighPassAnalysis(self.app))
+        self.analysis_list.addItem("Band-stop filter", BandStopAnalysis(self.app))
         select_analysis_layout.addRow("Analysis type", self.analysis_list)
         self.analysis_list.currentIndexChanged.connect(self.updateSelection)
 
