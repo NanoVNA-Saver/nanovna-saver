@@ -17,22 +17,13 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 import sys
-
-
 from PyQt5 import QtWidgets, QtCore
-
 from .NanoVNASaver import NanoVNASaver
 from .about import debug
-##*****************************************************
-#
-#                    Modif Carl
-#
-##*****************************************************
 import os
-# import qtmodern.styles
 from .skins import Skins
-##*****************************************************
-##*****************************************************
+
+
 def main():
     print("NanoVNASaver " + NanoVNASaver.version)
     print("Copyright (C) 2019 Rune B. Broberg")
@@ -80,19 +71,12 @@ def main():
     QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
     app = QtWidgets.QApplication(sys.argv)
 
-    ##*****************************************************
-    #
-    #                    Modif Carl For Styling
-    #
-    ##*****************************************************
     path = os.path.dirname(os.path.abspath(__file__))
     Skins.light(app)
-    # app.setStyleSheet( "file:///" + os.path.join(path, 'light-colored.css'))
     window = NanoVNASaver()
     window.show()
     app.exec_()
-    ##*****************************************************
-    ##*****************************************************
+
 
 if __name__ == '__main__':
     main()

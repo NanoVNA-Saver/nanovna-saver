@@ -1,18 +1,20 @@
 import logging
 import qtpy
-
-from os.path import join, dirname, abspath
-
+# from os.path import join, dirname, abspath
 from qtpy.QtGui import QPalette, QColor
+from PyQt5.QtWidgets import QCommonStyle
+from .skins_utils import DARK_SKIN_COLORED, DARK_SKIN_MONOCHROME, LIGHT_SKIN_COLORED,\
+ LIGHT_SKIN_MONOCHROME
 
 logger = logging.getLogger(__name__)
+
 
 class Skins:
     def dark(app):
         QT_VERSION = tuple(int(v) for v in qtpy.QT_VERSION.split('.'))
-        _STYLESHEET = join(dirname(abspath(__file__)), 'skins/style.css')
+        _STYLESHEET = LIGHT_SKIN_MONOCHROME
         darkPalette = QPalette()
-
+        default_style = QCommonStyle()
         # base
         darkPalette.setColor(QPalette.WindowText, QColor(180, 180, 180))
         darkPalette.setColor(QPalette.Button, QColor(53, 53, 53))
@@ -54,12 +56,11 @@ class Skins:
         with open(_STYLESHEET) as stylesheet:
             app.setStyleSheet(stylesheet.read())
 
-
     def light(app):
         QT_VERSION = tuple(int(v) for v in qtpy.QT_VERSION.split('.'))
-        _STYLESHEET = join(dirname(abspath(__file__)), 'skins/style.css')
+        _STYLESHEET = LIGHT_SKIN_MONOCHROME
         lightPalette = QPalette()
-
+        default_style = QCommonStyle()
         # base
         lightPalette.setColor(QPalette.WindowText, QColor(0, 0, 0))
         lightPalette.setColor(QPalette.Button, QColor(240, 240, 240))
@@ -94,9 +95,9 @@ class Skins:
         app.setPalette(lightPalette)
 
         if QT_VERSION < (5,):
-            app.setStyle('plastique')
+            app.setStyle(default_style)
         else:
-            app.setStyle('Fusion')
+            app.setStyle(default_style)
 
         with open(_STYLESHEET) as stylesheet:
             app.setStyleSheet(stylesheet.read())

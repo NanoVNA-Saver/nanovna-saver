@@ -13,6 +13,7 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+import os
 import collections
 import logging
 import math
@@ -37,20 +38,11 @@ from .Touchstone import Touchstone
 from .Analysis import Analysis, LowPassAnalysis, HighPassAnalysis, BandPassAnalysis
 from .about import version as ver
 from PyQt5.QtWidgets import QApplication, QPushButton, QDesktopWidget
-
-##*****************************************************
-#
-#                    Modif Carl
-#
-##*****************************************************
-import os
-# import qtmodern.styles
-# import qtmodern.windows
+from .skins_utils import DARK_SKIN_COLORED, DARK_SKIN_MONOCHROME, LIGHT_SKIN_COLORED,\
+ LIGHT_SKIN_MONOCHROME
 from .skins import Skins
-app = QtWidgets.QApplication(sys.argv)
-##*****************************************************
-##*****************************************************
 
+app = QtWidgets.QApplication(sys.argv)
 
 Datapoint = collections.namedtuple('Datapoint', 'freq re im')
 
@@ -1402,13 +1394,12 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
     def changeDarkMode(self):
         state = self.dark_mode_option.isChecked()
         self.app.settings.setValue("DarkMode", state)
-        path = os.path.dirname(os.path.abspath(__file__))
         if state:
             Skins.dark(app)
             if self.color_mode_option.isChecked():
-                app.setStyleSheet( "file:///" + os.path.join(path, 'dark-colored.css'))
+                app.setStyleSheet("file:///" + DARK_SKIN_COLORED)
             else:
-                app.setStyleSheet( "")
+                app.setStyleSheet("file:///" + DARK_SKIN_MONOCHROME)
             for c in self.app.charts:
                 c.setBackgroundColor(QtGui.QColor(QtCore.Qt.black))
                 c.setForegroundColor(QtGui.QColor(QtCore.Qt.lightGray))
@@ -1416,9 +1407,9 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         else:
             Skins.light(app)
             if self.color_mode_option.isChecked():
-                app.setStyleSheet( "file:///" + os.path.join(path, 'light-colored.css'))
+                app.setStyleSheet("file:///" + LIGHT_SKIN_COLORED)
             else:
-                app.setStyleSheet( "")
+                app.setStyleSheet("file:///" + LIGHT_SKIN_MONOCHROME)
             for c in self.app.charts:
                 c.setBackgroundColor(QtGui.QColor(QtCore.Qt.white))
                 c.setForegroundColor(QtGui.QColor(QtCore.Qt.lightGray))
@@ -1427,32 +1418,32 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
     def changeColorMode(self):
         state = self.color_mode_option.isChecked()
         self.app.settings.setValue("ColorMode", state)
-        path = os.path.dirname(os.path.abspath(__file__))
         if state:
             if self.dark_mode_option.isChecked():
-                app.setStyleSheet( "file:///" + os.path.join(path, 'dark-colored.css'))
+                app.setStyleSheet("file:///" + DARK_SKIN_COLORED)
                 for c in self.app.charts:
                     c.setBackgroundColor(QtGui.QColor(QtCore.Qt.black))
                     c.setForegroundColor(QtGui.QColor(QtCore.Qt.lightGray))
                     c.setTextColor(QtGui.QColor(QtCore.Qt.white))
             else:
-                app.setStyleSheet( "file:///" + os.path.join(path, 'light-colored.css'))
+                app.setStyleSheet("file:///" + LIGHT_SKIN_COLORED)
                 for c in self.app.charts:
                     c.setBackgroundColor(QtGui.QColor(QtCore.Qt.white))
                     c.setForegroundColor(QtGui.QColor(QtCore.Qt.lightGray))
                     c.setTextColor(QtGui.QColor(QtCore.Qt.black))
         else:
-                app.setStyleSheet( "")
-                if self.dark_mode_option.isChecked():
-                    for c in self.app.charts:
-                        c.setBackgroundColor(QtGui.QColor(QtCore.Qt.black))
-                        c.setForegroundColor(QtGui.QColor(QtCore.Qt.lightGray))
-                        c.setTextColor(QtGui.QColor(QtCore.Qt.white))
-                else:
-                    for c in self.app.charts:
-                        c.setBackgroundColor(QtGui.QColor(QtCore.Qt.white))
-                        c.setForegroundColor(QtGui.QColor(QtCore.Qt.lightGray))
-                        c.setTextColor(QtGui.QColor(QtCore.Qt.black))
+            if self.dark_mode_option.isChecked():
+                app.setStyleSheet("file:///" + DARK_SKIN_MONOCHROME)
+                for c in self.app.charts:
+                    c.setBackgroundColor(QtGui.QColor(QtCore.Qt.black))
+                    c.setForegroundColor(QtGui.QColor(QtCore.Qt.lightGray))
+                    c.setTextColor(QtGui.QColor(QtCore.Qt.white))
+            else:
+                app.setStyleSheet("file:///" + LIGHT_SKIN_MONOCHROME)
+                for c in self.app.charts:
+                    c.setBackgroundColor(QtGui.QColor(QtCore.Qt.white))
+                    c.setForegroundColor(QtGui.QColor(QtCore.Qt.lightGray))
+                    c.setTextColor(QtGui.QColor(QtCore.Qt.black))
 
     def changeCustomColors(self):
         self.app.settings.setValue("UseCustomColors", self.use_custom_colors.isChecked())
