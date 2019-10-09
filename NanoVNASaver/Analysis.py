@@ -364,11 +364,13 @@ class BandPassAnalysis(Analysis):
 
         self.center_frequency_label = QtWidgets.QLabel()
         self.span_label = QtWidgets.QLabel()
+        self.six_db_span_label = QtWidgets.QLabel()
         self.quality_label = QtWidgets.QLabel()
 
         layout.addRow("Center frequency:", self.center_frequency_label)
-        layout.addRow("Span:", self.span_label)
+        layout.addRow("Bandwidth (-3 dB):", self.span_label)
         layout.addRow("Quality factor:", self.quality_label)
+        layout.addRow("Bandwidth (-6 dB):", self.six_db_span_label)
 
         layout.addRow(QtWidgets.QLabel(""))
 
@@ -582,6 +584,10 @@ class BandPassAnalysis(Analysis):
             return
         upper_six_db_cutoff_frequency = self.app.data21[upper_six_db_location].freq
         self.upper_six_db_label.setText(NanoVNASaver.formatFrequency(upper_six_db_cutoff_frequency))
+
+        six_db_span = upper_six_db_cutoff_frequency - lower_six_db_cutoff_frequency
+
+        self.six_db_span_label.setText(NanoVNASaver.formatFrequency(six_db_span))
 
         upper_six_db_attenuation = NanoVNASaver.gain(self.app.data21[upper_six_db_location])
         upper_max_attenuation = NanoVNASaver.gain(self.app.data21[len(self.app.data21)-1])
