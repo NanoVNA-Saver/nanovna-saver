@@ -24,7 +24,7 @@ from PyQt5.QtCore import pyqtSlot, pyqtSignal
 import NanoVNASaver
 import logging
 
-from NanoVNASaver.Hardware import VNA
+from NanoVNASaver.Hardware import VNA, InvalidVNA
 
 logger = logging.getLogger(__name__)
 
@@ -38,12 +38,12 @@ class WorkerSignals(QtCore.QObject):
 
 
 class SweepWorker(QtCore.QRunnable):
-    def __init__(self, app: NanoVNASaver, vna: VNA):
+    def __init__(self, app: NanoVNASaver):
         super().__init__()
         logger.info("Initializing SweepWorker")
         self.signals = WorkerSignals()
         self.app = app
-        self.vna = vna
+        self.vna: VNA = InvalidVNA()
         self.noSweeps = 1
         self.setAutoDelete(False)
         self.percentage = 0
@@ -369,6 +369,9 @@ class SweepWorker(QtCore.QRunnable):
             self.truncates = int(truncates)
         except:
             return
+
+    def setVNA(self, vna):
+        self.vna = vna
 
 
 class NanoVNAValueException(Exception):

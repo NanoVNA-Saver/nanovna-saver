@@ -64,7 +64,11 @@ class NanoVNASaver(QtWidgets.QWidget):
         print("Settings: " + self.settings.fileName())
         self.threadpool = QtCore.QThreadPool()
         self.vna: VNA = InvalidVNA()
-        self.worker = SweepWorker(self, self.vna)
+        self.worker = SweepWorker(self)
+
+        self.worker.signals.updated.connect(self.dataUpdated)
+        self.worker.signals.finished.connect(self.sweepFinished)
+        self.worker.signals.sweepError.connect(self.showSweepError)
 
         self.bands = BandsModel()
 
@@ -577,11 +581,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             sleep(0.05)
 
             self.vna = VNA.getVNA(self, self.serial)
-            self.worker = SweepWorker(self, self.vna)
-
-            self.worker.signals.updated.connect(self.dataUpdated)
-            self.worker.signals.finished.connect(self.sweepFinished)
-            self.worker.signals.sweepError.connect(self.showSweepError)
+            self.worker.setVNA(self.vna)
 
             logger.info(self.vna.readFirmware())
 
@@ -989,8 +989,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         QtWidgets.QApplication.setActiveWindow(self.aboutWindow)
 
     def showError(self, text):
-        error_message = QtWidgets.QErrorMessage(self)
-        error_message.showMessage(text)
+        QtWidgets.QMessageBox.warning(self, "Error", text)
 
     def showSweepError(self):
         self.showError(self.worker.error_message)

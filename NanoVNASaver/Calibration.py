@@ -417,6 +417,11 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.notes_textedit.clear()
 
     def calculate(self):
+        if self.app.btnStopSweep.isEnabled():
+            # Currently sweeping
+            self.app.showError("Unable to apply calibration while a sweep is running. " +
+                               "Please stop the sweep and try again.")
+            return
         # TODO: Error handling for all the fields.
         if self.use_ideal_values.isChecked():
             self.app.calibration.useIdealShort = True
