@@ -168,7 +168,7 @@ class Marker(QtCore.QObject):
 
     def getGroupBox(self):
         return self.group_box
-    
+
     def resetLabels(self):
         self.frequency_label.setText("")
         self.impedance_label.setText("")

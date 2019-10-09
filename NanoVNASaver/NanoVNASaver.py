@@ -187,7 +187,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.sweepCenterInput.textEdited.connect(self.updateStartEnd)
 
         sweep_input_right_layout.addRow(QtWidgets.QLabel("Center"), self.sweepCenterInput)
-        
+
         self.sweepSpanInput = QtWidgets.QLineEdit("")
         self.sweepSpanInput.setAlignment(QtCore.Qt.AlignRight)
         self.sweepSpanInput.textEdited.connect(self.updateStartEnd)
@@ -1188,7 +1188,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.btn_foreground_picker.clicked.connect(lambda: self.setColor("foreground", QtWidgets.QColorDialog.getColor(self.foregroundColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
 
         color_options_layout.addRow("Chart foreground", self.btn_foreground_picker)
-        
+
         self.btn_text_picker = QtWidgets.QPushButton("█")
         self.btn_text_picker.setFixedWidth(20)
         self.btn_text_picker.clicked.connect(lambda: self.setColor("text", QtWidgets.QColorDialog.getColor(self.textColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
@@ -1265,7 +1265,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         chart01_selection.setCurrentIndex(selections.index(self.app.settings.value("Chart01", "S11 Return Loss")))
         chart01_selection.currentTextChanged.connect(lambda: self.changeChart(0, 1, chart01_selection.currentText()))
         charts_layout.addWidget(chart01_selection, 0, 1)
-        
+
         chart02_selection = QtWidgets.QComboBox()
         chart02_selection.addItems(selections)
         chart02_selection.setCurrentIndex(selections.index(self.app.settings.value("Chart02", "None")))

@@ -64,11 +64,11 @@ class CalibrationWindow(QtWidgets.QWidget):
         btn_cal_short = QtWidgets.QPushButton("Short")
         btn_cal_short.clicked.connect(self.saveShort)
         self.cal_short_label = QtWidgets.QLabel("Uncalibrated")
-        
+
         btn_cal_open = QtWidgets.QPushButton("Open")
         btn_cal_open.clicked.connect(self.saveOpen)
         self.cal_open_label = QtWidgets.QLabel("Uncalibrated")
-        
+
         btn_cal_load = QtWidgets.QPushButton("Load")
         btn_cal_load.clicked.connect(self.saveLoad)
         self.cal_load_label = QtWidgets.QLabel("Uncalibrated")
@@ -176,7 +176,7 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.cal_through_box.setDisabled(True)
         self.through_length = QtWidgets.QLineEdit("0")
         cal_through_form.addRow("Offset Delay (ps)", self.through_length)
-        
+
         cal_standard_layout.addWidget(self.cal_short_box)
         cal_standard_layout.addWidget(self.cal_open_box)
         cal_standard_layout.addWidget(self.cal_load_box)
@@ -308,9 +308,9 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.load_length.setText(str(self.app.settings.value("LoadDelay", 0)))
 
         self.through_length.setText(str(self.app.settings.value("ThroughDelay", 0)))
-        
+
         self.app.settings.endArray()
-        
+
     def deleteCalibrationStandard(self):
         if self.cal_standard_save_selector.currentData() == -1:
             return
@@ -382,7 +382,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             for i in range(len(names)):
                 self.app.settings.setArrayIndex(i)
                 self.app.settings.setValue("Name", names[i])
-                
+
                 self.app.settings.setValue("ShortL0", shortL0[i])
                 self.app.settings.setValue("ShortL1", shortL1[i])
                 self.app.settings.setValue("ShortL2", shortL2[i])
@@ -394,7 +394,7 @@ class CalibrationWindow(QtWidgets.QWidget):
                 self.app.settings.setValue("OpenC2", openC2[i])
                 self.app.settings.setValue("OpenC3", openC3[i])
                 self.app.settings.setValue("OpenDelay", openDelay[i])
-                
+
                 self.app.settings.setValue("LoadR", loadR[i])
                 self.app.settings.setValue("LoadL", loadL[i])
                 self.app.settings.setValue("LoadC", loadC[i])
