@@ -13,9 +13,9 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-from os.path import join, dirname, abspath
+import sys
 
-DARK_SKIN_MONOCHROME = join(dirname(abspath(__file__)), 'skins/dark-monochrome.css')
-DARK_SKIN_COLORED = join(dirname(abspath(__file__)), 'skins/dark-colored.css')
-LIGHT_SKIN_MONOCHROME = join(dirname(abspath(__file__)), 'skins/light-monochrome.css')
-LIGHT_SKIN_COLORED = join(dirname(abspath(__file__)), 'skins/light-colored.css')
+DARK_SKIN_MONOCHROME = sys._MEIPASS + '/skins/dark-monochrome.css')
+DARK_SKIN_COLORED = sys._MEIPASS + '/skins/dark-colored.css')
+LIGHT_SKIN_MONOCHROME = sys._MEIPASS + '/skins/light-monochrome.css')
+LIGHT_SKIN_COLORED = sys._MEIPASS + '/skins/light-colored.css')
