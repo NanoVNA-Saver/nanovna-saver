@@ -38,6 +38,22 @@ class Analysis:
     def reset(self):
         pass
 
+    def calculateRolloff(self, location1, location2):
+        from NanoVNASaver.NanoVNASaver import NanoVNASaver
+        frequency1 = self.app.data21[location1].freq
+        frequency2 = self.app.data21[location2].freq
+        gain1 = NanoVNASaver.gain(self.app.data21[location1])
+        gain2 = NanoVNASaver.gain(self.app.data21[location2])
+        frequency_factor = frequency2 / frequency1
+        if frequency_factor < 1:
+            frequency_factor = 1 / frequency_factor
+        attenuation = abs(gain1 - gain2)
+        logger.debug("Measured points: %d Hz and %d Hz", frequency1, frequency2)
+        logger.debug("%f dB over %f factor", attenuation, frequency_factor)
+        octave_attenuation = attenuation / (math.log10(frequency_factor) / math.log10(2))
+        decade_attenuation = attenuation / math.log10(frequency_factor)
+        return octave_attenuation, decade_attenuation
+
 
 class LowPassAnalysis(Analysis):
     def __init__(self, app):
@@ -154,16 +170,21 @@ class LowPassAnalysis(Analysis):
         six_db_cutoff_frequency = self.app.data21[six_db_location].freq
         self.six_db_label.setText(NanoVNASaver.formatFrequency(six_db_cutoff_frequency))
 
-        six_db_attenuation = NanoVNASaver.gain(self.app.data21[six_db_location])
-        max_attenuation = NanoVNASaver.gain(self.app.data21[len(self.app.data21) - 1])
-        frequency_factor = self.app.data21[len(self.app.data21) - 1].freq / six_db_cutoff_frequency
-        attenuation = (max_attenuation - six_db_attenuation)
-        logger.debug("Measured points: %d Hz and %d Hz", six_db_cutoff_frequency, self.app.data21[len(self.app.data21) - 1].freq)
-        logger.debug("%d dB over %f factor", attenuation, frequency_factor)
-        octave_attenuation = attenuation / (math.log10(frequency_factor) / math.log10(2))
-        self.db_per_octave_label.setText(str(round(octave_attenuation, 3)) + " dB / octave")
-        decade_attenuation = attenuation / math.log10(frequency_factor)
-        self.db_per_decade_label.setText(str(round(decade_attenuation, 3)) + " dB / decade")
+        ten_db_location = -1
+        for i in range(cutoff_location, len(self.app.data21)):
+            db = NanoVNASaver.gain(self.app.data21[i])
+            if (pass_band_db - db) > 10:
+                # We found 6dB location
+                ten_db_location = i
+                break
+
+        twenty_db_location = -1
+        for i in range(cutoff_location, len(self.app.data21)):
+            db = NanoVNASaver.gain(self.app.data21[i])
+            if (pass_band_db - db) > 20:
+                # We found 6dB location
+                twenty_db_location = i
+                break
 
         sixty_db_location = -1
         for i in range(six_db_location, len(self.app.data21)):
@@ -173,16 +194,23 @@ class LowPassAnalysis(Analysis):
                 sixty_db_location = i
                 break
 
-        if sixty_db_location < 0:
+        if sixty_db_location > 0:
+            sixty_db_cutoff_frequency = self.app.data21[sixty_db_location].freq
+            self.sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency))
+        else:
             # # We derive 60 dB instead
             # factor = 10 * (-54 / decade_attenuation)
             # sixty_db_cutoff_frequency = round(six_db_cutoff_frequency + six_db_cutoff_frequency * factor)
             # self.sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency) + " (derived)")
             self.sixty_db_label.setText("Not calculated")
 
+        if ten_db_location > 0 and twenty_db_location > 0:
+            octave_attenuation, decade_attenuation = self.calculateRolloff(ten_db_location, twenty_db_location)
+            self.db_per_octave_label.setText(str(round(octave_attenuation, 3)) + " dB / octave")
+            self.db_per_decade_label.setText(str(round(decade_attenuation, 3)) + " dB / decade")
         else:
-            sixty_db_cutoff_frequency = self.app.data21[sixty_db_location].freq
-            self.sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency))
+            self.db_per_octave_label.setText("Not calculated")
+            self.db_per_decade_label.setText("Not calculated")
 
         self.result_label.setText("Analysis complete (" + str(len(self.app.data)) + " points)")
 
@@ -303,16 +331,21 @@ class HighPassAnalysis(Analysis):
         six_db_cutoff_frequency = self.app.data21[six_db_location].freq
         self.six_db_label.setText(NanoVNASaver.formatFrequency(six_db_cutoff_frequency))
 
-        six_db_attenuation = NanoVNASaver.gain(self.app.data21[six_db_location])
-        max_attenuation = NanoVNASaver.gain(self.app.data21[len(self.app.data21) - 1])
-        frequency_factor = self.app.data21[len(self.app.data21) - 1].freq / six_db_cutoff_frequency
-        attenuation = (max_attenuation - six_db_attenuation)
-        logger.debug("Measured points: %d Hz and %d Hz", six_db_cutoff_frequency, self.app.data21[len(self.app.data21) - 1].freq)
-        logger.debug("%d dB over %f factor", attenuation, frequency_factor)
-        octave_attenuation = attenuation / (math.log10(frequency_factor) / math.log10(2))
-        self.db_per_octave_label.setText(str(round(octave_attenuation, 3)) + " dB / octave")
-        decade_attenuation = attenuation / math.log10(frequency_factor)
-        self.db_per_decade_label.setText(str(round(decade_attenuation, 3)) + " dB / decade")
+        ten_db_location = -1
+        for i in range(cutoff_location, -1, -1):
+            db = NanoVNASaver.gain(self.app.data21[i])
+            if (pass_band_db - db) > 10:
+                # We found 6dB location
+                ten_db_location = i
+                break
+
+        twenty_db_location = -1
+        for i in range(cutoff_location, -1, -1):
+            db = NanoVNASaver.gain(self.app.data21[i])
+            if (pass_band_db - db) > 20:
+                # We found 6dB location
+                twenty_db_location = i
+                break
 
         sixty_db_location = -1
         for i in range(six_db_location, -1, -1):
@@ -322,16 +355,23 @@ class HighPassAnalysis(Analysis):
                 sixty_db_location = i
                 break
 
-        if sixty_db_location < 0:
+        if sixty_db_location > 0:
+            sixty_db_cutoff_frequency = self.app.data21[sixty_db_location].freq
+            self.sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency))
+        else:
             # # We derive 60 dB instead
             # factor = 10 * (-54 / decade_attenuation)
             # sixty_db_cutoff_frequency = round(six_db_cutoff_frequency + six_db_cutoff_frequency * factor)
             # self.sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency) + " (derived)")
             self.sixty_db_label.setText("Not calculated")
 
+        if ten_db_location > 0 and twenty_db_location > 0:
+            octave_attenuation, decade_attenuation = self.calculateRolloff(ten_db_location, twenty_db_location)
+            self.db_per_octave_label.setText(str(round(octave_attenuation, 3)) + " dB / octave")
+            self.db_per_decade_label.setText(str(round(decade_attenuation, 3)) + " dB / decade")
         else:
-            sixty_db_cutoff_frequency = self.app.data21[sixty_db_location].freq
-            self.sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency))
+            self.db_per_octave_label.setText("Not calculated")
+            self.db_per_decade_label.setText("Not calculated")
 
         self.result_label.setText("Analysis complete (" + str(len(self.app.data)) + " points)")
 
@@ -539,35 +579,47 @@ class BandPassAnalysis(Analysis):
         lower_six_db_cutoff_frequency = self.app.data21[lower_six_db_location].freq
         self.lower_six_db_label.setText(NanoVNASaver.formatFrequency(lower_six_db_cutoff_frequency))
 
-        lower_six_db_attenuation = NanoVNASaver.gain(self.app.data21[lower_six_db_location])
-        lower_max_attenuation = NanoVNASaver.gain(self.app.data21[0])
-        frequency_factor = self.app.data21[0].freq / lower_six_db_cutoff_frequency
-        lower_attenuation = (lower_max_attenuation - lower_six_db_attenuation)
-        logger.debug("Measured points: %d Hz and %d Hz", lower_six_db_cutoff_frequency, self.app.data21[0].freq)
-        logger.debug("%d dB over %f factor", lower_attenuation, frequency_factor)
-        octave_attenuation = lower_attenuation / (math.log10(frequency_factor) / math.log10(2))
-        self.lower_db_per_octave_label.setText(str(round(octave_attenuation, 3)) + " dB / octave")
-        decade_attenuation = lower_attenuation / math.log10(frequency_factor)
-        self.lower_db_per_decade_label.setText(str(round(decade_attenuation, 3)) + " dB / decade")
+        ten_db_location = -1
+        for i in range(lower_cutoff_location, -1, -1):
+            db = NanoVNASaver.gain(self.app.data21[i])
+            if (pass_band_db - db) > 10:
+                # We found 6dB location
+                ten_db_location = i
+                break
 
-        lower_sixty_db_location = -1
+        twenty_db_location = -1
+        for i in range(lower_cutoff_location, -1, -1):
+            db = NanoVNASaver.gain(self.app.data21[i])
+            if (pass_band_db - db) > 20:
+                # We found 6dB location
+                twenty_db_location = i
+                break
+
+        sixty_db_location = -1
         for i in range(lower_six_db_location, -1, -1):
             db = NanoVNASaver.gain(self.app.data21[i])
             if (pass_band_db - db) > 60:
                 # We found 60dB location! Wow.
-                lower_sixty_db_location = i
+                sixty_db_location = i
                 break
 
-        if lower_sixty_db_location < 0:
+        if sixty_db_location > 0:
+            sixty_db_cutoff_frequency = self.app.data21[sixty_db_location].freq
+            self.lower_sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency))
+        else:
             # # We derive 60 dB instead
             # factor = 10 * (-54 / decade_attenuation)
             # sixty_db_cutoff_frequency = round(six_db_cutoff_frequency + six_db_cutoff_frequency * factor)
-            # self.upper_sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency) + " (derived)")
+            # self.sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency) + " (derived)")
             self.lower_sixty_db_label.setText("Not calculated")
 
+        if ten_db_location > 0 and twenty_db_location > 0:
+            octave_attenuation, decade_attenuation = self.calculateRolloff(ten_db_location, twenty_db_location)
+            self.lower_db_per_octave_label.setText(str(round(octave_attenuation, 3)) + " dB / octave")
+            self.lower_db_per_decade_label.setText(str(round(decade_attenuation, 3)) + " dB / decade")
         else:
-            lower_sixty_db_cutoff_frequency = self.app.data21[lower_sixty_db_location].freq
-            self.lower_sixty_db_label.setText(NanoVNASaver.formatFrequency(lower_sixty_db_cutoff_frequency))
+            self.lower_db_per_octave_label.setText("Not calculated")
+            self.lower_db_per_decade_label.setText("Not calculated")
 
         # Upper roll-off
 
@@ -589,36 +641,47 @@ class BandPassAnalysis(Analysis):
 
         self.six_db_span_label.setText(NanoVNASaver.formatFrequency(six_db_span))
 
-        upper_six_db_attenuation = NanoVNASaver.gain(self.app.data21[upper_six_db_location])
-        upper_max_attenuation = NanoVNASaver.gain(self.app.data21[len(self.app.data21)-1])
-        frequency_factor = upper_six_db_cutoff_frequency / self.app.data21[len(self.app.data21)-1].freq
-        upper_attenuation = (upper_max_attenuation - upper_six_db_attenuation)
-        logger.debug("Measured points: %d Hz and %d Hz", upper_six_db_cutoff_frequency,
-                     self.app.data21[len(self.app.data21)-1].freq)
-        logger.debug("%d dB over %f factor", upper_attenuation, frequency_factor)
-        octave_attenuation = upper_attenuation / (math.log10(frequency_factor) / math.log10(2))
-        self.upper_db_per_octave_label.setText(str(round(octave_attenuation, 3)) + " dB / octave")
-        decade_attenuation = upper_attenuation / math.log10(frequency_factor)
-        self.upper_db_per_decade_label.setText(str(round(decade_attenuation, 3)) + " dB / decade")
+        ten_db_location = -1
+        for i in range(upper_cutoff_location, len(self.app.data21), 1):
+            db = NanoVNASaver.gain(self.app.data21[i])
+            if (pass_band_db - db) > 10:
+                # We found 6dB location
+                ten_db_location = i
+                break
 
-        upper_sixty_db_location = -1
+        twenty_db_location = -1
+        for i in range(upper_cutoff_location, len(self.app.data21), 1):
+            db = NanoVNASaver.gain(self.app.data21[i])
+            if (pass_band_db - db) > 20:
+                # We found 6dB location
+                twenty_db_location = i
+                break
+
+        sixty_db_location = -1
         for i in range(upper_six_db_location, len(self.app.data21), 1):
             db = NanoVNASaver.gain(self.app.data21[i])
             if (pass_band_db - db) > 60:
                 # We found 60dB location! Wow.
-                upper_sixty_db_location = i
+                sixty_db_location = i
                 break
 
-        if upper_sixty_db_location < 0:
+        if sixty_db_location > 0:
+            sixty_db_cutoff_frequency = self.app.data21[sixty_db_location].freq
+            self.upper_sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency))
+        else:
             # # We derive 60 dB instead
             # factor = 10 * (-54 / decade_attenuation)
             # sixty_db_cutoff_frequency = round(six_db_cutoff_frequency + six_db_cutoff_frequency * factor)
-            # self.upper_sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency) + " (derived)")
+            # self.sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency) + " (derived)")
             self.upper_sixty_db_label.setText("Not calculated")
 
+        if ten_db_location > 0 and twenty_db_location > 0:
+            octave_attenuation, decade_attenuation = self.calculateRolloff(ten_db_location, twenty_db_location)
+            self.upper_db_per_octave_label.setText(str(round(octave_attenuation, 3)) + " dB / octave")
+            self.upper_db_per_decade_label.setText(str(round(decade_attenuation, 3)) + " dB / decade")
         else:
-            upper_sixty_db_cutoff_frequency = self.app.data21[upper_sixty_db_location].freq
-            self.upper_sixty_db_label.setText(NanoVNASaver.formatFrequency(upper_sixty_db_cutoff_frequency))
+            self.upper_db_per_octave_label.setText("Not calculated")
+            self.upper_db_per_decade_label.setText("Not calculated")
 
         if upper_cutoff_gain < -4 or lower_cutoff_gain < -4:
             self.result_label.setText("Analysis complete (" + str(len(self.app.data)) + " points)\n" +
