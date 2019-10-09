@@ -1123,6 +1123,36 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         layout = QtWidgets.QVBoxLayout()
         self.setLayout(layout)
 
+
+
+
+
+
+
+
+
+
+
+
+
+        display_skins_box = QtWidgets.QGroupBox("Skins")
+        display_skins_layout = QtWidgets.QFormLayout(display_skins_box)
+
+        self.skin_mode_option = QtWidgets.QCheckBox("Skin mode")
+        skin_mode_label = QtWidgets.QLabel("Skinning the UI (May need restart)")
+        self.skin_mode_option.stateChanged.connect(self.changeSkinMode)
+        display_skins_layout.addRow(self.skin_mode_option, skin_mode_label)
+
+
+        self.skin_dropdown = QtWidgets.QComboBox()
+        self.skin_dropdown.addItems(["Light", "Light Colored", "Dark", "Dark Colored"])
+        self.skin_dropdown.setDisabled(True)
+        self.skin_dropdown.currentTextChanged.connect(self.changeSkins)
+        skin_dropdown_label = QtWidgets.QLabel("Choose skin to display")
+        display_skins_layout.addRow(self.skin_dropdown, skin_dropdown_label)
+
+        layout.addWidget(display_skins_box)
+
         display_options_box = QtWidgets.QGroupBox("Options")
         display_options_layout = QtWidgets.QFormLayout(display_options_box)
 
@@ -1147,14 +1177,11 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.show_lines_option.stateChanged.connect(self.changeShowLines)
         display_options_layout.addRow(self.show_lines_option, show_lines_label)
 
+
         self.dark_mode_option = QtWidgets.QCheckBox("Dark mode")
-        self.color_mode_option = QtWidgets.QCheckBox("Color mode")
         dark_mode_label = QtWidgets.QLabel("Black background with white text")
-        color_mode_label = QtWidgets.QLabel("Values and menus colored (May need restart)")
         self.dark_mode_option.stateChanged.connect(self.changeDarkMode)
-        self.color_mode_option.stateChanged.connect(self.changeColorMode)
         display_options_layout.addRow(self.dark_mode_option, dark_mode_label)
-        display_options_layout.addRow(self.color_mode_option, color_mode_label)
 
         self.btnColorPicker = QtWidgets.QPushButton("█")
         self.btnColorPicker.setFixedWidth(20)
@@ -1319,7 +1346,6 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         layout.addWidget(charts_box)
         self.dark_mode_option.setChecked(self.app.settings.value("DarkMode", False, bool))
-        self.color_mode_option.setChecked(self.app.settings.value("ColorMode", False, bool))
         self.show_lines_option.setChecked(self.app.settings.value("ShowLines", False, bool))
 
         self.backgroundColor = self.app.settings.value("BackgroundColor", defaultValue=QtGui.QColor("white"),
@@ -1394,75 +1420,86 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
     def changeDarkMode(self):
         state = self.dark_mode_option.isChecked()
         self.app.settings.setValue("DarkMode", state)
-        if state:
-            Skins.dark(app)
-            if self.color_mode_option.isChecked():
-                app.setStyleSheet("file:///" + DARK_SKIN_COLORED)
-            else:
-                app.setStyleSheet("file:///" + DARK_SKIN_MONOCHROME)
+        if state and not self.skin_mode_option.isChecked():
+
+            self.skin_mode_option.setDisabled(True)
+
             for c in self.app.charts:
                 c.setBackgroundColor(QtGui.QColor(QtCore.Qt.black))
                 c.setForegroundColor(QtGui.QColor(QtCore.Qt.lightGray))
                 c.setTextColor(QtGui.QColor(QtCore.Qt.white))
-        else:
-            Skins.light(app)
-            if self.color_mode_option.isChecked():
-                app.setStyleSheet("file:///" + LIGHT_SKIN_COLORED)
-            else:
-                app.setStyleSheet("file:///" + LIGHT_SKIN_MONOCHROME)
+        elif not state and not self.skin_mode_option.isChecked():
+
+            self.skin_mode_option.setDisabled(False)
             for c in self.app.charts:
                 c.setBackgroundColor(QtGui.QColor(QtCore.Qt.white))
                 c.setForegroundColor(QtGui.QColor(QtCore.Qt.lightGray))
                 c.setTextColor(QtGui.QColor(QtCore.Qt.black))
-
-    def changeColorMode(self):
-        state = self.color_mode_option.isChecked()
-        self.app.settings.setValue("ColorMode", state)
-        if state:
-            if self.dark_mode_option.isChecked():
-                app.setStyleSheet("file:///" + DARK_SKIN_COLORED)
-                for c in self.app.charts:
-                    c.setBackgroundColor(QtGui.QColor(QtCore.Qt.black))
-                    c.setForegroundColor(QtGui.QColor(QtCore.Qt.lightGray))
-                    c.setTextColor(QtGui.QColor(QtCore.Qt.white))
-            else:
-                app.setStyleSheet("file:///" + LIGHT_SKIN_COLORED)
-                for c in self.app.charts:
-                    c.setBackgroundColor(QtGui.QColor(QtCore.Qt.white))
-                    c.setForegroundColor(QtGui.QColor(QtCore.Qt.lightGray))
-                    c.setTextColor(QtGui.QColor(QtCore.Qt.black))
         else:
-            if self.dark_mode_option.isChecked():
-                app.setStyleSheet("file:///" + DARK_SKIN_MONOCHROME)
-                for c in self.app.charts:
-                    c.setBackgroundColor(QtGui.QColor(QtCore.Qt.black))
-                    c.setForegroundColor(QtGui.QColor(QtCore.Qt.lightGray))
-                    c.setTextColor(QtGui.QColor(QtCore.Qt.white))
-            else:
-                app.setStyleSheet("file:///" + LIGHT_SKIN_MONOCHROME)
-                for c in self.app.charts:
-                    c.setBackgroundColor(QtGui.QColor(QtCore.Qt.white))
-                    c.setForegroundColor(QtGui.QColor(QtCore.Qt.lightGray))
-                    c.setTextColor(QtGui.QColor(QtCore.Qt.black))
+            self.skin_mode_option.setDisabled(False)
+
+    def changeSkins(self):
+        # TODO DropDown changeEvent update the skin
+        font_size = self.skin_dropdown.currentText()
+
+    def changeSkinMode(self):
+        state = self.skin_mode_option.isChecked()
+
+        self.app.settings.setValue("SkinMode", state)
+        if state:
+            self.dark_mode_option.setDisabled(True)
+            self.btn_background_picker.setDisabled(True)
+            self.btn_foreground_picker.setDisabled(True)
+            self.btn_text_picker.setDisabled(True)
+            self.use_custom_colors.setDisabled(True)
+            self.skin_dropdown.setDisabled(False)
+            # TODO
+            # Skins.dark(app)
+            # if self.color_mode_option.isChecked():
+            #     app.setStyleSheet("file:///" + DARK_SKIN_COLORED)
+            # else if !self.skin_mode_option.isChecked():
+            #     app.setStyleSheet("file:///" + DARK_SKIN_MONOCHROME)
+
+            # Skins.light(app)
+            # if self.color_mode_option.isChecked():
+            #     app.setStyleSheet("file:///" + LIGHT_SKIN_COLORED)
+            # else:
+            #     app.setStyleSheet("file:///" + LIGHT_SKIN_MONOCHROME)
+
+        else:
+            self.dark_mode_option.setDisabled(False)
+            self.btn_background_picker.setDisabled(False)
+            self.btn_foreground_picker.setDisabled(False)
+            self.btn_text_picker.setDisabled(False)
+            self.use_custom_colors.setDisabled(False)
+            self.skin_dropdown.setDisabled(True)
 
     def changeCustomColors(self):
         self.app.settings.setValue("UseCustomColors", self.use_custom_colors.isChecked())
-        if self.use_custom_colors.isChecked():
+        if self.use_custom_colors.isChecked() and not self.skin_mode_option.isChecked():
             self.dark_mode_option.setDisabled(True)
             self.dark_mode_option.setChecked(False)
             self.btn_background_picker.setDisabled(False)
             self.btn_foreground_picker.setDisabled(False)
             self.btn_text_picker.setDisabled(False)
+            self.skin_mode_option.setDisabled(True)
             for c in self.app.charts:
                 c.setBackgroundColor(self.backgroundColor)
                 c.setForegroundColor(self.foregroundColor)
                 c.setTextColor(self.textColor)
-        else:
+        elif not self.use_custom_colors.isChecked() and not self.skin_mode_option.isChecked():
             self.dark_mode_option.setDisabled(False)
             self.btn_background_picker.setDisabled(True)
             self.btn_foreground_picker.setDisabled(True)
             self.btn_text_picker.setDisabled(True)
+            self.skin_mode_option.setDisabled(False)
             self.changeDarkMode()  # Reset to the default colors depending on Dark Mode setting
+        else:
+            self.dark_mode_option.setDisabled(True)
+            self.btn_background_picker.setDisabled(True)
+            self.btn_foreground_picker.setDisabled(True)
+            self.btn_text_picker.setDisabled(True)
+            self.skin_mode_option.setDisabled(False)
 
     def setColor(self, name: str, color: QtGui.QColor):
         if name == "background":
