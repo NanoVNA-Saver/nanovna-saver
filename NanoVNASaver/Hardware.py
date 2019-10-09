@@ -183,7 +183,7 @@ class NanoVNA(VNA):
         self.version = Version(self.readVersion())
 
         logger.debug("Testing against 0.2.0")
-        if self.version > Version("0.2.0"):
+        if self.version >= Version("0.2.0"):
             logger.debug("Newer than 0.2.0, using new scan command.")
             self.useScan = True
         else:
@@ -248,9 +248,15 @@ class NanoVNA_F(NanoVNA):
 
 
 class Version:
+    major = 0
+    minor = 0
+    revision = 0
+    note = ""
+    version_string =""
+
     def __init__(self, version_string):
         self.version_string = version_string
-        results = re.match(r"(\D+)?\s*(\d+)\.(\d+)\.(\d+)(.*)", version_string)
+        results = re.match(r"(.*\D+)?(\d+)\.(\d+)\.(\d+)(.*)", version_string)
         if results:
             self.major = int(results.group(2))
             self.minor = int(results.group(3))
