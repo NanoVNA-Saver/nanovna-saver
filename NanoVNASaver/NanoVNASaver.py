@@ -28,7 +28,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import QModelIndex
 from serial.tools import list_ports
 
-from NanoVNASaver.Hardware import VNA, InvalidVNA
+from NanoVNASaver.Hardware import VNA, InvalidVNA, Version
 from .Chart import Chart, PhaseChart, VSWRChart, PolarChart, SmithChart, LogMagChart, QualityFactorChart, TDRChart, \
     RealImaginaryChart
 from .Calibration import CalibrationWindow, Calibration
@@ -63,7 +63,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                                          "NanoVNASaver", "NanoVNASaver")
         print("Settings: " + self.settings.fileName())
         self.threadpool = QtCore.QThreadPool()
-        self.vna = InvalidVNA()
+        self.vna: VNA = InvalidVNA()
         self.worker = SweepWorker(self, self.vna)
 
         self.bands = BandsModel()
@@ -453,15 +453,12 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.displaySetupWindow = DisplaySettingsWindow(self)
         btn_display_setup.clicked.connect(self.displaySettingsWindow)
 
+        self.aboutWindow = AboutWindow(self)
+
         btn_about = QtWidgets.QPushButton("About ...")
         btn_about.setMaximumWidth(250)
-        btn_about.clicked.connect(lambda: QtWidgets.QMessageBox.about(self, "About NanoVNASaver",
-                                                                      "NanoVNASaver version "
-                                                                      + NanoVNASaver.version +
-                                                                      "\n\n\N{COPYRIGHT SIGN} Copyright 2019 Rune B. Broberg\n" +
-                                                                      "This program comes with ABSOLUTELY NO WARRANTY\n" +
-                                                                      "This program is licensed under the GNU General Public License version 3\n\n" +
-                                                                      "See https://mihtjel.github.io/nanovna-saver/ for further details"))
+
+        btn_about.clicked.connect(self.displayAboutWindow)
 
         button_grid = QtWidgets.QGridLayout()
         button_grid.addWidget(btn_open_file_window, 0, 0)
@@ -987,6 +984,10 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.analysis_window.show()
         QtWidgets.QApplication.setActiveWindow(self.analysis_window)
 
+    def displayAboutWindow(self):
+        self.aboutWindow.show()
+        QtWidgets.QApplication.setActiveWindow(self.aboutWindow)
+
     def showError(self, text):
         error_message = QtWidgets.QErrorMessage(self)
         error_message.showMessage(text)
@@ -1399,6 +1400,64 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
     def displayBandsWindow(self):
         self.bandsWindow.show()
         QtWidgets.QApplication.setActiveWindow(self.bandsWindow)
+
+
+class AboutWindow(QtWidgets.QWidget):
+    def __init__(self, app: NanoVNASaver):
+        super().__init__()
+        self.app = app
+
+        self.setWindowTitle("About NanoVNASaver")
+        self.setWindowIcon(self.app.icon)
+        top_layout = QtWidgets.QHBoxLayout()
+        self.setLayout(top_layout)
+        #self.setAutoFillBackground(True)
+        pal = self.palette()
+        pal.setColor(QtGui.QPalette.Background, QtGui.QColor("white"))
+        self.setPalette(pal)
+        shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
+
+        icon_layout = QtWidgets.QVBoxLayout()
+        top_layout.addLayout(icon_layout)
+        icon = QtWidgets.QLabel()
+        icon.setPixmap(self.app.icon.pixmap(128, 128))
+        icon_layout.addWidget(icon)
+        icon_layout.addStretch()
+
+        layout = QtWidgets.QVBoxLayout()
+        top_layout.addLayout(layout)
+
+        layout.addWidget(QtWidgets.QLabel("NanoVNASaver version " + NanoVNASaver.version))
+        layout.addWidget(QtWidgets.QLabel(""))
+        layout.addWidget(QtWidgets.QLabel("\N{COPYRIGHT SIGN} Copyright 2019 Rune B. Broberg"))
+        layout.addWidget(QtWidgets.QLabel("This program comes with ABSOLUTELY NO WARRANTY"))
+        layout.addWidget(QtWidgets.QLabel("This program is licensed under the GNU General Public License version 3"))
+        layout.addWidget(QtWidgets.QLabel(""))
+        link_label = QtWidgets.QLabel("For further details, see: " +
+                                      "<a href=\"https://mihtjel.github.io/nanovna-saver/\">" +
+                                      "https://mihtjel.github.io/nanovna-saver/</a>")
+        link_label.setOpenExternalLinks(True)
+        layout.addWidget(link_label)
+        layout.addWidget(QtWidgets.QLabel(""))
+
+        self.versionLabel = QtWidgets.QLabel("NanoVNA Firmware Version: Not connected.")
+        layout.addWidget(self.versionLabel)
+
+        layout.addStretch()
+
+        btn_ok = QtWidgets.QPushButton("Ok")
+        btn_ok.clicked.connect(lambda: self.close())
+        layout.addWidget(btn_ok)
+
+    def show(self):
+        super().show()
+        self.updateLabels()
+
+    def updateLabels(self):
+        if self.app.vna.isValid():
+            logger.debug("Valid VNA")
+            v: Version = self.app.vna.version
+            self.versionLabel.setText("NanoVNA Firmware Version: " + v.version_string)
 
 
 class TDRWindow(QtWidgets.QWidget):

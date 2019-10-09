@@ -31,6 +31,7 @@ class VNA:
         from NanoVNASaver.NanoVNASaver import NanoVNASaver
         self.app: NanoVNASaver = app
         self.serial = serialPort
+        self.version: Version = Version("0.0.0")
 
     @staticmethod
     def getVNA(app, serialPort: serial.Serial) -> 'VNA':
@@ -53,6 +54,9 @@ class VNA:
 
     def resetSweep(self, start: int, stop: int):
         pass
+
+    def isValid(self):
+        return False
 
     def flushSerialBuffers(self):
         if self.app.serialLock.acquire():
@@ -175,6 +179,9 @@ class NanoVNA(VNA):
         else:
             logger.debug("Older than 0.2.0, using old sweep command.")
             self.useScan = False
+
+    def isValid(self):
+        return True
 
     def readFrequencies(self) -> List[str]:
         return self.readValues("frequencies")
