@@ -1080,6 +1080,18 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         display_options_layout.addRow("Reference color", self.btnReferenceColorPicker)
 
+        self.btnSecondaryReferenceColorPicker = QtWidgets.QPushButton("█")
+        self.btnSecondaryReferenceColorPicker.setFixedWidth(20)
+        self.secondaryReferenceColor = self.app.settings.value("SecondaryReferenceColor",
+                                                               defaultValue=QtGui.QColor(0, 0, 255, 32),
+                                                               type=QtGui.QColor)
+        self.setSecondaryReferenceColor(self.secondaryReferenceColor)
+        self.btnSecondaryReferenceColorPicker.clicked.connect(lambda: self.setSecondaryReferenceColor(
+            QtWidgets.QColorDialog.getColor(self.secondaryReferenceColor,
+                                            options=QtWidgets.QColorDialog.ShowAlphaChannel)))
+
+        display_options_layout.addRow("Second reference color", self.btnSecondaryReferenceColorPicker)
+
         layout.addWidget(display_options_box)
 
         color_options_box = QtWidgets.QGroupBox("Chart colors")
@@ -1376,6 +1388,18 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
             for c in self.app.charts:
                 c.setReferenceColor(color)
+
+    def setSecondaryReferenceColor(self, color):
+        if color.isValid():
+            self.secondaryReferenceColor = color
+            p = self.btnSecondaryReferenceColorPicker.palette()
+            p.setColor(QtGui.QPalette.ButtonText, color)
+            self.btnSecondaryReferenceColorPicker.setPalette(p)
+            self.app.settings.setValue("SecondaryReferenceColor", color)
+            self.app.settings.sync()
+
+            for c in self.app.charts:
+                c.setSecondaryReferenceColor(color)
 
     def setShowBands(self, show_bands):
         self.app.bands.enabled = show_bands

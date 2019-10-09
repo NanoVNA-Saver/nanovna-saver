@@ -31,6 +31,8 @@ class Chart(QtWidgets.QWidget):
     secondarySweepColor = QtCore.Qt.darkMagenta
     referenceColor: QtGui.QColor = QtGui.QColor(QtCore.Qt.blue)
     referenceColor.setAlpha(64)
+    secondaryReferenceColor: QtGui.QColor = QtGui.QColor(QtCore.Qt.blue)
+    secondaryReferenceColor.setAlpha(64)
     backgroundColor: QtGui.QColor = QtGui.QColor(QtCore.Qt.white)
     foregroundColor: QtGui.QColor = QtGui.QColor(QtCore.Qt.lightGray)
     textColor: QtGui.QColor = QtGui.QColor(QtCore.Qt.black)
@@ -63,6 +65,10 @@ class Chart(QtWidgets.QWidget):
 
     def setReferenceColor(self, color : QtGui.QColor):
         self.referenceColor = color
+        self.update()
+
+    def setSecondaryReferenceColor(self, color : QtGui.QColor):
+        self.secondaryReferenceColor = color
         self.update()
 
     def setBackgroundColor(self, color: QtGui.QColor):
@@ -1614,9 +1620,9 @@ class RealImaginaryChart(FrequencyChart):
                 prev_y_im = self.getImYPosition(self.data[i-1])
 
                 # Real part first
+                line_pen.setColor(self.sweepColor)
+                qp.setPen(line_pen)
                 if self.isPlotable(x, y_re) and self.isPlotable(prev_x, prev_y_re):
-                    line_pen.setColor(self.sweepColor)
-                    qp.setPen(line_pen)
                     qp.drawLine(x, y_re, prev_x, prev_y_re)
                 elif self.isPlotable(x, y_re) and not self.isPlotable(prev_x, prev_y_re):
                     new_x, new_y = self.getPlotable(x, y_re, prev_x, prev_y_re)
@@ -1625,10 +1631,10 @@ class RealImaginaryChart(FrequencyChart):
                     new_x, new_y = self.getPlotable(prev_x, prev_y_re, x, y_re)
                     qp.drawLine(prev_x, prev_y_re, new_x, new_y)
 
-                # Imag part first
+                # Imag part second
+                line_pen.setColor(self.secondarySweepColor)
+                qp.setPen(line_pen)
                 if self.isPlotable(x, y_im) and self.isPlotable(prev_x, prev_y_im):
-                    line_pen.setColor(self.secondarySweepColor)
-                    qp.setPen(line_pen)
                     qp.drawLine(x, y_im, prev_x, prev_y_im)
                 elif self.isPlotable(x, y_im) and not self.isPlotable(prev_x, prev_y_im):
                     new_x, new_y = self.getPlotable(x, y_im, prev_x, prev_y_im)
@@ -1639,7 +1645,7 @@ class RealImaginaryChart(FrequencyChart):
 
         primary_pen.setColor(self.referenceColor)
         line_pen.setColor(self.referenceColor)
-        secondary_pen.setColor(self.referenceColor)
+        secondary_pen.setColor(self.secondaryReferenceColor)
         qp.setPen(primary_pen)
         if len(self.reference) > 0:
             c = QtGui.QColor(self.referenceColor)
@@ -1647,7 +1653,12 @@ class RealImaginaryChart(FrequencyChart):
             pen = QtGui.QPen(c)
             pen.setWidth(2)
             qp.setPen(pen)
-            qp.drawLine(20, 14, 25, 14)  # Alpha might be low, so we draw twice
+            qp.drawLine(20, 14, 25, 14)
+            c = QtGui.QColor(self.secondaryReferenceColor)
+            c.setAlpha(255)
+            pen = QtGui.QPen(c)
+            pen.setWidth(2)
+            qp.setPen(pen)
             qp.drawLine(self.leftMargin + self.chartWidth, 14, self.leftMargin + self.chartWidth + 5, 14)
 
         for i in range(len(self.reference)):
@@ -1667,10 +1678,10 @@ class RealImaginaryChart(FrequencyChart):
                 prev_y_re = self.getReYPosition(self.reference[i-1])
                 prev_y_im = self.getImYPosition(self.reference[i-1])
 
+                line_pen.setColor(self.secondaryReferenceColor)
+                qp.setPen(line_pen)
                 # Real part first
                 if self.isPlotable(x, y_re) and self.isPlotable(prev_x, prev_y_re):
-                    line_pen.setColor(self.referenceColor)
-                    qp.setPen(line_pen)
                     qp.drawLine(x, y_re, prev_x, prev_y_re)
                 elif self.isPlotable(x, y_re) and not self.isPlotable(prev_x, prev_y_re):
                     new_x, new_y = self.getPlotable(x, y_re, prev_x, prev_y_re)
@@ -1679,10 +1690,10 @@ class RealImaginaryChart(FrequencyChart):
                     new_x, new_y = self.getPlotable(prev_x, prev_y_re, x, y_re)
                     qp.drawLine(prev_x, prev_y_re, new_x, new_y)
 
-                # Imag part first
+                line_pen.setColor(self.secondaryReferenceColor)
+                qp.setPen(line_pen)
+                # Imag part second
                 if self.isPlotable(x, y_im) and self.isPlotable(prev_x, prev_y_im):
-                    line_pen.setColor(self.secondarySweepColor)
-                    qp.setPen(line_pen)
                     qp.drawLine(x, y_im, prev_x, prev_y_im)
                 elif self.isPlotable(x, y_im) and not self.isPlotable(prev_x, prev_y_im):
                     new_x, new_y = self.getPlotable(x, y_im, prev_x, prev_y_im)
