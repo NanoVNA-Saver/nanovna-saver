@@ -81,18 +81,6 @@ class NanoVNA_UI:
             Skins.default(app, self)
             logger.debug("Skin set to Default")
 
-    # TODO
-    # Skins.dark(app)
-    # if self.color_mode_option.isChecked():
-    #     app.setStyleSheet("file:///" + DARK_SKIN_COLORED)
-    # else if !self.skin_mode_option.isChecked():
-    #     app.setStyleSheet("file:///" + DARK_SKIN_MONOCHROME)
-
-    # Skins.light(app)
-    # if self.color_mode_option.isChecked():
-    #     app.setStyleSheet("file:///" + LIGHT_SKIN_COLORED)
-    # else:
-    #     app.setStyleSheet("file:///" + LIGHT_SKIN_MONOCHROME)
     def validateSkin(saved_skin):
         if not saved_skin < DARK_SKIN_STRING_COLORED or not saved_skin < DARK_SKIN_STRING_MONOCHROME or not saved_skin < LIGHT_SKIN_STRING_COLORED or not saved_skin < LIGHT_SKIN_STRING_MONOCHROME:
             return True
