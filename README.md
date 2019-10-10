@@ -24,7 +24,7 @@ Current features:
 - Exporting images of plotted values
 
 0.1.0:
-![Screenshot of version 0.1.0](https://i.imgur.com/OHlq9oW.png)
+![Screenshot of version 0.1.2](https://scontent.fyhu2-1.fna.fbcdn.net/v/t1.0-9/72085456_3063145840422079_6608574845875650560_o.jpg?_nc_cat=106&_nc_oc=AQkhXe-NFPjrzWRdsjynySB62PVyZDbagu2aZw0RhFWnWFCkgpCT0Zw9EGhRI5Zk0rA&_nc_ht=scontent.fyhu2-1.fna&oh=7883a082aacd8c2ccb328f9802a86dff&oe=5E3278B5)
 
 ## Running the application
 
