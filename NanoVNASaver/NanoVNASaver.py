@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import os
+# import os
 import collections
 import logging
 import math
@@ -38,9 +38,7 @@ from .Touchstone import Touchstone
 from .Analysis import Analysis, LowPassAnalysis, HighPassAnalysis, BandPassAnalysis
 from .about import version as ver
 from PyQt5.QtWidgets import QApplication, QPushButton, QDesktopWidget
-from .skins_utils import DARK_SKIN_COLORED, DARK_SKIN_MONOCHROME, LIGHT_SKIN_COLORED,\
- LIGHT_SKIN_MONOCHROME
-from .skins import Skins
+from .skins_utils import *
 
 app = QtWidgets.QApplication(sys.argv)
 
@@ -491,7 +489,8 @@ class NanoVNASaver(QtWidgets.QWidget):
                                                                       "\n\n\N{COPYRIGHT SIGN} Copyright 2019 Rune B. Broberg\n" +
                                                                       "This program comes with ABSOLUTELY NO WARRANTY\n" +
                                                                       "This program is licensed under the GNU General Public License version 3\n\n" +
-                                                                      "See https://mihtjel.github.io/nanovna-saver/ for further details"))
+                                                                      "See https://mihtjel.github.io/nanovna-saver/ for further details\n\n" +
+                                                                      "AUTHOR:\nRune B. Broberg - 5Q5R\n\nCONTRIBUTORS:\nOhan Smit, Neilkatin, Carl Tremblay - VA2SAJ"))
 
         button_grid = QtWidgets.QGridLayout()
         button_grid.addWidget(btn_open_file_window, 0, 0)
@@ -1123,18 +1122,9 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         layout = QtWidgets.QVBoxLayout()
         self.setLayout(layout)
 
-
-
-
-
-
-
-
-
-
-
-
-
+        # **************************
+        #      Skins Controls
+        # **************************
         display_skins_box = QtWidgets.QGroupBox("Skins")
         display_skins_layout = QtWidgets.QFormLayout(display_skins_box)
 
@@ -1145,14 +1135,16 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
 
         self.skin_dropdown = QtWidgets.QComboBox()
-        self.skin_dropdown.addItems(["Light", "Light Colored", "Dark", "Dark Colored"])
+        self.skin_dropdown.addItems([DARK_SKIN_STRING_COLORED, DARK_SKIN_STRING_MONOCHROME, LIGHT_SKIN_STRING_COLORED, LIGHT_SKIN_STRING_MONOCHROME])
         self.skin_dropdown.setDisabled(True)
         self.skin_dropdown.currentTextChanged.connect(self.changeSkins)
         skin_dropdown_label = QtWidgets.QLabel("Choose skin to display")
         display_skins_layout.addRow(self.skin_dropdown, skin_dropdown_label)
 
         layout.addWidget(display_skins_box)
-
+        # **************************
+        #      Options Controls
+        # **************************
         display_options_box = QtWidgets.QGroupBox("Options")
         display_options_layout = QtWidgets.QFormLayout(display_options_box)
 
@@ -1216,7 +1208,9 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         display_options_layout.addRow("Reference color", self.btnReferenceColorPicker)
 
         layout.addWidget(display_options_box)
-
+        # **************************
+        #   Chart Colors Controls
+        # **************************
         color_options_box = QtWidgets.QGroupBox("Chart colors")
         color_options_layout = QtWidgets.QFormLayout(color_options_box)
 
@@ -1243,7 +1237,9 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         color_options_layout.addRow("Chart text", self.btn_text_picker)
 
         layout.addWidget(color_options_box)
-
+        # **************************
+        #      Font Controls
+        # **************************
         font_options_box = QtWidgets.QGroupBox("Font")
         font_options_layout = QtWidgets.QFormLayout(font_options_box)
         self.font_dropdown = QtWidgets.QComboBox()
@@ -1258,7 +1254,9 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         font_options_layout.addRow("Font size", self.font_dropdown)
 
         layout.addWidget(font_options_box)
-
+        # **************************
+        #      Bands Controls
+        # **************************
         bands_box = QtWidgets.QGroupBox("Bands")
         bands_layout = QtWidgets.QFormLayout(bands_box)
 
@@ -1281,7 +1279,9 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         bands_layout.addRow(self.btn_manage_bands)
 
         layout.addWidget(bands_box)
-
+        # **************************
+        #      Charts Controls
+        # **************************
         charts_box = QtWidgets.QGroupBox("Displayed charts")
         charts_layout = QtWidgets.QGridLayout(charts_box)
 
@@ -1345,6 +1345,10 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.changeChart(1, 2, chart12_selection.currentText())
 
         layout.addWidget(charts_box)
+        # *********************************************************************
+        #     Set the default value if value if not saved in the config file
+        #               Set the default UI Skin color
+        # *********************************************************************
         self.dark_mode_option.setChecked(self.app.settings.value("DarkMode", False, bool))
         self.show_lines_option.setChecked(self.app.settings.value("ShowLines", False, bool))
 
@@ -1382,7 +1386,20 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         p = self.btn_bands_picker.palette()
         p.setColor(QtGui.QPalette.ButtonText, self.bandsColor)
         self.btn_bands_picker.setPalette(p)
-
+        # ******************************************
+        #     Initialization of Skins mode feature
+        # ******************************************
+        self.skin_mode_option.setChecked(self.app.settings.value("SkinMode", False, bool))
+        if self.skin_mode_option.isChecked():
+            saved_skin = self.app.settings.value("CurrentSkin", False)
+            if NanoVNA_UI.validateSkin(saved_skin):
+                index = self.skin_dropdown.findText(saved_skin, QtCore.Qt.MatchFixedString)
+                if index >= 0:
+                    self.skin_dropdown.setCurrentIndex(index)
+                # NanoVNA_UI.updateUI(self)
+        # *************************************
+        #      Display Settings Functions
+        # *************************************
     def changeChart(self, x, y, chart):
         found = None
         for c in self.app.charts:
@@ -1421,15 +1438,12 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         state = self.dark_mode_option.isChecked()
         self.app.settings.setValue("DarkMode", state)
         if state and not self.skin_mode_option.isChecked():
-
             self.skin_mode_option.setDisabled(True)
-
             for c in self.app.charts:
                 c.setBackgroundColor(QtGui.QColor(QtCore.Qt.black))
                 c.setForegroundColor(QtGui.QColor(QtCore.Qt.lightGray))
                 c.setTextColor(QtGui.QColor(QtCore.Qt.white))
         elif not state and not self.skin_mode_option.isChecked():
-
             self.skin_mode_option.setDisabled(False)
             for c in self.app.charts:
                 c.setBackgroundColor(QtGui.QColor(QtCore.Qt.white))
@@ -1439,12 +1453,14 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self.skin_mode_option.setDisabled(False)
 
     def changeSkins(self):
-        # TODO DropDown changeEvent update the skin
-        font_size = self.skin_dropdown.currentText()
+        if self.skin_mode_option.isChecked():
+            self.app.settings.setValue("CurrentSkin", self.skin_dropdown.currentText())
+            NanoVNA_UI.updateUI(self,self.skin_dropdown.currentText(),app)
+        else:
+            NanoVNA_UI.updateUI(self, "NULL", app)
 
     def changeSkinMode(self):
         state = self.skin_mode_option.isChecked()
-
         self.app.settings.setValue("SkinMode", state)
         if state:
             self.dark_mode_option.setDisabled(True)
@@ -1453,19 +1469,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self.btn_text_picker.setDisabled(True)
             self.use_custom_colors.setDisabled(True)
             self.skin_dropdown.setDisabled(False)
-            # TODO
-            # Skins.dark(app)
-            # if self.color_mode_option.isChecked():
-            #     app.setStyleSheet("file:///" + DARK_SKIN_COLORED)
-            # else if !self.skin_mode_option.isChecked():
-            #     app.setStyleSheet("file:///" + DARK_SKIN_MONOCHROME)
-
-            # Skins.light(app)
-            # if self.color_mode_option.isChecked():
-            #     app.setStyleSheet("file:///" + LIGHT_SKIN_COLORED)
-            # else:
-            #     app.setStyleSheet("file:///" + LIGHT_SKIN_MONOCHROME)
-
+            NanoVNA_UI.updateUI(self,self.skin_dropdown.currentText(),app)
         else:
             self.dark_mode_option.setDisabled(False)
             self.btn_background_picker.setDisabled(False)
@@ -1473,6 +1477,8 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self.btn_text_picker.setDisabled(False)
             self.use_custom_colors.setDisabled(False)
             self.skin_dropdown.setDisabled(True)
+            NanoVNA_UI.updateUI(self, "NULL", app)
+
 
     def changeCustomColors(self):
         self.app.settings.setValue("UseCustomColors", self.use_custom_colors.isChecked())
@@ -1853,6 +1859,7 @@ class BandsModel(QtCore.QAbstractTableModel):
     enabled = False
     color = QtGui.QColor(128, 128, 128, 48)
 
+    # TODO Regionalized bands in the app settings from a DropDown menu. You choose the bands plan from your region
     # These bands correspond broadly to the Danish Amateur Radio allocation
     default_bands = ["2200 m;135700;137800",
                      "630 m;472000;479000",
