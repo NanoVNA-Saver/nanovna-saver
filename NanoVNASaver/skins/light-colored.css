@@ -176,7 +176,9 @@ QGroupBox {
   color: #000000;
   font-weight: bold;
 }
-
+[cssClass="aboutWindow"] {
+  background-color: #ffffff;
+}
 [cssClass="dialog"] {
   border-radius: 12px;
   border-style: solid;

@@ -138,3 +138,6 @@ QSlider::sub-page:horizontal {
 QSlider::sub-page:horizontal:disabled {
   background-color: palette(light);
 }
+[cssClass="aboutWindow"] {
+  background-color: #545254;
+}

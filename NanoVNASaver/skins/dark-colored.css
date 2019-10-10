@@ -1,5 +1,5 @@
 /*
-background foncer 343334
+background dark 343334
 
 background 545254
 background shadow 464446
@@ -170,7 +170,7 @@ QGroupBox {
 }
 
 [cssClass="aboutWindow"] {
-  background-color: #FF0000;
+  background-color: #545254;
 }
 
 [cssClass="dialog"] {
