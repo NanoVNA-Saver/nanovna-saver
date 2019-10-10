@@ -20,7 +20,7 @@ Current features:
 - Display of both an active and a reference trace
 - Live updates of data from the NanoVNA, including for multi-segment sweeps
 - In-application calibration, including compensation for non-ideal calibration standards
-- Customizable display options, including "dark mode"
+- Customizable display options, including "dark mode" and "Skin Mode"
 - Exporting images of plotted values
 
 0.1.2:
