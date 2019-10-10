@@ -45,7 +45,6 @@ def LIGHT_SKIN_MONOCHROME():
 
 
 def LIGHT_SKIN_COLORED():
-
     if getattr(sys, 'frozen', False):
         return sys._MEIPASS + '/skins/light-colored.css'
     else:

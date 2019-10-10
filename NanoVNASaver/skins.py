@@ -66,6 +66,9 @@ class Skins:
         darkPalette.setColor(QPalette.Disabled, QPalette.HighlightedText,
                              QColor(127, 127, 127))
 
+        # pal = self.aboutWindow.palette()
+        # pal.setColor(QtGui.QPalette.Background, QtGui.QColor("black"))
+        # self.aboutWindow.setPalette(pal)
         app.setPalette(darkPalette)
 
         if QT_VERSION < (5,):
@@ -115,7 +118,9 @@ class Skins:
         lightPalette.setColor(QPalette.Disabled, QPalette.HighlightedText,
                               QColor(115, 115, 115))
 
-        app.setPalette(lightPalette)
+        # pal = self.aboutWindow.palette()
+        # pal.setColor(QtGui.QPalette.Background, QtGui.QColor("white"))
+        # self.aboutWindow.setPalette(pal)
 
         if QT_VERSION < (5,):
             app.setStyle('plastique')
@@ -165,10 +170,6 @@ class Skins:
         lightPalette.setColor(QPalette.Disabled, QPalette.HighlightedText,
                               QColor(115, 115, 115))
 
-        default_style = QCommonStyle()
-        app.setStyle(default_style)
-        app.setPalette(lightPalette)
-
         self.btn_background_picker.setDisabled(True)
         self.btn_foreground_picker.setDisabled(True)
         self.btn_text_picker.setDisabled(True)
@@ -189,8 +190,16 @@ class Skins:
         p.setColor(QtGui.QPalette.ButtonText, self.bandsColor)
         self.btn_bands_picker.setPalette(p)
 
+        # p = self.aboutWindow.palette()
+        # p.setColor(QtGui.QPalette.Background, QtGui.QColor("white"))
+        # self.aboutWindow.setPalette(p)
+
         for c in self.app.charts:
             c.setBackgroundColor(QtGui.QColor(QtCore.Qt.white))
             c.setForegroundColor(QtGui.QColor(QtCore.Qt.lightGray))
             c.setTextColor(QtGui.QColor(QtCore.Qt.black))
+
+        default_style = QCommonStyle()
+        app.setStyle(default_style)
+        app.setPalette(lightPalette)
         logger.debug("Skin sucessfully set to default palette")

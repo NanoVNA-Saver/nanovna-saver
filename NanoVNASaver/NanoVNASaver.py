@@ -471,6 +471,9 @@ class NanoVNASaver(QtWidgets.QWidget):
         btn_display_setup.clicked.connect(self.displaySettingsWindow)
 
         self.aboutWindow = AboutWindow(self)
+        self.aboutWindow.setStyle("{background-color: #ff0000}}")
+
+        shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
         btn_about = QtWidgets.QPushButton("About ...")
         btn_about.setMaximumWidth(250)
@@ -1377,7 +1380,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
     def changeSkins(self):
         if self.skin_mode_option.isChecked():
             self.app.settings.setValue("CurrentSkin", self.skin_dropdown.currentText())
-            NanoVNA_UI.updateUI(self,self.skin_dropdown.currentText(),app)
+            NanoVNA_UI.updateUI(self, self.skin_dropdown.currentText(), app)
         else:
             NanoVNA_UI.updateUI(self, "NULL", app)
 
@@ -1527,15 +1530,28 @@ class AboutWindow(QtWidgets.QWidget):
     def __init__(self, app: NanoVNASaver):
         super().__init__()
         self.app = app
-
         self.setWindowTitle("About NanoVNASaver")
         self.setWindowIcon(self.app.icon)
         top_layout = QtWidgets.QHBoxLayout()
         self.setLayout(top_layout)
         #self.setAutoFillBackground(True)
-        pal = self.palette()
-        pal.setColor(QtGui.QPalette.Background, QtGui.QColor("white"))
-        self.setPalette(pal)
+
+        # TODO @Rune Removed from the constructor so it will be possible to skin.
+        # It has been replace by styling. Giving another palette than the global one, broke the skin mode for about dialog.
+        # All color and style for the default UI need to be placed outside constructor and defined after the component is defined.
+        # Unless it could broke skin mecanism
+        #
+        # i.e. Like this:   self.aboutWindow = ....
+        #                   self.aboutWindow.setStyle("QFrame{background-color: #ffffff;}")
+        #
+        # eventually we will have to move all assets like icons into css class
+        # This will come when I will iconify buttons to save space in the UI as an option in the skin mode.
+        #
+        #     pal = self.palette()
+        #     pal.setColor(QtGui.QPalette.Background, QtGui.QColor("white"))
+        #     self.setPalette(pal)
+
+
         shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
         icon_layout = QtWidgets.QVBoxLayout()
