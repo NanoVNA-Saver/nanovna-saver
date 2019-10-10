@@ -1,0 +1,357 @@
+/* #  NanoVNASaver - a python program to view and export Touchstone data from a NanoVNA
+#  Copyright (C) 2019.  Rune B. Broberg
+#  Author Carl Tremblay -Cinosh07 AKA VA2SAJ
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>. */
+/*
+
+Light Blue 53d1ea
+Light Green 00d074
+Light Yellow eae7ac
+Light Red e1442a
+Light Gray c6c3c5
+
+https://www.atlassian.com/git/tutorials/saving-changes/git-stash
+to install right version of qtmodern librairy pip3 install git+https://github.com/gmarull/qtmodern.git
+*/
+/*
+ * QGroupBox
+ */
+QGroupBox {
+  background-color: palette(alternate-base);
+  border: 1px solid palette(midlight);
+  margin-top: 25px;
+}
+
+QGroupBox::title {
+  background-color: transparent;
+}
+
+/*
+ * QToolBar
+ */
+QToolBar {
+  border: none;
+}
+
+/*
+ * QTabBar
+ */
+QTabBar {
+  background-color: transparent;
+}
+
+QTabBar::tab {
+  padding: 4px 6px;
+  background-color: transparent;
+  border-bottom: 2px solid transparent;
+}
+
+QTabBar::tab:selected, QTabBar::tab:hover {
+  color: palette(text);
+  border-bottom: 2px solid palette(highlight);
+}
+
+QTabBar::tab:selected:disabled {
+  border-bottom: 2px solid palette(light);
+}
+
+/*
+ * QScrollBar
+ */
+QScrollBar:vertical {
+  background: palette(base);
+  border-top-right-radius: 2px;
+  border-bottom-right-radius: 2px;
+  width: 16px;
+  margin: 0px;
+}
+
+QScrollBar::handle:vertical {
+  background-color: palette(alternate-base);
+  border-radius: 2px;
+  min-height: 20px;
+  margin: 2px 4px 2px 4px;
+}
+
+QScrollBar::handle:vertical:hover {
+  background-color: palette(highlight);
+}
+
+QScrollBar::add-line:vertical {
+  background: none;
+  height: 0px;
+  subcontrol-position: right;
+  subcontrol-origin: margin;
+}
+
+QScrollBar::sub-line:vertical {
+  background: none;
+  height: 0px;
+  subcontrol-position: left;
+  subcontrol-origin: margin;
+}
+
+QScrollBar:horizontal {
+  background: palette(base);
+  height: 16px;
+  margin: 0px;
+}
+
+QScrollBar::handle:horizontal {
+  background-color: palette(alternate-base);
+  border-radius: 2px;
+  min-width: 20px;
+  margin: 4px 2px 4px 2px;
+}
+
+QScrollBar::handle:horizontal:hover {
+  background-color: palette(highlight);
+}
+
+QScrollBar::add-line:horizontal {
+  background: none;
+  width: 0px;
+  subcontrol-position: bottom;
+  subcontrol-origin: margin;
+}
+
+QScrollBar::sub-line:horizontal {
+  background: none;
+  width: 0px;
+  subcontrol-position: top;
+  subcontrol-origin: margin;
+}
+
+/*
+ * QScrollArea
+ */
+QScrollArea {
+  border-style: none;
+}
+
+QScrollArea #scrollAreaWidgetContents {
+  background-color: palette(alternate-base);
+}
+
+/*
+ * QSlider
+ */
+QSlider::handle:horizontal {
+  border-radius: 5px;
+  background-color: palette(light);
+  max-height: 20px;
+}
+
+QSlider::add-page:horizontal {
+  background: palette(base);
+}
+
+QSlider::sub-page:horizontal {
+  background: palette(highlight);
+}
+
+QSlider::sub-page:horizontal:disabled {
+  background-color: palette(light);
+}
+
+QLineEdit {
+  background-color: #000000;
+  color: #e1442a;
+  border: 2px groove #232223;
+  margin: 2px;
+}
+
+QGroupBox {
+  color: #000000;
+  font-weight: bold;
+}
+[cssClass="aboutWindow"] {
+  background-color: #ffffff;
+}
+[cssClass="dialog"] {
+  border-radius: 12px;
+  border-style: solid;
+  border-color: red;
+  border-width: 4px 4px 4px 4px;
+}
+
+[cssClass="mainWindow"] {
+  color: #53d1ea;
+}
+
+[cssClass="Marker-1"] {
+  color: #e1442a;
+  font-weight: bold;
+}
+
+[cssClass="Marker-2"] {
+  color: #53d1ea;
+  font-weight: bold;
+}
+
+[cssClass="Marker-3"] {
+  color: #00d074;
+  font-weight: bold;
+}
+
+[cssClass="frequency_label"] {
+  background-color: #c6c3c5;
+  color: #e1442a;
+  border: 2px groove #232223;
+  margin: 2px;
+  font-weight: bold;
+}
+
+[cssClass="marker_label"] {
+  background-color: #c6c3c5;
+  color: #e1442a;
+  border: 2px groove #232223;
+  margin: 2px;
+  font-weight: bold;
+}
+
+[cssClass="impedance_label"] {
+  background-color: #53d1ea;
+  color: #000000;
+  border: 2px groove #232223;
+  margin: 2px;
+  font-weight: bold;
+}
+
+[cssClass="parallel_r_label"] {
+  background-color: #53d1ea;
+  color: #000000;
+  border: 2px groove #232223;
+  margin: 2px;
+  font-weight: bold;
+}
+
+[cssClass="parallel_x_label"] {
+  background-color: #53d1ea;
+  color: #000000;
+  border: 2px groove #232223;
+  margin: 2px;
+  font-weight: bold;
+}
+
+[cssClass="returnloss_label"] {
+  background-color: #eae7ac;
+  color: #000000;
+  border: 2px groove #232223;
+  margin: 2px;
+  font-weight: bold;
+}
+
+[cssClass="vswr_label"] {
+  background-color: #eae7ac;
+  color: #000000;
+  border: 2px groove #232223;
+  margin: 2px;
+  font-weight: bold;
+}
+
+[cssClass="inductance_label"] {
+  background-color: #000000;
+  color: #e1442a;
+  border: 2px groove #232223;
+  margin: 2px;
+  font-weight: bold;
+}
+
+[cssClass="capacitance_label"] {
+  background-color: #000000;
+  color: #e1442a;
+  border: 2px groove #232223;
+  margin: 2px;
+  font-weight: bold;
+}
+
+[cssClass="gain_label"] {
+  background-color: #00d074;
+  color: #000000;
+  border: 2px groove #232223;
+  margin: 2px;
+  font-weight: bold;
+}
+
+[cssClass="s11_phase_label"] {
+  background-color: #00d074;
+  color: #000000;
+  border: 2px groove #232223;
+  margin: 2px;
+  font-weight: bold;
+}
+
+[cssClass="s21_phase_label"] {
+  background-color: #00d074;
+  color: #000000;
+  border: 2px groove #232223;
+  margin: 2px;
+  font-weight: bold;
+}
+
+[cssClass="quality_factor_label"] {
+  background-color: #000000;
+  color: #e1442a;
+  border: 2px groove #232223;
+  margin: 2px;
+  font-weight: bold;
+}
+
+[cssClass="s11_min_swr_label"] {
+  background-color: #000000;
+  color: #e1442a;
+  border: 2px groove #232223;
+  margin: 2px;
+  font-weight: bold;
+}
+
+[cssClass="s11_min_rl_label"] {
+  background-color: #000000;
+  color: #e1442a;
+  border: 2px groove #232223;
+  margin: 2px;
+  font-weight: bold;
+}
+
+[cssClass="s21_min_gain_label"] {
+  background-color: #000000;
+  color: #e1442a;
+  border: 2px groove #232223;
+  margin: 2px;
+  font-weight: bold;
+}
+
+[cssClass="s21_max_gain_label"] {
+  background-color: #000000;
+  color: #e1442a;
+  border: 2px groove #232223;
+  margin: 2px;
+  font-weight: bold;
+}
+
+[cssClass="s11_control_box"] {
+  color: #000000;
+  font-weight: bold;
+}
+
+[cssClass="s21_control_box"] {
+  color: #000000;
+  font-weight: bold;
+}
+
+[cssClass="tdr_result_label"] {
+  color: #000000;
+  font-weight: bold;
+}
