@@ -22,31 +22,37 @@ from .skins import Skins
 
 logger = logging.getLogger(__name__)
 
+
 def DARK_SKIN_MONOCHROME():
-    if debug == True:
-        return join(dirname(abspath(__file__)), 'skins/dark-monochrome.css')
-    else:
+    if getattr(sys, 'frozen', False):
         return sys._MEIPASS + '/skins/dark-monochrome.css'
+    else:
+        return join(dirname(abspath(__file__)), 'skins/dark-monochrome.css')
+
 
 def DARK_SKIN_COLORED():
-    if debug == True:
-        return join(dirname(abspath(__file__)), 'skins/dark-colored.css')
-    else:
+    if getattr(sys, 'frozen', False):
         return sys._MEIPASS + '/skins/dark-colored.css'
+    else:
+        return join(dirname(abspath(__file__)), 'skins/dark-colored.css')
+
 
 def LIGHT_SKIN_MONOCHROME():
-    if debug == True:
-        return join(dirname(abspath(__file__)), 'skins/light-monochrome.css')
-    else:
+    if getattr(sys, 'frozen', False):
         return sys._MEIPASS + '/skins/light-monochrome.css'
+    else:
+        return join(dirname(abspath(__file__)), 'skins/light-monochrome.css')
+
 
 def LIGHT_SKIN_COLORED():
-    if debug == True:
-        return join(dirname(abspath(__file__)), 'skins/light-colored.css')
-    else:
-        return sys._MEIPASS + '/skins/light-colored.css'
 
-DARK_SKIN_STRING_COLORED =  "Dark Colored"
+    if getattr(sys, 'frozen', False):
+        return sys._MEIPASS + '/skins/light-colored.css'
+    else:
+        return join(dirname(abspath(__file__)), 'skins/light-colored.css')
+
+
+DARK_SKIN_STRING_COLORED = "Dark Colored"
 DARK_SKIN_STRING_MONOCHROME = "Dark"
 LIGHT_SKIN_STRING_COLORED = "Light Colored"
 LIGHT_SKIN_STRING_MONOCHROME = "Light"
@@ -55,6 +61,7 @@ LIGHT_SKIN_STRING_MONOCHROME = "Light"
 class NanoVNA_UI:
     def getSkins():
         return [DARK_SKIN_STRING_COLORED, DARK_SKIN_STRING_MONOCHROME, LIGHT_SKIN_STRING_COLORED, LIGHT_SKIN_STRING_MONOCHROME]
+
     def updateUI(self, skin, app):
         current_skin = self.skin_dropdown.currentText()
         logger.debug("Current Skin is: " + current_skin)
@@ -82,7 +89,7 @@ class NanoVNA_UI:
             logger.debug("Skin set to Default")
 
     def validateSkin(saved_skin):
-        if not saved_skin < DARK_SKIN_STRING_COLORED or not saved_skin < DARK_SKIN_STRING_MONOCHROME or not saved_skin < LIGHT_SKIN_STRING_COLORED or not saved_skin < LIGHT_SKIN_STRING_MONOCHROME:
+        if saved_skin is DARK_SKIN_STRING_COLORED or saved_skin is DARK_SKIN_STRING_MONOCHROME or  saved_skin is LIGHT_SKIN_STRING_COLORED or saved_skin is LIGHT_SKIN_STRING_MONOCHROME:
             return True
         else:
             return False
