@@ -20,10 +20,10 @@ Current features:
 - Display of both an active and a reference trace
 - Live updates of data from the NanoVNA, including for multi-segment sweeps
 - In-application calibration, including compensation for non-ideal calibration standards
-- Customizable display options, including "dark mode" and "Skin Mode"
+- Customizable display options, including "dark mode" and "Skin Mode or Default UI" 
 - Exporting images of plotted values
 
-0.1.2:
+0.1.2: (In Skin Mode)
 ![Screenshot of version 0.1.2](https://scontent.fyhu2-1.fna.fbcdn.net/v/t1.0-9/72262657_3068746463195350_5944686409309749248_o.jpg?_nc_cat=109&_nc_oc=AQkAqxaVKGJeUui-qjSqDkjuCRu6Whv8Jb9zvVoy96bz8ZmMYsOm_RMhFVFssWlIGNc&_nc_ht=scontent.fyhu2-1.fna&oh=691c185e24c27cf466bd48a5fffefc22&oe=5E2E2C81)
 
 ## Running the application
