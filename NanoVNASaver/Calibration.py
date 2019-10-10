@@ -37,8 +37,7 @@ class CalibrationWindow(QtWidgets.QWidget):
         from .NanoVNASaver import NanoVNASaver
 
         self.app: NanoVNASaver = app
-
-        self.setMinimumSize(450, 600)
+        self.setMinimumSize(450, 800)
         self.setWindowTitle("Calibration")
         self.setWindowIcon(self.app.icon)
         self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
