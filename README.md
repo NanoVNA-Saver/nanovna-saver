@@ -23,10 +23,10 @@ Current features:
 - Customizable display options, including "dark mode" and "4 Skins mode UI or Default UI" 
 - Exporting images of plotted values
 
-0.1.2: (In Default UI)
+0.1.2: (Default UI mode)
 ![Screenshot of version 0.1.0](https://i.imgur.com/OHlq9oW.png)
 
-0.1.2: (In Skin Mode UI)
+0.1.2: (Skinned UI mode)
 ![Screenshot of version 0.1.2](https://scontent.fyhu2-1.fna.fbcdn.net/v/t1.0-9/72262657_3068746463195350_5944686409309749248_o.jpg?_nc_cat=109&_nc_oc=AQkAqxaVKGJeUui-qjSqDkjuCRu6Whv8Jb9zvVoy96bz8ZmMYsOm_RMhFVFssWlIGNc&_nc_ht=scontent.fyhu2-1.fna&oh=691c185e24c27cf466bd48a5fffefc22&oe=5E2E2C81)
 
 ## Running the application
