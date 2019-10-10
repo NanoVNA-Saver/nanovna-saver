@@ -23,7 +23,7 @@ Current features:
 - Customizable display options, including "dark mode"
 - Exporting images of plotted values
 
-0.1.0:
+0.1.2:
 ![Screenshot of version 0.1.2](https://scontent.fyhu2-1.fna.fbcdn.net/v/t1.0-9/72262657_3068746463195350_5944686409309749248_o.jpg?_nc_cat=109&_nc_oc=AQkAqxaVKGJeUui-qjSqDkjuCRu6Whv8Jb9zvVoy96bz8ZmMYsOm_RMhFVFssWlIGNc&_nc_ht=scontent.fyhu2-1.fna&oh=691c185e24c27cf466bd48a5fffefc22&oe=5E2E2C81)
 
 ## Running the application
