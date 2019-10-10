@@ -46,11 +46,6 @@ def LIGHT_SKIN_COLORED():
     else:
         return sys._MEIPASS + '/skins/light-colored.css'
 
-# DARK_SKIN_MONOCHROME =  DARK_SKIN_MONOCHROME()
-# DARK_SKIN_COLORED = DARK_SKIN_COLORED()
-# LIGHT_SKIN_MONOCHROME = LIGHT_SKIN_MONOCHROME()
-# LIGHT_SKIN_COLORED = LIGHT_SKIN_COLORED()
-
 DARK_SKIN_STRING_COLORED =  "Dark Colored"
 DARK_SKIN_STRING_MONOCHROME = "Dark"
 LIGHT_SKIN_STRING_COLORED = "Light Colored"
@@ -58,6 +53,8 @@ LIGHT_SKIN_STRING_MONOCHROME = "Light"
 
 
 class NanoVNA_UI:
+    def getSkins():
+        return [DARK_SKIN_STRING_COLORED, DARK_SKIN_STRING_MONOCHROME, LIGHT_SKIN_STRING_COLORED, LIGHT_SKIN_STRING_MONOCHROME]
     def updateUI(self, skin, app):
         current_skin = self.skin_dropdown.currentText()
         logger.debug("Current Skin is: " + current_skin)

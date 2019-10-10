@@ -1135,7 +1135,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
 
         self.skin_dropdown = QtWidgets.QComboBox()
-        self.skin_dropdown.addItems([DARK_SKIN_STRING_COLORED, DARK_SKIN_STRING_MONOCHROME, LIGHT_SKIN_STRING_COLORED, LIGHT_SKIN_STRING_MONOCHROME])
+        self.skin_dropdown.addItems(NanoVNA_UI.getSkins())
         self.skin_dropdown.setDisabled(True)
         self.skin_dropdown.currentTextChanged.connect(self.changeSkins)
         skin_dropdown_label = QtWidgets.QLabel("Choose skin to display")
