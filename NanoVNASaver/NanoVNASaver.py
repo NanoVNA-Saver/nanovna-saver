@@ -37,7 +37,6 @@ from .SweepWorker import SweepWorker
 from .Touchstone import Touchstone
 from .Analysis import Analysis, LowPassAnalysis, HighPassAnalysis, BandPassAnalysis, BandStopAnalysis
 from .about import version as ver
-from PyQt5.QtWidgets import QApplication, QPushButton, QDesktopWidget
 from .skins_utils import *
 
 app = QtWidgets.QApplication(sys.argv)
@@ -1084,7 +1083,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         display_options_layout.addRow(self.show_lines_option, show_lines_label)
 
 
-        self.dark_mode_option = QtWidgets.QCheckBox("Dark mode")
+        self.dark_mode_option = QtWidgets.QCheckBox("Dark Charts mode")
         dark_mode_label = QtWidgets.QLabel("Black background with white text")
         self.dark_mode_option.stateChanged.connect(self.changeDarkMode)
         display_options_layout.addRow(self.dark_mode_option, dark_mode_label)
@@ -1562,7 +1561,6 @@ class AboutWindow(QtWidgets.QWidget):
         link_label = QtWidgets.QLabel("For further details, see: " +
                                       "<a href=\"https://mihtjel.github.io/nanovna-saver/\">" +
                                       "https://mihtjel.github.io/nanovna-saver/</a>")
-        # layout.addWidget(QtWidgets.QLabel(""))
         layout.addWidget(QtWidgets.QLabel("AUTHOR:"))
         layout.addWidget(QtWidgets.QLabel("Rune B. Broberg - 5Q5R<br>"))
         layout.addWidget(QtWidgets.QLabel("CONTRIBUTORS:"))
