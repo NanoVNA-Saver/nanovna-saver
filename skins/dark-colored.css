@@ -349,3 +349,10 @@ QGroupBox {
   color: #00d074;
   font-weight: bold;
 }
+[cssClass="cal_input"] {
+  background-color: #000000;
+  color: #e1442a;
+  border: 2px groove #232223;
+  margin: 0px;
+  font-weight: bold;
+}
