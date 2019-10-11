@@ -37,6 +37,9 @@ from .SweepWorker import SweepWorker
 from .Touchstone import Touchstone
 from .Analysis import Analysis, LowPassAnalysis, HighPassAnalysis, BandPassAnalysis, BandStopAnalysis
 from .about import version as ver
+from .skins_utils import *
+
+app = QtWidgets.QApplication(sys.argv)
 
 Datapoint = collections.namedtuple('Datapoint', 'freq re im')
 
@@ -62,6 +65,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                                          QtCore.QSettings.UserScope,
                                          "NanoVNASaver", "NanoVNASaver")
         print("Settings: " + self.settings.fileName())
+        NanoVNA_UI.defaultUI(app)
         self.threadpool = QtCore.QThreadPool()
         self.vna: VNA = InvalidVNA()
         self.worker = SweepWorker(self)
@@ -95,6 +99,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         logger.debug("Building user interface")
 
         self.baseTitle = "NanoVNA Saver " + NanoVNASaver.version
+
+        self.setProperty("cssClass", "mainWindow")
         self.updateTitle()
         layout = QtWidgets.QGridLayout()
         scrollarea = QtWidgets.QScrollArea()
@@ -193,7 +199,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.sweepCenterInput.textEdited.connect(self.updateStartEnd)
 
         sweep_input_right_layout.addRow(QtWidgets.QLabel("Center"), self.sweepCenterInput)
-        
+
         self.sweepSpanInput = QtWidgets.QLineEdit("")
         self.sweepSpanInput.setAlignment(QtCore.Qt.AlignRight)
         self.sweepSpanInput.textEdited.connect(self.updateStartEnd)
@@ -253,6 +259,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         marker1.updated.connect(self.dataUpdated)
         label, layout = marker1.getRow()
         marker_control_layout.addRow(label, layout)
+
         self.markers.append(marker1)
         marker1.isMouseControlledRadioButton.setChecked(True)
 
@@ -268,7 +275,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         marker3.updated.connect(self.dataUpdated)
         label, layout = marker3.getRow()
         marker_control_layout.addRow(label, layout)
-
         self.markers.append(marker3)
 
         self.showMarkerButton = QtWidgets.QPushButton()
@@ -296,10 +302,12 @@ class NanoVNASaver(QtWidgets.QWidget):
         s11_control_box.setTitle("S11")
         s11_control_layout = QtWidgets.QFormLayout()
         s11_control_box.setLayout(s11_control_layout)
-
+        s11_control_box.setProperty("cssClass", "s11_control_box")
         self.s11_min_swr_label = QtWidgets.QLabel()
+        self.s11_min_swr_label.setProperty("cssClass", "s11_min_swr_label")
         s11_control_layout.addRow("Min VSWR:", self.s11_min_swr_label)
         self.s11_min_rl_label = QtWidgets.QLabel()
+        self.s11_min_rl_label.setProperty("cssClass", "s11_min_rl_label")
         s11_control_layout.addRow("Return loss:", self.s11_min_rl_label)
 
         marker_column.addWidget(s11_control_box)
@@ -308,11 +316,13 @@ class NanoVNASaver(QtWidgets.QWidget):
         s21_control_box.setTitle("S21")
         s21_control_layout = QtWidgets.QFormLayout()
         s21_control_box.setLayout(s21_control_layout)
-
+        s21_control_box.setProperty("cssClass", "s21_control_box")
         self.s21_min_gain_label = QtWidgets.QLabel()
+        self.s21_min_gain_label.setProperty("cssClass", "s21_min_gain_label")
         s21_control_layout.addRow("Min gain:", self.s21_min_gain_label)
 
         self.s21_max_gain_label = QtWidgets.QLabel()
+        self.s21_max_gain_label.setProperty("cssClass", "s21_max_gain_label")
         s21_control_layout.addRow("Max gain:", self.s21_max_gain_label)
 
         marker_column.addWidget(s21_control_box)
@@ -339,6 +349,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         tdr_control_box.setMaximumWidth(250)
 
         self.tdr_result_label = QtWidgets.QLabel()
+        self.tdr_result_label.setProperty("cssClass", "tdr_result_label")
         tdr_control_layout.addRow("Estimated cable length:", self.tdr_result_label)
 
         self.tdr_button = QtWidgets.QPushButton("Time Domain Reflectometry ...")
@@ -458,6 +469,9 @@ class NanoVNASaver(QtWidgets.QWidget):
         btn_display_setup.clicked.connect(self.displaySettingsWindow)
 
         self.aboutWindow = AboutWindow(self)
+        self.aboutWindow.setProperty("cssClass", "aboutWindow")
+
+        shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
         btn_about = QtWidgets.QPushButton("About ...")
         btn_about.setMaximumWidth(250)
@@ -1019,7 +1033,29 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         layout = QtWidgets.QVBoxLayout()
         self.setLayout(layout)
 
-        display_options_box = QtWidgets.QGroupBox("Options")
+        # **************************
+        #      Skins Controls
+        # **************************
+        display_skins_box = QtWidgets.QGroupBox("Skins")
+        display_skins_layout = QtWidgets.QFormLayout(display_skins_box)
+
+        self.skin_mode_option = QtWidgets.QCheckBox("Skin mode")
+        skin_mode_label = QtWidgets.QLabel("Skinning the UI (Need restart)")
+        self.skin_mode_option.stateChanged.connect(self.changeSkinMode)
+        display_skins_layout.addRow(self.skin_mode_option, skin_mode_label)
+
+        self.skin_dropdown = QtWidgets.QComboBox()
+        self.skin_dropdown.addItems(NanoVNA_UI.getSkins())
+        self.skin_dropdown.setDisabled(True)
+        self.skin_dropdown.currentTextChanged.connect(self.changeSkins)
+        skin_dropdown_label = QtWidgets.QLabel("Choose skin to display")
+        display_skins_layout.addRow(self.skin_dropdown, skin_dropdown_label)
+
+        layout.addWidget(display_skins_box)
+        # **************************
+        #      Options Controls
+        # **************************
+        display_options_box = QtWidgets.QGroupBox("Chart options")
         display_options_layout = QtWidgets.QFormLayout(display_options_box)
 
         returnloss_group = QtWidgets.QButtonGroup()
@@ -1042,11 +1078,6 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         show_lines_label = QtWidgets.QLabel("Displays a thin line between data points")
         self.show_lines_option.stateChanged.connect(self.changeShowLines)
         display_options_layout.addRow(self.show_lines_option, show_lines_label)
-
-        self.dark_mode_option = QtWidgets.QCheckBox("Dark mode")
-        dark_mode_label = QtWidgets.QLabel("Black background with white text")
-        self.dark_mode_option.stateChanged.connect(self.changeDarkMode)
-        display_options_layout.addRow(self.dark_mode_option, dark_mode_label)
 
         self.btnColorPicker = QtWidgets.QPushButton("█")
         self.btnColorPicker.setFixedWidth(20)
@@ -1092,35 +1123,45 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         display_options_layout.addRow("Second reference color", self.btnSecondaryReferenceColorPicker)
 
-        layout.addWidget(display_options_box)
+        # layout.addWidget(display_options_box)
+        # **************************
+        #   Chart Colors Controls
+        # **************************
+        # color_options_box = QtWidgets.QGroupBox("Chart colors")
+        # color_options_layout = QtWidgets.QFormLayout(color_options_box)
 
-        color_options_box = QtWidgets.QGroupBox("Chart colors")
-        color_options_layout = QtWidgets.QFormLayout(color_options_box)
+        self.dark_mode_option = QtWidgets.QCheckBox("Dark chart mode")
+        dark_mode_label = QtWidgets.QLabel("Black background with white text")
+        self.dark_mode_option.stateChanged.connect(self.changeDarkMode)
+        display_options_layout.addRow(self.dark_mode_option, dark_mode_label)
 
         self.use_custom_colors = QtWidgets.QCheckBox("Use custom chart colors")
         self.use_custom_colors.stateChanged.connect(self.changeCustomColors)
-        color_options_layout.addRow(self.use_custom_colors)
+        display_options_layout.addRow(self.use_custom_colors)
 
         self.btn_background_picker = QtWidgets.QPushButton("█")
         self.btn_background_picker.setFixedWidth(20)
         self.btn_background_picker.clicked.connect(lambda: self.setColor("background", QtWidgets.QColorDialog.getColor(self.backgroundColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
 
-        color_options_layout.addRow("Chart background", self.btn_background_picker)
+        display_options_layout.addRow("Chart background", self.btn_background_picker)
 
         self.btn_foreground_picker = QtWidgets.QPushButton("█")
         self.btn_foreground_picker.setFixedWidth(20)
         self.btn_foreground_picker.clicked.connect(lambda: self.setColor("foreground", QtWidgets.QColorDialog.getColor(self.foregroundColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
 
-        color_options_layout.addRow("Chart foreground", self.btn_foreground_picker)
-        
+        display_options_layout.addRow("Chart foreground", self.btn_foreground_picker)
+
         self.btn_text_picker = QtWidgets.QPushButton("█")
         self.btn_text_picker.setFixedWidth(20)
         self.btn_text_picker.clicked.connect(lambda: self.setColor("text", QtWidgets.QColorDialog.getColor(self.textColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
 
-        color_options_layout.addRow("Chart text", self.btn_text_picker)
+        display_options_layout.addRow("Chart text", self.btn_text_picker)
 
-        layout.addWidget(color_options_box)
-
+        # layout.addWidget(color_options_box)
+        layout.addWidget(display_options_box)
+        # **************************
+        #      Font Controls
+        # **************************
         font_options_box = QtWidgets.QGroupBox("Font")
         font_options_layout = QtWidgets.QFormLayout(font_options_box)
         self.font_dropdown = QtWidgets.QComboBox()
@@ -1135,7 +1176,9 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         font_options_layout.addRow("Font size", self.font_dropdown)
 
         layout.addWidget(font_options_box)
-
+        # **************************
+        #      Bands Controls
+        # **************************
         bands_box = QtWidgets.QGroupBox("Bands")
         bands_layout = QtWidgets.QFormLayout(bands_box)
 
@@ -1158,7 +1201,9 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         bands_layout.addRow(self.btn_manage_bands)
 
         layout.addWidget(bands_box)
-
+        # **************************
+        #      Charts Controls
+        # **************************
         charts_box = QtWidgets.QGroupBox("Displayed charts")
         charts_layout = QtWidgets.QGridLayout(charts_box)
 
@@ -1189,7 +1234,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         chart01_selection.setCurrentIndex(selections.index(self.app.settings.value("Chart01", "S11 Return Loss")))
         chart01_selection.currentTextChanged.connect(lambda: self.changeChart(0, 1, chart01_selection.currentText()))
         charts_layout.addWidget(chart01_selection, 0, 1)
-        
+
         chart02_selection = QtWidgets.QComboBox()
         chart02_selection.addItems(selections)
         chart02_selection.setCurrentIndex(selections.index(self.app.settings.value("Chart02", "None")))
@@ -1222,6 +1267,10 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.changeChart(1, 2, chart12_selection.currentText())
 
         layout.addWidget(charts_box)
+        # *********************************************************************
+        #     Set the default value if value if not saved in the config file
+        #               Set the default UI Skin color
+        # *********************************************************************
         self.dark_mode_option.setChecked(self.app.settings.value("DarkMode", False, bool))
         self.show_lines_option.setChecked(self.app.settings.value("ShowLines", False, bool))
 
@@ -1259,7 +1308,21 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         p = self.btn_bands_picker.palette()
         p.setColor(QtGui.QPalette.ButtonText, self.bandsColor)
         self.btn_bands_picker.setPalette(p)
+        # ******************************************
+        #     Initialization of Skins mode feature
+        # ******************************************
+        self.skin_mode_option.setChecked(self.app.settings.value("SkinMode", False, bool))
+        if self.skin_mode_option.isChecked():
+            saved_skin = self.app.settings.value("CurrentSkin", False)
+            if NanoVNA_UI.validateSkin(saved_skin):
+                index = self.skin_dropdown.findText(saved_skin, QtCore.Qt.MatchFixedString)
+                if index >= 0:
+                    self.skin_dropdown.setCurrentIndex(index)
+                # NanoVNA_UI.updateUI(self)
 
+    # *************************************
+    #      Display Settings Functions
+    # *************************************
     def changeChart(self, x, y, chart):
         found = None
         for c in self.app.charts:
@@ -1297,35 +1360,75 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
     def changeDarkMode(self):
         state = self.dark_mode_option.isChecked()
         self.app.settings.setValue("DarkMode", state)
-        if state:
+        if state and not self.skin_mode_option.isChecked():
+            self.skin_mode_option.setDisabled(True)
             for c in self.app.charts:
                 c.setBackgroundColor(QtGui.QColor(QtCore.Qt.black))
                 c.setForegroundColor(QtGui.QColor(QtCore.Qt.lightGray))
                 c.setTextColor(QtGui.QColor(QtCore.Qt.white))
-        else:
+        elif not state and not self.skin_mode_option.isChecked():
+            self.skin_mode_option.setDisabled(False)
             for c in self.app.charts:
                 c.setBackgroundColor(QtGui.QColor(QtCore.Qt.white))
                 c.setForegroundColor(QtGui.QColor(QtCore.Qt.lightGray))
                 c.setTextColor(QtGui.QColor(QtCore.Qt.black))
+        else:
+            self.skin_mode_option.setDisabled(False)
+
+    def changeSkins(self):
+        if self.skin_mode_option.isChecked():
+            self.app.settings.setValue("CurrentSkin", self.skin_dropdown.currentText())
+            NanoVNA_UI.updateUI(self, self.skin_dropdown.currentText(), app)
+        else:
+            NanoVNA_UI.updateUI(self, "NULL", app)
+
+    def changeSkinMode(self):
+        state = self.skin_mode_option.isChecked()
+        self.app.settings.setValue("SkinMode", state)
+        if state:
+            self.dark_mode_option.setDisabled(True)
+            self.btn_background_picker.setDisabled(True)
+            self.btn_foreground_picker.setDisabled(True)
+            self.btn_text_picker.setDisabled(True)
+            self.use_custom_colors.setDisabled(True)
+            self.skin_dropdown.setDisabled(False)
+            NanoVNA_UI.updateUI(self,self.skin_dropdown.currentText(),app)
+        else:
+            self.dark_mode_option.setDisabled(False)
+            self.btn_background_picker.setDisabled(False)
+            self.btn_foreground_picker.setDisabled(False)
+            self.btn_text_picker.setDisabled(False)
+            self.use_custom_colors.setDisabled(False)
+            self.skin_dropdown.setDisabled(True)
+            NanoVNA_UI.updateUI(self, "NULL", app)
+
 
     def changeCustomColors(self):
         self.app.settings.setValue("UseCustomColors", self.use_custom_colors.isChecked())
-        if self.use_custom_colors.isChecked():
+        if self.use_custom_colors.isChecked() and not self.skin_mode_option.isChecked():
             self.dark_mode_option.setDisabled(True)
             self.dark_mode_option.setChecked(False)
             self.btn_background_picker.setDisabled(False)
             self.btn_foreground_picker.setDisabled(False)
             self.btn_text_picker.setDisabled(False)
+            self.skin_mode_option.setDisabled(True)
             for c in self.app.charts:
                 c.setBackgroundColor(self.backgroundColor)
                 c.setForegroundColor(self.foregroundColor)
                 c.setTextColor(self.textColor)
-        else:
+        elif not self.use_custom_colors.isChecked() and not self.skin_mode_option.isChecked():
             self.dark_mode_option.setDisabled(False)
             self.btn_background_picker.setDisabled(True)
             self.btn_foreground_picker.setDisabled(True)
             self.btn_text_picker.setDisabled(True)
+            self.skin_mode_option.setDisabled(False)
             self.changeDarkMode()  # Reset to the default colors depending on Dark Mode setting
+        else:
+            self.dark_mode_option.setDisabled(True)
+            self.btn_background_picker.setDisabled(True)
+            self.btn_foreground_picker.setDisabled(True)
+            self.btn_text_picker.setDisabled(True)
+            self.skin_mode_option.setDisabled(False)
 
     def setColor(self, name: str, color: QtGui.QColor):
         if name == "background":
@@ -1425,15 +1528,16 @@ class AboutWindow(QtWidgets.QWidget):
     def __init__(self, app: NanoVNASaver):
         super().__init__()
         self.app = app
-
         self.setWindowTitle("About NanoVNASaver")
         self.setWindowIcon(self.app.icon)
         top_layout = QtWidgets.QHBoxLayout()
         self.setLayout(top_layout)
         #self.setAutoFillBackground(True)
-        pal = self.palette()
-        pal.setColor(QtGui.QPalette.Background, QtGui.QColor("white"))
-        self.setPalette(pal)
+        # @Rune Removed from the constructor so it will be possible to skin
+        #
+        #     pal = self.palette()
+        #     pal.setColor(QtGui.QPalette.Background, QtGui.QColor("white"))
+        #     self.setPalette(pal)
         shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
         icon_layout = QtWidgets.QVBoxLayout()
@@ -1455,6 +1559,10 @@ class AboutWindow(QtWidgets.QWidget):
         link_label = QtWidgets.QLabel("For further details, see: " +
                                       "<a href=\"https://mihtjel.github.io/nanovna-saver/\">" +
                                       "https://mihtjel.github.io/nanovna-saver/</a>")
+        layout.addWidget(QtWidgets.QLabel("AUTHOR:"))
+        layout.addWidget(QtWidgets.QLabel("Rune B. Broberg - 5Q5R<br>"))
+        layout.addWidget(QtWidgets.QLabel("CONTRIBUTORS:"))
+        layout.addWidget(QtWidgets.QLabel("Ohan Smit, Neilkatin, Larry Goga, Carl Tremblay - VA2SAJ<br>"))
         link_label.setOpenExternalLinks(True)
         layout.addWidget(link_label)
         layout.addWidget(QtWidgets.QLabel(""))
@@ -1634,6 +1742,7 @@ class TDRWindow(QtWidgets.QWidget):
         layout.addRow("Velocity factor", self.tdr_velocity_input)
 
         self.tdr_result_label = QtWidgets.QLabel()
+        self.tdr_result_label.setProperty("cssClass", "tdr_result_label")
         layout.addRow("Estimated cable length:", self.tdr_result_label)
 
         layout.addRow(self.app.tdr_chart)
@@ -1839,6 +1948,7 @@ class BandsModel(QtCore.QAbstractTableModel):
     enabled = False
     color = QtGui.QColor(128, 128, 128, 48)
 
+    # TODO Regionalized bands in the app settings from a DropDown menu. You choose the bands plan from your region
     # These bands correspond broadly to the Danish Amateur Radio allocation
     default_bands = ["2200 m;135700;137800",
                      "630 m;472000;479000",

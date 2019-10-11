@@ -17,9 +17,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 import sys
-
 from PyQt5 import QtWidgets, QtCore
-
 from .NanoVNASaver import NanoVNASaver
 from .about import debug
 

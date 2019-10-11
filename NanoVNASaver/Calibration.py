@@ -37,8 +37,7 @@ class CalibrationWindow(QtWidgets.QWidget):
         from .NanoVNASaver import NanoVNASaver
 
         self.app: NanoVNASaver = app
-
-        self.setMinimumSize(450, 600)
+        self.setMinimumSize(450, 700)
         self.setWindowTitle("Calibration")
         self.setWindowIcon(self.app.icon)
         self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
@@ -64,11 +63,11 @@ class CalibrationWindow(QtWidgets.QWidget):
         btn_cal_short = QtWidgets.QPushButton("Short")
         btn_cal_short.clicked.connect(self.saveShort)
         self.cal_short_label = QtWidgets.QLabel("Uncalibrated")
-        
+
         btn_cal_open = QtWidgets.QPushButton("Open")
         btn_cal_open.clicked.connect(self.saveOpen)
         self.cal_open_label = QtWidgets.QLabel("Uncalibrated")
-        
+
         btn_cal_load = QtWidgets.QPushButton("Load")
         btn_cal_load.clicked.connect(self.saveLoad)
         self.cal_load_label = QtWidgets.QLabel("Uncalibrated")
@@ -131,13 +130,19 @@ class CalibrationWindow(QtWidgets.QWidget):
         cal_standard_layout.addRow(self.use_ideal_values)
 
         self.cal_short_box = QtWidgets.QGroupBox("Short")
+        # self.cal_short_box.setProperty("cssClass", "cal_box")
         cal_short_form = QtWidgets.QFormLayout(self.cal_short_box)
         self.cal_short_box.setDisabled(True)
         self.short_l0_input = QtWidgets.QLineEdit("0")
+        self.short_l0_input.setProperty("cssClass", "cal_input")
         self.short_l1_input = QtWidgets.QLineEdit("0")
+        self.short_l1_input.setProperty("cssClass", "cal_input")
         self.short_l2_input = QtWidgets.QLineEdit("0")
+        self.short_l2_input.setProperty("cssClass", "cal_input")
         self.short_l3_input = QtWidgets.QLineEdit("0")
+        self.short_l3_input.setProperty("cssClass", "cal_input")
         self.short_length = QtWidgets.QLineEdit("0")
+        self.short_length.setProperty("cssClass", "cal_input")
         cal_short_form.addRow("L0 (F(e-12))", self.short_l0_input)
         cal_short_form.addRow("L1 (F(e-24))", self.short_l1_input)
         cal_short_form.addRow("L2 (F(e-33))", self.short_l2_input)
@@ -145,13 +150,19 @@ class CalibrationWindow(QtWidgets.QWidget):
         cal_short_form.addRow("Offset Delay (ps)", self.short_length)
 
         self.cal_open_box = QtWidgets.QGroupBox("Open")
+        # self.cal_open_box.setProperty("cssClass", "cal_box")
         cal_open_form = QtWidgets.QFormLayout(self.cal_open_box)
         self.cal_open_box.setDisabled(True)
         self.open_c0_input = QtWidgets.QLineEdit("50")
+        self.open_c0_input.setProperty("cssClass", "cal_input")
         self.open_c1_input = QtWidgets.QLineEdit("0")
+        self.open_c1_input.setProperty("cssClass", "cal_input")
         self.open_c2_input = QtWidgets.QLineEdit("0")
+        self.open_c2_input.setProperty("cssClass", "cal_input")
         self.open_c3_input = QtWidgets.QLineEdit("0")
+        self.open_c3_input.setProperty("cssClass", "cal_input")
         self.open_length = QtWidgets.QLineEdit("0")
+        self.open_length.setProperty("cssClass", "cal_input")
         cal_open_form.addRow("C0 (H(e-15))", self.open_c0_input)
         cal_open_form.addRow("C1 (H(e-27))", self.open_c1_input)
         cal_open_form.addRow("C2 (H(e-36))", self.open_c2_input)
@@ -159,30 +170,38 @@ class CalibrationWindow(QtWidgets.QWidget):
         cal_open_form.addRow("Offset Delay (ps)", self.open_length)
 
         self.cal_load_box = QtWidgets.QGroupBox("Load")
+        # self.cal_load_box.setProperty("cssClass", "cal_box")
         cal_load_form = QtWidgets.QFormLayout(self.cal_load_box)
         self.cal_load_box.setDisabled(True)
         self.load_resistance = QtWidgets.QLineEdit("50")
+        self.load_resistance.setProperty("cssClass", "cal_input")
         self.load_inductance = QtWidgets.QLineEdit("0")
+        self.load_inductance.setProperty("cssClass", "cal_input")
         self.load_capacitance = QtWidgets.QLineEdit("0")
+        self.load_capacitance.setProperty("cssClass", "cal_input")
         self.load_capacitance.setDisabled(True)  # Not yet implemented
         self.load_length = QtWidgets.QLineEdit("0")
+        self.load_length.setProperty("cssClass", "cal_input")
         cal_load_form.addRow("Resistance (\N{OHM SIGN})", self.load_resistance)
         cal_load_form.addRow("Inductance (H(e-12))", self.load_inductance)
         cal_load_form.addRow("Capacitance (F(e-12))", self.load_capacitance)
         cal_load_form.addRow("Offset Delay (ps)", self.load_length)
 
         self.cal_through_box = QtWidgets.QGroupBox("Through")
+        # self.cal_through_box.setProperty("cssClass", "cal_box")
         cal_through_form = QtWidgets.QFormLayout(self.cal_through_box)
         self.cal_through_box.setDisabled(True)
         self.through_length = QtWidgets.QLineEdit("0")
+        self.through_length.setProperty("cssClass", "cal_input")
         cal_through_form.addRow("Offset Delay (ps)", self.through_length)
-        
+
         cal_standard_layout.addWidget(self.cal_short_box)
         cal_standard_layout.addWidget(self.cal_open_box)
         cal_standard_layout.addWidget(self.cal_load_box)
         cal_standard_layout.addWidget(self.cal_through_box)
 
         self.cal_standard_save_box = QtWidgets.QGroupBox("Saved settings")
+        # self.cal_standard_save_box.setProperty("cssClass", "cal_box")
         cal_standard_save_layout = QtWidgets.QVBoxLayout(self.cal_standard_save_box)
         self.cal_standard_save_box.setDisabled(True)
 
@@ -308,9 +327,9 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.load_length.setText(str(self.app.settings.value("LoadDelay", 0)))
 
         self.through_length.setText(str(self.app.settings.value("ThroughDelay", 0)))
-        
+
         self.app.settings.endArray()
-        
+
     def deleteCalibrationStandard(self):
         if self.cal_standard_save_selector.currentData() == -1:
             return
@@ -382,7 +401,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             for i in range(len(names)):
                 self.app.settings.setArrayIndex(i)
                 self.app.settings.setValue("Name", names[i])
-                
+
                 self.app.settings.setValue("ShortL0", shortL0[i])
                 self.app.settings.setValue("ShortL1", shortL1[i])
                 self.app.settings.setValue("ShortL2", shortL2[i])
@@ -394,7 +413,7 @@ class CalibrationWindow(QtWidgets.QWidget):
                 self.app.settings.setValue("OpenC2", openC2[i])
                 self.app.settings.setValue("OpenC3", openC3[i])
                 self.app.settings.setValue("OpenDelay", openDelay[i])
-                
+
                 self.app.settings.setValue("LoadR", loadR[i])
                 self.app.settings.setValue("LoadL", loadL[i])
                 self.app.settings.setValue("LoadC", loadC[i])

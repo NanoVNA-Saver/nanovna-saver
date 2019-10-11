@@ -40,6 +40,7 @@ class Marker(QtCore.QObject):
         if frequency.isnumeric():
             self.frequency = int(frequency)
         self.frequencyInput = QtWidgets.QLineEdit(frequency)
+        self.frequencyInput.setProperty("cssClass", "marker_label")
         self.frequencyInput.setAlignment(QtCore.Qt.AlignRight)
         self.frequencyInput.textEdited.connect(lambda: self.setFrequency(self.frequencyInput.text()))
 
@@ -49,19 +50,31 @@ class Marker(QtCore.QObject):
 
         self.frequency_label = QtWidgets.QLabel("")
         self.frequency_label.setMinimumWidth(100)
+        self.frequency_label.setProperty("cssClass", "frequency_label")
         self.impedance_label = QtWidgets.QLabel("")
+        self.impedance_label.setProperty("cssClass", "impedance_label")
         # self.admittance_label = QtWidgets.QLabel("")
         self.parallel_r_label = QtWidgets.QLabel("")
+        self.parallel_r_label.setProperty("cssClass", "parallel_r_label")
         self.parallel_x_label = QtWidgets.QLabel("")
+        self.parallel_x_label.setProperty("cssClass", "parallel_x_label")
         self.returnloss_label = QtWidgets.QLabel("")
+        self.returnloss_label.setProperty("cssClass", "returnloss_label")
         self.returnloss_label.setMinimumWidth(80)
         self.vswr_label = QtWidgets.QLabel("")
+        self.vswr_label.setProperty("cssClass", "vswr_label")
         self.inductance_label = QtWidgets.QLabel("")
+        self.inductance_label.setProperty("cssClass", "inductance_label")
         self.capacitance_label = QtWidgets.QLabel("")
+        self.capacitance_label.setProperty("cssClass", "capacitance_label")
         self.gain_label = QtWidgets.QLabel("")
+        self.gain_label.setProperty("cssClass", "gain_label")
         self.s11_phase_label = QtWidgets.QLabel("")
+        self.s11_phase_label.setProperty("cssClass", "s11_phase_label")
         self.s21_phase_label = QtWidgets.QLabel("")
+        self.s21_phase_label.setProperty("cssClass", "s21_phase_label")
         self.quality_factor_label = QtWidgets.QLabel("")
+        self.quality_factor_label.setProperty("cssClass", "quality_factor_label")
 
         ################################################################################################################
         # Marker control layout
@@ -83,6 +96,7 @@ class Marker(QtCore.QObject):
         ################################################################################################################
 
         self.group_box = QtWidgets.QGroupBox(self.name)
+        self.group_box.setProperty("cssClass", self.name.replace(" ", "-"))
         box_layout = QtWidgets.QHBoxLayout(self.group_box)
 
         line = QtWidgets.QFrame()
@@ -168,7 +182,7 @@ class Marker(QtCore.QObject):
 
     def getGroupBox(self):
         return self.group_box
-    
+
     def resetLabels(self):
         self.frequency_label.setText("")
         self.impedance_label.setText("")
