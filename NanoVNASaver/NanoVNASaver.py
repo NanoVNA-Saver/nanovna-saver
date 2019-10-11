@@ -1058,7 +1058,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         # **************************
         #      Options Controls
         # **************************
-        display_options_box = QtWidgets.QGroupBox("Chart Options")
+        display_options_box = QtWidgets.QGroupBox("Chart options")
         display_options_layout = QtWidgets.QFormLayout(display_options_box)
 
         returnloss_group = QtWidgets.QButtonGroup()
