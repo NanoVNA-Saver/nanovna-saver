@@ -31,10 +31,6 @@ def DEFAULT_UI():
         logger.debug("CSS Url for DEFAULT_UI", url)
         return url
 
-# def get_full_path(*path):
-#     return join(ROOT_DIRECTORY, *path)
-#         return url
-#         # return join(dirname(abspath(__file__)), 'skins/default.css')
 
 def DARK_SKIN_MONOCHROME():
     if getattr(sys, 'frozen', False):
@@ -43,8 +39,6 @@ def DARK_SKIN_MONOCHROME():
         url = join(ROOT_DIRECTORY, 'skins/dark-monochrome.css')
         logger.debug("CSS Url for DARK_SKIN_MONOCHROME", url)
         return url
-        # return join(dirname(abspath(__file__)), 'skins/dark-monochrome.css')
-        # os.path.dirname(os.path.abspath(__file__))
 
 
 def DARK_SKIN_COLORED():
@@ -54,7 +48,6 @@ def DARK_SKIN_COLORED():
         url = join(ROOT_DIRECTORY, 'skins/dark-colored.css')
         logger.debug("CSS Url for DARK_SKIN_COLORED", url)
         return url
-        # return join(dirname(abspath(__file__)), 'skins/dark-colored.css')
 
 
 def LIGHT_SKIN_MONOCHROME():
@@ -64,7 +57,6 @@ def LIGHT_SKIN_MONOCHROME():
         url = join(ROOT_DIRECTORY, 'skins/light-monochrome.css')
         logger.debug("CSS Url for LIGHT_SKIN_MONOCHROME", url)
         return url
-        # return join(dirname(abspath(__file__)), 'skins/light-monochrome.css')
 
 
 def LIGHT_SKIN_COLORED():
@@ -74,7 +66,6 @@ def LIGHT_SKIN_COLORED():
         url = join(ROOT_DIRECTORY, 'skins/light-colored.css')
         logger.debug("CSS Url for LIGHT_SKIN_COLORED", url)
         return url
-        # return join(dirname(abspath(__file__)), 'skins/light-colored.css')
 
 
 DARK_SKIN_STRING_COLORED = "Dark Colored"
