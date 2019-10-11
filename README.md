@@ -20,14 +20,11 @@ Current features:
 - Display of both an active and a reference trace
 - Live updates of data from the NanoVNA, including for multi-segment sweeps
 - In-application calibration, including compensation for non-ideal calibration standards
-- Customizable display options, including "Dark chart mode" and optionnal "Skin mode" including 4 skinned UI
+- Customizable display options, including "dark mode"
 - Exporting images of plotted values
 
-0.2.0: (Default UI mode)
-![Screenshot of version 0.2.0](https://i.imgur.com/OHlq9oW.png)
-
-0.2.0: (Skinned UI mode)
-![Screenshot of version 0.2.0](https://scontent.fyhu2-1.fna.fbcdn.net/v/t1.0-9/72262657_3068746463195350_5944686409309749248_o.jpg?_nc_cat=109&_nc_oc=AQkAqxaVKGJeUui-qjSqDkjuCRu6Whv8Jb9zvVoy96bz8ZmMYsOm_RMhFVFssWlIGNc&_nc_ht=scontent.fyhu2-1.fna&oh=691c185e24c27cf466bd48a5fffefc22&oe=5E2E2C81)
+0.1.0:
+![Screenshot of version 0.1.0](https://i.imgur.com/OHlq9oW.png)
 
 ## Running the application
 
@@ -70,20 +67,20 @@ In order to run this app in Linux environment, you'll need the following package
 
         sudo apt install python3.7 python3-pip
 
-3. Clone repo and cd into the directory
-
+3. Clone repo and cd into the directory 
+		
         git clone https://github.com/mihtjel/nanovna-saver
         cd nanovna-saver
 
 4. Run the pip installation
 
         python3.7 -m pip install .
-
+    
 5. Once completed run with the following command
 
         python3.7 nanovna-saver.py
-
-
+    
+    
 ### Mac OS:
 #### Homebrew
 1. Install Homebrew
@@ -99,10 +96,10 @@ In order to run this app in Linux environment, you'll need the following package
 
         git clone https://github.com/mihtjel/nanovna-saver
         cd nanovna-saver
-
+        
 4. Change PyQt restriction in setup.py
 			`PyQt5==5.11.2` to `PyQt5`
-
+			        
 5. Install local pip packages
 
         python3 -m pip install .
