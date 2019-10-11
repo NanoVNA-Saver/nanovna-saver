@@ -1637,7 +1637,7 @@ class AboutWindow(QtWidgets.QWidget):
         else:
             self.app.settings.setValue("CheckForUpdates", "Ask")
 
-    def findUpdates(self, automatic = False):
+    def findUpdates(self, automatic=False):
         from urllib import request, error
         import json
         update_url = "http://mihtjel.dk/nanovna-saver/latest.json"
@@ -1670,7 +1670,7 @@ class AboutWindow(QtWidgets.QWidget):
             self.updateLabel.setOpenExternalLinks(True)
         else:
             # Probably don't show a message box, just update the screen?
-            # Maybe consider showing it if the user has automatic updates turned off.
+            # Maybe consider showing it if not an automatic update.
             #
             # QtWidgets.QMessageBox.information(self, "No updates available", "There are no new updates available.")
             #
