@@ -194,7 +194,7 @@ class Skins:
             c.setBackgroundColor(QtGui.QColor(QtCore.Qt.white))
             c.setForegroundColor(QtGui.QColor(QtCore.Qt.lightGray))
             c.setTextColor(QtGui.QColor(QtCore.Qt.black))
-
+        # (For future release)
         # default_style = QCommonStyle()
         # app.setStyle(default_style)
         logger.debug("Skin sucessfully set to default palette")
