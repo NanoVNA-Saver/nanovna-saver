@@ -1536,29 +1536,11 @@ class AboutWindow(QtWidgets.QWidget):
         top_layout = QtWidgets.QHBoxLayout()
         self.setLayout(top_layout)
         #self.setAutoFillBackground(True)
-
-        # TODO @Rune Removed from the constructor so it will be possible to skin.
-        # It has been replace by styling. Giving another palette than the global one, broke the skin mode for about dialog.
-        # All color and style for the default UI need to be placed outside constructor and defined after the component is defined.
-        # Unless it could broke skin mecanism. You define style by giving style class to component, then add the css class the default.css file
-        # At the beginning of NanoVNASaver initialization, NanoVNA_UI.defaultUI(app) is called to initialize the default css file.
-        # (For future release: When all needed component will be ported in the default.css file, this will solved the know issue on Skin Mode )
-        #
-        # i.e. Like this with the name of the python class used:
-        #
-        #                               self.aboutWindow = ....
-        #                               self.aboutWindow.setProperty("cssClass", "aboutWindow")
-
-        #
-        #
-        # eventually we will have to move all assets like icons into css class unless the component is state static like the Charts.
-        # This will come when I will iconify buttons to save space in the UI as an option in the skin mode.
+        # @Rune Removed from the constructor so it will be possible to skin
         #
         #     pal = self.palette()
         #     pal.setColor(QtGui.QPalette.Background, QtGui.QColor("white"))
         #     self.setPalette(pal)
-
-
         shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
         icon_layout = QtWidgets.QVBoxLayout()
