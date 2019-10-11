@@ -1058,7 +1058,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         # **************************
         #      Options Controls
         # **************************
-        display_options_box = QtWidgets.QGroupBox("Options")
+        display_options_box = QtWidgets.QGroupBox("Chart Options")
         display_options_layout = QtWidgets.QFormLayout(display_options_box)
 
         returnloss_group = QtWidgets.QButtonGroup()
@@ -1083,7 +1083,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         display_options_layout.addRow(self.show_lines_option, show_lines_label)
 
 
-        self.dark_mode_option = QtWidgets.QCheckBox("Dark Charts mode")
+        self.dark_mode_option = QtWidgets.QCheckBox("Dark chart mode")
         dark_mode_label = QtWidgets.QLabel("Black background with white text")
         self.dark_mode_option.stateChanged.connect(self.changeDarkMode)
         display_options_layout.addRow(self.dark_mode_option, dark_mode_label)
