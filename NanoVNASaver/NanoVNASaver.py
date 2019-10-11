@@ -1083,10 +1083,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         display_options_layout.addRow(self.show_lines_option, show_lines_label)
 
 
-        self.dark_mode_option = QtWidgets.QCheckBox("Dark chart mode")
-        dark_mode_label = QtWidgets.QLabel("Black background with white text")
-        self.dark_mode_option.stateChanged.connect(self.changeDarkMode)
-        display_options_layout.addRow(self.dark_mode_option, dark_mode_label)
+
 
         self.btnColorPicker = QtWidgets.QPushButton("█")
         self.btnColorPicker.setFixedWidth(20)
@@ -1132,36 +1129,42 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         display_options_layout.addRow("Second reference color", self.btnSecondaryReferenceColorPicker)
 
-        layout.addWidget(display_options_box)
+        # layout.addWidget(display_options_box)
         # **************************
         #   Chart Colors Controls
         # **************************
-        color_options_box = QtWidgets.QGroupBox("Chart colors")
-        color_options_layout = QtWidgets.QFormLayout(color_options_box)
+        # color_options_box = QtWidgets.QGroupBox("Chart colors")
+        # color_options_layout = QtWidgets.QFormLayout(color_options_box)
+
+        self.dark_mode_option = QtWidgets.QCheckBox("Dark chart mode")
+        dark_mode_label = QtWidgets.QLabel("Black background with white text")
+        self.dark_mode_option.stateChanged.connect(self.changeDarkMode)
+        display_options_layout.addRow(self.dark_mode_option, dark_mode_label)
 
         self.use_custom_colors = QtWidgets.QCheckBox("Use custom chart colors")
         self.use_custom_colors.stateChanged.connect(self.changeCustomColors)
-        color_options_layout.addRow(self.use_custom_colors)
+        display_options_layout.addRow(self.use_custom_colors)
 
         self.btn_background_picker = QtWidgets.QPushButton("█")
         self.btn_background_picker.setFixedWidth(20)
         self.btn_background_picker.clicked.connect(lambda: self.setColor("background", QtWidgets.QColorDialog.getColor(self.backgroundColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
 
-        color_options_layout.addRow("Chart background", self.btn_background_picker)
+        display_options_layout.addRow("Chart background", self.btn_background_picker)
 
         self.btn_foreground_picker = QtWidgets.QPushButton("█")
         self.btn_foreground_picker.setFixedWidth(20)
         self.btn_foreground_picker.clicked.connect(lambda: self.setColor("foreground", QtWidgets.QColorDialog.getColor(self.foregroundColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
 
-        color_options_layout.addRow("Chart foreground", self.btn_foreground_picker)
+        display_options_layout.addRow("Chart foreground", self.btn_foreground_picker)
 
         self.btn_text_picker = QtWidgets.QPushButton("█")
         self.btn_text_picker.setFixedWidth(20)
         self.btn_text_picker.clicked.connect(lambda: self.setColor("text", QtWidgets.QColorDialog.getColor(self.textColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
 
-        color_options_layout.addRow("Chart text", self.btn_text_picker)
+        display_options_layout.addRow("Chart text", self.btn_text_picker)
 
-        layout.addWidget(color_options_box)
+        # layout.addWidget(color_options_box)
+        layout.addWidget(display_options_box)
         # **************************
         #      Font Controls
         # **************************
