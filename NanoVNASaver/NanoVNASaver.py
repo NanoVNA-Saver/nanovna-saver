@@ -1542,7 +1542,7 @@ class AboutWindow(QtWidgets.QWidget):
         # All color and style for the default UI need to be placed outside constructor and defined after the component is defined.
         # Unless it could broke skin mecanism. You define style by giving style class to component, then add the css class the default.css file
         # At the beginning of NanoVNASaver initialization, NanoVNA_UI.defaultUI(app) is called to initialize the default css file.
-        # When all needed component will be ported there, this will solve the know issue on Skin Mode
+        # (For future release: When all needed component will be ported in the default.css file, this will solved the know issue on Skin Mode )
         #
         # i.e. Like this with the name of the python class used:
         #
