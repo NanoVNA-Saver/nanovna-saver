@@ -15,40 +15,66 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 import sys
-from os.path import join, dirname, abspath
+from os.path import join, dirname, abspath, curdir
 from .about import debug
 from .skins import Skins
 
+ROOT_DIRECTORY = dirname(dirname(__file__))
 
 logger = logging.getLogger(__name__)
 
+def DEFAULT_UI():
+    if getattr(sys, 'frozen', False):
+        return sys._MEIPASS + '/skins/default.css'
+    else:
+        url = join(ROOT_DIRECTORY, "skins/default.css")
+        logger.debug("CSS Url for DEFAULT_UI", url)
+        return url
+
+# def get_full_path(*path):
+#     return join(ROOT_DIRECTORY, *path)
+#         return url
+#         # return join(dirname(abspath(__file__)), 'skins/default.css')
 
 def DARK_SKIN_MONOCHROME():
     if getattr(sys, 'frozen', False):
         return sys._MEIPASS + '/skins/dark-monochrome.css'
     else:
-        return join(dirname(abspath(__file__)), 'skins/dark-monochrome.css')
+        url = join(ROOT_DIRECTORY, 'skins/dark-monochrome.css')
+        logger.debug("CSS Url for DARK_SKIN_MONOCHROME", url)
+        return url
+        # return join(dirname(abspath(__file__)), 'skins/dark-monochrome.css')
+        # os.path.dirname(os.path.abspath(__file__))
 
 
 def DARK_SKIN_COLORED():
     if getattr(sys, 'frozen', False):
         return sys._MEIPASS + '/skins/dark-colored.css'
     else:
-        return join(dirname(abspath(__file__)), 'skins/dark-colored.css')
+        url = join(ROOT_DIRECTORY, 'skins/dark-colored.css')
+        logger.debug("CSS Url for DARK_SKIN_COLORED", url)
+        return url
+        # return join(dirname(abspath(__file__)), 'skins/dark-colored.css')
 
 
 def LIGHT_SKIN_MONOCHROME():
     if getattr(sys, 'frozen', False):
         return sys._MEIPASS + '/skins/light-monochrome.css'
     else:
-        return join(dirname(abspath(__file__)), 'skins/light-monochrome.css')
+        url = join(ROOT_DIRECTORY, 'skins/light-monochrome.css')
+        logger.debug("CSS Url for LIGHT_SKIN_MONOCHROME", url)
+        return url
+        # return join(dirname(abspath(__file__)), 'skins/light-monochrome.css')
 
 
 def LIGHT_SKIN_COLORED():
     if getattr(sys, 'frozen', False):
         return sys._MEIPASS + '/skins/light-colored.css'
     else:
-        return join(dirname(abspath(__file__)), 'skins/light-colored.css')
+        url = join(ROOT_DIRECTORY, 'skins/light-colored.css')
+        logger.debug("CSS Url for LIGHT_SKIN_COLORED", url)
+        return url
+        # return join(dirname(abspath(__file__)), 'skins/light-colored.css')
 
 
 DARK_SKIN_STRING_COLORED = "Dark Colored"
@@ -56,10 +82,17 @@ DARK_SKIN_STRING_MONOCHROME = "Dark"
 LIGHT_SKIN_STRING_COLORED = "Light Colored"
 LIGHT_SKIN_STRING_MONOCHROME = "Light"
 
+def _defaultUI(app):
+    with open(DEFAULT_UI()) as stylesheet:
+        app.setStyleSheet(stylesheet.read())
 
 class NanoVNA_UI:
+
     def getSkins():
         return [DARK_SKIN_STRING_COLORED, DARK_SKIN_STRING_MONOCHROME, LIGHT_SKIN_STRING_COLORED, LIGHT_SKIN_STRING_MONOCHROME]
+
+    def defaultUI(app):
+        _defaultUI(app)
 
     def updateUI(self, skin, app):
         current_skin = self.skin_dropdown.currentText()
@@ -82,9 +115,9 @@ class NanoVNA_UI:
                 current_skin = LIGHT_SKIN_COLORED()
                 Skins.light(app, self, current_skin)
                 logger.debug("Skin set to LIGHT_SKIN_STRING_COLORED")
-
         else:
             Skins.default(app, self)
+            _defaultUI(app)
             logger.debug("Skin set to Default")
 
     def validateSkin(saved_skin):

@@ -66,6 +66,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                                          QtCore.QSettings.UserScope,
                                          "NanoVNASaver", "NanoVNASaver")
         print("Settings: " + self.settings.fileName())
+        NanoVNA_UI.defaultUI(app)
         self.threadpool = QtCore.QThreadPool()
         self.vna: VNA = InvalidVNA()
         self.worker = SweepWorker(self)
@@ -471,7 +472,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         btn_display_setup.clicked.connect(self.displaySettingsWindow)
 
         self.aboutWindow = AboutWindow(self)
-        self.aboutWindow.setStyle("{background-color: #ff0000}}")
+        self.aboutWindow.setProperty("cssClass", "aboutWindow")
 
         shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
@@ -1042,7 +1043,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         display_skins_layout = QtWidgets.QFormLayout(display_skins_box)
 
         self.skin_mode_option = QtWidgets.QCheckBox("Skin mode")
-        skin_mode_label = QtWidgets.QLabel("Skinning the UI (May need restart)")
+        skin_mode_label = QtWidgets.QLabel("Skinning the UI (Need restart)")
         self.skin_mode_option.stateChanged.connect(self.changeSkinMode)
         display_skins_layout.addRow(self.skin_mode_option, skin_mode_label)
 
@@ -1539,12 +1540,18 @@ class AboutWindow(QtWidgets.QWidget):
         # TODO @Rune Removed from the constructor so it will be possible to skin.
         # It has been replace by styling. Giving another palette than the global one, broke the skin mode for about dialog.
         # All color and style for the default UI need to be placed outside constructor and defined after the component is defined.
-        # Unless it could broke skin mecanism
+        # Unless it could broke skin mecanism. You define style by giving style class to component, then add the css class the default.css file
+        # At the beginning of NanoVNASaver initialization, NanoVNA_UI.defaultUI(app) is called to initialize the default css file.
+        # When all needed component will be ported there, this will solve the know issue on Skin Mode
         #
-        # i.e. Like this:   self.aboutWindow = ....
-        #                   self.aboutWindow.setStyle("QFrame{background-color: #ffffff;}")
+        # i.e. Like this with the name of the python class used:
         #
-        # eventually we will have to move all assets like icons into css class
+        #                               self.aboutWindow = ....
+        #                               self.aboutWindow.setProperty("cssClass", "aboutWindow")
+
+        #
+        #
+        # eventually we will have to move all assets like icons into css class unless the component is state static like the Charts.
         # This will come when I will iconify buttons to save space in the UI as an option in the skin mode.
         #
         #     pal = self.palette()
@@ -1573,11 +1580,11 @@ class AboutWindow(QtWidgets.QWidget):
         link_label = QtWidgets.QLabel("For further details, see: " +
                                       "<a href=\"https://mihtjel.github.io/nanovna-saver/\">" +
                                       "https://mihtjel.github.io/nanovna-saver/</a>")
-        layout.addWidget(QtWidgets.QLabel(""))
+        # layout.addWidget(QtWidgets.QLabel(""))
         layout.addWidget(QtWidgets.QLabel("AUTHOR:"))
-        layout.addWidget(QtWidgets.QLabel("Rune B. Broberg - 5Q5R"))
-        layout.addWidget(QtWidgets.QLabel("CONTRIBUTORS"))
-        layout.addWidget(QtWidgets.QLabel("Ohan Smit, Neilkatin, Carl Tremblay - VA2SAJ"))
+        layout.addWidget(QtWidgets.QLabel("Rune B. Broberg - 5Q5R<br>"))
+        layout.addWidget(QtWidgets.QLabel("CONTRIBUTORS:"))
+        layout.addWidget(QtWidgets.QLabel("Ohan Smit, Neilkatin, Carl Tremblay - VA2SAJ<br>"))
         link_label.setOpenExternalLinks(True)
         layout.addWidget(link_label)
         layout.addWidget(QtWidgets.QLabel(""))
