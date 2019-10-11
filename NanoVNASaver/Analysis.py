@@ -40,6 +40,8 @@ class Analysis:
 
     def calculateRolloff(self, location1, location2):
         from NanoVNASaver.NanoVNASaver import NanoVNASaver
+        if location1 == location2:
+            return 0, 0
         frequency1 = self.app.data21[location1].freq
         frequency2 = self.app.data21[location2].freq
         gain1 = NanoVNASaver.gain(self.app.data21[location1])
@@ -204,7 +206,7 @@ class LowPassAnalysis(Analysis):
             # self.sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency) + " (derived)")
             self.sixty_db_label.setText("Not calculated")
 
-        if ten_db_location > 0 and twenty_db_location > 0:
+        if ten_db_location > 0 and twenty_db_location > 0 and ten_db_location != twenty_db_location:
             octave_attenuation, decade_attenuation = self.calculateRolloff(ten_db_location, twenty_db_location)
             self.db_per_octave_label.setText(str(round(octave_attenuation, 3)) + " dB / octave")
             self.db_per_decade_label.setText(str(round(decade_attenuation, 3)) + " dB / decade")
@@ -365,7 +367,7 @@ class HighPassAnalysis(Analysis):
             # self.sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency) + " (derived)")
             self.sixty_db_label.setText("Not calculated")
 
-        if ten_db_location > 0 and twenty_db_location > 0:
+        if ten_db_location > 0 and twenty_db_location > 0 and ten_db_location != twenty_db_location:
             octave_attenuation, decade_attenuation = self.calculateRolloff(ten_db_location, twenty_db_location)
             self.db_per_octave_label.setText(str(round(octave_attenuation, 3)) + " dB / octave")
             self.db_per_decade_label.setText(str(round(decade_attenuation, 3)) + " dB / decade")
@@ -617,7 +619,7 @@ class BandPassAnalysis(Analysis):
             # self.sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency) + " (derived)")
             self.lower_sixty_db_label.setText("Not calculated")
 
-        if ten_db_location > 0 and twenty_db_location > 0:
+        if ten_db_location > 0 and twenty_db_location > 0 and ten_db_location != twenty_db_location:
             octave_attenuation, decade_attenuation = self.calculateRolloff(ten_db_location, twenty_db_location)
             self.lower_db_per_octave_label.setText(str(round(octave_attenuation, 3)) + " dB / octave")
             self.lower_db_per_decade_label.setText(str(round(decade_attenuation, 3)) + " dB / decade")
@@ -679,7 +681,7 @@ class BandPassAnalysis(Analysis):
             # self.sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency) + " (derived)")
             self.upper_sixty_db_label.setText("Not calculated")
 
-        if ten_db_location > 0 and twenty_db_location > 0:
+        if ten_db_location > 0 and twenty_db_location > 0 and ten_db_location != twenty_db_location:
             octave_attenuation, decade_attenuation = self.calculateRolloff(ten_db_location, twenty_db_location)
             self.upper_db_per_octave_label.setText(str(round(octave_attenuation, 3)) + " dB / octave")
             self.upper_db_per_decade_label.setText(str(round(decade_attenuation, 3)) + " dB / decade")
@@ -890,7 +892,7 @@ class BandStopAnalysis(Analysis):
             # self.sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency) + " (derived)")
             self.lower_sixty_db_label.setText("Not calculated")
 
-        if ten_db_location > 0 and twenty_db_location > 0:
+        if ten_db_location > 0 and twenty_db_location > 0 and ten_db_location != twenty_db_location:
             octave_attenuation, decade_attenuation = self.calculateRolloff(ten_db_location, twenty_db_location)
             self.lower_db_per_octave_label.setText(str(round(octave_attenuation, 3)) + " dB / octave")
             self.lower_db_per_decade_label.setText(str(round(decade_attenuation, 3)) + " dB / decade")
@@ -952,7 +954,7 @@ class BandStopAnalysis(Analysis):
             # self.sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency) + " (derived)")
             self.upper_sixty_db_label.setText("Not calculated")
 
-        if ten_db_location > 0 and twenty_db_location > 0:
+        if ten_db_location > 0 and twenty_db_location > 0 and ten_db_location != twenty_db_location:
             octave_attenuation, decade_attenuation = self.calculateRolloff(ten_db_location, twenty_db_location)
             self.upper_db_per_octave_label.setText(str(round(octave_attenuation, 3)) + " dB / octave")
             self.upper_db_per_decade_label.setText(str(round(decade_attenuation, 3)) + " dB / decade")
