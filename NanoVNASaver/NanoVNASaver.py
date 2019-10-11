@@ -28,13 +28,14 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import QModelIndex
 from serial.tools import list_ports
 
+from NanoVNASaver.Hardware import VNA, InvalidVNA, Version
 from .Chart import Chart, PhaseChart, VSWRChart, PolarChart, SmithChart, LogMagChart, QualityFactorChart, TDRChart, \
     RealImaginaryChart
 from .Calibration import CalibrationWindow, Calibration
 from .Marker import Marker
 from .SweepWorker import SweepWorker
 from .Touchstone import Touchstone
-from .Analysis import Analysis, LowPassAnalysis, HighPassAnalysis, BandPassAnalysis
+from .Analysis import Analysis, LowPassAnalysis, HighPassAnalysis, BandPassAnalysis, BandStopAnalysis
 from .about import version as ver
 
 Datapoint = collections.namedtuple('Datapoint', 'freq re im')
@@ -62,7 +63,12 @@ class NanoVNASaver(QtWidgets.QWidget):
                                          "NanoVNASaver", "NanoVNASaver")
         print("Settings: " + self.settings.fileName())
         self.threadpool = QtCore.QThreadPool()
+        self.vna: VNA = InvalidVNA()
         self.worker = SweepWorker(self)
+
+        self.worker.signals.updated.connect(self.dataUpdated)
+        self.worker.signals.finished.connect(self.sweepFinished)
+        self.worker.signals.sweepError.connect(self.showSweepError)
 
         self.bands = BandsModel()
 
@@ -399,53 +405,37 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.fileWindow = QtWidgets.QWidget()
         self.fileWindow.setWindowTitle("Files")
         self.fileWindow.setWindowIcon(self.icon)
+        self.fileWindow.setMinimumWidth(200)
         shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self.fileWindow, self.fileWindow.hide)
         file_window_layout = QtWidgets.QVBoxLayout()
         self.fileWindow.setLayout(file_window_layout)
 
-        reference_file_control_box = QtWidgets.QGroupBox("Import file")
-        reference_file_control_layout = QtWidgets.QFormLayout(reference_file_control_box)
-        self.referenceFileNameInput = QtWidgets.QLineEdit("")
-        btn_reference_file_picker = QtWidgets.QPushButton("...")
-        btn_reference_file_picker.setMaximumWidth(25)
-        btn_reference_file_picker.clicked.connect(self.pickReferenceFile)
-        reference_file_name_layout = QtWidgets.QHBoxLayout()
-        reference_file_name_layout.addWidget(self.referenceFileNameInput)
-        reference_file_name_layout.addWidget(btn_reference_file_picker)
+        load_file_control_box = QtWidgets.QGroupBox("Import file")
+        load_file_control_box.setMaximumWidth(300)
+        load_file_control_layout = QtWidgets.QFormLayout(load_file_control_box)
 
-        reference_file_control_layout.addRow(QtWidgets.QLabel("Filename"), reference_file_name_layout)
-        file_window_layout.addWidget(reference_file_control_box)
-
-        btn_load_reference = QtWidgets.QPushButton("Load reference")
-        btn_load_reference.clicked.connect(self.loadReferenceFile)
         btn_load_sweep = QtWidgets.QPushButton("Load as sweep")
         btn_load_sweep.clicked.connect(self.loadSweepFile)
-        reference_file_control_layout.addRow(btn_load_reference)
-        reference_file_control_layout.addRow(btn_load_sweep)
+        btn_load_reference = QtWidgets.QPushButton("Load reference")
+        btn_load_reference.clicked.connect(self.loadReferenceFile)
+        load_file_control_layout.addRow(btn_load_sweep)
+        load_file_control_layout.addRow(btn_load_reference)
 
-        file_control_box = QtWidgets.QGroupBox()
-        file_control_box.setTitle("Export file")
-        file_control_box.setMaximumWidth(300)
-        file_control_layout = QtWidgets.QFormLayout(file_control_box)
-        self.fileNameInput = QtWidgets.QLineEdit("")
-        btn_file_picker = QtWidgets.QPushButton("...")
-        btn_file_picker.setMaximumWidth(25)
-        btn_file_picker.clicked.connect(self.pickFile)
-        file_name_layout = QtWidgets.QHBoxLayout()
-        file_name_layout.addWidget(self.fileNameInput)
-        file_name_layout.addWidget(btn_file_picker)
+        file_window_layout.addWidget(load_file_control_box)
 
-        file_control_layout.addRow(QtWidgets.QLabel("Filename"), file_name_layout)
+        save_file_control_box = QtWidgets.QGroupBox("Export file")
+        save_file_control_box.setMaximumWidth(300)
+        save_file_control_layout = QtWidgets.QFormLayout(save_file_control_box)
 
-        self.btnExportFile = QtWidgets.QPushButton("Export data S1P")
-        self.btnExportFile.clicked.connect(self.exportFileS1P)
-        file_control_layout.addRow(self.btnExportFile)
+        btnExportFile = QtWidgets.QPushButton("Save file (S1P)")
+        btnExportFile.clicked.connect(self.exportFileS1P)
+        save_file_control_layout.addRow(btnExportFile)
 
-        self.btnExportFile = QtWidgets.QPushButton("Export data S2P")
-        self.btnExportFile.clicked.connect(self.exportFileS2P)
-        file_control_layout.addRow(self.btnExportFile)
+        btnExportFile = QtWidgets.QPushButton("Save file (S2P)")
+        btnExportFile.clicked.connect(self.exportFileS2P)
+        save_file_control_layout.addRow(btnExportFile)
 
-        file_window_layout.addWidget(file_control_box)
+        file_window_layout.addWidget(save_file_control_box)
 
         btn_open_file_window = QtWidgets.QPushButton("Files ...")
         btn_open_file_window.clicked.connect(self.displayFileWindow)
@@ -467,15 +457,12 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.displaySetupWindow = DisplaySettingsWindow(self)
         btn_display_setup.clicked.connect(self.displaySettingsWindow)
 
+        self.aboutWindow = AboutWindow(self)
+
         btn_about = QtWidgets.QPushButton("About ...")
         btn_about.setMaximumWidth(250)
-        btn_about.clicked.connect(lambda: QtWidgets.QMessageBox.about(self, "About NanoVNASaver",
-                                                                      "NanoVNASaver version "
-                                                                      + NanoVNASaver.version +
-                                                                      "\n\n\N{COPYRIGHT SIGN} Copyright 2019 Rune B. Broberg\n" +
-                                                                      "This program comes with ABSOLUTELY NO WARRANTY\n" +
-                                                                      "This program is licensed under the GNU General Public License version 3\n\n" +
-                                                                      "See https://mihtjel.github.io/nanovna-saver/ for further details"))
+
+        btn_about.clicked.connect(self.displayAboutWindow)
 
         button_grid = QtWidgets.QGridLayout()
         button_grid.addWidget(btn_open_file_window, 0, 0)
@@ -483,14 +470,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         button_grid.addWidget(btn_display_setup, 1, 0)
         button_grid.addWidget(btn_about, 1, 1)
         left_column.addLayout(button_grid)
-
-        ################################################################################################################
-        #  Right side
-        ################################################################################################################
-
-        self.worker.signals.updated.connect(self.dataUpdated)
-        self.worker.signals.finished.connect(self.sweepFinished)
-        self.worker.signals.sweepError.connect(self.showSweepError)
 
         logger.debug("Finished building interface")
 
@@ -511,26 +490,22 @@ class NanoVNASaver(QtWidgets.QWidget):
                 return port
         return ""
 
-    def pickReferenceFile(self):
-        filename, _ = QtWidgets.QFileDialog.getOpenFileName(directory=self.referenceFileNameInput.text(),
-                                                            filter="Touchstone Files (*.s1p *.s2p);;All files (*.*)")
-        if filename != "":
-            self.referenceFileNameInput.setText(filename)
-
-    def pickFile(self):
-        filename, _ = QtWidgets.QFileDialog.getSaveFileName(directory=self.fileNameInput.text(),
-                                                            filter="Touchstone Files (*.s1p *.s2p);;All files (*.*)")
-        if filename != "":
-            self.fileNameInput.setText(filename)
-
     def exportFileS1P(self):
-        logger.debug("Save S1P file to %s", self.fileNameInput.text())
+        filedialog = QtWidgets.QFileDialog(self)
+        filedialog.setDefaultSuffix("s1p")
+        filedialog.setNameFilter("Touchstone Files (*.s1p *.s2p);;All files (*.*)")
+        filedialog.setAcceptMode(QtWidgets.QFileDialog.AcceptSave)
+        selected = filedialog.exec()
+        if selected:
+            filename = filedialog.selectedFiles()[0]
+        else:
+            return
+        if filename == "":
+            logger.debug("No file name selected.")
+            return
+        logger.debug("Save S1P file to %s", filename)
         if len(self.data) == 0:
             logger.warning("No data stored, nothing written.")
-            return
-        filename = self.fileNameInput.text()
-        if filename == "":
-            logger.warning("No filename entered, nothing saved.")
             return
         try:
             logger.debug("Opening %s for writing", filename)
@@ -547,13 +522,21 @@ class NanoVNASaver(QtWidgets.QWidget):
             return
 
     def exportFileS2P(self):
-        logger.debug("Save S2P file to %s", self.fileNameInput.text())
+        filedialog = QtWidgets.QFileDialog(self)
+        filedialog.setDefaultSuffix("s2p")
+        filedialog.setNameFilter("Touchstone Files (*.s1p *.s2p);;All files (*.*)")
+        filedialog.setAcceptMode(QtWidgets.QFileDialog.AcceptSave)
+        selected = filedialog.exec()
+        if selected:
+            filename = filedialog.selectedFiles()[0]
+        else:
+            return
+        if filename == "":
+            logger.debug("No file name selected.")
+            return
+        logger.debug("Save S2P file to %s", filename)
         if len(self.data) == 0 or len(self.data21) == 0:
             logger.warning("No data stored, nothing written.")
-            return
-        filename = self.fileNameInput.text()
-        if filename == "":
-            logger.warning("No filename entered, nothing saved.")
             return
         try:
             logger.debug("Opening %s for writing", filename)
@@ -577,15 +560,6 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.startSerial()
         return
 
-    def flushSerialBuffers(self):
-        if self.serialLock.acquire():
-            self.serial.write(b"\r\n\r\n")
-            sleep(0.1)
-            self.serial.reset_input_buffer()
-            self.serial.reset_output_buffer()
-            sleep(0.1)
-            self.serialLock.release()
-
     def startSerial(self):
         if self.serialLock.acquire():
             self.serialPort = self.serialPortInput.text()
@@ -602,12 +576,12 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.serialLock.release()
             sleep(0.05)
 
-            self.flushSerialBuffers()
-            sleep(0.05)
+            self.vna = VNA.getVNA(self, self.serial)
+            self.worker.setVNA(self.vna)
 
-            logger.info(self.readFirmware())
+            logger.info(self.vna.readFirmware())
 
-            frequencies = self.readValues("frequencies")
+            frequencies = self.vna.readFrequencies()
             if frequencies:
                 logger.info("Read starting frequency %s and end frequency %s", frequencies[0], frequencies[100])
                 if int(frequencies[0]) == int(frequencies[100]) and (self.sweepStartInput.text() == "" or self.sweepEndInput.text() == ""):
@@ -620,7 +594,6 @@ class NanoVNASaver(QtWidgets.QWidget):
             else:
                 logger.warning("No frequencies read")
                 return
-
             logger.debug("Starting initial sweep")
             self.sweep()
             return
@@ -631,22 +604,6 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.serial.close()
             self.serialLock.release()
             self.btnSerialToggle.setText("Connect to NanoVNA")
-
-    def writeSerial(self, command):
-        if not self.serial.is_open:
-            logger.warning("Writing without serial port being opened (%s)", command)
-            return
-        if self.serialLock.acquire():
-            try:
-                self.serial.write(str(command + "\r").encode('ascii'))
-                self.serial.readline()
-            except serial.SerialException as exc:
-                logger.exception("Exception while writing to serial port (%s): %s", command, exc)
-            self.serialLock.release()
-        return
-
-    def setSweep(self, start, stop):
-        self.writeSerial("sweep " + str(start) + " " + str(stop) + " 101")
 
     def toggleSweepSettings(self, disabled):
         self.sweepStartInput.setDisabled(disabled)
@@ -676,60 +633,11 @@ class NanoVNASaver(QtWidgets.QWidget):
         if self.sweepCountInput.text().isdigit():
             self.settings.setValue("Segments", self.sweepCountInput.text())
 
+        logger.debug("Starting worker thread")
         self.threadpool.start(self.worker)
 
     def stopSweep(self):
         self.worker.stopped = True
-
-    def readFirmware(self):
-        if self.serialLock.acquire():
-            result = ""
-            try:
-                data = "a"
-                while data != "":
-                    data = self.serial.readline().decode('ascii')
-                #  Then send the command to read data
-                self.serial.write("info\r".encode('ascii'))
-                result = ""
-                data = ""
-                sleep(0.01)
-                while "ch>" not in data:
-                    data = self.serial.readline().decode('ascii')
-                    result += data
-            except serial.SerialException as exc:
-                logger.exception("Exception while reading firmware data: %s", exc)
-            self.serialLock.release()
-            return result
-        else:
-            logger.error("Unable to acquire serial lock to read firmware.")
-            return ""
-
-    def readValues(self, value):
-        if self.serialLock.acquire():
-            try:
-                data = "a"
-                while data != "":
-                    data = self.serial.readline().decode('ascii')
-
-                #  Then send the command to read data
-                self.serial.write(str(value + "\r").encode('ascii'))
-                result = ""
-                data = ""
-                sleep(0.05)
-                while "ch>" not in data:
-                    data = self.serial.readline().decode('ascii')
-                    result += data
-                values = result.split("\r\n")
-            except serial.SerialException as exc:
-                logger.exception("Exception while reading %s: %s", value, exc)
-                self.serialLock.release()
-                return
-
-            self.serialLock.release()
-            return values[1:102]
-        else:
-            logger.error("Unable to acquire serial lock to read %s", value)
-            return
 
     def saveData(self, data, data12, source=None):
         if self.dataLock.acquire(blocking=True):
@@ -912,8 +820,9 @@ class NanoVNASaver(QtWidgets.QWidget):
             return
         if self.sweepCountInput.text().isdigit():
             segments = int(self.sweepCountInput.text())
-            fstep = fspan / (segments * 101)
-            self.sweepStepLabel.setText(self.formatShortFrequency(fstep) + "/step")
+            if segments > 0:
+                fstep = fspan / (segments * 101)
+                self.sweepStepLabel.setText(self.formatShortFrequency(fstep) + "/step")
 
     @staticmethod
     def formatFrequency(freq):
@@ -1027,16 +936,16 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.btnResetReference.setDisabled(True)
 
     def loadReferenceFile(self):
-        filename = self.referenceFileNameInput.text()
-        if filename is not "":
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(filter="Touchstone Files (*.s1p *.s2p);;All files (*.*)")
+        if filename != "":
             self.resetReference()
             t = Touchstone(filename)
             t.load()
             self.setReference(t.s11data, t.s21data, filename)
 
     def loadSweepFile(self):
-        filename = self.referenceFileNameInput.text()
-        if filename is not "":
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(filter="Touchstone Files (*.s1p *.s2p);;All files (*.*)")
+        if filename != "":
             self.data = []
             self.data21 = []
             t = Touchstone(filename)
@@ -1071,9 +980,12 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.analysis_window.show()
         QtWidgets.QApplication.setActiveWindow(self.analysis_window)
 
+    def displayAboutWindow(self):
+        self.aboutWindow.show()
+        QtWidgets.QApplication.setActiveWindow(self.aboutWindow)
+
     def showError(self, text):
-        error_message = QtWidgets.QErrorMessage(self)
-        error_message.showMessage(text)
+        QtWidgets.QMessageBox.warning(self, "Error", text)
 
     def showSweepError(self):
         self.showError(self.worker.error_message)
@@ -1167,6 +1079,18 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             QtWidgets.QColorDialog.getColor(self.referenceColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
 
         display_options_layout.addRow("Reference color", self.btnReferenceColorPicker)
+
+        self.btnSecondaryReferenceColorPicker = QtWidgets.QPushButton("█")
+        self.btnSecondaryReferenceColorPicker.setFixedWidth(20)
+        self.secondaryReferenceColor = self.app.settings.value("SecondaryReferenceColor",
+                                                               defaultValue=QtGui.QColor(0, 0, 255, 32),
+                                                               type=QtGui.QColor)
+        self.setSecondaryReferenceColor(self.secondaryReferenceColor)
+        self.btnSecondaryReferenceColorPicker.clicked.connect(lambda: self.setSecondaryReferenceColor(
+            QtWidgets.QColorDialog.getColor(self.secondaryReferenceColor,
+                                            options=QtWidgets.QColorDialog.ShowAlphaChannel)))
+
+        display_options_layout.addRow("Second reference color", self.btnSecondaryReferenceColorPicker)
 
         layout.addWidget(display_options_box)
 
@@ -1465,6 +1389,18 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             for c in self.app.charts:
                 c.setReferenceColor(color)
 
+    def setSecondaryReferenceColor(self, color):
+        if color.isValid():
+            self.secondaryReferenceColor = color
+            p = self.btnSecondaryReferenceColorPicker.palette()
+            p.setColor(QtGui.QPalette.ButtonText, color)
+            self.btnSecondaryReferenceColorPicker.setPalette(p)
+            self.app.settings.setValue("SecondaryReferenceColor", color)
+            self.app.settings.sync()
+
+            for c in self.app.charts:
+                c.setSecondaryReferenceColor(color)
+
     def setShowBands(self, show_bands):
         self.app.bands.enabled = show_bands
         self.app.bands.settings.setValue("ShowBands", show_bands)
@@ -1483,6 +1419,155 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
     def displayBandsWindow(self):
         self.bandsWindow.show()
         QtWidgets.QApplication.setActiveWindow(self.bandsWindow)
+
+
+class AboutWindow(QtWidgets.QWidget):
+    def __init__(self, app: NanoVNASaver):
+        super().__init__()
+        self.app = app
+
+        self.setWindowTitle("About NanoVNASaver")
+        self.setWindowIcon(self.app.icon)
+        top_layout = QtWidgets.QHBoxLayout()
+        self.setLayout(top_layout)
+        #self.setAutoFillBackground(True)
+        pal = self.palette()
+        pal.setColor(QtGui.QPalette.Background, QtGui.QColor("white"))
+        self.setPalette(pal)
+        shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
+
+        icon_layout = QtWidgets.QVBoxLayout()
+        top_layout.addLayout(icon_layout)
+        icon = QtWidgets.QLabel()
+        icon.setPixmap(self.app.icon.pixmap(128, 128))
+        icon_layout.addWidget(icon)
+        icon_layout.addStretch()
+
+        layout = QtWidgets.QVBoxLayout()
+        top_layout.addLayout(layout)
+
+        layout.addWidget(QtWidgets.QLabel("NanoVNASaver version " + NanoVNASaver.version))
+        layout.addWidget(QtWidgets.QLabel(""))
+        layout.addWidget(QtWidgets.QLabel("\N{COPYRIGHT SIGN} Copyright 2019 Rune B. Broberg"))
+        layout.addWidget(QtWidgets.QLabel("This program comes with ABSOLUTELY NO WARRANTY"))
+        layout.addWidget(QtWidgets.QLabel("This program is licensed under the GNU General Public License version 3"))
+        layout.addWidget(QtWidgets.QLabel(""))
+        link_label = QtWidgets.QLabel("For further details, see: " +
+                                      "<a href=\"https://mihtjel.github.io/nanovna-saver/\">" +
+                                      "https://mihtjel.github.io/nanovna-saver/</a>")
+        link_label.setOpenExternalLinks(True)
+        layout.addWidget(link_label)
+        layout.addWidget(QtWidgets.QLabel(""))
+
+        self.versionLabel = QtWidgets.QLabel("NanoVNA Firmware Version: Not connected.")
+        layout.addWidget(self.versionLabel)
+
+        layout.addStretch()
+
+        btn_check_version = QtWidgets.QPushButton("Check for updates")
+        btn_check_version.clicked.connect(self.findUpdates)
+
+        self.updateLabel = QtWidgets.QLabel("Last checked: ")
+        self.updateCheckBox = QtWidgets.QCheckBox("Check for updates on startup")
+
+        self.updateCheckBox.toggled.connect(self.updateSettings)
+
+        check_for_updates = self.app.settings.value("CheckForUpdates", "Ask")
+        if check_for_updates == "Yes":
+            self.updateCheckBox.setChecked(True)
+            self.findUpdates(automatic = True)
+        elif check_for_updates == "No":
+            self.updateCheckBox.setChecked(False)
+        else:
+            logger.debug("Starting timer")
+            QtCore.QTimer.singleShot(2000, self.askAboutUpdates)
+
+        update_hbox = QtWidgets.QHBoxLayout()
+        update_hbox.addWidget(btn_check_version)
+        update_form = QtWidgets.QFormLayout()
+        update_hbox.addLayout(update_form)
+        update_hbox.addStretch()
+        update_form.addRow(self.updateLabel)
+        update_form.addRow(self.updateCheckBox)
+        layout.addLayout(update_hbox)
+
+        layout.addStretch()
+
+        btn_ok = QtWidgets.QPushButton("Ok")
+        btn_ok.clicked.connect(lambda: self.close())
+        layout.addWidget(btn_ok)
+
+    def show(self):
+        super().show()
+        self.updateLabels()
+
+    def updateLabels(self):
+        if self.app.vna.isValid():
+            logger.debug("Valid VNA")
+            v: Version = self.app.vna.version
+            self.versionLabel.setText("NanoVNA Firmware Version: " + self.app.vna.name + " " + v.version_string)
+
+    def updateSettings(self):
+        if self.updateCheckBox.isChecked():
+            self.app.settings.setValue("CheckForUpdates", "Yes")
+        else:
+            self.app.settings.setValue("CheckForUpdates", "No")
+
+    def askAboutUpdates(self):
+        logger.debug("Asking about automatic update checks")
+        selection = QtWidgets.QMessageBox.question(self.app, "Enable checking for updates?",
+                                                   "Would you like NanoVNA-Saver to check for updates automatically?")
+        if selection == QtWidgets.QMessageBox.Yes:
+            self.updateCheckBox.setChecked(True)
+            self.app.settings.setValue("CheckForUpdates", "Yes")
+            self.findUpdates()
+        elif selection == QtWidgets.QMessageBox.No:
+            self.updateCheckBox.setChecked(False)
+            self.app.settings.setValue("CheckForUpdates", "No")
+            QtWidgets.QMessageBox.information(self.app, "Checking for updates disabled",
+                                              "You can check for updates using the \"About\" window.")
+        else:
+            self.app.settings.setValue("CheckForUpdates", "Ask")
+
+    def findUpdates(self, automatic=False):
+        from urllib import request, error
+        import json
+        update_url = "http://mihtjel.dk/nanovna-saver/latest.json"
+
+        try:
+            updates = json.load(request.urlopen(update_url, timeout=3))
+            latest_version = Version(updates['version'])
+            latest_url = updates['url']
+        except error.HTTPError as e:
+            logger.exception("Checking for updates produced an HTTP exception: %s", e)
+            return
+        except json.JSONDecodeError as e:
+            logger.exception("Checking for updates provided an unparseable file: %s", e)
+            return
+
+        logger.info("Latest version is " + latest_version.version_string)
+        this_version = Version(NanoVNASaver.version)
+        logger.info("This is " + this_version.version_string)
+        if latest_version > this_version:
+            logger.info("New update available: %s!", latest_version)
+            if automatic:
+                QtWidgets.QMessageBox.information(self, "Updates available",
+                                                  "There is a new update for NanoVNA-Saver available!\n" +
+                                                  "Version " + latest_version.version_string + "\n\n" +
+                                                  "Press \"About\" to find the update.")
+            else:
+                QtWidgets.QMessageBox.information(self, "Updates available",
+                                                  "There is a new update for NanoVNA-Saver available!")
+            self.updateLabel.setText("<a href=\"" + latest_url + "\">New version available</a>.")
+            self.updateLabel.setOpenExternalLinks(True)
+        else:
+            # Probably don't show a message box, just update the screen?
+            # Maybe consider showing it if not an automatic update.
+            #
+            # QtWidgets.QMessageBox.information(self, "No updates available", "There are no new updates available.")
+            #
+            self.updateLabel.setText("Last checked: " + strftime("%Y-%m-%d %H:%M:%S", localtime()))
+        return
 
 
 class TDRWindow(QtWidgets.QWidget):
@@ -1900,6 +1985,7 @@ class AnalysisWindow(QtWidgets.QWidget):
         self.analysis_list.addItem("Low-pass filter", LowPassAnalysis(self.app))
         self.analysis_list.addItem("Band-pass filter", BandPassAnalysis(self.app))
         self.analysis_list.addItem("High-pass filter", HighPassAnalysis(self.app))
+        self.analysis_list.addItem("Band-stop filter", BandStopAnalysis(self.app))
         select_analysis_layout.addRow("Analysis type", self.analysis_list)
         self.analysis_list.currentIndexChanged.connect(self.updateSelection)
 

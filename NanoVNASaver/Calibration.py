@@ -417,6 +417,11 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.notes_textedit.clear()
 
     def calculate(self):
+        if self.app.btnStopSweep.isEnabled():
+            # Currently sweeping
+            self.app.showError("Unable to apply calibration while a sweep is running. " +
+                               "Please stop the sweep and try again.")
+            return
         # TODO: Error handling for all the fields.
         if self.use_ideal_values.isChecked():
             self.app.calibration.useIdealShort = True
@@ -475,7 +480,16 @@ class CalibrationWindow(QtWidgets.QWidget):
             return
         filedialog = QtWidgets.QFileDialog(self)
         filedialog.setDefaultSuffix("cal")
-        filename, _ = filedialog.getSaveFileName(filter="Calibration Files (*.cal);;All files (*.*)")
+        filedialog.setNameFilter("Calibration Files (*.cal);;All files (*.*)")
+        filedialog.setAcceptMode(QtWidgets.QFileDialog.AcceptSave)
+        selected = filedialog.exec()
+        if selected:
+            filename = filedialog.selectedFiles()[0]
+        else:
+            return
+        if filename == "":
+            logger.debug("No file name selected.")
+            return
         self.app.calibration.notes = self.notes_textedit.toPlainText().splitlines()
         if filename and self.app.calibration.saveCalibration(filename):
             self.app.settings.setValue("CalibrationFile", filename)

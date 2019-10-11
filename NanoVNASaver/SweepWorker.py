@@ -24,6 +24,8 @@ from PyQt5.QtCore import pyqtSlot, pyqtSignal
 import NanoVNASaver
 import logging
 
+from NanoVNASaver.Hardware import VNA, InvalidVNA
+
 logger = logging.getLogger(__name__)
 
 Datapoint = collections.namedtuple('Datapoint', 'freq re im')
@@ -41,6 +43,7 @@ class SweepWorker(QtCore.QRunnable):
         logger.info("Initializing SweepWorker")
         self.signals = WorkerSignals()
         self.app = app
+        self.vna: VNA = InvalidVNA()
         self.noSweeps = 1
         self.setAutoDelete(False)
         self.percentage = 0
@@ -156,7 +159,8 @@ class SweepWorker(QtCore.QRunnable):
         logger.debug("Resetting NanoVNA sweep to full range: %d to %d",
                      NanoVNASaver.parseFrequency(self.app.sweepStartInput.text()),
                      NanoVNASaver.parseFrequency(self.app.sweepEndInput.text()))
-        self.app.setSweep(NanoVNASaver.parseFrequency(self.app.sweepStartInput.text()), NanoVNASaver.parseFrequency(self.app.sweepEndInput.text()))
+        self.vna.resetSweep(NanoVNASaver.parseFrequency(self.app.sweepStartInput.text()),
+                            NanoVNASaver.parseFrequency(self.app.sweepEndInput.text()))
 
         self.percentage = 100
         logger.debug("Sending \"finished\" signal")
@@ -248,10 +252,10 @@ class SweepWorker(QtCore.QRunnable):
 
         for valueset in values:
             avg = np.average(valueset, 0)  # avg becomes a 2-value array of the location of the average
+            new_valueset = valueset
             for n in range(count):
                 max_deviance = 0
                 max_idx = -1
-                new_valueset = valueset
                 for i in range(len(new_valueset)):
                     deviance = abs(new_valueset[i][0] - avg[0])**2 + abs(new_valueset[i][1] - avg[1])**2
                     if deviance > max_deviance:
@@ -270,9 +274,7 @@ class SweepWorker(QtCore.QRunnable):
 
     def readSegment(self, start, stop):
         logger.debug("Setting sweep range to %d to %d", start, stop)
-        self.app.setSweep(start, stop)
-        sleep(1)    # TODO This long delay seems to fix the weird data transitions we were seeing by getting partial
-                    #      sweeps.  Clearly something needs to be done, maybe at firmware level, to address this fully.
+        self.vna.setSweep(start, stop)
 
         # Let's check the frequencies first:
         frequencies = self.readFreq()
@@ -296,7 +298,7 @@ class SweepWorker(QtCore.QRunnable):
         while not done:
             done = True
             returndata = []
-            tmpdata = self.app.readValues(data)
+            tmpdata = self.vna.readValues(data)
             if not tmpdata:
                 logger.warning("Read no values")
                 raise NanoVNAValueException("Failed reading data: Returned no values.")
@@ -338,7 +340,7 @@ class SweepWorker(QtCore.QRunnable):
         while not done:
             done = True
             returnfreq = []
-            tmpfreq = self.app.readValues("frequencies")
+            tmpfreq = self.vna.readFrequencies()
             if not tmpfreq:
                 logger.warning("Read no frequencies")
                 raise NanoVNAValueException("Failed reading frequencies: Returned no values.")
@@ -367,6 +369,9 @@ class SweepWorker(QtCore.QRunnable):
             self.truncates = int(truncates)
         except:
             return
+
+    def setVNA(self, vna):
+        self.vna = vna
 
 
 class NanoVNAValueException(Exception):
