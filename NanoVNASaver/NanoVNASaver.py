@@ -260,8 +260,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         label, layout = marker1.getRow()
         marker_control_layout.addRow(label, layout)
 
-
-
         self.markers.append(marker1)
         marker1.isMouseControlledRadioButton.setChecked(True)
 
@@ -1046,7 +1044,6 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.skin_mode_option.stateChanged.connect(self.changeSkinMode)
         display_skins_layout.addRow(self.skin_mode_option, skin_mode_label)
 
-
         self.skin_dropdown = QtWidgets.QComboBox()
         self.skin_dropdown.addItems(NanoVNA_UI.getSkins())
         self.skin_dropdown.setDisabled(True)
@@ -1081,9 +1078,6 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         show_lines_label = QtWidgets.QLabel("Displays a thin line between data points")
         self.show_lines_option.stateChanged.connect(self.changeShowLines)
         display_options_layout.addRow(self.show_lines_option, show_lines_label)
-
-
-
 
         self.btnColorPicker = QtWidgets.QPushButton("█")
         self.btnColorPicker.setFixedWidth(20)
@@ -1325,9 +1319,10 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
                 if index >= 0:
                     self.skin_dropdown.setCurrentIndex(index)
                 # NanoVNA_UI.updateUI(self)
-        # *************************************
-        #      Display Settings Functions
-        # *************************************
+
+    # *************************************
+    #      Display Settings Functions
+    # *************************************
     def changeChart(self, x, y, chart):
         found = None
         for c in self.app.charts:
@@ -1567,7 +1562,7 @@ class AboutWindow(QtWidgets.QWidget):
         layout.addWidget(QtWidgets.QLabel("AUTHOR:"))
         layout.addWidget(QtWidgets.QLabel("Rune B. Broberg - 5Q5R<br>"))
         layout.addWidget(QtWidgets.QLabel("CONTRIBUTORS:"))
-        layout.addWidget(QtWidgets.QLabel("Ohan Smit, Neilkatin, Carl Tremblay - VA2SAJ<br>"))
+        layout.addWidget(QtWidgets.QLabel("Ohan Smit, Neilkatin, Larry Goga, Carl Tremblay - VA2SAJ<br>"))
         link_label.setOpenExternalLinks(True)
         layout.addWidget(link_label)
         layout.addWidget(QtWidgets.QLabel(""))
