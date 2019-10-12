@@ -57,7 +57,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         else:
             self.icon = QtGui.QIcon("icon_48x48.png")
         self.setWindowIcon(self.icon)
-
         self.settings = QtCore.QSettings(QtCore.QSettings.IniFormat,
                                          QtCore.QSettings.UserScope,
                                          "NanoVNASaver", "NanoVNASaver")
@@ -110,6 +109,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         widget = QtWidgets.QWidget()
         widget.setLayout(layout)
         scrollarea.setWidget(widget)
+
+        # outer.setContentsMargins(2, 2, 2, 2)  # Small screen mode, reduce margins?
 
         self.s11SmithChart = SmithChart("S11 Smith Chart")
         self.s21PolarChart = PolarChart("S21 Polar Plot")
@@ -1535,7 +1536,9 @@ class AboutWindow(QtWidgets.QWidget):
         update_url = "http://mihtjel.dk/nanovna-saver/latest.json"
 
         try:
-            updates = json.load(request.urlopen(update_url, timeout=3))
+            req = request.Request(update_url)
+            req.add_header('User-Agent', "NanoVNA-Saver/" + self.app.version)
+            updates = json.load(request.urlopen(req, timeout=3))
             latest_version = Version(updates['version'])
             latest_url = updates['url']
         except error.HTTPError as e:
