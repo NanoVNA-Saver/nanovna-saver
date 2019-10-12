@@ -179,13 +179,13 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.sweepStartInput.setMinimumWidth(60)
         self.sweepStartInput.setAlignment(QtCore.Qt.AlignRight)
         self.sweepStartInput.textEdited.connect(self.updateCenterSpan)
-
+        self.sweepStartInput.textChanged.connect(self.updateStepSize)
         sweep_input_left_layout.addRow(QtWidgets.QLabel("Start"), self.sweepStartInput)
 
         self.sweepEndInput = QtWidgets.QLineEdit("")
         self.sweepEndInput.setAlignment(QtCore.Qt.AlignRight)
         self.sweepEndInput.textEdited.connect(self.updateCenterSpan)
-
+        self.sweepEndInput.textChanged.connect(self.updateStepSize)
         sweep_input_left_layout.addRow(QtWidgets.QLabel("Stop"), self.sweepEndInput)
 
         self.sweepCenterInput = QtWidgets.QLineEdit("")
@@ -800,7 +800,6 @@ class NanoVNASaver(QtWidgets.QWidget):
             return
         self.sweepSpanInput.setText(str(fspan))
         self.sweepCenterInput.setText(str(fcenter))
-        self.updateStepSize()
 
     def updateStartEnd(self):
         fcenter = self.parseFrequency(self.sweepCenterInput.text())
@@ -813,7 +812,6 @@ class NanoVNASaver(QtWidgets.QWidget):
             return
         self.sweepStartInput.setText(str(fstart))
         self.sweepEndInput.setText(str(fstop))
-        self.updateStepSize()
 
     def updateStepSize(self):
         fspan = self.parseFrequency(self.sweepSpanInput.text())
