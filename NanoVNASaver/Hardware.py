@@ -265,8 +265,7 @@ class Version:
             self.minor = int(results.group(3))
             self.revision = int(results.group(4))
             self.note = results.group(5)
-            print("Parsed version as %d.%d.%d%s" % (self.major, self.minor, self.revision, self.note))
-            logger.debug("Parsed version as %d.%d.%d%s", self.major, self.minor, self.revision, self.note)
+            logger.debug("Parsed version as \"%d.%d.%d%s\"", self.major, self.minor, self.revision, self.note)
 
     @staticmethod
     def getVersion(major: int, minor: int, revision: int, note=""):
