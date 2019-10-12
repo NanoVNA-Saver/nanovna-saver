@@ -186,7 +186,7 @@ class FrequencyChart(Chart):
     fixedValues = False
 
     linear = True
-    logarithmic = False
+    logarithmicX = False
 
     chartWidth = Chart.minChartWidth
     chartHeight = Chart.minChartHeight
@@ -229,6 +229,20 @@ class FrequencyChart(Chart):
 
         self.x_menu.addAction(self.action_set_fixed_start)
         self.x_menu.addAction(self.action_set_fixed_stop)
+        
+        self.x_menu.addSeparator()
+        frequency_mode_group = QtWidgets.QActionGroup(self.x_menu)
+        self.action_set_linear_x = QtWidgets.QAction("Linear")
+        self.action_set_linear_x.setCheckable(True)
+        self.action_set_logarithmic_x = QtWidgets.QAction("Logarithmic")
+        self.action_set_logarithmic_x.setCheckable(True)
+        frequency_mode_group.addAction(self.action_set_linear_x)
+        frequency_mode_group.addAction(self.action_set_logarithmic_x)
+        self.action_set_linear_x.triggered.connect(lambda: self.setLogarithmicX(False))
+        self.action_set_logarithmic_x.triggered.connect(lambda: self.setLogarithmicX(True))
+        self.action_set_linear_x.setChecked(True)
+        self.x_menu.addAction(self.action_set_linear_x)
+        self.x_menu.addAction(self.action_set_logarithmic_x)
 
         self.y_menu = QtWidgets.QMenu("Data axis")
         self.y_action_automatic = QtWidgets.QAction("Automatic")
@@ -283,6 +297,10 @@ class FrequencyChart(Chart):
             self.y_action_fixed_span.setChecked(False)
         self.update()
 
+    def setLogarithmicX(self, logarithmic: bool):
+        self.logarithmicX = logarithmic
+        self.update()
+
     def setMinimumFrequency(self):
         from NanoVNASaver.NanoVNASaver import NanoVNASaver
         min_freq_str, selected = QtWidgets.QInputDialog.getText(self, "Start frequency",
@@ -332,12 +350,18 @@ class FrequencyChart(Chart):
         self.y_action_automatic.setChecked(True)
         self.fixedSpan = False
         self.action_automatic.setChecked(True)
+        self.logarithmicX = False
         self.update()
 
     def getXPosition(self, d: Datapoint) -> int:
         span = self.fstop - self.fstart
         if span > 0:
-            return self.leftMargin + 1 + round(self.chartWidth * (d.freq - self.fstart) / span)
+            if self.logarithmicX:
+                span = math.log(self.fstop) - math.log(self.fstart)
+                return self.leftMargin + 1 +\
+                       round(self.chartWidth * (math.log(d.freq) - math.log(self.fstart)) / span)
+            else:
+                return self.leftMargin + 1 + round(self.chartWidth * (d.freq - self.fstart) / span)
         else:
             return math.floor(self.width()/2)
 
@@ -353,9 +377,14 @@ class FrequencyChart(Chart):
         a0.accept()
         if self.fstop - self.fstart > 0:
             m = self.getActiveMarker(a0)
-            span = self.fstop - self.fstart
-            step = span/self.chartWidth
-            f = self.fstart + absx * step
+            if self.logarithmicX:
+                span = math.log(self.fstop) - math.log(self.fstart)
+                step = span/self.chartWidth
+                f = math.exp(math.log(self.fstart) + absx * step)
+            else:
+                span = self.fstop - self.fstart
+                step = span/self.chartWidth
+                f = self.fstart + absx * step
             m.setFrequency(str(round(f)))
             m.frequencyInput.setText(str(round(f)))
         return
@@ -379,6 +408,23 @@ class FrequencyChart(Chart):
             qp.drawText(self.leftMargin + self.chartWidth/2 - 70, self.topMargin + self.chartHeight/2 - 20,
                         "Data outside frequency span")
         qp.end()
+
+    def drawFrequencyTicks(self, qp):
+        fspan = self.fstop - self.fstart
+        qp.setPen(self.textColor)
+        qp.drawText(self.leftMargin - 20, self.topMargin + self.chartHeight + 15, Chart.shortenFrequency(self.fstart))
+        ticks = math.floor(self.chartWidth / 100)  # Number of ticks does not include the origin
+        for i in range(ticks):
+            x = self.leftMargin + round((i + 1) * self.chartWidth / ticks)
+            if self.logarithmicX:
+                fspan = math.log(self.fstop) - math.log(self.fstart)
+                freq = round(math.exp(((i + 1) * fspan / ticks) + math.log(self.fstart)))
+            else:
+                freq = round(fspan / ticks * (i + 1) + self.fstart)
+            qp.setPen(QtGui.QPen(self.foregroundColor))
+            qp.drawLine(x, self.topMargin, x, self.topMargin + self.chartHeight + 5)
+            qp.setPen(self.textColor)
+            qp.drawText(x - 20, self.topMargin + self.chartHeight + 15, Chart.shortenFrequency(freq))
 
     def drawBands(self, qp, fstart, fstop):
         qp.setBrush(self.bands.color)
@@ -601,15 +647,7 @@ class PhaseChart(FrequencyChart):
         if self.bands.enabled:
             self.drawBands(qp, fstart, fstop)
 
-        qp.setPen(self.textColor)
-        qp.drawText(self.leftMargin-20, self.topMargin + self.chartHeight + 15, Chart.shortenFrequency(self.fstart))
-        ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
-        for i in range(ticks):
-            x = self.leftMargin + round((i+1)*self.chartWidth/ticks)
-            qp.setPen(QtGui.QPen(self.foregroundColor))
-            qp.drawLine(x, 20, x, 20+self.chartHeight+5)
-            qp.setPen(self.textColor)
-            qp.drawText(x-20, self.topMargin+self.chartHeight+15, Chart.shortenFrequency(round(fspan/ticks*(i+1) + self.fstart)))
+        self.drawFrequencyTicks(qp)
 
         self.drawData(qp, self.data, self.sweepColor)
         self.drawData(qp, self.reference, self.referenceColor)
@@ -732,15 +770,7 @@ class VSWRChart(FrequencyChart):
         # qp.drawText(3, self.chartHeight + self.topMargin, str(minVSWR))
         # At least 100 px between ticks
 
-        qp.drawText(self.leftMargin-20, self.topMargin + self.chartHeight + 15, Chart.shortenFrequency(fstart))
-        ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
-        for i in range(ticks):
-            x = self.leftMargin + round((i+1)*self.chartWidth/ticks)
-            qp.setPen(QtGui.QPen(self.foregroundColor))
-            qp.drawLine(x, self.topMargin, x, self.topMargin + self.chartHeight + 5)
-            qp.setPen(self.textColor)
-            qp.drawText(x-20, self.topMargin + self.chartHeight + 15, Chart.shortenFrequency(round(fspan/ticks*(i+1) + fstart)))
-
+        self.drawFrequencyTicks(qp)
         self.drawData(qp, self.data, self.sweepColor)
         self.drawData(qp, self.reference, self.referenceColor)
         self.drawMarkers(qp)
@@ -1175,16 +1205,7 @@ class LogMagChart(FrequencyChart):
         qp.setPen(self.textColor)
         qp.drawText(3, self.topMargin + 4, str(maxValue))
         qp.drawText(3, self.chartHeight+self.topMargin, str(minValue))
-        # Frequency ticks
-        qp.drawText(self.leftMargin-20, self.topMargin + self.chartHeight + 15, Chart.shortenFrequency(self.fstart))
-        ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
-        for i in range(ticks):
-            x = self.leftMargin + round((i+1)*self.chartWidth/ticks)
-            qp.setPen(QtGui.QPen(self.foregroundColor))
-            qp.drawLine(x, 20, x, self.topMargin+self.chartHeight+5)
-            qp.setPen(self.textColor)
-            qp.drawText(x-20, self.topMargin+self.chartHeight+15, LogMagChart.shortenFrequency(round(fspan/ticks*(i+1) + self.fstart)))
-
+        self.drawFrequencyTicks(qp)
         self.drawData(qp, self.data, self.sweepColor)
         self.drawData(qp, self.reference, self.referenceColor)
         self.drawMarkers(qp)
@@ -1308,17 +1329,7 @@ class QualityFactorChart(FrequencyChart):
         if self.bands.enabled:
             self.drawBands(qp, fstart, fstop)
 
-        qp.setPen(self.textColor)
-        qp.drawText(self.leftMargin-20, self.topMargin + self.chartHeight + 15, Chart.shortenFrequency(fstart))
-        ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
-        for i in range(ticks):
-            x = self.leftMargin + round((i+1)*self.chartWidth/ticks)
-            qp.setPen(QtGui.QPen(self.foregroundColor))
-            qp.drawLine(x, self.topMargin - 5, x, self.topMargin + self.chartHeight + 5)
-            qp.setPen(self.textColor)
-            qp.drawText(x - 20, self.topMargin + self.chartHeight + 15,
-                        Chart.shortenFrequency(round(fspan/ticks*(i+1) + fstart)))
-
+        self.drawFrequencyTicks(qp)
         self.drawData(qp, self.data, self.sweepColor)
         self.drawData(qp, self.reference, self.referenceColor)
         self.drawMarkers(qp)
@@ -1579,14 +1590,7 @@ class RealImaginaryChart(FrequencyChart):
         qp.drawText(3, self.chartHeight + self.topMargin, str(round(min_real, 1)))
         qp.drawText(self.leftMargin + self.chartWidth + 8, self.chartHeight + self.topMargin, str(round(min_imag, 1)))
 
-        qp.drawText(self.leftMargin-20, self.topMargin + self.chartHeight + 15, Chart.shortenFrequency(fstart))
-        ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
-        for i in range(ticks):
-            x = self.leftMargin + round((i+1)*self.chartWidth/ticks)
-            qp.setPen(QtGui.QPen(self.foregroundColor))
-            qp.drawLine(x, self.topMargin - 5, x, self.topMargin + self.chartHeight + 5)
-            qp.setPen(self.textColor)
-            qp.drawText(x-20, self.topMargin + self.chartHeight + 15, Chart.shortenFrequency(round(fspan/ticks*(i+1) + fstart)))
+        self.drawFrequencyTicks(qp)
 
         primary_pen = pen
         secondary_pen = QtGui.QPen(self.secondarySweepColor)
