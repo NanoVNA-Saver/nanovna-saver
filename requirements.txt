@@ -1,3 +1,4 @@
+qtpy
 pyqt5
 pyserial
 numpy

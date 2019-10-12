@@ -37,7 +37,7 @@ from .SweepWorker import SweepWorker
 from .Touchstone import Touchstone
 from .Analysis import Analysis, LowPassAnalysis, HighPassAnalysis, BandPassAnalysis, BandStopAnalysis
 from .about import version as ver
-from .skins_utils import *
+from .UIManager import *
 
 app = QtWidgets.QApplication(sys.argv)
 
@@ -65,7 +65,11 @@ class NanoVNASaver(QtWidgets.QWidget):
                                          QtCore.QSettings.UserScope,
                                          "NanoVNASaver", "NanoVNASaver")
         print("Settings: " + self.settings.fileName())
-        NanoVNA_UI.defaultUI(app)
+
+        # self.loadstyle = LoadStyle()
+        self.ui_manager = NanoVNA_UI_Manager(self)
+        self.ui_manager.defaultUI()
+        # self.skins = Skins(self)
         self.threadpool = QtCore.QThreadPool()
         self.vna: VNA = InvalidVNA()
         self.worker = SweepWorker(self)
@@ -486,6 +490,10 @@ class NanoVNASaver(QtWidgets.QWidget):
         left_column.addLayout(button_grid)
 
         logger.debug("Finished building interface")
+
+    def loadStyle(self):
+        # self.app.setStyle('Fusion')
+        logger.debug("Style sucessfully applied")
 
     def rescanSerialPort(self):
         serial_port = self.getPort()
@@ -1045,7 +1053,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         display_skins_layout.addRow(self.skin_mode_option, skin_mode_label)
 
         self.skin_dropdown = QtWidgets.QComboBox()
-        self.skin_dropdown.addItems(NanoVNA_UI.getSkins())
+        self.skin_dropdown.addItems(self.app.ui_manager.getSkins())
         self.skin_dropdown.setDisabled(True)
         self.skin_dropdown.currentTextChanged.connect(self.changeSkins)
         skin_dropdown_label = QtWidgets.QLabel("Choose skin to display")
@@ -1314,7 +1322,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.skin_mode_option.setChecked(self.app.settings.value("SkinMode", False, bool))
         if self.skin_mode_option.isChecked():
             saved_skin = self.app.settings.value("CurrentSkin", False)
-            if NanoVNA_UI.validateSkin(saved_skin):
+            if self.app.ui_manager.validateSkin(saved_skin):
                 index = self.skin_dropdown.findText(saved_skin, QtCore.Qt.MatchFixedString)
                 if index >= 0:
                     self.skin_dropdown.setCurrentIndex(index)
@@ -1378,9 +1386,9 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
     def changeSkins(self):
         if self.skin_mode_option.isChecked():
             self.app.settings.setValue("CurrentSkin", self.skin_dropdown.currentText())
-            NanoVNA_UI.updateUI(self, self.skin_dropdown.currentText(), app)
+            self.app.ui_manager.changeSkin(self.skin_dropdown.currentText())
         else:
-            NanoVNA_UI.updateUI(self, "NULL", app)
+            self.app.ui_manager.changeSkin("NULL")
 
     def changeSkinMode(self):
         state = self.skin_mode_option.isChecked()
@@ -1392,7 +1400,8 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self.btn_text_picker.setDisabled(True)
             self.use_custom_colors.setDisabled(True)
             self.skin_dropdown.setDisabled(False)
-            NanoVNA_UI.updateUI(self,self.skin_dropdown.currentText(),app)
+            # self.app.ui_manager.updateUI(self.skin_dropdown.currentText(), self.app.skin_dropdown.currentText())
+            self.app.ui_manager.setSkinMode()
         else:
             self.dark_mode_option.setDisabled(False)
             self.btn_background_picker.setDisabled(False)
@@ -1400,7 +1409,8 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self.btn_text_picker.setDisabled(False)
             self.use_custom_colors.setDisabled(False)
             self.skin_dropdown.setDisabled(True)
-            NanoVNA_UI.updateUI(self, "NULL", app)
+            # self.app.ui_manager.updateUI("NULL", app)
+            self.app.ui_manager.setDefaultMode()
 
 
     def changeCustomColors(self):
