@@ -1001,11 +1001,19 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def popoutChart(self, chart: Chart):
         logger.debug("Requested popout for chart: %s", chart.name)
-        new_chart = chart.copy()
-        self.subscribing_charts.append(new_chart)
-        new_chart.popoutRequested.connect(self.popoutChart)
+        new_chart = self.copyChart(chart)
         new_chart.show()
         new_chart.setWindowTitle(new_chart.name)
+
+    def copyChart(self, chart: Chart):
+        new_chart = chart.copy()
+        self.subscribing_charts.append(new_chart)
+        if chart in self.s11charts:
+            self.s11charts.append(new_chart)
+        if chart in self.s21charts:
+            self.s21charts.append(new_chart)
+        new_chart.popoutRequested.connect(self.popoutChart)
+        return new_chart
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
         self.worker.stopped = True
@@ -1290,6 +1298,10 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self.app.charts_layout.removeWidget(w)
             w.hide()
         if found is not None:
+            if self.app.charts_layout.indexOf(found) > -1:
+                logger.debug("%s is already shown, duplicating.", found.name)
+                found = self.app.copyChart(found)
+
             self.app.charts_layout.addWidget(found, x, y)
             if found.isHidden():
                 found.show()
