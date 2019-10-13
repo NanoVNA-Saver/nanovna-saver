@@ -121,7 +121,9 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s11VSWR = VSWRChart("S11 VSWR")
         self.s11QualityFactor = QualityFactorChart("S11 Quality Factor")
         self.s11RealImaginary = RealImaginaryChart("S11 R+jX")
+        self.tdr_chart = TDRChart("TDR")
 
+        # List of all the S11 charts, for selecting
         self.s11charts: List[Chart] = []
         self.s11charts.append(self.s11SmithChart)
         self.s11charts.append(self.s11LogMag)
@@ -130,15 +132,19 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s11charts.append(self.s11RealImaginary)
         self.s11charts.append(self.s11QualityFactor)
 
+        # List of all the S21 charts, for selecting
         self.s21charts: List[Chart] = []
         self.s21charts.append(self.s21PolarChart)
         self.s21charts.append(self.s21LogMag)
         self.s21charts.append(self.s21Phase)
 
+        # List of all charts that can be selected for display
         self.charts = self.s11charts + self.s21charts
-
-        self.tdr_chart = TDRChart("TDR")
         self.charts.append(self.tdr_chart)
+
+        # List of all charts that subscribe to updates (including duplicates!)
+        self.subscribing_charts = []
+        self.subscribing_charts.extend(self.charts)
 
         self.charts_layout = QtWidgets.QGridLayout()
 
@@ -280,7 +286,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.showMarkerButton.clicked.connect(self.toggleMarkerFrame)
         marker_control_layout.addRow(self.showMarkerButton)
 
-        for c in self.charts:
+        for c in self.subscribing_charts:
             c.setMarkers(self.markers)
             c.setBands(self.bands)
         left_column.addWidget(marker_control_box)
@@ -930,7 +936,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.referenceS21data = []
         self.referenceSource = ""
         self.updateTitle()
-        for c in self.charts:
+        for c in self.subscribing_charts:
             c.resetReference()
         self.btnResetReference.setDisabled(True)
 
@@ -1290,19 +1296,19 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
     def changeShowLines(self):
         state = self.show_lines_option.isChecked()
         self.app.settings.setValue("ShowLines", state)
-        for c in self.app.charts:
+        for c in self.app.subscribing_charts:
             c.setDrawLines(state)
 
     def changeDarkMode(self):
         state = self.dark_mode_option.isChecked()
         self.app.settings.setValue("DarkMode", state)
         if state:
-            for c in self.app.charts:
+            for c in self.app.subscribing_charts:
                 c.setBackgroundColor(QtGui.QColor(QtCore.Qt.black))
                 c.setForegroundColor(QtGui.QColor(QtCore.Qt.lightGray))
                 c.setTextColor(QtGui.QColor(QtCore.Qt.white))
         else:
-            for c in self.app.charts:
+            for c in self.app.subscribing_charts:
                 c.setBackgroundColor(QtGui.QColor(QtCore.Qt.white))
                 c.setForegroundColor(QtGui.QColor(QtCore.Qt.lightGray))
                 c.setTextColor(QtGui.QColor(QtCore.Qt.black))
@@ -1315,7 +1321,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self.btn_background_picker.setDisabled(False)
             self.btn_foreground_picker.setDisabled(False)
             self.btn_text_picker.setDisabled(False)
-            for c in self.app.charts:
+            for c in self.app.subscribing_charts:
                 c.setBackgroundColor(self.backgroundColor)
                 c.setForegroundColor(self.foregroundColor)
                 c.setTextColor(self.textColor)
@@ -1362,7 +1368,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self.btnColorPicker.setPalette(p)
             self.app.settings.setValue("SweepColor", color)
             self.app.settings.sync()
-            for c in self.app.charts:
+            for c in self.app.subscribing_charts:
                 c.setSweepColor(color)
 
     def setSecondarySweepColor(self, color: QtGui.QColor):
@@ -1373,7 +1379,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self.btnSecondaryColorPicker.setPalette(p)
             self.app.settings.setValue("SecondarySweepColor", color)
             self.app.settings.sync()
-            for c in self.app.charts:
+            for c in self.app.subscribing_charts:
                 c.setSecondarySweepColor(color)
 
     def setReferenceColor(self, color):
@@ -1385,7 +1391,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self.app.settings.setValue("ReferenceColor", color)
             self.app.settings.sync()
 
-            for c in self.app.charts:
+            for c in self.app.subscribing_charts:
                 c.setReferenceColor(color)
 
     def setSecondaryReferenceColor(self, color):
@@ -1397,14 +1403,14 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self.app.settings.setValue("SecondaryReferenceColor", color)
             self.app.settings.sync()
 
-            for c in self.app.charts:
+            for c in self.app.subscribing_charts:
                 c.setSecondaryReferenceColor(color)
 
     def setShowBands(self, show_bands):
         self.app.bands.enabled = show_bands
         self.app.bands.settings.setValue("ShowBands", show_bands)
         self.app.bands.settings.sync()
-        for c in self.app.charts:
+        for c in self.app.subscribing_charts:
             c.update()
 
     def changeFont(self):
