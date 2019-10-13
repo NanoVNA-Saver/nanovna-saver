@@ -1758,7 +1758,7 @@ class RealImaginaryChart(FrequencyChart):
                 prev_y_re = self.getReYPosition(self.reference[i-1])
                 prev_y_im = self.getImYPosition(self.reference[i-1])
 
-                line_pen.setColor(self.secondaryReferenceColor)
+                line_pen.setColor(self.referenceColor)
                 qp.setPen(line_pen)
                 # Real part first
                 if self.isPlotable(x, y_re) and self.isPlotable(prev_x, prev_y_re):

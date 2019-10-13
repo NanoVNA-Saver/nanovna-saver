@@ -1186,6 +1186,10 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         self.vswrMarkers: List[float] = self.app.settings.value("VSWRMarkers", [], float)
 
+        if isinstance(self.vswrMarkers, float):
+            # Single values from the .ini become floats rather than lists. Convert them.
+            self.vswrMarkers = [self.vswrMarkers]
+
         self.btn_vswr_picker = QtWidgets.QPushButton("█")
         self.btn_vswr_picker.setFixedWidth(20)
         self.btn_vswr_picker.clicked.connect(lambda: self.setColor("vswr", QtWidgets.QColorDialog.getColor(self.vswrColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
