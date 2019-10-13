@@ -1424,7 +1424,8 @@ class TDRChart(Chart):
         self.rightMargin = 20
         self.bottomMargin = 35
         self.setMinimumSize(250, 250)
-        self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding))
+        self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
+                                                 QtWidgets.QSizePolicy.MinimumExpanding))
         pal = QtGui.QPalette()
         pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
         self.setPalette(pal)
@@ -1446,7 +1447,7 @@ class TDRChart(Chart):
         ticks = math.floor((self.width() - self.leftMargin)/100)  # Number of ticks does not include the origin
 
         if len(self.tdrWindow.td) > 0:
-            x_step = len(self.tdrWindow.distance_axis) / width
+            x_step = len(self.tdrWindow.distance_axis) / (width * 2)
             y_step = np.max(self.tdrWindow.td)*1.1 / height
 
             for i in range(ticks):
