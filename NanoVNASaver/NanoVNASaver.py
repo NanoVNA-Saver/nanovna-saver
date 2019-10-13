@@ -139,12 +139,15 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s21charts.append(self.s21Phase)
 
         # List of all charts that can be selected for display
-        self.charts = self.s11charts + self.s21charts
-        self.charts.append(self.tdr_chart)
+        self.selectable_charts = self.s11charts + self.s21charts
+        self.selectable_charts.append(self.tdr_chart)
+
+        for c in self.selectable_charts:
+            c.popoutRequested.connect(self.popoutChart)
 
         # List of all charts that subscribe to updates (including duplicates!)
         self.subscribing_charts = []
-        self.subscribing_charts.extend(self.charts)
+        self.subscribing_charts.extend(self.selectable_charts)
 
         self.charts_layout = QtWidgets.QGridLayout()
 
@@ -996,6 +999,14 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.showError(self.worker.error_message)
         self.stopSerial()
 
+    def popoutChart(self, chart: Chart):
+        logger.debug("Requested popout for chart: %s", chart.name)
+        new_chart = chart.copy()
+        self.subscribing_charts.append(new_chart)
+        new_chart.popoutRequested.connect(self.popoutChart)
+        new_chart.show()
+        new_chart.setWindowTitle(new_chart.name)
+
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
         self.worker.stopped = True
         self.settings.setValue("Marker1Color", self.markers[0].color)
@@ -1178,7 +1189,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         selections = []
 
-        for c in self.app.charts:
+        for c in self.app.selectable_charts:
             selections.append(c.name)
 
         selections.append("None")
@@ -1267,7 +1278,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
     def changeChart(self, x, y, chart):
         found = None
-        for c in self.app.charts:
+        for c in self.app.selectable_charts:
             if c.name == chart:
                 found = c
 

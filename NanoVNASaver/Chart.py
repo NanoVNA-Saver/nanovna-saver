@@ -20,6 +20,7 @@ import numpy as np
 import logging
 
 from PyQt5 import QtWidgets, QtGui, QtCore
+from PyQt5.QtCore import pyqtSignal
 
 from .Marker import Marker
 logger = logging.getLogger(__name__)
@@ -46,6 +47,8 @@ class Chart(QtWidgets.QWidget):
     minChartHeight = 200
     minChartWidth = 200
 
+    popoutRequested = pyqtSignal(object)
+
     def __init__(self, name):
         super().__init__()
         self.name = name
@@ -54,6 +57,9 @@ class Chart(QtWidgets.QWidget):
         self.action_save_screenshot = QtWidgets.QAction("Save image")
         self.action_save_screenshot.triggered.connect(self.saveScreenshot)
         self.addAction(self.action_save_screenshot)
+        self.action_popout = QtWidgets.QAction("Popout chart")
+        self.action_popout.triggered.connect(lambda: self.popoutRequested.emit(self))
+        self.addAction(self.action_popout)
 
     def setSweepColor(self, color : QtGui.QColor):
         self.sweepColor = color
@@ -171,6 +177,23 @@ class Chart(QtWidgets.QWidget):
         if filename != "":
             self.grab().save(filename)
 
+    def copy(self):
+        new_chart = self.__class__(self.name)
+        new_chart.data = self.data
+        new_chart.reference = self.reference
+        new_chart.sweepColor = self.sweepColor
+        new_chart.secondarySweepColor = self.secondarySweepColor
+        new_chart.referenceColor = self.referenceColor
+        new_chart.secondaryReferenceColor = self.secondaryReferenceColor
+        new_chart.setBackgroundColor(self.backgroundColor)
+        new_chart.textColor = self.textColor
+        new_chart.foregroundColor = self.foregroundColor
+        new_chart.markers = self.markers
+        new_chart.bands = self.bands
+        new_chart.drawLines = self.drawLines
+        new_chart.resize(self.width(), self.height())
+        return new_chart
+
 
 class FrequencyChart(Chart):
     fstart = 0
@@ -272,6 +295,9 @@ class FrequencyChart(Chart):
         self.menu.addMenu(self.y_menu)
         self.menu.addSeparator()
         self.menu.addAction(self.action_save_screenshot)
+        self.action_popout = QtWidgets.QAction("Popout chart")
+        self.action_popout.triggered.connect(lambda: self.popoutRequested.emit(self))
+        self.menu.addAction(self.action_popout)
 
     def contextMenuEvent(self, event):
         self.action_set_fixed_start.setText("Start (" + Chart.shortenFrequency(self.minFrequency) + ")")
