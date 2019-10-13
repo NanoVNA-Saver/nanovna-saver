@@ -15,7 +15,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import collections
 import math
-from typing import List
+from typing import List, Set
 import numpy as np
 import logging
 
@@ -37,9 +37,12 @@ class Chart(QtWidgets.QWidget):
     backgroundColor: QtGui.QColor = QtGui.QColor(QtCore.Qt.white)
     foregroundColor: QtGui.QColor = QtGui.QColor(QtCore.Qt.lightGray)
     textColor: QtGui.QColor = QtGui.QColor(QtCore.Qt.black)
+    swrColor: QtGui.QColor = QtGui.QColor(QtCore.Qt.red)
+    swrColor.setAlpha(128)
     data: List[Datapoint] = []
     reference: List[Datapoint] = []
     markers: List[Marker] = []
+    swrMarkers: Set[float] = set()
     bands = None
     draggedMarker: Marker = None
     name = ""
@@ -60,6 +63,8 @@ class Chart(QtWidgets.QWidget):
         self.action_popout = QtWidgets.QAction("Popout chart")
         self.action_popout.triggered.connect(lambda: self.popoutRequested.emit(self))
         self.addAction(self.action_popout)
+
+        self.swrMarkers = set()
 
     def setSweepColor(self, color : QtGui.QColor):
         self.sweepColor = color
@@ -188,11 +193,34 @@ class Chart(QtWidgets.QWidget):
         new_chart.setBackgroundColor(self.backgroundColor)
         new_chart.textColor = self.textColor
         new_chart.foregroundColor = self.foregroundColor
+        new_chart.swrColor = self.swrColor
         new_chart.markers = self.markers
+        new_chart.swrMarkers = self.swrMarkers
         new_chart.bands = self.bands
         new_chart.drawLines = self.drawLines
         new_chart.resize(self.width(), self.height())
         return new_chart
+
+    def addSWRMarker(self, swr: float):
+        self.swrMarkers.add(swr)
+        self.update()
+
+    def removeSWRMarker(self, swr: float):
+        try:
+            self.swrMarkers.remove(swr)
+        except KeyError:
+            logger.debug("KeyError from %s", self.name)
+            return
+        finally:
+            self.update()
+
+    def clearSWRMarkers(self):
+        self.swrMarkers.clear()
+        self.update()
+
+    def setSWRColor(self, color: QtGui.QColor):
+        self.swrColor = color
+        self.update()
 
 
 class FrequencyChart(Chart):
@@ -793,10 +821,15 @@ class VSWRChart(FrequencyChart):
         else:
             vswrstr = str(round(maxVSWR, digits))
         qp.drawText(3, 35, vswrstr)
-        # qp.drawText(3, self.chartHeight + self.topMargin, str(minVSWR))
-        # At least 100 px between ticks
 
         self.drawFrequencyTicks(qp)
+
+        qp.setPen(self.swrColor)
+        for vswr in self.swrMarkers:
+            y = self.topMargin + round((self.maxVSWR - vswr) / self.span * self.chartHeight)
+            qp.drawLine(self.leftMargin, y, self.leftMargin + self.chartWidth, y)
+            qp.drawText(self.leftMargin + 3, y - 1, str(vswr))
+
         self.drawData(qp, self.data, self.sweepColor)
         self.drawData(qp, self.reference, self.referenceColor)
         self.drawMarkers(qp)
@@ -987,6 +1020,13 @@ class SmithChart(SquareChart):
         qp.drawArc(centerX - int(self.chartWidth/2), centerY, self.chartWidth*2, -self.chartHeight*2, int(-99.5 * 16), int(-43.5 * 16))  # Im(Z) = 0.5
         qp.drawArc(centerX - self.chartWidth*2, centerY, self.chartWidth*5, self.chartHeight*5, int(93.85*16), int(18.85*16))  # Im(Z) = -0.2
         qp.drawArc(centerX - self.chartWidth*2, centerY, self.chartWidth*5, -self.chartHeight*5, int(-93.85 * 16), int(-18.85 * 16))  # Im(Z) = 0.2
+
+        qp.setPen(self.swrColor)
+        for swr in self.swrMarkers:
+            gamma = (swr - 1)/(swr + 1)
+            r = round(gamma * self.chartWidth/2)
+            qp.drawEllipse(QtCore.QPoint(centerX, centerY), r, r)
+            qp.drawText(QtCore.QRect(centerX - 50, centerY - 4 + r, 100, 20), QtCore.Qt.AlignCenter, str(swr))
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
@@ -1232,6 +1272,16 @@ class LogMagChart(FrequencyChart):
         qp.drawText(3, self.topMargin + 4, str(maxValue))
         qp.drawText(3, self.chartHeight+self.topMargin, str(minValue))
         self.drawFrequencyTicks(qp)
+
+        qp.setPen(self.swrColor)
+        for vswr in self.swrMarkers:
+            logMag = 20 * math.log10((vswr-1)/(vswr+1))
+            if self.isInverted:
+                logMag = logMag * -1
+            y = self.topMargin + round((self.maxValue - logMag) / self.span * self.chartHeight)
+            qp.drawLine(self.leftMargin, y, self.leftMargin + self.chartWidth, y)
+            qp.drawText(self.leftMargin + 3, y - 1, "VSWR: " + str(vswr))
+
         self.drawData(qp, self.data, self.sweepColor)
         self.drawData(qp, self.reference, self.referenceColor)
         self.drawMarkers(qp)
