@@ -341,6 +341,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.tdr_window = TDRWindow(self)
         self.tdr_chart.tdrWindow = self.tdr_window
+        self.tdr_window.updated.connect(self.tdr_chart.update)
 
         tdr_control_box = QtWidgets.QGroupBox()
         tdr_control_box.setTitle("TDR")
@@ -1683,6 +1684,8 @@ class AboutWindow(QtWidgets.QWidget):
 
 
 class TDRWindow(QtWidgets.QWidget):
+    updated = QtCore.pyqtSignal()
+
     def __init__(self, app: NanoVNASaver):
         super().__init__()
         self.app = app
@@ -1794,7 +1797,7 @@ class TDRWindow(QtWidgets.QWidget):
 
         self.tdr_result_label.setText(str(cable_len) + " m (" + str(feet) + "ft " + str(inches) + "in)")
         self.app.tdr_result_label.setText(str(cable_len) + " m")
-        self.app.tdr_chart.update()
+        self.updated.emit()
 
 
 class SweepSettingsWindow(QtWidgets.QWidget):

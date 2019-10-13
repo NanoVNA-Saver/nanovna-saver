@@ -236,7 +236,6 @@ class FrequencyChart(Chart):
     fixedSpan = False
     fixedValues = False
 
-    linear = True
     logarithmicX = False
 
     chartWidth = Chart.minChartWidth
@@ -565,6 +564,28 @@ class FrequencyChart(Chart):
         else:
             return x, y
 
+    def copy(self):
+        new_chart: FrequencyChart = super().copy()
+        new_chart.fstart = self.fstart
+        new_chart.fstop = self.fstop
+        new_chart.maxFrequency = self.maxFrequency
+        new_chart.minFrequency = self.minFrequency
+        new_chart.minDisplayValue = self.minDisplayValue
+        new_chart.maxDisplayValue = self.maxDisplayValue
+
+        new_chart.setFixedSpan(self.fixedSpan)
+        new_chart.action_automatic.setChecked(not self.fixedSpan)
+        new_chart.action_fixed_span.setChecked(self.fixedSpan)
+
+        new_chart.setFixedValues(self.fixedValues)
+        new_chart.y_action_automatic.setChecked(not self.fixedValues)
+        new_chart.y_action_fixed_span.setChecked(self.fixedValues)
+
+        new_chart.setLogarithmicX(self.logarithmicX)
+        new_chart.action_set_logarithmic_x.setChecked(self.logarithmicX)
+        new_chart.action_set_linear_x.setChecked(not self.logarithmicX)
+        return new_chart
+
 
 class SquareChart(Chart):
     def __init__(self, name):
@@ -610,6 +631,11 @@ class PhaseChart(FrequencyChart):
         self.action_unwrap.setCheckable(True)
         self.action_unwrap.triggered.connect(lambda: self.setUnwrap(self.action_unwrap.isChecked()))
         self.y_menu.addAction(self.action_unwrap)
+
+    def copy(self):
+        new_chart: PhaseChart = super().copy()
+        new_chart.setUnwrap(self.unwrap)
+        new_chart.action_unwrap.setChecked(self.unwrap)
 
     def setUnwrap(self, unwrap: bool):
         self.unwrap = unwrap
@@ -810,7 +836,7 @@ class VSWRChart(FrequencyChart):
                     vswrstr = str(round(vswr))
                 else:
                     vswrstr = str(round(vswr, digits))
-            qp.drawText(3, y+3, vswrstr)
+                qp.drawText(3, y+3, vswrstr)
             qp.setPen(QtGui.QPen(self.foregroundColor))
             qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.chartWidth, y)
         qp.drawLine(self.leftMargin - 5, self.topMargin, self.leftMargin + self.chartWidth, self.topMargin)
@@ -1297,6 +1323,12 @@ class LogMagChart(FrequencyChart):
         else:
             return NanoVNASaver.gain(p)
 
+    def copy(self):
+        new_chart: LogMagChart = super().copy()
+        new_chart.isInverted = self.isInverted
+        new_chart.span = self.span
+        return new_chart
+
 
 class QualityFactorChart(FrequencyChart):
     def __init__(self, name=""):
@@ -1431,6 +1463,12 @@ class TDRChart(Chart):
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
+    def copy(self):
+        new_chart = super().copy()
+        new_chart.tdrWindow = self.tdrWindow
+        self.tdrWindow.updated.connect(new_chart.update)
+        return new_chart
+
     def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
         qp = QtGui.QPainter(self)
         qp.setPen(QtGui.QPen(self.textColor))
@@ -1538,6 +1576,14 @@ class RealImaginaryChart(FrequencyChart):
         pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
+
+    def copy(self):
+        new_chart: RealImaginaryChart = super().copy()
+
+        new_chart.maxDisplayReal = self.maxDisplayReal
+        new_chart.maxDisplayImag = self.maxDisplayImag
+        new_chart.minDisplayReal = self.minDisplayReal
+        new_chart.minDisplayImag = self.minDisplayImag
 
     def drawChart(self, qp: QtGui.QPainter):
         qp.setPen(QtGui.QPen(self.textColor))
