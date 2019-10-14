@@ -672,9 +672,9 @@ class PhaseChart(FrequencyChart):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
         pen = QtGui.QPen(self.sweepColor)
-        pen.setWidth(2)
+        pen.setWidth(self.pointSize)
         line_pen = QtGui.QPen(self.sweepColor)
-        line_pen.setWidth(1)
+        line_pen.setWidth(self.lineThickness)
 
         if self.unwrap:
             rawData = []
@@ -806,9 +806,9 @@ class VSWRChart(FrequencyChart):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
         pen = QtGui.QPen(self.sweepColor)
-        pen.setWidth(2)
+        pen.setWidth(self.pointSize)
         line_pen = QtGui.QPen(self.sweepColor)
-        line_pen.setWidth(1)
+        line_pen.setWidth(self.lineThickness)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(1)
         if self.fixedSpan:
@@ -1200,9 +1200,9 @@ class LogMagChart(FrequencyChart):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
         pen = QtGui.QPen(self.sweepColor)
-        pen.setWidth(2)
+        pen.setWidth(self.pointSize)
         line_pen = QtGui.QPen(self.sweepColor)
-        line_pen.setWidth(1)
+        line_pen.setWidth(self.lineThickness)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(1)
         if not self.fixedSpan:
@@ -1434,9 +1434,9 @@ class QualityFactorChart(FrequencyChart):
         if self.span == 0:
             return
         pen = QtGui.QPen(self.sweepColor)
-        pen.setWidth(2)
+        pen.setWidth(self.pointSize)
         line_pen = QtGui.QPen(self.sweepColor)
-        line_pen.setWidth(1)
+        line_pen.setWidth(self.lineThickness)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(1)
         if self.fixedSpan:
@@ -1622,9 +1622,9 @@ class RealImaginaryChart(FrequencyChart):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
         pen = QtGui.QPen(self.sweepColor)
-        pen.setWidth(2)
+        pen.setWidth(self.pointSize)
         line_pen = QtGui.QPen(self.sweepColor)
-        line_pen.setWidth(1)
+        line_pen.setWidth(self.lineThickness)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(1)
         if self.fixedSpan:
@@ -1739,7 +1739,6 @@ class RealImaginaryChart(FrequencyChart):
 
         primary_pen = pen
         secondary_pen = QtGui.QPen(self.secondarySweepColor)
-        secondary_pen.setWidth(2)
         if len(self.data) > 0:
             c = QtGui.QColor(self.sweepColor)
             c.setAlpha(255)
