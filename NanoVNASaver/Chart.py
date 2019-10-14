@@ -49,6 +49,9 @@ class Chart(QtWidgets.QWidget):
     drawLines = False
     minChartHeight = 200
     minChartWidth = 200
+    lineThickness = 1
+    pointSize = 2
+
 
     isPopout = False
     popoutRequested = pyqtSignal(object)
@@ -115,6 +118,14 @@ class Chart(QtWidgets.QWidget):
 
     def setBands(self, bands):
         self.bands = bands
+
+    def setLineThickness(self, thickness):
+        self.lineThickness = thickness
+        self.update()
+
+    def setPointSize(self, size):
+        self.pointSize = size
+        self.update()
 
     def getActiveMarker(self, event: QtGui.QMouseEvent) -> Marker:
         if self.draggedMarker is not None:
@@ -503,9 +514,9 @@ class FrequencyChart(Chart):
 
     def drawData(self, qp: QtGui.QPainter, data: List[Datapoint], color: QtGui.QColor):
         pen = QtGui.QPen(color)
-        pen.setWidth(2)
+        pen.setWidth(self.pointSize)
         line_pen = QtGui.QPen(color)
-        line_pen.setWidth(1)
+        line_pen.setWidth(self.lineThickness)
         qp.setPen(pen)
         for i in range(len(data)):
             x, y = self.getPosition(data[i])
@@ -573,6 +584,8 @@ class FrequencyChart(Chart):
         new_chart.minFrequency = self.minFrequency
         new_chart.minDisplayValue = self.minDisplayValue
         new_chart.maxDisplayValue = self.maxDisplayValue
+        new_chart.pointSize = self.pointSize
+        new_chart.lineThickness = self.lineThickness
 
         new_chart.setFixedSpan(self.fixedSpan)
         new_chart.action_automatic.setChecked(not self.fixedSpan)
@@ -920,9 +933,9 @@ class PolarChart(SquareChart):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
         pen = QtGui.QPen(self.sweepColor)
-        pen.setWidth(2)
+        pen.setWidth(self.pointSize)
         line_pen = QtGui.QPen(self.sweepColor)
-        line_pen.setWidth(1)
+        line_pen.setWidth(self.lineThickness)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(1)
         qp.setPen(pen)
@@ -1065,9 +1078,9 @@ class SmithChart(SquareChart):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
         pen = QtGui.QPen(self.sweepColor)
-        pen.setWidth(2)
+        pen.setWidth(self.pointSize)
         line_pen = QtGui.QPen(self.sweepColor)
-        line_pen.setWidth(1)
+        line_pen.setWidth(self.lineThickness)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(1)
         qp.setPen(pen)
@@ -1503,7 +1516,9 @@ class TDRChart(Chart):
                 qp.drawText(x - 20, 20 + height,
                             str(round(self.tdrWindow.distance_axis[int((x - self.leftMargin) * x_step) - 1]/2, 1)) + "m")
 
-            qp.setPen(self.sweepColor)
+            pen = QtGui.QPen(self.sweepColor)
+            pen.setWidth(self.pointSize)
+            qp.setPen(pen)
             for i in range(len(self.tdrWindow.distance_axis)):
                 qp.drawPoint(self.leftMargin + int(i / x_step), height - int(self.tdrWindow.td[i] / y_step))
             id_max = np.argmax(self.tdrWindow.td)
@@ -1737,6 +1752,10 @@ class RealImaginaryChart(FrequencyChart):
             pen.setColor(c)
             qp.setPen(pen)
             qp.drawLine(self.leftMargin + self.chartWidth, 9, self.leftMargin + self.chartWidth + 5, 9)
+
+        primary_pen.setWidth(self.pointSize)
+        secondary_pen.setWidth(self.pointSize)
+        line_pen.setWidth(self.lineThickness)
 
         for i in range(len(self.data)):
             x = self.getXPosition(self.data[i])

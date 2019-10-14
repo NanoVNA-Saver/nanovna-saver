@@ -1127,6 +1127,24 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         display_options_layout.addRow("Second reference color", self.btnSecondaryReferenceColorPicker)
 
+        self.pointSizeInput = QtWidgets.QSpinBox()
+        self.pointSizeInput.setValue(self.app.settings.value("PointSize", 2, int))
+        self.pointSizeInput.setMinimum(1)
+        self.pointSizeInput.setMaximum(10)
+        self.pointSizeInput.setSuffix(" px")
+        self.pointSizeInput.setAlignment(QtCore.Qt.AlignRight)
+        self.pointSizeInput.valueChanged.connect(self.changePointSize)
+        display_options_layout.addRow("Point size", self.pointSizeInput)
+
+        self.lineThicknessInput = QtWidgets.QSpinBox()
+        self.lineThicknessInput.setValue(self.app.settings.value("LineThickness", 1, int))
+        self.lineThicknessInput.setMinimum(1)
+        self.lineThicknessInput.setMaximum(10)
+        self.lineThicknessInput.setSuffix(" px")
+        self.lineThicknessInput.setAlignment(QtCore.Qt.AlignRight)
+        self.lineThicknessInput.valueChanged.connect(self.changeLineThickness)
+        display_options_layout.addRow("Line thickness", self.lineThicknessInput)
+
         color_options_box = QtWidgets.QGroupBox("Chart colors")
         color_options_layout = QtWidgets.QFormLayout(color_options_box)
 
@@ -1145,7 +1163,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.btn_foreground_picker.clicked.connect(lambda: self.setColor("foreground", QtWidgets.QColorDialog.getColor(self.foregroundColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
 
         color_options_layout.addRow("Chart foreground", self.btn_foreground_picker)
-        
+
         self.btn_text_picker = QtWidgets.QPushButton("█")
         self.btn_text_picker.setFixedWidth(20)
         self.btn_text_picker.clicked.connect(lambda: self.setColor("text", QtWidgets.QColorDialog.getColor(self.textColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
@@ -1256,7 +1274,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         chart01_selection.setCurrentIndex(selections.index(self.app.settings.value("Chart01", "S11 Return Loss")))
         chart01_selection.currentTextChanged.connect(lambda: self.changeChart(0, 1, chart01_selection.currentText()))
         charts_layout.addWidget(chart01_selection, 0, 1)
-        
+
         chart02_selection = QtWidgets.QComboBox()
         chart02_selection.addItems(selections)
         chart02_selection.setCurrentIndex(selections.index(self.app.settings.value("Chart02", "None")))
@@ -1378,6 +1396,16 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.app.settings.setValue("ShowLines", state)
         for c in self.app.subscribing_charts:
             c.setDrawLines(state)
+
+    def changePointSize(self, size: int):
+        self.app.settings.setValue("PointSize", size)
+        for c in self.app.subscribing_charts:
+            c.setPointSize(size)
+
+    def changeLineThickness(self, size: int):
+        self.app.settings.setValue("LineThickness", size)
+        for c in self.app.subscribing_charts:
+            c.setLineThickness(size)
 
     def changeDarkMode(self):
         state = self.dark_mode_option.isChecked()
