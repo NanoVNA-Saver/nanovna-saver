@@ -122,6 +122,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s11QualityFactor = QualityFactorChart("S11 Quality Factor")
         self.s11RealImaginary = RealImaginaryChart("S11 R+jX")
         self.tdr_chart = TDRChart("TDR")
+        self.tdr_mainwindow_chart = TDRChart("TDR")
 
         # List of all the S11 charts, for selecting
         self.s11charts: List[Chart] = []
@@ -140,14 +141,15 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         # List of all charts that can be selected for display
         self.selectable_charts = self.s11charts + self.s21charts
-        self.selectable_charts.append(self.tdr_chart)
-
-        for c in self.selectable_charts:
-            c.popoutRequested.connect(self.popoutChart)
+        self.selectable_charts.append(self.tdr_mainwindow_chart)
 
         # List of all charts that subscribe to updates (including duplicates!)
         self.subscribing_charts = []
         self.subscribing_charts.extend(self.selectable_charts)
+        self.subscribing_charts.append(self.tdr_chart)
+
+        for c in self.subscribing_charts:
+            c.popoutRequested.connect(self.popoutChart)
 
         self.charts_layout = QtWidgets.QGridLayout()
 
@@ -341,7 +343,9 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.tdr_window = TDRWindow(self)
         self.tdr_chart.tdrWindow = self.tdr_window
+        self.tdr_mainwindow_chart.tdrWindow = self.tdr_window
         self.tdr_window.updated.connect(self.tdr_chart.update)
+        self.tdr_window.updated.connect(self.tdr_mainwindow_chart.update)
 
         tdr_control_box = QtWidgets.QGroupBox()
         tdr_control_box.setTitle("TDR")

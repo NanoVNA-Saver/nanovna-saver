@@ -47,7 +47,9 @@ class VNA:
             return NanoVNA_F(app, serialPort)
         elif firmware.find("NanoVNA") > 0:
             return NanoVNA(app, serialPort)
-        return InvalidVNA(app, serialPort)
+        else:
+            logger.warning("Did not recognize NanoVNA type from firmware.")
+            return NanoVNA(app, serialPort)
 
     def readFrequencies(self) -> List[str]:
         pass
