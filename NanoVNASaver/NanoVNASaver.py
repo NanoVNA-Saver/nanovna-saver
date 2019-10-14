@@ -238,8 +238,10 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.btnSweep = QtWidgets.QPushButton("Sweep")
         self.btnSweep.clicked.connect(self.sweep)
+        self.btnSweep.setShortcut(QtCore.Qt.Key_W | QtCore.Qt.CTRL)
         self.btnStopSweep = QtWidgets.QPushButton("Stop")
         self.btnStopSweep.clicked.connect(self.stopSweep)
+        self.btnStopSweep.setShortcut(QtCore.Qt.Key_Escape)
         self.btnStopSweep.setDisabled(True)
         btn_layout = QtWidgets.QHBoxLayout()
         btn_layout.addWidget(self.btnSweep)
@@ -1007,6 +1009,7 @@ class NanoVNASaver(QtWidgets.QWidget):
     def popoutChart(self, chart: Chart):
         logger.debug("Requested popout for chart: %s", chart.name)
         new_chart = self.copyChart(chart)
+        new_chart.isPopout = True
         new_chart.show()
         new_chart.setWindowTitle(new_chart.name)
 

@@ -50,6 +50,7 @@ class Chart(QtWidgets.QWidget):
     minChartHeight = 200
     minChartWidth = 200
 
+    isPopout = False
     popoutRequested = pyqtSignal(object)
 
     def __init__(self, name):
@@ -592,11 +593,17 @@ class SquareChart(Chart):
         super().__init__(name)
         sizepolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.MinimumExpanding)
         self.setSizePolicy(sizepolicy)
+        self.chartWidth = self.width()-40
+        self.chartHeight = self.height()-40
 
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
-        self.setFixedWidth(a0.size().height())
-        self.chartWidth = a0.size().height()-40
-        self.chartHeight = a0.size().height()-40
+        if not self.isPopout:
+            self.setFixedWidth(a0.size().height())
+            self.chartWidth = a0.size().height()-40
+            self.chartHeight = a0.size().height()-40
+        else:
+            min_dimension = min(a0.size().height(), a0.size().width())
+            self.chartWidth = self.chartHeight = min_dimension - 40
         self.update()
 
 
