@@ -510,15 +510,15 @@ class CalibrationWindow(QtWidgets.QWidget):
                                              "Calibration assistant",
                                              "This calibration assistant will help you create a calibration in the " +
                                              "NanoVNASaver application.  It will sweep the standards for you, and "+
-                                             "guide you through the process.\n\n" +
+                                             "guide you through the process.<br><br>" +
                                              "Before starting, ensure you have Open, Short and Load standards " +
                                              "available, and the cables you wish to have calibrated with the device " +
-                                             "connected.\n\n" +
+                                             "connected.<br><br>" +
                                              "If you want a 2-port calibration, also have a \"through\" connector " +
-                                             "to hand.\n\n" +
-                                             "The best results are achieved by having the NanoVNA calibrated " +
+                                             "to hand.<br><br>" +
+                                             "<b>The best results are achieved by having the NanoVNA calibrated " +
                                              "on-device for the full span of interest and saved to save slot 0 " +
-                                             "before starting.\n\n" +
+                                             "before starting.</b><br><br>" +
                                              "Once you are ready to proceed, press Ok",
                                              QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
         response = introduction.exec()
