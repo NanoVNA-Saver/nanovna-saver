@@ -656,6 +656,7 @@ class PhaseChart(FrequencyChart):
         new_chart: PhaseChart = super().copy()
         new_chart.setUnwrap(self.unwrap)
         new_chart.action_unwrap.setChecked(self.unwrap)
+        return new_chart
 
     def setUnwrap(self, unwrap: bool):
         self.unwrap = unwrap
@@ -1606,6 +1607,7 @@ class RealImaginaryChart(FrequencyChart):
         new_chart.maxDisplayImag = self.maxDisplayImag
         new_chart.minDisplayReal = self.minDisplayReal
         new_chart.minDisplayImag = self.minDisplayImag
+        return new_chart
 
     def drawChart(self, qp: QtGui.QPainter):
         qp.setPen(QtGui.QPen(self.textColor))

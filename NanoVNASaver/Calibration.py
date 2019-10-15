@@ -533,6 +533,12 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.btn_automatic.setDisabled(False)
             return
 
+        if self.app.sweepSettingsWindow.continuous_sweep_radiobutton.isChecked():
+            QtWidgets.QMessageBox(QtWidgets.QMessageBox.Information, "Continuous sweep enabled",
+                                  "Please disable continuous sweeping before attempting calibration.").exec()
+            self.btn_automatic.setDisabled(False)
+            return
+
         short_step = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Information,
                                            "Calibrate short",
                                            "Please connect the \"short\" standard to port 0 of the NanoVNA.\n\n" +
