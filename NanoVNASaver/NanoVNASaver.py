@@ -1435,6 +1435,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
                 c.setBackgroundColor(self.backgroundColor)
                 c.setForegroundColor(self.foregroundColor)
                 c.setTextColor(self.textColor)
+                c.setSWRColor(self.vswrColor)
         else:
             self.dark_mode_option.setDisabled(False)
             self.btn_background_picker.setDisabled(True)
