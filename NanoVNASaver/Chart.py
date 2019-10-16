@@ -15,11 +15,12 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import collections
 import math
-from typing import List
+from typing import List, Set
 import numpy as np
 import logging
 
 from PyQt5 import QtWidgets, QtGui, QtCore
+from PyQt5.QtCore import pyqtSignal
 
 from .Marker import Marker
 logger = logging.getLogger(__name__)
@@ -36,15 +37,24 @@ class Chart(QtWidgets.QWidget):
     backgroundColor: QtGui.QColor = QtGui.QColor(QtCore.Qt.white)
     foregroundColor: QtGui.QColor = QtGui.QColor(QtCore.Qt.lightGray)
     textColor: QtGui.QColor = QtGui.QColor(QtCore.Qt.black)
+    swrColor: QtGui.QColor = QtGui.QColor(QtCore.Qt.red)
+    swrColor.setAlpha(128)
     data: List[Datapoint] = []
     reference: List[Datapoint] = []
     markers: List[Marker] = []
+    swrMarkers: Set[float] = set()
     bands = None
     draggedMarker: Marker = None
     name = ""
     drawLines = False
     minChartHeight = 200
     minChartWidth = 200
+    lineThickness = 1
+    pointSize = 2
+
+
+    isPopout = False
+    popoutRequested = pyqtSignal(object)
 
     def __init__(self, name):
         super().__init__()
@@ -54,6 +64,11 @@ class Chart(QtWidgets.QWidget):
         self.action_save_screenshot = QtWidgets.QAction("Save image")
         self.action_save_screenshot.triggered.connect(self.saveScreenshot)
         self.addAction(self.action_save_screenshot)
+        self.action_popout = QtWidgets.QAction("Popout chart")
+        self.action_popout.triggered.connect(lambda: self.popoutRequested.emit(self))
+        self.addAction(self.action_popout)
+
+        self.swrMarkers = set()
 
     def setSweepColor(self, color : QtGui.QColor):
         self.sweepColor = color
@@ -103,6 +118,14 @@ class Chart(QtWidgets.QWidget):
 
     def setBands(self, bands):
         self.bands = bands
+
+    def setLineThickness(self, thickness):
+        self.lineThickness = thickness
+        self.update()
+
+    def setPointSize(self, size):
+        self.pointSize = size
+        self.update()
 
     def getActiveMarker(self, event: QtGui.QMouseEvent) -> Marker:
         if self.draggedMarker is not None:
@@ -171,6 +194,46 @@ class Chart(QtWidgets.QWidget):
         if filename != "":
             self.grab().save(filename)
 
+    def copy(self):
+        new_chart = self.__class__(self.name)
+        new_chart.data = self.data
+        new_chart.reference = self.reference
+        new_chart.sweepColor = self.sweepColor
+        new_chart.secondarySweepColor = self.secondarySweepColor
+        new_chart.referenceColor = self.referenceColor
+        new_chart.secondaryReferenceColor = self.secondaryReferenceColor
+        new_chart.setBackgroundColor(self.backgroundColor)
+        new_chart.textColor = self.textColor
+        new_chart.foregroundColor = self.foregroundColor
+        new_chart.swrColor = self.swrColor
+        new_chart.markers = self.markers
+        new_chart.swrMarkers = self.swrMarkers
+        new_chart.bands = self.bands
+        new_chart.drawLines = self.drawLines
+        new_chart.resize(self.width(), self.height())
+        return new_chart
+
+    def addSWRMarker(self, swr: float):
+        self.swrMarkers.add(swr)
+        self.update()
+
+    def removeSWRMarker(self, swr: float):
+        try:
+            self.swrMarkers.remove(swr)
+        except KeyError:
+            logger.debug("KeyError from %s", self.name)
+            return
+        finally:
+            self.update()
+
+    def clearSWRMarkers(self):
+        self.swrMarkers.clear()
+        self.update()
+
+    def setSWRColor(self, color: QtGui.QColor):
+        self.swrColor = color
+        self.update()
+
 
 class FrequencyChart(Chart):
     fstart = 0
@@ -185,8 +248,7 @@ class FrequencyChart(Chart):
     fixedSpan = False
     fixedValues = False
 
-    linear = True
-    logarithmic = False
+    logarithmicX = False
 
     chartWidth = Chart.minChartWidth
     chartHeight = Chart.minChartHeight
@@ -229,6 +291,20 @@ class FrequencyChart(Chart):
 
         self.x_menu.addAction(self.action_set_fixed_start)
         self.x_menu.addAction(self.action_set_fixed_stop)
+        
+        self.x_menu.addSeparator()
+        frequency_mode_group = QtWidgets.QActionGroup(self.x_menu)
+        self.action_set_linear_x = QtWidgets.QAction("Linear")
+        self.action_set_linear_x.setCheckable(True)
+        self.action_set_logarithmic_x = QtWidgets.QAction("Logarithmic")
+        self.action_set_logarithmic_x.setCheckable(True)
+        frequency_mode_group.addAction(self.action_set_linear_x)
+        frequency_mode_group.addAction(self.action_set_logarithmic_x)
+        self.action_set_linear_x.triggered.connect(lambda: self.setLogarithmicX(False))
+        self.action_set_logarithmic_x.triggered.connect(lambda: self.setLogarithmicX(True))
+        self.action_set_linear_x.setChecked(True)
+        self.x_menu.addAction(self.action_set_linear_x)
+        self.x_menu.addAction(self.action_set_logarithmic_x)
 
         self.y_menu = QtWidgets.QMenu("Data axis")
         self.y_action_automatic = QtWidgets.QAction("Automatic")
@@ -258,6 +334,9 @@ class FrequencyChart(Chart):
         self.menu.addMenu(self.y_menu)
         self.menu.addSeparator()
         self.menu.addAction(self.action_save_screenshot)
+        self.action_popout = QtWidgets.QAction("Popout chart")
+        self.action_popout.triggered.connect(lambda: self.popoutRequested.emit(self))
+        self.menu.addAction(self.action_popout)
 
     def contextMenuEvent(self, event):
         self.action_set_fixed_start.setText("Start (" + Chart.shortenFrequency(self.minFrequency) + ")")
@@ -281,6 +360,10 @@ class FrequencyChart(Chart):
             self.fixedValues = False
             self.y_action_automatic.setChecked(True)
             self.y_action_fixed_span.setChecked(False)
+        self.update()
+
+    def setLogarithmicX(self, logarithmic: bool):
+        self.logarithmicX = logarithmic
         self.update()
 
     def setMinimumFrequency(self):
@@ -332,12 +415,18 @@ class FrequencyChart(Chart):
         self.y_action_automatic.setChecked(True)
         self.fixedSpan = False
         self.action_automatic.setChecked(True)
+        self.logarithmicX = False
         self.update()
 
     def getXPosition(self, d: Datapoint) -> int:
         span = self.fstop - self.fstart
         if span > 0:
-            return self.leftMargin + 1 + round(self.chartWidth * (d.freq - self.fstart) / span)
+            if self.logarithmicX:
+                span = math.log(self.fstop) - math.log(self.fstart)
+                return self.leftMargin + 1 +\
+                       round(self.chartWidth * (math.log(d.freq) - math.log(self.fstart)) / span)
+            else:
+                return self.leftMargin + 1 + round(self.chartWidth * (d.freq - self.fstart) / span)
         else:
             return math.floor(self.width()/2)
 
@@ -353,9 +442,14 @@ class FrequencyChart(Chart):
         a0.accept()
         if self.fstop - self.fstart > 0:
             m = self.getActiveMarker(a0)
-            span = self.fstop - self.fstart
-            step = span/self.chartWidth
-            f = self.fstart + absx * step
+            if self.logarithmicX:
+                span = math.log(self.fstop) - math.log(self.fstart)
+                step = span/self.chartWidth
+                f = math.exp(math.log(self.fstart) + absx * step)
+            else:
+                span = self.fstop - self.fstart
+                step = span/self.chartWidth
+                f = self.fstart + absx * step
             m.setFrequency(str(round(f)))
             m.frequencyInput.setText(str(round(f)))
         return
@@ -380,6 +474,23 @@ class FrequencyChart(Chart):
                         "Data outside frequency span")
         qp.end()
 
+    def drawFrequencyTicks(self, qp):
+        fspan = self.fstop - self.fstart
+        qp.setPen(self.textColor)
+        qp.drawText(self.leftMargin - 20, self.topMargin + self.chartHeight + 15, Chart.shortenFrequency(self.fstart))
+        ticks = math.floor(self.chartWidth / 100)  # Number of ticks does not include the origin
+        for i in range(ticks):
+            x = self.leftMargin + round((i + 1) * self.chartWidth / ticks)
+            if self.logarithmicX:
+                fspan = math.log(self.fstop) - math.log(self.fstart)
+                freq = round(math.exp(((i + 1) * fspan / ticks) + math.log(self.fstart)))
+            else:
+                freq = round(fspan / ticks * (i + 1) + self.fstart)
+            qp.setPen(QtGui.QPen(self.foregroundColor))
+            qp.drawLine(x, self.topMargin, x, self.topMargin + self.chartHeight + 5)
+            qp.setPen(self.textColor)
+            qp.drawText(x - 20, self.topMargin + self.chartHeight + 15, Chart.shortenFrequency(freq))
+
     def drawBands(self, qp, fstart, fstop):
         qp.setBrush(self.bands.color)
         qp.setPen(QtGui.QColor(128, 128, 128, 0))  # Don't outline the bands
@@ -403,9 +514,9 @@ class FrequencyChart(Chart):
 
     def drawData(self, qp: QtGui.QPainter, data: List[Datapoint], color: QtGui.QColor):
         pen = QtGui.QPen(color)
-        pen.setWidth(2)
+        pen.setWidth(self.pointSize)
         line_pen = QtGui.QPen(color)
-        line_pen.setWidth(1)
+        line_pen.setWidth(self.lineThickness)
         qp.setPen(pen)
         for i in range(len(data)):
             x, y = self.getPosition(data[i])
@@ -465,17 +576,47 @@ class FrequencyChart(Chart):
         else:
             return x, y
 
+    def copy(self):
+        new_chart: FrequencyChart = super().copy()
+        new_chart.fstart = self.fstart
+        new_chart.fstop = self.fstop
+        new_chart.maxFrequency = self.maxFrequency
+        new_chart.minFrequency = self.minFrequency
+        new_chart.minDisplayValue = self.minDisplayValue
+        new_chart.maxDisplayValue = self.maxDisplayValue
+        new_chart.pointSize = self.pointSize
+        new_chart.lineThickness = self.lineThickness
+
+        new_chart.setFixedSpan(self.fixedSpan)
+        new_chart.action_automatic.setChecked(not self.fixedSpan)
+        new_chart.action_fixed_span.setChecked(self.fixedSpan)
+
+        new_chart.setFixedValues(self.fixedValues)
+        new_chart.y_action_automatic.setChecked(not self.fixedValues)
+        new_chart.y_action_fixed_span.setChecked(self.fixedValues)
+
+        new_chart.setLogarithmicX(self.logarithmicX)
+        new_chart.action_set_logarithmic_x.setChecked(self.logarithmicX)
+        new_chart.action_set_linear_x.setChecked(not self.logarithmicX)
+        return new_chart
+
 
 class SquareChart(Chart):
     def __init__(self, name):
         super().__init__(name)
         sizepolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.MinimumExpanding)
         self.setSizePolicy(sizepolicy)
+        self.chartWidth = self.width()-40
+        self.chartHeight = self.height()-40
 
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
-        self.setFixedWidth(a0.size().height())
-        self.chartWidth = a0.size().height()-40
-        self.chartHeight = a0.size().height()-40
+        if not self.isPopout:
+            self.setFixedWidth(a0.size().height())
+            self.chartWidth = a0.size().height()-40
+            self.chartHeight = a0.size().height()-40
+        else:
+            min_dimension = min(a0.size().height(), a0.size().width())
+            self.chartWidth = self.chartHeight = min_dimension - 40
         self.update()
 
 
@@ -511,6 +652,12 @@ class PhaseChart(FrequencyChart):
         self.action_unwrap.triggered.connect(lambda: self.setUnwrap(self.action_unwrap.isChecked()))
         self.y_menu.addAction(self.action_unwrap)
 
+    def copy(self):
+        new_chart: PhaseChart = super().copy()
+        new_chart.setUnwrap(self.unwrap)
+        new_chart.action_unwrap.setChecked(self.unwrap)
+        return new_chart
+
     def setUnwrap(self, unwrap: bool):
         self.unwrap = unwrap
         self.update()
@@ -526,9 +673,9 @@ class PhaseChart(FrequencyChart):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
         pen = QtGui.QPen(self.sweepColor)
-        pen.setWidth(2)
+        pen.setWidth(self.pointSize)
         line_pen = QtGui.QPen(self.sweepColor)
-        line_pen.setWidth(1)
+        line_pen.setWidth(self.lineThickness)
 
         if self.unwrap:
             rawData = []
@@ -601,15 +748,7 @@ class PhaseChart(FrequencyChart):
         if self.bands.enabled:
             self.drawBands(qp, fstart, fstop)
 
-        qp.setPen(self.textColor)
-        qp.drawText(self.leftMargin-20, self.topMargin + self.chartHeight + 15, Chart.shortenFrequency(self.fstart))
-        ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
-        for i in range(ticks):
-            x = self.leftMargin + round((i+1)*self.chartWidth/ticks)
-            qp.setPen(QtGui.QPen(self.foregroundColor))
-            qp.drawLine(x, 20, x, 20+self.chartHeight+5)
-            qp.setPen(self.textColor)
-            qp.drawText(x-20, self.topMargin+self.chartHeight+15, Chart.shortenFrequency(round(fspan/ticks*(i+1) + self.fstart)))
+        self.drawFrequencyTicks(qp)
 
         self.drawData(qp, self.data, self.sweepColor)
         self.drawData(qp, self.reference, self.referenceColor)
@@ -668,9 +807,9 @@ class VSWRChart(FrequencyChart):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
         pen = QtGui.QPen(self.sweepColor)
-        pen.setWidth(2)
+        pen.setWidth(self.pointSize)
         line_pen = QtGui.QPen(self.sweepColor)
-        line_pen.setWidth(1)
+        line_pen.setWidth(self.lineThickness)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(1)
         if self.fixedSpan:
@@ -718,7 +857,7 @@ class VSWRChart(FrequencyChart):
                     vswrstr = str(round(vswr))
                 else:
                     vswrstr = str(round(vswr, digits))
-            qp.drawText(3, y+3, vswrstr)
+                qp.drawText(3, y+3, vswrstr)
             qp.setPen(QtGui.QPen(self.foregroundColor))
             qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.chartWidth, y)
         qp.drawLine(self.leftMargin - 5, self.topMargin, self.leftMargin + self.chartWidth, self.topMargin)
@@ -729,17 +868,14 @@ class VSWRChart(FrequencyChart):
         else:
             vswrstr = str(round(maxVSWR, digits))
         qp.drawText(3, 35, vswrstr)
-        # qp.drawText(3, self.chartHeight + self.topMargin, str(minVSWR))
-        # At least 100 px between ticks
 
-        qp.drawText(self.leftMargin-20, self.topMargin + self.chartHeight + 15, Chart.shortenFrequency(fstart))
-        ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
-        for i in range(ticks):
-            x = self.leftMargin + round((i+1)*self.chartWidth/ticks)
-            qp.setPen(QtGui.QPen(self.foregroundColor))
-            qp.drawLine(x, self.topMargin, x, self.topMargin + self.chartHeight + 5)
-            qp.setPen(self.textColor)
-            qp.drawText(x-20, self.topMargin + self.chartHeight + 15, Chart.shortenFrequency(round(fspan/ticks*(i+1) + fstart)))
+        self.drawFrequencyTicks(qp)
+
+        qp.setPen(self.swrColor)
+        for vswr in self.swrMarkers:
+            y = self.topMargin + round((self.maxVSWR - vswr) / self.span * self.chartHeight)
+            qp.drawLine(self.leftMargin, y, self.leftMargin + self.chartWidth, y)
+            qp.drawText(self.leftMargin + 3, y - 1, str(vswr))
 
         self.drawData(qp, self.data, self.sweepColor)
         self.drawData(qp, self.reference, self.referenceColor)
@@ -798,9 +934,9 @@ class PolarChart(SquareChart):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
         pen = QtGui.QPen(self.sweepColor)
-        pen.setWidth(2)
+        pen.setWidth(self.pointSize)
         line_pen = QtGui.QPen(self.sweepColor)
-        line_pen.setWidth(1)
+        line_pen.setWidth(self.lineThickness)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(1)
         qp.setPen(pen)
@@ -932,13 +1068,22 @@ class SmithChart(SquareChart):
         qp.drawArc(centerX - self.chartWidth*2, centerY, self.chartWidth*5, self.chartHeight*5, int(93.85*16), int(18.85*16))  # Im(Z) = -0.2
         qp.drawArc(centerX - self.chartWidth*2, centerY, self.chartWidth*5, -self.chartHeight*5, int(-93.85 * 16), int(-18.85 * 16))  # Im(Z) = 0.2
 
+        qp.setPen(self.swrColor)
+        for swr in self.swrMarkers:
+            if swr <= 1:
+                continue
+            gamma = (swr - 1)/(swr + 1)
+            r = round(gamma * self.chartWidth/2)
+            qp.drawEllipse(QtCore.QPoint(centerX, centerY), r, r)
+            qp.drawText(QtCore.QRect(centerX - 50, centerY - 4 + r, 100, 20), QtCore.Qt.AlignCenter, str(swr))
+
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
         pen = QtGui.QPen(self.sweepColor)
-        pen.setWidth(2)
+        pen.setWidth(self.pointSize)
         line_pen = QtGui.QPen(self.sweepColor)
-        line_pen.setWidth(1)
+        line_pen.setWidth(self.lineThickness)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(1)
         qp.setPen(pen)
@@ -1058,9 +1203,9 @@ class LogMagChart(FrequencyChart):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
         pen = QtGui.QPen(self.sweepColor)
-        pen.setWidth(2)
+        pen.setWidth(self.pointSize)
         line_pen = QtGui.QPen(self.sweepColor)
-        line_pen.setWidth(1)
+        line_pen.setWidth(self.lineThickness)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(1)
         if not self.fixedSpan:
@@ -1175,15 +1320,18 @@ class LogMagChart(FrequencyChart):
         qp.setPen(self.textColor)
         qp.drawText(3, self.topMargin + 4, str(maxValue))
         qp.drawText(3, self.chartHeight+self.topMargin, str(minValue))
-        # Frequency ticks
-        qp.drawText(self.leftMargin-20, self.topMargin + self.chartHeight + 15, Chart.shortenFrequency(self.fstart))
-        ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
-        for i in range(ticks):
-            x = self.leftMargin + round((i+1)*self.chartWidth/ticks)
-            qp.setPen(QtGui.QPen(self.foregroundColor))
-            qp.drawLine(x, 20, x, self.topMargin+self.chartHeight+5)
-            qp.setPen(self.textColor)
-            qp.drawText(x-20, self.topMargin+self.chartHeight+15, LogMagChart.shortenFrequency(round(fspan/ticks*(i+1) + self.fstart)))
+        self.drawFrequencyTicks(qp)
+
+        qp.setPen(self.swrColor)
+        for vswr in self.swrMarkers:
+            if vswr <= 1:
+                continue
+            logMag = 20 * math.log10((vswr-1)/(vswr+1))
+            if self.isInverted:
+                logMag = logMag * -1
+            y = self.topMargin + round((self.maxValue - logMag) / self.span * self.chartHeight)
+            qp.drawLine(self.leftMargin, y, self.leftMargin + self.chartWidth, y)
+            qp.drawText(self.leftMargin + 3, y - 1, "VSWR: " + str(vswr))
 
         self.drawData(qp, self.data, self.sweepColor)
         self.drawData(qp, self.reference, self.referenceColor)
@@ -1199,6 +1347,12 @@ class LogMagChart(FrequencyChart):
             return -NanoVNASaver.gain(p)
         else:
             return NanoVNASaver.gain(p)
+
+    def copy(self):
+        new_chart: LogMagChart = super().copy()
+        new_chart.isInverted = self.isInverted
+        new_chart.span = self.span
+        return new_chart
 
 
 class QualityFactorChart(FrequencyChart):
@@ -1285,9 +1439,9 @@ class QualityFactorChart(FrequencyChart):
         if self.span == 0:
             return
         pen = QtGui.QPen(self.sweepColor)
-        pen.setWidth(2)
+        pen.setWidth(self.pointSize)
         line_pen = QtGui.QPen(self.sweepColor)
-        line_pen.setWidth(1)
+        line_pen.setWidth(self.lineThickness)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(1)
         if self.fixedSpan:
@@ -1308,17 +1462,7 @@ class QualityFactorChart(FrequencyChart):
         if self.bands.enabled:
             self.drawBands(qp, fstart, fstop)
 
-        qp.setPen(self.textColor)
-        qp.drawText(self.leftMargin-20, self.topMargin + self.chartHeight + 15, Chart.shortenFrequency(fstart))
-        ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
-        for i in range(ticks):
-            x = self.leftMargin + round((i+1)*self.chartWidth/ticks)
-            qp.setPen(QtGui.QPen(self.foregroundColor))
-            qp.drawLine(x, self.topMargin - 5, x, self.topMargin + self.chartHeight + 5)
-            qp.setPen(self.textColor)
-            qp.drawText(x - 20, self.topMargin + self.chartHeight + 15,
-                        Chart.shortenFrequency(round(fspan/ticks*(i+1) + fstart)))
-
+        self.drawFrequencyTicks(qp)
         self.drawData(qp, self.data, self.sweepColor)
         self.drawData(qp, self.reference, self.referenceColor)
         self.drawMarkers(qp)
@@ -1337,11 +1481,18 @@ class TDRChart(Chart):
         self.rightMargin = 20
         self.bottomMargin = 35
         self.setMinimumSize(250, 250)
-        self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding))
+        self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
+                                                 QtWidgets.QSizePolicy.MinimumExpanding))
         pal = QtGui.QPalette()
         pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
+
+    def copy(self):
+        new_chart = super().copy()
+        new_chart.tdrWindow = self.tdrWindow
+        self.tdrWindow.updated.connect(new_chart.update)
+        return new_chart
 
     def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
         qp = QtGui.QPainter(self)
@@ -1359,7 +1510,7 @@ class TDRChart(Chart):
         ticks = math.floor((self.width() - self.leftMargin)/100)  # Number of ticks does not include the origin
 
         if len(self.tdrWindow.td) > 0:
-            x_step = len(self.tdrWindow.distance_axis) / width
+            x_step = len(self.tdrWindow.distance_axis) / (width * 2)
             y_step = np.max(self.tdrWindow.td)*1.1 / height
 
             for i in range(ticks):
@@ -1370,7 +1521,9 @@ class TDRChart(Chart):
                 qp.drawText(x - 20, 20 + height,
                             str(round(self.tdrWindow.distance_axis[int((x - self.leftMargin) * x_step) - 1]/2, 1)) + "m")
 
-            qp.setPen(self.sweepColor)
+            pen = QtGui.QPen(self.sweepColor)
+            pen.setWidth(self.pointSize)
+            qp.setPen(pen)
             for i in range(len(self.tdrWindow.distance_axis)):
                 qp.drawPoint(self.leftMargin + int(i / x_step), height - int(self.tdrWindow.td[i] / y_step))
             id_max = np.argmax(self.tdrWindow.td)
@@ -1451,6 +1604,15 @@ class RealImaginaryChart(FrequencyChart):
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
+    def copy(self):
+        new_chart: RealImaginaryChart = super().copy()
+
+        new_chart.maxDisplayReal = self.maxDisplayReal
+        new_chart.maxDisplayImag = self.maxDisplayImag
+        new_chart.minDisplayReal = self.minDisplayReal
+        new_chart.minDisplayImag = self.minDisplayImag
+        return new_chart
+
     def drawChart(self, qp: QtGui.QPainter):
         qp.setPen(QtGui.QPen(self.textColor))
         qp.drawText(self.leftMargin + 5, 15, self.name + " (\N{OHM SIGN})")
@@ -1466,9 +1628,9 @@ class RealImaginaryChart(FrequencyChart):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
         pen = QtGui.QPen(self.sweepColor)
-        pen.setWidth(2)
+        pen.setWidth(self.pointSize)
         line_pen = QtGui.QPen(self.sweepColor)
-        line_pen.setWidth(1)
+        line_pen.setWidth(self.lineThickness)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(1)
         if self.fixedSpan:
@@ -1579,18 +1741,10 @@ class RealImaginaryChart(FrequencyChart):
         qp.drawText(3, self.chartHeight + self.topMargin, str(round(min_real, 1)))
         qp.drawText(self.leftMargin + self.chartWidth + 8, self.chartHeight + self.topMargin, str(round(min_imag, 1)))
 
-        qp.drawText(self.leftMargin-20, self.topMargin + self.chartHeight + 15, Chart.shortenFrequency(fstart))
-        ticks = math.floor(self.chartWidth/100)  # Number of ticks does not include the origin
-        for i in range(ticks):
-            x = self.leftMargin + round((i+1)*self.chartWidth/ticks)
-            qp.setPen(QtGui.QPen(self.foregroundColor))
-            qp.drawLine(x, self.topMargin - 5, x, self.topMargin + self.chartHeight + 5)
-            qp.setPen(self.textColor)
-            qp.drawText(x-20, self.topMargin + self.chartHeight + 15, Chart.shortenFrequency(round(fspan/ticks*(i+1) + fstart)))
+        self.drawFrequencyTicks(qp)
 
         primary_pen = pen
         secondary_pen = QtGui.QPen(self.secondarySweepColor)
-        secondary_pen.setWidth(2)
         if len(self.data) > 0:
             c = QtGui.QColor(self.sweepColor)
             c.setAlpha(255)
@@ -1603,6 +1757,10 @@ class RealImaginaryChart(FrequencyChart):
             pen.setColor(c)
             qp.setPen(pen)
             qp.drawLine(self.leftMargin + self.chartWidth, 9, self.leftMargin + self.chartWidth + 5, 9)
+
+        primary_pen.setWidth(self.pointSize)
+        secondary_pen.setWidth(self.pointSize)
+        line_pen.setWidth(self.lineThickness)
 
         for i in range(len(self.data)):
             x = self.getXPosition(self.data[i])
@@ -1678,7 +1836,7 @@ class RealImaginaryChart(FrequencyChart):
                 prev_y_re = self.getReYPosition(self.reference[i-1])
                 prev_y_im = self.getImYPosition(self.reference[i-1])
 
-                line_pen.setColor(self.secondaryReferenceColor)
+                line_pen.setColor(self.referenceColor)
                 qp.setPen(line_pen)
                 # Real part first
                 if self.isPlotable(x, y_re) and self.isPlotable(prev_x, prev_y_re):

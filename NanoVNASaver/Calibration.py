@@ -138,10 +138,10 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.short_l2_input = QtWidgets.QLineEdit("0")
         self.short_l3_input = QtWidgets.QLineEdit("0")
         self.short_length = QtWidgets.QLineEdit("0")
-        cal_short_form.addRow("L0 (F(e-12))", self.short_l0_input)
-        cal_short_form.addRow("L1 (F(e-24))", self.short_l1_input)
-        cal_short_form.addRow("L2 (F(e-33))", self.short_l2_input)
-        cal_short_form.addRow("L3 (F(e-42))", self.short_l3_input)
+        cal_short_form.addRow("L0 (H(e-12))", self.short_l0_input)
+        cal_short_form.addRow("L1 (H(e-24))", self.short_l1_input)
+        cal_short_form.addRow("L2 (H(e-33))", self.short_l2_input)
+        cal_short_form.addRow("L3 (H(e-42))", self.short_l3_input)
         cal_short_form.addRow("Offset Delay (ps)", self.short_length)
 
         self.cal_open_box = QtWidgets.QGroupBox("Open")
@@ -152,10 +152,10 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.open_c2_input = QtWidgets.QLineEdit("0")
         self.open_c3_input = QtWidgets.QLineEdit("0")
         self.open_length = QtWidgets.QLineEdit("0")
-        cal_open_form.addRow("C0 (H(e-15))", self.open_c0_input)
-        cal_open_form.addRow("C1 (H(e-27))", self.open_c1_input)
-        cal_open_form.addRow("C2 (H(e-36))", self.open_c2_input)
-        cal_open_form.addRow("C3 (H(e-45))", self.open_c3_input)
+        cal_open_form.addRow("C0 (F(e-15))", self.open_c0_input)
+        cal_open_form.addRow("C1 (F(e-27))", self.open_c1_input)
+        cal_open_form.addRow("C2 (F(e-36))", self.open_c2_input)
+        cal_open_form.addRow("C3 (F(e-45))", self.open_c3_input)
         cal_open_form.addRow("Offset Delay (ps)", self.open_length)
 
         self.cal_load_box = QtWidgets.QGroupBox("Load")
@@ -510,15 +510,15 @@ class CalibrationWindow(QtWidgets.QWidget):
                                              "Calibration assistant",
                                              "This calibration assistant will help you create a calibration in the " +
                                              "NanoVNASaver application.  It will sweep the standards for you, and "+
-                                             "guide you through the process.\n\n" +
+                                             "guide you through the process.<br><br>" +
                                              "Before starting, ensure you have Open, Short and Load standards " +
                                              "available, and the cables you wish to have calibrated with the device " +
-                                             "connected.\n\n" +
+                                             "connected.<br><br>" +
                                              "If you want a 2-port calibration, also have a \"through\" connector " +
-                                             "to hand.\n\n" +
-                                             "The best results are achieved by having the NanoVNA calibrated " +
+                                             "to hand.<br><br>" +
+                                             "<b>The best results are achieved by having the NanoVNA calibrated " +
                                              "on-device for the full span of interest and saved to save slot 0 " +
-                                             "before starting.\n\n" +
+                                             "before starting.</b><br><br>" +
                                              "Once you are ready to proceed, press Ok",
                                              QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
         response = introduction.exec()
@@ -530,6 +530,12 @@ class CalibrationWindow(QtWidgets.QWidget):
         if not self.app.serial.is_open:
             QtWidgets.QMessageBox(QtWidgets.QMessageBox.Information, "NanoVNA not connected",
                                   "Please ensure the NanoVNA is connected before attempting calibration.").exec()
+            self.btn_automatic.setDisabled(False)
+            return
+
+        if self.app.sweepSettingsWindow.continuous_sweep_radiobutton.isChecked():
+            QtWidgets.QMessageBox(QtWidgets.QMessageBox.Information, "Continuous sweep enabled",
+                                  "Please disable continuous sweeping before attempting calibration.").exec()
             self.btn_automatic.setDisabled(False)
             return
 

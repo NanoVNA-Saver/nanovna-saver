@@ -57,7 +57,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         else:
             self.icon = QtGui.QIcon("icon_48x48.png")
         self.setWindowIcon(self.icon)
-
         self.settings = QtCore.QSettings(QtCore.QSettings.IniFormat,
                                          QtCore.QSettings.UserScope,
                                          "NanoVNASaver", "NanoVNASaver")
@@ -111,6 +110,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         widget.setLayout(layout)
         scrollarea.setWidget(widget)
 
+        # outer.setContentsMargins(2, 2, 2, 2)  # Small screen mode, reduce margins?
+
         self.s11SmithChart = SmithChart("S11 Smith Chart")
         self.s21PolarChart = PolarChart("S21 Polar Plot")
         self.s11LogMag = LogMagChart("S11 Return Loss")
@@ -120,7 +121,10 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s11VSWR = VSWRChart("S11 VSWR")
         self.s11QualityFactor = QualityFactorChart("S11 Quality Factor")
         self.s11RealImaginary = RealImaginaryChart("S11 R+jX")
+        self.tdr_chart = TDRChart("TDR")
+        self.tdr_mainwindow_chart = TDRChart("TDR")
 
+        # List of all the S11 charts, for selecting
         self.s11charts: List[Chart] = []
         self.s11charts.append(self.s11SmithChart)
         self.s11charts.append(self.s11LogMag)
@@ -129,15 +133,23 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s11charts.append(self.s11RealImaginary)
         self.s11charts.append(self.s11QualityFactor)
 
+        # List of all the S21 charts, for selecting
         self.s21charts: List[Chart] = []
         self.s21charts.append(self.s21PolarChart)
         self.s21charts.append(self.s21LogMag)
         self.s21charts.append(self.s21Phase)
 
-        self.charts = self.s11charts + self.s21charts
+        # List of all charts that can be selected for display
+        self.selectable_charts = self.s11charts + self.s21charts
+        self.selectable_charts.append(self.tdr_mainwindow_chart)
 
-        self.tdr_chart = TDRChart("TDR")
-        self.charts.append(self.tdr_chart)
+        # List of all charts that subscribe to updates (including duplicates!)
+        self.subscribing_charts = []
+        self.subscribing_charts.extend(self.selectable_charts)
+        self.subscribing_charts.append(self.tdr_chart)
+
+        for c in self.subscribing_charts:
+            c.popoutRequested.connect(self.popoutChart)
 
         self.charts_layout = QtWidgets.QGridLayout()
 
@@ -178,13 +190,13 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.sweepStartInput.setMinimumWidth(60)
         self.sweepStartInput.setAlignment(QtCore.Qt.AlignRight)
         self.sweepStartInput.textEdited.connect(self.updateCenterSpan)
-
+        self.sweepStartInput.textChanged.connect(self.updateStepSize)
         sweep_input_left_layout.addRow(QtWidgets.QLabel("Start"), self.sweepStartInput)
 
         self.sweepEndInput = QtWidgets.QLineEdit("")
         self.sweepEndInput.setAlignment(QtCore.Qt.AlignRight)
         self.sweepEndInput.textEdited.connect(self.updateCenterSpan)
-
+        self.sweepEndInput.textChanged.connect(self.updateStepSize)
         sweep_input_left_layout.addRow(QtWidgets.QLabel("Stop"), self.sweepEndInput)
 
         self.sweepCenterInput = QtWidgets.QLineEdit("")
@@ -226,8 +238,10 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.btnSweep = QtWidgets.QPushButton("Sweep")
         self.btnSweep.clicked.connect(self.sweep)
+        self.btnSweep.setShortcut(QtCore.Qt.Key_W | QtCore.Qt.CTRL)
         self.btnStopSweep = QtWidgets.QPushButton("Stop")
         self.btnStopSweep.clicked.connect(self.stopSweep)
+        self.btnStopSweep.setShortcut(QtCore.Qt.Key_Escape)
         self.btnStopSweep.setDisabled(True)
         btn_layout = QtWidgets.QHBoxLayout()
         btn_layout.addWidget(self.btnSweep)
@@ -279,7 +293,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.showMarkerButton.clicked.connect(self.toggleMarkerFrame)
         marker_control_layout.addRow(self.showMarkerButton)
 
-        for c in self.charts:
+        for c in self.subscribing_charts:
             c.setMarkers(self.markers)
             c.setBands(self.bands)
         left_column.addWidget(marker_control_box)
@@ -331,6 +345,9 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.tdr_window = TDRWindow(self)
         self.tdr_chart.tdrWindow = self.tdr_window
+        self.tdr_mainwindow_chart.tdrWindow = self.tdr_window
+        self.tdr_window.updated.connect(self.tdr_chart.update)
+        self.tdr_window.updated.connect(self.tdr_mainwindow_chart.update)
 
         tdr_control_box = QtWidgets.QGroupBox()
         tdr_control_box.setTitle("TDR")
@@ -799,7 +816,6 @@ class NanoVNASaver(QtWidgets.QWidget):
             return
         self.sweepSpanInput.setText(str(fspan))
         self.sweepCenterInput.setText(str(fcenter))
-        self.updateStepSize()
 
     def updateStartEnd(self):
         fcenter = self.parseFrequency(self.sweepCenterInput.text())
@@ -812,7 +828,6 @@ class NanoVNASaver(QtWidgets.QWidget):
             return
         self.sweepStartInput.setText(str(fstart))
         self.sweepEndInput.setText(str(fstop))
-        self.updateStepSize()
 
     def updateStepSize(self):
         fspan = self.parseFrequency(self.sweepSpanInput.text())
@@ -931,7 +946,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.referenceS21data = []
         self.referenceSource = ""
         self.updateTitle()
-        for c in self.charts:
+        for c in self.subscribing_charts:
             c.resetReference()
         self.btnResetReference.setDisabled(True)
 
@@ -991,6 +1006,23 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.showError(self.worker.error_message)
         self.stopSerial()
 
+    def popoutChart(self, chart: Chart):
+        logger.debug("Requested popout for chart: %s", chart.name)
+        new_chart = self.copyChart(chart)
+        new_chart.isPopout = True
+        new_chart.show()
+        new_chart.setWindowTitle(new_chart.name)
+
+    def copyChart(self, chart: Chart):
+        new_chart = chart.copy()
+        self.subscribing_charts.append(new_chart)
+        if chart in self.s11charts:
+            self.s11charts.append(new_chart)
+        if chart in self.s21charts:
+            self.s21charts.append(new_chart)
+        new_chart.popoutRequested.connect(self.popoutChart)
+        return new_chart
+
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
         self.worker.stopped = True
         self.settings.setValue("Marker1Color", self.markers[0].color)
@@ -1016,8 +1048,11 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
-        layout = QtWidgets.QVBoxLayout()
+        layout = QtWidgets.QHBoxLayout()
         self.setLayout(layout)
+
+        left_layout = QtWidgets.QVBoxLayout()
+        layout.addLayout(left_layout)
 
         display_options_box = QtWidgets.QGroupBox("Options")
         display_options_layout = QtWidgets.QFormLayout(display_options_box)
@@ -1092,7 +1127,23 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         display_options_layout.addRow("Second reference color", self.btnSecondaryReferenceColorPicker)
 
-        layout.addWidget(display_options_box)
+        self.pointSizeInput = QtWidgets.QSpinBox()
+        self.pointSizeInput.setValue(self.app.settings.value("PointSize", 2, int))
+        self.pointSizeInput.setMinimum(1)
+        self.pointSizeInput.setMaximum(10)
+        self.pointSizeInput.setSuffix(" px")
+        self.pointSizeInput.setAlignment(QtCore.Qt.AlignRight)
+        self.pointSizeInput.valueChanged.connect(self.changePointSize)
+        display_options_layout.addRow("Point size", self.pointSizeInput)
+
+        self.lineThicknessInput = QtWidgets.QSpinBox()
+        self.lineThicknessInput.setValue(self.app.settings.value("LineThickness", 1, int))
+        self.lineThicknessInput.setMinimum(1)
+        self.lineThicknessInput.setMaximum(10)
+        self.lineThicknessInput.setSuffix(" px")
+        self.lineThicknessInput.setAlignment(QtCore.Qt.AlignRight)
+        self.lineThicknessInput.valueChanged.connect(self.changeLineThickness)
+        display_options_layout.addRow("Line thickness", self.lineThicknessInput)
 
         color_options_box = QtWidgets.QGroupBox("Chart colors")
         color_options_layout = QtWidgets.QFormLayout(color_options_box)
@@ -1112,14 +1163,15 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.btn_foreground_picker.clicked.connect(lambda: self.setColor("foreground", QtWidgets.QColorDialog.getColor(self.foregroundColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
 
         color_options_layout.addRow("Chart foreground", self.btn_foreground_picker)
-        
+
         self.btn_text_picker = QtWidgets.QPushButton("█")
         self.btn_text_picker.setFixedWidth(20)
         self.btn_text_picker.clicked.connect(lambda: self.setColor("text", QtWidgets.QColorDialog.getColor(self.textColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
 
         color_options_layout.addRow("Chart text", self.btn_text_picker)
 
-        layout.addWidget(color_options_box)
+        right_layout = QtWidgets.QVBoxLayout()
+        layout.addLayout(right_layout)
 
         font_options_box = QtWidgets.QGroupBox("Font")
         font_options_layout = QtWidgets.QFormLayout(font_options_box)
@@ -1133,8 +1185,6 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         self.font_dropdown.currentTextChanged.connect(self.changeFont)
         font_options_layout.addRow("Font size", self.font_dropdown)
-
-        layout.addWidget(font_options_box)
 
         bands_box = QtWidgets.QGroupBox("Bands")
         bands_layout = QtWidgets.QFormLayout(bands_box)
@@ -1157,7 +1207,45 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         bands_layout.addRow(self.btn_manage_bands)
 
-        layout.addWidget(bands_box)
+        vswr_marker_box = QtWidgets.QGroupBox("VSWR Markers")
+        vswr_marker_layout = QtWidgets.QFormLayout(vswr_marker_box)
+
+        self.vswrMarkers: List[float] = self.app.settings.value("VSWRMarkers", [], float)
+
+        if isinstance(self.vswrMarkers, float):
+            if self.vswrMarkers == 0:
+                self.vswrMarkers = []
+            else:
+                # Single values from the .ini become floats rather than lists. Convert them.
+                self.vswrMarkers = [self.vswrMarkers]
+
+        self.btn_vswr_picker = QtWidgets.QPushButton("█")
+        self.btn_vswr_picker.setFixedWidth(20)
+        self.btn_vswr_picker.clicked.connect(lambda: self.setColor("vswr", QtWidgets.QColorDialog.getColor(self.vswrColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
+
+        vswr_marker_layout.addRow("VSWR Markers", self.btn_vswr_picker)
+
+        self.vswr_marker_dropdown = QtWidgets.QComboBox()
+        vswr_marker_layout.addRow(self.vswr_marker_dropdown)
+
+        if len(self.vswrMarkers) == 0:
+            self.vswr_marker_dropdown.addItem("None")
+        else:
+            for m in self.vswrMarkers:
+                self.vswr_marker_dropdown.addItem(str(m))
+                for c in self.app.s11charts:
+                    c.addSWRMarker(m)
+
+        self.vswr_marker_dropdown.setCurrentIndex(0)
+        btn_add_marker = QtWidgets.QPushButton("Add ...")
+        btn_remove_marker = QtWidgets.QPushButton("Remove")
+        vswr_marker_btn_layout = QtWidgets.QHBoxLayout()
+        vswr_marker_btn_layout.addWidget(btn_add_marker)
+        vswr_marker_btn_layout.addWidget(btn_remove_marker)
+        vswr_marker_layout.addRow(vswr_marker_btn_layout)
+
+        btn_add_marker.clicked.connect(self.addVSWRMarker)
+        btn_remove_marker.clicked.connect(self.removeVSWRMarker)
 
         charts_box = QtWidgets.QGroupBox("Displayed charts")
         charts_layout = QtWidgets.QGridLayout(charts_box)
@@ -1173,7 +1261,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         selections = []
 
-        for c in self.app.charts:
+        for c in self.app.selectable_charts:
             selections.append(c.name)
 
         selections.append("None")
@@ -1189,7 +1277,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         chart01_selection.setCurrentIndex(selections.index(self.app.settings.value("Chart01", "S11 Return Loss")))
         chart01_selection.currentTextChanged.connect(lambda: self.changeChart(0, 1, chart01_selection.currentText()))
         charts_layout.addWidget(chart01_selection, 0, 1)
-        
+
         chart02_selection = QtWidgets.QComboBox()
         chart02_selection.addItems(selections)
         chart02_selection.setCurrentIndex(selections.index(self.app.settings.value("Chart02", "None")))
@@ -1221,10 +1309,6 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.changeChart(1, 1, chart11_selection.currentText())
         self.changeChart(1, 2, chart12_selection.currentText())
 
-        layout.addWidget(charts_box)
-        self.dark_mode_option.setChecked(self.app.settings.value("DarkMode", False, bool))
-        self.show_lines_option.setChecked(self.app.settings.value("ShowLines", False, bool))
-
         self.backgroundColor = self.app.settings.value("BackgroundColor", defaultValue=QtGui.QColor("white"),
                                                        type=QtGui.QColor)
         self.foregroundColor = self.app.settings.value("ForegroundColor", defaultValue=QtGui.QColor("lightgray"),
@@ -1234,6 +1318,11 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.bandsColor = self.app.settings.value("BandsColor", defaultValue=QtGui.QColor(128, 128, 128, 48),
                                                   type=QtGui.QColor)
         self.app.bands.color = self.bandsColor
+        self.vswrColor = self.app.settings.value("VSWRColor", defaultValue=QtGui.QColor(192, 0, 0, 128),
+                                                 type=QtGui.QColor)
+
+        self.dark_mode_option.setChecked(self.app.settings.value("DarkMode", False, bool))
+        self.show_lines_option.setChecked(self.app.settings.value("ShowLines", False, bool))
 
         if self.app.settings.value("UseCustomColors", defaultValue=False, type=bool):
             self.dark_mode_option.setDisabled(True)
@@ -1260,9 +1349,22 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         p.setColor(QtGui.QPalette.ButtonText, self.bandsColor)
         self.btn_bands_picker.setPalette(p)
 
+        p = self.btn_vswr_picker.palette()
+        p.setColor(QtGui.QPalette.ButtonText, self.vswrColor)
+        self.btn_vswr_picker.setPalette(p)
+
+        left_layout.addWidget(display_options_box)
+        left_layout.addWidget(charts_box)
+        left_layout.addStretch(1)
+
+        right_layout.addWidget(color_options_box)
+        right_layout.addWidget(font_options_box)
+        right_layout.addWidget(bands_box)
+        right_layout.addWidget(vswr_marker_box)
+
     def changeChart(self, x, y, chart):
         found = None
-        for c in self.app.charts:
+        for c in self.app.selectable_charts:
             if c.name == chart:
                 found = c
 
@@ -1274,6 +1376,10 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self.app.charts_layout.removeWidget(w)
             w.hide()
         if found is not None:
+            if self.app.charts_layout.indexOf(found) > -1:
+                logger.debug("%s is already shown, duplicating.", found.name)
+                found = self.app.copyChart(found)
+
             self.app.charts_layout.addWidget(found, x, y)
             if found.isHidden():
                 found.show()
@@ -1291,22 +1397,34 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
     def changeShowLines(self):
         state = self.show_lines_option.isChecked()
         self.app.settings.setValue("ShowLines", state)
-        for c in self.app.charts:
+        for c in self.app.subscribing_charts:
             c.setDrawLines(state)
+
+    def changePointSize(self, size: int):
+        self.app.settings.setValue("PointSize", size)
+        for c in self.app.subscribing_charts:
+            c.setPointSize(size)
+
+    def changeLineThickness(self, size: int):
+        self.app.settings.setValue("LineThickness", size)
+        for c in self.app.subscribing_charts:
+            c.setLineThickness(size)
 
     def changeDarkMode(self):
         state = self.dark_mode_option.isChecked()
         self.app.settings.setValue("DarkMode", state)
         if state:
-            for c in self.app.charts:
+            for c in self.app.subscribing_charts:
                 c.setBackgroundColor(QtGui.QColor(QtCore.Qt.black))
                 c.setForegroundColor(QtGui.QColor(QtCore.Qt.lightGray))
                 c.setTextColor(QtGui.QColor(QtCore.Qt.white))
+                c.setSWRColor(self.vswrColor)
         else:
-            for c in self.app.charts:
+            for c in self.app.subscribing_charts:
                 c.setBackgroundColor(QtGui.QColor(QtCore.Qt.white))
                 c.setForegroundColor(QtGui.QColor(QtCore.Qt.lightGray))
                 c.setTextColor(QtGui.QColor(QtCore.Qt.black))
+                c.setSWRColor(self.vswrColor)
 
     def changeCustomColors(self):
         self.app.settings.setValue("UseCustomColors", self.use_custom_colors.isChecked())
@@ -1316,10 +1434,11 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self.btn_background_picker.setDisabled(False)
             self.btn_foreground_picker.setDisabled(False)
             self.btn_text_picker.setDisabled(False)
-            for c in self.app.charts:
+            for c in self.app.subscribing_charts:
                 c.setBackgroundColor(self.backgroundColor)
                 c.setForegroundColor(self.foregroundColor)
                 c.setTextColor(self.textColor)
+                c.setSWRColor(self.vswrColor)
         else:
             self.dark_mode_option.setDisabled(False)
             self.btn_background_picker.setDisabled(True)
@@ -1353,6 +1472,12 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self.bandsColor = color
             self.app.settings.setValue("BandsColor", color)
             self.app.bands.setColor(color)
+        elif name == "vswr":
+            p = self.btn_vswr_picker.palette()
+            p.setColor(QtGui.QPalette.ButtonText, color)
+            self.btn_vswr_picker.setPalette(p)
+            self.vswrColor = color
+            self.app.settings.setValue("VSWRColor", color)
         self.changeCustomColors()
 
     def setSweepColor(self, color: QtGui.QColor):
@@ -1363,7 +1488,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self.btnColorPicker.setPalette(p)
             self.app.settings.setValue("SweepColor", color)
             self.app.settings.sync()
-            for c in self.app.charts:
+            for c in self.app.subscribing_charts:
                 c.setSweepColor(color)
 
     def setSecondarySweepColor(self, color: QtGui.QColor):
@@ -1374,7 +1499,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self.btnSecondaryColorPicker.setPalette(p)
             self.app.settings.setValue("SecondarySweepColor", color)
             self.app.settings.sync()
-            for c in self.app.charts:
+            for c in self.app.subscribing_charts:
                 c.setSecondarySweepColor(color)
 
     def setReferenceColor(self, color):
@@ -1386,7 +1511,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self.app.settings.setValue("ReferenceColor", color)
             self.app.settings.sync()
 
-            for c in self.app.charts:
+            for c in self.app.subscribing_charts:
                 c.setReferenceColor(color)
 
     def setSecondaryReferenceColor(self, color):
@@ -1398,14 +1523,14 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self.app.settings.setValue("SecondaryReferenceColor", color)
             self.app.settings.sync()
 
-            for c in self.app.charts:
+            for c in self.app.subscribing_charts:
                 c.setSecondaryReferenceColor(color)
 
     def setShowBands(self, show_bands):
         self.app.bands.enabled = show_bands
         self.app.bands.settings.setValue("ShowBands", show_bands)
         self.app.bands.settings.sync()
-        for c in self.app.charts:
+        for c in self.app.subscribing_charts:
             c.update()
 
     def changeFont(self):
@@ -1419,6 +1544,33 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
     def displayBandsWindow(self):
         self.bandsWindow.show()
         QtWidgets.QApplication.setActiveWindow(self.bandsWindow)
+
+    def addVSWRMarker(self):
+        value, selected = QtWidgets.QInputDialog.getDouble(self, "Add VSWR Marker",
+                                                           "VSWR value to show:", min=1.001, decimals=3)
+        if selected:
+            self.vswrMarkers.append(value)
+            if self.vswr_marker_dropdown.itemText(0) == "None":
+                self.vswr_marker_dropdown.removeItem(0)
+            self.vswr_marker_dropdown.addItem(str(value))
+            self.vswr_marker_dropdown.setCurrentText(str(value))
+            for c in self.app.s11charts:
+                c.addSWRMarker(value)
+            self.app.settings.setValue("VSWRMarkers", self.vswrMarkers)
+
+    def removeVSWRMarker(self):
+        value_str = self.vswr_marker_dropdown.currentText()
+        if value_str != "None":
+            value = float(value_str)
+            self.vswrMarkers.remove(value)
+            self.vswr_marker_dropdown.removeItem(self.vswr_marker_dropdown.currentIndex())
+            if self.vswr_marker_dropdown.count() == 0:
+                self.vswr_marker_dropdown.addItem("None")
+                self.app.settings.remove("VSWRMarkers")
+            else:
+                self.app.settings.setValue("VSWRMarkers", self.vswrMarkers)
+            for c in self.app.s11charts:
+                c.removeSWRMarker(value)
 
 
 class AboutWindow(QtWidgets.QWidget):
@@ -1475,7 +1627,7 @@ class AboutWindow(QtWidgets.QWidget):
         check_for_updates = self.app.settings.value("CheckForUpdates", "Ask")
         if check_for_updates == "Yes":
             self.updateCheckBox.setChecked(True)
-            self.findUpdates(automatic = True)
+            self.findUpdates(automatic=True)
         elif check_for_updates == "No":
             self.updateCheckBox.setChecked(False)
         else:
@@ -1535,7 +1687,9 @@ class AboutWindow(QtWidgets.QWidget):
         update_url = "http://mihtjel.dk/nanovna-saver/latest.json"
 
         try:
-            updates = json.load(request.urlopen(update_url, timeout=3))
+            req = request.Request(update_url)
+            req.add_header('User-Agent', "NanoVNA-Saver/" + self.app.version)
+            updates = json.load(request.urlopen(req, timeout=3))
             latest_version = Version(updates['version'])
             latest_url = updates['url']
         except error.HTTPError as e:
@@ -1571,6 +1725,8 @@ class AboutWindow(QtWidgets.QWidget):
 
 
 class TDRWindow(QtWidgets.QWidget):
+    updated = QtCore.pyqtSignal()
+
     def __init__(self, app: NanoVNASaver):
         super().__init__()
         self.app = app
@@ -1682,7 +1838,7 @@ class TDRWindow(QtWidgets.QWidget):
 
         self.tdr_result_label.setText(str(cable_len) + " m (" + str(feet) + "ft " + str(inches) + "in)")
         self.app.tdr_result_label.setText(str(cable_len) + " m")
-        self.app.tdr_chart.update()
+        self.updated.emit()
 
 
 class SweepSettingsWindow(QtWidgets.QWidget):

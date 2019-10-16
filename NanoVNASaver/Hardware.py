@@ -47,7 +47,9 @@ class VNA:
             return NanoVNA_F(app, serialPort)
         elif firmware.find("NanoVNA") > 0:
             return NanoVNA(app, serialPort)
-        return InvalidVNA(app, serialPort)
+        else:
+            logger.warning("Did not recognize NanoVNA type from firmware.")
+            return NanoVNA(app, serialPort)
 
     def readFrequencies(self) -> List[str]:
         pass
@@ -259,13 +261,13 @@ class Version:
 
     def __init__(self, version_string):
         self.version_string = version_string
-        results = re.match(r"(.*\D+)?(\d+)\.(\d+)\.(\d+)(.*)", version_string)
+        results = re.match(r"(.*\s+)?(\d+)\.(\d+)\.(\d+)(.*)", version_string)
         if results:
             self.major = int(results.group(2))
             self.minor = int(results.group(3))
             self.revision = int(results.group(4))
             self.note = results.group(5)
-            logger.debug("Parsed version as %d.%d.%d%s", self.major, self.minor, self.revision, self.note)
+            logger.debug("Parsed version as \"%d.%d.%d%s\"", self.major, self.minor, self.revision, self.note)
 
     @staticmethod
     def getVersion(major: int, minor: int, revision: int, note=""):

@@ -199,11 +199,12 @@ class LowPassAnalysis(Analysis):
         if sixty_db_location > 0:
             sixty_db_cutoff_frequency = self.app.data21[sixty_db_location].freq
             self.sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency))
+        elif ten_db_location != -1 and twenty_db_location != -1:
+            ten = self.app.data21[ten_db_location].freq
+            twenty = self.app.data21[twenty_db_location].freq
+            sixty_db_frequency = ten * 10 ** (5 * (math.log10(twenty) - math.log10(ten)))
+            self.sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_frequency) + " (derived)")
         else:
-            # # We derive 60 dB instead
-            # factor = 10 * (-54 / decade_attenuation)
-            # sixty_db_cutoff_frequency = round(six_db_cutoff_frequency + six_db_cutoff_frequency * factor)
-            # self.sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency) + " (derived)")
             self.sixty_db_label.setText("Not calculated")
 
         if ten_db_location > 0 and twenty_db_location > 0 and ten_db_location != twenty_db_location:
@@ -358,14 +359,16 @@ class HighPassAnalysis(Analysis):
                 break
 
         if sixty_db_location > 0:
-            sixty_db_cutoff_frequency = self.app.data21[sixty_db_location].freq
-            self.sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency))
-        else:
-            # # We derive 60 dB instead
-            # factor = 10 * (-54 / decade_attenuation)
-            # sixty_db_cutoff_frequency = round(six_db_cutoff_frequency + six_db_cutoff_frequency * factor)
-            # self.sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency) + " (derived)")
-            self.sixty_db_label.setText("Not calculated")
+            if sixty_db_location > 0:
+                sixty_db_cutoff_frequency = self.app.data21[sixty_db_location].freq
+                self.sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency))
+            elif ten_db_location != -1 and twenty_db_location != -1:
+                ten = self.app.data21[ten_db_location].freq
+                twenty = self.app.data21[twenty_db_location].freq
+                sixty_db_frequency = ten * 10 ** (5 * (math.log10(twenty) - math.log10(ten)))
+                self.sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_frequency) + " (derived)")
+            else:
+                self.sixty_db_label.setText("Not calculated")
 
         if ten_db_location > 0 and twenty_db_location > 0 and ten_db_location != twenty_db_location:
             octave_attenuation, decade_attenuation = self.calculateRolloff(ten_db_location, twenty_db_location)
@@ -610,14 +613,16 @@ class BandPassAnalysis(Analysis):
                 break
 
         if sixty_db_location > 0:
-            sixty_db_cutoff_frequency = self.app.data21[sixty_db_location].freq
-            self.lower_sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency))
-        else:
-            # # We derive 60 dB instead
-            # factor = 10 * (-54 / decade_attenuation)
-            # sixty_db_cutoff_frequency = round(six_db_cutoff_frequency + six_db_cutoff_frequency * factor)
-            # self.sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency) + " (derived)")
-            self.lower_sixty_db_label.setText("Not calculated")
+            if sixty_db_location > 0:
+                sixty_db_cutoff_frequency = self.app.data21[sixty_db_location].freq
+                self.lower_sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency))
+            elif ten_db_location != -1 and twenty_db_location != -1:
+                ten = self.app.data21[ten_db_location].freq
+                twenty = self.app.data21[twenty_db_location].freq
+                sixty_db_frequency = ten * 10 ** (5 * (math.log10(twenty) - math.log10(ten)))
+                self.lower_sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_frequency) + " (derived)")
+            else:
+                self.lower_sixty_db_label.setText("Not calculated")
 
         if ten_db_location > 0 and twenty_db_location > 0 and ten_db_location != twenty_db_location:
             octave_attenuation, decade_attenuation = self.calculateRolloff(ten_db_location, twenty_db_location)
@@ -674,11 +679,12 @@ class BandPassAnalysis(Analysis):
         if sixty_db_location > 0:
             sixty_db_cutoff_frequency = self.app.data21[sixty_db_location].freq
             self.upper_sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency))
+        elif ten_db_location != -1 and twenty_db_location != -1:
+            ten = self.app.data21[ten_db_location].freq
+            twenty = self.app.data21[twenty_db_location].freq
+            sixty_db_frequency = ten * 10 ** (5 * (math.log10(twenty) - math.log10(ten)))
+            self.upper_sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_frequency) + " (derived)")
         else:
-            # # We derive 60 dB instead
-            # factor = 10 * (-54 / decade_attenuation)
-            # sixty_db_cutoff_frequency = round(six_db_cutoff_frequency + six_db_cutoff_frequency * factor)
-            # self.sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency) + " (derived)")
             self.upper_sixty_db_label.setText("Not calculated")
 
         if ten_db_location > 0 and twenty_db_location > 0 and ten_db_location != twenty_db_location:
@@ -885,11 +891,12 @@ class BandStopAnalysis(Analysis):
         if sixty_db_location > 0:
             sixty_db_cutoff_frequency = self.app.data21[sixty_db_location].freq
             self.lower_sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency))
+        elif ten_db_location != -1 and twenty_db_location != -1:
+            ten = self.app.data21[ten_db_location].freq
+            twenty = self.app.data21[twenty_db_location].freq
+            sixty_db_frequency = ten * 10 ** (5 * (math.log10(twenty) - math.log10(ten)))
+            self.lower_sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_frequency) + " (derived)")
         else:
-            # # We derive 60 dB instead
-            # factor = 10 * (-54 / decade_attenuation)
-            # sixty_db_cutoff_frequency = round(six_db_cutoff_frequency + six_db_cutoff_frequency * factor)
-            # self.sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency) + " (derived)")
             self.lower_sixty_db_label.setText("Not calculated")
 
         if ten_db_location > 0 and twenty_db_location > 0 and ten_db_location != twenty_db_location:
@@ -947,11 +954,12 @@ class BandStopAnalysis(Analysis):
         if sixty_db_location > 0:
             sixty_db_cutoff_frequency = self.app.data21[sixty_db_location].freq
             self.upper_sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency))
+        elif ten_db_location != -1 and twenty_db_location != -1:
+            ten = self.app.data21[ten_db_location].freq
+            twenty = self.app.data21[twenty_db_location].freq
+            sixty_db_frequency = ten * 10 ** (5 * (math.log10(twenty) - math.log10(ten)))
+            self.upper_sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_frequency) + " (derived)")
         else:
-            # # We derive 60 dB instead
-            # factor = 10 * (-54 / decade_attenuation)
-            # sixty_db_cutoff_frequency = round(six_db_cutoff_frequency + six_db_cutoff_frequency * factor)
-            # self.sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency) + " (derived)")
             self.upper_sixty_db_label.setText("Not calculated")
 
         if ten_db_location > 0 and twenty_db_location > 0 and ten_db_location != twenty_db_location:
