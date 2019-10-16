@@ -1070,6 +1070,8 @@ class SmithChart(SquareChart):
 
         qp.setPen(self.swrColor)
         for swr in self.swrMarkers:
+            if swr <= 1:
+                continue
             gamma = (swr - 1)/(swr + 1)
             r = round(gamma * self.chartWidth/2)
             qp.drawEllipse(QtCore.QPoint(centerX, centerY), r, r)
@@ -1322,6 +1324,8 @@ class LogMagChart(FrequencyChart):
 
         qp.setPen(self.swrColor)
         for vswr in self.swrMarkers:
+            if vswr <= 1:
+                continue
             logMag = 20 * math.log10((vswr-1)/(vswr+1))
             if self.isInverted:
                 logMag = logMag * -1
