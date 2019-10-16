@@ -1213,8 +1213,11 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.vswrMarkers: List[float] = self.app.settings.value("VSWRMarkers", [], float)
 
         if isinstance(self.vswrMarkers, float):
-            # Single values from the .ini become floats rather than lists. Convert them.
-            self.vswrMarkers = [self.vswrMarkers]
+            if self.vswrMarkers == 0:
+                self.vswrMarkers = []
+            else:
+                # Single values from the .ini become floats rather than lists. Convert them.
+                self.vswrMarkers = [self.vswrMarkers]
 
         self.btn_vswr_picker = QtWidgets.QPushButton("█")
         self.btn_vswr_picker.setFixedWidth(20)
@@ -1563,9 +1566,11 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self.vswr_marker_dropdown.removeItem(self.vswr_marker_dropdown.currentIndex())
             if self.vswr_marker_dropdown.count() == 0:
                 self.vswr_marker_dropdown.addItem("None")
+                self.app.settings.remove("VSWRMarkers")
+            else:
+                self.app.settings.setValue("VSWRMarkers", self.vswrMarkers)
             for c in self.app.s11charts:
                 c.removeSWRMarker(value)
-            self.app.settings.setValue("VSWRMarkers", self.vswrMarkers)
 
 
 class AboutWindow(QtWidgets.QWidget):
