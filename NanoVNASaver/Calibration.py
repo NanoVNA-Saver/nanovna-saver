@@ -807,6 +807,7 @@ class Calibration:
                 self.deltaE[i] = - ((g1*(gm2-gm3)-g2*gm2+g3*gm3)*gm1+(g2*gm3-g3*gm3)*gm2) / denominator
             except ZeroDivisionError:
                 self.isCalculated = False
+                # TODO: Output this error more clearly to the user
                 logger.error("Division error - did you use the same measurement for two of short, open and load?")
                 return self.isCalculated
 

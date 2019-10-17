@@ -120,6 +120,7 @@ class VNA:
                 return []
             finally:
                 self.app.serialLock.release()
+            logger.debug("VNA done reading %s (%d values)", value, len(values)-2)
             return values[1:-1]
         else:
             logger.error("Unable to acquire serial lock to read %s", value)

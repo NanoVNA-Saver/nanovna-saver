@@ -607,6 +607,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                 elif self.sweepStartInput.text() == "" or self.sweepEndInput.text() == "":
                     self.sweepStartInput.setText(frequencies[0])
                     self.sweepEndInput.setText(frequencies[100])
+                self.sweepStartInput.textEdited.emit(self.sweepStartInput.text())
                 self.sweepStartInput.textChanged.emit(self.sweepStartInput.text())
             else:
                 logger.warning("No frequencies read")
@@ -1128,7 +1129,9 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         display_options_layout.addRow("Second reference color", self.btnSecondaryReferenceColorPicker)
 
         self.pointSizeInput = QtWidgets.QSpinBox()
-        self.pointSizeInput.setValue(self.app.settings.value("PointSize", 2, int))
+        pointsize = self.app.settings.value("PointSize", 2, int)
+        self.pointSizeInput.setValue(pointsize)
+        self.changePointSize(pointsize)
         self.pointSizeInput.setMinimum(1)
         self.pointSizeInput.setMaximum(10)
         self.pointSizeInput.setSuffix(" px")
@@ -1137,7 +1140,9 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         display_options_layout.addRow("Point size", self.pointSizeInput)
 
         self.lineThicknessInput = QtWidgets.QSpinBox()
-        self.lineThicknessInput.setValue(self.app.settings.value("LineThickness", 1, int))
+        linethickness = self.app.settings.value("LineThickness", 2, int)
+        self.lineThicknessInput.setValue(linethickness)
+        self.changeLineThickness(linethickness)
         self.lineThicknessInput.setMinimum(1)
         self.lineThicknessInput.setMaximum(10)
         self.lineThicknessInput.setSuffix(" px")
