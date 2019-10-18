@@ -30,7 +30,7 @@ from serial.tools import list_ports
 
 from NanoVNASaver.Hardware import VNA, InvalidVNA, Version
 from .Chart import Chart, PhaseChart, VSWRChart, PolarChart, SmithChart, LogMagChart, QualityFactorChart, TDRChart, \
-    RealImaginaryChart
+    RealImaginaryChart, MagnitudeChart, MagnitudeZChart
 from .Calibration import CalibrationWindow, Calibration
 from .Marker import Marker
 from .SweepWorker import SweepWorker
@@ -116,6 +116,9 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s21PolarChart = PolarChart("S21 Polar Plot")
         self.s11LogMag = LogMagChart("S11 Return Loss")
         self.s21LogMag = LogMagChart("S21 Gain")
+        self.s11Mag = MagnitudeChart("|S11|")
+        self.s21Mag = MagnitudeChart("|S21|")
+        self.s11MagZ = MagnitudeZChart("S11 |Z|")
         self.s11Phase = PhaseChart("S11 Phase")
         self.s21Phase = PhaseChart("S21 Phase")
         self.s11VSWR = VSWRChart("S11 VSWR")
@@ -128,6 +131,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s11charts: List[Chart] = []
         self.s11charts.append(self.s11SmithChart)
         self.s11charts.append(self.s11LogMag)
+        self.s11charts.append(self.s11Mag)
+        self.s11charts.append(self.s11MagZ)
         self.s11charts.append(self.s11Phase)
         self.s11charts.append(self.s11VSWR)
         self.s11charts.append(self.s11RealImaginary)
@@ -137,6 +142,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s21charts: List[Chart] = []
         self.s21charts.append(self.s21PolarChart)
         self.s21charts.append(self.s21LogMag)
+        self.s21charts.append(self.s21Mag)
         self.s21charts.append(self.s21Phase)
 
         # List of all charts that can be selected for display
@@ -740,7 +746,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         return im50, re50, vswr
 
     @staticmethod
-    def qualifyFactor(data: Datapoint):
+    def qualityFactor(data: Datapoint):
         im50, re50, _ = NanoVNASaver.vswr(data)
         if re50 != 0:
             Q = abs(im50 / re50)
@@ -1036,7 +1042,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.bands.saveSettings()
         self.threadpool.waitForDone(2500)
         a0.accept()
-        sys.exit()
+        #sys.exit()
 
 
 class DisplaySettingsWindow(QtWidgets.QWidget):

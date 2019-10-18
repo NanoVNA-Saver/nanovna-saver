@@ -20,7 +20,7 @@ from typing import List
 from PyQt5 import QtGui, QtWidgets, QtCore
 from PyQt5.QtCore import pyqtSignal
 
-Datapoint = collections.namedtuple('Datapoint', 'freq re im')
+from NanoVNASaver.RFTools import Datapoint, RFTools
 
 
 class Marker(QtCore.QObject):
@@ -112,8 +112,7 @@ class Marker(QtCore.QObject):
         right_form.addRow("S21 Phase:", self.s21_phase_label)
 
     def setFrequency(self, frequency):
-        from .NanoVNASaver import NanoVNASaver
-        f = NanoVNASaver.parseFrequency(frequency)
+        f = RFTools.parseFrequency(frequency)
         if f > 0:
             self.frequency = f
             self.updated.emit()
@@ -185,10 +184,9 @@ class Marker(QtCore.QObject):
         self.quality_factor_label.setText("")
 
     def updateLabels(self, s11data: List[Datapoint], s21data: List[Datapoint]):
-        from NanoVNASaver.Chart import PhaseChart
-        from NanoVNASaver.NanoVNASaver import NanoVNASaver
         if self.location != -1:
-            im50, re50, vswr = NanoVNASaver.vswr(s11data[self.location])
+            re50, im50 = RFTools.normalize50(s11data[self.location])
+            vswr = RFTools.calculateVSWR(s11data[self.location])
             if re50 > 0:
                 rp = (re50 ** 2 + im50 ** 2) / re50
                 rp = round(rp, 4 - max(0, math.floor(math.log10(abs(rp)))))
@@ -203,9 +201,9 @@ class Marker(QtCore.QObject):
                 xp = (re50 ** 2 + im50 ** 2) / im50
                 xp = round(xp, 4 - max(0, math.floor(math.log10(abs(xp)))))
                 if xp < 0:
-                    xpstr = NanoVNASaver.capacitanceEquivalent(xp, s11data[self.location].freq)
+                    xpstr = RFTools.capacitanceEquivalent(xp, s11data[self.location].freq)
                 else:
-                    xpstr = NanoVNASaver.inductanceEquivalent(xp, s11data[self.location].freq)
+                    xpstr = RFTools.inductanceEquivalent(xp, s11data[self.location].freq)
             else:
                 xpstr = "-"
 
@@ -218,24 +216,24 @@ class Marker(QtCore.QObject):
                 im50str = " +j" + str(im50)
             im50str += " \N{OHM SIGN}"
 
-            self.frequency_label.setText(NanoVNASaver.formatFrequency(s11data[self.location].freq))
+            self.frequency_label.setText(RFTools.formatFrequency(s11data[self.location].freq))
             self.impedance_label.setText(str(re50) + im50str)
             self.parallel_r_label.setText(rpstr)
             self.parallel_x_label.setText(xpstr)
             if self.returnloss_is_positive:
-                returnloss = -round(NanoVNASaver.gain(s11data[self.location]), 3)
+                returnloss = -round(RFTools.gain(s11data[self.location]), 3)
             else:
-                returnloss = round(NanoVNASaver.gain(s11data[self.location]), 3)
+                returnloss = round(RFTools.gain(s11data[self.location]), 3)
             self.returnloss_label.setText(str(returnloss) + " dB")
-            capacitance = NanoVNASaver.capacitanceEquivalent(im50, s11data[self.location].freq)
-            inductance = NanoVNASaver.inductanceEquivalent(im50, s11data[self.location].freq)
+            capacitance = RFTools.capacitanceEquivalent(im50, s11data[self.location].freq)
+            inductance = RFTools.inductanceEquivalent(im50, s11data[self.location].freq)
             self.inductance_label.setText(inductance)
             self.capacitance_label.setText(capacitance)
             vswr = round(vswr, 3)
             if vswr < 0:
                 vswr = "-"
             self.vswr_label.setText(str(vswr))
-            q = NanoVNASaver.qualifyFactor(s11data[self.location])
+            q = RFTools.qualityFactor(s11data[self.location])
             if q > 10000 or q < 0:
                 q_str = "\N{INFINITY}"
             elif q > 1000:
@@ -248,9 +246,8 @@ class Marker(QtCore.QObject):
                 q_str = str(round(q, 3))
             self.quality_factor_label.setText(q_str)
             self.s11_phase_label.setText(
-                str(round(PhaseChart.angle(s11data[self.location]), 2)) + "\N{DEGREE SIGN}")
+                str(round(RFTools.phaseAngle(s11data[self.location]), 2)) + "\N{DEGREE SIGN}")
             if len(s21data) == len(s11data):
-                _, _, vswr = NanoVNASaver.vswr(s21data[self.location])
-                self.gain_label.setText(str(round(NanoVNASaver.gain(s21data[self.location]), 3)) + " dB")
+                self.gain_label.setText(str(round(RFTools.gain(s21data[self.location]), 3)) + " dB")
                 self.s21_phase_label.setText(
-                    str(round(PhaseChart.angle(s21data[self.location]), 2)) + "\N{DEGREE SIGN}")
+                    str(round(RFTools.phaseAngle(s21data[self.location]), 2)) + "\N{DEGREE SIGN}")

@@ -105,7 +105,6 @@ class VNA:
                 data = "a"
                 while data != "":
                     data = self.serial.readline().decode('ascii')
-
                 #  Then send the command to read data
                 self.serial.write(str(value + "\r").encode('ascii'))
                 result = ""
