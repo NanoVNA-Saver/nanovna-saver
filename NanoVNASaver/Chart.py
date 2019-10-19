@@ -211,6 +211,8 @@ class Chart(QtWidgets.QWidget):
         new_chart.bands = self.bands
         new_chart.drawLines = self.drawLines
         new_chart.resize(self.width(), self.height())
+        new_chart.setPointSize(self.pointSize)
+        new_chart.setLineThickness(self.lineThickness)
         return new_chart
 
     def addSWRMarker(self, swr: float):
