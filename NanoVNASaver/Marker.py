@@ -26,7 +26,7 @@ from NanoVNASaver.RFTools import Datapoint, RFTools
 class Marker(QtCore.QObject):
     name = "Marker"
     frequency = 0
-    color = QtGui.QColor()
+    color: QtGui.QColor = QtGui.QColor()
     location = -1
 
     returnloss_is_positive = False
@@ -40,6 +40,7 @@ class Marker(QtCore.QObject):
         if frequency.isnumeric():
             self.frequency = int(frequency)
         self.frequencyInput = QtWidgets.QLineEdit(frequency)
+
         self.frequencyInput.setAlignment(QtCore.Qt.AlignRight)
         self.frequencyInput.textEdited.connect(lambda: self.setFrequency(self.frequencyInput.text()))
 
@@ -69,7 +70,6 @@ class Marker(QtCore.QObject):
 
         self.btnColorPicker = QtWidgets.QPushButton("█")
         self.btnColorPicker.setFixedWidth(20)
-        self.setColor(initialColor)
         self.btnColorPicker.clicked.connect(lambda: self.setColor(QtWidgets.QColorDialog.getColor(self.color, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
         self.isMouseControlledRadioButton = QtWidgets.QRadioButton()
 
@@ -81,9 +81,11 @@ class Marker(QtCore.QObject):
         ################################################################################################################
         # Data display layout
         ################################################################################################################
-
         self.group_box = QtWidgets.QGroupBox(self.name)
+        self.group_box.setMaximumWidth(340)
         box_layout = QtWidgets.QHBoxLayout(self.group_box)
+
+        self.setColor(initialColor)
 
         line = QtWidgets.QFrame()
         line.setFrameShape(QtWidgets.QFrame.VLine)
@@ -128,6 +130,10 @@ class Marker(QtCore.QObject):
             p.setColor(QtGui.QPalette.ButtonText, self.color)
             self.btnColorPicker.setPalette(p)
 
+        color_string = QtCore.QVariant(color)
+        color_string.convert(QtCore.QVariant.String)
+        self.group_box.setStyleSheet('QGroupBox { color: ' + color_string.value() + '};')
+
     def getRow(self):
         return QtWidgets.QLabel(self.name), self.layout
 
@@ -165,7 +171,7 @@ class Marker(QtCore.QObject):
         self.location = len(data)-1
         return
 
-    def getGroupBox(self):
+    def getGroupBox(self) -> QtWidgets.QGroupBox:
         return self.group_box
     
     def resetLabels(self):

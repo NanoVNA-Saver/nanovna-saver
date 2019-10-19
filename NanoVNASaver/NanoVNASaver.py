@@ -48,6 +48,12 @@ logger = logging.getLogger(__name__)
 
 class NanoVNASaver(QtWidgets.QWidget):
     version = ver
+    default_marker_colors = [QtGui.QColor(255, 0, 0),
+                             QtGui.QColor(0, 255, 0),
+                             QtGui.QColor(0, 0, 255),
+                             QtGui.QColor(0, 255, 255),
+                             QtGui.QColor(255, 0, 255),
+                             QtGui.QColor(255, 255, 0)]
 
     def __init__(self):
         super().__init__()
@@ -160,10 +166,10 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.charts_layout = QtWidgets.QGridLayout()
 
         left_column = QtWidgets.QVBoxLayout()
-        marker_column = QtWidgets.QVBoxLayout()
+        self.marker_column = QtWidgets.QVBoxLayout()
         self.marker_frame = QtWidgets.QFrame()
-        marker_column.setContentsMargins(0, 0, 0, 0)
-        self.marker_frame.setLayout(marker_column)
+        self.marker_column.setContentsMargins(0, 0, 0, 0)
+        self.marker_frame.setLayout(self.marker_column)
         right_column = QtWidgets.QVBoxLayout()
         right_column.addLayout(self.charts_layout)
         self.marker_frame.setHidden(not self.settings.value("MarkersVisible", True, bool))
@@ -266,30 +272,18 @@ class NanoVNASaver(QtWidgets.QWidget):
         marker_control_box = QtWidgets.QGroupBox()
         marker_control_box.setTitle("Markers")
         marker_control_box.setMaximumWidth(250)
-        marker_control_layout = QtWidgets.QFormLayout(marker_control_box)
+        self.marker_control_layout = QtWidgets.QFormLayout(marker_control_box)
 
-        marker1_color = self.settings.value("Marker1Color", QtGui.QColor(255, 0, 20), QtGui.QColor)
-        marker1 = Marker("Marker 1", marker1_color)
-        marker1.updated.connect(self.dataUpdated)
-        label, layout = marker1.getRow()
-        marker_control_layout.addRow(label, layout)
-        self.markers.append(marker1)
-        marker1.isMouseControlledRadioButton.setChecked(True)
-
-        marker2_color = self.settings.value("Marker2Color", QtGui.QColor(20, 0, 255), QtGui.QColor)
-        marker2 = Marker("Marker 2", marker2_color)
-        marker2.updated.connect(self.dataUpdated)
-        label, layout = marker2.getRow()
-        marker_control_layout.addRow(label, layout)
-        self.markers.append(marker2)
-
-        marker3_color = self.settings.value("Marker3Color", QtGui.QColor(20, 255, 20), QtGui.QColor)
-        marker3 = Marker("Marker 3", marker3_color)
-        marker3.updated.connect(self.dataUpdated)
-        label, layout = marker3.getRow()
-        marker_control_layout.addRow(label, layout)
-
-        self.markers.append(marker3)
+        marker_count = self.settings.value("MarkerCount", 3, int)
+        for i in range(marker_count):
+            color = self.settings.value("Marker" + str(i+1) + "Color", self.default_marker_colors[i])
+            marker = Marker("Marker " + str(i+1), color)
+            marker.updated.connect(self.dataUpdated)
+            label, layout = marker.getRow()
+            self.marker_control_layout.addRow(label, layout)
+            self.markers.append(marker)
+            if i == 0:
+                marker.isMouseControlledRadioButton.setChecked(True)
 
         self.showMarkerButton = QtWidgets.QPushButton()
         if self.marker_frame.isHidden():
@@ -297,16 +291,21 @@ class NanoVNASaver(QtWidgets.QWidget):
         else:
             self.showMarkerButton.setText("Hide data")
         self.showMarkerButton.clicked.connect(self.toggleMarkerFrame)
-        marker_control_layout.addRow(self.showMarkerButton)
+        self.marker_control_layout.addRow(self.showMarkerButton)
 
         for c in self.subscribing_charts:
             c.setMarkers(self.markers)
             c.setBands(self.bands)
         left_column.addWidget(marker_control_box)
 
-        marker_column.addWidget(self.markers[0].getGroupBox())
-        marker_column.addWidget(self.markers[1].getGroupBox())
-        marker_column.addWidget(self.markers[2].getGroupBox())
+        self.marker_data_layout = QtWidgets.QVBoxLayout()
+        self.marker_data_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.marker_data_layout.addWidget(self.markers[0].getGroupBox())
+        self.marker_data_layout.addWidget(self.markers[1].getGroupBox())
+        self.marker_data_layout.addWidget(self.markers[2].getGroupBox())
+
+        self.marker_column.addLayout(self.marker_data_layout)
 
         ################################################################################################################
         #  Statistics/analysis
@@ -322,7 +321,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s11_min_rl_label = QtWidgets.QLabel()
         s11_control_layout.addRow("Return loss:", self.s11_min_rl_label)
 
-        marker_column.addWidget(s11_control_box)
+        self.marker_column.addWidget(s11_control_box)
 
         s21_control_box = QtWidgets.QGroupBox()
         s21_control_box.setTitle("S21")
@@ -335,15 +334,14 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s21_max_gain_label = QtWidgets.QLabel()
         s21_control_layout.addRow("Max gain:", self.s21_max_gain_label)
 
-        marker_column.addWidget(s21_control_box)
+        self.marker_column.addWidget(s21_control_box)
 
-        marker_column.addSpacerItem(QtWidgets.QSpacerItem(1, 1, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding))
-
+        self.marker_column.addStretch(1)
         self.analysis_window = AnalysisWindow(self)
 
         btn_show_analysis = QtWidgets.QPushButton("Analysis ...")
         btn_show_analysis.clicked.connect(self.displayAnalysisWindow)
-        marker_column.addWidget(btn_show_analysis)
+        self.marker_column.addWidget(btn_show_analysis)
 
         ################################################################################################################
         # TDR
@@ -1032,9 +1030,9 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
         self.worker.stopped = True
-        self.settings.setValue("Marker1Color", self.markers[0].color)
-        self.settings.setValue("Marker2Color", self.markers[1].color)
-        self.settings.setValue("Marker3Color", self.markers[2].color)
+        self.settings.setValue("MarkerCount", len(self.markers))
+        for i in range(len(self.markers)):
+            self.settings.setValue("Marker" + str(i+1) + "Color", self.markers[i].color)
 
         self.settings.setValue("WindowHeight", self.height())
         self.settings.setValue("WindowWidth", self.width())
@@ -1248,15 +1246,29 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
                     c.addSWRMarker(m)
 
         self.vswr_marker_dropdown.setCurrentIndex(0)
-        btn_add_marker = QtWidgets.QPushButton("Add ...")
-        btn_remove_marker = QtWidgets.QPushButton("Remove")
+        btn_add_vswr_marker = QtWidgets.QPushButton("Add ...")
+        btn_remove_vswr_marker = QtWidgets.QPushButton("Remove")
         vswr_marker_btn_layout = QtWidgets.QHBoxLayout()
-        vswr_marker_btn_layout.addWidget(btn_add_marker)
-        vswr_marker_btn_layout.addWidget(btn_remove_marker)
+        vswr_marker_btn_layout.addWidget(btn_add_vswr_marker)
+        vswr_marker_btn_layout.addWidget(btn_remove_vswr_marker)
         vswr_marker_layout.addRow(vswr_marker_btn_layout)
 
-        btn_add_marker.clicked.connect(self.addVSWRMarker)
-        btn_remove_marker.clicked.connect(self.removeVSWRMarker)
+        btn_add_vswr_marker.clicked.connect(self.addVSWRMarker)
+        btn_remove_vswr_marker.clicked.connect(self.removeVSWRMarker)
+
+        markers_box = QtWidgets.QGroupBox("Markers")
+        markers_layout = QtWidgets.QFormLayout(markers_box)
+
+        btn_add_marker = QtWidgets.QPushButton("Add")
+        btn_add_marker.clicked.connect(self.addMarker)
+        btn_remove_marker = QtWidgets.QPushButton("Remove")
+        btn_remove_marker.clicked.connect(self.removeMarker)
+
+        marker_btn_layout = QtWidgets.QHBoxLayout()
+        marker_btn_layout.addWidget(btn_add_marker)
+        marker_btn_layout.addWidget(btn_remove_marker)
+
+        markers_layout.addRow(marker_btn_layout)
 
         charts_box = QtWidgets.QGroupBox("Displayed charts")
         charts_layout = QtWidgets.QGridLayout(charts_box)
@@ -1366,12 +1378,14 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         left_layout.addWidget(display_options_box)
         left_layout.addWidget(charts_box)
+        left_layout.addWidget(markers_box)
         left_layout.addStretch(1)
 
         right_layout.addWidget(color_options_box)
         right_layout.addWidget(font_options_box)
         right_layout.addWidget(bands_box)
         right_layout.addWidget(vswr_marker_box)
+        right_layout.addStretch(1)
 
     def changeChart(self, x, y, chart):
         found = None
@@ -1556,6 +1570,30 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.bandsWindow.show()
         QtWidgets.QApplication.setActiveWindow(self.bandsWindow)
 
+    def addMarker(self):
+        marker_count = len(self.app.markers)
+        if marker_count < 6:
+            color = NanoVNASaver.default_marker_colors[marker_count]
+        else:
+            color = QtGui.QColor(QtCore.Qt.darkGray)
+        new_marker = Marker("Marker " + str(marker_count+1), color)
+        self.app.markers.append(new_marker)
+        self.app.marker_data_layout.addWidget(new_marker.getGroupBox())
+
+        new_marker.updated.connect(self.app.dataUpdated)
+        label, layout = new_marker.getRow()
+        self.app.marker_control_layout.insertRow(marker_count, label, layout)
+
+    def removeMarker(self):
+        last_marker = self.app.markers.pop()
+        last_marker.updated.disconnect(self.app.dataUpdated)
+        self.app.marker_data_layout.removeWidget(last_marker.getGroupBox())
+        self.app.marker_control_layout.removeRow(len(self.app.markers))
+        last_marker.getGroupBox().hide()
+        last_marker.getGroupBox().destroy()
+        label, layout = last_marker.getRow()
+        label.hide()
+
     def addVSWRMarker(self):
         value, selected = QtWidgets.QInputDialog.getDouble(self, "Add VSWR Marker",
                                                            "VSWR value to show:", min=1.001, decimals=3)
@@ -1708,6 +1746,9 @@ class AboutWindow(QtWidgets.QWidget):
             return
         except json.JSONDecodeError as e:
             logger.exception("Checking for updates provided an unparseable file: %s", e)
+            return
+        except error.URLError as e:
+            logger.exception("Checking for updates produced a URL exception: %s", e)
             return
 
         logger.info("Latest version is " + latest_version.version_string)
