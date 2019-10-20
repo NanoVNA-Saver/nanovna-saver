@@ -167,6 +167,7 @@ class SweepWorker(QtCore.QRunnable):
 
     def updateData(self, values11, values21, offset):
         # Update the data from (i*101) to (i+1)*101
+        # TODO: Get rid of the 101 point assumptions
         logger.debug("Calculating data and inserting in existing data at offset %d", offset)
         for i in range(len(values11)):
             re, im = values11[i]
@@ -174,6 +175,7 @@ class SweepWorker(QtCore.QRunnable):
             freq = self.data11[offset*101 + i].freq
             rawData11 = Datapoint(freq, re, im)
             rawData21 = Datapoint(freq, re21, im21)
+            # TODO: Use applyCalibration instead
             if self.app.calibration.isCalculated:
                 re, im = self.app.calibration.correct11(re, im, freq)
                 if self.app.calibration.isValid2Port():
@@ -188,8 +190,6 @@ class SweepWorker(QtCore.QRunnable):
         self.signals.updated.emit()
 
     def saveData(self, frequencies, values11, values21):
-        data = []
-        data12 = []
         rawData11 = []
         rawData21 = []
         logger.debug("Calculating data including corrections")
@@ -199,20 +199,38 @@ class SweepWorker(QtCore.QRunnable):
             freq = frequencies[i]
             rawData11 += [Datapoint(freq, re, im)]
             rawData21 += [Datapoint(freq, re21, im21)]
-            if self.app.calibration.isCalculated:
-                re, im = self.app.calibration.correct11(re, im, freq)
-                if self.app.calibration.isValid2Port():
-                    re21, im21 = self.app.calibration.correct21(re21, im21, freq)
-            data += [Datapoint(freq, re, im)]
-            data12 += [Datapoint(freq, re21, im21)]
-        self.data11 = data
-        self.data21 = data12
+        self.data11, self.data21 = self.applyCalibration(rawData11, rawData21)
         self.rawData11 = rawData11
         self.rawData21 = rawData21
         logger.debug("Saving data to application (%d and %d points)", len(self.data11), len(self.data21))
-        self.app.saveData(data, data12)
+        self.app.saveData(self.data11, self.data21)
         logger.debug("Sending \"updated\" signal")
         self.signals.updated.emit()
+
+    def applyCalibration(self, raw_data11: List[Datapoint], raw_data21: List[Datapoint]) ->\
+                        (List[Datapoint], List[Datapoint]):
+        if not self.app.calibration.isCalculated:
+            return raw_data11, raw_data21
+
+        data11: List[Datapoint] = []
+        data21: List[Datapoint] = []
+
+        if self.app.calibration.isValid1Port():
+            logger.debug("Applying S11 calibration.")
+            for d in raw_data11:
+                re, im = self.app.calibration.correct11(d.re, d.im, d.freq)
+                data11.append(Datapoint(d.freq, re, im))
+        else:
+            data11 = raw_data11
+
+        if self.app.calibration.isValid2Port():
+            logger.debug("Applying S21 calibration.")
+            for d in raw_data21:
+                re, im = self.app.calibration.correct21(d.re, d.im, d.freq)
+                data21.append(Datapoint(d.freq, re, im))
+        else:
+            data21 = raw_data21
+        return data11, data21
 
     def readAveragedSegment(self, start, stop, averages):
         val11 = []

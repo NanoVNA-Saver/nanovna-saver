@@ -414,6 +414,12 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.calibration_status_label.setText("Device calibration")
         self.notes_textedit.clear()
 
+        if len(self.app.worker.rawData11) > 0:
+            # There's raw data, so we can get corrected data
+            logger.debug("Saving and displaying raw data.")
+            self.app.saveData(self.app.worker.rawData11, self.app.worker.rawData21, self.app.sweepSource)
+            self.app.worker.signals.updated.emit()
+
     def calculate(self):
         if self.app.btnStopSweep.isEnabled():
             # Currently sweeping
@@ -470,7 +476,15 @@ class CalibrationWindow(QtWidgets.QWidget):
 
         logger.debug("Attempting calibration calculation.")
         if self.app.calibration.calculateCorrections():
-            self.calibration_status_label.setText("Application calibration (" + str(len(self.app.calibration.s11short)) + " points)")
+            self.calibration_status_label.setText("Application calibration (" +
+                                                  str(len(self.app.calibration.s11short)) + " points)")
+            if len(self.app.worker.rawData11) > 0:
+                # There's raw data, so we can get corrected data
+                logger.debug("Applying calibration to existing sweep data.")
+                self.app.worker.data11, self.app.worker.data21 = self.app.worker.applyCalibration(self.app.worker.rawData11, self.app.worker.rawData21)
+                logger.debug("Saving and displaying corrected data.")
+                self.app.saveData(self.app.worker.data11, self.app.worker.data21, self.app.sweepSource)
+                self.app.worker.signals.updated.emit()
         else:
             # TODO: Put in some error handling here
             self.calibration_status_label.setText("Applying calibration failed.")
