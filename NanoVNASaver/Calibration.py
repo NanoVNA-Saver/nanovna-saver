@@ -420,39 +420,67 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.app.showError("Unable to apply calibration while a sweep is running. " +
                                "Please stop the sweep and try again.")
             return
-        # TODO: Error handling for all the fields.
         if self.use_ideal_values.isChecked():
             self.app.calibration.useIdealShort = True
             self.app.calibration.useIdealOpen = True
             self.app.calibration.useIdealLoad = True
+            self.app.calibration.useIdealThrough = True
         else:
             # We are using custom calibration standards
-            self.app.calibration.shortL0 = float(self.short_l0_input.text())/10**12
-            self.app.calibration.shortL1 = float(self.short_l1_input.text())/10**24
-            self.app.calibration.shortL2 = float(self.short_l2_input.text())/10**33
-            self.app.calibration.shortL3 = float(self.short_l3_input.text())/10**42
-            self.app.calibration.shortLength = float(self.short_length.text())/10**12
-            self.app.calibration.useIdealShort = False
+            try:
+                self.app.calibration.shortL0 = self.getFloatValue(self.short_l0_input.text())/10**12
+                self.app.calibration.shortL1 = self.getFloatValue(self.short_l1_input.text())/10**24
+                self.app.calibration.shortL2 = self.getFloatValue(self.short_l2_input.text())/10**33
+                self.app.calibration.shortL3 = self.getFloatValue(self.short_l3_input.text())/10**42
+                self.app.calibration.shortLength = self.getFloatValue(self.short_length.text())/10**12
+                self.app.calibration.useIdealShort = False
+            except ValueError:
+                self.app.calibration.useIdealShort = True
+                logger.warning("Invalid data for \"short\" calibration standard. Using ideal values.")
 
-            self.app.calibration.openC0 = float(self.open_c0_input.text())/10**15
-            self.app.calibration.openC1 = float(self.open_c1_input.text())/10**27
-            self.app.calibration.openC2 = float(self.open_c2_input.text())/10**36
-            self.app.calibration.openC3 = float(self.open_c3_input.text())/10**45
-            self.app.calibration.openLength = float(self.open_length.text())/10**12
-            self.app.calibration.useIdealOpen = False
+            try:
+                self.app.calibration.openC0 = self.getFloatValue(self.open_c0_input.text())/10**15
+                if self.app.calibration.openC0 == 0:
+                    raise ValueError("C0 cannot be 0.")
+                self.app.calibration.openC1 = self.getFloatValue(self.open_c1_input.text())/10**27
+                self.app.calibration.openC2 = self.getFloatValue(self.open_c2_input.text())/10**36
+                self.app.calibration.openC3 = self.getFloatValue(self.open_c3_input.text())/10**45
+                self.app.calibration.openLength = self.getFloatValue(self.open_length.text())/10**12
+                self.app.calibration.useIdealOpen = False
+            except ValueError:
+                self.app.calibration.useIdealOpen = True
+                logger.warning("Invalid data for \"open\" calibration standard. Using ideal values.")
 
-            self.app.calibration.loadR = float(self.load_resistance.text())
-            self.app.calibration.loadL = float(self.load_inductance.text())/10**12
-            self.app.calibration.loadC = float(self.load_capacitance.text()) / 10 ** 12
-            self.app.calibration.loadLength = float(self.load_length.text())/10**12
-            self.app.calibration.useIdealLoad = False
+            try:
+                self.app.calibration.loadR = self.getFloatValue(self.load_resistance.text())
+                self.app.calibration.loadL = self.getFloatValue(self.load_inductance.text())/10**12
+                self.app.calibration.loadC = self.getFloatValue(self.load_capacitance.text()) / 10 ** 12
+                self.app.calibration.loadLength = self.getFloatValue(self.load_length.text())/10**12
+                self.app.calibration.useIdealLoad = False
+            except ValueError:
+                self.app.calibration.useIdealLoad = True
+                logger.warning("Invalid data for \"load\" calibration standard. Using ideal values.")
 
-            self.app.calibration.throughLength = float(self.through_length.text())/10**12
-            self.app.calibration.useIdealThrough = False
+            try:
+                self.app.calibration.throughLength = self.getFloatValue(self.through_length.text())/10**12
+                self.app.calibration.useIdealThrough = False
+            except ValueError:
+                self.app.calibration.useIdealThrough = True
+                logger.warning("Invalid data for \"through\" calibration standard. Using ideal values.")
 
         logger.debug("Attempting calibration calculation.")
         if self.app.calibration.calculateCorrections():
             self.calibration_status_label.setText("Application calibration (" + str(len(self.app.calibration.s11short)) + " points)")
+        else:
+            # TODO: Put in some error handling here
+            self.calibration_status_label.setText("Applying calibration failed.")
+
+    @staticmethod
+    def getFloatValue(text: str) -> float:
+        if text == "":
+            # Default value is float
+            return 0
+        return float(text)
 
     def loadCalibration(self):
         filename, _ = QtWidgets.QFileDialog.getOpenFileName(filter="Calibration Files (*.cal);;All files (*.*)")
