@@ -475,7 +475,8 @@ class CalibrationWindow(QtWidgets.QWidget):
                 logger.warning("Invalid data for \"through\" calibration standard. Using ideal values.")
 
         logger.debug("Attempting calibration calculation.")
-        if self.app.calibration.calculateCorrections():
+        valid, error = self.app.calibration.calculateCorrections()
+        if valid:
             self.calibration_status_label.setText("Application calibration (" +
                                                   str(len(self.app.calibration.s11short)) + " points)")
             if len(self.app.worker.rawData11) > 0:
@@ -486,7 +487,8 @@ class CalibrationWindow(QtWidgets.QWidget):
                 self.app.saveData(self.app.worker.data11, self.app.worker.data21, self.app.sweepSource)
                 self.app.worker.signals.updated.emit()
         else:
-            # TODO: Put in some error handling here
+            # showError here hides the calibration window, so we need to pop up our own
+            QtWidgets.QMessageBox.warning(self, "Error applying calibration", error)
             self.calibration_status_label.setText("Applying calibration failed.")
 
     @staticmethod
@@ -777,15 +779,23 @@ class Calibration:
     isCalculated = False
 
     def isValid2Port(self):
-        return len(self.s21through) > 0 and len(self.s21isolation) > 0 and self.isValid1Port()
+        valid = len(self.s21through) > 0 and len(self.s21isolation) > 0 and self.isValid1Port()
+        valid &= len(self.s21through) == len(self.s21isolation) == len(self.s11short)
+        return valid
 
     def isValid1Port(self):
-        return len(self.s11short) > 0 and len(self.s11open) > 0 and len(self.s11load) > 0
+        valid = len(self.s11short) > 0 and len(self.s11open) > 0 and len(self.s11load) > 0
+        valid &= len(self.s11short) == len(self.s11open) == len(self.s11load)
+        return valid
 
-    def calculateCorrections(self):
+    def calculateCorrections(self) -> (bool, str):
         if not self.isValid1Port():
             logger.warning("Tried to calibrate from insufficient data.")
-            return False
+            if len(self.s11short) == 0 or len(self.s11open) == 0 or len(self.s11load) == 0:
+                return False, "All of short, open and load calibration steps must be completed for calibration to be " \
+                            + "applied."
+            else:
+                return False, "All calibration data sets must be the same size."
         self.frequencies = [int] * len(self.s11short)
         self.e00 = [np.complex] * len(self.s11short)
         self.e11 = [np.complex] * len(self.s11short)
@@ -847,9 +857,13 @@ class Calibration:
                 self.deltaE[i] = - ((g1*(gm2-gm3)-g2*gm2+g3*gm3)*gm1+(g2*gm3-g3*gm3)*gm2) / denominator
             except ZeroDivisionError:
                 self.isCalculated = False
-                # TODO: Output this error more clearly to the user
                 logger.error("Division error - did you use the same measurement for two of short, open and load?")
-                return self.isCalculated
+                logger.debug("Division error at index %d", i)
+                logger.debug("Short == Load: %s", self.s11short[i] == self.s11load[i])
+                logger.debug("Short == Open: %s", self.s11short[i] == self.s11open[i])
+                logger.debug("Open == Load: %s", self.s11open[i] == self.s11load[i])
+                return self.isCalculated, "Two of short, open and load returned the same values at frequency " \
+                                          + str(self.s11open[i].freq) + " Hz."
 
             if self.isValid2Port():
                 self.e30[i] = np.complex(self.s21isolation[i].re, self.s21isolation[i].im)
@@ -861,7 +875,7 @@ class Calibration:
 
         self.isCalculated = True
         logger.debug("Calibration correctly calculated.")
-        return self.isCalculated
+        return self.isCalculated, "Calibration successful."
 
     def correct11(self, re, im, freq):
         s11m = np.complex(re, im)
