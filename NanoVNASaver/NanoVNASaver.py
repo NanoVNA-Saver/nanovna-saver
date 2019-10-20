@@ -1611,12 +1611,15 @@ class AboutWindow(QtWidgets.QWidget):
             latest_url = updates['url']
         except error.HTTPError as e:
             logger.exception("Checking for updates produced an HTTP exception: %s", e)
+            self.updateLabel.setText("Connection error.")
             return
         except json.JSONDecodeError as e:
             logger.exception("Checking for updates provided an unparseable file: %s", e)
+            self.updateLabel.setText("Data error reading versions.")
             return
         except error.URLError as e:
             logger.exception("Checking for updates produced a URL exception: %s", e)
+            self.updateLabel.setText("Connection error.")
             return
 
         logger.info("Latest version is " + latest_version.version_string)
