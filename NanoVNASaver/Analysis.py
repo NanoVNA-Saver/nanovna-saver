@@ -18,6 +18,7 @@ import math
 
 from PyQt5 import QtWidgets
 
+from NanoVNASaver.RFTools import RFTools
 
 logger = logging.getLogger(__name__)
 
@@ -39,13 +40,12 @@ class Analysis:
         pass
 
     def calculateRolloff(self, location1, location2):
-        from NanoVNASaver.NanoVNASaver import NanoVNASaver
         if location1 == location2:
             return 0, 0
         frequency1 = self.app.data21[location1].freq
         frequency2 = self.app.data21[location2].freq
-        gain1 = NanoVNASaver.gain(self.app.data21[location1])
-        gain2 = NanoVNASaver.gain(self.app.data21[location2])
+        gain1 = RFTools.gain(self.app.data21[location1])
+        gain2 = RFTools.gain(self.app.data21[location2])
         frequency_factor = frequency2 / frequency1
         if frequency_factor < 1:
             frequency_factor = 1 / frequency_factor
@@ -89,7 +89,6 @@ class LowPassAnalysis(Analysis):
         self.db_per_decade_label.clear()
 
     def runAnalysis(self):
-        from NanoVNASaver.NanoVNASaver import NanoVNASaver
         self.reset()
         pass_band_location = self.app.markers[0].location
         logger.debug("Pass band location: %d", pass_band_location)
@@ -104,13 +103,13 @@ class LowPassAnalysis(Analysis):
             self.result_label.setText("Please place " + self.app.markers[0].name  + " in the passband.")
             return
 
-        pass_band_db = NanoVNASaver.gain(self.app.data21[pass_band_location])
+        pass_band_db = RFTools.gain(self.app.data21[pass_band_location])
 
         logger.debug("Initial passband gain: %d", pass_band_db)
 
         initial_cutoff_location = -1
         for i in range(pass_band_location, len(self.app.data21)):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if (pass_band_db - db) > 3:
                 # We found a cutoff location
                 initial_cutoff_location = i
@@ -125,9 +124,9 @@ class LowPassAnalysis(Analysis):
         logger.debug("Found initial cutoff frequency at %d", initial_cutoff_frequency)
 
         peak_location = -1
-        peak_db = NanoVNASaver.gain(self.app.data21[initial_cutoff_location])
+        peak_db = RFTools.gain(self.app.data21[initial_cutoff_location])
         for i in range(0, initial_cutoff_location):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if db > peak_db:
                 peak_db = db
                 peak_location = i
@@ -140,27 +139,27 @@ class LowPassAnalysis(Analysis):
         cutoff_location = -1
         pass_band_db = peak_db
         for i in range(peak_location, len(self.app.data21)):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if (pass_band_db - db) > 3:
                 # We found the cutoff location
                 cutoff_location = i
                 break
 
         cutoff_frequency = self.app.data21[cutoff_location].freq
-        cutoff_gain = NanoVNASaver.gain(self.app.data21[cutoff_location]) - pass_band_db
+        cutoff_gain = RFTools.gain(self.app.data21[cutoff_location]) - pass_band_db
         if cutoff_gain < -4:
             logger.debug("Cutoff frequency found at %f dB - insufficient data points for true -3 dB point.",
                          cutoff_gain)
         logger.debug("Found true cutoff frequency at %d", cutoff_frequency)
 
-        self.cutoff_label.setText(NanoVNASaver.formatFrequency(cutoff_frequency) +
+        self.cutoff_label.setText(RFTools.formatFrequency(cutoff_frequency) +
                                   " (" + str(round(cutoff_gain, 1)) + " dB)")
         self.app.markers[1].setFrequency(str(cutoff_frequency))
         self.app.markers[1].frequencyInput.setText(str(cutoff_frequency))
 
         six_db_location = -1
         for i in range(cutoff_location, len(self.app.data21)):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if (pass_band_db - db) > 6:
                 # We found 6dB location
                 six_db_location = i
@@ -170,11 +169,11 @@ class LowPassAnalysis(Analysis):
             self.result_label.setText("6 dB location not found.")
             return
         six_db_cutoff_frequency = self.app.data21[six_db_location].freq
-        self.six_db_label.setText(NanoVNASaver.formatFrequency(six_db_cutoff_frequency))
+        self.six_db_label.setText(RFTools.formatFrequency(six_db_cutoff_frequency))
 
         ten_db_location = -1
         for i in range(cutoff_location, len(self.app.data21)):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if (pass_band_db - db) > 10:
                 # We found 6dB location
                 ten_db_location = i
@@ -182,7 +181,7 @@ class LowPassAnalysis(Analysis):
 
         twenty_db_location = -1
         for i in range(cutoff_location, len(self.app.data21)):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if (pass_band_db - db) > 20:
                 # We found 6dB location
                 twenty_db_location = i
@@ -190,7 +189,7 @@ class LowPassAnalysis(Analysis):
 
         sixty_db_location = -1
         for i in range(six_db_location, len(self.app.data21)):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if (pass_band_db - db) > 60:
                 # We found 60dB location! Wow.
                 sixty_db_location = i
@@ -198,12 +197,12 @@ class LowPassAnalysis(Analysis):
 
         if sixty_db_location > 0:
             sixty_db_cutoff_frequency = self.app.data21[sixty_db_location].freq
-            self.sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency))
+            self.sixty_db_label.setText(RFTools.formatFrequency(sixty_db_cutoff_frequency))
         elif ten_db_location != -1 and twenty_db_location != -1:
             ten = self.app.data21[ten_db_location].freq
             twenty = self.app.data21[twenty_db_location].freq
             sixty_db_frequency = ten * 10 ** (5 * (math.log10(twenty) - math.log10(ten)))
-            self.sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_frequency) + " (derived)")
+            self.sixty_db_label.setText(RFTools.formatFrequency(sixty_db_frequency) + " (derived)")
         else:
             self.sixty_db_label.setText("Not calculated")
 
@@ -250,7 +249,6 @@ class HighPassAnalysis(Analysis):
         self.db_per_decade_label.clear()
 
     def runAnalysis(self):
-        from NanoVNASaver.NanoVNASaver import NanoVNASaver
         self.reset()
         pass_band_location = self.app.markers[0].location
         logger.debug("Pass band location: %d", pass_band_location)
@@ -265,13 +263,13 @@ class HighPassAnalysis(Analysis):
             self.result_label.setText("Please place " + self.app.markers[0].name  + " in the passband.")
             return
 
-        pass_band_db = NanoVNASaver.gain(self.app.data21[pass_band_location])
+        pass_band_db = RFTools.gain(self.app.data21[pass_band_location])
 
         logger.debug("Initial passband gain: %d", pass_band_db)
 
         initial_cutoff_location = -1
         for i in range(pass_band_location, -1, -1):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if (pass_band_db - db) > 3:
                 # We found a cutoff location
                 initial_cutoff_location = i
@@ -286,9 +284,9 @@ class HighPassAnalysis(Analysis):
         logger.debug("Found initial cutoff frequency at %d", initial_cutoff_frequency)
 
         peak_location = -1
-        peak_db = NanoVNASaver.gain(self.app.data21[initial_cutoff_location])
+        peak_db = RFTools.gain(self.app.data21[initial_cutoff_location])
         for i in range(len(self.app.data21) - 1, initial_cutoff_location - 1, -1):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if db > peak_db:
                 peak_db = db
                 peak_location = i
@@ -301,28 +299,28 @@ class HighPassAnalysis(Analysis):
         cutoff_location = -1
         pass_band_db = peak_db
         for i in range(peak_location, -1, -1):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if (pass_band_db - db) > 3:
                 # We found the cutoff location
                 cutoff_location = i
                 break
 
         cutoff_frequency = self.app.data21[cutoff_location].freq
-        cutoff_gain = NanoVNASaver.gain(self.app.data21[cutoff_location]) - pass_band_db
+        cutoff_gain = RFTools.gain(self.app.data21[cutoff_location]) - pass_band_db
         if cutoff_gain < -4:
             logger.debug("Cutoff frequency found at %f dB - insufficient data points for true -3 dB point.",
                          cutoff_gain)
 
         logger.debug("Found true cutoff frequency at %d", cutoff_frequency)
 
-        self.cutoff_label.setText(NanoVNASaver.formatFrequency(cutoff_frequency) +
+        self.cutoff_label.setText(RFTools.formatFrequency(cutoff_frequency) +
                                   " (" + str(round(cutoff_gain, 1)) + " dB)")
         self.app.markers[1].setFrequency(str(cutoff_frequency))
         self.app.markers[1].frequencyInput.setText(str(cutoff_frequency))
 
         six_db_location = -1
         for i in range(cutoff_location, -1, -1):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if (pass_band_db - db) > 6:
                 # We found 6dB location
                 six_db_location = i
@@ -332,11 +330,11 @@ class HighPassAnalysis(Analysis):
             self.result_label.setText("6 dB location not found.")
             return
         six_db_cutoff_frequency = self.app.data21[six_db_location].freq
-        self.six_db_label.setText(NanoVNASaver.formatFrequency(six_db_cutoff_frequency))
+        self.six_db_label.setText(RFTools.formatFrequency(six_db_cutoff_frequency))
 
         ten_db_location = -1
         for i in range(cutoff_location, -1, -1):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if (pass_band_db - db) > 10:
                 # We found 6dB location
                 ten_db_location = i
@@ -344,7 +342,7 @@ class HighPassAnalysis(Analysis):
 
         twenty_db_location = -1
         for i in range(cutoff_location, -1, -1):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if (pass_band_db - db) > 20:
                 # We found 6dB location
                 twenty_db_location = i
@@ -352,7 +350,7 @@ class HighPassAnalysis(Analysis):
 
         sixty_db_location = -1
         for i in range(six_db_location, -1, -1):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if (pass_band_db - db) > 60:
                 # We found 60dB location! Wow.
                 sixty_db_location = i
@@ -361,12 +359,12 @@ class HighPassAnalysis(Analysis):
         if sixty_db_location > 0:
             if sixty_db_location > 0:
                 sixty_db_cutoff_frequency = self.app.data21[sixty_db_location].freq
-                self.sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency))
+                self.sixty_db_label.setText(RFTools.formatFrequency(sixty_db_cutoff_frequency))
             elif ten_db_location != -1 and twenty_db_location != -1:
                 ten = self.app.data21[ten_db_location].freq
                 twenty = self.app.data21[twenty_db_location].freq
                 sixty_db_frequency = ten * 10 ** (5 * (math.log10(twenty) - math.log10(ten)))
-                self.sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_frequency) + " (derived)")
+                self.sixty_db_label.setText(RFTools.formatFrequency(sixty_db_frequency) + " (derived)")
             else:
                 self.sixty_db_label.setText("Not calculated")
 
@@ -454,7 +452,6 @@ class BandPassAnalysis(Analysis):
         self.lower_db_per_decade_label.clear()
 
     def runAnalysis(self):
-        from NanoVNASaver.NanoVNASaver import NanoVNASaver
         self.reset()
         pass_band_location = self.app.markers[0].location
         logger.debug("Pass band location: %d", pass_band_location)
@@ -469,13 +466,13 @@ class BandPassAnalysis(Analysis):
             self.result_label.setText("Please place " + self.app.markers[0].name  + " in the passband.")
             return
 
-        pass_band_db = NanoVNASaver.gain(self.app.data21[pass_band_location])
+        pass_band_db = RFTools.gain(self.app.data21[pass_band_location])
 
         logger.debug("Initial passband gain: %d", pass_band_db)
 
         initial_lower_cutoff_location = -1
         for i in range(pass_band_location, -1, -1):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if (pass_band_db - db) > 3:
                 # We found a cutoff location
                 initial_lower_cutoff_location = i
@@ -491,7 +488,7 @@ class BandPassAnalysis(Analysis):
 
         initial_upper_cutoff_location = -1
         for i in range(pass_band_location, len(self.app.data21), 1):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if (pass_band_db - db) > 3:
                 # We found a cutoff location
                 initial_upper_cutoff_location = i
@@ -506,9 +503,9 @@ class BandPassAnalysis(Analysis):
         logger.debug("Found initial upper cutoff frequency at %d", initial_upper_cutoff_frequency)
 
         peak_location = -1
-        peak_db = NanoVNASaver.gain(self.app.data21[initial_lower_cutoff_location])
+        peak_db = RFTools.gain(self.app.data21[initial_lower_cutoff_location])
         for i in range(initial_lower_cutoff_location, initial_upper_cutoff_location, 1):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if db > peak_db:
                 peak_db = db
                 peak_location = i
@@ -518,14 +515,14 @@ class BandPassAnalysis(Analysis):
         lower_cutoff_location = -1
         pass_band_db = peak_db
         for i in range(peak_location, -1, -1):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if (pass_band_db - db) > 3:
                 # We found the cutoff location
                 lower_cutoff_location = i
                 break
 
         lower_cutoff_frequency = self.app.data21[lower_cutoff_location].freq
-        lower_cutoff_gain = NanoVNASaver.gain(self.app.data21[lower_cutoff_location]) - pass_band_db
+        lower_cutoff_gain = RFTools.gain(self.app.data21[lower_cutoff_location]) - pass_band_db
 
         if lower_cutoff_gain < -4:
             logger.debug("Lower cutoff frequency found at %f dB - insufficient data points for true -3 dB point.",
@@ -533,7 +530,7 @@ class BandPassAnalysis(Analysis):
 
         logger.debug("Found true lower cutoff frequency at %d", lower_cutoff_frequency)
 
-        self.lower_cutoff_label.setText(NanoVNASaver.formatFrequency(lower_cutoff_frequency) +
+        self.lower_cutoff_label.setText(RFTools.formatFrequency(lower_cutoff_frequency) +
                                         " (" + str(round(lower_cutoff_gain, 1)) + " dB)")
 
         self.app.markers[1].setFrequency(str(lower_cutoff_frequency))
@@ -542,21 +539,21 @@ class BandPassAnalysis(Analysis):
         upper_cutoff_location = -1
         pass_band_db = peak_db
         for i in range(peak_location, len(self.app.data21), 1):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if (pass_band_db - db) > 3:
                 # We found the cutoff location
                 upper_cutoff_location = i
                 break
 
         upper_cutoff_frequency = self.app.data21[upper_cutoff_location].freq
-        upper_cutoff_gain = NanoVNASaver.gain(self.app.data21[upper_cutoff_location]) - pass_band_db
+        upper_cutoff_gain = RFTools.gain(self.app.data21[upper_cutoff_location]) - pass_band_db
         if upper_cutoff_gain < -4:
             logger.debug("Upper cutoff frequency found at %f dB - insufficient data points for true -3 dB point.",
                          upper_cutoff_gain)
 
         logger.debug("Found true upper cutoff frequency at %d", upper_cutoff_frequency)
 
-        self.upper_cutoff_label.setText(NanoVNASaver.formatFrequency(upper_cutoff_frequency) +
+        self.upper_cutoff_label.setText(RFTools.formatFrequency(upper_cutoff_frequency) +
                                         " (" + str(round(upper_cutoff_gain, 1)) + " dB)")
         self.app.markers[2].setFrequency(str(upper_cutoff_frequency))
         self.app.markers[2].frequencyInput.setText(str(upper_cutoff_frequency))
@@ -565,8 +562,8 @@ class BandPassAnalysis(Analysis):
         center_frequency = math.sqrt(lower_cutoff_frequency * upper_cutoff_frequency)
         q = center_frequency / span
 
-        self.span_label.setText(NanoVNASaver.formatFrequency(span))
-        self.center_frequency_label.setText(NanoVNASaver.formatFrequency(center_frequency))
+        self.span_label.setText(RFTools.formatFrequency(span))
+        self.center_frequency_label.setText(RFTools.formatFrequency(center_frequency))
         self.quality_label.setText(str(round(q, 2)))
 
         self.app.markers[0].setFrequency(str(round(center_frequency)))
@@ -576,7 +573,7 @@ class BandPassAnalysis(Analysis):
 
         lower_six_db_location = -1
         for i in range(lower_cutoff_location, -1, -1):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if (pass_band_db - db) > 6:
                 # We found 6dB location
                 lower_six_db_location = i
@@ -586,11 +583,11 @@ class BandPassAnalysis(Analysis):
             self.result_label.setText("Lower 6 dB location not found.")
             return
         lower_six_db_cutoff_frequency = self.app.data21[lower_six_db_location].freq
-        self.lower_six_db_label.setText(NanoVNASaver.formatFrequency(lower_six_db_cutoff_frequency))
+        self.lower_six_db_label.setText(RFTools.formatFrequency(lower_six_db_cutoff_frequency))
 
         ten_db_location = -1
         for i in range(lower_cutoff_location, -1, -1):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if (pass_band_db - db) > 10:
                 # We found 6dB location
                 ten_db_location = i
@@ -598,7 +595,7 @@ class BandPassAnalysis(Analysis):
 
         twenty_db_location = -1
         for i in range(lower_cutoff_location, -1, -1):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if (pass_band_db - db) > 20:
                 # We found 6dB location
                 twenty_db_location = i
@@ -606,7 +603,7 @@ class BandPassAnalysis(Analysis):
 
         sixty_db_location = -1
         for i in range(lower_six_db_location, -1, -1):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if (pass_band_db - db) > 60:
                 # We found 60dB location! Wow.
                 sixty_db_location = i
@@ -615,12 +612,12 @@ class BandPassAnalysis(Analysis):
         if sixty_db_location > 0:
             if sixty_db_location > 0:
                 sixty_db_cutoff_frequency = self.app.data21[sixty_db_location].freq
-                self.lower_sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency))
+                self.lower_sixty_db_label.setText(RFTools.formatFrequency(sixty_db_cutoff_frequency))
             elif ten_db_location != -1 and twenty_db_location != -1:
                 ten = self.app.data21[ten_db_location].freq
                 twenty = self.app.data21[twenty_db_location].freq
                 sixty_db_frequency = ten * 10 ** (5 * (math.log10(twenty) - math.log10(ten)))
-                self.lower_sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_frequency) + " (derived)")
+                self.lower_sixty_db_label.setText(RFTools.formatFrequency(sixty_db_frequency) + " (derived)")
             else:
                 self.lower_sixty_db_label.setText("Not calculated")
 
@@ -636,7 +633,7 @@ class BandPassAnalysis(Analysis):
 
         upper_six_db_location = -1
         for i in range(upper_cutoff_location, len(self.app.data21), 1):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if (pass_band_db - db) > 6:
                 # We found 6dB location
                 upper_six_db_location = i
@@ -646,15 +643,15 @@ class BandPassAnalysis(Analysis):
             self.result_label.setText("Upper 6 dB location not found.")
             return
         upper_six_db_cutoff_frequency = self.app.data21[upper_six_db_location].freq
-        self.upper_six_db_label.setText(NanoVNASaver.formatFrequency(upper_six_db_cutoff_frequency))
+        self.upper_six_db_label.setText(RFTools.formatFrequency(upper_six_db_cutoff_frequency))
 
         six_db_span = upper_six_db_cutoff_frequency - lower_six_db_cutoff_frequency
 
-        self.six_db_span_label.setText(NanoVNASaver.formatFrequency(six_db_span))
+        self.six_db_span_label.setText(RFTools.formatFrequency(six_db_span))
 
         ten_db_location = -1
         for i in range(upper_cutoff_location, len(self.app.data21), 1):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if (pass_band_db - db) > 10:
                 # We found 6dB location
                 ten_db_location = i
@@ -662,7 +659,7 @@ class BandPassAnalysis(Analysis):
 
         twenty_db_location = -1
         for i in range(upper_cutoff_location, len(self.app.data21), 1):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if (pass_band_db - db) > 20:
                 # We found 6dB location
                 twenty_db_location = i
@@ -670,7 +667,7 @@ class BandPassAnalysis(Analysis):
 
         sixty_db_location = -1
         for i in range(upper_six_db_location, len(self.app.data21), 1):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if (pass_band_db - db) > 60:
                 # We found 60dB location! Wow.
                 sixty_db_location = i
@@ -678,12 +675,12 @@ class BandPassAnalysis(Analysis):
 
         if sixty_db_location > 0:
             sixty_db_cutoff_frequency = self.app.data21[sixty_db_location].freq
-            self.upper_sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency))
+            self.upper_sixty_db_label.setText(RFTools.formatFrequency(sixty_db_cutoff_frequency))
         elif ten_db_location != -1 and twenty_db_location != -1:
             ten = self.app.data21[ten_db_location].freq
             twenty = self.app.data21[twenty_db_location].freq
             sixty_db_frequency = ten * 10 ** (5 * (math.log10(twenty) - math.log10(ten)))
-            self.upper_sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_frequency) + " (derived)")
+            self.upper_sixty_db_label.setText(RFTools.formatFrequency(sixty_db_frequency) + " (derived)")
         else:
             self.upper_sixty_db_label.setText("Not calculated")
 
@@ -774,7 +771,6 @@ class BandStopAnalysis(Analysis):
         self.lower_db_per_decade_label.clear()
 
     def runAnalysis(self):
-        from NanoVNASaver.NanoVNASaver import NanoVNASaver
         self.reset()
 
         if len(self.app.data21) == 0:
@@ -783,9 +779,9 @@ class BandStopAnalysis(Analysis):
             return
 
         peak_location = -1
-        peak_db = NanoVNASaver.gain(self.app.data21[0])
+        peak_db = RFTools.gain(self.app.data21[0])
         for i in range(len(self.app.data21)):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if db > peak_db:
                 peak_db = db
                 peak_location = i
@@ -795,14 +791,14 @@ class BandStopAnalysis(Analysis):
         lower_cutoff_location = -1
         pass_band_db = peak_db
         for i in range(len(self.app.data21)):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if (pass_band_db - db) > 3:
                 # We found the cutoff location
                 lower_cutoff_location = i
                 break
 
         lower_cutoff_frequency = self.app.data21[lower_cutoff_location].freq
-        lower_cutoff_gain = NanoVNASaver.gain(self.app.data21[lower_cutoff_location]) - pass_band_db
+        lower_cutoff_gain = RFTools.gain(self.app.data21[lower_cutoff_location]) - pass_band_db
 
         if lower_cutoff_gain < -4:
             logger.debug("Lower cutoff frequency found at %f dB - insufficient data points for true -3 dB point.",
@@ -810,7 +806,7 @@ class BandStopAnalysis(Analysis):
 
         logger.debug("Found true lower cutoff frequency at %d", lower_cutoff_frequency)
 
-        self.lower_cutoff_label.setText(NanoVNASaver.formatFrequency(lower_cutoff_frequency) +
+        self.lower_cutoff_label.setText(RFTools.formatFrequency(lower_cutoff_frequency) +
                                         " (" + str(round(lower_cutoff_gain, 1)) + " dB)")
 
         self.app.markers[1].setFrequency(str(lower_cutoff_frequency))
@@ -818,21 +814,21 @@ class BandStopAnalysis(Analysis):
 
         upper_cutoff_location = -1
         for i in range(len(self.app.data21)-1, -1, -1):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if (pass_band_db - db) > 3:
                 # We found the cutoff location
                 upper_cutoff_location = i
                 break
 
         upper_cutoff_frequency = self.app.data21[upper_cutoff_location].freq
-        upper_cutoff_gain = NanoVNASaver.gain(self.app.data21[upper_cutoff_location]) - pass_band_db
+        upper_cutoff_gain = RFTools.gain(self.app.data21[upper_cutoff_location]) - pass_band_db
         if upper_cutoff_gain < -4:
             logger.debug("Upper cutoff frequency found at %f dB - insufficient data points for true -3 dB point.",
                          upper_cutoff_gain)
 
         logger.debug("Found true upper cutoff frequency at %d", upper_cutoff_frequency)
 
-        self.upper_cutoff_label.setText(NanoVNASaver.formatFrequency(upper_cutoff_frequency) +
+        self.upper_cutoff_label.setText(RFTools.formatFrequency(upper_cutoff_frequency) +
                                         " (" + str(round(upper_cutoff_gain, 1)) + " dB)")
         self.app.markers[2].setFrequency(str(upper_cutoff_frequency))
         self.app.markers[2].frequencyInput.setText(str(upper_cutoff_frequency))
@@ -841,8 +837,8 @@ class BandStopAnalysis(Analysis):
         center_frequency = math.sqrt(lower_cutoff_frequency * upper_cutoff_frequency)
         q = center_frequency / span
 
-        self.span_label.setText(NanoVNASaver.formatFrequency(span))
-        self.center_frequency_label.setText(NanoVNASaver.formatFrequency(center_frequency))
+        self.span_label.setText(RFTools.formatFrequency(span))
+        self.center_frequency_label.setText(RFTools.formatFrequency(center_frequency))
         self.quality_label.setText(str(round(q, 2)))
 
         self.app.markers[0].setFrequency(str(round(center_frequency)))
@@ -852,7 +848,7 @@ class BandStopAnalysis(Analysis):
 
         lower_six_db_location = -1
         for i in range(lower_cutoff_location, len(self.app.data21)):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if (pass_band_db - db) > 6:
                 # We found 6dB location
                 lower_six_db_location = i
@@ -862,11 +858,11 @@ class BandStopAnalysis(Analysis):
             self.result_label.setText("Lower 6 dB location not found.")
             return
         lower_six_db_cutoff_frequency = self.app.data21[lower_six_db_location].freq
-        self.lower_six_db_label.setText(NanoVNASaver.formatFrequency(lower_six_db_cutoff_frequency))
+        self.lower_six_db_label.setText(RFTools.formatFrequency(lower_six_db_cutoff_frequency))
 
         ten_db_location = -1
         for i in range(lower_cutoff_location, len(self.app.data21)):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if (pass_band_db - db) > 10:
                 # We found 6dB location
                 ten_db_location = i
@@ -874,7 +870,7 @@ class BandStopAnalysis(Analysis):
 
         twenty_db_location = -1
         for i in range(lower_cutoff_location, len(self.app.data21)):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if (pass_band_db - db) > 20:
                 # We found 6dB location
                 twenty_db_location = i
@@ -882,7 +878,7 @@ class BandStopAnalysis(Analysis):
 
         sixty_db_location = -1
         for i in range(lower_six_db_location, len(self.app.data21)):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if (pass_band_db - db) > 60:
                 # We found 60dB location! Wow.
                 sixty_db_location = i
@@ -890,12 +886,12 @@ class BandStopAnalysis(Analysis):
 
         if sixty_db_location > 0:
             sixty_db_cutoff_frequency = self.app.data21[sixty_db_location].freq
-            self.lower_sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency))
+            self.lower_sixty_db_label.setText(RFTools.formatFrequency(sixty_db_cutoff_frequency))
         elif ten_db_location != -1 and twenty_db_location != -1:
             ten = self.app.data21[ten_db_location].freq
             twenty = self.app.data21[twenty_db_location].freq
             sixty_db_frequency = ten * 10 ** (5 * (math.log10(twenty) - math.log10(ten)))
-            self.lower_sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_frequency) + " (derived)")
+            self.lower_sixty_db_label.setText(RFTools.formatFrequency(sixty_db_frequency) + " (derived)")
         else:
             self.lower_sixty_db_label.setText("Not calculated")
 
@@ -911,7 +907,7 @@ class BandStopAnalysis(Analysis):
 
         upper_six_db_location = -1
         for i in range(upper_cutoff_location, -1, -1):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if (pass_band_db - db) > 6:
                 # We found 6dB location
                 upper_six_db_location = i
@@ -921,15 +917,15 @@ class BandStopAnalysis(Analysis):
             self.result_label.setText("Upper 6 dB location not found.")
             return
         upper_six_db_cutoff_frequency = self.app.data21[upper_six_db_location].freq
-        self.upper_six_db_label.setText(NanoVNASaver.formatFrequency(upper_six_db_cutoff_frequency))
+        self.upper_six_db_label.setText(RFTools.formatFrequency(upper_six_db_cutoff_frequency))
 
         six_db_span = upper_six_db_cutoff_frequency - lower_six_db_cutoff_frequency
 
-        self.six_db_span_label.setText(NanoVNASaver.formatFrequency(six_db_span))
+        self.six_db_span_label.setText(RFTools.formatFrequency(six_db_span))
 
         ten_db_location = -1
         for i in range(upper_cutoff_location, -1, -1):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if (pass_band_db - db) > 10:
                 # We found 6dB location
                 ten_db_location = i
@@ -937,7 +933,7 @@ class BandStopAnalysis(Analysis):
 
         twenty_db_location = -1
         for i in range(upper_cutoff_location, -1, -1):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if (pass_band_db - db) > 20:
                 # We found 6dB location
                 twenty_db_location = i
@@ -945,7 +941,7 @@ class BandStopAnalysis(Analysis):
 
         sixty_db_location = -1
         for i in range(upper_six_db_location, -1, -1):
-            db = NanoVNASaver.gain(self.app.data21[i])
+            db = RFTools.gain(self.app.data21[i])
             if (pass_band_db - db) > 60:
                 # We found 60dB location! Wow.
                 sixty_db_location = i
@@ -953,12 +949,12 @@ class BandStopAnalysis(Analysis):
 
         if sixty_db_location > 0:
             sixty_db_cutoff_frequency = self.app.data21[sixty_db_location].freq
-            self.upper_sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_cutoff_frequency))
+            self.upper_sixty_db_label.setText(RFTools.formatFrequency(sixty_db_cutoff_frequency))
         elif ten_db_location != -1 and twenty_db_location != -1:
             ten = self.app.data21[ten_db_location].freq
             twenty = self.app.data21[twenty_db_location].freq
             sixty_db_frequency = ten * 10 ** (5 * (math.log10(twenty) - math.log10(ten)))
-            self.upper_sixty_db_label.setText(NanoVNASaver.formatFrequency(sixty_db_frequency) + " (derived)")
+            self.upper_sixty_db_label.setText(RFTools.formatFrequency(sixty_db_frequency) + " (derived)")
         else:
             self.upper_sixty_db_label.setText("Not calculated")
 

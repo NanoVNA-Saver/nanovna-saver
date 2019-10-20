@@ -29,6 +29,7 @@ from PyQt5.QtCore import QModelIndex
 from serial.tools import list_ports
 
 from NanoVNASaver.Hardware import VNA, InvalidVNA, Version
+from NanoVNASaver.RFTools import RFTools
 from .Chart import Chart, PhaseChart, VSWRChart, PolarChart, SmithChart, LogMagChart, QualityFactorChart, TDRChart, \
     RealImaginaryChart, MagnitudeChart, MagnitudeZChart
 from .Calibration import CalibrationWindow, Calibration
@@ -693,13 +694,13 @@ class NanoVNASaver(QtWidgets.QWidget):
             minVSWR = 100
             minVSWRfreq = -1
             for d in self.data:
-                _, _, vswr = self.vswr(d)
+                vswr = RFTools.calculateVSWR(d)
                 if minVSWR > vswr > 0:
                     minVSWR = vswr
                     minVSWRfreq = d.freq
 
             if minVSWRfreq > -1:
-                self.s11_min_swr_label.setText(str(round(minVSWR, 3)) + " @ " + self.formatFrequency(minVSWRfreq))
+                self.s11_min_swr_label.setText(str(round(minVSWR, 3)) + " @ " + RFTools.formatFrequency(minVSWRfreq))
                 if minVSWR > 1:
                     self.s11_min_rl_label.setText(str(round(20*math.log10((minVSWR-1)/(minVSWR+1)), 3)) + " dB")
                 else:
@@ -713,7 +714,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             maxGain = -100
             maxGainFreq = -1
             for d in self.data21:
-                gain = self.gain(d)
+                gain = RFTools.gain(d)
                 if gain > maxGain:
                     maxGain = gain
                     maxGainFreq = d.freq
@@ -722,8 +723,8 @@ class NanoVNASaver(QtWidgets.QWidget):
                     minGainFreq = d.freq
 
             if maxGainFreq > -1:
-                self.s21_min_gain_label.setText(str(round(minGain, 3)) + " dB @ " + self.formatFrequency(minGainFreq))
-                self.s21_max_gain_label.setText(str(round(maxGain, 3)) + " dB @ " + self.formatFrequency(maxGainFreq))
+                self.s21_min_gain_label.setText(str(round(minGain, 3)) + " dB @ " + RFTools.formatFrequency(minGainFreq))
+                self.s21_max_gain_label.setText(str(round(maxGain, 3)) + " dB @ " + RFTools.formatFrequency(maxGainFreq))
             else:
                 self.s21_min_gain_label.setText("")
                 self.s21_max_gain_label.setText("")
@@ -733,79 +734,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.updateTitle()
         self.dataLock.release()
 
-    @staticmethod
-    def vswr(data: Datapoint):
-        re50, im50 = NanoVNASaver.normalize50(data)
-        try:
-            mag = math.sqrt((re50 - 50) * (re50 - 50) + im50 * im50) / math.sqrt((re50 + 50) * (re50 + 50) + im50 * im50)
-            vswr = (1 + mag) / (1 - mag)
-        except ZeroDivisionError as e:
-            vswr = 1
-        return im50, re50, vswr
-
-    @staticmethod
-    def qualityFactor(data: Datapoint):
-        im50, re50, _ = NanoVNASaver.vswr(data)
-        if re50 != 0:
-            Q = abs(im50 / re50)
-        else:
-            Q = -1
-        return Q
-
-    @staticmethod
-    def capacitanceEquivalent(im50, freq) -> str:
-        if im50 == 0 or freq == 0:
-            return "- pF"
-        capacitance = 10**12/(freq * 2 * math.pi * im50)
-        if abs(capacitance) > 10000:
-            return str(round(-capacitance/1000, 2)) + " nF"
-        elif abs(capacitance) > 1000:
-            return str(round(-capacitance/1000, 3)) + " nF"
-        elif abs(capacitance) > 10:
-            return str(round(-capacitance, 2)) + " pF"
-        else:
-            return str(round(-capacitance, 3)) + " pF"
-
-    @staticmethod
-    def inductanceEquivalent(im50, freq) -> str:
-        if freq == 0:
-            return "- nH"
-        inductance = im50 * 1000000000 / (freq * 2 * math.pi)
-        if abs(inductance) > 10000:
-            return str(round(inductance / 1000, 2)) + " μH"
-        elif abs(inductance) > 1000:
-            return str(round(inductance/1000, 3)) + " μH"
-        elif abs(inductance) > 10:
-            return str(round(inductance, 2)) + " nH"
-        else:
-            return str(round(inductance, 3)) + " nH"
-
-    @staticmethod
-    def gain(data: Datapoint):
-        re50, im50 = NanoVNASaver.normalize50(data)
-        # Calculate the gain / reflection coefficient
-        mag = math.sqrt((re50 - 50) * (re50 - 50) + im50 * im50) / math.sqrt(
-            (re50 + 50) * (re50 + 50) + im50 * im50)
-        if mag > 0:
-            return 20 * math.log10(mag)
-        else:
-            return 0
-
-    @staticmethod
-    def normalize50(data):
-        re = data.re
-        im = data.im
-        re50 = 50 * (1 - re * re - im * im) / (1 + re * re + im * im - 2 * re)
-        im50 = 50 * (2 * im) / (1 + re * re + im * im - 2 * re)
-        return re50, im50
-
-    @staticmethod
-    def admittance(data):
-        re50, im50 = NanoVNASaver.normalize50(data)
-        rp = re50 / (re50**2 + im50**2)
-        xp = - im50 / (re50**2 + im50**2)
-        return rp, xp
-
     def sweepFinished(self):
         self.sweepProgressBar.setValue(100)
         self.btnSweep.setDisabled(False)
@@ -813,8 +741,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.toggleSweepSettings(False)
 
     def updateCenterSpan(self):
-        fstart = self.parseFrequency(self.sweepStartInput.text())
-        fstop = self.parseFrequency(self.sweepEndInput.text())
+        fstart = RFTools.parseFrequency(self.sweepStartInput.text())
+        fstop = RFTools.parseFrequency(self.sweepEndInput.text())
         fspan = fstop - fstart
         fcenter = int(round((fstart+fstop)/2))
         if fspan < 0 or fstart < 0 or fstop < 0:
@@ -823,8 +751,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.sweepCenterInput.setText(str(fcenter))
 
     def updateStartEnd(self):
-        fcenter = self.parseFrequency(self.sweepCenterInput.text())
-        fspan = self.parseFrequency(self.sweepSpanInput.text())
+        fcenter = RFTools.parseFrequency(self.sweepCenterInput.text())
+        fspan = RFTools.parseFrequency(self.sweepSpanInput.text())
         if fspan < 0 or fcenter < 0:
             return
         fstart = int(round(fcenter - fspan/2))
@@ -835,72 +763,14 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.sweepEndInput.setText(str(fstop))
 
     def updateStepSize(self):
-        fspan = self.parseFrequency(self.sweepSpanInput.text())
+        fspan = RFTools.parseFrequency(self.sweepSpanInput.text())
         if fspan < 0:
             return
         if self.sweepCountInput.text().isdigit():
             segments = int(self.sweepCountInput.text())
             if segments > 0:
                 fstep = fspan / (segments * 101)
-                self.sweepStepLabel.setText(self.formatShortFrequency(fstep) + "/step")
-
-    @staticmethod
-    def formatFrequency(freq):
-        if freq < 1:
-            return "- Hz"
-        if math.log10(freq) < 3:
-            return str(round(freq)) + " Hz"
-        elif math.log10(freq) < 7:
-            return "{:.3f}".format(freq/1000) + " kHz"
-        elif math.log10(freq) < 8:
-            return "{:.4f}".format(freq/1000000) + " MHz"
-        else:
-            return "{:.3f}".format(freq/1000000) + " MHz"
-
-    @staticmethod
-    def formatShortFrequency(freq):
-        if freq < 1:
-            return "- Hz"
-        if math.log10(freq) < 3:
-            return str(round(freq)) + " Hz"
-        elif math.log10(freq) < 5:
-            return "{:.3f}".format(freq/1000) + " kHz"
-        elif math.log10(freq) < 6:
-            return "{:.2f}".format(freq/1000) + " kHz"
-        elif math.log10(freq) < 7:
-            return "{:.1f}".format(freq/1000) + " kHz"
-        elif math.log10(freq) < 8:
-            return "{:.3f}".format(freq/1000000) + " MHz"
-        elif math.log10(freq) < 9:
-            return "{:.2f}".format(freq/1000000) + " MHz"
-        else:
-            return "{:.1f}".format(freq/1000000) + " MHz"
-
-    @staticmethod
-    def parseFrequency(freq: str):
-        freq = freq.replace(" ", "")  # People put all sorts of weird whitespace in.
-        if freq.isnumeric():
-            return int(freq)
-
-        multiplier = 1
-        freq = freq.lower()
-
-        if freq.endswith("k"):
-            multiplier = 1000
-            freq = freq[:-1]
-        elif freq.endswith("m"):
-            multiplier = 1000000
-            freq = freq[:-1]
-
-        if freq.isnumeric():
-            return int(freq) * multiplier
-
-        try:
-            f = float(freq)
-            return int(round(multiplier * f))
-        except ValueError:
-            # Okay, we couldn't parse this however much we tried.
-            return -1
+                self.sweepStepLabel.setText(RFTools.formatShortFrequency(fstep) + "/step")
 
     def setReference(self, s11data=None, s21data=None, source=None):
         if not s11data:
@@ -1970,8 +1840,8 @@ class SweepSettingsWindow(QtWidgets.QWidget):
             start = max(1, start)
             stop += round(span / 10)
 
-        self.band_limit_label.setText("Sweep span: " + NanoVNASaver.formatShortFrequency(start) + " to " +
-                                      NanoVNASaver.formatShortFrequency(stop))
+        self.band_limit_label.setText("Sweep span: " + RFTools.formatShortFrequency(start) + " to " +
+                                      RFTools.formatShortFrequency(stop))
 
     def setBandSweep(self):
         index_start = self.band_list.model().index(self.band_list.currentIndex(), 1)

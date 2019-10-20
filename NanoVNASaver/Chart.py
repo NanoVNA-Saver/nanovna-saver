@@ -369,24 +369,22 @@ class FrequencyChart(Chart):
         self.update()
 
     def setMinimumFrequency(self):
-        from NanoVNASaver.NanoVNASaver import NanoVNASaver
         min_freq_str, selected = QtWidgets.QInputDialog.getText(self, "Start frequency",
                                                                 "Set start frequency", text=str(self.minFrequency))
         if not selected:
             return
-        min_freq = NanoVNASaver.parseFrequency(min_freq_str)
+        min_freq = RFTools.parseFrequency(min_freq_str)
         if min_freq > 0 and not (self.fixedSpan and min_freq >= self.maxFrequency):
             self.minFrequency = min_freq
         if self.fixedSpan:
             self.update()
 
     def setMaximumFrequency(self):
-        from NanoVNASaver.NanoVNASaver import NanoVNASaver
         max_freq_str, selected = QtWidgets.QInputDialog.getText(self, "Stop frequency",
                                                                 "Set stop frequency", text=str(self.maxFrequency))
         if not selected:
             return
-        max_freq = NanoVNASaver.parseFrequency(max_freq_str)
+        max_freq = RFTools.parseFrequency(max_freq_str)
         if max_freq > 0 and not (self.fixedSpan and max_freq <= self.minFrequency):
             self.maxFrequency = max_freq
         if self.fixedSpan:

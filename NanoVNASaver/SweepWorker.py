@@ -25,6 +25,7 @@ import NanoVNASaver
 import logging
 
 from NanoVNASaver.Hardware import VNA, InvalidVNA
+from NanoVNASaver.RFTools import RFTools
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +62,6 @@ class SweepWorker(QtCore.QRunnable):
     @pyqtSlot()
     def run(self):
         logger.info("Initializing SweepWorker")
-        from NanoVNASaver.NanoVNASaver import NanoVNASaver
         self.percentage = 0
         if not self.app.serial.is_open:
             logger.debug("Attempted to run without being connected to the NanoVNA")
@@ -80,8 +80,8 @@ class SweepWorker(QtCore.QRunnable):
             sweep_from = 1000000
             sweep_to = 800000000
         else:
-            sweep_from = NanoVNASaver.parseFrequency(self.app.sweepStartInput.text())
-            sweep_to = NanoVNASaver.parseFrequency(self.app.sweepEndInput.text())
+            sweep_from = RFTools.parseFrequency(self.app.sweepStartInput.text())
+            sweep_to = RFTools.parseFrequency(self.app.sweepEndInput.text())
             logger.debug("Parsed sweep range as %d to %d", sweep_from, sweep_to)
             if sweep_from < 0 or sweep_to < 0 or sweep_from == sweep_to:
                 logger.warning("Can't sweep from %s to %s",
@@ -157,10 +157,10 @@ class SweepWorker(QtCore.QRunnable):
 
         # Reset the device to show the full range
         logger.debug("Resetting NanoVNA sweep to full range: %d to %d",
-                     NanoVNASaver.parseFrequency(self.app.sweepStartInput.text()),
-                     NanoVNASaver.parseFrequency(self.app.sweepEndInput.text()))
-        self.vna.resetSweep(NanoVNASaver.parseFrequency(self.app.sweepStartInput.text()),
-                            NanoVNASaver.parseFrequency(self.app.sweepEndInput.text()))
+                     RFTools.parseFrequency(self.app.sweepStartInput.text()),
+                     RFTools.parseFrequency(self.app.sweepEndInput.text()))
+        self.vna.resetSweep(RFTools.parseFrequency(self.app.sweepStartInput.text()),
+                            RFTools.parseFrequency(self.app.sweepEndInput.text()))
 
         self.percentage = 100
         logger.debug("Sending \"finished\" signal")
