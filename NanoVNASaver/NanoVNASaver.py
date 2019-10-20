@@ -31,7 +31,7 @@ from serial.tools import list_ports
 from .Hardware import VNA, InvalidVNA, Version
 from .RFTools import RFTools, Datapoint
 from .Chart import Chart, PhaseChart, VSWRChart, PolarChart, SmithChart, LogMagChart, QualityFactorChart, TDRChart, \
-    RealImaginaryChart, MagnitudeChart, MagnitudeZChart
+    RealImaginaryChart, MagnitudeChart, MagnitudeZChart, CombinedLogMagChart
 from .Calibration import CalibrationWindow, Calibration
 from .Marker import Marker
 from .SweepWorker import SweepWorker
@@ -131,6 +131,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s11RealImaginary = RealImaginaryChart("S11 R+jX")
         self.tdr_chart = TDRChart("TDR")
         self.tdr_mainwindow_chart = TDRChart("TDR")
+        self.combinedLogMag = CombinedLogMagChart("S11 & S21 LogMag")
 
         # List of all the S11 charts, for selecting
         self.s11charts: List[Chart] = []
@@ -150,8 +151,12 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s21charts.append(self.s21Mag)
         self.s21charts.append(self.s21Phase)
 
+        # List of all charts that use both S11 and S21
+        self.combinedCharts: List[Chart] = []
+        self.combinedCharts.append(self.combinedLogMag)
+
         # List of all charts that can be selected for display
-        self.selectable_charts = self.s11charts + self.s21charts
+        self.selectable_charts = self.s11charts + self.s21charts + self.combinedCharts
         self.selectable_charts.append(self.tdr_mainwindow_chart)
 
         # List of all charts that subscribe to updates (including duplicates!)
@@ -685,6 +690,9 @@ class NanoVNASaver(QtWidgets.QWidget):
             for c in self.s21charts:
                 c.setData(self.data21)
 
+            for c in self.combinedCharts:
+                c.setCombinedData(self.data, self.data21)
+
             self.sweepProgressBar.setValue(self.worker.percentage)
             self.tdr_window.updateTDR()
 
@@ -782,6 +790,10 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.referenceS21data = s21data
         for c in self.s21charts:
             c.setReference(s21data)
+
+        for c in self.combinedCharts:
+            c.setCombinedReference(s11data, s21data)
+
         self.btnResetReference.setDisabled(False)
 
         if source is not None:
@@ -893,6 +905,8 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.s11charts.append(new_chart)
         if chart in self.s21charts:
             self.s21charts.append(new_chart)
+        if chart in self.combinedCharts:
+            self.combinedCharts.append(new_chart)
         new_chart.popoutRequested.connect(self.popoutChart)
         return new_chart
 
