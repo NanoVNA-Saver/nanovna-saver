@@ -25,11 +25,9 @@ import NanoVNASaver
 import logging
 
 from NanoVNASaver.Hardware import VNA, InvalidVNA
-from NanoVNASaver.RFTools import RFTools
+from NanoVNASaver.RFTools import RFTools, Datapoint
 
 logger = logging.getLogger(__name__)
-
-Datapoint = collections.namedtuple('Datapoint', 'freq re im')
 
 
 class WorkerSignals(QtCore.QObject):

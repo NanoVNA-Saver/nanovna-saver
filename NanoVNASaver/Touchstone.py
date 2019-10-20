@@ -18,8 +18,7 @@ import logging
 import math
 import re
 from typing import List
-
-Datapoint = collections.namedtuple('Datapoint', 'freq re im')
+from .RFTools import Datapoint
 
 logger = logging.getLogger(__name__)
 

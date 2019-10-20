@@ -20,12 +20,10 @@ import math
 
 from PyQt5 import QtWidgets, QtCore
 from typing import List
+from .RFTools import Datapoint
 import numpy as np
 
 logger = logging.getLogger(__name__)
-
-
-Datapoint = collections.namedtuple('Datapoint', 'freq re im')
 
 
 class CalibrationWindow(QtWidgets.QWidget):

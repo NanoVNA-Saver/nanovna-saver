@@ -18,10 +18,9 @@ import logging
 import re
 from time import sleep
 from typing import List
+from NanoVNASaver.RFTools import Datapoint
 
 import serial
-
-Datapoint = collections.namedtuple('Datapoint', 'freq re im')
 
 logger = logging.getLogger(__name__)
 

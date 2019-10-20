@@ -28,8 +28,8 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import QModelIndex
 from serial.tools import list_ports
 
-from NanoVNASaver.Hardware import VNA, InvalidVNA, Version
-from NanoVNASaver.RFTools import RFTools
+from .Hardware import VNA, InvalidVNA, Version
+from .RFTools import RFTools, Datapoint
 from .Chart import Chart, PhaseChart, VSWRChart, PolarChart, SmithChart, LogMagChart, QualityFactorChart, TDRChart, \
     RealImaginaryChart, MagnitudeChart, MagnitudeZChart
 from .Calibration import CalibrationWindow, Calibration
@@ -38,8 +38,6 @@ from .SweepWorker import SweepWorker
 from .Touchstone import Touchstone
 from .Analysis import Analysis, LowPassAnalysis, HighPassAnalysis, BandPassAnalysis, BandStopAnalysis
 from .about import version as ver
-
-Datapoint = collections.namedtuple('Datapoint', 'freq re im')
 
 VID = 1155
 PID = 22336
