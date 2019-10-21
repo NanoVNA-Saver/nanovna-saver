@@ -423,10 +423,10 @@ class FrequencyChart(Chart):
         if span > 0:
             if self.logarithmicX:
                 span = math.log(self.fstop) - math.log(self.fstart)
-                return self.leftMargin + 1 +\
+                return self.leftMargin +\
                        round(self.chartWidth * (math.log(d.freq) - math.log(self.fstart)) / span)
             else:
-                return self.leftMargin + 1 + round(self.chartWidth * (d.freq - self.fstart) / span)
+                return self.leftMargin + round(self.chartWidth * (d.freq - self.fstart) / span)
         else:
             return math.floor(self.width()/2)
 
@@ -512,18 +512,22 @@ class FrequencyChart(Chart):
                 # All the chart is in a band, we won't show it(?)
                 pass
 
-    def drawData(self, qp: QtGui.QPainter, data: List[Datapoint], color: QtGui.QColor):
+    def drawData(self, qp: QtGui.QPainter, data: List[Datapoint], color: QtGui.QColor, y_function=None):
+        if y_function is None:
+            y_function = self.getYPosition
         pen = QtGui.QPen(color)
         pen.setWidth(self.pointSize)
         line_pen = QtGui.QPen(color)
         line_pen.setWidth(self.lineThickness)
         qp.setPen(pen)
         for i in range(len(data)):
-            x, y = self.getPosition(data[i])
+            x = self.getXPosition(data[i])
+            y = y_function(data[i])
             if self.isPlotable(x, y):
                 qp.drawPoint(int(x), int(y))
             if self.drawLines and i > 0:
-                prevx, prevy = self.getPosition(data[i - 1])
+                prevx = self.getXPosition(data[i - 1])
+                prevy = y_function(data[i - 1])
                 qp.setPen(line_pen)
                 if self.isPlotable(x, y) and self.isPlotable(prevx, prevy):
                     qp.drawLine(x, y, prevx, prevy)
@@ -535,14 +539,19 @@ class FrequencyChart(Chart):
                     qp.drawLine(prevx, prevy, new_x, new_y)
                 qp.setPen(pen)
 
-    def drawMarkers(self, qp):
+    def drawMarkers(self, qp, data=None, y_function=None):
+        if data is None:
+            data = self.data
+        if y_function is None:
+            y_function = self.getYPosition
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(1)
         for m in self.markers:
-            if m.location != -1:
+            if m.location != -1 and m.location < len(data):
                 highlighter.setColor(m.color)
                 qp.setPen(highlighter)
-                x, y = self.getPosition(self.data[m.location])
+                x = self.getXPosition(data[m.location])
+                y = y_function(data[m.location])
                 if self.isPlotable(x, y):
                     qp.drawLine(int(x), int(y) + 3, int(x) - 3, int(y) - 3)
                     qp.drawLine(int(x), int(y) + 3, int(x) + 3, int(y) - 3)
@@ -965,7 +974,7 @@ class PolarChart(SquareChart):
                 qp.setPen(pen)
         # Now draw the markers
         for m in self.markers:
-            if m.location != -1:
+            if m.location != -1 and m.location < len(self.data):
                 highlighter.setColor(m.color)
                 qp.setPen(highlighter)
                 x = self.getXPosition(self.data[m.location])
@@ -973,7 +982,6 @@ class PolarChart(SquareChart):
                 qp.drawLine(int(x), int(y) + 3, int(x) - 3, int(y) - 3)
                 qp.drawLine(int(x), int(y) + 3, int(x) + 3, int(y) - 3)
                 qp.drawLine(int(x) - 3, int(y) - 3, int(x) + 3, int(y) - 3)
-                #qp.drawPoint(int(x), int(y))
 
     def getXPosition(self, d: Datapoint) -> int:
         return self.width()/2 + d.re * self.chartWidth/2
@@ -1577,7 +1585,8 @@ class CombinedLogMagChart(FrequencyChart):
         self.drawData(qp, self.data21, self.secondarySweepColor)
         self.drawData(qp, self.reference11, self.referenceColor)
         self.drawData(qp, self.reference21, self.secondaryReferenceColor)
-        # self.drawMarkers(qp)
+        self.drawMarkers(qp, data=self.data11)
+        self.drawMarkers(qp, data=self.data21)
 
     def getYPosition(self, d: Datapoint) -> int:
         logMag = self.logMag(d)
