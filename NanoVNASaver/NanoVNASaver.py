@@ -31,7 +31,7 @@ from serial.tools import list_ports
 from .Hardware import VNA, InvalidVNA, Version
 from .RFTools import RFTools, Datapoint
 from .Chart import Chart, PhaseChart, VSWRChart, PolarChart, SmithChart, LogMagChart, QualityFactorChart, TDRChart, \
-    RealImaginaryChart, MagnitudeChart, MagnitudeZChart, CombinedLogMagChart
+    RealImaginaryChart, MagnitudeChart, MagnitudeZChart, CombinedLogMagChart, SParameterChart
 from .Calibration import CalibrationWindow, Calibration
 from .Marker import Marker
 from .SweepWorker import SweepWorker
@@ -119,6 +119,8 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.s11SmithChart = SmithChart("S11 Smith Chart")
         self.s21PolarChart = PolarChart("S21 Polar Plot")
+        self.s11SParameterChart = SParameterChart("S11 Real/Imaginary")
+        self.s21SParameterChart = SParameterChart("S21 Real/Imaginary")
         self.s11LogMag = LogMagChart("S11 Return Loss")
         self.s21LogMag = LogMagChart("S21 Gain")
         self.s11Mag = MagnitudeChart("|S11|")
@@ -143,6 +145,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s11charts.append(self.s11VSWR)
         self.s11charts.append(self.s11RealImaginary)
         self.s11charts.append(self.s11QualityFactor)
+        self.s11charts.append(self.s11SParameterChart)
 
         # List of all the S21 charts, for selecting
         self.s21charts: List[Chart] = []
@@ -150,6 +153,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s21charts.append(self.s21LogMag)
         self.s21charts.append(self.s21Mag)
         self.s21charts.append(self.s21Phase)
+        self.s21charts.append(self.s21SParameterChart)
 
         # List of all charts that use both S11 and S21
         self.combinedCharts: List[Chart] = []
