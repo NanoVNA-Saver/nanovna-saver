@@ -1868,6 +1868,10 @@ class QualityFactorChart(FrequencyChart):
 
 
 class TDRChart(Chart):
+    maxDisplayLength = 50
+    minDisplayLength = 0
+    fixedSpan = True
+
     def __init__(self, name):
         super().__init__(name)
         self.tdrWindow = None
@@ -1882,9 +1886,86 @@ class TDRChart(Chart):
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
+        self.setContextMenuPolicy(QtCore.Qt.DefaultContextMenu)
+        mode_group = QtWidgets.QActionGroup(self)
+        self.menu = QtWidgets.QMenu()
+
+        self.reset = QtWidgets.QAction("Reset")
+        self.reset.triggered.connect(self.resetDisplayLimits)
+        self.menu.addAction(self.reset)
+
+        self.x_menu = QtWidgets.QMenu("Length axis")
+        self.action_automatic = QtWidgets.QAction("Automatic")
+        self.action_automatic.setCheckable(True)
+        self.action_automatic.setChecked(True)
+        self.action_automatic.changed.connect(lambda: self.setFixedSpan(self.action_fixed_span.isChecked()))
+        self.action_fixed_span = QtWidgets.QAction("Fixed span")
+        self.action_fixed_span.setCheckable(True)
+        self.action_fixed_span.changed.connect(lambda: self.setFixedSpan(self.action_fixed_span.isChecked()))
+        mode_group.addAction(self.action_automatic)
+        mode_group.addAction(self.action_fixed_span)
+        self.x_menu.addAction(self.action_automatic)
+        self.x_menu.addAction(self.action_fixed_span)
+        self.x_menu.addSeparator()
+
+        self.action_set_fixed_start = QtWidgets.QAction("Start (" + str(self.minDisplayLength) + ")")
+        self.action_set_fixed_start.triggered.connect(self.setMinimumLength)
+
+        self.action_set_fixed_stop = QtWidgets.QAction("Stop (" + str(self.maxDisplayLength) + ")")
+        self.action_set_fixed_stop.triggered.connect(self.setMaximumLength)
+
+        self.x_menu.addAction(self.action_set_fixed_start)
+        self.x_menu.addAction(self.action_set_fixed_stop)
+        self.menu.addMenu(self.x_menu)
+        self.menu.addSeparator()
+        self.menu.addAction(self.action_save_screenshot)
+        self.action_popout = QtWidgets.QAction("Popout chart")
+        self.action_popout.triggered.connect(lambda: self.popoutRequested.emit(self))
+        self.menu.addAction(self.action_popout)
+
+    def contextMenuEvent(self, event):
+        self.action_set_fixed_start.setText("Start (" + str(self.minDisplayLength) + ")")
+        self.action_set_fixed_stop.setText("Stop (" + str(self.maxDisplayLength) + ")")
+        self.menu.exec_(event.globalPos())
+
+    def resetDisplayLimits(self):
+        self.fixedSpan = False
+        self.minDisplayLength = 0
+        self.maxDisplayLength = 100
+        self.update()
+
+    def setFixedSpan(self, fixed_span):
+        self.fixedSpan = fixed_span
+        self.update()
+
+    def setMinimumLength(self):
+        min_val, selected = QtWidgets.QInputDialog.getDouble(self, "Start length (m)",
+                                                             "Set start length (m)", value=self.minDisplayLength,
+                                                             min=0, decimals=1)
+        if not selected:
+            return
+        if not (self.fixedSpan and min_val >= self.maxDisplayLength):
+            self.minDisplayLength = min_val
+        if self.fixedSpan:
+            self.update()
+
+    def setMaximumLength(self):
+        max_val, selected = QtWidgets.QInputDialog.getDouble(self, "Stop length (m)",
+                                                             "Set stop length (m)", value=self.minDisplayLength,
+                                                             min=0, decimals=1)
+        if not selected:
+            return
+        if not (self.fixedSpan and max_val <= self.minDisplayLength):
+            self.maxDisplayLength = max_val
+        if self.fixedSpan:
+            self.update()
+
     def copy(self):
-        new_chart = super().copy()
+        new_chart: TDRChart = super().copy()
         new_chart.tdrWindow = self.tdrWindow
+        new_chart.minDisplayLength = self.minDisplayLength
+        new_chart.maxDisplayLength = self.maxDisplayLength
+        new_chart.fixedSpan = self.fixedSpan
         self.tdrWindow.updated.connect(new_chart.update)
         return new_chart
 
@@ -1904,7 +1985,15 @@ class TDRChart(Chart):
         ticks = math.floor((self.width() - self.leftMargin)/100)  # Number of ticks does not include the origin
 
         if len(self.tdrWindow.td) > 0:
-            x_step = len(self.tdrWindow.distance_axis) / (width * 2)
+            if self.fixedSpan:
+                max_index = np.searchsorted(self.tdrWindow.distance_axis, self.maxDisplayLength * 2)
+                min_index = np.searchsorted(self.tdrWindow.distance_axis, self.minDisplayLength * 2)
+                x_step = (max_index - min_index) / width
+            else:
+                min_index = 0
+                max_index = len(self.tdrWindow.distance_axis)
+                x_step = len(self.tdrWindow.distance_axis) / (width * 2)
+
             y_step = np.max(self.tdrWindow.td)*1.1 / height
 
             for i in range(ticks):
@@ -1912,16 +2001,22 @@ class TDRChart(Chart):
                 qp.setPen(QtGui.QPen(self.foregroundColor))
                 qp.drawLine(x, 20, x, height)
                 qp.setPen(QtGui.QPen(self.textColor))
-                qp.drawText(x - 20, 20 + height,
-                            str(round(self.tdrWindow.distance_axis[int((x - self.leftMargin) * x_step) - 1]/2, 1)) + "m")
+                qp.drawText(x - 15, 20 + height,
+                            str(round(self.tdrWindow.distance_axis[min_index + int((x - self.leftMargin) * x_step) - 1]/2, 1)) + "m")
+
+            qp.setPen(QtGui.QPen(self.textColor))
+            qp.drawText(self.leftMargin - 10, 20 + height,
+                        str(round(self.tdrWindow.distance_axis[min_index]/2, 1)) + "m")
 
             pen = QtGui.QPen(self.sweepColor)
             pen.setWidth(self.pointSize)
             qp.setPen(pen)
             for i in range(len(self.tdrWindow.distance_axis)):
-                qp.drawPoint(self.leftMargin + int(i / x_step), height - int(self.tdrWindow.td[i] / y_step))
+                if i < min_index or i > max_index:
+                    continue
+                qp.drawPoint(self.leftMargin + int((i - min_index) / x_step), height - int(self.tdrWindow.td[i] / y_step))
             id_max = np.argmax(self.tdrWindow.td)
-            max_point = QtCore.QPoint(self.leftMargin + int(id_max / x_step),
+            max_point = QtCore.QPoint(self.leftMargin + int((id_max - min_index) / x_step),
                                       height - int(self.tdrWindow.td[id_max] / y_step))
             qp.setPen(self.markers[0].color)
             qp.drawEllipse(max_point, 2, 2)
