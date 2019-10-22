@@ -1147,12 +1147,12 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         btn_add_marker = QtWidgets.QPushButton("Add")
         btn_add_marker.clicked.connect(self.addMarker)
-        btn_remove_marker = QtWidgets.QPushButton("Remove")
-        btn_remove_marker.clicked.connect(self.removeMarker)
+        self.btn_remove_marker = QtWidgets.QPushButton("Remove")
+        self.btn_remove_marker.clicked.connect(self.removeMarker)
 
         marker_btn_layout = QtWidgets.QHBoxLayout()
         marker_btn_layout.addWidget(btn_add_marker)
-        marker_btn_layout.addWidget(btn_remove_marker)
+        marker_btn_layout.addWidget(self.btn_remove_marker)
 
         markers_layout.addRow(marker_btn_layout)
 
@@ -1469,9 +1469,21 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         new_marker.updated.connect(self.app.dataUpdated)
         label, layout = new_marker.getRow()
         self.app.marker_control_layout.insertRow(marker_count, label, layout)
+        if marker_count == 0:
+            new_marker.isMouseControlledRadioButton.setChecked(True)
+
+        self.btn_remove_marker.setDisabled(False)
 
     def removeMarker(self):
+        if len(self.app.markers) == 0:
+            # How did we even get here? Better handle it anyway.
+            self.btn_remove_marker.setDisabled(True)
+            return
         last_marker = self.app.markers.pop()
+        if len(self.app.markers) == 0:
+            # Last marker removed.
+            self.btn_remove_marker.setDisabled(True)
+
         last_marker.updated.disconnect(self.app.dataUpdated)
         self.app.marker_data_layout.removeWidget(last_marker.getGroupBox())
         self.app.marker_control_layout.removeRow(len(self.app.markers))
