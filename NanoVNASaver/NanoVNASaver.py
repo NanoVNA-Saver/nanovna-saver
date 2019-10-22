@@ -998,7 +998,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         self.btnReferenceColorPicker = QtWidgets.QPushButton("█")
         self.btnReferenceColorPicker.setFixedWidth(20)
-        self.referenceColor = self.app.settings.value("ReferenceColor", defaultValue=QtGui.QColor(0, 0, 255, 32),
+        self.referenceColor = self.app.settings.value("ReferenceColor", defaultValue=QtGui.QColor(0, 0, 255, 48),
                                                       type=QtGui.QColor)
         self.setReferenceColor(self.referenceColor)
         self.btnReferenceColorPicker.clicked.connect(lambda: self.setReferenceColor(
@@ -1009,7 +1009,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.btnSecondaryReferenceColorPicker = QtWidgets.QPushButton("█")
         self.btnSecondaryReferenceColorPicker.setFixedWidth(20)
         self.secondaryReferenceColor = self.app.settings.value("SecondaryReferenceColor",
-                                                               defaultValue=QtGui.QColor(0, 0, 255, 32),
+                                                               defaultValue=QtGui.QColor(0, 0, 255, 48),
                                                                type=QtGui.QColor)
         self.setSecondaryReferenceColor(self.secondaryReferenceColor)
         self.btnSecondaryReferenceColorPicker.clicked.connect(lambda: self.setSecondaryReferenceColor(
