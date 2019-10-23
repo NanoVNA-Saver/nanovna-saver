@@ -28,17 +28,16 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import QModelIndex
 from serial.tools import list_ports
 
-from NanoVNASaver.Hardware import VNA, InvalidVNA, Version
+from .Hardware import VNA, InvalidVNA, Version
+from .RFTools import RFTools, Datapoint
 from .Chart import Chart, PhaseChart, VSWRChart, PolarChart, SmithChart, LogMagChart, QualityFactorChart, TDRChart, \
-    RealImaginaryChart
+    RealImaginaryChart, MagnitudeChart, MagnitudeZChart, CombinedLogMagChart, SParameterChart
 from .Calibration import CalibrationWindow, Calibration
 from .Marker import Marker
 from .SweepWorker import SweepWorker
 from .Touchstone import Touchstone
 from .Analysis import Analysis, LowPassAnalysis, HighPassAnalysis, BandPassAnalysis, BandStopAnalysis
 from .about import version as ver
-
-Datapoint = collections.namedtuple('Datapoint', 'freq re im')
 
 VID = 1155
 PID = 22336
@@ -48,6 +47,12 @@ logger = logging.getLogger(__name__)
 
 class NanoVNASaver(QtWidgets.QWidget):
     version = ver
+    default_marker_colors = [QtGui.QColor(255, 0, 0),
+                             QtGui.QColor(0, 255, 0),
+                             QtGui.QColor(0, 0, 255),
+                             QtGui.QColor(0, 255, 255),
+                             QtGui.QColor(255, 0, 255),
+                             QtGui.QColor(255, 255, 0)]
 
     def __init__(self):
         super().__init__()
@@ -114,8 +119,13 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.s11SmithChart = SmithChart("S11 Smith Chart")
         self.s21PolarChart = PolarChart("S21 Polar Plot")
+        self.s11SParameterChart = SParameterChart("S11 Real/Imaginary")
+        self.s21SParameterChart = SParameterChart("S21 Real/Imaginary")
         self.s11LogMag = LogMagChart("S11 Return Loss")
         self.s21LogMag = LogMagChart("S21 Gain")
+        self.s11Mag = MagnitudeChart("|S11|")
+        self.s21Mag = MagnitudeChart("|S21|")
+        self.s11MagZ = MagnitudeZChart("S11 |Z|")
         self.s11Phase = PhaseChart("S11 Phase")
         self.s21Phase = PhaseChart("S21 Phase")
         self.s11VSWR = VSWRChart("S11 VSWR")
@@ -123,24 +133,34 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s11RealImaginary = RealImaginaryChart("S11 R+jX")
         self.tdr_chart = TDRChart("TDR")
         self.tdr_mainwindow_chart = TDRChart("TDR")
+        self.combinedLogMag = CombinedLogMagChart("S11 & S21 LogMag")
 
         # List of all the S11 charts, for selecting
         self.s11charts: List[Chart] = []
         self.s11charts.append(self.s11SmithChart)
         self.s11charts.append(self.s11LogMag)
+        self.s11charts.append(self.s11Mag)
+        self.s11charts.append(self.s11MagZ)
         self.s11charts.append(self.s11Phase)
         self.s11charts.append(self.s11VSWR)
         self.s11charts.append(self.s11RealImaginary)
         self.s11charts.append(self.s11QualityFactor)
+        self.s11charts.append(self.s11SParameterChart)
 
         # List of all the S21 charts, for selecting
         self.s21charts: List[Chart] = []
         self.s21charts.append(self.s21PolarChart)
         self.s21charts.append(self.s21LogMag)
+        self.s21charts.append(self.s21Mag)
         self.s21charts.append(self.s21Phase)
+        self.s21charts.append(self.s21SParameterChart)
+
+        # List of all charts that use both S11 and S21
+        self.combinedCharts: List[Chart] = []
+        self.combinedCharts.append(self.combinedLogMag)
 
         # List of all charts that can be selected for display
-        self.selectable_charts = self.s11charts + self.s21charts
+        self.selectable_charts = self.s11charts + self.s21charts + self.combinedCharts
         self.selectable_charts.append(self.tdr_mainwindow_chart)
 
         # List of all charts that subscribe to updates (including duplicates!)
@@ -154,10 +174,10 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.charts_layout = QtWidgets.QGridLayout()
 
         left_column = QtWidgets.QVBoxLayout()
-        marker_column = QtWidgets.QVBoxLayout()
+        self.marker_column = QtWidgets.QVBoxLayout()
         self.marker_frame = QtWidgets.QFrame()
-        marker_column.setContentsMargins(0, 0, 0, 0)
-        self.marker_frame.setLayout(marker_column)
+        self.marker_column.setContentsMargins(0, 0, 0, 0)
+        self.marker_frame.setLayout(self.marker_column)
         right_column = QtWidgets.QVBoxLayout()
         right_column.addLayout(self.charts_layout)
         self.marker_frame.setHidden(not self.settings.value("MarkersVisible", True, bool))
@@ -260,30 +280,18 @@ class NanoVNASaver(QtWidgets.QWidget):
         marker_control_box = QtWidgets.QGroupBox()
         marker_control_box.setTitle("Markers")
         marker_control_box.setMaximumWidth(250)
-        marker_control_layout = QtWidgets.QFormLayout(marker_control_box)
+        self.marker_control_layout = QtWidgets.QFormLayout(marker_control_box)
 
-        marker1_color = self.settings.value("Marker1Color", QtGui.QColor(255, 0, 20), QtGui.QColor)
-        marker1 = Marker("Marker 1", marker1_color)
-        marker1.updated.connect(self.dataUpdated)
-        label, layout = marker1.getRow()
-        marker_control_layout.addRow(label, layout)
-        self.markers.append(marker1)
-        marker1.isMouseControlledRadioButton.setChecked(True)
-
-        marker2_color = self.settings.value("Marker2Color", QtGui.QColor(20, 0, 255), QtGui.QColor)
-        marker2 = Marker("Marker 2", marker2_color)
-        marker2.updated.connect(self.dataUpdated)
-        label, layout = marker2.getRow()
-        marker_control_layout.addRow(label, layout)
-        self.markers.append(marker2)
-
-        marker3_color = self.settings.value("Marker3Color", QtGui.QColor(20, 255, 20), QtGui.QColor)
-        marker3 = Marker("Marker 3", marker3_color)
-        marker3.updated.connect(self.dataUpdated)
-        label, layout = marker3.getRow()
-        marker_control_layout.addRow(label, layout)
-
-        self.markers.append(marker3)
+        marker_count = self.settings.value("MarkerCount", 3, int)
+        for i in range(marker_count):
+            color = self.settings.value("Marker" + str(i+1) + "Color", self.default_marker_colors[i])
+            marker = Marker("Marker " + str(i+1), color)
+            marker.updated.connect(self.dataUpdated)
+            label, layout = marker.getRow()
+            self.marker_control_layout.addRow(label, layout)
+            self.markers.append(marker)
+            if i == 0:
+                marker.isMouseControlledRadioButton.setChecked(True)
 
         self.showMarkerButton = QtWidgets.QPushButton()
         if self.marker_frame.isHidden():
@@ -291,16 +299,21 @@ class NanoVNASaver(QtWidgets.QWidget):
         else:
             self.showMarkerButton.setText("Hide data")
         self.showMarkerButton.clicked.connect(self.toggleMarkerFrame)
-        marker_control_layout.addRow(self.showMarkerButton)
+        self.marker_control_layout.addRow(self.showMarkerButton)
 
         for c in self.subscribing_charts:
             c.setMarkers(self.markers)
             c.setBands(self.bands)
         left_column.addWidget(marker_control_box)
 
-        marker_column.addWidget(self.markers[0].getGroupBox())
-        marker_column.addWidget(self.markers[1].getGroupBox())
-        marker_column.addWidget(self.markers[2].getGroupBox())
+        self.marker_data_layout = QtWidgets.QVBoxLayout()
+        self.marker_data_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.marker_data_layout.addWidget(self.markers[0].getGroupBox())
+        self.marker_data_layout.addWidget(self.markers[1].getGroupBox())
+        self.marker_data_layout.addWidget(self.markers[2].getGroupBox())
+
+        self.marker_column.addLayout(self.marker_data_layout)
 
         ################################################################################################################
         #  Statistics/analysis
@@ -316,7 +329,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s11_min_rl_label = QtWidgets.QLabel()
         s11_control_layout.addRow("Return loss:", self.s11_min_rl_label)
 
-        marker_column.addWidget(s11_control_box)
+        self.marker_column.addWidget(s11_control_box)
 
         s21_control_box = QtWidgets.QGroupBox()
         s21_control_box.setTitle("S21")
@@ -329,15 +342,14 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s21_max_gain_label = QtWidgets.QLabel()
         s21_control_layout.addRow("Max gain:", self.s21_max_gain_label)
 
-        marker_column.addWidget(s21_control_box)
+        self.marker_column.addWidget(s21_control_box)
 
-        marker_column.addSpacerItem(QtWidgets.QSpacerItem(1, 1, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding))
-
+        self.marker_column.addStretch(1)
         self.analysis_window = AnalysisWindow(self)
 
         btn_show_analysis = QtWidgets.QPushButton("Analysis ...")
         btn_show_analysis.clicked.connect(self.displayAnalysisWindow)
-        marker_column.addWidget(btn_show_analysis)
+        self.marker_column.addWidget(btn_show_analysis)
 
         ################################################################################################################
         # TDR
@@ -607,6 +619,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                 elif self.sweepStartInput.text() == "" or self.sweepEndInput.text() == "":
                     self.sweepStartInput.setText(frequencies[0])
                     self.sweepEndInput.setText(frequencies[100])
+                self.sweepStartInput.textEdited.emit(self.sweepStartInput.text())
                 self.sweepStartInput.textChanged.emit(self.sweepStartInput.text())
             else:
                 logger.warning("No frequencies read")
@@ -681,6 +694,9 @@ class NanoVNASaver(QtWidgets.QWidget):
             for c in self.s21charts:
                 c.setData(self.data21)
 
+            for c in self.combinedCharts:
+                c.setCombinedData(self.data, self.data21)
+
             self.sweepProgressBar.setValue(self.worker.percentage)
             self.tdr_window.updateTDR()
 
@@ -688,13 +704,13 @@ class NanoVNASaver(QtWidgets.QWidget):
             minVSWR = 100
             minVSWRfreq = -1
             for d in self.data:
-                _, _, vswr = self.vswr(d)
+                vswr = RFTools.calculateVSWR(d)
                 if minVSWR > vswr > 0:
                     minVSWR = vswr
                     minVSWRfreq = d.freq
 
             if minVSWRfreq > -1:
-                self.s11_min_swr_label.setText(str(round(minVSWR, 3)) + " @ " + self.formatFrequency(minVSWRfreq))
+                self.s11_min_swr_label.setText(str(round(minVSWR, 3)) + " @ " + RFTools.formatFrequency(minVSWRfreq))
                 if minVSWR > 1:
                     self.s11_min_rl_label.setText(str(round(20*math.log10((minVSWR-1)/(minVSWR+1)), 3)) + " dB")
                 else:
@@ -708,7 +724,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             maxGain = -100
             maxGainFreq = -1
             for d in self.data21:
-                gain = self.gain(d)
+                gain = RFTools.gain(d)
                 if gain > maxGain:
                     maxGain = gain
                     maxGainFreq = d.freq
@@ -717,8 +733,8 @@ class NanoVNASaver(QtWidgets.QWidget):
                     minGainFreq = d.freq
 
             if maxGainFreq > -1:
-                self.s21_min_gain_label.setText(str(round(minGain, 3)) + " dB @ " + self.formatFrequency(minGainFreq))
-                self.s21_max_gain_label.setText(str(round(maxGain, 3)) + " dB @ " + self.formatFrequency(maxGainFreq))
+                self.s21_min_gain_label.setText(str(round(minGain, 3)) + " dB @ " + RFTools.formatFrequency(minGainFreq))
+                self.s21_max_gain_label.setText(str(round(maxGain, 3)) + " dB @ " + RFTools.formatFrequency(maxGainFreq))
             else:
                 self.s21_min_gain_label.setText("")
                 self.s21_max_gain_label.setText("")
@@ -728,79 +744,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.updateTitle()
         self.dataLock.release()
 
-    @staticmethod
-    def vswr(data: Datapoint):
-        re50, im50 = NanoVNASaver.normalize50(data)
-        try:
-            mag = math.sqrt((re50 - 50) * (re50 - 50) + im50 * im50) / math.sqrt((re50 + 50) * (re50 + 50) + im50 * im50)
-            vswr = (1 + mag) / (1 - mag)
-        except ZeroDivisionError as e:
-            vswr = 1
-        return im50, re50, vswr
-
-    @staticmethod
-    def qualifyFactor(data: Datapoint):
-        im50, re50, _ = NanoVNASaver.vswr(data)
-        if re50 != 0:
-            Q = abs(im50 / re50)
-        else:
-            Q = -1
-        return Q
-
-    @staticmethod
-    def capacitanceEquivalent(im50, freq) -> str:
-        if im50 == 0 or freq == 0:
-            return "- pF"
-        capacitance = 10**12/(freq * 2 * math.pi * im50)
-        if abs(capacitance) > 10000:
-            return str(round(-capacitance/1000, 2)) + " nF"
-        elif abs(capacitance) > 1000:
-            return str(round(-capacitance/1000, 3)) + " nF"
-        elif abs(capacitance) > 10:
-            return str(round(-capacitance, 2)) + " pF"
-        else:
-            return str(round(-capacitance, 3)) + " pF"
-
-    @staticmethod
-    def inductanceEquivalent(im50, freq) -> str:
-        if freq == 0:
-            return "- nH"
-        inductance = im50 * 1000000000 / (freq * 2 * math.pi)
-        if abs(inductance) > 10000:
-            return str(round(inductance / 1000, 2)) + " μH"
-        elif abs(inductance) > 1000:
-            return str(round(inductance/1000, 3)) + " μH"
-        elif abs(inductance) > 10:
-            return str(round(inductance, 2)) + " nH"
-        else:
-            return str(round(inductance, 3)) + " nH"
-
-    @staticmethod
-    def gain(data: Datapoint):
-        re50, im50 = NanoVNASaver.normalize50(data)
-        # Calculate the gain / reflection coefficient
-        mag = math.sqrt((re50 - 50) * (re50 - 50) + im50 * im50) / math.sqrt(
-            (re50 + 50) * (re50 + 50) + im50 * im50)
-        if mag > 0:
-            return 20 * math.log10(mag)
-        else:
-            return 0
-
-    @staticmethod
-    def normalize50(data):
-        re = data.re
-        im = data.im
-        re50 = 50 * (1 - re * re - im * im) / (1 + re * re + im * im - 2 * re)
-        im50 = 50 * (2 * im) / (1 + re * re + im * im - 2 * re)
-        return re50, im50
-
-    @staticmethod
-    def admittance(data):
-        re50, im50 = NanoVNASaver.normalize50(data)
-        rp = re50 / (re50**2 + im50**2)
-        xp = - im50 / (re50**2 + im50**2)
-        return rp, xp
-
     def sweepFinished(self):
         self.sweepProgressBar.setValue(100)
         self.btnSweep.setDisabled(False)
@@ -808,8 +751,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.toggleSweepSettings(False)
 
     def updateCenterSpan(self):
-        fstart = self.parseFrequency(self.sweepStartInput.text())
-        fstop = self.parseFrequency(self.sweepEndInput.text())
+        fstart = RFTools.parseFrequency(self.sweepStartInput.text())
+        fstop = RFTools.parseFrequency(self.sweepEndInput.text())
         fspan = fstop - fstart
         fcenter = int(round((fstart+fstop)/2))
         if fspan < 0 or fstart < 0 or fstop < 0:
@@ -818,8 +761,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.sweepCenterInput.setText(str(fcenter))
 
     def updateStartEnd(self):
-        fcenter = self.parseFrequency(self.sweepCenterInput.text())
-        fspan = self.parseFrequency(self.sweepSpanInput.text())
+        fcenter = RFTools.parseFrequency(self.sweepCenterInput.text())
+        fspan = RFTools.parseFrequency(self.sweepSpanInput.text())
         if fspan < 0 or fcenter < 0:
             return
         fstart = int(round(fcenter - fspan/2))
@@ -830,72 +773,14 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.sweepEndInput.setText(str(fstop))
 
     def updateStepSize(self):
-        fspan = self.parseFrequency(self.sweepSpanInput.text())
+        fspan = RFTools.parseFrequency(self.sweepSpanInput.text())
         if fspan < 0:
             return
         if self.sweepCountInput.text().isdigit():
             segments = int(self.sweepCountInput.text())
             if segments > 0:
                 fstep = fspan / (segments * 101)
-                self.sweepStepLabel.setText(self.formatShortFrequency(fstep) + "/step")
-
-    @staticmethod
-    def formatFrequency(freq):
-        if freq < 1:
-            return "- Hz"
-        if math.log10(freq) < 3:
-            return str(round(freq)) + " Hz"
-        elif math.log10(freq) < 7:
-            return "{:.3f}".format(freq/1000) + " kHz"
-        elif math.log10(freq) < 8:
-            return "{:.4f}".format(freq/1000000) + " MHz"
-        else:
-            return "{:.3f}".format(freq/1000000) + " MHz"
-
-    @staticmethod
-    def formatShortFrequency(freq):
-        if freq < 1:
-            return "- Hz"
-        if math.log10(freq) < 3:
-            return str(round(freq)) + " Hz"
-        elif math.log10(freq) < 5:
-            return "{:.3f}".format(freq/1000) + " kHz"
-        elif math.log10(freq) < 6:
-            return "{:.2f}".format(freq/1000) + " kHz"
-        elif math.log10(freq) < 7:
-            return "{:.1f}".format(freq/1000) + " kHz"
-        elif math.log10(freq) < 8:
-            return "{:.3f}".format(freq/1000000) + " MHz"
-        elif math.log10(freq) < 9:
-            return "{:.2f}".format(freq/1000000) + " MHz"
-        else:
-            return "{:.1f}".format(freq/1000000) + " MHz"
-
-    @staticmethod
-    def parseFrequency(freq: str):
-        freq = freq.replace(" ", "")  # People put all sorts of weird whitespace in.
-        if freq.isnumeric():
-            return int(freq)
-
-        multiplier = 1
-        freq = freq.lower()
-
-        if freq.endswith("k"):
-            multiplier = 1000
-            freq = freq[:-1]
-        elif freq.endswith("m"):
-            multiplier = 1000000
-            freq = freq[:-1]
-
-        if freq.isnumeric():
-            return int(freq) * multiplier
-
-        try:
-            f = float(freq)
-            return int(round(multiplier * f))
-        except ValueError:
-            # Okay, we couldn't parse this however much we tried.
-            return -1
+                self.sweepStepLabel.setText(RFTools.formatShortFrequency(fstep) + "/step")
 
     def setReference(self, s11data=None, s21data=None, source=None):
         if not s11data:
@@ -909,6 +794,10 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.referenceS21data = s21data
         for c in self.s21charts:
             c.setReference(s21data)
+
+        for c in self.combinedCharts:
+            c.setCombinedReference(s11data, s21data)
+
         self.btnResetReference.setDisabled(False)
 
         if source is not None:
@@ -1020,14 +909,16 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.s11charts.append(new_chart)
         if chart in self.s21charts:
             self.s21charts.append(new_chart)
+        if chart in self.combinedCharts:
+            self.combinedCharts.append(new_chart)
         new_chart.popoutRequested.connect(self.popoutChart)
         return new_chart
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
         self.worker.stopped = True
-        self.settings.setValue("Marker1Color", self.markers[0].color)
-        self.settings.setValue("Marker2Color", self.markers[1].color)
-        self.settings.setValue("Marker3Color", self.markers[2].color)
+        self.settings.setValue("MarkerCount", len(self.markers))
+        for i in range(len(self.markers)):
+            self.settings.setValue("Marker" + str(i+1) + "Color", self.markers[i].color)
 
         self.settings.setValue("WindowHeight", self.height())
         self.settings.setValue("WindowWidth", self.width())
@@ -1035,7 +926,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.bands.saveSettings()
         self.threadpool.waitForDone(2500)
         a0.accept()
-        sys.exit()
+        #sys.exit()
 
 
 class DisplaySettingsWindow(QtWidgets.QWidget):
@@ -1107,7 +998,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         self.btnReferenceColorPicker = QtWidgets.QPushButton("█")
         self.btnReferenceColorPicker.setFixedWidth(20)
-        self.referenceColor = self.app.settings.value("ReferenceColor", defaultValue=QtGui.QColor(0, 0, 255, 32),
+        self.referenceColor = self.app.settings.value("ReferenceColor", defaultValue=QtGui.QColor(0, 0, 255, 48),
                                                       type=QtGui.QColor)
         self.setReferenceColor(self.referenceColor)
         self.btnReferenceColorPicker.clicked.connect(lambda: self.setReferenceColor(
@@ -1118,7 +1009,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.btnSecondaryReferenceColorPicker = QtWidgets.QPushButton("█")
         self.btnSecondaryReferenceColorPicker.setFixedWidth(20)
         self.secondaryReferenceColor = self.app.settings.value("SecondaryReferenceColor",
-                                                               defaultValue=QtGui.QColor(0, 0, 255, 32),
+                                                               defaultValue=QtGui.QColor(0, 0, 255, 48),
                                                                type=QtGui.QColor)
         self.setSecondaryReferenceColor(self.secondaryReferenceColor)
         self.btnSecondaryReferenceColorPicker.clicked.connect(lambda: self.setSecondaryReferenceColor(
@@ -1128,7 +1019,9 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         display_options_layout.addRow("Second reference color", self.btnSecondaryReferenceColorPicker)
 
         self.pointSizeInput = QtWidgets.QSpinBox()
-        self.pointSizeInput.setValue(self.app.settings.value("PointSize", 2, int))
+        pointsize = self.app.settings.value("PointSize", 2, int)
+        self.pointSizeInput.setValue(pointsize)
+        self.changePointSize(pointsize)
         self.pointSizeInput.setMinimum(1)
         self.pointSizeInput.setMaximum(10)
         self.pointSizeInput.setSuffix(" px")
@@ -1137,7 +1030,9 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         display_options_layout.addRow("Point size", self.pointSizeInput)
 
         self.lineThicknessInput = QtWidgets.QSpinBox()
-        self.lineThicknessInput.setValue(self.app.settings.value("LineThickness", 1, int))
+        linethickness = self.app.settings.value("LineThickness", 2, int)
+        self.lineThicknessInput.setValue(linethickness)
+        self.changeLineThickness(linethickness)
         self.lineThicknessInput.setMinimum(1)
         self.lineThicknessInput.setMaximum(10)
         self.lineThicknessInput.setSuffix(" px")
@@ -1237,15 +1132,29 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
                     c.addSWRMarker(m)
 
         self.vswr_marker_dropdown.setCurrentIndex(0)
-        btn_add_marker = QtWidgets.QPushButton("Add ...")
-        btn_remove_marker = QtWidgets.QPushButton("Remove")
+        btn_add_vswr_marker = QtWidgets.QPushButton("Add ...")
+        btn_remove_vswr_marker = QtWidgets.QPushButton("Remove")
         vswr_marker_btn_layout = QtWidgets.QHBoxLayout()
-        vswr_marker_btn_layout.addWidget(btn_add_marker)
-        vswr_marker_btn_layout.addWidget(btn_remove_marker)
+        vswr_marker_btn_layout.addWidget(btn_add_vswr_marker)
+        vswr_marker_btn_layout.addWidget(btn_remove_vswr_marker)
         vswr_marker_layout.addRow(vswr_marker_btn_layout)
 
-        btn_add_marker.clicked.connect(self.addVSWRMarker)
-        btn_remove_marker.clicked.connect(self.removeVSWRMarker)
+        btn_add_vswr_marker.clicked.connect(self.addVSWRMarker)
+        btn_remove_vswr_marker.clicked.connect(self.removeVSWRMarker)
+
+        markers_box = QtWidgets.QGroupBox("Markers")
+        markers_layout = QtWidgets.QFormLayout(markers_box)
+
+        btn_add_marker = QtWidgets.QPushButton("Add")
+        btn_add_marker.clicked.connect(self.addMarker)
+        self.btn_remove_marker = QtWidgets.QPushButton("Remove")
+        self.btn_remove_marker.clicked.connect(self.removeMarker)
+
+        marker_btn_layout = QtWidgets.QHBoxLayout()
+        marker_btn_layout.addWidget(btn_add_marker)
+        marker_btn_layout.addWidget(self.btn_remove_marker)
+
+        markers_layout.addRow(marker_btn_layout)
 
         charts_box = QtWidgets.QGroupBox("Displayed charts")
         charts_layout = QtWidgets.QGridLayout(charts_box)
@@ -1355,12 +1264,14 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         left_layout.addWidget(display_options_box)
         left_layout.addWidget(charts_box)
+        left_layout.addWidget(markers_box)
         left_layout.addStretch(1)
 
         right_layout.addWidget(color_options_box)
         right_layout.addWidget(font_options_box)
         right_layout.addWidget(bands_box)
         right_layout.addWidget(vswr_marker_box)
+        right_layout.addStretch(1)
 
     def changeChart(self, x, y, chart):
         found = None
@@ -1545,6 +1456,42 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.bandsWindow.show()
         QtWidgets.QApplication.setActiveWindow(self.bandsWindow)
 
+    def addMarker(self):
+        marker_count = len(self.app.markers)
+        if marker_count < 6:
+            color = NanoVNASaver.default_marker_colors[marker_count]
+        else:
+            color = QtGui.QColor(QtCore.Qt.darkGray)
+        new_marker = Marker("Marker " + str(marker_count+1), color)
+        self.app.markers.append(new_marker)
+        self.app.marker_data_layout.addWidget(new_marker.getGroupBox())
+
+        new_marker.updated.connect(self.app.dataUpdated)
+        label, layout = new_marker.getRow()
+        self.app.marker_control_layout.insertRow(marker_count, label, layout)
+        if marker_count == 0:
+            new_marker.isMouseControlledRadioButton.setChecked(True)
+
+        self.btn_remove_marker.setDisabled(False)
+
+    def removeMarker(self):
+        if len(self.app.markers) == 0:
+            # How did we even get here? Better handle it anyway.
+            self.btn_remove_marker.setDisabled(True)
+            return
+        last_marker = self.app.markers.pop()
+        if len(self.app.markers) == 0:
+            # Last marker removed.
+            self.btn_remove_marker.setDisabled(True)
+
+        last_marker.updated.disconnect(self.app.dataUpdated)
+        self.app.marker_data_layout.removeWidget(last_marker.getGroupBox())
+        self.app.marker_control_layout.removeRow(len(self.app.markers))
+        last_marker.getGroupBox().hide()
+        last_marker.getGroupBox().destroy()
+        label, layout = last_marker.getRow()
+        label.hide()
+
     def addVSWRMarker(self):
         value, selected = QtWidgets.QInputDialog.getDouble(self, "Add VSWR Marker",
                                                            "VSWR value to show:", min=1.001, decimals=3)
@@ -1694,9 +1641,15 @@ class AboutWindow(QtWidgets.QWidget):
             latest_url = updates['url']
         except error.HTTPError as e:
             logger.exception("Checking for updates produced an HTTP exception: %s", e)
+            self.updateLabel.setText("Connection error.")
             return
         except json.JSONDecodeError as e:
             logger.exception("Checking for updates provided an unparseable file: %s", e)
+            self.updateLabel.setText("Data error reading versions.")
+            return
+        except error.URLError as e:
+            logger.exception("Checking for updates produced a URL exception: %s", e)
+            self.updateLabel.setText("Connection error.")
             return
 
         logger.info("Latest version is " + latest_version.version_string)
@@ -1918,8 +1871,8 @@ class SweepSettingsWindow(QtWidgets.QWidget):
             start = max(1, start)
             stop += round(span / 10)
 
-        self.band_limit_label.setText("Sweep span: " + NanoVNASaver.formatShortFrequency(start) + " to " +
-                                      NanoVNASaver.formatShortFrequency(stop))
+        self.band_limit_label.setText("Sweep span: " + RFTools.formatShortFrequency(start) + " to " +
+                                      RFTools.formatShortFrequency(stop))
 
     def setBandSweep(self):
         index_start = self.band_list.model().index(self.band_list.currentIndex(), 1)
