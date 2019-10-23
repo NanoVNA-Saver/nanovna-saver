@@ -287,7 +287,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             if i < len(self.default_marker_colors):
                 default_color = self.default_marker_colors[i]
             else:
-                default_color = self.default_marker_colors[len(self.default_marker_colors) - 1]
+                color = QtGui.QColor(QtCore.Qt.darkGray)
             color = self.settings.value("Marker" + str(i+1) + "Color", default_color)
             marker = Marker("Marker " + str(i+1), color)
             marker.updated.connect(self.dataUpdated)
