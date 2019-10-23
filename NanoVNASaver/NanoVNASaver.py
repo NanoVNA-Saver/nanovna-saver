@@ -284,7 +284,11 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         marker_count = self.settings.value("MarkerCount", 3, int)
         for i in range(marker_count):
-            color = self.settings.value("Marker" + str(i+1) + "Color", self.default_marker_colors[i])
+            if i < len(self.default_marker_colors):
+                default_color = self.default_marker_colors[i]
+            else:
+                default_color = self.default_marker_colors[len(self.default_marker_colors) - 1]
+            color = self.settings.value("Marker" + str(i+1) + "Color", default_color)
             marker = Marker("Marker " + str(i+1), color)
             marker.updated.connect(self.dataUpdated)
             label, layout = marker.getRow()
@@ -309,9 +313,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.marker_data_layout = QtWidgets.QVBoxLayout()
         self.marker_data_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.marker_data_layout.addWidget(self.markers[0].getGroupBox())
-        self.marker_data_layout.addWidget(self.markers[1].getGroupBox())
-        self.marker_data_layout.addWidget(self.markers[2].getGroupBox())
+        for m in self.markers:
+            self.marker_data_layout.addWidget(m.getGroupBox())
 
         self.marker_column.addLayout(self.marker_data_layout)
 
