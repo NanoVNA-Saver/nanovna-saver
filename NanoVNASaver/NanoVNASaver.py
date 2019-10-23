@@ -929,7 +929,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.bands.saveSettings()
         self.threadpool.waitForDone(2500)
         a0.accept()
-        #sys.exit()
+        sys.exit()
 
 
 class DisplaySettingsWindow(QtWidgets.QWidget):
