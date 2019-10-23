@@ -17,14 +17,15 @@ Current features:
 - Displaying customizable frequency bands as reference, for example amateur radio bands
 - Exporting and importing 1-port and 2-port Touchstone files
 - TDR function (measurement of cable length)
+- Filter analysis functions for low-pass, high-pass, band-pass and band-stop filters
 - Display of both an active and a reference trace
 - Live updates of data from the NanoVNA, including for multi-segment sweeps
 - In-application calibration, including compensation for non-ideal calibration standards
 - Customizable display options, including "dark mode"
 - Exporting images of plotted values
 
-0.1.0:
-![Screenshot of version 0.1.0](https://i.imgur.com/OHlq9oW.png)
+0.1.4:
+![Screenshot of version 0.1.4](https://i.imgur.com/ZoFsV2V.png)
 
 ## Running the application
 
@@ -136,11 +137,13 @@ conditions under which the calibration was performed.
 Calibration results may be saved and loaded using the provided buttons at the bottom of the window.  Notes are saved
 and loaded along with the calibration data.
 
-![Screenshot of Calibration Window](https://i.imgur.com/k6sqAVd.png)
+![Screenshot of Calibration Window](https://i.imgur.com/p94cxOX.png)
 
-Users of known characterized calibration standard sets can enter the data for these, and save the sets.and
+Users of known characterized calibration standard sets can enter the data for these, and save the sets.
 
-_Currently, load capacitance and deleting calibration sets is unsupported_
+After pressing _Apply_, the calibration is immediately applied to the latest sweep data.
+
+_Currently, load capacitance is unsupported_
 
 ### TDR
 To get accurate TDR measurements, calibrate the device, and attach the cable to be measured at the calibration plane -
