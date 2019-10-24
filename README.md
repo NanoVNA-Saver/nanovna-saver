@@ -1,6 +1,7 @@
 [![Latest Release](https://img.shields.io/github/v/release/mihtjel/nanovna-saver.svg)](https://github.com/mihtjel/nanovna-saver/releases/latest)
 [![License](https://img.shields.io/github/license/mihtjel/nanovna-saver.svg)](https://github.com/mihtjel/nanovna-saver/blob/master/LICENSE)
 [![Downloads](https://img.shields.io/github/downloads/mihtjel/nanovna-saver/total.svg)](https://github.com/mihtjel/nanovna-saver/releases/)
+[![GitHub Releases](https://img.shields.io/github/downloads/mihtjel/nanovna-saver/latest/total)](https://github.com/mihtjel/nanovna-saver/releases/latest)
 
 NanoVNASaver
 ============
