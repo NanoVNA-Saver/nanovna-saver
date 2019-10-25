@@ -1245,6 +1245,8 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self.btn_foreground_picker.setDisabled(True)
             self.btn_text_picker.setDisabled(True)
 
+        self.changeCustomColors()  # Update all the colours of all the charts
+
         p = self.btn_background_picker.palette()
         p.setColor(QtGui.QPalette.ButtonText, self.backgroundColor)
         self.btn_background_picker.setPalette(p)
