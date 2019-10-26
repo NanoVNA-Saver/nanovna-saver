@@ -82,6 +82,8 @@ In order to run this app in Linux environment, you'll need the following package
 
         python3.7 -m pip install .
     
+    (You may need to install the additional packages python3-distutils and python3-setuptools for this command to work on some distributions.)
+    
 5. Once completed run with the following command
 
         python3.7 nanovna-saver.py
