@@ -1875,10 +1875,11 @@ class TDRChart(Chart):
     def __init__(self, name):
         super().__init__(name)
         self.tdrWindow = None
-        self.leftMargin = 20
+        self.leftMargin = 30
         self.rightMargin = 20
-        self.bottomMargin = 35
-        self.setMinimumSize(250, 250)
+        self.bottomMargin = 25
+        self.topMargin = 20
+        self.setMinimumSize(300, 300)
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
                                                  QtWidgets.QSizePolicy.MinimumExpanding))
         pal = QtGui.QPalette()
@@ -1975,12 +1976,12 @@ class TDRChart(Chart):
         qp.drawText(3, 15, self.name)
 
         width = self.width() - self.leftMargin - self.rightMargin
-        height = self.height() - self.bottomMargin
+        height = self.height() - self.bottomMargin - self.topMargin
 
         qp.setPen(QtGui.QPen(self.foregroundColor))
         qp.drawLine(self.leftMargin - 5, self.height() - self.bottomMargin, self.width() - self.rightMargin,
                     self.height() - self.bottomMargin)
-        qp.drawLine(self.leftMargin, 20, self.leftMargin, self.height() - self.bottomMargin + 5)
+        qp.drawLine(self.leftMargin, self.topMargin - 5, self.leftMargin, self.height() - self.bottomMargin + 5)
 
         ticks = math.floor((self.width() - self.leftMargin)/100)  # Number of ticks does not include the origin
 
@@ -1991,33 +1992,58 @@ class TDRChart(Chart):
                 x_step = (max_index - min_index) / width
             else:
                 min_index = 0
-                max_index = len(self.tdrWindow.distance_axis)
-                x_step = len(self.tdrWindow.distance_axis) / (width * 2)
+                max_index = math.ceil(len(self.tdrWindow.distance_axis) / 2)
+                x_step = max_index / width
 
-            y_step = np.max(self.tdrWindow.td)*1.1 / height
+            # TODO: Limit the search to the selected span?
+            min_impedance = max(0, np.min(self.tdrWindow.step_response_Z) / 1.05)
+            max_impedance = min(10000, np.max(self.tdrWindow.step_response_Z) * 1.05)
+
+            y_step = np.max(self.tdrWindow.td) * 1.1 / height
+            y_impedance_step = (max_impedance - min_impedance) / height
 
             for i in range(ticks):
                 x = self.leftMargin + round((i + 1) * width / ticks)
                 qp.setPen(QtGui.QPen(self.foregroundColor))
-                qp.drawLine(x, 20, x, height)
+                qp.drawLine(x, self.topMargin, x, self.topMargin + height)
                 qp.setPen(QtGui.QPen(self.textColor))
-                qp.drawText(x - 15, 20 + height,
+                qp.drawText(x - 15, self.topMargin + height + 15,
                             str(round(self.tdrWindow.distance_axis[min_index + int((x - self.leftMargin) * x_step) - 1]/2, 1)) + "m")
 
             qp.setPen(QtGui.QPen(self.textColor))
-            qp.drawText(self.leftMargin - 10, 20 + height,
+            qp.drawText(self.leftMargin - 10, self.topMargin + height + 15,
                         str(round(self.tdrWindow.distance_axis[min_index]/2, 1)) + "m")
+
+            y_ticks = math.floor(height / 60)
+            y_tick_step = height/y_ticks
+
+            for i in range(y_ticks):
+                y = self.bottomMargin + int(i * y_tick_step)
+                qp.setPen(QtGui.QPen(self.foregroundColor))
+                qp.drawLine(self.leftMargin, y, self.leftMargin + width, y)
+                y_val = max_impedance - y_impedance_step * i * y_tick_step
+                qp.drawText(3, y + 3, str(round(y_val, 1)))
+
+            qp.drawText(3, self.topMargin + height + 3, str(round(min_impedance, 1)))
 
             pen = QtGui.QPen(self.sweepColor)
             pen.setWidth(self.pointSize)
             qp.setPen(pen)
-            for i in range(len(self.tdrWindow.distance_axis)):
+            for i in range(min_index, max_index):
                 if i < min_index or i > max_index:
                     continue
-                qp.drawPoint(self.leftMargin + int((i - min_index) / x_step), height - int(self.tdrWindow.td[i] / y_step))
+                pen.setColor(self.sweepColor)
+                qp.setPen(pen)
+                qp.drawPoint(self.leftMargin + int((i - min_index) / x_step),
+                             (self.topMargin + height) - int(self.tdrWindow.td[i] / y_step))
+                pen.setColor(self.secondarySweepColor)
+                qp.setPen(pen)
+                qp.drawPoint(self.leftMargin + int((i - min_index) / x_step),
+                             (self.topMargin + height) - int((self.tdrWindow.step_response_Z[i]-min_impedance) / y_impedance_step))
+
             id_max = np.argmax(self.tdrWindow.td)
             max_point = QtCore.QPoint(self.leftMargin + int((id_max - min_index) / x_step),
-                                      height - int(self.tdrWindow.td[id_max] / y_step))
+                                      (self.topMargin + height) - int(self.tdrWindow.td[id_max] / y_step))
             qp.setPen(self.markers[0].color)
             qp.drawEllipse(max_point, 2, 2)
             qp.setPen(self.textColor)

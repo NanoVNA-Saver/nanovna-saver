@@ -52,5 +52,6 @@ setup(
         'pyserial',
         'PyQt5==5.11.2',
         'numpy',
+        'scipy'
     ],
 )

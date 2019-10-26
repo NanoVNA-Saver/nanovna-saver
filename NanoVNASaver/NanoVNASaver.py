@@ -22,6 +22,7 @@ from time import sleep, strftime, localtime
 from typing import List, Tuple
 
 import numpy as np
+import scipy.signal as signal
 import serial
 import typing
 from PyQt5 import QtWidgets, QtCore, QtGui
@@ -1691,6 +1692,8 @@ class TDRWindow(QtWidgets.QWidget):
 
         self.td = []
         self.distance_axis = []
+        self.step_response = []
+        self.step_response_Z = []
 
         self.setWindowTitle("TDR")
         self.setWindowIcon(self.app.icon)
@@ -1754,6 +1757,9 @@ class TDRWindow(QtWidgets.QWidget):
 
     def updateTDR(self):
         c = 299792458
+        # TODO: Let the user select whether to use high or low resolution TDR?
+        FFT_POINTS = 2**14
+
         if len(self.app.data) < 2:
             return
 
@@ -1781,12 +1787,14 @@ class TDRWindow(QtWidgets.QWidget):
         window = np.blackman(len(self.app.data))
 
         windowed_s11 = window * s11
+        self.td = np.abs(np.fft.ifft(windowed_s11, FFT_POINTS))
+        step = np.ones(FFT_POINTS)
+        self.step_response = signal.convolve(self.td, step)
 
-        self.td = np.abs(np.fft.ifft(windowed_s11, 2**16))
+        self.step_response_Z = 50 * (1 + self.step_response) / (1 - self.step_response)
 
-        time_axis = np.linspace(0, 1/step_size, 2**16)
+        time_axis = np.linspace(0, 1/step_size, FFT_POINTS)
         self.distance_axis = time_axis * v * c
-
         # peak = np.max(td)  # We should check that this is an actual *peak*, and not just a vague maximum
         index_peak = np.argmax(self.td)
 
