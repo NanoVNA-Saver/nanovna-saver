@@ -61,12 +61,6 @@ For most users, this is already installed.
         NanoVNASaver
 
 ### Linux
-
-In order to run this app in Linux environment, you'll need the following packages:
-
-* `python3-serial`
-* `python3-pyqt5`
-* `numpy`
 #### Ubuntu 18.04 & 19.04
 ##### Installation and Use with pip
 1. Install python3.7 and pip
@@ -82,7 +76,7 @@ In order to run this app in Linux environment, you'll need the following package
 
         python3.7 -m pip install .
     
-    (You may need to install the additional packages python3-distutils and python3-setuptools for this command to work on some distributions.)
+    (You may need to install the additional packages python3-distutils, python3-setuptools and python3-wheel for this command to work on some distributions.)
     
 5. Once completed run with the following command
 
