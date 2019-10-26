@@ -31,7 +31,7 @@ class Marker(QtCore.QObject):
 
     returnloss_is_positive = False
 
-    updated = pyqtSignal()
+    updated = pyqtSignal(object)
 
     def __init__(self, name, initialColor, frequency=""):
         super().__init__()
@@ -115,13 +115,8 @@ class Marker(QtCore.QObject):
 
     def setFrequency(self, frequency):
         f = RFTools.parseFrequency(frequency)
-        if f > 0:
-            self.frequency = f
-            self.updated.emit()
-        else:
-            self.frequency = 0
-            self.updated.emit()
-            return
+        self.frequency = max(f, 0)
+        self.updated.emit(self)
 
     def setColor(self, color):
         if color.isValid():

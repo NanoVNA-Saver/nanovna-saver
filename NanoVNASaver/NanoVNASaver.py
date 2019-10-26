@@ -291,7 +291,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                 default_color = QtGui.QColor(QtCore.Qt.darkGray)
             color = self.settings.value("Marker" + str(i+1) + "Color", default_color)
             marker = Marker("Marker " + str(i+1), color)
-            marker.updated.connect(self.dataUpdated)
+            marker.updated.connect(self.markerUpdated)
             label, layout = marker.getRow()
             self.marker_control_layout.addRow(label, layout)
             self.markers.append(marker)
@@ -684,6 +684,17 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.sweepSource = source
         else:
             self.sweepSource = strftime("%Y-%m-%d %H:%M:%S", localtime())
+
+    def markerUpdated(self, marker: Marker):
+        if self.dataLock.acquire(blocking=True):
+            marker.findLocation(self.data)
+            for m in self.markers:
+                m.resetLabels()
+                m.updateLabels(self.data, self.data21)
+
+            for c in self.subscribing_charts:
+                c.update()
+        self.dataLock.release()
 
     def dataUpdated(self):
         if self.dataLock.acquire(blocking=True):
@@ -1472,7 +1483,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.app.markers.append(new_marker)
         self.app.marker_data_layout.addWidget(new_marker.getGroupBox())
 
-        new_marker.updated.connect(self.app.dataUpdated)
+        new_marker.updated.connect(self.app.markerUpdated)
         label, layout = new_marker.getRow()
         self.app.marker_control_layout.insertRow(marker_count, label, layout)
         if marker_count == 0:
@@ -1490,7 +1501,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             # Last marker removed.
             self.btn_remove_marker.setDisabled(True)
 
-        last_marker.updated.disconnect(self.app.dataUpdated)
+        last_marker.updated.disconnect(self.app.markerUpdated)
         self.app.marker_data_layout.removeWidget(last_marker.getGroupBox())
         self.app.marker_control_layout.removeRow(len(self.app.markers))
         last_marker.getGroupBox().hide()
