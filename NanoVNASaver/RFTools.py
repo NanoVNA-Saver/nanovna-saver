@@ -59,7 +59,7 @@ class RFTools:
             #mag = math.sqrt((re50 - 50) * (re50 - 50) + im50 * im50) / math.sqrt((re50 + 50) * (re50 + 50) + im50 * im50)
             mag = math.sqrt(data.re**2 + data.im**2)
             vswr = (1 + mag) / (1 - mag)
-        except ZeroDivisionError as e:
+        except ZeroDivisionError:
             vswr = 1
         return vswr
 
@@ -106,27 +106,14 @@ class RFTools:
 
     @staticmethod
     def formatShortFrequency(freq):
-        if freq < 1:
-            return "- Hz"
-        if math.log10(freq) < 3:
-            return str(round(freq)) + " Hz"
-        elif math.log10(freq) < 5:
-            return "{:.3f}".format(freq/1000) + " kHz"
-        elif math.log10(freq) < 6:
-            return "{:.2f}".format(freq/1000) + " kHz"
-        elif math.log10(freq) < 7:
-            return "{:.1f}".format(freq/1000) + " kHz"
-        elif math.log10(freq) < 8:
-            return "{:.3f}".format(freq/1000000) + " MHz"
-        elif math.log10(freq) < 9:
-            return "{:.2f}".format(freq/1000000) + " MHz"
-        else:
-            return "{:.1f}".format(freq/1000000) + " MHz"
+        return RFTools.formatFixedFrequency(
+            round(freq), 5, True, True)
 
     @staticmethod
     def formatFixedFrequency(freq: int,
                              maxdigits: int = 6,
                              appendHz: bool = True,
+                             appendSpace: bool = False,
                              assumeInfinity: bool = True) -> str:
         """ Format frequency with SI prefixes
 
@@ -136,6 +123,7 @@ class RFTools:
         freqstr = str(freq)
         freqlen = len(freqstr)
 
+        # sanity checks
         if freqlen > 15:
             if assumeInfinity:
                 return "\N{INFINITY}"
@@ -145,13 +133,15 @@ class RFTools:
                 "At least 3 digits are needed, given ({})".format(maxdigits))
 
         if freq < 1:
-            return " - " + ("Hz" if appendHz else "")
-        si_index = (freqlen -1) // 3
+            return " - " + \
+                (" " if appendSpace else "") + \
+                ("Hz" if appendHz else "")
+        si_index = (freqlen - 1) // 3
         dot_pos = freqlen % 3 or 3
         freqstr = freqstr[:dot_pos] + "." + freqstr[dot_pos:] + "00"
 
-        return freqstr[:maxdigits] + PREFIXES[si_index] + \
-            ("Hz" if appendHz else "")
+        return freqstr[:maxdigits] + (" " if appendSpace else "") + \
+            PREFIXES[si_index] + ("Hz" if appendHz else "")
 
     @staticmethod
     def parseFrequency(freq: str) -> int:
