@@ -16,6 +16,8 @@
 import collections
 import math
 
+PREFIXES = ("", "k", "M", "G", "T")
+
 Datapoint = collections.namedtuple('Datapoint', 'freq re im')
 
 
@@ -122,7 +124,37 @@ class RFTools:
             return "{:.1f}".format(freq/1000000) + " MHz"
 
     @staticmethod
-    def parseFrequency(freq: str):
+    def formatFixedFrequency(freq: int,
+                             maxdigits: int = 6,
+                             appendHz: bool = True,
+                             assumeInfinity: bool = True) -> str:
+        """ Format frequency with SI prefixes
+
+            maxdigits count include the dot, so that default leads
+            to a maximum output of 9 characters
+        """
+        freqstr = str(freq)
+        freqlen = len(freqstr)
+
+        if freqlen > 15:
+            if assumeInfinity:
+                return "\N{INFINITY}"
+            raise ValueError("Frequency to big. More than 15 digits!")
+        if maxdigits < 3:
+            raise ValueError(
+                "At least 3 digits are needed, given ({})".format(maxdigits))
+
+        if freq < 1:
+            return " - " + ("Hz" if appendHz else "")
+        si_index = (freqlen -1) // 3
+        dot_pos = freqlen % 3 or 3
+        freqstr = freqstr[:dot_pos] + "." + freqstr[dot_pos:] + "00"
+
+        return freqstr[:maxdigits] + PREFIXES[si_index] + \
+            ("Hz" if appendHz else "")
+
+    @staticmethod
+    def parseFrequency(freq: str) -> int:
         freq = freq.replace(" ", "")  # People put all sorts of weird whitespace in.
         if freq.isnumeric():
             return int(freq)
@@ -130,11 +162,12 @@ class RFTools:
         multiplier = 1
         freq = freq.lower()
 
-        if freq.endswith("k"):
-            multiplier = 1000
-            freq = freq[:-1]
-        elif freq.endswith("m"):
-            multiplier = 1000000
+        if freq.endswith("hz"):
+            freq = freq[:-2]
+
+        my_prefixes = [pfx.lower() for pfx in PREFIXES]
+        if len(freq) and freq[-1] in my_prefixes:
+            multiplier = 10 ** (my_prefixes.index(freq[-1]) * 3)
             freq = freq[:-1]
 
         if freq.isnumeric():

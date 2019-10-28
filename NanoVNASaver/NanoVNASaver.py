@@ -13,7 +13,6 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import collections
 import logging
 import math
 import sys
@@ -618,11 +617,11 @@ class NanoVNASaver(QtWidgets.QWidget):
             if frequencies:
                 logger.info("Read starting frequency %s and end frequency %s", frequencies[0], frequencies[100])
                 if int(frequencies[0]) == int(frequencies[100]) and (self.sweepStartInput.text() == "" or self.sweepEndInput.text() == ""):
-                    self.sweepStartInput.setText(frequencies[0])
-                    self.sweepEndInput.setText(str(int(frequencies[100]) + 100000))
+                    self.sweepStartInput.setText(RFTools.formatFixedFrequency(int(frequencies[0])))
+                    self.sweepEndInput.setText(RFTools.formatFixedFrequency(int(frequencies[100]) + 100000))
                 elif self.sweepStartInput.text() == "" or self.sweepEndInput.text() == "":
-                    self.sweepStartInput.setText(frequencies[0])
-                    self.sweepEndInput.setText(frequencies[100])
+                    self.sweepStartInput.setText(RFTools.formatFixedFrequency(int(frequencies[0])))
+                    self.sweepEndInput.setText(RFTools.formatFixedFrequency(int(frequencies[100])))
                 self.sweepStartInput.textEdited.emit(self.sweepStartInput.text())
                 self.sweepStartInput.textChanged.emit(self.sweepStartInput.text())
             else:
@@ -772,8 +771,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         fcenter = int(round((fstart+fstop)/2))
         if fspan < 0 or fstart < 0 or fstop < 0:
             return
-        self.sweepSpanInput.setText(str(fspan))
-        self.sweepCenterInput.setText(str(fcenter))
+        self.sweepSpanInput.setText(RFTools.formatFixedFrequency(fspan))
+        self.sweepCenterInput.setText(RFTools.formatFixedFrequency(fcenter))
 
     def updateStartEnd(self):
         fcenter = RFTools.parseFrequency(self.sweepCenterInput.text())
@@ -784,8 +783,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         fstop = int(round(fcenter + fspan/2))
         if fstart < 0 or fstop < 0:
             return
-        self.sweepStartInput.setText(str(fstart))
-        self.sweepEndInput.setText(str(fstop))
+        self.sweepStartInput.setText(RFTools.formatFixedFrequency(fstart))
+        self.sweepEndInput.setText(RFTools.formatFixedFrequency(fstop))
 
     def updateStepSize(self):
         fspan = RFTools.parseFrequency(self.sweepSpanInput.text())
@@ -1919,8 +1918,8 @@ class SweepSettingsWindow(QtWidgets.QWidget):
             start = max(1, start)
             stop += round(span / 10)
 
-        self.app.sweepStartInput.setText(str(start))
-        self.app.sweepEndInput.setText(str(stop))
+        self.app.sweepStartInput.setText(RFTools.formatFixedFrequency(start))
+        self.app.sweepEndInput.setText(RFTools.formatFixedFrequency(stop))
         self.app.sweepEndInput.textEdited.emit(self.app.sweepEndInput.text())
 
     def updateAveraging(self):
