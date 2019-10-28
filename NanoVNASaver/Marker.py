@@ -33,6 +33,8 @@ class Marker(QtCore.QObject):
 
     updated = pyqtSignal(object)
 
+    fieldSelection = ["actualfreq", "impedance", "vswr"]
+
     def __init__(self, name, initialColor, frequency=""):
         super().__init__()
         self.name = name
@@ -64,6 +66,20 @@ class Marker(QtCore.QObject):
         self.s21_phase_label = QtWidgets.QLabel("")
         self.quality_factor_label = QtWidgets.QLabel("")
 
+        self.fields = {"actualfreq": ("Frequency:", self.frequency_label),
+                       "impedance": ("Impedance:", self.impedance_label),
+                       "serl": ("Series L:", self.inductance_label),
+                       "serc": ("Series C:", self.capacitance_label),
+                       "parr": ("Parallel R:", self.parallel_r_label),
+                       "parlc": ("Parallel L/C:", self.parallel_x_label),
+                       "returnloss": ("Return loss:", self.returnloss_label),
+                       "vswr": ("VSWR:", self.vswr_label),
+                       "s11q": ("Quality factor:", self.quality_factor_label),
+                       "s11phase": ("S11 Phase:", self.s11_phase_label),
+                       "s21gain": ("S21 Gain:", self.gain_label),
+                       "s21phase": ("S21 Phase:", self.s21_phase_label),
+                       }
+
         ################################################################################################################
         # Marker control layout
         ################################################################################################################
@@ -90,33 +106,74 @@ class Marker(QtCore.QObject):
         line = QtWidgets.QFrame()
         line.setFrameShape(QtWidgets.QFrame.VLine)
 
-        left_form = QtWidgets.QFormLayout()
-        right_form = QtWidgets.QFormLayout()
-        box_layout.addLayout(left_form)
+        self.left_form = QtWidgets.QFormLayout()
+        self.right_form = QtWidgets.QFormLayout()
+        box_layout.addLayout(self.left_form)
         box_layout.addWidget(line)
-        box_layout.addLayout(right_form)
+        box_layout.addLayout(self.right_form)
+
+        self.buildForm()
+
+    def buildForm(self):
+        while self.left_form.count() > 0:
+            old_row = self.left_form.takeRow(0)
+            old_row.fieldItem.widget().hide()
+            old_row.labelItem.widget().hide()
+
+        while self.right_form.count() > 0:
+            old_row = self.right_form.takeRow(0)
+            old_row.fieldItem.widget().hide()
+            old_row.labelItem.widget().hide()
+
+        if len(self.fieldSelection) <= 3:
+            for field in self.fieldSelection:
+                if field in self.fields:
+                    label, value = self.fields[field]
+                    self.left_form.addRow(label, value)
+                    value.show()
+        else:
+            left_half = math.ceil(len(self.fieldSelection)/2)
+            right_half = len(self.fieldSelection)
+            for i in range(left_half):
+                field = self.fieldSelection[i]
+                if field in self.fields:
+                    label, value = self.fields[field]
+                    self.left_form.addRow(label, value)
+                    value.show()
+            for i in range(left_half, right_half):
+                field = self.fieldSelection[i]
+                if field in self.fields:
+                    label, value = self.fields[field]
+                    self.right_form.addRow(label, value)
+                    value.show()
 
         # Left side
-        left_form.addRow("Frequency:", self.frequency_label)
-        left_form.addRow("Impedance:", self.impedance_label)
-        # left_form.addRow("Admittance:", self.admittance_label)
-        left_form.addRow("Parallel R:", self.parallel_r_label)
-        left_form.addRow("Parallel X:", self.parallel_x_label)
-        left_form.addRow("L equiv.:", self.inductance_label)
-        left_form.addRow("C equiv.:", self.capacitance_label)
-
-        # Right side
-        right_form.addRow("Return loss:", self.returnloss_label)
-        right_form.addRow("VSWR:", self.vswr_label)
-        right_form.addRow("Q:", self.quality_factor_label)
-        right_form.addRow("S11 Phase:", self.s11_phase_label)
-        right_form.addRow("S21 Gain:", self.gain_label)
-        right_form.addRow("S21 Phase:", self.s21_phase_label)
+        # self.left_form.addRow("Frequency:", self.frequency_label)
+        # self.left_form.addRow("Impedance:", self.impedance_label)
+        # # left_form.addRow("Admittance:", self.admittance_label)
+        # self.left_form.addRow("Parallel R:", self.parallel_r_label)
+        # self.left_form.addRow("Parallel X:", self.parallel_x_label)
+        # self.left_form.addRow("L equiv.:", self.inductance_label)
+        # self.left_form.addRow("C equiv.:", self.capacitance_label)
+        #
+        # # Right side
+        # self.right_form.addRow("Return loss:", self.returnloss_label)
+        # if "vswr" in self.fieldSelection:
+        #     self.right_form.addRow("VSWR:", self.vswr_label)
+        #     self.vswr_label.show()
+        # self.right_form.addRow("Q:", self.quality_factor_label)
+        # self.right_form.addRow("S11 Phase:", self.s11_phase_label)
+        # self.right_form.addRow("S21 Gain:", self.gain_label)
+        # self.right_form.addRow("S21 Phase:", self.s21_phase_label)
 
     def setFrequency(self, frequency):
         f = RFTools.parseFrequency(frequency)
         self.frequency = max(f, 0)
         self.updated.emit(self)
+
+    def setFieldSelection(self, fields):
+        self.fieldSelection: List[str] = fields.copy()
+        self.buildForm()
 
     def setColor(self, color):
         if color.isValid():
