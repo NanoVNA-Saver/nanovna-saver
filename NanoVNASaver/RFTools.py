@@ -1,4 +1,6 @@
-#  NanoVNASaver - a python program to view and export Touchstone data from a NanoVNA
+#  NanoVNASaver - a python program to view and export Touchstone data
+#  from a NanoVNA
+#
 #  Copyright (C) 2019.  Rune B. Broberg
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -34,7 +36,8 @@ class RFTools:
     def gain(data: Datapoint):
         # re50, im50 = normalize50(data)
         # Calculate the gain / reflection coefficient
-        # mag = math.sqrt((re50 - 50) * (re50 - 50) + im50 * im50) / math.sqrt((re50 + 50) * (re50 + 50) + im50 * im50)
+        # mag = math.sqrt((re50 - 50) * (re50 - 50) + im50 * im50) / \
+        #       math.sqrt((re50 + 50) * (re50 + 50) + im50 * im50)
         #
         #  Magnitude = |Gamma|:
         mag = math.sqrt(data.re**2 + data.im**2)
@@ -56,7 +59,8 @@ class RFTools:
     def calculateVSWR(data: Datapoint):
         # re50, im50 = normalize50(data)
         try:
-            # mag = math.sqrt((re50 - 50) * (re50 - 50) + im50 * im50) / math.sqrt((re50 + 50) * (re50 + 50) + im50 * im50)
+            # mag = math.sqrt((re50 - 50) * (re50 - 50) + im50 * im50) / \
+            # math.sqrt((re50 + 50) * (re50 + 50) + im50 * im50)
             mag = math.sqrt(data.re**2 + data.im**2)
             vswr = (1 + mag) / (1 - mag)
         except ZeroDivisionError:
@@ -140,7 +144,7 @@ class RFTools:
 
     @staticmethod
     def parseFrequency(freq: str) -> int:
-        freq = freq.replace(" ", "")  # People put all sorts of weird whitespace in.
+        freq = freq.replace(" ", "")  # Ignore spaces
         if freq.isnumeric():
             return int(freq)
 
