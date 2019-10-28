@@ -110,7 +110,7 @@ class RFTools:
                              assumeInfinity: bool = True) -> str:
         """ Format frequency with SI prefixes
 
-            maxdigits count include the dot by defaul, so that
+            maxdigits count include the dot by default, so that
             default leads to a maximum output of 9 characters
         """
         freqstr = str(freq)
