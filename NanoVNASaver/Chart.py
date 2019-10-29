@@ -712,6 +712,8 @@ class PhaseChart(FrequencyChart):
             maxAngle = 180
 
         span = maxAngle - minAngle
+        if span == 0:
+            span = 0.01
         self.minAngle = minAngle
         self.maxAngle = maxAngle
         self.span = span
@@ -844,6 +846,8 @@ class VSWRChart(FrequencyChart):
             maxVSWR = min(self.maxDisplayValue, math.ceil(maxVSWR))
         self.maxVSWR = maxVSWR
         span = maxVSWR-minVSWR
+        if span == 0:
+            span = 0.01
         self.span = span
 
         target_ticks = math.floor(self.chartHeight / 60)
@@ -1255,6 +1259,8 @@ class LogMagChart(FrequencyChart):
             self.maxValue = maxValue
 
         span = maxValue-minValue
+        if span == 0:
+            span = 0.01
         self.span = span
 
         if self.span >= 50:
@@ -1444,6 +1450,8 @@ class SParameterChart(FrequencyChart):
             # self.maxValue = maxValue
 
         span = maxValue-minValue
+        if span == 0:
+            span = 0.01
         self.span = span
 
         tick_count = math.floor(self.chartHeight / 60)
@@ -1618,6 +1626,8 @@ class CombinedLogMagChart(FrequencyChart):
             self.maxValue = maxValue
 
         span = maxValue-minValue
+        if span == 0:
+            span = 0.01
         self.span = span
 
         if self.span >= 50:
@@ -2060,8 +2070,8 @@ class RealImaginaryChart(FrequencyChart):
         self.chartHeight = 250
         self.fstart = 0
         self.fstop = 0
-        self.span_real = 0
-        self.span_imag = 0
+        self.span_real = 0.01
+        self.span_imag = 0.01
         self.max_real = 0
         self.max_imag = 0
 
@@ -2233,9 +2243,13 @@ class RealImaginaryChart(FrequencyChart):
         self.max_imag = max_imag
 
         span_real = max_real - min_real
+        if span_real == 0:
+            span_real = 0.01
         self.span_real = span_real
 
         span_imag = max_imag - min_imag
+        if span_imag == 0:
+            span_imag = 0.01
         self.span_imag = span_imag
 
         # We want one horizontal tick per 50 pixels, at most
@@ -2561,6 +2575,8 @@ class MagnitudeChart(FrequencyChart):
             self.maxValue = maxValue
 
         span = maxValue-minValue
+        if span == 0:
+            span = 0.01
         self.span = span
 
         target_ticks = math.floor(self.chartHeight / 60)
@@ -2697,6 +2713,8 @@ class MagnitudeZChart(FrequencyChart):
             self.maxValue = maxValue
 
         span = maxValue-minValue
+        if span == 0:
+            span = 0.01
         self.span = span
 
         target_ticks = math.floor(self.chartHeight / 60)
