@@ -51,7 +51,7 @@ class Chart(QtWidgets.QWidget):
     minChartWidth = 200
     lineThickness = 1
     pointSize = 2
-
+    markerSize = 3
 
     isPopout = False
     popoutRequested = pyqtSignal(object)
@@ -125,6 +125,10 @@ class Chart(QtWidgets.QWidget):
 
     def setPointSize(self, size):
         self.pointSize = size
+        self.update()
+
+    def setMarkerSize(self, size):
+        self.markerSize = size
         self.update()
 
     def getActiveMarker(self, event: QtGui.QMouseEvent) -> Marker:
@@ -553,9 +557,12 @@ class FrequencyChart(Chart):
                 x = self.getXPosition(data[m.location])
                 y = y_function(data[m.location])
                 if self.isPlotable(x, y):
-                    qp.drawLine(int(x), int(y) + 3, int(x) - 3, int(y) - 3)
-                    qp.drawLine(int(x), int(y) + 3, int(x) + 3, int(y) - 3)
-                    qp.drawLine(int(x) - 3, int(y) - 3, int(x) + 3, int(y) - 3)
+                    qp.drawLine(int(x), int(y) + self.markerSize,
+                                int(x) - self.markerSize, int(y) - self.markerSize)
+                    qp.drawLine(int(x), int(y) + self.markerSize,
+                                int(x) + self.markerSize, int(y) - self.markerSize)
+                    qp.drawLine(int(x) - self.markerSize, int(y) - self.markerSize,
+                                int(x) + self.markerSize, int(y) - self.markerSize)
 
     def isPlotable(self, x, y):
         return self.leftMargin <= x <= self.leftMargin + self.chartWidth and \
@@ -983,9 +990,12 @@ class PolarChart(SquareChart):
                 qp.setPen(highlighter)
                 x = self.getXPosition(self.data[m.location])
                 y = self.height() / 2 + self.data[m.location].im * -1 * self.chartHeight / 2
-                qp.drawLine(int(x), int(y) + 3, int(x) - 3, int(y) - 3)
-                qp.drawLine(int(x), int(y) + 3, int(x) + 3, int(y) - 3)
-                qp.drawLine(int(x) - 3, int(y) - 3, int(x) + 3, int(y) - 3)
+                qp.drawLine(int(x), int(y) + self.markerSize,
+                            int(x) - self.markerSize, int(y) - self.markerSize)
+                qp.drawLine(int(x), int(y) + self.markerSize,
+                            int(x) + self.markerSize, int(y) - self.markerSize)
+                qp.drawLine(int(x) - self.markerSize, int(y) - self.markerSize,
+                            int(x) + self.markerSize, int(y) - self.markerSize)
 
     def getXPosition(self, d: Datapoint) -> int:
         return self.width()/2 + d.re * self.chartWidth/2
@@ -1129,9 +1139,12 @@ class SmithChart(SquareChart):
                 qp.setPen(highlighter)
                 x = self.getXPosition(self.data[m.location])
                 y = self.height() / 2 + self.data[m.location].im * -1 * self.chartHeight / 2
-                qp.drawLine(int(x), int(y) + 3, int(x) - 3, int(y) - 3)
-                qp.drawLine(int(x), int(y) + 3, int(x) + 3, int(y) - 3)
-                qp.drawLine(int(x) - 3, int(y) - 3, int(x) + 3, int(y) - 3)
+                qp.drawLine(int(x), int(y) + self.markerSize,
+                            int(x) - self.markerSize, int(y) - self.markerSize)
+                qp.drawLine(int(x), int(y) + self.markerSize,
+                            int(x) + self.markerSize, int(y) - self.markerSize)
+                qp.drawLine(int(x) - self.markerSize, int(y) - self.markerSize,
+                            int(x) + self.markerSize, int(y) - self.markerSize)
 
     def getXPosition(self, d: Datapoint) -> int:
         return self.width()/2 + d.re * self.chartWidth/2
@@ -2396,13 +2409,19 @@ class RealImaginaryChart(FrequencyChart):
                 y_re = self.getReYPosition(self.data[m.location])
                 y_im = self.getImYPosition(self.data[m.location])
 
-                qp.drawLine(int(x), int(y_re) + 3, int(x) - 3, int(y_re) - 3)
-                qp.drawLine(int(x), int(y_re) + 3, int(x) + 3, int(y_re) - 3)
-                qp.drawLine(int(x) - 3, int(y_re) - 3, int(x) + 3, int(y_re) - 3)
+                qp.drawLine(int(x), int(y_re) + self.markerSize,
+                            int(x) - self.markerSize, int(y_re) - self.markerSize)
+                qp.drawLine(int(x), int(y_re) + self.markerSize,
+                            int(x) + self.markerSize, int(y_re) - self.markerSize)
+                qp.drawLine(int(x) - self.markerSize, int(y_re) - self.markerSize,
+                            int(x) + self.markerSize, int(y_re) - self.markerSize)
 
-                qp.drawLine(int(x), int(y_im) + 3, int(x) - 3, int(y_im) - 3)
-                qp.drawLine(int(x), int(y_im) + 3, int(x) + 3, int(y_im) - 3)
-                qp.drawLine(int(x) - 3, int(y_im) - 3, int(x) + 3, int(y_im) - 3)
+                qp.drawLine(int(x), int(y_im) + self.markerSize,
+                            int(x) - self.markerSize, int(y_im) - self.markerSize)
+                qp.drawLine(int(x), int(y_im) + self.markerSize,
+                            int(x) + self.markerSize, int(y_im) - self.markerSize)
+                qp.drawLine(int(x) - self.markerSize, int(y_im) - self.markerSize,
+                            int(x) + self.markerSize, int(y_im) - self.markerSize)
 
     def getImYPosition(self, d: Datapoint) -> int:
         _, im = RFTools.normalize50(d)

@@ -1044,7 +1044,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         display_options_layout.addRow("Point size", self.pointSizeInput)
 
         self.lineThicknessInput = QtWidgets.QSpinBox()
-        linethickness = self.app.settings.value("LineThickness", 2, int)
+        linethickness = self.app.settings.value("LineThickness", 1, int)
         self.lineThicknessInput.setValue(linethickness)
         self.changeLineThickness(linethickness)
         self.lineThicknessInput.setMinimum(1)
@@ -1053,6 +1053,19 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.lineThicknessInput.setAlignment(QtCore.Qt.AlignRight)
         self.lineThicknessInput.valueChanged.connect(self.changeLineThickness)
         display_options_layout.addRow("Line thickness", self.lineThicknessInput)
+
+        self.markerSizeInput = QtWidgets.QSpinBox()
+        markersize = self.app.settings.value("MarkerSize", 6, int)
+        self.markerSizeInput.setValue(markersize)
+        self.changeMarkerSize(markersize)
+        self.markerSizeInput.setMinimum(4)
+        self.markerSizeInput.setMaximum(20)
+        self.markerSizeInput.setSingleStep(2)
+        self.markerSizeInput.setSuffix(" px")
+        self.markerSizeInput.setAlignment(QtCore.Qt.AlignRight)
+        self.markerSizeInput.valueChanged.connect(self.changeMarkerSize)
+        self.markerSizeInput.editingFinished.connect(self.validateMarkerSize)
+        display_options_layout.addRow("Marker size", self.markerSizeInput)
 
         color_options_box = QtWidgets.QGroupBox("Chart colors")
         color_options_layout = QtWidgets.QFormLayout(color_options_box)
@@ -1193,7 +1206,6 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             selections.append(c.name)
 
         selections.append("None")
-        # TODO: Make this tolerant of non-existant charts
         chart00_selection = QtWidgets.QComboBox()
         chart00_selection.addItems(selections)
         chart00 = self.app.settings.value("Chart00", "S11 Smith Chart")
@@ -1365,6 +1377,17 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.app.settings.setValue("LineThickness", size)
         for c in self.app.subscribing_charts:
             c.setLineThickness(size)
+
+    def changeMarkerSize(self, size: int):
+        if size % 2 == 0:
+            self.app.settings.setValue("MarkerSize", size)
+            for c in self.app.subscribing_charts:
+                c.setMarkerSize(int(size / 2))
+
+    def validateMarkerSize(self):
+        size = self.markerSizeInput.value()
+        if size % 2 != 0:
+            self.markerSizeInput.setValue(size + 1)
 
     def changeDarkMode(self):
         state = self.dark_mode_option.isChecked()
