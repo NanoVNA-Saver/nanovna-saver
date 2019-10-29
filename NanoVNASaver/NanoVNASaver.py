@@ -1196,37 +1196,61 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         # TODO: Make this tolerant of non-existant charts
         chart00_selection = QtWidgets.QComboBox()
         chart00_selection.addItems(selections)
-        chart00_selection.setCurrentIndex(selections.index(self.app.settings.value("Chart00", "S11 Smith Chart")))
+        chart00 = self.app.settings.value("Chart00", "S11 Smith Chart")
+        if chart00_selection.findText(chart00) > -1:
+            chart00_selection.setCurrentText(chart00)
+        else:
+            chart00_selection.setCurrentText("S11 Smith Chart")
         chart00_selection.currentTextChanged.connect(lambda: self.changeChart(0, 0, chart00_selection.currentText()))
         charts_layout.addWidget(chart00_selection, 0, 0)
 
         chart01_selection = QtWidgets.QComboBox()
         chart01_selection.addItems(selections)
-        chart01_selection.setCurrentIndex(selections.index(self.app.settings.value("Chart01", "S11 Return Loss")))
+        chart01 = self.app.settings.value("Chart01", "S11 Return Loss")
+        if chart01_selection.findText(chart01) > -1:
+            chart01_selection.setCurrentText(chart01)
+        else:
+            chart01_selection.setCurrentText("S11 Return Loss")
         chart01_selection.currentTextChanged.connect(lambda: self.changeChart(0, 1, chart01_selection.currentText()))
         charts_layout.addWidget(chart01_selection, 0, 1)
 
         chart02_selection = QtWidgets.QComboBox()
         chart02_selection.addItems(selections)
-        chart02_selection.setCurrentIndex(selections.index(self.app.settings.value("Chart02", "None")))
+        chart02 = self.app.settings.value("Chart02", "None")
+        if chart02_selection.findText(chart02) > -1:
+            chart02_selection.setCurrentText(chart02)
+        else:
+            chart02_selection.setCurrentText("None")
         chart02_selection.currentTextChanged.connect(lambda: self.changeChart(0, 2, chart02_selection.currentText()))
         charts_layout.addWidget(chart02_selection, 0, 2)
 
         chart10_selection = QtWidgets.QComboBox()
         chart10_selection.addItems(selections)
-        chart10_selection.setCurrentIndex(selections.index(self.app.settings.value("Chart10", "S21 Polar Plot")))
+        chart10 = self.app.settings.value("Chart10", "S21 Polar Plot")
+        if chart10_selection.findText(chart10) > -1:
+            chart10_selection.setCurrentText(chart10)
+        else:
+            chart10_selection.setCurrentText("S21 Polar Plot")
         chart10_selection.currentTextChanged.connect(lambda: self.changeChart(1, 0, chart10_selection.currentText()))
         charts_layout.addWidget(chart10_selection, 1, 0)
 
         chart11_selection = QtWidgets.QComboBox()
         chart11_selection.addItems(selections)
-        chart11_selection.setCurrentIndex(selections.index(self.app.settings.value("Chart11", "S21 Gain")))
+        chart11 = self.app.settings.value("Chart11", "S21 Gain")
+        if chart11_selection.findText(chart11) > -1:
+            chart11_selection.setCurrentText(chart11)
+        else:
+            chart11_selection.setCurrentText("S21 Gain")
         chart11_selection.currentTextChanged.connect(lambda: self.changeChart(1, 1, chart11_selection.currentText()))
         charts_layout.addWidget(chart11_selection, 1, 1)
 
         chart12_selection = QtWidgets.QComboBox()
         chart12_selection.addItems(selections)
-        chart12_selection.setCurrentIndex(selections.index(self.app.settings.value("Chart12", "None")))
+        chart12 = self.app.settings.value("Chart12", "None")
+        if chart12_selection.findText(chart12) > -1:
+            chart12_selection.setCurrentText(chart12)
+        else:
+            chart12_selection.setCurrentText("None")
         chart12_selection.currentTextChanged.connect(lambda: self.changeChart(1, 2, chart12_selection.currentText()))
         charts_layout.addWidget(chart12_selection, 1, 2)
 
