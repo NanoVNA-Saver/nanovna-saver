@@ -1067,6 +1067,11 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.markerSizeInput.editingFinished.connect(self.validateMarkerSize)
         display_options_layout.addRow("Marker size", self.markerSizeInput)
 
+        self.show_marker_number_option = QtWidgets.QCheckBox("Show marker numbers")
+        show_marker_number_label = QtWidgets.QLabel("Displays the marker number next to the marker")
+        self.show_marker_number_option.stateChanged.connect(self.changeShowMarkerNumber)
+        display_options_layout.addRow(self.show_marker_number_option, show_marker_number_label)
+
         color_options_box = QtWidgets.QGroupBox("Chart colors")
         color_options_layout = QtWidgets.QFormLayout(color_options_box)
 
@@ -1287,6 +1292,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         self.dark_mode_option.setChecked(self.app.settings.value("DarkMode", False, bool))
         self.show_lines_option.setChecked(self.app.settings.value("ShowLines", False, bool))
+        self.show_marker_number_option.setChecked(self.app.settings.value("ShowMarkerNumbers", False, bool))
 
         if self.app.settings.value("UseCustomColors", defaultValue=False, type=bool):
             self.dark_mode_option.setDisabled(True)
@@ -1367,6 +1373,12 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.app.settings.setValue("ShowLines", state)
         for c in self.app.subscribing_charts:
             c.setDrawLines(state)
+
+    def changeShowMarkerNumber(self):
+        state = self.show_marker_number_option.isChecked()
+        self.app.settings.setValue("ShowMarkerNumbers", state)
+        for c in self.app.subscribing_charts:
+            c.setDrawMarkerNumbers(state)
 
     def changePointSize(self, size: int):
         self.app.settings.setValue("PointSize", size)
@@ -2270,10 +2282,9 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
 
         settings_group_box = QtWidgets.QGroupBox("Settings")
         settings_group_box_layout = QtWidgets.QFormLayout(settings_group_box)
+        # TODO: Implement colored marker name selection
         self.checkboxColouredMarker = QtWidgets.QCheckBox("Colored marker name")
-        self.checkboxDataShownInCharts = QtWidgets.QCheckBox("Show data in charts (EXPERIMENTAL)")
         settings_group_box_layout.addRow(self.checkboxColouredMarker)
-        settings_group_box_layout.addRow(self.checkboxDataShownInCharts)
 
         fields_group_box = QtWidgets.QGroupBox("Displayed data")
         fields_group_box_layout = QtWidgets.QFormLayout(fields_group_box)
