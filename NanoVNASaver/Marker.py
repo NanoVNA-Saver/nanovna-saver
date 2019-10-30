@@ -35,16 +35,34 @@ class Marker(QtCore.QObject):
 
     fieldSelection = []
 
+    class FrequencyInput(QtWidgets.QLineEdit):
+        nextFrequency = -1
+        previousFrequency = -1
+
+        def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
+            if a0.type() == QtCore.QEvent.KeyPress:
+                if a0.key() == QtCore.Qt.Key_Up and self.nextFrequency != -1:
+                    a0.accept()
+                    self.setText(str(self.nextFrequency))
+                    self.textEdited.emit(self.text())
+                    return
+                elif a0.key() == QtCore.Qt.Key_Down and self.previousFrequency != -1:
+                    a0.accept()
+                    self.setText(str(self.previousFrequency))
+                    self.textEdited.emit(self.text())
+                    return
+            super().keyPressEvent(a0)
+
     def __init__(self, name, initialColor, frequency=""):
         super().__init__()
         self.name = name
 
         if frequency.isnumeric():
             self.frequency = int(frequency)
-        self.frequencyInput = QtWidgets.QLineEdit(frequency)
+        self.frequencyInput = Marker.FrequencyInput(frequency)
 
         self.frequencyInput.setAlignment(QtCore.Qt.AlignRight)
-        self.frequencyInput.textEdited.connect(lambda: self.setFrequency(self.frequencyInput.text()))
+        self.frequencyInput.textEdited.connect(self.setFrequency)
 
         ################################################################################################################
         # Data display label
@@ -201,6 +219,7 @@ class Marker(QtCore.QObject):
 
     def findLocation(self, data: List[Datapoint]):
         self.location = -1
+        self.frequencyInput.nextFrequency = self.frequencyInput.previousFrequency = -1
         if self.frequency == 0:
             # No frequency set for this marker
             return
@@ -210,17 +229,13 @@ class Marker(QtCore.QObject):
 
         min_freq = data[0].freq
         max_freq = data[len(data)-1].freq
-        stepsize = data[1].freq - data[0].freq
+        lower_stepsize = data[1].freq - data[0].freq
+        upper_stepsize = data[len(data)-1].freq - data[len(data)-2].freq
 
-        if self.frequency + stepsize/2 < min_freq or self.frequency - stepsize/2 > max_freq:
+        if self.frequency + lower_stepsize/2 < min_freq or self.frequency - upper_stepsize/2 > max_freq:
+            # We are outside the bounds of the data, so we can't put in a marker
             return
 
-        for i in range(len(data)):
-            if abs(data[i].freq - self.frequency) <= (stepsize/2):
-                self.location = i
-                return
-
-        # No position found, but we are within the span
         min_distance = max_freq
         for i in range(len(data)):
             if abs(data[i].freq - self.frequency) < min_distance:
@@ -228,9 +243,14 @@ class Marker(QtCore.QObject):
             else:
                 # We have now started moving away from the nearest point
                 self.location = i-1
+                if i < len(data):
+                    self.frequencyInput.nextFrequency = data[i].freq
+                if (i-2) >= 0:
+                    self.frequencyInput.previousFrequency = data[i-2].freq
                 return
         # If we still didn't find a best spot, it was the last value
         self.location = len(data)-1
+        self.frequencyInput.previousFrequency = data[len(data)-2].freq
         return
 
     def getGroupBox(self) -> QtWidgets.QGroupBox:
