@@ -1,6 +1,4 @@
-#  NanoVNASaver - a python program to view and export Touchstone data
-#  from a NanoVNA
-#
+#  NanoVNASaver - a python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019.  Rune B. Broberg
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -126,22 +124,17 @@ class RFTools:
                 return "\N{INFINITY}"
             raise ValueError("Frequency to big. More than 15 digits!")
         if maxdigits < 3:
-            raise ValueError(
-                "At least 3 digits are needed, given ({})".format(maxdigits))
+            raise ValueError("At least 3 digits are needed, given ({})".format(maxdigits))
         if not countDot:
             maxdigits += 1
 
-
         if freq < 1:
-            return " - " + \
-                (" " if insertSpace else "") + \
-                ("Hz" if appendHz else "")
+            return " - " + (" " if insertSpace else "") + ("Hz" if appendHz else "")
         si_index = (freqlen - 1) // 3
         dot_pos = freqlen % 3 or 3
         freqstr = freqstr[:dot_pos] + "." + freqstr[dot_pos:] + "00"
 
-        return freqstr[:maxdigits] + (" " if insertSpace else "") + \
-            PREFIXES[si_index] + ("Hz" if appendHz else "")
+        return freqstr[:maxdigits] + (" " if insertSpace else "") + PREFIXES[si_index] + ("Hz" if appendHz else "")
 
     @staticmethod
     def parseFrequency(freq: str) -> int:
