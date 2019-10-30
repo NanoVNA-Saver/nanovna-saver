@@ -131,6 +131,7 @@ class RFTools:
         if not countDot:
             maxdigits += 1
 
+
         if freq < 1:
             return " - " + \
                 (" " if insertSpace else "") + \

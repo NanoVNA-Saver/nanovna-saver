@@ -33,7 +33,25 @@ class Marker(QtCore.QObject):
 
     updated = pyqtSignal(object)
 
-    fieldSelection = ["actualfreq", "impedance", "vswr"]
+    fieldSelection = []
+
+    class FrequencyInput(QtWidgets.QLineEdit):
+        nextFrequency = -1
+        previousFrequency = -1
+
+        def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
+            if a0.type() == QtCore.QEvent.KeyPress:
+                if a0.key() == QtCore.Qt.Key_Up and self.nextFrequency != -1:
+                    a0.accept()
+                    self.setText(str(self.nextFrequency))
+                    self.textEdited.emit(self.text())
+                    return
+                elif a0.key() == QtCore.Qt.Key_Down and self.previousFrequency != -1:
+                    a0.accept()
+                    self.setText(str(self.previousFrequency))
+                    self.textEdited.emit(self.text())
+                    return
+            super().keyPressEvent(a0)
 
     def __init__(self, name, initialColor, frequency=""):
         super().__init__()
@@ -41,10 +59,10 @@ class Marker(QtCore.QObject):
 
         if frequency.isnumeric():
             self.frequency = int(frequency)
-        self.frequencyInput = QtWidgets.QLineEdit(frequency)
+        self.frequencyInput = Marker.FrequencyInput(frequency)
 
         self.frequencyInput.setAlignment(QtCore.Qt.AlignRight)
-        self.frequencyInput.textEdited.connect(lambda: self.setFrequency(self.frequencyInput.text()))
+        self.frequencyInput.textEdited.connect(self.setFrequency)
 
         ################################################################################################################
         # Data display label
@@ -53,12 +71,17 @@ class Marker(QtCore.QObject):
         self.frequency_label = QtWidgets.QLabel("")
         self.frequency_label.setMinimumWidth(100)
         self.impedance_label = QtWidgets.QLabel("")
+        self.admittance_label = QtWidgets.QLabel("")
         # self.admittance_label = QtWidgets.QLabel("")
         self.parallel_r_label = QtWidgets.QLabel("")
         self.parallel_x_label = QtWidgets.QLabel("")
+        self.parallel_c_label = QtWidgets.QLabel("")
+        self.parallel_l_label = QtWidgets.QLabel("")
         self.returnloss_label = QtWidgets.QLabel("")
         self.returnloss_label.setMinimumWidth(80)
         self.vswr_label = QtWidgets.QLabel("")
+        self.series_r_label = QtWidgets.QLabel("")
+        self.series_lc_label = QtWidgets.QLabel("")
         self.inductance_label = QtWidgets.QLabel("")
         self.capacitance_label = QtWidgets.QLabel("")
         self.gain_label = QtWidgets.QLabel("")
@@ -68,9 +91,14 @@ class Marker(QtCore.QObject):
 
         self.fields = {"actualfreq": ("Frequency:", self.frequency_label),
                        "impedance": ("Impedance:", self.impedance_label),
+                       "admittance": ("Admittance:", self.admittance_label),
+                       "serr": ("Series R:", self.series_r_label),
                        "serl": ("Series L:", self.inductance_label),
                        "serc": ("Series C:", self.capacitance_label),
+                       "serlc": ("Series L/C:", self.series_lc_label),
                        "parr": ("Parallel R:", self.parallel_r_label),
+                       "parc": ("Parallel C:", self.parallel_c_label),
+                       "parl": ("Parallel L:", self.parallel_l_label),
                        "parlc": ("Parallel L/C:", self.parallel_x_label),
                        "returnloss": ("Return loss:", self.returnloss_label),
                        "vswr": ("VSWR:", self.vswr_label),
@@ -191,6 +219,7 @@ class Marker(QtCore.QObject):
 
     def findLocation(self, data: List[Datapoint]):
         self.location = -1
+        self.frequencyInput.nextFrequency = self.frequencyInput.previousFrequency = -1
         if self.frequency == 0:
             # No frequency set for this marker
             return
@@ -200,17 +229,13 @@ class Marker(QtCore.QObject):
 
         min_freq = data[0].freq
         max_freq = data[len(data)-1].freq
-        stepsize = data[1].freq - data[0].freq
+        lower_stepsize = data[1].freq - data[0].freq
+        upper_stepsize = data[len(data)-1].freq - data[len(data)-2].freq
 
-        if self.frequency + stepsize/2 < min_freq or self.frequency - stepsize/2 > max_freq:
+        if self.frequency + lower_stepsize/2 < min_freq or self.frequency - upper_stepsize/2 > max_freq:
+            # We are outside the bounds of the data, so we can't put in a marker
             return
 
-        for i in range(len(data)):
-            if abs(data[i].freq - self.frequency) <= (stepsize/2):
-                self.location = i
-                return
-
-        # No position found, but we are within the span
         min_distance = max_freq
         for i in range(len(data)):
             if abs(data[i].freq - self.frequency) < min_distance:
@@ -218,9 +243,14 @@ class Marker(QtCore.QObject):
             else:
                 # We have now started moving away from the nearest point
                 self.location = i-1
+                if i < len(data):
+                    self.frequencyInput.nextFrequency = data[i].freq
+                if (i-2) >= 0:
+                    self.frequencyInput.previousFrequency = data[i-2].freq
                 return
         # If we still didn't find a best spot, it was the last value
         self.location = len(data)-1
+        self.frequencyInput.previousFrequency = data[len(data)-2].freq
         return
 
     def getGroupBox(self) -> QtWidgets.QGroupBox:
@@ -248,22 +278,28 @@ class Marker(QtCore.QObject):
             if re50 > 0:
                 rp = (re50 ** 2 + im50 ** 2) / re50
                 rp = round(rp, 4 - max(0, math.floor(math.log10(abs(rp)))))
-                rpstr = str(rp) + " \N{OHM SIGN}"
+                rpstr = str(rp)
 
                 re50 = round(re50, 4 - max(0, math.floor(math.log10(abs(re50)))))
             else:
-                rpstr = "- \N{OHM SIGN}"
+                rpstr = "-"
                 re50 = 0
 
             if im50 != 0:
                 xp = (re50 ** 2 + im50 ** 2) / im50
                 xp = round(xp, 4 - max(0, math.floor(math.log10(abs(xp)))))
+                xpcstr = RFTools.capacitanceEquivalent(xp, s11data[self.location].freq)
+                xplstr = RFTools.inductanceEquivalent(xp, s11data[self.location].freq)
                 if xp < 0:
-                    xpstr = RFTools.capacitanceEquivalent(xp, s11data[self.location].freq)
+                    xpstr = xpcstr
+                    xp50str = " -j" + str(-1 * xp)
                 else:
-                    xpstr = RFTools.inductanceEquivalent(xp, s11data[self.location].freq)
+                    xpstr = xplstr
+                    xp50str = " +j" + str(xp)
+                xp50str += " \N{OHM SIGN}"
             else:
-                xpstr = "-"
+                xp50str = " +j ? \N{OHM SIGN}"
+                xpstr = xpcstr = xplstr = "-"
 
             if im50 != 0:
                 im50 = round(im50, 4 - max(0, math.floor(math.log10(abs(im50)))))
@@ -276,7 +312,9 @@ class Marker(QtCore.QObject):
 
             self.frequency_label.setText(RFTools.formatFrequency(s11data[self.location].freq))
             self.impedance_label.setText(str(re50) + im50str)
-            self.parallel_r_label.setText(rpstr)
+            self.admittance_label.setText(rpstr + xp50str)
+            self.series_r_label.setText(str(re50) + " \N{OHM SIGN}")
+            self.parallel_r_label.setText(rpstr + " \N{OHM SIGN}")
             self.parallel_x_label.setText(xpstr)
             if self.returnloss_is_positive:
                 returnloss = -round(RFTools.gain(s11data[self.location]), 3)
@@ -287,6 +325,12 @@ class Marker(QtCore.QObject):
             inductance = RFTools.inductanceEquivalent(im50, s11data[self.location].freq)
             self.inductance_label.setText(inductance)
             self.capacitance_label.setText(capacitance)
+            self.parallel_c_label.setText(xpcstr)
+            self.parallel_l_label.setText(xplstr)
+            if im50 > 0:
+                self.series_lc_label.setText(inductance)
+            else:
+                self.series_lc_label.setText(capacitance)
             vswr = round(vswr, 3)
             if vswr < 0:
                 vswr = "-"

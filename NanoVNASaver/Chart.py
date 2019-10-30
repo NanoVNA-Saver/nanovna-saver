@@ -51,7 +51,8 @@ class Chart(QtWidgets.QWidget):
     minChartWidth = 200
     lineThickness = 1
     pointSize = 2
-
+    markerSize = 3
+    drawMarkerNumbers = False
 
     isPopout = False
     popoutRequested = pyqtSignal(object)
@@ -127,6 +128,10 @@ class Chart(QtWidgets.QWidget):
         self.pointSize = size
         self.update()
 
+    def setMarkerSize(self, size):
+        self.markerSize = size
+        self.update()
+
     def getActiveMarker(self, event: QtGui.QMouseEvent) -> Marker:
         if self.draggedMarker is not None:
             return self.draggedMarker
@@ -161,6 +166,10 @@ class Chart(QtWidgets.QWidget):
 
     def setDrawLines(self, drawLines):
         self.drawLines = drawLines
+        self.update()
+
+    def setDrawMarkerNumbers(self, drawMarkerNumbers):
+        self.drawMarkerNumbers = drawMarkerNumbers
         self.update()
 
     @staticmethod
@@ -235,6 +244,21 @@ class Chart(QtWidgets.QWidget):
     def setSWRColor(self, color: QtGui.QColor):
         self.swrColor = color
         self.update()
+
+    def drawMarker(self, x, y, qp: QtGui.QPainter, color: QtGui.QColor, number=0):
+        pen = QtGui.QPen(color)
+        qp.setPen(pen)
+        qp.drawLine(int(x), int(y) + self.markerSize,
+                    int(x) - self.markerSize, int(y) - self.markerSize)
+        qp.drawLine(int(x), int(y) + self.markerSize,
+                    int(x) + self.markerSize, int(y) - self.markerSize)
+        qp.drawLine(int(x) - self.markerSize, int(y) - self.markerSize,
+                    int(x) + self.markerSize, int(y) - self.markerSize)
+
+        if self.drawMarkerNumbers:
+            number_x = x - 3
+            number_y = y - self.markerSize - 3
+            qp.drawText(number_x, number_y, str(number))
 
 
 class FrequencyChart(Chart):
@@ -548,14 +572,10 @@ class FrequencyChart(Chart):
         highlighter.setWidth(1)
         for m in self.markers:
             if m.location != -1 and m.location < len(data):
-                highlighter.setColor(m.color)
-                qp.setPen(highlighter)
                 x = self.getXPosition(data[m.location])
                 y = y_function(data[m.location])
                 if self.isPlotable(x, y):
-                    qp.drawLine(int(x), int(y) + 3, int(x) - 3, int(y) - 3)
-                    qp.drawLine(int(x), int(y) + 3, int(x) + 3, int(y) - 3)
-                    qp.drawLine(int(x) - 3, int(y) - 3, int(x) + 3, int(y) - 3)
+                    self.drawMarker(x, y, qp, m.color, self.markers.index(m)+1)
 
     def isPlotable(self, x, y):
         return self.leftMargin <= x <= self.leftMargin + self.chartWidth and \
@@ -712,6 +732,8 @@ class PhaseChart(FrequencyChart):
             maxAngle = 180
 
         span = maxAngle - minAngle
+        if span == 0:
+            span = 0.01
         self.minAngle = minAngle
         self.maxAngle = maxAngle
         self.span = span
@@ -844,6 +866,8 @@ class VSWRChart(FrequencyChart):
             maxVSWR = min(self.maxDisplayValue, math.ceil(maxVSWR))
         self.maxVSWR = maxVSWR
         span = maxVSWR-minVSWR
+        if span == 0:
+            span = 0.01
         self.span = span
 
         target_ticks = math.floor(self.chartHeight / 60)
@@ -975,13 +999,9 @@ class PolarChart(SquareChart):
         # Now draw the markers
         for m in self.markers:
             if m.location != -1 and m.location < len(self.data):
-                highlighter.setColor(m.color)
-                qp.setPen(highlighter)
                 x = self.getXPosition(self.data[m.location])
                 y = self.height() / 2 + self.data[m.location].im * -1 * self.chartHeight / 2
-                qp.drawLine(int(x), int(y) + 3, int(x) - 3, int(y) - 3)
-                qp.drawLine(int(x), int(y) + 3, int(x) + 3, int(y) - 3)
-                qp.drawLine(int(x) - 3, int(y) - 3, int(x) + 3, int(y) - 3)
+                self.drawMarker(x, y, qp, m.color, self.markers.index(m)+1)
 
     def getXPosition(self, d: Datapoint) -> int:
         return self.width()/2 + d.re * self.chartWidth/2
@@ -1121,13 +1141,9 @@ class SmithChart(SquareChart):
         # Now draw the markers
         for m in self.markers:
             if m.location != -1:
-                highlighter.setColor(m.color)
-                qp.setPen(highlighter)
                 x = self.getXPosition(self.data[m.location])
                 y = self.height() / 2 + self.data[m.location].im * -1 * self.chartHeight / 2
-                qp.drawLine(int(x), int(y) + 3, int(x) - 3, int(y) - 3)
-                qp.drawLine(int(x), int(y) + 3, int(x) + 3, int(y) - 3)
-                qp.drawLine(int(x) - 3, int(y) - 3, int(x) + 3, int(y) - 3)
+                self.drawMarker(x, y, qp, m.color, self.markers.index(m)+1)
 
     def getXPosition(self, d: Datapoint) -> int:
         return self.width()/2 + d.re * self.chartWidth/2
@@ -1255,6 +1271,8 @@ class LogMagChart(FrequencyChart):
             self.maxValue = maxValue
 
         span = maxValue-minValue
+        if span == 0:
+            span = 0.01
         self.span = span
 
         if self.span >= 50:
@@ -1444,6 +1462,8 @@ class SParameterChart(FrequencyChart):
             # self.maxValue = maxValue
 
         span = maxValue-minValue
+        if span == 0:
+            span = 0.01
         self.span = span
 
         tick_count = math.floor(self.chartHeight / 60)
@@ -1618,6 +1638,8 @@ class CombinedLogMagChart(FrequencyChart):
             self.maxValue = maxValue
 
         span = maxValue-minValue
+        if span == 0:
+            span = 0.01
         self.span = span
 
         if self.span >= 50:
@@ -2060,8 +2082,8 @@ class RealImaginaryChart(FrequencyChart):
         self.chartHeight = 250
         self.fstart = 0
         self.fstop = 0
-        self.span_real = 0
-        self.span_imag = 0
+        self.span_real = 0.01
+        self.span_imag = 0.01
         self.max_real = 0
         self.max_imag = 0
 
@@ -2233,9 +2255,13 @@ class RealImaginaryChart(FrequencyChart):
         self.max_imag = max_imag
 
         span_real = max_real - min_real
+        if span_real == 0:
+            span_real = 0.01
         self.span_real = span_real
 
         span_imag = max_imag - min_imag
+        if span_imag == 0:
+            span_imag = 0.01
         self.span_imag = span_imag
 
         # We want one horizontal tick per 50 pixels, at most
@@ -2376,19 +2402,12 @@ class RealImaginaryChart(FrequencyChart):
         # Now draw the markers
         for m in self.markers:
             if m.location != -1:
-                highlighter.setColor(m.color)
-                qp.setPen(highlighter)
                 x = self.getXPosition(self.data[m.location])
                 y_re = self.getReYPosition(self.data[m.location])
                 y_im = self.getImYPosition(self.data[m.location])
 
-                qp.drawLine(int(x), int(y_re) + 3, int(x) - 3, int(y_re) - 3)
-                qp.drawLine(int(x), int(y_re) + 3, int(x) + 3, int(y_re) - 3)
-                qp.drawLine(int(x) - 3, int(y_re) - 3, int(x) + 3, int(y_re) - 3)
-
-                qp.drawLine(int(x), int(y_im) + 3, int(x) - 3, int(y_im) - 3)
-                qp.drawLine(int(x), int(y_im) + 3, int(x) + 3, int(y_im) - 3)
-                qp.drawLine(int(x) - 3, int(y_im) - 3, int(x) + 3, int(y_im) - 3)
+                self.drawMarker(x, y_re, qp, m.color)
+                self.drawMarker(x, y_im, qp, m.color)
 
     def getImYPosition(self, d: Datapoint) -> int:
         _, im = RFTools.normalize50(d)
@@ -2561,6 +2580,8 @@ class MagnitudeChart(FrequencyChart):
             self.maxValue = maxValue
 
         span = maxValue-minValue
+        if span == 0:
+            span = 0.01
         self.span = span
 
         target_ticks = math.floor(self.chartHeight / 60)
@@ -2697,6 +2718,8 @@ class MagnitudeZChart(FrequencyChart):
             self.maxValue = maxValue
 
         span = maxValue-minValue
+        if span == 0:
+            span = 0.01
         self.span = span
 
         target_ticks = math.floor(self.chartHeight / 60)
