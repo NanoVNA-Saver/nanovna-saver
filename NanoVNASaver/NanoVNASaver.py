@@ -2282,8 +2282,9 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
 
         settings_group_box = QtWidgets.QGroupBox("Settings")
         settings_group_box_layout = QtWidgets.QFormLayout(settings_group_box)
-        # TODO: Implement colored marker name selection
         self.checkboxColouredMarker = QtWidgets.QCheckBox("Colored marker name")
+        self.checkboxColouredMarker.setChecked(self.app.settings.value("ColoredMarkerNames", True, bool))
+        self.checkboxColouredMarker.stateChanged.connect(self.updateMarker)
         settings_group_box_layout.addRow(self.checkboxColouredMarker)
 
         fields_group_box = QtWidgets.QGroupBox("Displayed data")
@@ -2336,8 +2337,10 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
         self.updateMarker()
         for m in self.app.markers:
             m.setFieldSelection(self.currentFieldSelection)
+            m.setColoredText(self.checkboxColouredMarker.isChecked())
 
     def updateMarker(self):
+        self.exampleMarker.setColoredText(self.checkboxColouredMarker.isChecked())
         self.exampleMarker.setFieldSelection(self.currentFieldSelection)
         self.exampleMarker.findLocation(self.exampleData11)
         self.exampleMarker.resetLabels()
@@ -2359,8 +2362,10 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
     def applyButtonClick(self):
         self.savedFieldSelection = self.currentFieldSelection.copy()
         self.app.settings.setValue("MarkerFields", self.savedFieldSelection)
+        self.app.settings.setValue("ColoredMarkerNames", self.checkboxColouredMarker.isChecked())
         for m in self.app.markers:
             m.setFieldSelection(self.savedFieldSelection)
+            m.setColoredText(self.checkboxColouredMarker.isChecked())
 
     def okButtonClick(self):
         self.applyButtonClick()

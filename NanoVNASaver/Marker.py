@@ -27,6 +27,7 @@ class Marker(QtCore.QObject):
     name = "Marker"
     frequency = 0
     color: QtGui.QColor = QtGui.QColor()
+    coloredText = True
     location = -1
 
     returnloss_is_positive = False
@@ -210,9 +211,16 @@ class Marker(QtCore.QObject):
             p.setColor(QtGui.QPalette.ButtonText, self.color)
             self.btnColorPicker.setPalette(p)
 
-        color_string = QtCore.QVariant(color)
-        color_string.convert(QtCore.QVariant.String)
-        self.group_box.setStyleSheet('QGroupBox { color: ' + color_string.value() + '};')
+        if self.coloredText:
+            color_string = QtCore.QVariant(color)
+            color_string.convert(QtCore.QVariant.String)
+            self.group_box.setStyleSheet('QGroupBox { color: ' + color_string.value() + '};')
+        else:
+            self.group_box.setStyleSheet("")
+
+    def setColoredText(self, colored_text):
+        self.coloredText = colored_text
+        self.setColor(self.color)
 
     def getRow(self):
         return QtWidgets.QLabel(self.name), self.layout
