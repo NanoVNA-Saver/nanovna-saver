@@ -1938,9 +1938,21 @@ class SweepSettingsWindow(QtWidgets.QWidget):
 
         band_sweep_layout.addRow("Select band", self.band_list)
 
-        self.band_pad_limits = QtWidgets.QCheckBox("Pad band limits (10%)")
-        self.band_pad_limits.stateChanged.connect(self.updateCurrentBand)
-        band_sweep_layout.addRow(self.band_pad_limits)
+        self.band_pad_group = QtWidgets.QButtonGroup()
+        self.band_pad_0 = QtWidgets.QRadioButton("None")
+        self.band_pad_10 = QtWidgets.QRadioButton("10%")
+        self.band_pad_25 = QtWidgets.QRadioButton("25%")
+        self.band_pad_100 = QtWidgets.QRadioButton("100%")
+        self.band_pad_0.setChecked(True)
+        self.band_pad_group.addButton(self.band_pad_0)
+        self.band_pad_group.addButton(self.band_pad_10)
+        self.band_pad_group.addButton(self.band_pad_25)
+        self.band_pad_group.addButton(self.band_pad_100)
+        self.band_pad_group.buttonClicked.connect(self.updateCurrentBand)
+        band_sweep_layout.addRow("Pad band limits", self.band_pad_0)
+        band_sweep_layout.addRow("", self.band_pad_10)
+        band_sweep_layout.addRow("", self.band_pad_25)
+        band_sweep_layout.addRow("", self.band_pad_100)
 
         self.band_limit_label = QtWidgets.QLabel()
 
@@ -1960,11 +1972,20 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         start = int(self.band_list.model().data(index_start, QtCore.Qt.ItemDataRole).value())
         stop = int(self.band_list.model().data(index_stop, QtCore.Qt.ItemDataRole).value())
 
-        if self.band_pad_limits.isChecked():
+        if self.band_pad_10.isChecked():
+            padding = 10
+        elif self.band_pad_25.isChecked():
+            padding = 25
+        elif self.band_pad_100.isChecked():
+            padding = 100
+        else:
+            padding = 0
+
+        if padding > 0:
             span = stop - start
-            start -= round(span / 10)
+            start -= round(span * padding / 100)
             start = max(1, start)
-            stop += round(span / 10)
+            stop += round(span * padding / 100)
 
         self.band_limit_label.setText("Sweep span: " + RFTools.formatShortFrequency(start) + " to " +
                                       RFTools.formatShortFrequency(stop))
@@ -1975,11 +1996,20 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         start = int(self.band_list.model().data(index_start, QtCore.Qt.ItemDataRole).value())
         stop = int(self.band_list.model().data(index_stop, QtCore.Qt.ItemDataRole).value())
 
-        if self.band_pad_limits.isChecked():
+        if self.band_pad_10.isChecked():
+            padding = 10
+        elif self.band_pad_25.isChecked():
+            padding = 25
+        elif self.band_pad_100.isChecked():
+            padding = 100
+        else:
+            padding = 0
+
+        if padding > 0:
             span = stop - start
-            start -= round(span / 10)
+            start -= round(span * padding / 100)
             start = max(1, start)
-            stop += round(span / 10)
+            stop += round(span * padding / 100)
 
         self.app.sweepStartInput.setText(RFTools.formatFixedFrequency(start))
         self.app.sweepEndInput.setText(RFTools.formatFixedFrequency(stop))
