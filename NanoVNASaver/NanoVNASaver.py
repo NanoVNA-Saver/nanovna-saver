@@ -36,7 +36,8 @@ from .Calibration import CalibrationWindow, Calibration
 from .Marker import Marker
 from .SweepWorker import SweepWorker
 from .Touchstone import Touchstone
-from .Analysis import Analysis, LowPassAnalysis, HighPassAnalysis, BandPassAnalysis, BandStopAnalysis
+from .Analysis import Analysis, LowPassAnalysis, HighPassAnalysis, BandPassAnalysis, BandStopAnalysis, \
+    PeakSearchAnalysis, VSWRAnalysis
 from .about import version as ver
 
 VID = 1155
@@ -2186,6 +2187,8 @@ class AnalysisWindow(QtWidgets.QWidget):
         self.analysis_list.addItem("Band-pass filter", BandPassAnalysis(self.app))
         self.analysis_list.addItem("High-pass filter", HighPassAnalysis(self.app))
         self.analysis_list.addItem("Band-stop filter", BandStopAnalysis(self.app))
+        self.analysis_list.addItem("Peak search", PeakSearchAnalysis(self.app))
+        self.analysis_list.addItem("VSWR analysis", VSWRAnalysis(self.app))
         select_analysis_layout.addRow("Analysis type", self.analysis_list)
         self.analysis_list.currentIndexChanged.connect(self.updateSelection)
 
@@ -2197,6 +2200,7 @@ class AnalysisWindow(QtWidgets.QWidget):
         analysis_box.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
 
         self.analysis_layout = QtWidgets.QVBoxLayout(analysis_box)
+        self.analysis_layout.setContentsMargins(0, 0, 0, 0)
 
         layout.addWidget(select_analysis_box)
         layout.addWidget(analysis_box)

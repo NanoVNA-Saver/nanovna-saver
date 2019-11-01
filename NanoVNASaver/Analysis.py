@@ -19,6 +19,8 @@ import math
 from PyQt5 import QtWidgets
 
 from NanoVNASaver.RFTools import RFTools
+from scipy import signal
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -971,3 +973,209 @@ class BandStopAnalysis(Analysis):
                                       "Insufficient data for analysis. Increase segment count.")
         else:
             self.result_label.setText("Analysis complete (" + str(len(self.app.data)) + " points)")
+
+
+class PeakSearchAnalysis(Analysis):
+    class QHLine(QtWidgets.QFrame):
+        def __init__(self):
+            super().__init__()
+            self.setFrameShape(QtWidgets.QFrame.HLine)
+
+    def __init__(self, app):
+        super().__init__(app)
+
+        self._widget = QtWidgets.QWidget()
+        outer_layout = QtWidgets.QFormLayout()
+        self._widget.setLayout(outer_layout)
+
+        self.rbtn_data_group = QtWidgets.QButtonGroup()
+        self.rbtn_data_vswr = QtWidgets.QRadioButton("VSWR")
+        self.rbtn_data_resistance = QtWidgets.QRadioButton("Resistance")
+        self.rbtn_data_reactance = QtWidgets.QRadioButton("Reactance")
+        self.rbtn_data_s21_gain = QtWidgets.QRadioButton("S21 Gain")
+        self.rbtn_data_group.addButton(self.rbtn_data_vswr)
+        self.rbtn_data_group.addButton(self.rbtn_data_resistance)
+        self.rbtn_data_group.addButton(self.rbtn_data_reactance)
+        self.rbtn_data_group.addButton(self.rbtn_data_s21_gain)
+
+        self.rbtn_data_vswr.setChecked(True)
+
+        self.rbtn_peak_group = QtWidgets.QButtonGroup()
+        self.rbtn_peak_positive = QtWidgets.QRadioButton("Positive")
+        self.rbtn_peak_negative = QtWidgets.QRadioButton("Negative")
+        self.rbtn_peak_both = QtWidgets.QRadioButton("Both")
+        self.rbtn_peak_group.addButton(self.rbtn_peak_positive)
+        self.rbtn_peak_group.addButton(self.rbtn_peak_negative)
+        self.rbtn_peak_group.addButton(self.rbtn_peak_both)
+
+        self.rbtn_peak_positive.setChecked(True)
+
+        self.input_number_of_peaks = QtWidgets.QSpinBox()
+        self.input_number_of_peaks.setValue(1)
+        self.input_number_of_peaks.setMinimum(1)
+        self.input_number_of_peaks.setMaximum(10)
+
+        self.checkbox_move_markers = QtWidgets.QCheckBox()
+
+        outer_layout.addRow(QtWidgets.QLabel("<b>Settings</b>"))
+        outer_layout.addRow("Data source", self.rbtn_data_vswr)
+        outer_layout.addRow("", self.rbtn_data_resistance)
+        outer_layout.addRow("", self.rbtn_data_reactance)
+        outer_layout.addRow("", self.rbtn_data_s21_gain)
+        outer_layout.addRow(PeakSearchAnalysis.QHLine())
+        outer_layout.addRow("Peak type", self.rbtn_peak_positive)
+        outer_layout.addRow("", self.rbtn_peak_negative)
+        #  outer_layout.addRow("", self.rbtn_peak_both)
+        outer_layout.addRow(PeakSearchAnalysis.QHLine())
+        outer_layout.addRow("Max number of peaks", self.input_number_of_peaks)
+        outer_layout.addRow("Move markers", self.checkbox_move_markers)
+        outer_layout.addRow(PeakSearchAnalysis.QHLine())
+
+        outer_layout.addRow(QtWidgets.QLabel("<b>Results</b>"))
+
+    def runAnalysis(self):
+        count = self.input_number_of_peaks.value()
+        if self.rbtn_data_vswr.isChecked():
+            data = []
+            for d in self.app.data:
+                data.append(RFTools.calculateVSWR(d))
+        elif self.rbtn_data_s21_gain.isChecked():
+            data = []
+            for d in self.app.data21:
+                data.append(RFTools.gain(d))
+        else:
+            logger.warning("Searching for peaks on unknown data")
+            return
+
+        if self.rbtn_peak_positive.isChecked():
+            peaks, _ = signal.find_peaks(data, width=3, distance=3, prominence=1)
+        elif self.rbtn_peak_negative.isChecked():
+            peaks, _ = signal.find_peaks(np.array(data)*-1, width=3, distance=3, prominence=1)
+        # elif self.rbtn_peak_both.isChecked():
+        #     peaks_max, _ = signal.find_peaks(data, width=3, distance=3, prominence=1)
+        #     peaks_min, _ = signal.find_peaks(np.array(data)*-1, width=3, distance=3, prominence=1)
+        #     peaks = np.concatenate((peaks_max, peaks_min))
+        else:
+            logger.warning("Searching for peaks, but neither looking at positive nor negative?")  # Both is not yet in
+            return
+
+        # Having found the peaks, get the prominence data
+
+        for p in peaks:
+            logger.debug("Peak at %d", p)
+        prominences, left_bases, right_bases = signal.peak_prominences(data, peaks)
+        logger.debug("%d prominences", len(prominences))
+
+        # Find the peaks with the most extreme values
+        # Alternately, allow the user to select "most prominent"?
+        indices = np.argpartition(prominences, -count)[-count:]
+        logger.debug("%d indices", len(indices))
+        for i in indices:
+            logger.debug("Index %d", i)
+            logger.debug("Prominence %f", prominences[i])
+            logger.debug("Index in sweep %d", peaks[i])
+            logger.debug("Frequency %d", self.app.data[peaks[i]].freq)
+            logger.debug("Value %f", data[peaks[i]])
+
+        if self.checkbox_move_markers:
+            if count > len(self.app.markers):
+                logger.warning("More peaks found than there are markers")
+            for i in range(min(count, len(self.app.markers))):
+                self.app.markers[i].setFrequency(str(self.app.data[peaks[indices[i]]].freq))
+                self.app.markers[i].frequencyInput.setText(str(self.app.data[peaks[indices[i]]].freq))
+
+        max_val = -10**10
+        max_idx = -1
+        for p in peaks:
+            if data[p] > max_val:
+                max_val = data[p]
+                max_idx = p
+
+        logger.debug("Max peak at %d, value %f", max_idx, max_val)
+
+    def reset(self):
+        pass
+
+
+class VSWRAnalysis(Analysis):
+    class QHLine(QtWidgets.QFrame):
+        def __init__(self):
+            super().__init__()
+            self.setFrameShape(QtWidgets.QFrame.HLine)
+
+    def __init__(self, app):
+        super().__init__(app)
+
+        self._widget = QtWidgets.QWidget()
+        self.layout = QtWidgets.QFormLayout()
+        self._widget.setLayout(self.layout)
+
+        self.input_vswr_limit = QtWidgets.QDoubleSpinBox()
+        self.input_vswr_limit.setValue(1.5)
+        self.input_vswr_limit.setSingleStep(0.1)
+        self.input_vswr_limit.setMinimum(1)
+        self.input_vswr_limit.setMaximum(25)
+        self.input_vswr_limit.setDecimals(2)
+
+        self.checkbox_move_marker = QtWidgets.QCheckBox()
+        self.layout.addRow(QtWidgets.QLabel("<b>Settings</b>"))
+        self.layout.addRow("VSWR limit", self.input_vswr_limit)
+        self.layout.addRow(VSWRAnalysis.QHLine())
+
+        self.results_label = QtWidgets.QLabel("<b>Results</b>")
+        self.layout.addRow(self.results_label)
+
+    def runAnalysis(self):
+        data = []
+        for d in self.app.data:
+            vswr = RFTools.calculateVSWR(d)
+            if vswr < 1:
+                vswr = float('inf')
+            data.append(vswr)
+        # min_idx = np.argmin(data)
+        #
+        # logger.debug("Minimum at %d", min_idx)
+        # logger.debug("Value at minimum: %f", data[min_idx])
+        # logger.debug("Frequency: %d", self.app.data[min_idx].freq)
+        #
+        # if self.checkbox_move_marker.isChecked():
+        #     self.app.markers[0].setFrequency(str(self.app.data[min_idx].freq))
+        #     self.app.markers[0].frequencyInput.setText(str(self.app.data[min_idx].freq))
+
+        minimums = []
+        min_start = -1
+        min_idx = -1
+        threshold = self.input_vswr_limit.value()
+        min_val = threshold
+        for i in range(len(data)):
+            d = data[i]
+            if d < threshold:
+                if d < min_val:
+                    min_val = d
+                    min_idx = i
+                if min_start == -1:
+                    min_start = i
+            elif min_start != -1:
+                # We are above the threshold, and were in a section that was below
+                minimums.append((min_start, min_idx, i-1))
+                min_start = -1
+                min_idx = -1
+                min_val = threshold
+
+        logger.debug("Found %d sections under %f threshold", len(minimums), threshold)
+
+        results_header = self.layout.indexOf(self.results_label)
+        logger.debug("Results start at %d, out of %d", results_header, self.layout.rowCount())
+        for i in range(results_header, self.layout.rowCount()):
+            self.layout.removeRow(self.layout.rowCount()-1)
+
+        if len(minimums) > 0:
+            for m in minimums:
+                start, lowest, end = m
+                logger.debug("Section from %d to %d, lowest at %d", start, end, lowest)
+                self.layout.addRow("Start", QtWidgets.QLabel(RFTools.formatFrequency(self.app.data[start].freq)))
+                self.layout.addRow("Minimum", QtWidgets.QLabel(RFTools.formatFrequency(self.app.data[lowest].freq) +
+                                                               " (" + str(round(data[lowest], 2)) + ")"))
+                self.layout.addRow("End", QtWidgets.QLabel(RFTools.formatFrequency(self.app.data[end].freq)))
+        else:
+            self.layout.addRow(QtWidgets.QLabel("No areas found with VSWR below " + str(threshold) + "."))
