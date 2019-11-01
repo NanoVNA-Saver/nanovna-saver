@@ -55,6 +55,8 @@ class NanoVNASaver(QtWidgets.QWidget):
                              QtGui.QColor(255, 0, 255),
                              QtGui.QColor(255, 255, 0)]
 
+    dataAvailable = QtCore.pyqtSignal()
+
     def __init__(self):
         super().__init__()
         if getattr(sys, 'frozen', False):
@@ -758,6 +760,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             logger.error("Failed acquiring data lock while updating.")
         self.updateTitle()
         self.dataLock.release()
+        self.dataAvailable.emit()
 
     def sweepFinished(self):
         self.sweepProgressBar.setValue(100)
@@ -2196,6 +2199,10 @@ class AnalysisWindow(QtWidgets.QWidget):
         btn_run_analysis.clicked.connect(self.runAnalysis)
         select_analysis_layout.addRow(btn_run_analysis)
 
+        self.checkbox_run_automatically = QtWidgets.QCheckBox("Run automatically")
+        self.checkbox_run_automatically.stateChanged.connect(self.toggleAutomaticRun)
+        select_analysis_layout.addRow(self.checkbox_run_automatically)
+
         analysis_box = QtWidgets.QGroupBox("Analysis")
         analysis_box.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
 
@@ -2222,6 +2229,14 @@ class AnalysisWindow(QtWidgets.QWidget):
             self.analysis_layout.addWidget(self.analysis.widget())
         self.analysis.widget().show()
         self.update()
+
+    def toggleAutomaticRun(self, state: QtCore.Qt.CheckState):
+        if state == QtCore.Qt.Checked:
+            self.analysis_list.setDisabled(True)
+            self.app.dataAvailable.connect(self.runAnalysis)
+        else:
+            self.analysis_list.setDisabled(True)
+            self.app.dataAvailable.disconnect(self.runAnalysis)
 
 
 class MarkerSettingsWindow(QtWidgets.QWidget):

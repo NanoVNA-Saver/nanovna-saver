@@ -1149,7 +1149,7 @@ class VSWRAnalysis(Analysis):
         min_val = threshold
         for i in range(len(data)):
             d = data[i]
-            if d < threshold:
+            if d < threshold and i < len(data)-1:
                 if d < min_val:
                     min_val = d
                     min_idx = i
