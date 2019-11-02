@@ -17,6 +17,7 @@
 import collections
 import logging
 import math
+import os
 
 from PyQt5 import QtWidgets, QtCore
 from typing import List
@@ -36,7 +37,7 @@ class CalibrationWindow(QtWidgets.QWidget):
 
         self.app: NanoVNASaver = app
 
-        self.setMinimumSize(450, 600)
+        self.setMinimumWidth(450)
         self.setWindowTitle("Calibration")
         self.setWindowIcon(self.app.icon)
         self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
@@ -53,7 +54,9 @@ class CalibrationWindow(QtWidgets.QWidget):
         calibration_status_group = QtWidgets.QGroupBox("Active calibration")
         calibration_status_layout = QtWidgets.QFormLayout()
         self.calibration_status_label = QtWidgets.QLabel("Device calibration")
-        calibration_status_layout.addRow("Calibration active:", self.calibration_status_label)
+        self.calibration_source_label = QtWidgets.QLabel("NanoVNA")
+        calibration_status_layout.addRow("Calibration:", self.calibration_status_label)
+        calibration_status_layout.addRow("Source:", self.calibration_source_label)
         calibration_status_group.setLayout(calibration_status_layout)
         left_layout.addWidget(calibration_status_group)
 
@@ -204,23 +207,23 @@ class CalibrationWindow(QtWidgets.QWidget):
 
     def saveShort(self):
         self.app.calibration.s11short = self.app.data
-        self.cal_short_label.setText("Calibrated (" + str(len(self.app.calibration.s11short)) + " points)")
+        self.cal_short_label.setText("Data set (" + str(len(self.app.calibration.s11short)) + " points)")
 
     def saveOpen(self):
         self.app.calibration.s11open = self.app.data
-        self.cal_open_label.setText("Calibrated (" + str(len(self.app.calibration.s11open)) + " points)")
+        self.cal_open_label.setText("Data set (" + str(len(self.app.calibration.s11open)) + " points)")
 
     def saveLoad(self):
         self.app.calibration.s11load = self.app.data
-        self.cal_load_label.setText("Calibrated (" + str(len(self.app.calibration.s11load)) + " points)")
+        self.cal_load_label.setText("Data set (" + str(len(self.app.calibration.s11load)) + " points)")
 
     def saveIsolation(self):
         self.app.calibration.s21isolation = self.app.data21
-        self.cal_isolation_label.setText("Calibrated (" + str(len(self.app.calibration.s21isolation)) + " points)")
+        self.cal_isolation_label.setText("Data set (" + str(len(self.app.calibration.s21isolation)) + " points)")
 
     def saveThrough(self):
         self.app.calibration.s21through = self.app.data21
-        self.cal_through_label.setText("Calibrated (" + str(len(self.app.calibration.s21through)) + " points)")
+        self.cal_through_label.setText("Data set (" + str(len(self.app.calibration.s21through)) + " points)")
 
     def listCalibrationStandards(self):
         self.cal_standard_save_selector.clear()
@@ -412,6 +415,7 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.cal_through_label.setText("Uncalibrated")
         self.cal_isolation_label.setText("Uncalibrated")
         self.calibration_status_label.setText("Device calibration")
+        self.calibration_source_label.setText("Device")
         self.notes_textedit.clear()
 
         if len(self.app.worker.rawData11) > 0:
@@ -479,6 +483,11 @@ class CalibrationWindow(QtWidgets.QWidget):
         if valid:
             self.calibration_status_label.setText("Application calibration (" +
                                                   str(len(self.app.calibration.s11short)) + " points)")
+            if self.use_ideal_values.isChecked():
+                self.calibration_source_label.setText(self.app.calibration.source)
+            else:
+                self.calibration_source_label.setText(self.app.calibration.source + " (Standards: Custom)")
+
             if len(self.app.worker.rawData11) > 0:
                 # There's raw data, so we can get corrected data
                 logger.debug("Applying calibration to existing sweep data.")
@@ -490,6 +499,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             # showError here hides the calibration window, so we need to pop up our own
             QtWidgets.QMessageBox.warning(self, "Error applying calibration", error)
             self.calibration_status_label.setText("Applying calibration failed.")
+            self.calibration_source_label.setText(self.app.calibration.source)
 
     @staticmethod
     def getFloatValue(text: str) -> float:
@@ -568,7 +578,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.btn_automatic.setDisabled(False)
             return
         logger.info("Starting automatic calibration assistant.")
-
+        self.app.calibration.source = "Calibration assistant"
         if not self.app.serial.is_open:
             QtWidgets.QMessageBox(QtWidgets.QMessageBox.Information, "NanoVNA not connected",
                                   "Please ensure the NanoVNA is connected before attempting calibration.").exec()
@@ -778,6 +788,8 @@ class Calibration:
 
     isCalculated = False
 
+    source = "Manual"
+
     def isValid2Port(self):
         valid = len(self.s21through) > 0 and len(self.s21isolation) > 0 and self.isValid1Port()
         valid &= len(self.s21through) == len(self.s21isolation) == len(self.s11short)
@@ -937,6 +949,8 @@ class Calibration:
         # Load calibration data from file
         if filename == "":
             return
+
+        self.source = os.path.basename(filename)
 
         self.s11short = []
         self.s11open = []
