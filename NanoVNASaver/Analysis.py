@@ -975,6 +975,104 @@ class BandStopAnalysis(Analysis):
             self.result_label.setText("Analysis complete (" + str(len(self.app.data)) + " points)")
 
 
+class SimplePeakSearchAnalysis(Analysis):
+    def __init__(self, app):
+        super().__init__(app)
+        self._widget = QtWidgets.QWidget()
+        outer_layout = QtWidgets.QFormLayout()
+        self._widget.setLayout(outer_layout)
+
+        self.rbtn_data_group = QtWidgets.QButtonGroup()
+        self.rbtn_data_vswr = QtWidgets.QRadioButton("VSWR")
+        self.rbtn_data_resistance = QtWidgets.QRadioButton("Resistance")
+        self.rbtn_data_reactance = QtWidgets.QRadioButton("Reactance")
+        self.rbtn_data_s21_gain = QtWidgets.QRadioButton("S21 Gain")
+        self.rbtn_data_group.addButton(self.rbtn_data_vswr)
+        self.rbtn_data_group.addButton(self.rbtn_data_resistance)
+        self.rbtn_data_group.addButton(self.rbtn_data_reactance)
+        self.rbtn_data_group.addButton(self.rbtn_data_s21_gain)
+
+        self.rbtn_data_s21_gain.setChecked(True)
+
+        self.rbtn_peak_group = QtWidgets.QButtonGroup()
+        self.rbtn_peak_positive = QtWidgets.QRadioButton("Highest value")
+        self.rbtn_peak_negative = QtWidgets.QRadioButton("Lowest value")
+        self.rbtn_peak_group.addButton(self.rbtn_peak_positive)
+        self.rbtn_peak_group.addButton(self.rbtn_peak_negative)
+
+        self.rbtn_peak_positive.setChecked(True)
+
+        self.checkbox_move_marker = QtWidgets.QCheckBox()
+
+        outer_layout.addRow(QtWidgets.QLabel("<b>Settings</b>"))
+        outer_layout.addRow("Data source", self.rbtn_data_vswr)
+        outer_layout.addRow("", self.rbtn_data_resistance)
+        outer_layout.addRow("", self.rbtn_data_reactance)
+        outer_layout.addRow("", self.rbtn_data_s21_gain)
+        outer_layout.addRow(PeakSearchAnalysis.QHLine())
+        outer_layout.addRow("Peak type", self.rbtn_peak_positive)
+        outer_layout.addRow("", self.rbtn_peak_negative)
+        outer_layout.addRow(PeakSearchAnalysis.QHLine())
+        outer_layout.addRow("Move marker to peak", self.checkbox_move_marker)
+        outer_layout.addRow(PeakSearchAnalysis.QHLine())
+
+        outer_layout.addRow(QtWidgets.QLabel("<b>Results</b>"))
+
+        self.peak_frequency = QtWidgets.QLabel()
+        self.peak_value = QtWidgets.QLabel()
+
+        outer_layout.addRow("Peak frequency:", self.peak_frequency)
+        outer_layout.addRow("Peak value:", self.peak_value)
+
+    def runAnalysis(self):
+        if self.rbtn_data_vswr.isChecked():
+            suffix = ""
+            data = []
+            for d in self.app.data:
+                vswr = RFTools.calculateVSWR(d)
+                if vswr < 1:
+                    vswr = float('inf')
+                data.append(vswr)
+        elif self.rbtn_data_resistance.isChecked():
+            suffix = " \N{OHM SIGN}"
+            data = []
+            for d in self.app.data:
+                re, im = RFTools.normalize50(d)
+                data.append(re)
+        elif self.rbtn_data_reactance.isChecked():
+            suffix = " \N{OHM SIGN}"
+            data = []
+            for d in self.app.data:
+                re, im = RFTools.normalize50(d)
+                data.append(im)
+        elif self.rbtn_data_s21_gain.isChecked():
+            suffix = " dB"
+            data = []
+            for d in self.app.data21:
+                data.append(RFTools.gain(d))
+        else:
+            logger.warning("Searching for peaks on unknown data")
+            return
+
+        if len(data) == 0:
+            return
+
+        if self.rbtn_peak_positive.isChecked():
+            idx_peak = np.argmax(data)
+        elif self.rbtn_peak_negative.isChecked():
+            idx_peak = np.argmin(data)
+        else:
+            logger.warning("Searching for peaks, but neither looking at positive nor negative?")  # Both is not yet in
+            return
+
+        self.peak_frequency.setText(RFTools.formatFrequency(self.app.data[idx_peak].freq))
+        self.peak_value.setText(str(round(data[idx_peak], 3)) + suffix)
+
+        if self.checkbox_move_marker.isChecked() and len(self.app.markers) >= 1:
+            self.app.markers[0].setFrequency(str(self.app.data[idx_peak].freq))
+            self.app.markers[0].frequencyInput.setText(RFTools.formatFrequency(self.app.data[idx_peak].freq))
+
+
 class PeakSearchAnalysis(Analysis):
     class QHLine(QtWidgets.QFrame):
         def __init__(self):
@@ -1025,7 +1123,7 @@ class PeakSearchAnalysis(Analysis):
         outer_layout.addRow(PeakSearchAnalysis.QHLine())
         outer_layout.addRow("Peak type", self.rbtn_peak_positive)
         outer_layout.addRow("", self.rbtn_peak_negative)
-        #  outer_layout.addRow("", self.rbtn_peak_both)
+        # outer_layout.addRow("", self.rbtn_peak_both)
         outer_layout.addRow(PeakSearchAnalysis.QHLine())
         outer_layout.addRow("Max number of peaks", self.input_number_of_peaks)
         outer_layout.addRow("Move markers", self.checkbox_move_markers)
