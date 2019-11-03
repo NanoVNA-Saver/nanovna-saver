@@ -2,6 +2,7 @@
 [![License](https://img.shields.io/github/license/mihtjel/nanovna-saver.svg)](https://github.com/mihtjel/nanovna-saver/blob/master/LICENSE)
 [![Downloads](https://img.shields.io/github/downloads/mihtjel/nanovna-saver/total.svg)](https://github.com/mihtjel/nanovna-saver/releases/)
 [![GitHub Releases](https://img.shields.io/github/downloads/mihtjel/nanovna-saver/latest/total)](https://github.com/mihtjel/nanovna-saver/releases/latest)
+[![Donate](https://img.shields.io/badge/paypal-donate-yellow.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=T8KTGVDQF5K6E&item_name=NanoVNASaver+Development&currency_code=EUR&source=url)
 
 NanoVNASaver
 ============
@@ -21,7 +22,7 @@ Current features:
 - Displaying markers, and the impedance, VSWR, Q, equivalent capacitance/inductance etc. at these locations
 - Displaying customizable frequency bands as reference, for example amateur radio bands
 - Exporting and importing 1-port and 2-port Touchstone files
-- TDR function (measurement of cable length)
+- TDR function (measurement of cable length) - including impedance display
 - Filter analysis functions for low-pass, high-pass, band-pass and band-stop filters
 - Display of both an active and a reference trace
 - Live updates of data from the NanoVNA, including for multi-segment sweeps
@@ -36,7 +37,7 @@ Current features:
 
 ### Windows
 
-The software was written in Python on Windows, using Pycharm, and the modules PyQT5, numpy and pyserial.
+The software was written in Python on Windows, using Pycharm, and the modules PyQT5, numpy, scipy and pyserial.
 
 #### Binary releases
 You can find the latest binary (.exe) release for Windows at https://github.com/mihtjel/nanovna-saver/releases/latest
