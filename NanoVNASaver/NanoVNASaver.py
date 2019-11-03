@@ -56,6 +56,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                              QtGui.QColor(255, 255, 0)]
 
     dataAvailable = QtCore.pyqtSignal()
+    scaleFactor = 1
 
     def __init__(self):
         super().__init__()
@@ -956,6 +957,21 @@ class NanoVNASaver(QtWidgets.QWidget):
         a0.accept()
         sys.exit()
 
+    def changeFont(self, font: QtGui.QFont) -> None:
+        qf_new = QtGui.QFontMetricsF(font)
+        normal_font = QtGui.QFont(font)
+        normal_font.setPointSize(8)
+        qf_normal = QtGui.QFontMetricsF(normal_font)
+        standard_string = "0.123456789 0.123456789 MHz \N{OHM SIGN}"  # Characters we would normally display
+        new_width = qf_new.boundingRect(standard_string).width()
+        old_width = qf_normal.boundingRect(standard_string).width()
+        self.scaleFactor = new_width / old_width
+        logger.debug("New font width: %f, normal font: %f, factor: %f", new_width, old_width, self.scaleFactor)
+        # TODO: Update all the fixed widths to account for the scaling
+        for m in self.markers:
+            m.getGroupBox().setFont(font)
+            m.setScale(self.scaleFactor)
+
 
 class DisplaySettingsWindow(QtWidgets.QWidget):
     def __init__(self, app: NanoVNASaver):
@@ -1545,6 +1561,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         font = app.font()
         font.setPointSize(int(font_size))
         app.setFont(font)
+        self.app.changeFont(font)
 
     def displayBandsWindow(self):
         self.bandsWindow.show()

@@ -143,6 +143,19 @@ class Marker(QtCore.QObject):
 
         self.buildForm()
 
+    def setScale(self, scale):
+        self.group_box.setMaximumWidth(int(340 * scale))
+        self.frequency_label.setMinimumWidth(int(100 * scale))
+        self.returnloss_label.setMinimumWidth(int(80*scale))
+        if self.coloredText:
+            color_string = QtCore.QVariant(self.color)
+            color_string.convert(QtCore.QVariant.String)
+
+            self.group_box.setStyleSheet('QGroupBox { color: ' + color_string.value() + '; font-size: ' + \
+                                         str(self.group_box.font().pointSize()) + '};')
+        else:
+            self.group_box.setStyleSheet('QGroupBox { font-size: ' + str(self.group_box.font().pointSize()) + '};')
+
     def buildForm(self):
         while self.left_form.count() > 0:
             old_row = self.left_form.takeRow(0)
@@ -214,9 +227,10 @@ class Marker(QtCore.QObject):
         if self.coloredText:
             color_string = QtCore.QVariant(color)
             color_string.convert(QtCore.QVariant.String)
-            self.group_box.setStyleSheet('QGroupBox { color: ' + color_string.value() + '};')
+            self.group_box.setStyleSheet('QGroupBox { color: ' + color_string.value() + '; font-size: ' + \
+                                         str(self.group_box.font().pointSize()) + '};')
         else:
-            self.group_box.setStyleSheet("")
+            self.group_box.setStyleSheet('QGroupBox { font-size: ' + str(self.group_box.font().pointSize()) + '};')
 
     def setColoredText(self, colored_text):
         self.coloredText = colored_text
@@ -263,7 +277,7 @@ class Marker(QtCore.QObject):
 
     def getGroupBox(self) -> QtWidgets.QGroupBox:
         return self.group_box
-    
+
     def resetLabels(self):
         self.frequency_label.setText("")
         self.impedance_label.setText("")
