@@ -1135,7 +1135,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.font_dropdown = QtWidgets.QComboBox()
         self.font_dropdown.addItems(["7", "8", "9", "10", "11", "12"])
         font_size = self.app.settings.value("FontSize",
-                                            defaultValue=str(QtWidgets.QApplication.instance().font().pointSize()),
+                                            defaultValue="8",
                                             type=str)
         self.font_dropdown.setCurrentText(font_size)
         self.changeFont()
