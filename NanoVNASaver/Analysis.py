@@ -1224,6 +1224,7 @@ class VSWRAnalysis(Analysis):
         self.layout.addRow(self.results_label)
 
     def runAnalysis(self):
+        max_dips_shown = 3
         data = []
         for d in self.app.data:
             vswr = RFTools.calculateVSWR(d)
@@ -1267,13 +1268,35 @@ class VSWRAnalysis(Analysis):
         for i in range(results_header, self.layout.rowCount()):
             self.layout.removeRow(self.layout.rowCount()-1)
 
+        if len(minimums) > max_dips_shown:
+            self.layout.addRow(QtWidgets.QLabel("<b>More than " + str(max_dips_shown) +
+                                                " dips found. Lowest shown.</b>"))
+            dips = []
+            for m in minimums:
+                start, lowest, end = m
+                dips.append(data[lowest])
+
+            best_dips = []
+            for i in range(max_dips_shown):
+                best_dips.append(minimums[np.argmin(dips)])
+                dips.remove(np.min(dips))
+            minimums = best_dips
+
         if len(minimums) > 0:
             for m in minimums:
                 start, lowest, end = m
-                logger.debug("Section from %d to %d, lowest at %d", start, end, lowest)
-                self.layout.addRow("Start", QtWidgets.QLabel(RFTools.formatFrequency(self.app.data[start].freq)))
-                self.layout.addRow("Minimum", QtWidgets.QLabel(RFTools.formatFrequency(self.app.data[lowest].freq) +
-                                                               " (" + str(round(data[lowest], 2)) + ")"))
-                self.layout.addRow("End", QtWidgets.QLabel(RFTools.formatFrequency(self.app.data[end].freq)))
+                if start != end:
+                    logger.debug("Section from %d to %d, lowest at %d", start, end, lowest)
+                    self.layout.addRow("Start", QtWidgets.QLabel(RFTools.formatFrequency(self.app.data[start].freq)))
+                    self.layout.addRow("Minimum", QtWidgets.QLabel(RFTools.formatFrequency(self.app.data[lowest].freq) +
+                                                                   " (" + str(round(data[lowest], 2)) + ")"))
+                    self.layout.addRow("End", QtWidgets.QLabel(RFTools.formatFrequency(self.app.data[end].freq)))
+                    self.layout.addRow("Span", QtWidgets.QLabel(RFTools.formatFrequency(self.app.data[end].freq -\
+                                                                                        self.app.data[start].freq)))
+                    self.layout.addWidget(PeakSearchAnalysis.QHLine())
+                else:
+                    self.layout.addRow("Low spot", QtWidgets.QLabel(RFTools.formatFrequency(self.app.data[lowest].freq)))
+                    self.layout.addWidget(PeakSearchAnalysis.QHLine())
+            self.layout.removeRow(self.layout.rowCount()-1)  # Remove the final separator line
         else:
-            self.layout.addRow(QtWidgets.QLabel("No areas found with VSWR below " + str(threshold) + "."))
+            self.layout.addRow(QtWidgets.QLabel("No areas found with VSWR below " + str(round(threshold, 2)) + "."))

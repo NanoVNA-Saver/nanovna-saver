@@ -2276,7 +2276,7 @@ class AnalysisWindow(QtWidgets.QWidget):
             self.analysis_list.setDisabled(True)
             self.app.dataAvailable.connect(self.runAnalysis)
         else:
-            self.analysis_list.setDisabled(True)
+            self.analysis_list.setDisabled(False)
             self.app.dataAvailable.disconnect(self.runAnalysis)
 
 
