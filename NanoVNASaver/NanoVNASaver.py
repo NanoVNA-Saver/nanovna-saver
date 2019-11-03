@@ -526,6 +526,11 @@ class NanoVNASaver(QtWidgets.QWidget):
         return ""
 
     def exportFileS1P(self):
+        if len(self.data) == 0:
+            # No data to save, alert the user
+            QtWidgets.QMessageBox.warning(self, "No data to save", "There is no data to save.")
+            return
+
         filedialog = QtWidgets.QFileDialog(self)
         filedialog.setDefaultSuffix("s1p")
         filedialog.setNameFilter("Touchstone Files (*.s1p *.s2p);;All files (*.*)")
@@ -557,6 +562,11 @@ class NanoVNASaver(QtWidgets.QWidget):
             return
 
     def exportFileS2P(self):
+        if len(self.data21) == 0:
+            # No S21 data to save, alert the user
+            QtWidgets.QMessageBox.warning(self, "No S21 data to save", "There is no S21 data to save.")
+            return
+
         filedialog = QtWidgets.QFileDialog(self)
         filedialog.setDefaultSuffix("s2p")
         filedialog.setNameFilter("Touchstone Files (*.s1p *.s2p);;All files (*.*)")
