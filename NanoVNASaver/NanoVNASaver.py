@@ -1578,6 +1578,10 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         else:
             color = QtGui.QColor(QtCore.Qt.darkGray)
         new_marker = Marker("Marker " + str(marker_count+1), color)
+        new_marker.setColoredText(self.app.settings.value("ColoredMarkerNames", True, bool))
+        new_marker.setFieldSelection(self.app.settings.value("MarkerFields",
+                                                             defaultValue=self.marker_window.defaultValue))
+        new_marker.setScale(self.app.scaleFactor)
         self.app.markers.append(new_marker)
         self.app.marker_data_layout.addWidget(new_marker.getGroupBox())
 
