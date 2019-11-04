@@ -219,6 +219,8 @@ class Chart(QtWidgets.QWidget):
         new_chart.swrMarkers = self.swrMarkers
         new_chart.bands = self.bands
         new_chart.drawLines = self.drawLines
+        new_chart.markerSize = self.markerSize
+        new_chart.drawMarkerNumbers = self.drawMarkerNumbers
         new_chart.resize(self.width(), self.height())
         new_chart.setPointSize(self.pointSize)
         new_chart.setLineThickness(self.lineThickness)
