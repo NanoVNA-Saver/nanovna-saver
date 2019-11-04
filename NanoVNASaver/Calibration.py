@@ -578,7 +578,6 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.btn_automatic.setDisabled(False)
             return
         logger.info("Starting automatic calibration assistant.")
-        self.app.calibration.source = "Calibration assistant"
         if not self.app.serial.is_open:
             QtWidgets.QMessageBox(QtWidgets.QMessageBox.Information, "NanoVNA not connected",
                                   "Please ensure the NanoVNA is connected before attempting calibration.").exec()
@@ -602,6 +601,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.btn_automatic.setDisabled(False)
             return
         self.reset()
+        self.app.calibration.source = "Calibration assistant"
         self.nextStep = 0
         self.app.worker.signals.finished.connect(self.automaticCalibrationStep)
         self.app.sweep()
