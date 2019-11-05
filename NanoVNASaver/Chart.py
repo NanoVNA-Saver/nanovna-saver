@@ -2408,8 +2408,8 @@ class RealImaginaryChart(FrequencyChart):
                 y_re = self.getReYPosition(self.data[m.location])
                 y_im = self.getImYPosition(self.data[m.location])
 
-                self.drawMarker(x, y_re, qp, m.color)
-                self.drawMarker(x, y_im, qp, m.color)
+                self.drawMarker(x, y_re, qp, m.color, self.markers.index(m)+1)
+                self.drawMarker(x, y_im, qp, m.color, self.markers.index(m)+1)
 
     def getImYPosition(self, d: Datapoint) -> int:
         _, im = RFTools.normalize50(d)
