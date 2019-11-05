@@ -17,6 +17,7 @@
 import collections
 import logging
 import math
+import os
 
 from PyQt5 import QtWidgets, QtCore
 from typing import List
@@ -36,7 +37,7 @@ class CalibrationWindow(QtWidgets.QWidget):
 
         self.app: NanoVNASaver = app
 
-        self.setMinimumSize(450, 600)
+        self.setMinimumWidth(450)
         self.setWindowTitle("Calibration")
         self.setWindowIcon(self.app.icon)
         self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
@@ -53,7 +54,9 @@ class CalibrationWindow(QtWidgets.QWidget):
         calibration_status_group = QtWidgets.QGroupBox("Active calibration")
         calibration_status_layout = QtWidgets.QFormLayout()
         self.calibration_status_label = QtWidgets.QLabel("Device calibration")
-        calibration_status_layout.addRow("Calibration active:", self.calibration_status_label)
+        self.calibration_source_label = QtWidgets.QLabel("NanoVNA")
+        calibration_status_layout.addRow("Calibration:", self.calibration_status_label)
+        calibration_status_layout.addRow("Source:", self.calibration_source_label)
         calibration_status_group.setLayout(calibration_status_layout)
         left_layout.addWidget(calibration_status_group)
 
@@ -93,13 +96,18 @@ class CalibrationWindow(QtWidgets.QWidget):
         calibration_control_layout.addRow(self.btn_automatic)
         self.btn_automatic.clicked.connect(self.automaticCalibration)
 
+        apply_reset_layout = QtWidgets.QHBoxLayout()
+
         btn_apply = QtWidgets.QPushButton("Apply")
-        calibration_control_layout.addRow(btn_apply)
         btn_apply.clicked.connect(self.calculate)
 
         btn_reset = QtWidgets.QPushButton("Reset")
-        calibration_control_layout.addRow(btn_reset)
         btn_reset.clicked.connect(self.reset)
+
+        apply_reset_layout.addWidget(btn_apply)
+        apply_reset_layout.addWidget(btn_reset)
+
+        calibration_control_layout.addRow(apply_reset_layout)
 
         left_layout.addWidget(calibration_control_group)
 
@@ -114,10 +122,14 @@ class CalibrationWindow(QtWidgets.QWidget):
         file_layout = QtWidgets.QFormLayout(file_box)
         btn_save_file = QtWidgets.QPushButton("Save calibration")
         btn_save_file.clicked.connect(lambda: self.saveCalibration())
-        file_layout.addRow(btn_save_file)
         btn_load_file = QtWidgets.QPushButton("Load calibration")
         btn_load_file.clicked.connect(lambda: self.loadCalibration())
-        file_layout.addRow(btn_load_file)
+
+        save_load_layout = QtWidgets.QHBoxLayout()
+        save_load_layout.addWidget(btn_save_file)
+        save_load_layout.addWidget(btn_load_file)
+
+        file_layout.addRow(save_load_layout)
 
         left_layout.addWidget(file_box)
 
@@ -161,12 +173,12 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.cal_load_box.setDisabled(True)
         self.load_resistance = QtWidgets.QLineEdit("50")
         self.load_inductance = QtWidgets.QLineEdit("0")
-        self.load_capacitance = QtWidgets.QLineEdit("0")
-        self.load_capacitance.setDisabled(True)  # Not yet implemented
+        # self.load_capacitance = QtWidgets.QLineEdit("0")
+        # self.load_capacitance.setDisabled(True)  # Not yet implemented
         self.load_length = QtWidgets.QLineEdit("0")
         cal_load_form.addRow("Resistance (\N{OHM SIGN})", self.load_resistance)
         cal_load_form.addRow("Inductance (H(e-12))", self.load_inductance)
-        cal_load_form.addRow("Capacitance (F(e-12))", self.load_capacitance)
+        # cal_load_form.addRow("Capacitance (F(e-12))", self.load_capacitance)
         cal_load_form.addRow("Offset Delay (ps)", self.load_length)
 
         self.cal_through_box = QtWidgets.QGroupBox("Through")
@@ -204,23 +216,23 @@ class CalibrationWindow(QtWidgets.QWidget):
 
     def saveShort(self):
         self.app.calibration.s11short = self.app.data
-        self.cal_short_label.setText("Calibrated (" + str(len(self.app.calibration.s11short)) + " points)")
+        self.cal_short_label.setText("Data set (" + str(len(self.app.calibration.s11short)) + " points)")
 
     def saveOpen(self):
         self.app.calibration.s11open = self.app.data
-        self.cal_open_label.setText("Calibrated (" + str(len(self.app.calibration.s11open)) + " points)")
+        self.cal_open_label.setText("Data set (" + str(len(self.app.calibration.s11open)) + " points)")
 
     def saveLoad(self):
         self.app.calibration.s11load = self.app.data
-        self.cal_load_label.setText("Calibrated (" + str(len(self.app.calibration.s11load)) + " points)")
+        self.cal_load_label.setText("Data set (" + str(len(self.app.calibration.s11load)) + " points)")
 
     def saveIsolation(self):
         self.app.calibration.s21isolation = self.app.data21
-        self.cal_isolation_label.setText("Calibrated (" + str(len(self.app.calibration.s21isolation)) + " points)")
+        self.cal_isolation_label.setText("Data set (" + str(len(self.app.calibration.s21isolation)) + " points)")
 
     def saveThrough(self):
         self.app.calibration.s21through = self.app.data21
-        self.cal_through_label.setText("Calibrated (" + str(len(self.app.calibration.s21through)) + " points)")
+        self.cal_through_label.setText("Data set (" + str(len(self.app.calibration.s21through)) + " points)")
 
     def listCalibrationStandards(self):
         self.cal_standard_save_selector.clear()
@@ -267,7 +279,7 @@ class CalibrationWindow(QtWidgets.QWidget):
 
         self.app.settings.setValue("LoadR", self.load_resistance.text())
         self.app.settings.setValue("LoadL", self.load_inductance.text())
-        self.app.settings.setValue("LoadC", self.load_capacitance.text())
+        # self.app.settings.setValue("LoadC", self.load_capacitance.text())
         self.app.settings.setValue("LoadDelay", self.load_length.text())
 
         self.app.settings.setValue("ThroughDelay", self.through_length.text())
@@ -302,7 +314,7 @@ class CalibrationWindow(QtWidgets.QWidget):
 
         self.load_resistance.setText(str(self.app.settings.value("LoadR", 50)))
         self.load_inductance.setText(str(self.app.settings.value("LoadL", 0)))
-        self.load_capacitance.setText(str(self.app.settings.value("LoadC", 0)))
+        # self.load_capacitance.setText(str(self.app.settings.value("LoadC", 0)))
         self.load_length.setText(str(self.app.settings.value("LoadDelay", 0)))
 
         self.through_length.setText(str(self.app.settings.value("ThroughDelay", 0)))
@@ -412,6 +424,7 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.cal_through_label.setText("Uncalibrated")
         self.cal_isolation_label.setText("Uncalibrated")
         self.calibration_status_label.setText("Device calibration")
+        self.calibration_source_label.setText("Device")
         self.notes_textedit.clear()
 
         if len(self.app.worker.rawData11) > 0:
@@ -460,7 +473,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             try:
                 self.app.calibration.loadR = self.getFloatValue(self.load_resistance.text())
                 self.app.calibration.loadL = self.getFloatValue(self.load_inductance.text())/10**12
-                self.app.calibration.loadC = self.getFloatValue(self.load_capacitance.text()) / 10 ** 12
+                # self.app.calibration.loadC = self.getFloatValue(self.load_capacitance.text()) / 10 ** 12
                 self.app.calibration.loadLength = self.getFloatValue(self.load_length.text())/10**12
                 self.app.calibration.useIdealLoad = False
             except ValueError:
@@ -479,6 +492,11 @@ class CalibrationWindow(QtWidgets.QWidget):
         if valid:
             self.calibration_status_label.setText("Application calibration (" +
                                                   str(len(self.app.calibration.s11short)) + " points)")
+            if self.use_ideal_values.isChecked():
+                self.calibration_source_label.setText(self.app.calibration.source)
+            else:
+                self.calibration_source_label.setText(self.app.calibration.source + " (Standards: Custom)")
+
             if len(self.app.worker.rawData11) > 0:
                 # There's raw data, so we can get corrected data
                 logger.debug("Applying calibration to existing sweep data.")
@@ -490,6 +508,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             # showError here hides the calibration window, so we need to pop up our own
             QtWidgets.QMessageBox.warning(self, "Error applying calibration", error)
             self.calibration_status_label.setText("Applying calibration failed.")
+            self.calibration_source_label.setText(self.app.calibration.source)
 
     @staticmethod
     def getFloatValue(text: str) -> float:
@@ -568,7 +587,6 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.btn_automatic.setDisabled(False)
             return
         logger.info("Starting automatic calibration assistant.")
-
         if not self.app.serial.is_open:
             QtWidgets.QMessageBox(QtWidgets.QMessageBox.Information, "NanoVNA not connected",
                                   "Please ensure the NanoVNA is connected before attempting calibration.").exec()
@@ -592,6 +610,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.btn_automatic.setDisabled(False)
             return
         self.reset()
+        self.app.calibration.source = "Calibration assistant"
         self.nextStep = 0
         self.app.worker.signals.finished.connect(self.automaticCalibrationStep)
         self.app.sweep()
@@ -778,6 +797,8 @@ class Calibration:
 
     isCalculated = False
 
+    source = "Manual"
+
     def isValid2Port(self):
         valid = len(self.s21through) > 0 and len(self.s21isolation) > 0 and self.isValid1Port()
         valid &= len(self.s21through) == len(self.s21isolation) == len(self.s11short)
@@ -937,6 +958,8 @@ class Calibration:
         # Load calibration data from file
         if filename == "":
             return
+
+        self.source = os.path.basename(filename)
 
         self.s11short = []
         self.s11open = []

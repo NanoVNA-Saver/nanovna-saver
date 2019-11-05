@@ -16,6 +16,8 @@
 import collections
 import math
 
+PREFIXES = ("", "k", "M", "G", "T")
+
 Datapoint = collections.namedtuple('Datapoint', 'freq re im')
 
 
@@ -30,9 +32,10 @@ class RFTools:
 
     @staticmethod
     def gain(data: Datapoint):
-        #re50, im50 = normalize50(data)
+        # re50, im50 = normalize50(data)
         # Calculate the gain / reflection coefficient
-        #mag = math.sqrt((re50 - 50) * (re50 - 50) + im50 * im50) / math.sqrt((re50 + 50) * (re50 + 50) + im50 * im50)
+        # mag = math.sqrt((re50 - 50) * (re50 - 50) + im50 * im50) / \
+        #       math.sqrt((re50 + 50) * (re50 + 50) + im50 * im50)
         #
         #  Magnitude = |Gamma|:
         mag = math.sqrt(data.re**2 + data.im**2)
@@ -52,12 +55,13 @@ class RFTools:
 
     @staticmethod
     def calculateVSWR(data: Datapoint):
-        #re50, im50 = normalize50(data)
+        # re50, im50 = normalize50(data)
         try:
-            #mag = math.sqrt((re50 - 50) * (re50 - 50) + im50 * im50) / math.sqrt((re50 + 50) * (re50 + 50) + im50 * im50)
+            # mag = math.sqrt((re50 - 50) * (re50 - 50) + im50 * im50) / \
+            # math.sqrt((re50 + 50) * (re50 + 50) + im50 * im50)
             mag = math.sqrt(data.re**2 + data.im**2)
             vswr = (1 + mag) / (1 - mag)
-        except ZeroDivisionError as e:
+        except ZeroDivisionError:
             vswr = 1
         return vswr
 
@@ -91,50 +95,62 @@ class RFTools:
 
     @staticmethod
     def formatFrequency(freq):
-        if freq < 1:
-            return "- Hz"
-        if math.log10(freq) < 3:
-            return str(round(freq)) + " Hz"
-        elif math.log10(freq) < 7:
-            return "{:.3f}".format(freq/1000) + " kHz"
-        elif math.log10(freq) < 8:
-            return "{:.4f}".format(freq/1000000) + " MHz"
-        else:
-            return "{:.3f}".format(freq/1000000) + " MHz"
+        return RFTools.formatFixedFrequency(
+            round(freq), 7, True, True)
 
     @staticmethod
     def formatShortFrequency(freq):
-        if freq < 1:
-            return "- Hz"
-        if math.log10(freq) < 3:
-            return str(round(freq)) + " Hz"
-        elif math.log10(freq) < 5:
-            return "{:.3f}".format(freq/1000) + " kHz"
-        elif math.log10(freq) < 6:
-            return "{:.2f}".format(freq/1000) + " kHz"
-        elif math.log10(freq) < 7:
-            return "{:.1f}".format(freq/1000) + " kHz"
-        elif math.log10(freq) < 8:
-            return "{:.3f}".format(freq/1000000) + " MHz"
-        elif math.log10(freq) < 9:
-            return "{:.2f}".format(freq/1000000) + " MHz"
-        else:
-            return "{:.1f}".format(freq/1000000) + " MHz"
+        return RFTools.formatFixedFrequency(
+            round(freq), 5, True, True)
 
     @staticmethod
-    def parseFrequency(freq: str):
-        freq = freq.replace(" ", "")  # People put all sorts of weird whitespace in.
+    def formatFixedFrequency(freq: int,
+                             maxdigits: int = 6,
+                             appendHz: bool = True,
+                             insertSpace: bool = False,
+                             countDot: bool = True,
+                             assumeInfinity: bool = True) -> str:
+        """ Format frequency with SI prefixes
+
+            maxdigits count include the dot by default, so that
+            default leads to a maximum output of 9 characters
+        """
+        freqstr = str(freq)
+        freqlen = len(freqstr)
+
+        # sanity checks
+        if freqlen > 15:
+            if assumeInfinity:
+                return "\N{INFINITY}"
+            raise ValueError("Frequency to big. More than 15 digits!")
+        if maxdigits < 3:
+            raise ValueError("At least 3 digits are needed, given ({})".format(maxdigits))
+        if not countDot:
+            maxdigits += 1
+
+        if freq < 1:
+            return " - " + (" " if insertSpace else "") + ("Hz" if appendHz else "")
+        si_index = (freqlen - 1) // 3
+        dot_pos = freqlen % 3 or 3
+        freqstr = freqstr[:dot_pos] + "." + freqstr[dot_pos:] + "00"
+
+        return freqstr[:maxdigits] + (" " if insertSpace else "") + PREFIXES[si_index] + ("Hz" if appendHz else "")
+
+    @staticmethod
+    def parseFrequency(freq: str) -> int:
+        freq = freq.replace(" ", "")  # Ignore spaces
         if freq.isnumeric():
             return int(freq)
 
         multiplier = 1
         freq = freq.lower()
 
-        if freq.endswith("k"):
-            multiplier = 1000
-            freq = freq[:-1]
-        elif freq.endswith("m"):
-            multiplier = 1000000
+        if freq.endswith("hz"):
+            freq = freq[:-2]
+
+        my_prefixes = [pfx.lower() for pfx in PREFIXES]
+        if len(freq) and freq[-1] in my_prefixes:
+            multiplier = 10 ** (my_prefixes.index(freq[-1]) * 3)
             freq = freq[:-1]
 
         if freq.isnumeric():

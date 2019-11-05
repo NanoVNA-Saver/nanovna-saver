@@ -51,7 +51,8 @@ class Chart(QtWidgets.QWidget):
     minChartWidth = 200
     lineThickness = 1
     pointSize = 2
-
+    markerSize = 3
+    drawMarkerNumbers = False
 
     isPopout = False
     popoutRequested = pyqtSignal(object)
@@ -127,6 +128,10 @@ class Chart(QtWidgets.QWidget):
         self.pointSize = size
         self.update()
 
+    def setMarkerSize(self, size):
+        self.markerSize = size
+        self.update()
+
     def getActiveMarker(self, event: QtGui.QMouseEvent) -> Marker:
         if self.draggedMarker is not None:
             return self.draggedMarker
@@ -161,6 +166,10 @@ class Chart(QtWidgets.QWidget):
 
     def setDrawLines(self, drawLines):
         self.drawLines = drawLines
+        self.update()
+
+    def setDrawMarkerNumbers(self, drawMarkerNumbers):
+        self.drawMarkerNumbers = drawMarkerNumbers
         self.update()
 
     @staticmethod
@@ -210,6 +219,8 @@ class Chart(QtWidgets.QWidget):
         new_chart.swrMarkers = self.swrMarkers
         new_chart.bands = self.bands
         new_chart.drawLines = self.drawLines
+        new_chart.markerSize = self.markerSize
+        new_chart.drawMarkerNumbers = self.drawMarkerNumbers
         new_chart.resize(self.width(), self.height())
         new_chart.setPointSize(self.pointSize)
         new_chart.setLineThickness(self.lineThickness)
@@ -235,6 +246,21 @@ class Chart(QtWidgets.QWidget):
     def setSWRColor(self, color: QtGui.QColor):
         self.swrColor = color
         self.update()
+
+    def drawMarker(self, x, y, qp: QtGui.QPainter, color: QtGui.QColor, number=0):
+        pen = QtGui.QPen(color)
+        qp.setPen(pen)
+        qp.drawLine(int(x), int(y) + self.markerSize,
+                    int(x) - self.markerSize, int(y) - self.markerSize)
+        qp.drawLine(int(x), int(y) + self.markerSize,
+                    int(x) + self.markerSize, int(y) - self.markerSize)
+        qp.drawLine(int(x) - self.markerSize, int(y) - self.markerSize,
+                    int(x) + self.markerSize, int(y) - self.markerSize)
+
+        if self.drawMarkerNumbers:
+            number_x = x - 3
+            number_y = y - self.markerSize - 3
+            qp.drawText(number_x, number_y, str(number))
 
 
 class FrequencyChart(Chart):
@@ -548,14 +574,10 @@ class FrequencyChart(Chart):
         highlighter.setWidth(1)
         for m in self.markers:
             if m.location != -1 and m.location < len(data):
-                highlighter.setColor(m.color)
-                qp.setPen(highlighter)
                 x = self.getXPosition(data[m.location])
                 y = y_function(data[m.location])
                 if self.isPlotable(x, y):
-                    qp.drawLine(int(x), int(y) + 3, int(x) - 3, int(y) - 3)
-                    qp.drawLine(int(x), int(y) + 3, int(x) + 3, int(y) - 3)
-                    qp.drawLine(int(x) - 3, int(y) - 3, int(x) + 3, int(y) - 3)
+                    self.drawMarker(x, y, qp, m.color, self.markers.index(m)+1)
 
     def isPlotable(self, x, y):
         return self.leftMargin <= x <= self.leftMargin + self.chartWidth and \
@@ -712,6 +734,8 @@ class PhaseChart(FrequencyChart):
             maxAngle = 180
 
         span = maxAngle - minAngle
+        if span == 0:
+            span = 0.01
         self.minAngle = minAngle
         self.maxAngle = maxAngle
         self.span = span
@@ -844,6 +868,8 @@ class VSWRChart(FrequencyChart):
             maxVSWR = min(self.maxDisplayValue, math.ceil(maxVSWR))
         self.maxVSWR = maxVSWR
         span = maxVSWR-minVSWR
+        if span == 0:
+            span = 0.01
         self.span = span
 
         target_ticks = math.floor(self.chartHeight / 60)
@@ -975,13 +1001,9 @@ class PolarChart(SquareChart):
         # Now draw the markers
         for m in self.markers:
             if m.location != -1 and m.location < len(self.data):
-                highlighter.setColor(m.color)
-                qp.setPen(highlighter)
                 x = self.getXPosition(self.data[m.location])
                 y = self.height() / 2 + self.data[m.location].im * -1 * self.chartHeight / 2
-                qp.drawLine(int(x), int(y) + 3, int(x) - 3, int(y) - 3)
-                qp.drawLine(int(x), int(y) + 3, int(x) + 3, int(y) - 3)
-                qp.drawLine(int(x) - 3, int(y) - 3, int(x) + 3, int(y) - 3)
+                self.drawMarker(x, y, qp, m.color, self.markers.index(m)+1)
 
     def getXPosition(self, d: Datapoint) -> int:
         return self.width()/2 + d.re * self.chartWidth/2
@@ -1121,13 +1143,9 @@ class SmithChart(SquareChart):
         # Now draw the markers
         for m in self.markers:
             if m.location != -1:
-                highlighter.setColor(m.color)
-                qp.setPen(highlighter)
                 x = self.getXPosition(self.data[m.location])
                 y = self.height() / 2 + self.data[m.location].im * -1 * self.chartHeight / 2
-                qp.drawLine(int(x), int(y) + 3, int(x) - 3, int(y) - 3)
-                qp.drawLine(int(x), int(y) + 3, int(x) + 3, int(y) - 3)
-                qp.drawLine(int(x) - 3, int(y) - 3, int(x) + 3, int(y) - 3)
+                self.drawMarker(x, y, qp, m.color, self.markers.index(m)+1)
 
     def getXPosition(self, d: Datapoint) -> int:
         return self.width()/2 + d.re * self.chartWidth/2
@@ -1255,6 +1273,8 @@ class LogMagChart(FrequencyChart):
             self.maxValue = maxValue
 
         span = maxValue-minValue
+        if span == 0:
+            span = 0.01
         self.span = span
 
         if self.span >= 50:
@@ -1444,6 +1464,8 @@ class SParameterChart(FrequencyChart):
             # self.maxValue = maxValue
 
         span = maxValue-minValue
+        if span == 0:
+            span = 0.01
         self.span = span
 
         tick_count = math.floor(self.chartHeight / 60)
@@ -1618,6 +1640,8 @@ class CombinedLogMagChart(FrequencyChart):
             self.maxValue = maxValue
 
         span = maxValue-minValue
+        if span == 0:
+            span = 0.01
         self.span = span
 
         if self.span >= 50:
@@ -1875,10 +1899,11 @@ class TDRChart(Chart):
     def __init__(self, name):
         super().__init__(name)
         self.tdrWindow = None
-        self.leftMargin = 20
+        self.leftMargin = 30
         self.rightMargin = 20
-        self.bottomMargin = 35
-        self.setMinimumSize(250, 250)
+        self.bottomMargin = 25
+        self.topMargin = 20
+        self.setMinimumSize(300, 300)
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
                                                  QtWidgets.QSizePolicy.MinimumExpanding))
         pal = QtGui.QPalette()
@@ -1975,12 +2000,12 @@ class TDRChart(Chart):
         qp.drawText(3, 15, self.name)
 
         width = self.width() - self.leftMargin - self.rightMargin
-        height = self.height() - self.bottomMargin
+        height = self.height() - self.bottomMargin - self.topMargin
 
         qp.setPen(QtGui.QPen(self.foregroundColor))
         qp.drawLine(self.leftMargin - 5, self.height() - self.bottomMargin, self.width() - self.rightMargin,
                     self.height() - self.bottomMargin)
-        qp.drawLine(self.leftMargin, 20, self.leftMargin, self.height() - self.bottomMargin + 5)
+        qp.drawLine(self.leftMargin, self.topMargin - 5, self.leftMargin, self.height() - self.bottomMargin + 5)
 
         ticks = math.floor((self.width() - self.leftMargin)/100)  # Number of ticks does not include the origin
 
@@ -1991,33 +2016,58 @@ class TDRChart(Chart):
                 x_step = (max_index - min_index) / width
             else:
                 min_index = 0
-                max_index = len(self.tdrWindow.distance_axis)
-                x_step = len(self.tdrWindow.distance_axis) / (width * 2)
+                max_index = math.ceil(len(self.tdrWindow.distance_axis) / 2)
+                x_step = max_index / width
 
-            y_step = np.max(self.tdrWindow.td)*1.1 / height
+            # TODO: Limit the search to the selected span?
+            min_impedance = max(0, np.min(self.tdrWindow.step_response_Z) / 1.05)
+            max_impedance = min(10000, np.max(self.tdrWindow.step_response_Z) * 1.05)
+
+            y_step = np.max(self.tdrWindow.td) * 1.1 / height
+            y_impedance_step = (max_impedance - min_impedance) / height
 
             for i in range(ticks):
                 x = self.leftMargin + round((i + 1) * width / ticks)
                 qp.setPen(QtGui.QPen(self.foregroundColor))
-                qp.drawLine(x, 20, x, height)
+                qp.drawLine(x, self.topMargin, x, self.topMargin + height)
                 qp.setPen(QtGui.QPen(self.textColor))
-                qp.drawText(x - 15, 20 + height,
+                qp.drawText(x - 15, self.topMargin + height + 15,
                             str(round(self.tdrWindow.distance_axis[min_index + int((x - self.leftMargin) * x_step) - 1]/2, 1)) + "m")
 
             qp.setPen(QtGui.QPen(self.textColor))
-            qp.drawText(self.leftMargin - 10, 20 + height,
+            qp.drawText(self.leftMargin - 10, self.topMargin + height + 15,
                         str(round(self.tdrWindow.distance_axis[min_index]/2, 1)) + "m")
+
+            y_ticks = math.floor(height / 60)
+            y_tick_step = height/y_ticks
+
+            for i in range(y_ticks):
+                y = self.bottomMargin + int(i * y_tick_step)
+                qp.setPen(QtGui.QPen(self.foregroundColor))
+                qp.drawLine(self.leftMargin, y, self.leftMargin + width, y)
+                y_val = max_impedance - y_impedance_step * i * y_tick_step
+                qp.drawText(3, y + 3, str(round(y_val, 1)))
+
+            qp.drawText(3, self.topMargin + height + 3, str(round(min_impedance, 1)))
 
             pen = QtGui.QPen(self.sweepColor)
             pen.setWidth(self.pointSize)
             qp.setPen(pen)
-            for i in range(len(self.tdrWindow.distance_axis)):
+            for i in range(min_index, max_index):
                 if i < min_index or i > max_index:
                     continue
-                qp.drawPoint(self.leftMargin + int((i - min_index) / x_step), height - int(self.tdrWindow.td[i] / y_step))
+                pen.setColor(self.sweepColor)
+                qp.setPen(pen)
+                qp.drawPoint(self.leftMargin + int((i - min_index) / x_step),
+                             (self.topMargin + height) - int(self.tdrWindow.td[i] / y_step))
+                pen.setColor(self.secondarySweepColor)
+                qp.setPen(pen)
+                qp.drawPoint(self.leftMargin + int((i - min_index) / x_step),
+                             (self.topMargin + height) - int((self.tdrWindow.step_response_Z[i]-min_impedance) / y_impedance_step))
+
             id_max = np.argmax(self.tdrWindow.td)
             max_point = QtCore.QPoint(self.leftMargin + int((id_max - min_index) / x_step),
-                                      height - int(self.tdrWindow.td[id_max] / y_step))
+                                      (self.topMargin + height) - int(self.tdrWindow.td[id_max] / y_step))
             qp.setPen(self.markers[0].color)
             qp.drawEllipse(max_point, 2, 2)
             qp.setPen(self.textColor)
@@ -2034,8 +2084,8 @@ class RealImaginaryChart(FrequencyChart):
         self.chartHeight = 250
         self.fstart = 0
         self.fstop = 0
-        self.span_real = 0
-        self.span_imag = 0
+        self.span_real = 0.01
+        self.span_imag = 0.01
         self.max_real = 0
         self.max_imag = 0
 
@@ -2207,9 +2257,13 @@ class RealImaginaryChart(FrequencyChart):
         self.max_imag = max_imag
 
         span_real = max_real - min_real
+        if span_real == 0:
+            span_real = 0.01
         self.span_real = span_real
 
         span_imag = max_imag - min_imag
+        if span_imag == 0:
+            span_imag = 0.01
         self.span_imag = span_imag
 
         # We want one horizontal tick per 50 pixels, at most
@@ -2350,19 +2404,12 @@ class RealImaginaryChart(FrequencyChart):
         # Now draw the markers
         for m in self.markers:
             if m.location != -1:
-                highlighter.setColor(m.color)
-                qp.setPen(highlighter)
                 x = self.getXPosition(self.data[m.location])
                 y_re = self.getReYPosition(self.data[m.location])
                 y_im = self.getImYPosition(self.data[m.location])
 
-                qp.drawLine(int(x), int(y_re) + 3, int(x) - 3, int(y_re) - 3)
-                qp.drawLine(int(x), int(y_re) + 3, int(x) + 3, int(y_re) - 3)
-                qp.drawLine(int(x) - 3, int(y_re) - 3, int(x) + 3, int(y_re) - 3)
-
-                qp.drawLine(int(x), int(y_im) + 3, int(x) - 3, int(y_im) - 3)
-                qp.drawLine(int(x), int(y_im) + 3, int(x) + 3, int(y_im) - 3)
-                qp.drawLine(int(x) - 3, int(y_im) - 3, int(x) + 3, int(y_im) - 3)
+                self.drawMarker(x, y_re, qp, m.color)
+                self.drawMarker(x, y_im, qp, m.color)
 
     def getImYPosition(self, d: Datapoint) -> int:
         _, im = RFTools.normalize50(d)
@@ -2535,6 +2582,8 @@ class MagnitudeChart(FrequencyChart):
             self.maxValue = maxValue
 
         span = maxValue-minValue
+        if span == 0:
+            span = 0.01
         self.span = span
 
         target_ticks = math.floor(self.chartHeight / 60)
@@ -2671,6 +2720,8 @@ class MagnitudeZChart(FrequencyChart):
             self.maxValue = maxValue
 
         span = maxValue-minValue
+        if span == 0:
+            span = 0.01
         self.span = span
 
         target_ticks = math.floor(self.chartHeight / 60)

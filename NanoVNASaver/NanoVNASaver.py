@@ -13,7 +13,6 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import collections
 import logging
 import math
 import sys
@@ -22,6 +21,7 @@ from time import sleep, strftime, localtime
 from typing import List, Tuple
 
 import numpy as np
+import scipy.signal as signal
 import serial
 import typing
 from PyQt5 import QtWidgets, QtCore, QtGui
@@ -36,7 +36,8 @@ from .Calibration import CalibrationWindow, Calibration
 from .Marker import Marker
 from .SweepWorker import SweepWorker
 from .Touchstone import Touchstone
-from .Analysis import Analysis, LowPassAnalysis, HighPassAnalysis, BandPassAnalysis, BandStopAnalysis
+from .Analysis import Analysis, LowPassAnalysis, HighPassAnalysis, BandPassAnalysis, BandStopAnalysis, \
+    PeakSearchAnalysis, VSWRAnalysis, SimplePeakSearchAnalysis
 from .about import version as ver
 
 VID = 1155
@@ -53,6 +54,9 @@ class NanoVNASaver(QtWidgets.QWidget):
                              QtGui.QColor(0, 255, 255),
                              QtGui.QColor(255, 0, 255),
                              QtGui.QColor(255, 255, 0)]
+
+    dataAvailable = QtCore.pyqtSignal()
+    scaleFactor = 1
 
     def __init__(self):
         super().__init__()
@@ -287,10 +291,10 @@ class NanoVNASaver(QtWidgets.QWidget):
             if i < len(self.default_marker_colors):
                 default_color = self.default_marker_colors[i]
             else:
-                default_color = self.default_marker_colors[len(self.default_marker_colors) - 1]
+                default_color = QtGui.QColor(QtCore.Qt.darkGray)
             color = self.settings.value("Marker" + str(i+1) + "Color", default_color)
             marker = Marker("Marker " + str(i+1), color)
-            marker.updated.connect(self.dataUpdated)
+            marker.updated.connect(self.markerUpdated)
             label, layout = marker.getRow()
             self.marker_control_layout.addRow(label, layout)
             self.markers.append(marker)
@@ -523,6 +527,11 @@ class NanoVNASaver(QtWidgets.QWidget):
         return ""
 
     def exportFileS1P(self):
+        if len(self.data) == 0:
+            # No data to save, alert the user
+            QtWidgets.QMessageBox.warning(self, "No data to save", "There is no data to save.")
+            return
+
         filedialog = QtWidgets.QFileDialog(self)
         filedialog.setDefaultSuffix("s1p")
         filedialog.setNameFilter("Touchstone Files (*.s1p *.s2p);;All files (*.*)")
@@ -554,6 +563,11 @@ class NanoVNASaver(QtWidgets.QWidget):
             return
 
     def exportFileS2P(self):
+        if len(self.data21) == 0:
+            # No S21 data to save, alert the user
+            QtWidgets.QMessageBox.warning(self, "No S21 data to save", "There is no S21 data to save.")
+            return
+
         filedialog = QtWidgets.QFileDialog(self)
         filedialog.setDefaultSuffix("s2p")
         filedialog.setNameFilter("Touchstone Files (*.s1p *.s2p);;All files (*.*)")
@@ -617,11 +631,11 @@ class NanoVNASaver(QtWidgets.QWidget):
             if frequencies:
                 logger.info("Read starting frequency %s and end frequency %s", frequencies[0], frequencies[100])
                 if int(frequencies[0]) == int(frequencies[100]) and (self.sweepStartInput.text() == "" or self.sweepEndInput.text() == ""):
-                    self.sweepStartInput.setText(frequencies[0])
-                    self.sweepEndInput.setText(str(int(frequencies[100]) + 100000))
+                    self.sweepStartInput.setText(RFTools.formatFixedFrequency(int(frequencies[0])))
+                    self.sweepEndInput.setText(RFTools.formatFixedFrequency(int(frequencies[100]) + 100000))
                 elif self.sweepStartInput.text() == "" or self.sweepEndInput.text() == "":
-                    self.sweepStartInput.setText(frequencies[0])
-                    self.sweepEndInput.setText(frequencies[100])
+                    self.sweepStartInput.setText(RFTools.formatFixedFrequency(int(frequencies[0])))
+                    self.sweepEndInput.setText(RFTools.formatFixedFrequency(int(frequencies[100])))
                 self.sweepStartInput.textEdited.emit(self.sweepStartInput.text())
                 self.sweepStartInput.textChanged.emit(self.sweepStartInput.text())
             else:
@@ -683,6 +697,17 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.sweepSource = source
         else:
             self.sweepSource = strftime("%Y-%m-%d %H:%M:%S", localtime())
+
+    def markerUpdated(self, marker: Marker):
+        if self.dataLock.acquire(blocking=True):
+            marker.findLocation(self.data)
+            for m in self.markers:
+                m.resetLabels()
+                m.updateLabels(self.data, self.data21)
+
+            for c in self.subscribing_charts:
+                c.update()
+        self.dataLock.release()
 
     def dataUpdated(self):
         if self.dataLock.acquire(blocking=True):
@@ -746,6 +771,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             logger.error("Failed acquiring data lock while updating.")
         self.updateTitle()
         self.dataLock.release()
+        self.dataAvailable.emit()
 
     def sweepFinished(self):
         self.sweepProgressBar.setValue(100)
@@ -760,8 +786,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         fcenter = int(round((fstart+fstop)/2))
         if fspan < 0 or fstart < 0 or fstop < 0:
             return
-        self.sweepSpanInput.setText(str(fspan))
-        self.sweepCenterInput.setText(str(fcenter))
+        self.sweepSpanInput.setText(RFTools.formatFixedFrequency(fspan))
+        self.sweepCenterInput.setText(RFTools.formatFixedFrequency(fcenter))
 
     def updateStartEnd(self):
         fcenter = RFTools.parseFrequency(self.sweepCenterInput.text())
@@ -772,8 +798,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         fstop = int(round(fcenter + fspan/2))
         if fstart < 0 or fstop < 0:
             return
-        self.sweepStartInput.setText(str(fstart))
-        self.sweepEndInput.setText(str(fstop))
+        self.sweepStartInput.setText(RFTools.formatFixedFrequency(fstart))
+        self.sweepEndInput.setText(RFTools.formatFixedFrequency(fstop))
 
     def updateStepSize(self):
         fspan = RFTools.parseFrequency(self.sweepSpanInput.text())
@@ -931,6 +957,21 @@ class NanoVNASaver(QtWidgets.QWidget):
         a0.accept()
         sys.exit()
 
+    def changeFont(self, font: QtGui.QFont) -> None:
+        qf_new = QtGui.QFontMetricsF(font)
+        normal_font = QtGui.QFont(font)
+        normal_font.setPointSize(8)
+        qf_normal = QtGui.QFontMetricsF(normal_font)
+        standard_string = "0.123456789 0.123456789 MHz \N{OHM SIGN}"  # Characters we would normally display
+        new_width = qf_new.boundingRect(standard_string).width()
+        old_width = qf_normal.boundingRect(standard_string).width()
+        self.scaleFactor = new_width / old_width
+        logger.debug("New font width: %f, normal font: %f, factor: %f", new_width, old_width, self.scaleFactor)
+        # TODO: Update all the fixed widths to account for the scaling
+        for m in self.markers:
+            m.getGroupBox().setFont(font)
+            m.setScale(self.scaleFactor)
+
 
 class DisplaySettingsWindow(QtWidgets.QWidget):
     def __init__(self, app: NanoVNASaver):
@@ -1033,7 +1074,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         display_options_layout.addRow("Point size", self.pointSizeInput)
 
         self.lineThicknessInput = QtWidgets.QSpinBox()
-        linethickness = self.app.settings.value("LineThickness", 2, int)
+        linethickness = self.app.settings.value("LineThickness", 1, int)
         self.lineThicknessInput.setValue(linethickness)
         self.changeLineThickness(linethickness)
         self.lineThicknessInput.setMinimum(1)
@@ -1042,6 +1083,24 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.lineThicknessInput.setAlignment(QtCore.Qt.AlignRight)
         self.lineThicknessInput.valueChanged.connect(self.changeLineThickness)
         display_options_layout.addRow("Line thickness", self.lineThicknessInput)
+
+        self.markerSizeInput = QtWidgets.QSpinBox()
+        markersize = self.app.settings.value("MarkerSize", 6, int)
+        self.markerSizeInput.setValue(markersize)
+        self.changeMarkerSize(markersize)
+        self.markerSizeInput.setMinimum(4)
+        self.markerSizeInput.setMaximum(20)
+        self.markerSizeInput.setSingleStep(2)
+        self.markerSizeInput.setSuffix(" px")
+        self.markerSizeInput.setAlignment(QtCore.Qt.AlignRight)
+        self.markerSizeInput.valueChanged.connect(self.changeMarkerSize)
+        self.markerSizeInput.editingFinished.connect(self.validateMarkerSize)
+        display_options_layout.addRow("Marker size", self.markerSizeInput)
+
+        self.show_marker_number_option = QtWidgets.QCheckBox("Show marker numbers")
+        show_marker_number_label = QtWidgets.QLabel("Displays the marker number next to the marker")
+        self.show_marker_number_option.stateChanged.connect(self.changeShowMarkerNumber)
+        display_options_layout.addRow(self.show_marker_number_option, show_marker_number_label)
 
         color_options_box = QtWidgets.QGroupBox("Chart colors")
         color_options_layout = QtWidgets.QFormLayout(color_options_box)
@@ -1076,7 +1135,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.font_dropdown = QtWidgets.QComboBox()
         self.font_dropdown.addItems(["7", "8", "9", "10", "11", "12"])
         font_size = self.app.settings.value("FontSize",
-                                            defaultValue=str(QtWidgets.QApplication.instance().font().pointSize()),
+                                            defaultValue="8",
                                             type=str)
         self.font_dropdown.setCurrentText(font_size)
         self.changeFont()
@@ -1148,14 +1207,19 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         markers_box = QtWidgets.QGroupBox("Markers")
         markers_layout = QtWidgets.QFormLayout(markers_box)
 
+        self.marker_window = MarkerSettingsWindow(self.app)
+
         btn_add_marker = QtWidgets.QPushButton("Add")
         btn_add_marker.clicked.connect(self.addMarker)
         self.btn_remove_marker = QtWidgets.QPushButton("Remove")
         self.btn_remove_marker.clicked.connect(self.removeMarker)
+        btn_marker_settings = QtWidgets.QPushButton("Settings ...")
+        btn_marker_settings.clicked.connect(self.displayMarkerWindow)
 
         marker_btn_layout = QtWidgets.QHBoxLayout()
         marker_btn_layout.addWidget(btn_add_marker)
         marker_btn_layout.addWidget(self.btn_remove_marker)
+        marker_btn_layout.addWidget(btn_marker_settings)
 
         markers_layout.addRow(marker_btn_layout)
 
@@ -1177,40 +1241,63 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             selections.append(c.name)
 
         selections.append("None")
-
         chart00_selection = QtWidgets.QComboBox()
         chart00_selection.addItems(selections)
-        chart00_selection.setCurrentIndex(selections.index(self.app.settings.value("Chart00", "S11 Smith Chart")))
+        chart00 = self.app.settings.value("Chart00", "S11 Smith Chart")
+        if chart00_selection.findText(chart00) > -1:
+            chart00_selection.setCurrentText(chart00)
+        else:
+            chart00_selection.setCurrentText("S11 Smith Chart")
         chart00_selection.currentTextChanged.connect(lambda: self.changeChart(0, 0, chart00_selection.currentText()))
         charts_layout.addWidget(chart00_selection, 0, 0)
 
         chart01_selection = QtWidgets.QComboBox()
         chart01_selection.addItems(selections)
-        chart01_selection.setCurrentIndex(selections.index(self.app.settings.value("Chart01", "S11 Return Loss")))
+        chart01 = self.app.settings.value("Chart01", "S11 Return Loss")
+        if chart01_selection.findText(chart01) > -1:
+            chart01_selection.setCurrentText(chart01)
+        else:
+            chart01_selection.setCurrentText("S11 Return Loss")
         chart01_selection.currentTextChanged.connect(lambda: self.changeChart(0, 1, chart01_selection.currentText()))
         charts_layout.addWidget(chart01_selection, 0, 1)
 
         chart02_selection = QtWidgets.QComboBox()
         chart02_selection.addItems(selections)
-        chart02_selection.setCurrentIndex(selections.index(self.app.settings.value("Chart02", "None")))
+        chart02 = self.app.settings.value("Chart02", "None")
+        if chart02_selection.findText(chart02) > -1:
+            chart02_selection.setCurrentText(chart02)
+        else:
+            chart02_selection.setCurrentText("None")
         chart02_selection.currentTextChanged.connect(lambda: self.changeChart(0, 2, chart02_selection.currentText()))
         charts_layout.addWidget(chart02_selection, 0, 2)
 
         chart10_selection = QtWidgets.QComboBox()
         chart10_selection.addItems(selections)
-        chart10_selection.setCurrentIndex(selections.index(self.app.settings.value("Chart10", "S21 Polar Plot")))
+        chart10 = self.app.settings.value("Chart10", "S21 Polar Plot")
+        if chart10_selection.findText(chart10) > -1:
+            chart10_selection.setCurrentText(chart10)
+        else:
+            chart10_selection.setCurrentText("S21 Polar Plot")
         chart10_selection.currentTextChanged.connect(lambda: self.changeChart(1, 0, chart10_selection.currentText()))
         charts_layout.addWidget(chart10_selection, 1, 0)
 
         chart11_selection = QtWidgets.QComboBox()
         chart11_selection.addItems(selections)
-        chart11_selection.setCurrentIndex(selections.index(self.app.settings.value("Chart11", "S21 Gain")))
+        chart11 = self.app.settings.value("Chart11", "S21 Gain")
+        if chart11_selection.findText(chart11) > -1:
+            chart11_selection.setCurrentText(chart11)
+        else:
+            chart11_selection.setCurrentText("S21 Gain")
         chart11_selection.currentTextChanged.connect(lambda: self.changeChart(1, 1, chart11_selection.currentText()))
         charts_layout.addWidget(chart11_selection, 1, 1)
 
         chart12_selection = QtWidgets.QComboBox()
         chart12_selection.addItems(selections)
-        chart12_selection.setCurrentIndex(selections.index(self.app.settings.value("Chart12", "None")))
+        chart12 = self.app.settings.value("Chart12", "None")
+        if chart12_selection.findText(chart12) > -1:
+            chart12_selection.setCurrentText(chart12)
+        else:
+            chart12_selection.setCurrentText("None")
         chart12_selection.currentTextChanged.connect(lambda: self.changeChart(1, 2, chart12_selection.currentText()))
         charts_layout.addWidget(chart12_selection, 1, 2)
 
@@ -1235,6 +1322,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         self.dark_mode_option.setChecked(self.app.settings.value("DarkMode", False, bool))
         self.show_lines_option.setChecked(self.app.settings.value("ShowLines", False, bool))
+        self.show_marker_number_option.setChecked(self.app.settings.value("ShowMarkerNumbers", False, bool))
 
         if self.app.settings.value("UseCustomColors", defaultValue=False, type=bool):
             self.dark_mode_option.setDisabled(True)
@@ -1244,6 +1332,8 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self.btn_background_picker.setDisabled(True)
             self.btn_foreground_picker.setDisabled(True)
             self.btn_text_picker.setDisabled(True)
+
+        self.changeCustomColors()  # Update all the colours of all the charts
 
         p = self.btn_background_picker.palette()
         p.setColor(QtGui.QPalette.ButtonText, self.backgroundColor)
@@ -1314,6 +1404,12 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         for c in self.app.subscribing_charts:
             c.setDrawLines(state)
 
+    def changeShowMarkerNumber(self):
+        state = self.show_marker_number_option.isChecked()
+        self.app.settings.setValue("ShowMarkerNumbers", state)
+        for c in self.app.subscribing_charts:
+            c.setDrawMarkerNumbers(state)
+
     def changePointSize(self, size: int):
         self.app.settings.setValue("PointSize", size)
         for c in self.app.subscribing_charts:
@@ -1323,6 +1419,17 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.app.settings.setValue("LineThickness", size)
         for c in self.app.subscribing_charts:
             c.setLineThickness(size)
+
+    def changeMarkerSize(self, size: int):
+        if size % 2 == 0:
+            self.app.settings.setValue("MarkerSize", size)
+            for c in self.app.subscribing_charts:
+                c.setMarkerSize(int(size / 2))
+
+    def validateMarkerSize(self):
+        size = self.markerSizeInput.value()
+        if size % 2 != 0:
+            self.markerSizeInput.setValue(size + 1)
 
     def changeDarkMode(self):
         state = self.dark_mode_option.isChecked()
@@ -1454,10 +1561,15 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         font = app.font()
         font.setPointSize(int(font_size))
         app.setFont(font)
+        self.app.changeFont(font)
 
     def displayBandsWindow(self):
         self.bandsWindow.show()
         QtWidgets.QApplication.setActiveWindow(self.bandsWindow)
+
+    def displayMarkerWindow(self):
+        self.marker_window.show()
+        QtWidgets.QApplication.setActiveWindow(self.marker_window)
 
     def addMarker(self):
         marker_count = len(self.app.markers)
@@ -1466,10 +1578,14 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         else:
             color = QtGui.QColor(QtCore.Qt.darkGray)
         new_marker = Marker("Marker " + str(marker_count+1), color)
+        new_marker.setColoredText(self.app.settings.value("ColoredMarkerNames", True, bool))
+        new_marker.setFieldSelection(self.app.settings.value("MarkerFields",
+                                                             defaultValue=self.marker_window.defaultValue))
+        new_marker.setScale(self.app.scaleFactor)
         self.app.markers.append(new_marker)
         self.app.marker_data_layout.addWidget(new_marker.getGroupBox())
 
-        new_marker.updated.connect(self.app.dataUpdated)
+        new_marker.updated.connect(self.app.markerUpdated)
         label, layout = new_marker.getRow()
         self.app.marker_control_layout.insertRow(marker_count, label, layout)
         if marker_count == 0:
@@ -1487,7 +1603,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             # Last marker removed.
             self.btn_remove_marker.setDisabled(True)
 
-        last_marker.updated.disconnect(self.app.dataUpdated)
+        last_marker.updated.disconnect(self.app.markerUpdated)
         self.app.marker_data_layout.removeWidget(last_marker.getGroupBox())
         self.app.marker_control_layout.removeRow(len(self.app.markers))
         last_marker.getGroupBox().hide()
@@ -1689,6 +1805,8 @@ class TDRWindow(QtWidgets.QWidget):
 
         self.td = []
         self.distance_axis = []
+        self.step_response = []
+        self.step_response_Z = []
 
         self.setWindowTitle("TDR")
         self.setWindowIcon(self.app.icon)
@@ -1752,6 +1870,9 @@ class TDRWindow(QtWidgets.QWidget):
 
     def updateTDR(self):
         c = 299792458
+        # TODO: Let the user select whether to use high or low resolution TDR?
+        FFT_POINTS = 2**14
+
         if len(self.app.data) < 2:
             return
 
@@ -1779,12 +1900,14 @@ class TDRWindow(QtWidgets.QWidget):
         window = np.blackman(len(self.app.data))
 
         windowed_s11 = window * s11
+        self.td = np.abs(np.fft.ifft(windowed_s11, FFT_POINTS))
+        step = np.ones(FFT_POINTS)
+        self.step_response = signal.convolve(self.td, step)
 
-        self.td = np.abs(np.fft.ifft(windowed_s11, 2**16))
+        self.step_response_Z = 50 * (1 + self.step_response) / (1 - self.step_response)
 
-        time_axis = np.linspace(0, 1/step_size, 2**16)
+        time_axis = np.linspace(0, 1/step_size, FFT_POINTS)
         self.distance_axis = time_axis * v * c
-
         # peak = np.max(td)  # We should check that this is an actual *peak*, and not just a vague maximum
         index_peak = np.argmax(self.td)
 
@@ -1846,9 +1969,21 @@ class SweepSettingsWindow(QtWidgets.QWidget):
 
         band_sweep_layout.addRow("Select band", self.band_list)
 
-        self.band_pad_limits = QtWidgets.QCheckBox("Pad band limits (10%)")
-        self.band_pad_limits.stateChanged.connect(self.updateCurrentBand)
-        band_sweep_layout.addRow(self.band_pad_limits)
+        self.band_pad_group = QtWidgets.QButtonGroup()
+        self.band_pad_0 = QtWidgets.QRadioButton("None")
+        self.band_pad_10 = QtWidgets.QRadioButton("10%")
+        self.band_pad_25 = QtWidgets.QRadioButton("25%")
+        self.band_pad_100 = QtWidgets.QRadioButton("100%")
+        self.band_pad_0.setChecked(True)
+        self.band_pad_group.addButton(self.band_pad_0)
+        self.band_pad_group.addButton(self.band_pad_10)
+        self.band_pad_group.addButton(self.band_pad_25)
+        self.band_pad_group.addButton(self.band_pad_100)
+        self.band_pad_group.buttonClicked.connect(self.updateCurrentBand)
+        band_sweep_layout.addRow("Pad band limits", self.band_pad_0)
+        band_sweep_layout.addRow("", self.band_pad_10)
+        band_sweep_layout.addRow("", self.band_pad_25)
+        band_sweep_layout.addRow("", self.band_pad_100)
 
         self.band_limit_label = QtWidgets.QLabel()
 
@@ -1868,11 +2003,20 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         start = int(self.band_list.model().data(index_start, QtCore.Qt.ItemDataRole).value())
         stop = int(self.band_list.model().data(index_stop, QtCore.Qt.ItemDataRole).value())
 
-        if self.band_pad_limits.isChecked():
+        if self.band_pad_10.isChecked():
+            padding = 10
+        elif self.band_pad_25.isChecked():
+            padding = 25
+        elif self.band_pad_100.isChecked():
+            padding = 100
+        else:
+            padding = 0
+
+        if padding > 0:
             span = stop - start
-            start -= round(span / 10)
+            start -= round(span * padding / 100)
             start = max(1, start)
-            stop += round(span / 10)
+            stop += round(span * padding / 100)
 
         self.band_limit_label.setText("Sweep span: " + RFTools.formatShortFrequency(start) + " to " +
                                       RFTools.formatShortFrequency(stop))
@@ -1883,14 +2027,23 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         start = int(self.band_list.model().data(index_start, QtCore.Qt.ItemDataRole).value())
         stop = int(self.band_list.model().data(index_stop, QtCore.Qt.ItemDataRole).value())
 
-        if self.band_pad_limits.isChecked():
-            span = stop - start
-            start -= round(span / 10)
-            start = max(1, start)
-            stop += round(span / 10)
+        if self.band_pad_10.isChecked():
+            padding = 10
+        elif self.band_pad_25.isChecked():
+            padding = 25
+        elif self.band_pad_100.isChecked():
+            padding = 100
+        else:
+            padding = 0
 
-        self.app.sweepStartInput.setText(str(start))
-        self.app.sweepEndInput.setText(str(stop))
+        if padding > 0:
+            span = stop - start
+            start -= round(span * padding / 100)
+            start = max(1, start)
+            stop += round(span * padding / 100)
+
+        self.app.sweepStartInput.setText(RFTools.formatFixedFrequency(start))
+        self.app.sweepEndInput.setText(RFTools.formatFixedFrequency(stop))
         self.app.sweepEndInput.textEdited.emit(self.app.sweepEndInput.text())
 
     def updateAveraging(self):
@@ -2098,6 +2251,9 @@ class AnalysisWindow(QtWidgets.QWidget):
         self.analysis_list.addItem("Band-pass filter", BandPassAnalysis(self.app))
         self.analysis_list.addItem("High-pass filter", HighPassAnalysis(self.app))
         self.analysis_list.addItem("Band-stop filter", BandStopAnalysis(self.app))
+        # self.analysis_list.addItem("Peak search", PeakSearchAnalysis(self.app))
+        self.analysis_list.addItem("Peak search", SimplePeakSearchAnalysis(self.app))
+        self.analysis_list.addItem("VSWR analysis", VSWRAnalysis(self.app))
         select_analysis_layout.addRow("Analysis type", self.analysis_list)
         self.analysis_list.currentIndexChanged.connect(self.updateSelection)
 
@@ -2105,10 +2261,15 @@ class AnalysisWindow(QtWidgets.QWidget):
         btn_run_analysis.clicked.connect(self.runAnalysis)
         select_analysis_layout.addRow(btn_run_analysis)
 
+        self.checkbox_run_automatically = QtWidgets.QCheckBox("Run automatically")
+        self.checkbox_run_automatically.stateChanged.connect(self.toggleAutomaticRun)
+        select_analysis_layout.addRow(self.checkbox_run_automatically)
+
         analysis_box = QtWidgets.QGroupBox("Analysis")
         analysis_box.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
 
         self.analysis_layout = QtWidgets.QVBoxLayout(analysis_box)
+        self.analysis_layout.setContentsMargins(0, 0, 0, 0)
 
         layout.addWidget(select_analysis_box)
         layout.addWidget(analysis_box)
@@ -2130,3 +2291,186 @@ class AnalysisWindow(QtWidgets.QWidget):
             self.analysis_layout.addWidget(self.analysis.widget())
         self.analysis.widget().show()
         self.update()
+
+    def toggleAutomaticRun(self, state: QtCore.Qt.CheckState):
+        if state == QtCore.Qt.Checked:
+            self.analysis_list.setDisabled(True)
+            self.app.dataAvailable.connect(self.runAnalysis)
+        else:
+            self.analysis_list.setDisabled(False)
+            self.app.dataAvailable.disconnect(self.runAnalysis)
+
+
+class MarkerSettingsWindow(QtWidgets.QWidget):
+    exampleData11 = [Datapoint(123000000, 0, 0),
+                     Datapoint(123500000, 0.9, -0.1),
+                     Datapoint(124000000, 0, 0)]
+    exampleData21 = [Datapoint(123000000, 0, 0),
+                     Datapoint(123456000, -0.3, 0.5),
+                     Datapoint(124000000, 0, 0)]
+
+    fieldList = {"actualfreq": "Actual frequency",
+                 "impedance": "Impedance",
+                 "admittance": "Admittance",
+                 "serr": "Series R",
+                 "serlc": "Series equivalent L/C",
+                 "serl": "Series equivalent L",
+                 "serc": "Series equivalent C",
+                 "parr": "Parallel R",
+                 "parlc": "Parallel equivalent L/C",
+                 "parl": "Parallel equivalent L",
+                 "parc": "Parallel equivalent C",
+                 "vswr": "VSWR",
+                 "returnloss": "Return loss",
+                 "s11q": "S11 Quality factor",
+                 "s11phase": "S11 Phase",
+                 "s21gain": "S21 Gain",
+                 "s21phase": "S21 Phase",
+                }
+
+    defaultValue = ["actualfreq",
+                    "impedance",
+                    "serl",
+                    "serc",
+                    "parr",
+                    "parlc",
+                    "vswr",
+                    "returnloss",
+                    "s11q",
+                    "s11phase",
+                    "s21gain",
+                    "s21phase"
+                    ]
+
+    def __init__(self, app: NanoVNASaver):
+        super().__init__()
+        self.app = app
+
+        self.setWindowTitle("Marker settings")
+        self.setWindowIcon(self.app.icon)
+
+        shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.cancelButtonClick)
+
+        if len(self.app.markers) > 0:
+            color = self.app.markers[0].color
+        else:
+            color = self.app.default_marker_colors[0]
+
+        self.exampleMarker = Marker("Example marker", initialColor=color, frequency="123456000")
+
+        layout = QtWidgets.QVBoxLayout()
+        self.setLayout(layout)
+
+        settings_group_box = QtWidgets.QGroupBox("Settings")
+        settings_group_box_layout = QtWidgets.QFormLayout(settings_group_box)
+        self.checkboxColouredMarker = QtWidgets.QCheckBox("Colored marker name")
+        self.checkboxColouredMarker.setChecked(self.app.settings.value("ColoredMarkerNames", True, bool))
+        self.checkboxColouredMarker.stateChanged.connect(self.updateMarker)
+        settings_group_box_layout.addRow(self.checkboxColouredMarker)
+
+        fields_group_box = QtWidgets.QGroupBox("Displayed data")
+        fields_group_box_layout = QtWidgets.QFormLayout(fields_group_box)
+
+        self.savedFieldSelection = self.app.settings.value("MarkerFields", defaultValue=self.defaultValue)
+
+        if self.savedFieldSelection == "":
+            self.savedFieldSelection = []
+
+        self.currentFieldSelection = self.savedFieldSelection.copy()
+
+        self.fieldSelectionView = QtWidgets.QListView()
+        self.model = QtGui.QStandardItemModel()
+        for field in self.fieldList:
+            item = QtGui.QStandardItem(self.fieldList[field])
+            item.setData(field)
+            item.setCheckable(True)
+            item.setEditable(False)
+            if field in self.currentFieldSelection:
+                item.setCheckState(QtCore.Qt.Checked)
+            self.model.appendRow(item)
+        self.fieldSelectionView.setModel(self.model)
+
+        self.model.itemChanged.connect(self.updateField)
+
+        fields_group_box_layout.addRow(self.fieldSelectionView)
+
+        layout.addWidget(settings_group_box)
+        layout.addWidget(fields_group_box)
+        layout.addWidget(self.exampleMarker.getGroupBox())
+
+        btn_layout = QtWidgets.QHBoxLayout()
+        layout.addLayout(btn_layout)
+        btn_ok = QtWidgets.QPushButton("OK")
+        btn_apply = QtWidgets.QPushButton("Apply")
+        btn_default = QtWidgets.QPushButton("Defaults")
+        btn_cancel = QtWidgets.QPushButton("Cancel")
+
+        btn_ok.clicked.connect(self.okButtonClick)
+        btn_apply.clicked.connect(self.applyButtonClick)
+        btn_default.clicked.connect(self.defaultButtonClick)
+        btn_cancel.clicked.connect(self.cancelButtonClick)
+
+        btn_layout.addWidget(btn_ok)
+        btn_layout.addWidget(btn_apply)
+        btn_layout.addWidget(btn_default)
+        btn_layout.addWidget(btn_cancel)
+
+        self.updateMarker()
+        for m in self.app.markers:
+            m.setFieldSelection(self.currentFieldSelection)
+            m.setColoredText(self.checkboxColouredMarker.isChecked())
+
+    def updateMarker(self):
+        self.exampleMarker.setColoredText(self.checkboxColouredMarker.isChecked())
+        self.exampleMarker.setFieldSelection(self.currentFieldSelection)
+        self.exampleMarker.findLocation(self.exampleData11)
+        self.exampleMarker.resetLabels()
+        self.exampleMarker.updateLabels(self.exampleData11, self.exampleData21)
+
+    def updateField(self, field: QtGui.QStandardItem):
+        if field.checkState() == QtCore.Qt.Checked:
+            if not field.data() in self.currentFieldSelection:
+                self.currentFieldSelection = []
+                for i in range(self.model.rowCount()):
+                    field = self.model.item(i, 0)
+                    if field.checkState() == QtCore.Qt.Checked:
+                        self.currentFieldSelection.append(field.data())
+        else:
+            if field.data() in self.currentFieldSelection:
+                self.currentFieldSelection.remove(field.data())
+        self.updateMarker()
+
+    def applyButtonClick(self):
+        self.savedFieldSelection = self.currentFieldSelection.copy()
+        self.app.settings.setValue("MarkerFields", self.savedFieldSelection)
+        self.app.settings.setValue("ColoredMarkerNames", self.checkboxColouredMarker.isChecked())
+        for m in self.app.markers:
+            m.setFieldSelection(self.savedFieldSelection)
+            m.setColoredText(self.checkboxColouredMarker.isChecked())
+
+    def okButtonClick(self):
+        self.applyButtonClick()
+        self.close()
+
+    def cancelButtonClick(self):
+        self.currentFieldSelection = self.savedFieldSelection.copy()
+        self.resetModel()
+        self.updateMarker()
+        self.close()
+
+    def defaultButtonClick(self):
+        self.currentFieldSelection = self.defaultValue.copy()
+        self.resetModel()
+        self.updateMarker()
+
+    def resetModel(self):
+        self.model = QtGui.QStandardItemModel()
+        for field in self.fieldList:
+            item = QtGui.QStandardItem(self.fieldList[field])
+            item.setData(field)
+            item.setCheckable(True)
+            item.setEditable(False)
+            if field in self.currentFieldSelection:
+                item.setCheckState(QtCore.Qt.Checked)
+            self.model.appendRow(item)
+        self.fieldSelectionView.setModel(self.model)
