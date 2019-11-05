@@ -1001,12 +1001,13 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         display_options_layout.addRow("Return loss is:", self.returnloss_is_negative)
         display_options_layout.addRow("", self.returnloss_is_positive)
 
-        if self.app.settings.value("ReturnLossPositive", False):
-            self.returnloss_is_positive.setChecked(True)
-        else:
+        if self.app.settings.value("ReturnLossPositive", False, bool):
             self.returnloss_is_negative.setChecked(True)
+        else:
+            self.returnloss_is_positive.setChecked(True)
 
         self.returnloss_is_positive.toggled.connect(self.changeReturnLoss)
+        self.changeReturnLoss()
 
         self.show_lines_option = QtWidgets.QCheckBox("Show lines")
         show_lines_label = QtWidgets.QLabel("Displays a thin line between data points")
