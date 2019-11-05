@@ -418,7 +418,8 @@ class FrequencyChart(Chart):
 
     def setMinimumValue(self):
         min_val, selected = QtWidgets.QInputDialog.getDouble(self, "Minimum value",
-                                                             "Set minimum value", value=self.minDisplayValue)
+                                                             "Set minimum value", value=self.minDisplayValue,
+                                                             decimals=3)
         if not selected:
             return
         if not (self.fixedValues and min_val >= self.maxDisplayValue):
@@ -428,7 +429,8 @@ class FrequencyChart(Chart):
 
     def setMaximumValue(self):
         max_val, selected = QtWidgets.QInputDialog.getDouble(self, "Maximum value",
-                                                             "Set maximum value", value=self.maxDisplayValue)
+                                                             "Set maximum value", value=self.maxDisplayValue,
+                                                             decimals=3)
         if not selected:
             return
         if not (self.fixedValues and max_val <= self.minDisplayValue):
@@ -2438,7 +2440,8 @@ class RealImaginaryChart(FrequencyChart):
 
     def setMinimumRealValue(self):
         min_val, selected = QtWidgets.QInputDialog.getDouble(self, "Minimum real value",
-                                                             "Set minimum real value", value=self.minDisplayReal)
+                                                             "Set minimum real value", value=self.minDisplayReal,
+                                                             decimals=2)
         if not selected:
             return
         if not (self.fixedValues and min_val >= self.maxDisplayReal):
@@ -2448,7 +2451,8 @@ class RealImaginaryChart(FrequencyChart):
 
     def setMaximumRealValue(self):
         max_val, selected = QtWidgets.QInputDialog.getDouble(self, "Maximum real value",
-                                                             "Set maximum real value", value=self.maxDisplayReal)
+                                                             "Set maximum real value", value=self.maxDisplayReal,
+                                                             decimals=2)
         if not selected:
             return
         if not (self.fixedValues and max_val <= self.minDisplayReal):
@@ -2458,7 +2462,8 @@ class RealImaginaryChart(FrequencyChart):
 
     def setMinimumImagValue(self):
         min_val, selected = QtWidgets.QInputDialog.getDouble(self, "Minimum imaginary value",
-                                                             "Set minimum imaginary value", value=self.minDisplayImag)
+                                                             "Set minimum imaginary value", value=self.minDisplayImag,
+                                                             decimals=2)
         if not selected:
             return
         if not (self.fixedValues and min_val >= self.maxDisplayImag):
@@ -2468,7 +2473,8 @@ class RealImaginaryChart(FrequencyChart):
 
     def setMaximumImagValue(self):
         max_val, selected = QtWidgets.QInputDialog.getDouble(self, "Maximum imaginary value",
-                                                             "Set maximum imaginary value", value=self.maxDisplayImag)
+                                                             "Set maximum imaginary value", value=self.maxDisplayImag,
+                                                             decimals=2)
         if not selected:
             return
         if not (self.fixedValues and max_val <= self.minDisplayImag):
