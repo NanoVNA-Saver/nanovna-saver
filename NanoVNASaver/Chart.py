@@ -2598,7 +2598,7 @@ class MagnitudeChart(FrequencyChart):
             val = minValue + i / target_ticks * span
             y = self.topMargin + round((self.maxValue - val) / self.span * self.chartHeight)
             qp.setPen(self.textColor)
-            if val != 0:
+            if val != minValue:
                 digits = max(0, min(2, math.floor(3 - math.log10(abs(val)))))
                 if digits == 0:
                     vswrstr = str(round(val))
@@ -2733,10 +2733,10 @@ class MagnitudeZChart(FrequencyChart):
         target_ticks = math.floor(self.chartHeight / 60)
 
         for i in range(target_ticks):
-            val = minValue + i / target_ticks * span
+            val = minValue + (i / target_ticks) * span
             y = self.topMargin + round((self.maxValue - val) / self.span * self.chartHeight)
             qp.setPen(self.textColor)
-            if val != 0:
+            if val != minValue:
                 digits = max(0, min(2, math.floor(3 - math.log10(abs(val)))))
                 if digits == 0:
                     vswrstr = str(round(val))
