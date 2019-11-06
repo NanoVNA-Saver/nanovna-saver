@@ -130,11 +130,51 @@ class RFTools:
 
         if freq < 1:
             return " - " + (" " if insertSpace else "") + ("Hz" if appendHz else "")
+
+        freqstr = str(freq)
+        freqlen = len(freqstr)
         si_index = (freqlen - 1) // 3
         dot_pos = freqlen % 3 or 3
         freqstr = freqstr[:dot_pos] + "." + freqstr[dot_pos:] + "00"
+        retval = freqstr[:maxdigits] + (" " if insertSpace else "") + PREFIXES[si_index] + ("Hz" if appendHz else "")
+        return retval
 
-        return freqstr[:maxdigits] + (" " if insertSpace else "") + PREFIXES[si_index] + ("Hz" if appendHz else "")
+    @staticmethod
+    def formatSweepFrequency(freq: int,
+                             mindigits: int = 0,
+                             appendHz: bool = True,
+                             insertSpace: bool = False,
+                             countDot: bool = True,
+                             assumeInfinity: bool = True) -> str:
+        """ Format frequency with SI prefixes
+
+            mindigits count refers to the number of decimal place digits
+            that will be shown, padded with zeroes if needed.
+        """
+        freqstr = str(freq)
+        freqlen = len(freqstr)
+
+        # sanity checks
+        if freqlen > 15:
+            if assumeInfinity:
+                return "\N{INFINITY}"
+            raise ValueError("Frequency to big. More than 15 digits!")
+
+        if freq < 1:
+            return " - " + (" " if insertSpace else "") + ("Hz" if appendHz else "")
+
+        si_index = (freqlen - 1) // 3
+        dot_pos = freqlen % 3 or 3
+        intfstr = freqstr[:dot_pos]
+        decfstr = freqstr[dot_pos:]
+        nzdecfstr = decfstr.rstrip('0')
+        nzdecfstrlen = len(nzdecfstr)
+        if si_index != 0:
+            while (len(nzdecfstr) < mindigits): nzdecfstr += '0'
+        freqstr = intfstr + ("." if len(nzdecfstr) > 0 else "") + nzdecfstr
+        retval = freqstr + (" " if insertSpace else "") + PREFIXES[si_index] + ("Hz" if appendHz else "")
+        return retval
+
 
     @staticmethod
     def parseFrequency(freq: str) -> int:
