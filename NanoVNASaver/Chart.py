@@ -53,6 +53,8 @@ class Chart(QtWidgets.QWidget):
     pointSize = 2
     markerSize = 3
     drawMarkerNumbers = False
+    markerAtTip = False
+    filledMarkers = False
 
     isPopout = False
     popoutRequested = pyqtSignal(object)
@@ -164,12 +166,20 @@ class Chart(QtWidgets.QWidget):
     def getPosition(self, d: Datapoint) -> (int, int):
         return self.getXPosition(d), self.getYPosition(d)
 
-    def setDrawLines(self, drawLines):
-        self.drawLines = drawLines
+    def setDrawLines(self, draw_lines):
+        self.drawLines = draw_lines
         self.update()
 
-    def setDrawMarkerNumbers(self, drawMarkerNumbers):
-        self.drawMarkerNumbers = drawMarkerNumbers
+    def setDrawMarkerNumbers(self, draw_marker_numbers):
+        self.drawMarkerNumbers = draw_marker_numbers
+        self.update()
+
+    def setMarkerAtTip(self, marker_at_tip):
+        self.markerAtTip = marker_at_tip
+        self.update()
+
+    def setFilledMarkers(self, filled_markers):
+        self.filledMarkers = filled_markers
         self.update()
 
     @staticmethod
@@ -221,6 +231,8 @@ class Chart(QtWidgets.QWidget):
         new_chart.drawLines = self.drawLines
         new_chart.markerSize = self.markerSize
         new_chart.drawMarkerNumbers = self.drawMarkerNumbers
+        new_chart.filledMarkers = self.filledMarkers
+        new_chart.markerAtTip = self.markerAtTip
         new_chart.resize(self.width(), self.height())
         new_chart.setPointSize(self.pointSize)
         new_chart.setLineThickness(self.lineThickness)
@@ -248,14 +260,20 @@ class Chart(QtWidgets.QWidget):
         self.update()
 
     def drawMarker(self, x, y, qp: QtGui.QPainter, color: QtGui.QColor, number=0):
+        if self.markerAtTip:
+            y -= self.markerSize
         pen = QtGui.QPen(color)
         qp.setPen(pen)
-        qp.drawLine(int(x), int(y) + self.markerSize,
-                    int(x) - self.markerSize, int(y) - self.markerSize)
-        qp.drawLine(int(x), int(y) + self.markerSize,
-                    int(x) + self.markerSize, int(y) - self.markerSize)
-        qp.drawLine(int(x) - self.markerSize, int(y) - self.markerSize,
-                    int(x) + self.markerSize, int(y) - self.markerSize)
+        qpp = QtGui.QPainterPath()
+        qpp.moveTo(x, y + self.markerSize)
+        qpp.lineTo(x - self.markerSize, y - self.markerSize)
+        qpp.lineTo(x + self.markerSize, y - self.markerSize)
+        qpp.lineTo(x, y + self.markerSize)
+
+        if self.filledMarkers:
+            qp.fillPath(qpp, color)
+        else:
+            qp.drawPath(qpp)
 
         if self.drawMarkerNumbers:
             number_x = x - 3

@@ -992,11 +992,11 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         display_options_box = QtWidgets.QGroupBox("Options")
         display_options_layout = QtWidgets.QFormLayout(display_options_box)
 
-        returnloss_group = QtWidgets.QButtonGroup()
+        self.returnloss_group = QtWidgets.QButtonGroup()
         self.returnloss_is_negative = QtWidgets.QRadioButton("Negative")
         self.returnloss_is_positive = QtWidgets.QRadioButton("Positive")
-        returnloss_group.addButton(self.returnloss_is_positive)
-        returnloss_group.addButton(self.returnloss_is_negative)
+        self.returnloss_group.addButton(self.returnloss_is_positive)
+        self.returnloss_group.addButton(self.returnloss_is_negative)
 
         display_options_layout.addRow("Return loss is:", self.returnloss_is_negative)
         display_options_layout.addRow("", self.returnloss_is_positive)
@@ -1103,6 +1103,28 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.show_marker_number_option.stateChanged.connect(self.changeShowMarkerNumber)
         display_options_layout.addRow(self.show_marker_number_option, show_marker_number_label)
 
+        self.filled_marker_option = QtWidgets.QCheckBox("Filled markers")
+        filled_marker_label = QtWidgets.QLabel("Shows the marker as a filled triangle")
+        self.filled_marker_option.stateChanged.connect(self.changeFilledMarkers)
+        display_options_layout.addRow(self.filled_marker_option, filled_marker_label)
+
+        self.marker_tip_group = QtWidgets.QButtonGroup()
+        self.marker_at_center = QtWidgets.QRadioButton("At the center of the marker")
+        self.marker_at_tip = QtWidgets.QRadioButton("At the tip of the marker")
+        self.marker_tip_group.addButton(self.marker_at_center)
+        self.marker_tip_group.addButton(self.marker_at_tip)
+
+        display_options_layout.addRow("Data point is:", self.marker_at_center)
+        display_options_layout.addRow("", self.marker_at_tip)
+
+        if self.app.settings.value("MarkerAtTip", False, bool):
+            self.marker_at_tip.setChecked(True)
+        else:
+            self.marker_at_center.setChecked(True)
+
+        self.marker_at_tip.toggled.connect(self.changeMarkerAtTip)
+        self.changeMarkerAtTip()
+        
         color_options_box = QtWidgets.QGroupBox("Chart colors")
         color_options_layout = QtWidgets.QFormLayout(color_options_box)
 
@@ -1112,19 +1134,25 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         self.btn_background_picker = QtWidgets.QPushButton("█")
         self.btn_background_picker.setFixedWidth(20)
-        self.btn_background_picker.clicked.connect(lambda: self.setColor("background", QtWidgets.QColorDialog.getColor(self.backgroundColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
+        self.btn_background_picker.clicked.connect(lambda: self.setColor("background",
+                                                   QtWidgets.QColorDialog.getColor(self.backgroundColor,
+                                                                      options=QtWidgets.QColorDialog.ShowAlphaChannel)))
 
         color_options_layout.addRow("Chart background", self.btn_background_picker)
 
         self.btn_foreground_picker = QtWidgets.QPushButton("█")
         self.btn_foreground_picker.setFixedWidth(20)
-        self.btn_foreground_picker.clicked.connect(lambda: self.setColor("foreground", QtWidgets.QColorDialog.getColor(self.foregroundColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
+        self.btn_foreground_picker.clicked.connect(lambda: self.setColor("foreground",
+                                                   QtWidgets.QColorDialog.getColor(self.foregroundColor,
+                                                                      options=QtWidgets.QColorDialog.ShowAlphaChannel)))
 
         color_options_layout.addRow("Chart foreground", self.btn_foreground_picker)
 
         self.btn_text_picker = QtWidgets.QPushButton("█")
         self.btn_text_picker.setFixedWidth(20)
-        self.btn_text_picker.clicked.connect(lambda: self.setColor("text", QtWidgets.QColorDialog.getColor(self.textColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
+        self.btn_text_picker.clicked.connect(lambda: self.setColor("text",
+                                             QtWidgets.QColorDialog.getColor(self.textColor,
+                                                                      options=QtWidgets.QColorDialog.ShowAlphaChannel)))
 
         color_options_layout.addRow("Chart text", self.btn_text_picker)
 
@@ -1154,7 +1182,9 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         self.btn_bands_picker = QtWidgets.QPushButton("█")
         self.btn_bands_picker.setFixedWidth(20)
-        self.btn_bands_picker.clicked.connect(lambda: self.setColor("bands", QtWidgets.QColorDialog.getColor(self.bandsColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
+        self.btn_bands_picker.clicked.connect(lambda: self.setColor("bands",
+                                              QtWidgets.QColorDialog.getColor(self.bandsColor,
+                                                                      options=QtWidgets.QColorDialog.ShowAlphaChannel)))
 
         bands_layout.addRow("Chart bands", self.btn_bands_picker)
 
@@ -1179,7 +1209,9 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         self.btn_vswr_picker = QtWidgets.QPushButton("█")
         self.btn_vswr_picker.setFixedWidth(20)
-        self.btn_vswr_picker.clicked.connect(lambda: self.setColor("vswr", QtWidgets.QColorDialog.getColor(self.vswrColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
+        self.btn_vswr_picker.clicked.connect(lambda: self.setColor("vswr",
+                                             QtWidgets.QColorDialog.getColor(self.vswrColor,
+                                                                      options=QtWidgets.QColorDialog.ShowAlphaChannel)))
 
         vswr_marker_layout.addRow("VSWR Markers", self.btn_vswr_picker)
 
@@ -1324,6 +1356,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.dark_mode_option.setChecked(self.app.settings.value("DarkMode", False, bool))
         self.show_lines_option.setChecked(self.app.settings.value("ShowLines", False, bool))
         self.show_marker_number_option.setChecked(self.app.settings.value("ShowMarkerNumbers", False, bool))
+        self.filled_marker_option.setChecked(self.app.settings.value("FilledMarkers", False, bool))
 
         if self.app.settings.value("UseCustomColors", defaultValue=False, type=bool):
             self.dark_mode_option.setDisabled(True)
@@ -1410,6 +1443,18 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.app.settings.setValue("ShowMarkerNumbers", state)
         for c in self.app.subscribing_charts:
             c.setDrawMarkerNumbers(state)
+
+    def changeFilledMarkers(self):
+        state = self.filled_marker_option.isChecked()
+        self.app.settings.setValue("FilledMarkers", state)
+        for c in self.app.subscribing_charts:
+            c.setFilledMarkers(state)
+
+    def changeMarkerAtTip(self):
+        state = self.marker_at_tip.isChecked()
+        self.app.settings.setValue("MarkerAtTip", state)
+        for c in self.app.subscribing_charts:
+            c.setMarkerAtTip(state)
 
     def changePointSize(self, size: int):
         self.app.settings.setValue("PointSize", size)
