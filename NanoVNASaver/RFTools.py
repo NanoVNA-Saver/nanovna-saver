@@ -122,7 +122,7 @@ class RFTools:
         if freqlen > 15:
             if assumeInfinity:
                 return "\N{INFINITY}"
-            raise ValueError("Frequency to big. More than 15 digits!")
+            raise ValueError("Frequency too big. More than 15 digits!")
         if maxdigits < 3:
             raise ValueError("At least 3 digits are needed, given ({})".format(maxdigits))
         if not countDot:
@@ -141,7 +141,7 @@ class RFTools:
 
     @staticmethod
     def formatSweepFrequency(freq: int,
-                             mindigits: int = 0,
+                             mindigits: int = 2,
                              appendHz: bool = True,
                              insertSpace: bool = False,
                              countDot: bool = True,
@@ -158,7 +158,7 @@ class RFTools:
         if freqlen > 15:
             if assumeInfinity:
                 return "\N{INFINITY}"
-            raise ValueError("Frequency to big. More than 15 digits!")
+            raise ValueError("Frequency too big. More than 15 digits!")
 
         if freq < 1:
             return " - " + (" " if insertSpace else "") + ("Hz" if appendHz else "")
@@ -168,13 +168,11 @@ class RFTools:
         intfstr = freqstr[:dot_pos]
         decfstr = freqstr[dot_pos:]
         nzdecfstr = decfstr.rstrip('0')
-        nzdecfstrlen = len(nzdecfstr)
         if si_index != 0:
-            while (len(nzdecfstr) < mindigits): nzdecfstr += '0'
+            while len(nzdecfstr) < mindigits:
+                nzdecfstr += '0'
         freqstr = intfstr + ("." if len(nzdecfstr) > 0 else "") + nzdecfstr
-        retval = freqstr + (" " if insertSpace else "") + PREFIXES[si_index] + ("Hz" if appendHz else "")
-        return retval
-
+        return freqstr + (" " if insertSpace else "") + PREFIXES[si_index] + ("Hz" if appendHz else "")
 
     @staticmethod
     def parseFrequency(freq: str) -> int:
