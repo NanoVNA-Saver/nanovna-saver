@@ -1278,8 +1278,10 @@ class VSWRAnalysis(Analysis):
 
             best_dips = []
             for i in range(max_dips_shown):
-                best_dips.append(minimums[np.argmin(dips)])
-                dips.remove(np.min(dips))
+                min_idx = np.argmin(dips)
+                best_dips.append(minimums[min_idx])
+                dips.remove(dips[min_idx])
+                minimums.remove(minimums[min_idx])
             minimums = best_dips
 
         if len(minimums) > 0:
