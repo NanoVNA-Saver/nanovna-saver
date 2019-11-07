@@ -1920,6 +1920,8 @@ class TDRChart(Chart):
     maxImpedance = 1000
     fixedValues = False
 
+    markerLocation = -1
+
     def __init__(self, name):
         super().__init__(name)
         self.tdrWindow = None
@@ -2082,6 +2084,30 @@ class TDRChart(Chart):
         self.tdrWindow.updated.connect(new_chart.update)
         return new_chart
 
+    def mouseMoveEvent(self, a0: QtGui.QMouseEvent) -> None:
+        if a0.buttons() == QtCore.Qt.RightButton:
+            a0.ignore()
+            return
+        x = a0.x()
+        absx = x - self.leftMargin
+        if absx < 0 or absx > self.width() - self.rightMargin:
+            a0.ignore()
+            return
+        a0.accept()
+        width = self.width() - self.leftMargin - self.rightMargin
+        if len(self.tdrWindow.td) > 0:
+            if self.fixedSpan:
+                max_index = np.searchsorted(self.tdrWindow.distance_axis, self.maxDisplayLength * 2)
+                min_index = np.searchsorted(self.tdrWindow.distance_axis, self.minDisplayLength * 2)
+                x_step = (max_index - min_index) / width
+            else:
+                max_index = math.ceil(len(self.tdrWindow.distance_axis) / 2)
+                x_step = max_index / width
+
+            self.markerLocation = int(round(absx * x_step))
+            self.update()
+        return
+
     def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
         qp = QtGui.QPainter(self)
         qp.setPen(QtGui.QPen(self.textColor))
@@ -2169,7 +2195,17 @@ class TDRChart(Chart):
             qp.setPen(self.markers[0].color)
             qp.drawEllipse(max_point, 2, 2)
             qp.setPen(self.textColor)
-            qp.drawText(max_point.x() - 10, max_point.y() - 5, str(round(self.tdrWindow.distance_axis[id_max]/2, 2)) + "m")
+            qp.drawText(max_point.x() - 10, max_point.y() - 5,
+                        str(round(self.tdrWindow.distance_axis[id_max]/2, 2)) + "m")
+
+            if self.markerLocation != -1:
+                marker_point = QtCore.QPoint(self.leftMargin + int((self.markerLocation - min_index) / x_step),
+                                       (self.topMargin + height) - int(self.tdrWindow.td[self.markerLocation] / y_step))
+                qp.setPen(self.textColor)
+                qp.drawEllipse(marker_point, 2, 2)
+                qp.drawText(marker_point.x() - 10, marker_point.y() - 5,
+                            str(round(self.tdrWindow.distance_axis[self.markerLocation] / 2, 2)) + "m")
+
         qp.end()
 
 

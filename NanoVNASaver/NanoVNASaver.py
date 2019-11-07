@@ -981,6 +981,8 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.setWindowTitle("Display settings")
         self.setWindowIcon(self.app.icon)
 
+        self.marker_window = MarkerSettingsWindow(self.app)
+
         shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
         layout = QtWidgets.QHBoxLayout()
@@ -1239,8 +1241,6 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         markers_box = QtWidgets.QGroupBox("Markers")
         markers_layout = QtWidgets.QFormLayout(markers_box)
-
-        self.marker_window = MarkerSettingsWindow(self.app)
 
         btn_add_marker = QtWidgets.QPushButton("Add")
         btn_add_marker.clicked.connect(self.addMarker)
