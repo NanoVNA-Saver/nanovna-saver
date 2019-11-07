@@ -2051,8 +2051,8 @@ class TDRChart(Chart):
         self.update()
 
     def setMinimumImpedance(self):
-        min_val, selected = QtWidgets.QInputDialog.getDouble(self, "Start length (m)",
-                                                             "Set start length (m)", value=self.minDisplayLength,
+        min_val, selected = QtWidgets.QInputDialog.getDouble(self, "Minimum impedance (\N{OHM SIGN})",
+                                                             "Set minimum impedance (\N{OHM SIGN})", value=self.minDisplayLength,
                                                              min=0, decimals=1)
         if not selected:
             return
@@ -2062,8 +2062,8 @@ class TDRChart(Chart):
             self.update()
 
     def setMaximumImpedance(self):
-        max_val, selected = QtWidgets.QInputDialog.getDouble(self, "Stop length (m)",
-                                                             "Set stop length (m)", value=self.minDisplayLength,
+        max_val, selected = QtWidgets.QInputDialog.getDouble(self, "Maximum impedance (\N{OHM SIGN})",
+                                                             "Set maximum impedance (\N{OHM SIGN})", value=self.minDisplayLength,
                                                              min=0, decimals=1)
         if not selected:
             return
