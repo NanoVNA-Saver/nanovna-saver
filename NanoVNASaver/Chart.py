@@ -1914,7 +1914,11 @@ class QualityFactorChart(FrequencyChart):
 class TDRChart(Chart):
     maxDisplayLength = 50
     minDisplayLength = 0
-    fixedSpan = True
+    fixedSpan = False
+
+    minImpedance = 0
+    maxImpedance = 1000
+    fixedValues = False
 
     def __init__(self, name):
         super().__init__(name)
@@ -1932,7 +1936,6 @@ class TDRChart(Chart):
         self.setAutoFillBackground(True)
 
         self.setContextMenuPolicy(QtCore.Qt.DefaultContextMenu)
-        mode_group = QtWidgets.QActionGroup(self)
         self.menu = QtWidgets.QMenu()
 
         self.reset = QtWidgets.QAction("Reset")
@@ -1940,6 +1943,7 @@ class TDRChart(Chart):
         self.menu.addAction(self.reset)
 
         self.x_menu = QtWidgets.QMenu("Length axis")
+        self.mode_group = QtWidgets.QActionGroup(self.x_menu)
         self.action_automatic = QtWidgets.QAction("Automatic")
         self.action_automatic.setCheckable(True)
         self.action_automatic.setChecked(True)
@@ -1947,8 +1951,8 @@ class TDRChart(Chart):
         self.action_fixed_span = QtWidgets.QAction("Fixed span")
         self.action_fixed_span.setCheckable(True)
         self.action_fixed_span.changed.connect(lambda: self.setFixedSpan(self.action_fixed_span.isChecked()))
-        mode_group.addAction(self.action_automatic)
-        mode_group.addAction(self.action_fixed_span)
+        self.mode_group.addAction(self.action_automatic)
+        self.mode_group.addAction(self.action_fixed_span)
         self.x_menu.addAction(self.action_automatic)
         self.x_menu.addAction(self.action_fixed_span)
         self.x_menu.addSeparator()
@@ -1961,7 +1965,33 @@ class TDRChart(Chart):
 
         self.x_menu.addAction(self.action_set_fixed_start)
         self.x_menu.addAction(self.action_set_fixed_stop)
+
+        self.y_menu = QtWidgets.QMenu("Impedance axis")
+        self.y_mode_group = QtWidgets.QActionGroup(self.y_menu)
+        self.y_action_automatic = QtWidgets.QAction("Automatic")
+        self.y_action_automatic.setCheckable(True)
+        self.y_action_automatic.setChecked(True)
+        self.y_action_automatic.changed.connect(lambda: self.setFixedValues(self.y_action_fixed.isChecked()))
+        self.y_action_fixed = QtWidgets.QAction("Fixed")
+        self.y_action_fixed.setCheckable(True)
+        self.y_action_fixed.changed.connect(lambda: self.setFixedValues(self.y_action_fixed.isChecked()))
+        self.y_mode_group.addAction(self.y_action_automatic)
+        self.y_mode_group.addAction(self.y_action_fixed)
+        self.y_menu.addAction(self.y_action_automatic)
+        self.y_menu.addAction(self.y_action_fixed)
+        self.y_menu.addSeparator()
+
+        self.y_action_set_fixed_maximum = QtWidgets.QAction("Maximum (" + str(self.maxImpedance) + ")")
+        self.y_action_set_fixed_maximum.triggered.connect(self.setMaximumImpedance)
+
+        self.y_action_set_fixed_minimum = QtWidgets.QAction("Minimum (" + str(self.minImpedance) + ")")
+        self.y_action_set_fixed_minimum.triggered.connect(self.setMinimumImpedance)
+
+        self.y_menu.addAction(self.y_action_set_fixed_maximum)
+        self.y_menu.addAction(self.y_action_set_fixed_minimum)
+
         self.menu.addMenu(self.x_menu)
+        self.menu.addMenu(self.y_menu)
         self.menu.addSeparator()
         self.menu.addAction(self.action_save_screenshot)
         self.action_popout = QtWidgets.QAction("Popout chart")
@@ -1971,12 +2001,21 @@ class TDRChart(Chart):
     def contextMenuEvent(self, event):
         self.action_set_fixed_start.setText("Start (" + str(self.minDisplayLength) + ")")
         self.action_set_fixed_stop.setText("Stop (" + str(self.maxDisplayLength) + ")")
+        self.y_action_set_fixed_minimum.setText("Minimum (" + str(self.minImpedance) + ")")
+        self.y_action_set_fixed_maximum.setText("Maximum (" + str(self.maxImpedance) + ")")
         self.menu.exec_(event.globalPos())
+
+    def isPlotable(self, x, y):
+        return self.leftMargin <= x <= self.width() - self.rightMargin and \
+               self.topMargin <= y <= self.height() - self.bottomMargin
 
     def resetDisplayLimits(self):
         self.fixedSpan = False
         self.minDisplayLength = 0
         self.maxDisplayLength = 100
+        self.fixedValues = False
+        self.minImpedance = 0
+        self.maxImpedance = 1000
         self.update()
 
     def setFixedSpan(self, fixed_span):
@@ -2005,12 +2044,41 @@ class TDRChart(Chart):
         if self.fixedSpan:
             self.update()
 
+    def setFixedValues(self, fixed_values):
+        self.fixedValues = fixed_values
+        self.update()
+
+    def setMinimumImpedance(self):
+        min_val, selected = QtWidgets.QInputDialog.getDouble(self, "Start length (m)",
+                                                             "Set start length (m)", value=self.minDisplayLength,
+                                                             min=0, decimals=1)
+        if not selected:
+            return
+        if not (self.fixedValues and min_val >= self.maxImpedance):
+            self.minImpedance = min_val
+        if self.fixedSpan:
+            self.update()
+
+    def setMaximumImpedance(self):
+        max_val, selected = QtWidgets.QInputDialog.getDouble(self, "Stop length (m)",
+                                                             "Set stop length (m)", value=self.minDisplayLength,
+                                                             min=0, decimals=1)
+        if not selected:
+            return
+        if not (self.fixedValues and max_val <= self.minImpedance):
+            self.maxImpedance = max_val
+        if self.fixedSpan:
+            self.update()
+
     def copy(self):
         new_chart: TDRChart = super().copy()
         new_chart.tdrWindow = self.tdrWindow
         new_chart.minDisplayLength = self.minDisplayLength
         new_chart.maxDisplayLength = self.maxDisplayLength
         new_chart.fixedSpan = self.fixedSpan
+        new_chart.minImpedance = self.minImpedance
+        new_chart.maxImpedance = self.maxImpedance
+        new_chart.fixedValues = self.fixedValues
         self.tdrWindow.updated.connect(new_chart.update)
         return new_chart
 
@@ -2039,9 +2107,13 @@ class TDRChart(Chart):
                 max_index = math.ceil(len(self.tdrWindow.distance_axis) / 2)
                 x_step = max_index / width
 
-            # TODO: Limit the search to the selected span?
-            min_impedance = max(0, np.min(self.tdrWindow.step_response_Z) / 1.05)
-            max_impedance = min(10000, np.max(self.tdrWindow.step_response_Z) * 1.05)
+            if self.fixedValues:
+                min_impedance = self.minImpedance
+                max_impedance = self.maxImpedance
+            else:
+                # TODO: Limit the search to the selected span?
+                min_impedance = max(0, np.min(self.tdrWindow.step_response_Z) / 1.05)
+                max_impedance = min(1000, np.max(self.tdrWindow.step_response_Z) * 1.05)
 
             y_step = np.max(self.tdrWindow.td) * 1.1 / height
             y_impedance_step = (max_impedance - min_impedance) / height
@@ -2076,14 +2148,20 @@ class TDRChart(Chart):
             for i in range(min_index, max_index):
                 if i < min_index or i > max_index:
                     continue
-                pen.setColor(self.sweepColor)
-                qp.setPen(pen)
-                qp.drawPoint(self.leftMargin + int((i - min_index) / x_step),
-                             (self.topMargin + height) - int(self.tdrWindow.td[i] / y_step))
-                pen.setColor(self.secondarySweepColor)
-                qp.setPen(pen)
-                qp.drawPoint(self.leftMargin + int((i - min_index) / x_step),
-                             (self.topMargin + height) - int((self.tdrWindow.step_response_Z[i]-min_impedance) / y_impedance_step))
+
+                x = self.leftMargin + int((i - min_index) / x_step)
+                y = (self.topMargin + height) - int(self.tdrWindow.td[i] / y_step)
+                if self.isPlotable(x, y):
+                    pen.setColor(self.sweepColor)
+                    qp.setPen(pen)
+                    qp.drawPoint(x, y)
+
+                x = self.leftMargin + int((i - min_index) / x_step)
+                y = (self.topMargin + height) - int((self.tdrWindow.step_response_Z[i]-min_impedance) / y_impedance_step)
+                if self.isPlotable(x, y):
+                    pen.setColor(self.secondarySweepColor)
+                    qp.setPen(pen)
+                    qp.drawPoint(x, y)
 
             id_max = np.argmax(self.tdrWindow.td)
             max_point = QtCore.QPoint(self.leftMargin + int((id_max - min_index) / x_step),
