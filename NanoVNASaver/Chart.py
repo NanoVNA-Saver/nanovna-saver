@@ -18,6 +18,7 @@ import math
 from typing import List, Set
 import numpy as np
 import logging
+from scipy import signal
 
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSignal
@@ -2382,7 +2383,8 @@ class RealImaginaryChart(FrequencyChart):
         #
 
         self.setMinimumSize(self.chartWidth + self.leftMargin + self.rightMargin, self.chartHeight + 40)
-        self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding))
+        self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
+                                                 QtWidgets.QSizePolicy.MinimumExpanding))
         pal = QtGui.QPalette()
         pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
         self.setPalette(pal)
@@ -3051,3 +3053,438 @@ class MagnitudeZChart(FrequencyChart):
         new_chart: LogMagChart = super().copy()
         new_chart.span = self.span
         return new_chart
+
+
+class PermeabilityChart(FrequencyChart):
+    def __init__(self, name=""):
+        super().__init__(name)
+        self.leftMargin = 40
+        self.rightMargin = 30
+        self.chartWidth = 230
+        self.chartHeight = 250
+        self.fstart = 0
+        self.fstop = 0
+        self.span = 0.01
+        self.max = 0
+
+        self.maxDisplayValue = 100
+        self.minDisplayValue = -100
+
+        #
+        # Set up size policy and palette
+        #
+
+        self.setMinimumSize(self.chartWidth + self.leftMargin + self.rightMargin, self.chartHeight + 40)
+        self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding))
+        pal = QtGui.QPalette()
+        pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
+        self.setPalette(pal)
+        self.setAutoFillBackground(True)
+
+    def copy(self):
+        new_chart: PermabilityChart = super().copy()
+
+        return new_chart
+
+    def drawChart(self, qp: QtGui.QPainter):
+        qp.setPen(QtGui.QPen(self.textColor))
+        qp.drawText(self.leftMargin + 5, 15, self.name + " (\N{MICRO SIGN}\N{OHM SIGN} / Hz)")
+        qp.drawText(10, 15, "R")
+        qp.drawText(self.leftMargin + self.chartWidth + 10, 15, "X")
+        qp.setPen(QtGui.QPen(self.foregroundColor))
+        qp.drawLine(self.leftMargin, self.topMargin - 5, self.leftMargin, self.topMargin + self.chartHeight + 5)
+        qp.drawLine(self.leftMargin-5, self.topMargin + self.chartHeight,
+                    self.leftMargin + self.chartWidth + 5, self.topMargin + self.chartHeight)
+
+    def drawValues(self, qp: QtGui.QPainter):
+        if len(self.data) == 0 and len(self.reference) == 0:
+            return
+        pen = QtGui.QPen(self.sweepColor)
+        pen.setWidth(self.pointSize)
+        line_pen = QtGui.QPen(self.sweepColor)
+        line_pen.setWidth(self.lineThickness)
+        highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
+        highlighter.setWidth(1)
+        if self.fixedSpan:
+            fstart = self.minFrequency
+            fstop = self.maxFrequency
+        else:
+            if len(self.data) > 0:
+                fstart = self.data[0].freq
+                fstop = self.data[len(self.data)-1].freq
+            else:
+                fstart = self.reference[0].freq
+                fstop = self.reference[len(self.reference) - 1].freq
+        self.fstart = fstart
+        self.fstop = fstop
+
+        # Draw bands if required
+        if self.bands.enabled:
+            self.drawBands(qp, fstart, fstop)
+
+        # Find scaling
+        if self.fixedValues:
+            min = self.minDisplayValue
+            max = self.maxDisplayValue
+        else:
+            min = 1000
+            max = -1000
+            for d in self.data:
+                re, im = RFTools.normalize50(d)
+                re = re * 10e6 / d.freq
+                im = im * 10e6 / d.freq
+                if re > max:
+                    max = re
+                if re < min:
+                    min = re
+                if im > max:
+                    max = im
+                if im < min:
+                    min = im
+            for d in self.reference:  # Also check min/max for the reference sweep
+                if d.freq < fstart or d.freq > fstop:
+                    continue
+                re, im = RFTools.normalize50(d)
+                re = re * 10e6 / d.freq
+                im = im * 10e6 / d.freq
+                if re > max:
+                    max = re
+                if re < min:
+                    min = re
+                if im > max:
+                    max = im
+                if im < min:
+                    min = im
+
+        self.max = max
+
+        span = max - min
+        if span == 0:
+            span = 0.01
+        self.span = span
+
+        # We want one horizontal tick per 50 pixels, at most
+        horizontal_ticks = math.floor(self.chartHeight/50)
+
+        for i in range(horizontal_ticks):
+            y = self.topMargin + round(i * self.chartHeight / horizontal_ticks)
+            qp.setPen(QtGui.QPen(self.foregroundColor))
+            qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.chartWidth + 5, y)
+            qp.setPen(QtGui.QPen(self.textColor))
+            val = max - i * span / horizontal_ticks
+            qp.drawText(3, y + 4, str(round(val, 1)))
+
+        qp.drawText(3, self.chartHeight + self.topMargin, str(round(min, 1)))
+
+        self.drawFrequencyTicks(qp)
+
+        primary_pen = pen
+        secondary_pen = QtGui.QPen(self.secondarySweepColor)
+        if len(self.data) > 0:
+            c = QtGui.QColor(self.sweepColor)
+            c.setAlpha(255)
+            pen = QtGui.QPen(c)
+            pen.setWidth(2)
+            qp.setPen(pen)
+            qp.drawLine(20, 9, 25, 9)
+            c = QtGui.QColor(self.secondarySweepColor)
+            c.setAlpha(255)
+            pen.setColor(c)
+            qp.setPen(pen)
+            qp.drawLine(self.leftMargin + self.chartWidth, 9, self.leftMargin + self.chartWidth + 5, 9)
+
+        primary_pen.setWidth(self.pointSize)
+        secondary_pen.setWidth(self.pointSize)
+        line_pen.setWidth(self.lineThickness)
+
+        for i in range(len(self.data)):
+            x = self.getXPosition(self.data[i])
+            y_re = self.getReYPosition(self.data[i])
+            y_im = self.getImYPosition(self.data[i])
+            qp.setPen(primary_pen)
+            if self.isPlotable(x, y_re):
+                qp.drawPoint(x, y_re)
+            qp.setPen(secondary_pen)
+            if self.isPlotable(x, y_im):
+                qp.drawPoint(x, y_im)
+            if self.drawLines and i > 0:
+                prev_x = self.getXPosition(self.data[i - 1])
+                prev_y_re = self.getReYPosition(self.data[i-1])
+                prev_y_im = self.getImYPosition(self.data[i-1])
+
+                # Real part first
+                line_pen.setColor(self.sweepColor)
+                qp.setPen(line_pen)
+                if self.isPlotable(x, y_re) and self.isPlotable(prev_x, prev_y_re):
+                    qp.drawLine(x, y_re, prev_x, prev_y_re)
+                elif self.isPlotable(x, y_re) and not self.isPlotable(prev_x, prev_y_re):
+                    new_x, new_y = self.getPlotable(x, y_re, prev_x, prev_y_re)
+                    qp.drawLine(x, y_re, new_x, new_y)
+                elif not self.isPlotable(x, y_re) and self.isPlotable(prev_x, prev_y_re):
+                    new_x, new_y = self.getPlotable(prev_x, prev_y_re, x, y_re)
+                    qp.drawLine(prev_x, prev_y_re, new_x, new_y)
+
+                # Imag part second
+                line_pen.setColor(self.secondarySweepColor)
+                qp.setPen(line_pen)
+                if self.isPlotable(x, y_im) and self.isPlotable(prev_x, prev_y_im):
+                    qp.drawLine(x, y_im, prev_x, prev_y_im)
+                elif self.isPlotable(x, y_im) and not self.isPlotable(prev_x, prev_y_im):
+                    new_x, new_y = self.getPlotable(x, y_im, prev_x, prev_y_im)
+                    qp.drawLine(x, y_im, new_x, new_y)
+                elif not self.isPlotable(x, y_im) and self.isPlotable(prev_x, prev_y_im):
+                    new_x, new_y = self.getPlotable(prev_x, prev_y_im, x, y_im)
+                    qp.drawLine(prev_x, prev_y_im, new_x, new_y)
+
+        primary_pen.setColor(self.referenceColor)
+        line_pen.setColor(self.referenceColor)
+        secondary_pen.setColor(self.secondaryReferenceColor)
+        qp.setPen(primary_pen)
+        if len(self.reference) > 0:
+            c = QtGui.QColor(self.referenceColor)
+            c.setAlpha(255)
+            pen = QtGui.QPen(c)
+            pen.setWidth(2)
+            qp.setPen(pen)
+            qp.drawLine(20, 14, 25, 14)
+            c = QtGui.QColor(self.secondaryReferenceColor)
+            c.setAlpha(255)
+            pen = QtGui.QPen(c)
+            pen.setWidth(2)
+            qp.setPen(pen)
+            qp.drawLine(self.leftMargin + self.chartWidth, 14, self.leftMargin + self.chartWidth + 5, 14)
+
+        for i in range(len(self.reference)):
+            if self.reference[i].freq < fstart or self.reference[i].freq > fstop:
+                continue
+            x = self.getXPosition(self.reference[i])
+            y_re = self.getReYPosition(self.reference[i])
+            y_im = self.getImYPosition(self.reference[i])
+            qp.setPen(primary_pen)
+            if self.isPlotable(x, y_re):
+                qp.drawPoint(x, y_re)
+            qp.setPen(secondary_pen)
+            if self.isPlotable(x, y_im):
+                qp.drawPoint(x, y_im)
+            if self.drawLines and i > 0:
+                prev_x = self.getXPosition(self.reference[i - 1])
+                prev_y_re = self.getReYPosition(self.reference[i-1])
+                prev_y_im = self.getImYPosition(self.reference[i-1])
+
+                line_pen.setColor(self.referenceColor)
+                qp.setPen(line_pen)
+                # Real part first
+                if self.isPlotable(x, y_re) and self.isPlotable(prev_x, prev_y_re):
+                    qp.drawLine(x, y_re, prev_x, prev_y_re)
+                elif self.isPlotable(x, y_re) and not self.isPlotable(prev_x, prev_y_re):
+                    new_x, new_y = self.getPlotable(x, y_re, prev_x, prev_y_re)
+                    qp.drawLine(x, y_re, new_x, new_y)
+                elif not self.isPlotable(x, y_re) and self.isPlotable(prev_x, prev_y_re):
+                    new_x, new_y = self.getPlotable(prev_x, prev_y_re, x, y_re)
+                    qp.drawLine(prev_x, prev_y_re, new_x, new_y)
+
+                line_pen.setColor(self.secondaryReferenceColor)
+                qp.setPen(line_pen)
+                # Imag part second
+                if self.isPlotable(x, y_im) and self.isPlotable(prev_x, prev_y_im):
+                    qp.drawLine(x, y_im, prev_x, prev_y_im)
+                elif self.isPlotable(x, y_im) and not self.isPlotable(prev_x, prev_y_im):
+                    new_x, new_y = self.getPlotable(x, y_im, prev_x, prev_y_im)
+                    qp.drawLine(x, y_im, new_x, new_y)
+                elif not self.isPlotable(x, y_im) and self.isPlotable(prev_x, prev_y_im):
+                    new_x, new_y = self.getPlotable(prev_x, prev_y_im, x, y_im)
+                    qp.drawLine(prev_x, prev_y_im, new_x, new_y)
+
+        # Now draw the markers
+        for m in self.markers:
+            if m.location != -1:
+                x = self.getXPosition(self.data[m.location])
+                y_re = self.getReYPosition(self.data[m.location])
+                y_im = self.getImYPosition(self.data[m.location])
+
+                self.drawMarker(x, y_re, qp, m.color, self.markers.index(m)+1)
+                self.drawMarker(x, y_im, qp, m.color, self.markers.index(m)+1)
+
+    def getImYPosition(self, d: Datapoint) -> int:
+        # TODO: Logarithmic Y positions
+        _, im = RFTools.normalize50(d)
+        im = im * 10e6 / d.freq
+        return self.topMargin + round((self.max - im) / self.span * self.chartHeight)
+
+    def getReYPosition(self, d: Datapoint) -> int:
+        re, _ = RFTools.normalize50(d)
+        re = re * 10e6 / d.freq
+        return self.topMargin + round((self.max - re) / self.span * self.chartHeight)
+
+    def valueAtPosition(self, y) -> List[float]:
+        absy = y - self.topMargin
+        val = -1 * ((absy / self.chartHeight * self.span) - self.max)
+        return [val]
+
+    def getNearestMarker(self, x, y) -> Marker:
+        if len(self.data) == 0:
+            return None
+        shortest = 10**6
+        nearest = None
+        for m in self.markers:
+            mx, _ = self.getPosition(self.data[m.location])
+            myr = self.getReYPosition(self.data[m.location])
+            myi = self.getImYPosition(self.data[m.location])
+            dx = abs(x - mx)
+            dy = min(abs(y - myr), abs(y-myi))
+            distance = math.sqrt(dx**2 + dy**2)
+            if distance < shortest:
+                shortest = distance
+                nearest = m
+        return nearest
+
+
+class GroupDelayChart(FrequencyChart):
+    def __init__(self, name=""):
+        super().__init__(name)
+        self.leftMargin = 40
+        self.chartWidth = 250
+        self.chartHeight = 250
+        self.fstart = 0
+        self.fstop = 0
+        self.minDelay = 0
+        self.maxDelay = 0
+        self.span = 0
+
+        self.unwrappedData = []
+        self.unwrappedReference = []
+
+        self.groupDelay = []
+        self.groupDelayReference = []
+
+        self.minDisplayValue = -180
+        self.maxDisplayValue = 180
+
+        self.setMinimumSize(self.chartWidth + self.rightMargin + self.leftMargin,
+                            self.chartHeight + self.topMargin + self.bottomMargin)
+        self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
+                                                 QtWidgets.QSizePolicy.MinimumExpanding))
+        pal = QtGui.QPalette()
+        pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
+        self.setPalette(pal)
+        self.setAutoFillBackground(True)
+
+    def copy(self):
+        new_chart: GroupDelayChart = super().copy()
+
+        return new_chart
+
+    def setData(self, data):
+        self.data = data
+
+        rawData = []
+        for d in self.data:
+            rawData.append(RFTools.phaseAngle(d))
+
+        rawReference = []
+        for d in self.reference:
+            rawReference.append(RFTools.phaseAngle(d))
+
+        if len(self.data) > 0:
+            self.unwrappedData = np.unwrap(rawData, 180)
+            self.groupDelay = signal.convolve(self.unwrappedData, [1, -1], mode='same')
+            # TODO: Modify to show values as ps instead of $undefined?
+
+        if len(self.reference) > 0:
+            self.unwrappedReference = np.unwrap(rawReference, 180)
+            self.groupDelayReference = signal.convolve(self.unwrappedReference, [1, -1], mode='same')
+
+        self.update()
+
+    def drawChart(self, qp: QtGui.QPainter):
+        qp.setPen(QtGui.QPen(self.textColor))
+        qp.drawText(3, 15, self.name)
+        qp.setPen(QtGui.QPen(self.foregroundColor))
+        qp.drawLine(self.leftMargin, 20, self.leftMargin, self.topMargin+self.chartHeight+5)
+        qp.drawLine(self.leftMargin-5, self.topMargin+self.chartHeight, self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)
+
+    def drawValues(self, qp: QtGui.QPainter):
+        if len(self.data) == 0 and len(self.reference) == 0:
+            return
+        pen = QtGui.QPen(self.sweepColor)
+        pen.setWidth(self.pointSize)
+        line_pen = QtGui.QPen(self.sweepColor)
+        line_pen.setWidth(self.lineThickness)
+
+        if self.fixedValues:
+            min_delay = self.minDisplayValue
+            max_delay = self.maxDisplayValue
+        elif self.data:
+            min_delay = math.floor(np.min(self.groupDelay))
+            max_delay = math.ceil(np.max(self.groupDelay))
+        elif self.reference:
+            min_delay = math.floor(np.min(self.groupDelayReference))
+            max_delay = math.ceil(np.max(self.groupDelayReference))
+
+        span = max_delay - min_delay
+        if span == 0:
+            span = 0.01
+        self.minDelay = min_delay
+        self.maxDelay = max_delay
+        self.span = span
+
+        tickcount = math.floor(self.chartHeight / 60)
+
+        for i in range(tickcount):
+            delay = min_delay + span * i / tickcount
+            y = self.topMargin + round((self.maxDelay - delay) / self.span * self.chartHeight)
+            if delay != min_delay and delay != max_delay:
+                qp.setPen(QtGui.QPen(self.textColor))
+                if delay != 0:
+                    digits = max(0, min(2, math.floor(3 - math.log10(abs(delay)))))
+                    if digits == 0:
+                        delaystr = str(round(delay))
+                    else:
+                        delaystr = str(round(delay, digits))
+                else:
+                    delaystr = "0"
+                qp.drawText(3, y + 3, delaystr)
+                qp.setPen(QtGui.QPen(self.foregroundColor))
+                qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.chartWidth, y)
+        qp.drawLine(self.leftMargin - 5, self.topMargin, self.leftMargin + self.chartWidth, self.topMargin)
+        qp.setPen(self.textColor)
+        qp.drawText(3, self.topMargin + 5, str(max_delay))
+        qp.drawText(3, self.chartHeight + self.topMargin, str(min_delay))
+
+        if self.fixedSpan:
+            fstart = self.minFrequency
+            fstop = self.maxFrequency
+        else:
+            if len(self.data) > 0:
+                fstart = self.data[0].freq
+                fstop = self.data[len(self.data)-1].freq
+            else:
+                fstart = self.reference[0].freq
+                fstop = self.reference[len(self.reference) - 1].freq
+        self.fstart = fstart
+        self.fstop = fstop
+
+        # Draw bands if required
+        if self.bands.enabled:
+            self.drawBands(qp, fstart, fstop)
+
+        self.drawFrequencyTicks(qp)
+
+        self.drawData(qp, self.data, self.sweepColor)
+        self.drawData(qp, self.reference, self.referenceColor)
+        self.drawMarkers(qp)
+
+    def getYPosition(self, d: Datapoint) -> int:
+        # TODO: Find a faster way than these expensive "d in self.data" lookups
+        if d in self.data:
+            delay = self.groupDelay[self.data.index(d)]
+        elif d in self.reference:
+            delay = self.groupDelayReference[self.reference.index(d)]
+        else:
+            delay = 0
+        return self.topMargin + round((self.maxDelay - delay) / self.span * self.chartHeight)
+
+    def valueAtPosition(self, y) -> List[float]:
+        absy = y - self.topMargin
+        val = -1 * ((absy / self.chartHeight * self.span) - self.maxDelay)
+        return [val]

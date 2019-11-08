@@ -31,7 +31,8 @@ from serial.tools import list_ports
 from .Hardware import VNA, InvalidVNA, Version
 from .RFTools import RFTools, Datapoint
 from .Chart import Chart, PhaseChart, VSWRChart, PolarChart, SmithChart, LogMagChart, QualityFactorChart, TDRChart, \
-    RealImaginaryChart, MagnitudeChart, MagnitudeZChart, CombinedLogMagChart, SParameterChart
+    RealImaginaryChart, MagnitudeChart, MagnitudeZChart, CombinedLogMagChart, SParameterChart, PermeabilityChart, \
+    GroupDelayChart
 from .Calibration import CalibrationWindow, Calibration
 from .Marker import Marker
 from .SweepWorker import SweepWorker
@@ -132,6 +133,9 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s11MagZ = MagnitudeZChart("S11 |Z|")
         self.s11Phase = PhaseChart("S11 Phase")
         self.s21Phase = PhaseChart("S21 Phase")
+        self.s11GroupDelay = GroupDelayChart("S11 Group Delay")
+        self.s21GroupDelay = GroupDelayChart("S21 Group Delay")
+        self.permabilityChart = PermeabilityChart("S11 R/\N{GREEK SMALL LETTER OMEGA} & X/\N{GREEK SMALL LETTER OMEGA}")
         self.s11VSWR = VSWRChart("S11 VSWR")
         self.s11QualityFactor = QualityFactorChart("S11 Quality Factor")
         self.s11RealImaginary = RealImaginaryChart("S11 R+jX")
@@ -146,10 +150,12 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s11charts.append(self.s11Mag)
         self.s11charts.append(self.s11MagZ)
         self.s11charts.append(self.s11Phase)
+        self.s11charts.append(self.s11GroupDelay)
         self.s11charts.append(self.s11VSWR)
         self.s11charts.append(self.s11RealImaginary)
         self.s11charts.append(self.s11QualityFactor)
         self.s11charts.append(self.s11SParameterChart)
+        self.s11charts.append(self.permabilityChart)
 
         # List of all the S21 charts, for selecting
         self.s21charts: List[Chart] = []
@@ -157,6 +163,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s21charts.append(self.s21LogMag)
         self.s21charts.append(self.s21Mag)
         self.s21charts.append(self.s21Phase)
+        self.s21charts.append(self.s21GroupDelay)
         self.s21charts.append(self.s21SParameterChart)
 
         # List of all charts that use both S11 and S21
