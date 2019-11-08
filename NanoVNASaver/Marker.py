@@ -143,6 +143,19 @@ class Marker(QtCore.QObject):
 
         self.buildForm()
 
+    def setScale(self, scale):
+        self.group_box.setMaximumWidth(int(340 * scale))
+        self.frequency_label.setMinimumWidth(int(100 * scale))
+        self.returnloss_label.setMinimumWidth(int(80 * scale))
+        if self.coloredText:
+            color_string = QtCore.QVariant(self.color)
+            color_string.convert(QtCore.QVariant.String)
+
+            self.group_box.setStyleSheet('QGroupBox { color: ' + color_string.value() + '; font-size: ' +
+                                         str(self.group_box.font().pointSize()) + '};')
+        else:
+            self.group_box.setStyleSheet('QGroupBox { font-size: ' + str(self.group_box.font().pointSize()) + '};')
+
     def buildForm(self):
         while self.left_form.count() > 0:
             old_row = self.left_form.takeRow(0)
@@ -214,9 +227,10 @@ class Marker(QtCore.QObject):
         if self.coloredText:
             color_string = QtCore.QVariant(color)
             color_string.convert(QtCore.QVariant.String)
-            self.group_box.setStyleSheet('QGroupBox { color: ' + color_string.value() + '};')
+            self.group_box.setStyleSheet('QGroupBox { color: ' + color_string.value() + '; font-size: ' + \
+                                         str(self.group_box.font().pointSize()) + '};')
         else:
-            self.group_box.setStyleSheet("")
+            self.group_box.setStyleSheet('QGroupBox { font-size: ' + str(self.group_box.font().pointSize()) + '};')
 
     def setColoredText(self, colored_text):
         self.coloredText = colored_text
@@ -263,7 +277,7 @@ class Marker(QtCore.QObject):
 
     def getGroupBox(self) -> QtWidgets.QGroupBox:
         return self.group_box
-    
+
     def resetLabels(self):
         self.frequency_label.setText("")
         self.impedance_label.setText("")
@@ -285,17 +299,29 @@ class Marker(QtCore.QObject):
             vswr = RFTools.calculateVSWR(s11data[self.location])
             if re50 > 0:
                 rp = (re50 ** 2 + im50 ** 2) / re50
-                rp = round(rp, 4 - max(0, math.floor(math.log10(abs(rp)))))
-                rpstr = str(rp)
+                rp = round(rp, 3 - max(0, math.floor(math.log10(abs(rp)))))
+                if rp > 10000:
+                    rpstr = str(round(rp/1000, 2)) + "k"
+                elif rp > 1000:
+                    rpstr = str(round(rp))
+                else:
+                    rpstr = str(rp)
 
-                re50 = round(re50, 4 - max(0, math.floor(math.log10(abs(re50)))))
+                re50 = round(re50, 3 - max(0, math.floor(math.log10(abs(re50)))))
+                if re50 > 10000:
+                    re50str = str(round(re50/1000, 2)) + "k"
+                elif re50 > 1000:
+                    re50str = str(round(re50))  # Remove the ".0"
+                else:
+                    re50str = str(re50)
             else:
                 rpstr = "-"
                 re50 = 0
+                re50str = "-"
 
             if im50 != 0:
                 xp = (re50 ** 2 + im50 ** 2) / im50
-                xp = round(xp, 4 - max(0, math.floor(math.log10(abs(xp)))))
+                xp = round(xp, 3 - max(0, math.floor(math.log10(abs(xp)))))
                 xpcstr = RFTools.capacitanceEquivalent(xp, s11data[self.location].freq)
                 xplstr = RFTools.inductanceEquivalent(xp, s11data[self.location].freq)
                 if xp < 0:
@@ -310,7 +336,7 @@ class Marker(QtCore.QObject):
                 xpstr = xpcstr = xplstr = "-"
 
             if im50 != 0:
-                im50 = round(im50, 4 - max(0, math.floor(math.log10(abs(im50)))))
+                im50 = round(im50, 3 - max(0, math.floor(math.log10(abs(im50)))))
 
             if im50 < 0:
                 im50str = " -j" + str(-1 * im50)
@@ -319,9 +345,9 @@ class Marker(QtCore.QObject):
             im50str += " \N{OHM SIGN}"
 
             self.frequency_label.setText(RFTools.formatFrequency(s11data[self.location].freq))
-            self.impedance_label.setText(str(re50) + im50str)
+            self.impedance_label.setText(re50str + im50str)
             self.admittance_label.setText(rpstr + xp50str)
-            self.series_r_label.setText(str(re50) + " \N{OHM SIGN}")
+            self.series_r_label.setText(re50str + " \N{OHM SIGN}")
             self.parallel_r_label.setText(rpstr + " \N{OHM SIGN}")
             self.parallel_x_label.setText(xpstr)
             if self.returnloss_is_positive:
