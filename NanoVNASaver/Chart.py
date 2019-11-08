@@ -3066,6 +3066,7 @@ class PermeabilityChart(FrequencyChart):
         self.fstop = 0
         self.span = 0.01
         self.max = 0
+        self.logarithmicY = True
 
         self.maxDisplayValue = 100
         self.minDisplayValue = -100
@@ -3081,9 +3082,27 @@ class PermeabilityChart(FrequencyChart):
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
+        self.y_menu.addSeparator()
+        self.y_log_lin_group = QtWidgets.QActionGroup(self.y_menu)
+        self.y_action_linear = QtWidgets.QAction("Linear")
+        self.y_action_linear.setCheckable(True)
+        self.y_action_logarithmic = QtWidgets.QAction("Logarithmic")
+        self.y_action_logarithmic.setCheckable(True)
+        self.y_action_logarithmic.setChecked(True)
+        self.y_action_linear.triggered.connect(lambda: self.setLogarithmicY(False))
+        self.y_action_logarithmic.triggered.connect(lambda: self.setLogarithmicY(True))
+        self.y_log_lin_group.addAction(self.y_action_linear)
+        self.y_log_lin_group.addAction(self.y_action_logarithmic)
+        self.y_menu.addAction(self.y_action_linear)
+        self.y_menu.addAction(self.y_action_logarithmic)
+
+    def setLogarithmicY(self, logarithmic: bool):
+        self.logarithmicY = logarithmic
+        self.update()
+
     def copy(self):
         new_chart: PermabilityChart = super().copy()
-
+        new_chart.logarithmicY = self.logarithmicY
         return new_chart
 
     def drawChart(self, qp: QtGui.QPainter):
@@ -3171,7 +3190,7 @@ class PermeabilityChart(FrequencyChart):
             qp.setPen(QtGui.QPen(self.foregroundColor))
             qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.chartWidth + 5, y)
             qp.setPen(QtGui.QPen(self.textColor))
-            val = max - i * span / horizontal_ticks
+            val = self.valueAtPosition(y)[0]
             qp.drawText(3, y + 4, str(round(val, 1)))
 
         qp.drawText(3, self.chartHeight + self.topMargin, str(round(min, 1)))
@@ -3306,19 +3325,34 @@ class PermeabilityChart(FrequencyChart):
                 self.drawMarker(x, y_im, qp, m.color, self.markers.index(m)+1)
 
     def getImYPosition(self, d: Datapoint) -> int:
-        # TODO: Logarithmic Y positions
         _, im = RFTools.normalize50(d)
         im = im * 10e6 / d.freq
-        return self.topMargin + round((self.max - im) / self.span * self.chartHeight)
+        if self.logarithmicY:
+            min = self.max - self.span
+            span = math.log(self.max) - math.log(min)
+            return self.topMargin + round((math.log(self.max) - math.log(im)) / span * self.chartHeight)
+        else:
+            return self.topMargin + round((self.max - im) / self.span * self.chartHeight)
 
     def getReYPosition(self, d: Datapoint) -> int:
         re, _ = RFTools.normalize50(d)
         re = re * 10e6 / d.freq
-        return self.topMargin + round((self.max - re) / self.span * self.chartHeight)
+        if self.logarithmicY:
+            min = self.max - self.span
+            span = math.log(self.max) - math.log(min)
+            return self.topMargin + round((math.log(self.max) - math.log(re)) / span * self.chartHeight)
+        else:
+            return self.topMargin + round((self.max - re) / self.span * self.chartHeight)
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
-        val = -1 * ((absy / self.chartHeight * self.span) - self.max)
+        if self.logarithmicY:
+            min = self.max - self.span
+            span = math.log(self.max) - math.log(min)
+            step = span / self.chartHeight
+            val = math.exp(math.log(self.max) - absy * step)
+        else:
+            val = -1 * ((absy / self.chartHeight * self.span) - self.max)
         return [val]
 
     def getNearestMarker(self, x, y) -> Marker:
