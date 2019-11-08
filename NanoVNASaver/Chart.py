@@ -55,6 +55,9 @@ class Chart(QtWidgets.QWidget):
     drawMarkerNumbers = False
     markerAtTip = False
     filledMarkers = False
+    draggedBox = False
+    draggedBoxStart = (0, 0)
+    draggedBoxCurrent = (-1, -1)
 
     isPopout = False
     popoutRequested = pyqtSignal(object)
@@ -199,10 +202,24 @@ class Chart(QtWidgets.QWidget):
             return
         if event.modifiers() == QtCore.Qt.ShiftModifier:
             self.draggedMarker = self.getNearestMarker(event.x(), event.y())
+        elif event.modifiers() == QtCore.Qt.ControlModifier:
+            self.draggedBox = True
+            self.draggedBoxStart = (event.x(), event.y())
+            event.accept()
+            return
         self.mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, a0: QtGui.QMouseEvent) -> None:
         self.draggedMarker = None
+        if self.draggedBox:
+            self.zoomTo(self.draggedBoxStart[0], self.draggedBoxStart[1], a0.x(), a0.y())
+            self.draggedBox = False
+            self.draggedBoxCurrent = (-1, -1)
+            self.draggedBoxStart = (0, 0)
+            self.update()
+
+    def zoomTo(self, x1, y1, x2, y2):
+        pass
 
     def saveScreenshot(self):
         logger.info("Saving %s to file...", self.name)
@@ -476,28 +493,82 @@ class FrequencyChart(Chart):
         else:
             return math.floor(self.width()/2)
 
+    def frequencyAtPosition(self, x) -> int:
+        """
+        Calculates the frequency at a given X-position
+        :param x: The X position to calculate for.
+        :return: The frequency at the given position, if one exists, or -1 otherwise.  If the value is before or after
+                 the chart, returns minimum or maximum frequencies.
+        """
+        if self.fstop - self.fstart > 0:
+            absx = x - self.leftMargin
+            if absx < 0:
+                return self.fstart
+            if absx > self.chartWidth:
+                return self.fstop
+            if self.logarithmicX:
+                span = math.log(self.fstop) - math.log(self.fstart)
+                step = span/self.chartWidth
+                return round(math.exp(math.log(self.fstart) + absx * step))
+            else:
+                span = self.fstop - self.fstart
+                step = span/self.chartWidth
+                return round(self.fstart + absx * step)
+        else:
+            return -1
+
+    def valueAtPosition(self, y) -> List[float]:
+        """
+        Returns the chart-specific value(s) at the specified Y-position
+        :param y: The Y position to calculate for.
+        :return: A list of the values at the Y-position, either containing a single value, or the two values for the
+                 chart from left to right Y-axis.  If no value can be found, returns the empty list.  If the frequency
+                 is above or below the chart, returns maximum or minimum values.
+        """
+        return []
+
+    def zoomTo(self, x1, y1, x2, y2):
+        val1 = self.valueAtPosition(y1)
+        val2 = self.valueAtPosition(y2)
+
+        if len(val1) == len(val2) == 1 and val1[0] != val2[0]:
+            self.minDisplayValue = round(min(val1[0], val2[0]), 2)
+            self.maxDisplayValue = round(max(val1[0], val2[0]), 2)
+            self.setFixedValues(True)
+
+        freq1 = self.frequencyAtPosition(x1)
+        freq2 = self.frequencyAtPosition(x2)
+
+        if freq1 > 0 and freq2 > 0 and freq1 != freq2:
+            self.minFrequency = min(freq1, freq2)
+            self.maxFrequency = max(freq1, freq2)
+            self.setFixedSpan(True)
+
+        self.update()
+
     def mouseMoveEvent(self, a0: QtGui.QMouseEvent) -> None:
         if a0.buttons() == QtCore.Qt.RightButton:
             a0.ignore()
             return
+        if a0.modifiers() == QtCore.Qt.ControlModifier:
+            # Dragging a box
+            if not self.draggedBox:
+                self.draggedBoxStart = (a0.x(), a0.y())
+            self.draggedBoxCurrent = (a0.x(), a0.y())
+            self.update()
+            a0.accept()
+            return
         x = a0.x()
-        absx = x - self.leftMargin
-        if absx < 0 or absx > self.chartWidth:
+        f = self.frequencyAtPosition(x)
+        if x == -1:
             a0.ignore()
             return
-        a0.accept()
-        if self.fstop - self.fstart > 0:
+        else:
+            a0.accept()
             m = self.getActiveMarker(a0)
-            if self.logarithmicX:
-                span = math.log(self.fstop) - math.log(self.fstart)
-                step = span/self.chartWidth
-                f = math.exp(math.log(self.fstart) + absx * step)
-            else:
-                span = self.fstop - self.fstart
-                step = span/self.chartWidth
-                f = self.fstart + absx * step
-            m.setFrequency(str(round(f)))
-            m.frequencyInput.setText(str(round(f)))
+            if m is not None:
+                m.setFrequency(str(f))
+                m.frequencyInput.setText(str(f))
         return
 
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
@@ -518,6 +589,13 @@ class FrequencyChart(Chart):
             qp.setPen(self.textColor)
             qp.drawText(self.leftMargin + self.chartWidth/2 - 70, self.topMargin + self.chartHeight/2 - 20,
                         "Data outside frequency span")
+        if self.draggedBox and self.draggedBoxCurrent[0] != -1:
+            dashed_pen = QtGui.QPen(self.foregroundColor, 1, QtCore.Qt.DashLine)
+            qp.setPen(dashed_pen)
+            top_left = QtCore.QPoint(self.draggedBoxStart[0], self.draggedBoxStart[1])
+            bottom_right = QtCore.QPoint(self.draggedBoxCurrent[0], self.draggedBoxCurrent[1])
+            rect = QtCore.QRect(top_left, bottom_right)
+            qp.drawRect(rect)
         qp.end()
 
     def drawFrequencyTicks(self, qp):
@@ -819,6 +897,11 @@ class PhaseChart(FrequencyChart):
             angle = RFTools.phaseAngle(d)
         return self.topMargin + round((self.maxAngle - angle) / self.span * self.chartHeight)
 
+    def valueAtPosition(self, y) -> List[float]:
+        absy = y - self.topMargin
+        val = -1 * ((absy / self.chartHeight * self.span) - self.maxAngle)
+        return [val]
+
 
 class VSWRChart(FrequencyChart):
     def __init__(self, name=""):
@@ -931,6 +1014,11 @@ class VSWRChart(FrequencyChart):
     def getYPosition(self, d: Datapoint) -> int:
         vswr = RFTools.calculateVSWR(d)
         return self.topMargin + round((self.maxVSWR - vswr) / self.span * self.chartHeight)
+
+    def valueAtPosition(self, y) -> List[float]:
+        absy = y - self.topMargin
+        val = -1 * ((absy / self.chartHeight * self.span) - self.maxVSWR)
+        return [val]
 
     def resetDisplayLimits(self):
         self.maxDisplayValue = 25
@@ -1057,8 +1145,9 @@ class PolarChart(SquareChart):
 
         minimum_position = positions.index(min(positions))
         m = self.getActiveMarker(a0)
-        m.setFrequency(str(round(target[minimum_position].freq)))
-        m.frequencyInput.setText(str(round(target[minimum_position].freq)))
+        if m is not None:
+            m.setFrequency(str(round(target[minimum_position].freq)))
+            m.frequencyInput.setText(str(round(target[minimum_position].freq)))
         return
 
 
@@ -1202,8 +1291,9 @@ class SmithChart(SquareChart):
 
         minimum_position = positions.index(min(positions))
         m = self.getActiveMarker(a0)
-        m.setFrequency(str(round(target[minimum_position].freq)))
-        m.frequencyInput.setText(str(round(target[minimum_position].freq)))
+        if m is not None:
+            m.setFrequency(str(round(target[minimum_position].freq)))
+            m.frequencyInput.setText(str(round(target[minimum_position].freq)))
         return
 
 
@@ -1257,7 +1347,6 @@ class LogMagChart(FrequencyChart):
         else:
             fstart = self.fstart = self.minFrequency
             fstop = self.fstop = self.maxFrequency
-        fspan = self.fstop - self.fstart
 
         # Draw bands if required
         if self.bands.enabled:
@@ -1380,6 +1469,11 @@ class LogMagChart(FrequencyChart):
         logMag = self.logMag(d)
         return self.topMargin + round((self.maxValue - logMag) / self.span * self.chartHeight)
 
+    def valueAtPosition(self, y) -> List[float]:
+        absy = y - self.topMargin
+        val = -1 * ((absy / self.chartHeight * self.span) - self.maxValue)
+        return [val]
+
     def logMag(self, p: Datapoint) -> float:
         if self.isInverted:
             return -RFTools.gain(p)
@@ -1461,8 +1555,10 @@ class SParameterChart(FrequencyChart):
             self.minValue = minValue
         else:
             # Find scaling
-            minValue = 1
-            maxValue = -1
+            minValue = -1
+            maxValue = 1
+            self.maxValue = maxValue
+            self.minValue = minValue
             # for d in self.data:
             #     val = d.re
             #     if val > maxValue:
@@ -1523,6 +1619,11 @@ class SParameterChart(FrequencyChart):
 
     def getImYPosition(self, d: Datapoint) -> int:
         return self.topMargin + round((self.maxValue - d.im) / self.span * self.chartHeight)
+
+    def valueAtPosition(self, y) -> List[float]:
+        absy = y - self.topMargin
+        val = -1 * ((absy / self.chartHeight * self.span) - self.maxValue)
+        return [val]
 
     def logMag(self, p: Datapoint) -> float:
         if self.isInverted:
@@ -1778,6 +1879,11 @@ class CombinedLogMagChart(FrequencyChart):
         logMag = self.logMag(d)
         return self.topMargin + round((self.maxValue - logMag) / self.span * self.chartHeight)
 
+    def valueAtPosition(self, y) -> List[float]:
+        absy = y - self.topMargin
+        val = -1 * ((absy / self.chartHeight * self.span) - self.maxValue)
+        return [val]
+
     def logMag(self, p: Datapoint) -> float:
         if self.isInverted:
             return -RFTools.gain(p)
@@ -1909,6 +2015,11 @@ class QualityFactorChart(FrequencyChart):
     def getYPosition(self, d: Datapoint) -> int:
         Q = RFTools.qualityFactor(d)
         return self.topMargin + round((self.maxQ - Q) / self.span * self.chartHeight)
+
+    def valueAtPosition(self, y) -> List[float]:
+        absy = y - self.topMargin
+        val = -1 * ((absy / self.chartHeight * self.span) - self.maxQ)
+        return [val]
 
 
 class TDRChart(Chart):
@@ -2553,6 +2664,33 @@ class RealImaginaryChart(FrequencyChart):
         re, _ = RFTools.normalize50(d)
         return self.topMargin + round((self.max_real - re) / self.span_real * self.chartHeight)
 
+    def valueAtPosition(self, y) -> List[float]:
+        absy = y - self.topMargin
+        valRe = -1 * ((absy / self.chartHeight * self.span_real) - self.max_real)
+        valIm = -1 * ((absy / self.chartHeight * self.span_imag) - self.max_imag)
+        return [valRe, valIm]
+
+    def zoomTo(self, x1, y1, x2, y2):
+        val1 = self.valueAtPosition(y1)
+        val2 = self.valueAtPosition(y2)
+
+        if len(val1) == len(val2) == 2 and val1[0] != val2[0]:
+            self.minDisplayReal = round(min(val1[0], val2[0]), 2)
+            self.maxDisplayReal = round(max(val1[0], val2[0]), 2)
+            self.minDisplayImag = round(min(val1[1], val2[1]), 2)
+            self.maxDisplayImag = round(max(val1[1], val2[1]), 2)
+            self.setFixedValues(True)
+
+        freq1 = self.frequencyAtPosition(x1)
+        freq2 = self.frequencyAtPosition(x2)
+
+        if freq1 > 0 and freq2 > 0 and freq1 != freq2:
+            self.minFrequency = min(freq1, freq2)
+            self.maxFrequency = max(freq1, freq2)
+            self.setFixedSpan(True)
+
+        self.update()
+
     def getNearestMarker(self, x, y) -> Marker:
         if len(self.data) == 0:
             return None
@@ -2765,6 +2903,11 @@ class MagnitudeChart(FrequencyChart):
         mag = self.magnitude(d)
         return self.topMargin + round((self.maxValue - mag) / self.span * self.chartHeight)
 
+    def valueAtPosition(self, y) -> List[float]:
+        absy = y - self.topMargin
+        val = -1 * ((absy / self.chartHeight * self.span) - self.maxValue)
+        return [val]
+
     @staticmethod
     def magnitude(p: Datapoint) -> float:
         return math.sqrt(p.re**2 + p.im**2)
@@ -2893,6 +3036,11 @@ class MagnitudeZChart(FrequencyChart):
     def getYPosition(self, d: Datapoint) -> int:
         mag = self.magnitude(d)
         return self.topMargin + round((self.maxValue - mag) / self.span * self.chartHeight)
+
+    def valueAtPosition(self, y) -> List[float]:
+        absy = y - self.topMargin
+        val = -1 * ((absy / self.chartHeight * self.span) - self.maxValue)
+        return [val]
 
     @staticmethod
     def magnitude(p: Datapoint) -> float:

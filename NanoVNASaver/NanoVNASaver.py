@@ -307,7 +307,13 @@ class NanoVNASaver(QtWidgets.QWidget):
         else:
             self.showMarkerButton.setText("Hide data")
         self.showMarkerButton.clicked.connect(self.toggleMarkerFrame)
-        self.marker_control_layout.addRow(self.showMarkerButton)
+        lock_radiobutton = QtWidgets.QRadioButton("Locked")
+        lock_radiobutton.setLayoutDirection(QtCore.Qt.RightToLeft)
+        lock_radiobutton.setSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Preferred)
+        hbox = QtWidgets.QHBoxLayout()
+        hbox.addWidget(self.showMarkerButton)
+        hbox.addWidget(lock_radiobutton)
+        self.marker_control_layout.addRow(hbox)
 
         for c in self.subscribing_charts:
             c.setMarkers(self.markers)
