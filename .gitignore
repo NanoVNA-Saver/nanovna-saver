@@ -3,3 +3,8 @@
 /build/
 /dist/
 /nanovna-saver.spec
+*.egg-info/
+*.pyc
+*.cal
+settings.json
+.gitignore
