@@ -51,6 +51,8 @@ class Chart(QtWidgets.QWidget):
     drawLines = False
     minChartHeight = 200
     minChartWidth = 200
+    chartWidth = minChartWidth
+    chartHeight = minChartHeight
     lineThickness = 1
     pointSize = 2
     markerSize = 3
@@ -315,9 +317,6 @@ class FrequencyChart(Chart):
 
     logarithmicX = False
 
-    chartWidth = Chart.minChartWidth
-    chartHeight = Chart.minChartHeight
-
     leftMargin = 30
     rightMargin = 20
     bottomMargin = 20
@@ -495,20 +494,21 @@ class FrequencyChart(Chart):
         else:
             return math.floor(self.width()/2)
 
-    def frequencyAtPosition(self, x) -> int:
+    def frequencyAtPosition(self, x, limit = True) -> int:
         """
         Calculates the frequency at a given X-position
+        :param limit: Determines whether frequencies outside the currently displayed span can be returned.
         :param x: The X position to calculate for.
-        :return: The frequency at the given position, if one exists, or -1 otherwise.  If the value is before or after
-                 the chart, returns minimum or maximum frequencies.
+        :return: The frequency at the given position, if one exists, or -1 otherwise.  If limit is True, and the value
+                 is before or after the chart, returns minimum or maximum frequencies.
         """
         if self.fstop - self.fstart > 0:
             absx = x - self.leftMargin
-            if absx < 0:
+            if limit and absx < 0:
                 return self.fstart
-            if absx > self.chartWidth:
+            elif limit and absx > self.chartWidth:
                 return self.fstop
-            if self.logarithmicX:
+            elif self.logarithmicX:
                 span = math.log(self.fstop) - math.log(self.fstart)
                 step = span/self.chartWidth
                 return round(math.exp(math.log(self.fstart) + absx * step))
@@ -529,6 +529,44 @@ class FrequencyChart(Chart):
         """
         return []
 
+    def wheelEvent(self, a0: QtGui.QWheelEvent) -> None:
+        if a0.angleDelta().y() > 0:
+            # Zoom in
+            a0.accept()
+            # Center of zoom = a0.x(), a0.y()
+            # We zoom in by 1/10 of the width/height.
+            rate = a0.angleDelta().y() / 15
+            zoomx = rate * self.chartWidth / 10
+            zoomy = rate * self.chartHeight / 10
+            absx = max(0, a0.x() - self.leftMargin)
+            absy = max(0, a0.y() - self.topMargin)
+            ratiox = absx/self.chartWidth
+            ratioy = absy/self.chartHeight
+            p1x = int(self.leftMargin + ratiox * zoomx)
+            p1y = int(self.topMargin + ratioy * zoomy)
+            p2x = int(self.leftMargin + self.chartWidth - (1 - ratiox) * zoomx)
+            p2y = int(self.topMargin + self.chartHeight - (1 - ratioy) * zoomy)
+            self.zoomTo(p1x, p1y, p2x, p2y)
+        elif a0.angleDelta().y() < 0:
+            # Zoom out
+            a0.accept()
+            # Center of zoom = a0.x(), a0.y()
+            # We zoom out by 1/9 of the width/height, to match zoom in.
+            rate = -a0.angleDelta().y() / 15
+            zoomx = rate * self.chartWidth / 9
+            zoomy = rate * self.chartHeight / 9
+            absx = max(0, a0.x() - self.leftMargin)
+            absy = max(0, a0.y() - self.topMargin)
+            ratiox = absx/self.chartWidth
+            ratioy = absy/self.chartHeight
+            p1x = int(self.leftMargin - ratiox * zoomx)
+            p1y = int(self.topMargin - ratioy * zoomy)
+            p2x = int(self.leftMargin + self.chartWidth + (1 - ratiox) * zoomx)
+            p2y = int(self.topMargin + self.chartHeight + (1 - ratioy) * zoomy)
+            self.zoomTo(p1x, p1y, p2x, p2y)
+        else:
+            a0.ignore()
+
     def zoomTo(self, x1, y1, x2, y2):
         val1 = self.valueAtPosition(y1)
         val2 = self.valueAtPosition(y2)
@@ -538,8 +576,8 @@ class FrequencyChart(Chart):
             self.maxDisplayValue = round(max(val1[0], val2[0]), 2)
             self.setFixedValues(True)
 
-        freq1 = self.frequencyAtPosition(x1)
-        freq2 = self.frequencyAtPosition(x2)
+        freq1 = max(1, self.frequencyAtPosition(x1, limit=False))
+        freq2 = max(1, self.frequencyAtPosition(x2, limit=False))
 
         if freq1 > 0 and freq2 > 0 and freq1 != freq2:
             self.minFrequency = min(freq1, freq2)
@@ -2755,8 +2793,8 @@ class RealImaginaryChart(FrequencyChart):
             self.maxDisplayImag = round(max(val1[1], val2[1]), 2)
             self.setFixedValues(True)
 
-        freq1 = self.frequencyAtPosition(x1)
-        freq2 = self.frequencyAtPosition(x2)
+        freq1 = max(1, self.frequencyAtPosition(x1, limit=False))
+        freq2 = max(1, self.frequencyAtPosition(x2, limit=False))
 
         if freq1 > 0 and freq2 > 0 and freq1 != freq2:
             self.minFrequency = min(freq1, freq2)
