@@ -24,6 +24,7 @@ from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSignal
 
 from NanoVNASaver.RFTools import Datapoint, RFTools
+from NanoVNASaver.SITools import Format, Value
 from .Marker import Marker
 logger = logging.getLogger(__name__)
 
@@ -3101,7 +3102,7 @@ class PermeabilityChart(FrequencyChart):
         self.update()
 
     def copy(self):
-        new_chart: PermabilityChart = super().copy()
+        new_chart: PermeabilityChart = super().copy()
         new_chart.logarithmicY = self.logarithmicY
         return new_chart
 
@@ -3143,57 +3144,60 @@ class PermeabilityChart(FrequencyChart):
 
         # Find scaling
         if self.fixedValues:
-            min = self.minDisplayValue
-            max = self.maxDisplayValue
+            min_val = self.minDisplayValue
+            max_val = self.maxDisplayValue
         else:
-            min = 1000
-            max = -1000
+            min_val = 1000
+            max_val = -1000
             for d in self.data:
                 re, im = RFTools.normalize50(d)
                 re = re * 10e6 / d.freq
                 im = im * 10e6 / d.freq
-                if re > max:
-                    max = re
-                if re < min:
-                    min = re
-                if im > max:
-                    max = im
-                if im < min:
-                    min = im
+                if re > max_val:
+                    max_val = re
+                if re < min_val:
+                    min_val = re
+                if im > max_val:
+                    max_val = im
+                if im < min_val:
+                    min_val = im
             for d in self.reference:  # Also check min/max for the reference sweep
                 if d.freq < fstart or d.freq > fstop:
                     continue
                 re, im = RFTools.normalize50(d)
                 re = re * 10e6 / d.freq
                 im = im * 10e6 / d.freq
-                if re > max:
-                    max = re
-                if re < min:
-                    min = re
-                if im > max:
-                    max = im
-                if im < min:
-                    min = im
+                if re > max_val:
+                    max_val = re
+                if re < min_val:
+                    min_val = re
+                if im > max_val:
+                    max_val = im
+                if im < min_val:
+                    min_val = im
 
-        self.max = max
+        if self.logarithmicY:
+            min_val = max(0.01, min_val)
 
-        span = max - min
+        self.max = max_val
+
+        span = max_val - min_val
         if span == 0:
             span = 0.01
         self.span = span
 
         # We want one horizontal tick per 50 pixels, at most
         horizontal_ticks = math.floor(self.chartHeight/50)
-
+        fmt = Format(max_nr_digits=4)
         for i in range(horizontal_ticks):
             y = self.topMargin + round(i * self.chartHeight / horizontal_ticks)
             qp.setPen(QtGui.QPen(self.foregroundColor))
             qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.chartWidth + 5, y)
             qp.setPen(QtGui.QPen(self.textColor))
-            val = self.valueAtPosition(y)[0]
-            qp.drawText(3, y + 4, str(round(val, 1)))
+            val = Value(self.valueAtPosition(y)[0], fmt=fmt)
+            qp.drawText(3, y + 4, str(val))
 
-        qp.drawText(3, self.chartHeight + self.topMargin, str(round(min, 1)))
+        qp.drawText(3, self.chartHeight + self.topMargin, str(Value(min_val, fmt=fmt)))
 
         self.drawFrequencyTicks(qp)
 
@@ -3328,8 +3332,11 @@ class PermeabilityChart(FrequencyChart):
         _, im = RFTools.normalize50(d)
         im = im * 10e6 / d.freq
         if self.logarithmicY:
-            min = self.max - self.span
-            span = math.log(self.max) - math.log(min)
+            min_val = self.max - self.span
+            if self.max > 0 and min_val > 0 and im > 0:
+                span = math.log(self.max) - math.log(min_val)
+            else:
+                return -1
             return self.topMargin + round((math.log(self.max) - math.log(im)) / span * self.chartHeight)
         else:
             return self.topMargin + round((self.max - im) / self.span * self.chartHeight)
@@ -3338,8 +3345,11 @@ class PermeabilityChart(FrequencyChart):
         re, _ = RFTools.normalize50(d)
         re = re * 10e6 / d.freq
         if self.logarithmicY:
-            min = self.max - self.span
-            span = math.log(self.max) - math.log(min)
+            min_val = self.max - self.span
+            if self.max > 0 and min_val > 0 and re > 0:
+                span = math.log(self.max) - math.log(min_val)
+            else:
+                return -1
             return self.topMargin + round((math.log(self.max) - math.log(re)) / span * self.chartHeight)
         else:
             return self.topMargin + round((self.max - re) / self.span * self.chartHeight)
@@ -3347,10 +3357,13 @@ class PermeabilityChart(FrequencyChart):
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
         if self.logarithmicY:
-            min = self.max - self.span
-            span = math.log(self.max) - math.log(min)
-            step = span / self.chartHeight
-            val = math.exp(math.log(self.max) - absy * step)
+            min_val = self.max - self.span
+            if self.max > 0 and min_val > 0:
+                span = math.log(self.max) - math.log(min_val)
+                step = span / self.chartHeight
+                val = math.exp(math.log(self.max) - absy * step)
+            else:
+                val = -1
         else:
             val = -1 * ((absy / self.chartHeight * self.span) - self.max)
         return [val]
