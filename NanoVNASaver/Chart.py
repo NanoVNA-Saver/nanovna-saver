@@ -810,14 +810,14 @@ class PhaseChart(FrequencyChart):
         if self.unwrap:
             rawData = []
             for d in self.data:
-                rawData.append(RFTools.phaseAngle(d))
+                rawData.append(RFTools.phaseAngleRadians(d))
 
             rawReference = []
             for d in self.reference:
-                rawReference.append(RFTools.phaseAngle(d))
+                rawReference.append(RFTools.phaseAngleRadians(d))
 
-            self.unwrappedData = np.unwrap(rawData, 180)
-            self.unwrappedReference = np.unwrap(rawReference, 180)
+            self.unwrappedData = np.degrees(np.unwrap(rawData))
+            self.unwrappedReference = np.degrees(np.unwrap(rawReference))
 
         if self.fixedValues:
             minAngle = self.minDisplayValue
@@ -3408,31 +3408,54 @@ class GroupDelayChart(FrequencyChart):
 
         return new_chart
 
+    def setReference(self, data):
+        self.reference = data
+
+        self.calculateGroupDelay()
+
     def setData(self, data):
         self.data = data
 
+        self.calculateGroupDelay()
+
+    def calculateGroupDelay(self):
         rawData = []
         for d in self.data:
-            rawData.append(RFTools.phaseAngle(d))
+            rawData.append(RFTools.phaseAngleRadians(d))
 
         rawReference = []
         for d in self.reference:
-            rawReference.append(RFTools.phaseAngle(d))
+            rawReference.append(RFTools.phaseAngleRadians(d))
 
         if len(self.data) > 0:
-            self.unwrappedData = np.unwrap(rawData, 180)
-            self.groupDelay = signal.convolve(self.unwrappedData, [1, -1], mode='same')
+            self.unwrappedData = np.degrees(np.unwrap(rawData))
+            self.groupDelay = []
+            for i in range(len(self.data)):
+                if i == 0:
+                    phase_change = self.unwrappedData[1] - self.unwrappedData[0]
+                    freq_change = self.data[1].freq - self.data[0].freq
+                elif i == len(self.data)-1:
+                    idx = len(self.data)-1
+                    phase_change = self.unwrappedData[idx] - self.unwrappedData[idx-1]
+                    freq_change = self.data[idx].freq - self.data[idx-1].freq
+                else:
+                    phase_change = self.unwrappedData[i+1] - self.unwrappedData[i-1]
+                    freq_change = self.data[i+1].freq - self.data[i-1].freq
+                # TODO: Why is multiplying by 10e8, not 10e9, giving nanoseconds?
+                delay = (phase_change / (freq_change * 360)) * 10e8
+                self.groupDelay.append(delay)
             # TODO: Modify to show values as ps instead of $undefined?
+            # self.groupDelay = signal.convolve(self.unwrappedData, [1, -1], mode='same')
 
         if len(self.reference) > 0:
-            self.unwrappedReference = np.unwrap(rawReference, 180)
+            self.unwrappedReference = np.degrees(np.unwrap(rawReference))
             self.groupDelayReference = signal.convolve(self.unwrappedReference, [1, -1], mode='same')
 
         self.update()
 
     def drawChart(self, qp: QtGui.QPainter):
         qp.setPen(QtGui.QPen(self.textColor))
-        qp.drawText(3, 15, self.name)
+        qp.drawText(3, 15, self.name + " (ns)")
         qp.setPen(QtGui.QPen(self.foregroundColor))
         qp.drawLine(self.leftMargin, 20, self.leftMargin, self.topMargin+self.chartHeight+5)
         qp.drawLine(self.leftMargin-5, self.topMargin+self.chartHeight, self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)

@@ -206,3 +206,9 @@ class RFTools:
         re = data.re
         im = data.im
         return math.degrees(math.atan2(im, re))
+
+    @staticmethod
+    def phaseAngleRadians(data: Datapoint):
+        re = data.re
+        im = data.im
+        return math.atan2(im, re)
