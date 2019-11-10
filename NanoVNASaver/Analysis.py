@@ -262,7 +262,7 @@ class HighPassAnalysis(Analysis):
 
         if pass_band_location < 0:
             logger.debug("No location for %s", self.app.markers[0].name)
-            self.result_label.setText("Please place " + self.app.markers[0].name  + " in the passband.")
+            self.result_label.setText("Please place " + self.app.markers[0].name + " in the passband.")
             return
 
         pass_band_db = RFTools.gain(self.app.data21[pass_band_location])
@@ -437,6 +437,7 @@ class BandPassAnalysis(Analysis):
 
     def reset(self):
         self.result_label.clear()
+        self.center_frequency_label.clear()
         self.span_label.clear()
         self.quality_label.clear()
         self.six_db_span_label.clear()
@@ -1278,8 +1279,10 @@ class VSWRAnalysis(Analysis):
 
             best_dips = []
             for i in range(max_dips_shown):
-                best_dips.append(minimums[np.argmin(dips)])
-                dips.remove(np.min(dips))
+                min_idx = np.argmin(dips)
+                best_dips.append(minimums[min_idx])
+                dips.remove(dips[min_idx])
+                minimums.remove(minimums[min_idx])
             minimums = best_dips
 
         if len(minimums) > 0:

@@ -15,9 +15,9 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import collections
 import math
+from NanoVNASaver.SITools import Value, Format
 
 PREFIXES = ("", "k", "M", "G", "T")
-
 Datapoint = collections.namedtuple('Datapoint', 'freq re im')
 
 
@@ -70,50 +70,34 @@ class RFTools:
         if im50 == 0 or freq == 0:
             return "- pF"
         capacitance = 10**12/(freq * 2 * math.pi * im50)
-        if abs(capacitance) > 10000:
-            return str(round(-capacitance/1000, 2)) + " nF"
-        elif abs(capacitance) > 1000:
-            return str(round(-capacitance/1000, 3)) + " nF"
-        elif abs(capacitance) > 10:
-            return str(round(-capacitance, 2)) + " pF"
-        else:
-            return str(round(-capacitance, 3)) + " pF"
-
+        return str(Value(-capacitance, "F", Format(max_nr_digits=5)))
+        
     @staticmethod
     def inductanceEquivalent(im50, freq) -> str:
         if freq == 0:
             return "- nH"
         inductance = im50 * 1000000000 / (freq * 2 * math.pi)
-        if abs(inductance) > 10000:
-            return str(round(inductance / 1000, 2)) + " μH"
-        elif abs(inductance) > 1000:
-            return str(round(inductance/1000, 3)) + " μH"
-        elif abs(inductance) > 10:
-            return str(round(inductance, 2)) + " nH"
-        else:
-            return str(round(inductance, 3)) + " nH"
+        return str(Value(inductance, "H", Format(max_nr_digits=5)))
 
     @staticmethod
     def formatFrequency(freq):
-        return RFTools.formatFixedFrequency(
-            round(freq), 7, True, True)
+        return str(Value(freq, "Hz", Format(max_nr_digits=6)))
 
     @staticmethod
     def formatShortFrequency(freq):
-        return RFTools.formatFixedFrequency(
-            round(freq), 5, True, True)
+        return str(Value(freq, "Hz", Format(max_nr_digits=4)))
 
     @staticmethod
-    def formatFixedFrequency(freq: int,
-                             maxdigits: int = 6,
+    def formatSweepFrequency(freq: int,
+                             mindigits: int = 2,
                              appendHz: bool = True,
                              insertSpace: bool = False,
                              countDot: bool = True,
                              assumeInfinity: bool = True) -> str:
         """ Format frequency with SI prefixes
 
-            maxdigits count include the dot by default, so that
-            default leads to a maximum output of 9 characters
+            mindigits count refers to the number of decimal place digits
+            that will be shown, padded with zeroes if needed.
         """
         freqstr = str(freq)
         freqlen = len(freqstr)
@@ -122,45 +106,28 @@ class RFTools:
         if freqlen > 15:
             if assumeInfinity:
                 return "\N{INFINITY}"
-            raise ValueError("Frequency to big. More than 15 digits!")
-        if maxdigits < 3:
-            raise ValueError("At least 3 digits are needed, given ({})".format(maxdigits))
-        if not countDot:
-            maxdigits += 1
+            raise ValueError("Frequency too big. More than 15 digits!")
 
         if freq < 1:
             return " - " + (" " if insertSpace else "") + ("Hz" if appendHz else "")
+
         si_index = (freqlen - 1) // 3
         dot_pos = freqlen % 3 or 3
-        freqstr = freqstr[:dot_pos] + "." + freqstr[dot_pos:] + "00"
-
-        return freqstr[:maxdigits] + (" " if insertSpace else "") + PREFIXES[si_index] + ("Hz" if appendHz else "")
+        intfstr = freqstr[:dot_pos]
+        decfstr = freqstr[dot_pos:]
+        nzdecfstr = decfstr.rstrip('0')
+        if si_index != 0:
+            while len(nzdecfstr) < mindigits:
+                nzdecfstr += '0'
+        freqstr = intfstr + ("." if len(nzdecfstr) > 0 else "") + nzdecfstr
+        return freqstr + (" " if insertSpace else "") + PREFIXES[si_index] + ("Hz" if appendHz else "")
 
     @staticmethod
     def parseFrequency(freq: str) -> int:
-        freq = freq.replace(" ", "")  # Ignore spaces
-        if freq.isnumeric():
-            return int(freq)
-
-        multiplier = 1
-        freq = freq.lower()
-
-        if freq.endswith("hz"):
-            freq = freq[:-2]
-
-        my_prefixes = [pfx.lower() for pfx in PREFIXES]
-        if len(freq) and freq[-1] in my_prefixes:
-            multiplier = 10 ** (my_prefixes.index(freq[-1]) * 3)
-            freq = freq[:-1]
-
-        if freq.isnumeric():
-            return int(freq) * multiplier
-
+        parser = Value(0, "Hz")
         try:
-            f = float(freq)
-            return int(round(multiplier * f))
-        except ValueError:
-            # Okay, we couldn't parse this however much we tried.
+            return round(parser.parse(freq))
+        except (ValueError, IndexError):
             return -1
 
     @staticmethod
@@ -168,3 +135,9 @@ class RFTools:
         re = data.re
         im = data.im
         return math.degrees(math.atan2(im, re))
+
+    @staticmethod
+    def phaseAngleRadians(data: Datapoint):
+        re = data.re
+        im = data.im
+        return math.atan2(im, re)

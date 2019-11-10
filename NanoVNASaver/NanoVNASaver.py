@@ -31,7 +31,8 @@ from serial.tools import list_ports
 from .Hardware import VNA, InvalidVNA, Version
 from .RFTools import RFTools, Datapoint
 from .Chart import Chart, PhaseChart, VSWRChart, PolarChart, SmithChart, LogMagChart, QualityFactorChart, TDRChart, \
-    RealImaginaryChart, MagnitudeChart, MagnitudeZChart, CombinedLogMagChart, SParameterChart
+    RealImaginaryChart, MagnitudeChart, MagnitudeZChart, CombinedLogMagChart, SParameterChart, PermeabilityChart, \
+    GroupDelayChart
 from .Calibration import CalibrationWindow, Calibration
 from .Marker import Marker
 from .SweepWorker import SweepWorker
@@ -132,6 +133,9 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s11MagZ = MagnitudeZChart("S11 |Z|")
         self.s11Phase = PhaseChart("S11 Phase")
         self.s21Phase = PhaseChart("S21 Phase")
+        self.s11GroupDelay = GroupDelayChart("S11 Group Delay")
+        self.s21GroupDelay = GroupDelayChart("S21 Group Delay")
+        self.permabilityChart = PermeabilityChart("S11 R/\N{GREEK SMALL LETTER OMEGA} & X/\N{GREEK SMALL LETTER OMEGA}")
         self.s11VSWR = VSWRChart("S11 VSWR")
         self.s11QualityFactor = QualityFactorChart("S11 Quality Factor")
         self.s11RealImaginary = RealImaginaryChart("S11 R+jX")
@@ -146,10 +150,12 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s11charts.append(self.s11Mag)
         self.s11charts.append(self.s11MagZ)
         self.s11charts.append(self.s11Phase)
+        self.s11charts.append(self.s11GroupDelay)
         self.s11charts.append(self.s11VSWR)
         self.s11charts.append(self.s11RealImaginary)
         self.s11charts.append(self.s11QualityFactor)
         self.s11charts.append(self.s11SParameterChart)
+        self.s11charts.append(self.permabilityChart)
 
         # List of all the S21 charts, for selecting
         self.s21charts: List[Chart] = []
@@ -157,6 +163,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s21charts.append(self.s21LogMag)
         self.s21charts.append(self.s21Mag)
         self.s21charts.append(self.s21Phase)
+        self.s21charts.append(self.s21GroupDelay)
         self.s21charts.append(self.s21SParameterChart)
 
         # List of all charts that use both S11 and S21
@@ -307,7 +314,13 @@ class NanoVNASaver(QtWidgets.QWidget):
         else:
             self.showMarkerButton.setText("Hide data")
         self.showMarkerButton.clicked.connect(self.toggleMarkerFrame)
-        self.marker_control_layout.addRow(self.showMarkerButton)
+        lock_radiobutton = QtWidgets.QRadioButton("Locked")
+        lock_radiobutton.setLayoutDirection(QtCore.Qt.RightToLeft)
+        lock_radiobutton.setSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Preferred)
+        hbox = QtWidgets.QHBoxLayout()
+        hbox.addWidget(self.showMarkerButton)
+        hbox.addWidget(lock_radiobutton)
+        self.marker_control_layout.addRow(hbox)
 
         for c in self.subscribing_charts:
             c.setMarkers(self.markers)
@@ -631,11 +644,11 @@ class NanoVNASaver(QtWidgets.QWidget):
             if frequencies:
                 logger.info("Read starting frequency %s and end frequency %s", frequencies[0], frequencies[100])
                 if int(frequencies[0]) == int(frequencies[100]) and (self.sweepStartInput.text() == "" or self.sweepEndInput.text() == ""):
-                    self.sweepStartInput.setText(RFTools.formatFixedFrequency(int(frequencies[0])))
-                    self.sweepEndInput.setText(RFTools.formatFixedFrequency(int(frequencies[100]) + 100000))
+                    self.sweepStartInput.setText(RFTools.formatSweepFrequency(int(frequencies[0])))
+                    self.sweepEndInput.setText(RFTools.formatSweepFrequency(int(frequencies[100]) + 100000))
                 elif self.sweepStartInput.text() == "" or self.sweepEndInput.text() == "":
-                    self.sweepStartInput.setText(RFTools.formatFixedFrequency(int(frequencies[0])))
-                    self.sweepEndInput.setText(RFTools.formatFixedFrequency(int(frequencies[100])))
+                    self.sweepStartInput.setText(RFTools.formatSweepFrequency(int(frequencies[0])))
+                    self.sweepEndInput.setText(RFTools.formatSweepFrequency(int(frequencies[100])))
                 self.sweepStartInput.textEdited.emit(self.sweepStartInput.text())
                 self.sweepStartInput.textChanged.emit(self.sweepStartInput.text())
             else:
@@ -786,8 +799,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         fcenter = int(round((fstart+fstop)/2))
         if fspan < 0 or fstart < 0 or fstop < 0:
             return
-        self.sweepSpanInput.setText(RFTools.formatFixedFrequency(fspan))
-        self.sweepCenterInput.setText(RFTools.formatFixedFrequency(fcenter))
+        self.sweepSpanInput.setText(RFTools.formatSweepFrequency(fspan))
+        self.sweepCenterInput.setText(RFTools.formatSweepFrequency(fcenter))
 
     def updateStartEnd(self):
         fcenter = RFTools.parseFrequency(self.sweepCenterInput.text())
@@ -798,8 +811,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         fstop = int(round(fcenter + fspan/2))
         if fstart < 0 or fstop < 0:
             return
-        self.sweepStartInput.setText(RFTools.formatFixedFrequency(fstart))
-        self.sweepEndInput.setText(RFTools.formatFixedFrequency(fstop))
+        self.sweepStartInput.setText(RFTools.formatSweepFrequency(fstart))
+        self.sweepEndInput.setText(RFTools.formatSweepFrequency(fstop))
 
     def updateStepSize(self):
         fspan = RFTools.parseFrequency(self.sweepSpanInput.text())
@@ -981,6 +994,8 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.setWindowTitle("Display settings")
         self.setWindowIcon(self.app.icon)
 
+        self.marker_window = MarkerSettingsWindow(self.app)
+
         shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
         layout = QtWidgets.QHBoxLayout()
@@ -992,21 +1007,22 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         display_options_box = QtWidgets.QGroupBox("Options")
         display_options_layout = QtWidgets.QFormLayout(display_options_box)
 
-        returnloss_group = QtWidgets.QButtonGroup()
+        self.returnloss_group = QtWidgets.QButtonGroup()
         self.returnloss_is_negative = QtWidgets.QRadioButton("Negative")
         self.returnloss_is_positive = QtWidgets.QRadioButton("Positive")
-        returnloss_group.addButton(self.returnloss_is_positive)
-        returnloss_group.addButton(self.returnloss_is_negative)
+        self.returnloss_group.addButton(self.returnloss_is_positive)
+        self.returnloss_group.addButton(self.returnloss_is_negative)
 
         display_options_layout.addRow("Return loss is:", self.returnloss_is_negative)
         display_options_layout.addRow("", self.returnloss_is_positive)
 
-        if self.app.settings.value("ReturnLossPositive", False):
+        if self.app.settings.value("ReturnLossPositive", False, bool):
             self.returnloss_is_positive.setChecked(True)
         else:
             self.returnloss_is_negative.setChecked(True)
 
         self.returnloss_is_positive.toggled.connect(self.changeReturnLoss)
+        self.changeReturnLoss()
 
         self.show_lines_option = QtWidgets.QCheckBox("Show lines")
         show_lines_label = QtWidgets.QLabel("Displays a thin line between data points")
@@ -1102,6 +1118,28 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.show_marker_number_option.stateChanged.connect(self.changeShowMarkerNumber)
         display_options_layout.addRow(self.show_marker_number_option, show_marker_number_label)
 
+        self.filled_marker_option = QtWidgets.QCheckBox("Filled markers")
+        filled_marker_label = QtWidgets.QLabel("Shows the marker as a filled triangle")
+        self.filled_marker_option.stateChanged.connect(self.changeFilledMarkers)
+        display_options_layout.addRow(self.filled_marker_option, filled_marker_label)
+
+        self.marker_tip_group = QtWidgets.QButtonGroup()
+        self.marker_at_center = QtWidgets.QRadioButton("At the center of the marker")
+        self.marker_at_tip = QtWidgets.QRadioButton("At the tip of the marker")
+        self.marker_tip_group.addButton(self.marker_at_center)
+        self.marker_tip_group.addButton(self.marker_at_tip)
+
+        display_options_layout.addRow("Data point is:", self.marker_at_center)
+        display_options_layout.addRow("", self.marker_at_tip)
+
+        if self.app.settings.value("MarkerAtTip", False, bool):
+            self.marker_at_tip.setChecked(True)
+        else:
+            self.marker_at_center.setChecked(True)
+
+        self.marker_at_tip.toggled.connect(self.changeMarkerAtTip)
+        self.changeMarkerAtTip()
+        
         color_options_box = QtWidgets.QGroupBox("Chart colors")
         color_options_layout = QtWidgets.QFormLayout(color_options_box)
 
@@ -1111,19 +1149,25 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         self.btn_background_picker = QtWidgets.QPushButton("█")
         self.btn_background_picker.setFixedWidth(20)
-        self.btn_background_picker.clicked.connect(lambda: self.setColor("background", QtWidgets.QColorDialog.getColor(self.backgroundColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
+        self.btn_background_picker.clicked.connect(lambda: self.setColor("background",
+                                                   QtWidgets.QColorDialog.getColor(self.backgroundColor,
+                                                                      options=QtWidgets.QColorDialog.ShowAlphaChannel)))
 
         color_options_layout.addRow("Chart background", self.btn_background_picker)
 
         self.btn_foreground_picker = QtWidgets.QPushButton("█")
         self.btn_foreground_picker.setFixedWidth(20)
-        self.btn_foreground_picker.clicked.connect(lambda: self.setColor("foreground", QtWidgets.QColorDialog.getColor(self.foregroundColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
+        self.btn_foreground_picker.clicked.connect(lambda: self.setColor("foreground",
+                                                   QtWidgets.QColorDialog.getColor(self.foregroundColor,
+                                                                      options=QtWidgets.QColorDialog.ShowAlphaChannel)))
 
         color_options_layout.addRow("Chart foreground", self.btn_foreground_picker)
 
         self.btn_text_picker = QtWidgets.QPushButton("█")
         self.btn_text_picker.setFixedWidth(20)
-        self.btn_text_picker.clicked.connect(lambda: self.setColor("text", QtWidgets.QColorDialog.getColor(self.textColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
+        self.btn_text_picker.clicked.connect(lambda: self.setColor("text",
+                                             QtWidgets.QColorDialog.getColor(self.textColor,
+                                                                      options=QtWidgets.QColorDialog.ShowAlphaChannel)))
 
         color_options_layout.addRow("Chart text", self.btn_text_picker)
 
@@ -1153,7 +1197,9 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         self.btn_bands_picker = QtWidgets.QPushButton("█")
         self.btn_bands_picker.setFixedWidth(20)
-        self.btn_bands_picker.clicked.connect(lambda: self.setColor("bands", QtWidgets.QColorDialog.getColor(self.bandsColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
+        self.btn_bands_picker.clicked.connect(lambda: self.setColor("bands",
+                                              QtWidgets.QColorDialog.getColor(self.bandsColor,
+                                                                      options=QtWidgets.QColorDialog.ShowAlphaChannel)))
 
         bands_layout.addRow("Chart bands", self.btn_bands_picker)
 
@@ -1178,7 +1224,9 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         self.btn_vswr_picker = QtWidgets.QPushButton("█")
         self.btn_vswr_picker.setFixedWidth(20)
-        self.btn_vswr_picker.clicked.connect(lambda: self.setColor("vswr", QtWidgets.QColorDialog.getColor(self.vswrColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
+        self.btn_vswr_picker.clicked.connect(lambda: self.setColor("vswr",
+                                             QtWidgets.QColorDialog.getColor(self.vswrColor,
+                                                                      options=QtWidgets.QColorDialog.ShowAlphaChannel)))
 
         vswr_marker_layout.addRow("VSWR Markers", self.btn_vswr_picker)
 
@@ -1206,8 +1254,6 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         markers_box = QtWidgets.QGroupBox("Markers")
         markers_layout = QtWidgets.QFormLayout(markers_box)
-
-        self.marker_window = MarkerSettingsWindow(self.app)
 
         btn_add_marker = QtWidgets.QPushButton("Add")
         btn_add_marker.clicked.connect(self.addMarker)
@@ -1323,6 +1369,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.dark_mode_option.setChecked(self.app.settings.value("DarkMode", False, bool))
         self.show_lines_option.setChecked(self.app.settings.value("ShowLines", False, bool))
         self.show_marker_number_option.setChecked(self.app.settings.value("ShowMarkerNumbers", False, bool))
+        self.filled_marker_option.setChecked(self.app.settings.value("FilledMarkers", False, bool))
 
         if self.app.settings.value("UseCustomColors", defaultValue=False, type=bool):
             self.dark_mode_option.setDisabled(True)
@@ -1395,6 +1442,8 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         for m in self.app.markers:
             m.returnloss_is_positive = state
             m.updateLabels(self.app.data, self.app.data21)
+        self.marker_window.exampleMarker.returnloss_is_positive = state
+        self.marker_window.updateMarker()
         self.app.s11LogMag.isInverted = state
         self.app.s11LogMag.update()
 
@@ -1409,6 +1458,18 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.app.settings.setValue("ShowMarkerNumbers", state)
         for c in self.app.subscribing_charts:
             c.setDrawMarkerNumbers(state)
+
+    def changeFilledMarkers(self):
+        state = self.filled_marker_option.isChecked()
+        self.app.settings.setValue("FilledMarkers", state)
+        for c in self.app.subscribing_charts:
+            c.setFilledMarkers(state)
+
+    def changeMarkerAtTip(self):
+        state = self.marker_at_tip.isChecked()
+        self.app.settings.setValue("MarkerAtTip", state)
+        for c in self.app.subscribing_charts:
+            c.setMarkerAtTip(state)
 
     def changePointSize(self, size: int):
         self.app.settings.setValue("PointSize", size)
@@ -2042,8 +2103,8 @@ class SweepSettingsWindow(QtWidgets.QWidget):
             start = max(1, start)
             stop += round(span * padding / 100)
 
-        self.app.sweepStartInput.setText(RFTools.formatFixedFrequency(start))
-        self.app.sweepEndInput.setText(RFTools.formatFixedFrequency(stop))
+        self.app.sweepStartInput.setText(RFTools.formatSweepFrequency(start))
+        self.app.sweepEndInput.setText(RFTools.formatSweepFrequency(stop))
         self.app.sweepEndInput.textEdited.emit(self.app.sweepEndInput.text())
 
     def updateAveraging(self):
