@@ -77,10 +77,10 @@ class Value(object):
         if fmt.max_nr_digits < 4:
             formstr = ".0f"
         else:
-            fmt.max_nr_digits += (
+            max_digits = fmt.max_nr_digits + (
                 (1 if not fmt.fix_decimals and real < 10 else 0) +
                 (1 if not fmt.fix_decimals and real < 100 else 0))
-            formstr = "." + str(fmt.max_nr_digits - 3) + "f"
+            formstr = "." + str(max_digits - 3) + "f"
 
         result = format(real, formstr)
 
