@@ -134,7 +134,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s11Phase = PhaseChart("S11 Phase")
         self.s21Phase = PhaseChart("S21 Phase")
         self.s11GroupDelay = GroupDelayChart("S11 Group Delay")
-        self.s21GroupDelay = GroupDelayChart("S21 Group Delay")
+        self.s21GroupDelay = GroupDelayChart("S21 Group Delay", reflective=False)
         self.permabilityChart = PermeabilityChart("S11 R/\N{GREEK SMALL LETTER OMEGA} & X/\N{GREEK SMALL LETTER OMEGA}")
         self.s11VSWR = VSWRChart("S11 VSWR")
         self.s11QualityFactor = QualityFactorChart("S11 Quality Factor")

@@ -167,5 +167,5 @@ class RFTools:
                 delta_angle = delta_angle % math.tau
             else:
                 delta_angle = -1 * (delta_angle % math.tau)
-        val = delta_angle / math.tau / (freq1 - freq0)
+        val = -delta_angle / math.tau / (freq1 - freq0)
         return val

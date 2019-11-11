@@ -535,7 +535,7 @@ class FrequencyChart(Chart):
             a0.accept()
             # Center of zoom = a0.x(), a0.y()
             # We zoom in by 1/10 of the width/height.
-            rate = a0.angleDelta().y() / 15
+            rate = a0.angleDelta().y() / 120
             zoomx = rate * self.chartWidth / 10
             zoomy = rate * self.chartHeight / 10
             absx = max(0, a0.x() - self.leftMargin)
@@ -552,7 +552,7 @@ class FrequencyChart(Chart):
             a0.accept()
             # Center of zoom = a0.x(), a0.y()
             # We zoom out by 1/9 of the width/height, to match zoom in.
-            rate = -a0.angleDelta().y() / 15
+            rate = -a0.angleDelta().y() / 120
             zoomx = rate * self.chartWidth / 9
             zoomy = rate * self.chartHeight / 9
             absx = max(0, a0.x() - self.leftMargin)
@@ -2383,9 +2383,10 @@ class TDRChart(Chart):
 
             for i in range(y_ticks):
                 y = self.bottomMargin + int(i * y_tick_step)
-                qp.setPen(QtGui.QPen(self.foregroundColor))
+                qp.setPen(self.foregroundColor)
                 qp.drawLine(self.leftMargin, y, self.leftMargin + width, y)
                 y_val = max_impedance - y_impedance_step * i * y_tick_step
+                qp.setPen(self.textColor)
                 qp.drawText(3, y + 3, str(round(y_val, 1)))
 
             qp.drawText(3, self.topMargin + height + 3, str(round(min_impedance, 1)))
@@ -3496,7 +3497,7 @@ class PermeabilityChart(FrequencyChart):
 
 
 class GroupDelayChart(FrequencyChart):
-    def __init__(self, name=""):
+    def __init__(self, name="", reflective=True):
         super().__init__(name)
         self.leftMargin = 40
         self.chartWidth = 250
@@ -3506,6 +3507,8 @@ class GroupDelayChart(FrequencyChart):
         self.minDelay = 0
         self.maxDelay = 0
         self.span = 0
+
+        self.reflective = reflective
 
         self.unwrappedData = []
         self.unwrappedReference = []
@@ -3527,7 +3530,7 @@ class GroupDelayChart(FrequencyChart):
 
     def copy(self):
         new_chart: GroupDelayChart = super().copy()
-
+        new_chart.reflective = self.reflective
         return new_chart
 
     def setReference(self, data):
@@ -3563,15 +3566,29 @@ class GroupDelayChart(FrequencyChart):
                 else:
                     phase_change = self.unwrappedData[i+1] - self.unwrappedData[i-1]
                     freq_change = self.data[i+1].freq - self.data[i-1].freq
-                # TODO: Why is multiplying by 10e8, not 10e9, giving nanoseconds?
-                delay = (phase_change / (freq_change * 360)) * 10e8
+                delay = (-phase_change / (freq_change * 360)) * 10e8
+                if not self.reflective:
+                    delay /= 2
                 self.groupDelay.append(delay)
-            # TODO: Modify to show values as ps instead of $undefined?
-            # self.groupDelay = signal.convolve(self.unwrappedData, [1, -1], mode='same')
 
         if len(self.reference) > 0:
             self.unwrappedReference = np.degrees(np.unwrap(rawReference))
-            self.groupDelayReference = signal.convolve(self.unwrappedReference, [1, -1], mode='same')
+            self.groupDelayReference = []
+            for i in range(len(self.reference)):
+                if i == 0:
+                    phase_change = self.unwrappedReference[1] - self.unwrappedReference[0]
+                    freq_change = self.reference[1].freq - self.reference[0].freq
+                elif i == len(self.reference)-1:
+                    idx = len(self.reference)-1
+                    phase_change = self.unwrappedReference[idx] - self.unwrappedReference[idx-1]
+                    freq_change = self.reference[idx].freq - self.reference[idx-1].freq
+                else:
+                    phase_change = self.unwrappedReference[i+1] - self.unwrappedReference[i-1]
+                    freq_change = self.reference[i+1].freq - self.reference[i-1].freq
+                delay = (-phase_change / (freq_change * 360)) * 10e8
+                if not self.reflective:
+                    delay /= 2
+                self.groupDelayReference.append(delay)
 
         self.update()
 

@@ -395,6 +395,6 @@ class Marker(QtCore.QObject):
                 self.gain_label.setText(str(round(RFTools.gain(s21data[self.location]), 3)) + " dB")
                 self.s21_phase_label.setText(
                     str(round(RFTools.phaseAngle(s21data[self.location]), 2)) + "\N{DEGREE SIGN}")
-                self.s21_group_delay_label.setText(str(SITools.Value(RFTools.groupDelay(s21data, self.location),
+                self.s21_group_delay_label.setText(str(SITools.Value(RFTools.groupDelay(s21data, self.location) / 2,
                                                                      "s", fmt)))
 
