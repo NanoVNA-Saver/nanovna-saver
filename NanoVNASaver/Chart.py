@@ -530,6 +530,9 @@ class FrequencyChart(Chart):
         return []
 
     def wheelEvent(self, a0: QtGui.QWheelEvent) -> None:
+        if len(self.data) == 0 and len(self.reference) == 0:
+            a0.ignore()
+            return
         if a0.angleDelta().y() > 0:
             # Zoom in
             a0.accept()
