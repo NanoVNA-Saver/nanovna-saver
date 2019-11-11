@@ -15,6 +15,8 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import collections
 import math
+from typing import List
+
 from NanoVNASaver.SITools import Value, Format
 
 PREFIXES = ("", "k", "M", "G", "T")
@@ -69,15 +71,15 @@ class RFTools:
     def capacitanceEquivalent(im50, freq) -> str:
         if im50 == 0 or freq == 0:
             return "- pF"
-        capacitance = 10**12/(freq * 2 * math.pi * im50)
-        return str(Value(-capacitance, "F", Format(max_nr_digits=5)))
+        capacitance = 1 / (freq * 2 * math.pi * im50)
+        return str(Value(-capacitance, "F", Format(max_nr_digits=5, space_str=" ")))
         
     @staticmethod
     def inductanceEquivalent(im50, freq) -> str:
         if freq == 0:
             return "- nH"
-        inductance = im50 * 1000000000 / (freq * 2 * math.pi)
-        return str(Value(inductance, "H", Format(max_nr_digits=5)))
+        inductance = im50 * 1 / (freq * 2 * math.pi)
+        return str(Value(inductance, "H", Format(max_nr_digits=5, space_str=" ")))
 
     @staticmethod
     def formatFrequency(freq):
@@ -141,3 +143,29 @@ class RFTools:
         re = data.re
         im = data.im
         return math.atan2(im, re)
+
+    @staticmethod
+    def groupDelay(data: List[Datapoint], index: int) -> float:
+        if index == 0:
+            angle0 = RFTools.phaseAngleRadians(data[0])
+            angle1 = RFTools.phaseAngleRadians(data[1])
+            freq0 = data[0].freq
+            freq1 = data[1].freq
+        elif index == len(data) - 1:
+            angle0 = RFTools.phaseAngleRadians(data[-2])
+            angle1 = RFTools.phaseAngleRadians(data[-1])
+            freq0 = data[-2].freq
+            freq1 = data[-1].freq
+        else:
+            angle0 = RFTools.phaseAngleRadians(data[index-1])
+            angle1 = RFTools.phaseAngleRadians(data[index+1])
+            freq0 = data[index-1].freq
+            freq1 = data[index+1].freq
+        delta_angle = (angle1 - angle0)
+        if abs(delta_angle) > math.tau:
+            if delta_angle > 0:
+                delta_angle = delta_angle % math.tau
+            else:
+                delta_angle = -1 * (delta_angle % math.tau)
+        val = delta_angle / math.tau / (freq1 - freq0)
+        return val

@@ -2363,12 +2363,12 @@ class AnalysisWindow(QtWidgets.QWidget):
 
 
 class MarkerSettingsWindow(QtWidgets.QWidget):
-    exampleData11 = [Datapoint(123000000, 0, 0),
+    exampleData11 = [Datapoint(123000000, 0.89, -0.11),
                      Datapoint(123500000, 0.9, -0.1),
-                     Datapoint(124000000, 0, 0)]
-    exampleData21 = [Datapoint(123000000, 0, 0),
+                     Datapoint(124000000, 0.91, -0.95)]
+    exampleData21 = [Datapoint(123000000, -0.25, 0.49),
                      Datapoint(123456000, -0.3, 0.5),
-                     Datapoint(124000000, 0, 0)]
+                     Datapoint(124000000, -0.2, 0.5)]
 
     fieldList = {"actualfreq": "Actual frequency",
                  "impedance": "Impedance",
@@ -2385,8 +2385,10 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
                  "returnloss": "Return loss",
                  "s11q": "S11 Quality factor",
                  "s11phase": "S11 Phase",
+                 "s11groupdelay": "S11 Group Delay",
                  "s21gain": "S21 Gain",
                  "s21phase": "S21 Phase",
+                 "s21groupdelay": "S21 Group Delay",
                 }
 
     defaultValue = ["actualfreq",

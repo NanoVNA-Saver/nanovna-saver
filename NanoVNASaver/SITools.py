@@ -29,8 +29,7 @@ class Format(object):
                  assume_infinity: bool = True,
                  min_offset: int = -8,
                  max_offset: int = 8):
-        assert(min_offset >= -8 and max_offset <= 8 and
-               min_offset < max_offset)
+        assert(min_offset >= -8 and max_offset <= 8 and min_offset < max_offset)
         self.max_nr_digits = max_nr_digits
         self.fix_decimals = fix_decimals
         self.space_str = space_str
@@ -52,15 +51,12 @@ class Value(object):
         self.fmt = fmt
 
     def __repr__(self):
-        return (f"{self.__class__.__name__}("
-                f"{self.value}, '{self._unit}', {self.fmt})")
+        return f"{self.__class__.__name__}({self.value}, '{self._unit}', {self.fmt})"
 
     def __str__(self):
         fmt = self.fmt
-        if fmt.assume_infinity and \
-                abs(self.value) >= 10 ** ((fmt.max_offset + 1) * 3):
-            return (("-" if self.value < 0 else "") +
-                    "\N{INFINITY}" + fmt.space_str + self._unit)
+        if fmt.assume_infinity and abs(self.value) >= 10 ** ((fmt.max_offset + 1) * 3):
+            return ("-" if self.value < 0 else "") + "\N{INFINITY}" + fmt.space_str + self._unit
 
         if self.value == 0:
             offset = 0
@@ -78,8 +74,8 @@ class Value(object):
             formstr = ".0f"
         else:
             max_digits = fmt.max_nr_digits + (
-                (1 if not fmt.fix_decimals and real < 10 else 0) +
-                (1 if not fmt.fix_decimals and real < 100 else 0))
+                (1 if not fmt.fix_decimals and abs(real) < 10 else 0) +
+                (1 if not fmt.fix_decimals and abs(real) < 100 else 0))
             formstr = "." + str(max_digits - 3) + "f"
 
         result = format(real, formstr)
