@@ -402,7 +402,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         #  Spacer
         ################################################################################################################
 
-        left_column.addSpacerItem(QtWidgets.QSpacerItem(1, 1, QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding))
+        left_column.addSpacerItem(QtWidgets.QSpacerItem(1, 1, QtWidgets.QSizePolicy.Fixed,
+                                                        QtWidgets.QSizePolicy.Expanding))
 
         ################################################################################################################
         #  Reference control
@@ -413,13 +414,13 @@ class NanoVNASaver(QtWidgets.QWidget):
         reference_control_box.setTitle("Reference sweep")
         reference_control_layout = QtWidgets.QFormLayout(reference_control_box)
 
-        btnSetReference = QtWidgets.QPushButton("Set current as reference")
-        btnSetReference.clicked.connect(self.setReference)
+        btn_set_reference = QtWidgets.QPushButton("Set current as reference")
+        btn_set_reference.clicked.connect(self.setReference)
         self.btnResetReference = QtWidgets.QPushButton("Reset reference")
         self.btnResetReference.clicked.connect(self.resetReference)
         self.btnResetReference.setDisabled(True)
 
-        reference_control_layout.addRow(btnSetReference)
+        reference_control_layout.addRow(btn_set_reference)
         reference_control_layout.addRow(self.btnResetReference)
 
         left_column.addWidget(reference_control_box)
@@ -477,13 +478,13 @@ class NanoVNASaver(QtWidgets.QWidget):
         save_file_control_box.setMaximumWidth(300)
         save_file_control_layout = QtWidgets.QFormLayout(save_file_control_box)
 
-        btnExportFile = QtWidgets.QPushButton("Save file (S1P)")
-        btnExportFile.clicked.connect(self.exportFileS1P)
-        save_file_control_layout.addRow(btnExportFile)
+        btn_export_file = QtWidgets.QPushButton("Save file (S1P)")
+        btn_export_file.clicked.connect(self.exportFileS1P)
+        save_file_control_layout.addRow(btn_export_file)
 
-        btnExportFile = QtWidgets.QPushButton("Save file (S2P)")
-        btnExportFile.clicked.connect(self.exportFileS2P)
-        save_file_control_layout.addRow(btnExportFile)
+        btn_export_file = QtWidgets.QPushButton("Save file (S2P)")
+        btn_export_file.clicked.connect(self.exportFileS2P)
+        save_file_control_layout.addRow(btn_export_file)
 
         file_window_layout.addWidget(save_file_control_box)
 
@@ -644,7 +645,8 @@ class NanoVNASaver(QtWidgets.QWidget):
             frequencies = self.vna.readFrequencies()
             if frequencies:
                 logger.info("Read starting frequency %s and end frequency %s", frequencies[0], frequencies[100])
-                if int(frequencies[0]) == int(frequencies[100]) and (self.sweepStartInput.text() == "" or self.sweepEndInput.text() == ""):
+                if int(frequencies[0]) == int(frequencies[100]) and (self.sweepStartInput.text() == "" or
+                                                                     self.sweepEndInput.text() == ""):
                     self.sweepStartInput.setText(RFTools.formatSweepFrequency(int(frequencies[0])))
                     self.sweepEndInput.setText(RFTools.formatSweepFrequency(int(frequencies[100]) + 100000))
                 elif self.sweepStartInput.text() == "" or self.sweepEndInput.text() == "":
@@ -743,40 +745,40 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.tdr_window.updateTDR()
 
             # Find the minimum S11 VSWR:
-            minVSWR = 100
-            minVSWRfreq = -1
+            min_vswr = 100
+            min_vswr_freq = -1
             for d in self.data:
                 vswr = RFTools.calculateVSWR(d)
-                if minVSWR > vswr > 0:
-                    minVSWR = vswr
-                    minVSWRfreq = d.freq
+                if min_vswr > vswr > 0:
+                    min_vswr = vswr
+                    min_vswr_freq = d.freq
 
-            if minVSWRfreq > -1:
-                self.s11_min_swr_label.setText(str(round(minVSWR, 3)) + " @ " + RFTools.formatFrequency(minVSWRfreq))
-                if minVSWR > 1:
-                    self.s11_min_rl_label.setText(str(round(20*math.log10((minVSWR-1)/(minVSWR+1)), 3)) + " dB")
+            if min_vswr_freq > -1:
+                self.s11_min_swr_label.setText(str(round(min_vswr, 3)) + " @ " + RFTools.formatFrequency(min_vswr_freq))
+                if min_vswr > 1:
+                    self.s11_min_rl_label.setText(str(round(20*math.log10((min_vswr-1)/(min_vswr+1)), 3)) + " dB")
                 else:
                     # Infinite return loss?
                     self.s11_min_rl_label.setText("\N{INFINITY} dB")
             else:
                 self.s11_min_swr_label.setText("")
                 self.s11_min_rl_label.setText("")
-            minGain = 100
-            minGainFreq = -1
-            maxGain = -100
-            maxGainFreq = -1
+            min_gain = 100
+            min_gain_freq = -1
+            max_gain = -100
+            max_gain_freq = -1
             for d in self.data21:
                 gain = RFTools.gain(d)
-                if gain > maxGain:
-                    maxGain = gain
-                    maxGainFreq = d.freq
-                if gain < minGain:
-                    minGain = gain
-                    minGainFreq = d.freq
+                if gain > max_gain:
+                    max_gain = gain
+                    max_gain_freq = d.freq
+                if gain < min_gain:
+                    min_gain = gain
+                    min_gain_freq = d.freq
 
-            if maxGainFreq > -1:
-                self.s21_min_gain_label.setText(str(round(minGain, 3)) + " dB @ " + RFTools.formatFrequency(minGainFreq))
-                self.s21_max_gain_label.setText(str(round(maxGain, 3)) + " dB @ " + RFTools.formatFrequency(maxGainFreq))
+            if max_gain_freq > -1:
+                self.s21_min_gain_label.setText(str(round(min_gain, 3)) + " dB @ " + RFTools.formatFrequency(min_gain_freq))
+                self.s21_max_gain_label.setText(str(round(max_gain, 3)) + " dB @ " + RFTools.formatFrequency(max_gain_freq))
             else:
                 self.s21_min_gain_label.setText("")
                 self.s21_max_gain_label.setText("")
@@ -1426,9 +1428,9 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         self.app.settings.setValue("Chart" + str(x) + str(y), chart)
 
-        oldWidget = self.app.charts_layout.itemAtPosition(x, y)
-        if oldWidget is not None:
-            w = oldWidget.widget()
+        old_widget = self.app.charts_layout.itemAtPosition(x, y)
+        if old_widget is not None:
+            w = old_widget.widget()
             self.app.charts_layout.removeWidget(w)
             w.hide()
         if found is not None:
@@ -2300,10 +2302,6 @@ class AnalysisWindow(QtWidgets.QWidget):
         self.app: NanoVNASaver = app
         self.setWindowTitle("Sweep analysis")
         self.setWindowIcon(self.app.icon)
-
-        #self.setMinimumSize(400, 600)
-
-        #self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
 
         shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
