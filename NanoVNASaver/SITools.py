@@ -28,7 +28,9 @@ class Format(object):
                  space_str: str = "",
                  assume_infinity: bool = True,
                  min_offset: int = -8,
-                 max_offset: int = 8):
+                 max_offset: int = 8,
+                 parse_sloppy_unit: bool = False,
+                 parse_sloppy_kilo: bool = False):
         assert(min_offset >= -8 and max_offset <= 8 and min_offset < max_offset)
         self.max_nr_digits = max_nr_digits
         self.fix_decimals = fix_decimals
@@ -36,12 +38,15 @@ class Format(object):
         self.assume_infinity = assume_infinity
         self.min_offset = min_offset
         self.max_offset = max_offset
+        self.parse_sloppy_unit = parse_sloppy_unit
+        self.parse_sloppy_kilo = parse_sloppy_kilo
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (f"{self.__class__.__name__}("
                 f"{self.max_nr_digits}, {self.fix_decimals}, "
                 f"'{self.space_str}', {self.assume_infinity}, "
-                f"{self.min_offset}, {self.max_offset})")
+                f"{self.min_offset}, {self.max_offset}, "
+                f"{self.parse_sloppy_unit}, {self.parse_sloppy_kilo})")
 
 
 class Value(object):
@@ -50,10 +55,10 @@ class Value(object):
         self._unit = unit
         self.fmt = fmt
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.value}, '{self._unit}', {self.fmt})"
 
-    def __str__(self):
+    def __str__(self) -> str:
         fmt = self.fmt
         if fmt.assume_infinity and abs(self.value) >= 10 ** ((fmt.max_offset + 1) * 3):
             return ("-" if self.value < 0 else "") + "\N{INFINITY}" + fmt.space_str + self._unit
@@ -85,22 +90,30 @@ class Value(object):
 
         return result + fmt.space_str + PREFIXES[offset + 8] + self._unit
 
-    def parse(self, value: str):
+    def parse(self, value: str) -> float:
         value = value.replace(" ", "")  # Ignore spaces
-        if self._unit and value.endswith(self._unit) or value.lower().endswith(self._unit.lower()):  # strip unit
+
+        if self._unit and (
+            value.endswith(self._unit) or
+            (self.fmt.parse_sloppy_unit and
+                value.lower().endswith(self._unit.lower()))):  # strip unit
             value = value[:-len(self._unit)]
 
         factor = 1
+        if self.fmt.parse_sloppy_kilo and value[-1] == "K":  # fix for e.g. KHz
+            value = value[:-1] + "k"
         if value[-1] in PREFIXES:
             factor = 10 ** ((PREFIXES.index(value[-1]) - 8) * 3)
             value = value[:-1]
-        elif value[-1] == 'K':
-            # Fix for the very common KHz
-            factor = 10 ** ((PREFIXES.index(value[-1].lower()) - 8) * 3)
-            value = value[:-1]
-        self.value = float(value) * factor
+
+        if self.fmt.assume_infinity and value == "\N{INFINITY}":
+            self.value = math.inf
+        elif self.fmt.assume_infinity and value == "-\N{INFINITY}":
+            self.value = -math.inf
+        else:
+            self.value = float(value) * factor
         return self.value
 
     @property
-    def unit(self):
+    def unit(self) -> str:
         return self._unit

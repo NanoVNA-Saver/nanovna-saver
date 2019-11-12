@@ -73,7 +73,7 @@ class RFTools:
             return "- pF"
         capacitance = 1 / (freq * 2 * math.pi * im50)
         return str(Value(-capacitance, "F", Format(max_nr_digits=5, space_str=" ")))
-        
+
     @staticmethod
     def inductanceEquivalent(im50, freq) -> str:
         if freq == 0:
