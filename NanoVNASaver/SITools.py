@@ -87,12 +87,16 @@ class Value(object):
 
     def parse(self, value: str):
         value = value.replace(" ", "")  # Ignore spaces
-        if self._unit and value.endswith(self._unit):  # strip unit
+        if self._unit and value.endswith(self._unit) or value.lower().endswith(self._unit.lower()):  # strip unit
             value = value[:-len(self._unit)]
 
         factor = 1
         if value[-1] in PREFIXES:
             factor = 10 ** ((PREFIXES.index(value[-1]) - 8) * 3)
+            value = value[:-1]
+        elif value[-1] == 'K':
+            # Fix for the very common KHz
+            factor = 10 ** ((PREFIXES.index(value[-1].lower()) - 8) * 3)
             value = value[:-1]
         self.value = float(value) * factor
         return self.value
