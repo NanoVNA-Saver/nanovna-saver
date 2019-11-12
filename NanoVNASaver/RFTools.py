@@ -114,16 +114,22 @@ class RFTools:
         return math.atan2(im, re)
 
     @staticmethod
-    def groupDelay(data: List[Datapoint], index: int) -> float:
-        if index <= 0:  # fix list boundaries
-            index = 1
-        elif index >= len(data) - 1:
-            index = len(data -2)
+    def clamp_int(value: int, min: int, max: int) -> int:
+        assert min <= max
+        if value < min:
+            return min
+        if value > max:
+            return max
+        return value
 
-        angle0 = RFTools.phaseAngleRadians(data[index-1])
-        angle1 = RFTools.phaseAngleRadians(data[index+1])
-        freq0 = data[index-1].freq
-        freq1 = data[index+1].freq
+    @staticmethod
+    def groupDelay(data: List[Datapoint], index: int) -> float:
+        index0 = clamp_int(index - 1, 0, len(data) - 1)
+        index1 = clamp_int(index + 1, 0, len(data) - 1)
+        angle0 = RFTools.phaseAngleRadians(data[index0])
+        angle1 = RFTools.phaseAngleRadians(data[index1])
+        freq0 = data[index0].freq
+        freq1 = data[index1].freq
         delta_angle = (angle1 - angle0)
         if abs(delta_angle) > math.tau:
             if delta_angle > 0:
