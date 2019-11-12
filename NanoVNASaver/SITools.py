@@ -15,41 +15,27 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
+from typing import NamedTuple
 from numbers import Number
 
 PREFIXES = ("y", "z", "a", "f", "p", "n", "µ", "m",
             "", "k", "M", "G", "T", "P", "E", "Z", "Y")
 
-class Format():
-    def __init__(self,
-                 max_nr_digits: int = 6,
-                 fix_decimals: bool = False,
-                 space_str: str = "",
-                 assume_infinity: bool = True,
-                 min_offset: int = -8,
-                 max_offset: int = 8,
-                 parse_sloppy_unit: bool = False,
-                 parse_sloppy_kilo: bool = False):
-        assert -8 <= min_offset < max_offset <= 8
-        self.max_nr_digits = max_nr_digits
-        self.fix_decimals = fix_decimals
-        self.space_str = space_str
-        self.assume_infinity = assume_infinity
-        self.min_offset = min_offset
-        self.max_offset = max_offset
-        self.parse_sloppy_unit = parse_sloppy_unit
-        self.parse_sloppy_kilo = parse_sloppy_kilo
-
-    def __repr__(self) -> str:
-        return (f"{self.__class__.__name__}("
-                f"{self.max_nr_digits}, {self.fix_decimals}, "
-                f"'{self.space_str}', {self.assume_infinity}, "
-                f"{self.min_offset}, {self.max_offset}, "
-                f"{self.parse_sloppy_unit}, {self.parse_sloppy_kilo})")
+class Format(NamedTuple):
+    max_nr_digits: int = 6
+    fix_decimals: bool = False
+    space_str: str = ""
+    assume_infinity: bool = True
+    min_offset: int = -8
+    max_offset: int = 8
+    parse_sloppy_unit: bool = False
+    parse_sloppy_kilo: bool = False
 
 
 class Value():
     def __init__(self, value: Number = 0, unit: str = "", fmt=Format()):
+        assert 3 <= fmt.max_nr_digits <= 27
+        assert -8 <= fmt.min_offset <= fmt.max_offset <= 8
         self.value = value
         self._unit = unit
         self.fmt = fmt
