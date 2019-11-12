@@ -124,8 +124,8 @@ class RFTools:
 
     @staticmethod
     def groupDelay(data: List[Datapoint], index: int) -> float:
-        index0 = clamp_int(index - 1, 0, len(data) - 1)
-        index1 = clamp_int(index + 1, 0, len(data) - 1)
+        index0 = RFTools.clamp_int(index - 1, 0, len(data) - 1)
+        index1 = RFTools.clamp_int(index + 1, 0, len(data) - 1)
         angle0 = RFTools.phaseAngleRadians(data[index0])
         angle1 = RFTools.phaseAngleRadians(data[index1])
         freq0 = data[index0].freq
