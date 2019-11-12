@@ -20,8 +20,7 @@ from numbers import Number
 PREFIXES = ("y", "z", "a", "f", "p", "n", "µ", "m",
             "", "k", "M", "G", "T", "P", "E", "Z", "Y")
 
-
-class Format(object):
+class Format():
     def __init__(self,
                  max_nr_digits: int = 6,
                  fix_decimals: bool = False,
@@ -31,7 +30,7 @@ class Format(object):
                  max_offset: int = 8,
                  parse_sloppy_unit: bool = False,
                  parse_sloppy_kilo: bool = False):
-        assert(min_offset >= -8 and max_offset <= 8 and min_offset < max_offset)
+        assert -8 <= min_offset < max_offset <= 8
         self.max_nr_digits = max_nr_digits
         self.fix_decimals = fix_decimals
         self.space_str = space_str
@@ -49,7 +48,7 @@ class Format(object):
                 f"{self.parse_sloppy_unit}, {self.parse_sloppy_kilo})")
 
 
-class Value(object):
+class Value():
     def __init__(self, value: Number = 0, unit: str = "", fmt=Format()):
         self.value = value
         self._unit = unit
@@ -94,9 +93,9 @@ class Value(object):
         value = value.replace(" ", "")  # Ignore spaces
 
         if self._unit and (
-            value.endswith(self._unit) or
-            (self.fmt.parse_sloppy_unit and
-                value.lower().endswith(self._unit.lower()))):  # strip unit
+                value.endswith(self._unit) or
+                (self.fmt.parse_sloppy_unit and
+                 value.lower().endswith(self._unit.lower()))):  # strip unit
             value = value[:-len(self._unit)]
 
         factor = 1
