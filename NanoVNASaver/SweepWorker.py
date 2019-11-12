@@ -34,6 +34,7 @@ class WorkerSignals(QtCore.QObject):
     updated = pyqtSignal()
     finished = pyqtSignal()
     sweepError = pyqtSignal()
+    fatalSweepError = pyqtSignal()
 
 
 class SweepWorker(QtCore.QRunnable):
@@ -85,7 +86,9 @@ class SweepWorker(QtCore.QRunnable):
                 logger.warning("Can't sweep from %s to %s",
                                self.app.sweepStartInput.text(),
                                self.app.sweepEndInput.text())
-                self.signals.finished.emit()
+                self.error_message = "Unable to parse frequency inputs - check start and stop fields."
+                self.stopped = True
+                self.signals.sweepError.emit()
                 return
 
         span = sweep_to - sweep_from
@@ -134,7 +137,7 @@ class SweepWorker(QtCore.QRunnable):
                 except NanoVNAValueException as e:
                     self.error_message = str(e)
                     self.stopped = True
-                    self.signals.sweepError.emit()
+                    self.signals.fatalSweepError.emit()
 
         while self.continuousSweep and not self.stopped:
             logger.debug("Continuous sweeping")
@@ -151,7 +154,7 @@ class SweepWorker(QtCore.QRunnable):
                 except NanoVNAValueException as e:
                     self.error_message = str(e)
                     self.stopped = True
-                    self.signals.sweepError.emit()
+                    self.signals.fatalSweepError.emit()
 
         # Reset the device to show the full range
         logger.debug("Resetting NanoVNA sweep to full range: %d to %d",

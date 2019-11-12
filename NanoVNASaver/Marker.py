@@ -20,6 +20,7 @@ from typing import List
 from PyQt5 import QtGui, QtWidgets, QtCore
 from PyQt5.QtCore import pyqtSignal
 
+from NanoVNASaver import SITools
 from NanoVNASaver.RFTools import Datapoint, RFTools
 
 
@@ -88,6 +89,8 @@ class Marker(QtCore.QObject):
         self.gain_label = QtWidgets.QLabel("")
         self.s11_phase_label = QtWidgets.QLabel("")
         self.s21_phase_label = QtWidgets.QLabel("")
+        self.s11_group_delay_label = QtWidgets.QLabel("")
+        self.s21_group_delay_label = QtWidgets.QLabel("")
         self.quality_factor_label = QtWidgets.QLabel("")
 
         self.fields = {"actualfreq": ("Frequency:", self.frequency_label),
@@ -105,8 +108,10 @@ class Marker(QtCore.QObject):
                        "vswr": ("VSWR:", self.vswr_label),
                        "s11q": ("Quality factor:", self.quality_factor_label),
                        "s11phase": ("S11 Phase:", self.s11_phase_label),
+                       "s11groupdelay": ("S11 Group Delay:", self.s11_group_delay_label),
                        "s21gain": ("S21 Gain:", self.gain_label),
                        "s21phase": ("S21 Phase:", self.s21_phase_label),
+                       "s21groupdelay": ("S21 Group Delay:", self.s21_group_delay_label),
                        }
 
         ################################################################################################################
@@ -281,16 +286,22 @@ class Marker(QtCore.QObject):
     def resetLabels(self):
         self.frequency_label.setText("")
         self.impedance_label.setText("")
+        self.admittance_label.setText("")
         self.parallel_r_label.setText("")
         self.parallel_x_label.setText("")
-        # self.admittance_label.setText("")
-        self.vswr_label.setText("")
-        self.returnloss_label.setText("")
+        self.parallel_l_label.setText("")
+        self.parallel_c_label.setText("")
+        self.series_lc_label.setText("")
+        self.series_r_label.setText("")
         self.inductance_label.setText("")
         self.capacitance_label.setText("")
+        self.vswr_label.setText("")
+        self.returnloss_label.setText("")
         self.gain_label.setText("")
         self.s11_phase_label.setText("")
         self.s21_phase_label.setText("")
+        self.s11_group_delay_label.setText("")
+        self.s21_group_delay_label.setText("")
         self.quality_factor_label.setText("")
 
     def updateLabels(self, s11data: List[Datapoint], s21data: List[Datapoint]):
@@ -383,7 +394,13 @@ class Marker(QtCore.QObject):
             self.quality_factor_label.setText(q_str)
             self.s11_phase_label.setText(
                 str(round(RFTools.phaseAngle(s11data[self.location]), 2)) + "\N{DEGREE SIGN}")
+            fmt = SITools.Format(max_nr_digits=5, space_str=" ")
+            self.s11_group_delay_label.setText(str(SITools.Value(RFTools.groupDelay(s11data, self.location), "s", fmt)))
+
             if len(s21data) == len(s11data):
                 self.gain_label.setText(str(round(RFTools.gain(s21data[self.location]), 3)) + " dB")
                 self.s21_phase_label.setText(
                     str(round(RFTools.phaseAngle(s21data[self.location]), 2)) + "\N{DEGREE SIGN}")
+                self.s21_group_delay_label.setText(str(SITools.Value(RFTools.groupDelay(s21data, self.location) / 2,
+                                                                     "s", fmt)))
+
