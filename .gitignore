@@ -6,5 +6,7 @@
 *.egg-info/
 *.pyc
 *.cal
+*.s1p
 settings.json
+.vscode
 .gitignore
