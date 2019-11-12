@@ -1474,7 +1474,7 @@ class LogMagChart(FrequencyChart):
         else:
             # Find scaling
             minValue = 100
-            maxValue = 0
+            maxValue = -100
             for d in self.data:
                 logmag = self.logMag(d)
                 if logmag > maxValue:
