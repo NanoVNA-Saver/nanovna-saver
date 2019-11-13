@@ -433,8 +433,9 @@ class NanoVNASaver(QtWidgets.QWidget):
         serial_control_box.setMaximumWidth(250)
         serial_control_box.setTitle("Serial port control")
         serial_control_layout = QtWidgets.QFormLayout(serial_control_box)
-        self.serialPortInput = QtWidgets.QLineEdit(self.serialPort)
-        self.serialPortInput.setAlignment(QtCore.Qt.AlignRight)
+        self.serialPortInput = QtWidgets.QComboBox()
+        self.rescanSerialPort()
+        self.serialPortInput.setEditable(True)
         btn_rescan_serial_port = QtWidgets.QPushButton("Rescan")
         btn_rescan_serial_port.setFixedWidth(60)
         btn_rescan_serial_port.clicked.connect(self.rescanSerialPort)
@@ -525,21 +526,22 @@ class NanoVNASaver(QtWidgets.QWidget):
         logger.debug("Finished building interface")
 
     def rescanSerialPort(self):
-        serial_port = self.getPort()
-        self.serialPort = serial_port
-        self.serialPortInput.setText(serial_port)
+        self.serialPortInput.clear()
+        for port in self.getPort():
+            self.serialPortInput.insertItem(1,port)
 
     # Get that windows port
     @staticmethod
-    def getPort() -> str:
+    def getPort() -> list:
+        return_ports = []
         device_list = list_ports.comports()
         for d in device_list:
             if (d.vid == VID and
                     d.pid == PID):
                 port = d.device
                 logger.info("Found NanoVNA (%04x %04x) on port %s", d.vid, d.pid, d.device)
-                return port
-        return ""
+                return_ports.append(port)
+        return return_ports
 
     def exportFileS1P(self):
         if len(self.data) == 0:
