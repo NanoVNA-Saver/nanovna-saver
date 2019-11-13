@@ -13,35 +13,41 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import collections
 import math
+import cmath
 from numbers import Number
-from typing import List
+from typing import List, NamedTuple
 
 from NanoVNASaver.SITools import Value, Format
 
-PREFIXES = ("", "k", "M", "G", "T")
-Datapoint = collections.namedtuple('Datapoint', 'freq re im')
+def clamp_int(value: int, imin: int, imax: int) -> int:
+    assert imin <= imax
+    if value < imin:
+        return imin
+    if value > imax:
+        return imax
+    return value
 
+
+class Datapoint(NamedTuple):
+    freq: int
+    re: float
+    im: float
+
+    @property
+    def z(self):
+        """ return datapoint impedance as complex number """
+        return complex(self.re, self.im)
 
 class RFTools:
     @staticmethod
     def normalize50(data: Datapoint):
-        re = data.re
-        im = data.im
-        re50 = 50 * (1 - re * re - im * im) / (1 + re * re + im * im - 2 * re)
-        im50 = 50 * (2 * im) / (1 + re * re + im * im - 2 * re)
-        return re50, im50
+        result = 50 * ((-data.z - 1) / (data.z - 1))
+        return result.real, result.imag
 
     @staticmethod
     def gain(data: Datapoint) -> float:
-        # re50, im50 = normalize50(data)
-        # Calculate the gain / reflection coefficient
-        # mag = math.sqrt((re50 - 50) * (re50 - 50) + im50 * im50) / \
-        #       math.sqrt((re50 + 50) * (re50 + 50) + im50 * im50)
-        #
-        #  Magnitude = |Gamma|:
-        mag = math.sqrt(data.re**2 + data.im**2)
+        mag = abs(data.z)
         if mag > 0:
             return 20 * math.log10(mag)
         return 0
@@ -59,9 +65,7 @@ class RFTools:
     def calculateVSWR(data: Datapoint):
         # re50, im50 = normalize50(data)
         try:
-            # mag = math.sqrt((re50 - 50) * (re50 - 50) + im50 * im50) / \
-            # math.sqrt((re50 + 50) * (re50 + 50) + im50 * im50)
-            mag = math.sqrt(data.re**2 + data.im**2)
+            mag = abs(data.z)
             vswr = (1 + mag) / (1 - mag)
         except ZeroDivisionError:
             vswr = 1
@@ -103,31 +107,18 @@ class RFTools:
 
     @staticmethod
     def phaseAngle(data: Datapoint) -> float:
-        re = data.re
-        im = data.im
-        return math.degrees(math.atan2(im, re))
+        return math.degrees(cmath.phase(data.z))
 
     @staticmethod
     def phaseAngleRadians(data: Datapoint) -> float:
-        re = data.re
-        im = data.im
-        return math.atan2(im, re)
-
-    @staticmethod
-    def clamp_int(value: int, min: int, max: int) -> int:
-        assert min <= max
-        if value < min:
-            return min
-        if value > max:
-            return max
-        return value
+        return cmath.phase(data.z)
 
     @staticmethod
     def groupDelay(data: List[Datapoint], index: int) -> float:
-        index0 = RFTools.clamp_int(index - 1, 0, len(data) - 1)
-        index1 = RFTools.clamp_int(index + 1, 0, len(data) - 1)
-        angle0 = RFTools.phaseAngleRadians(data[index0])
-        angle1 = RFTools.phaseAngleRadians(data[index1])
+        index0 = clamp_int(index - 1, 0, len(data) - 1)
+        index1 = clamp_int(index + 1, 0, len(data) - 1)
+        angle0 = cmath.phase(data[index0].z)
+        angle1 = cmath.phase(data[index1].z)
         freq0 = data[index0].freq
         freq1 = data[index1].freq
         delta_angle = (angle1 - angle0)
