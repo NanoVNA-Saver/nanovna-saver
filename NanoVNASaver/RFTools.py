@@ -29,6 +29,10 @@ def clamp_int(value: int, imin: int, imax: int) -> int:
     return value
 
 
+def gamma_to_impedance(gamma: complex, impedance: float) -> complex:
+    return impedance * ((-gamma - 1) / (gamma - 1))
+
+
 class Datapoint(NamedTuple):
     freq: int
     re: float
@@ -42,7 +46,7 @@ class Datapoint(NamedTuple):
 class RFTools:
     @staticmethod
     def normalize50(data: Datapoint):
-        result = 50 * ((-data.z - 1) / (data.z - 1))
+        result = gamma_to_impedance(data.z, 50)
         return result.real, result.imag
 
     @staticmethod
@@ -54,16 +58,13 @@ class RFTools:
 
     @staticmethod
     def qualityFactor(data: Datapoint):
-        re50, im50 = RFTools.normalize50(data)
-        if re50 != 0:
-            Q = abs(im50 / re50)
-        else:
-            Q = -1
-        return Q
+        imp = gamma_to_impedance(data.z, 50)
+        if imp.real != 0.0:
+            return abs(imp.imag / imp.real)
+        return -1
 
     @staticmethod
     def calculateVSWR(data: Datapoint):
-        # re50, im50 = normalize50(data)
         try:
             mag = abs(data.z)
             vswr = (1 + mag) / (1 - mag)
