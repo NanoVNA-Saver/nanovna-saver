@@ -41,6 +41,11 @@ class Datapoint(NamedTuple):
         """ return datapoint impedance as complex number """
         return complex(self.re, self.im)
 
+    @property
+    def phase(self):
+        """ return datapoints phase value """
+        return cmath.phase(self.z)
+
     def as_gain(self) -> float:
         mag = abs(self.z)
         if mag > 0:
@@ -141,17 +146,13 @@ class RFTools:
 
     @staticmethod
     def groupDelay(data: List[Datapoint], index: int) -> float:
-        index0 = clamp_int(index - 1, 0, len(data) - 1)
-        index1 = clamp_int(index + 1, 0, len(data) - 1)
-        angle0 = cmath.phase(data[index0].z)
-        angle1 = cmath.phase(data[index1].z)
-        freq0 = data[index0].freq
-        freq1 = data[index1].freq
-        delta_angle = (angle1 - angle0)
+        idx0 = clamp_int(index - 1, 0, len(data) - 1)
+        idx1 = clamp_int(index + 1, 0, len(data) - 1)
+        delta_angle = (data[idx1].phase - data[idx0].phase)
         if abs(delta_angle) > math.tau:
             if delta_angle > 0:
                 delta_angle = delta_angle % math.tau
             else:
                 delta_angle = -1 * (delta_angle % math.tau)
-        val = -delta_angle / math.tau / (freq1 - freq0)
+        val = -delta_angle / math.tau / (data[idx1].freq - data[idx0].freq)
         return val
