@@ -1,4 +1,5 @@
-#  NanoVNASaver - a python program to view and export Touchstone data from a NanoVNA
+#  NanoVNASaver
+#  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019.  Rune B. Broberg
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -20,6 +21,7 @@ from typing import List, NamedTuple
 
 from NanoVNASaver.SITools import Value, Format
 
+
 def clamp_int(value: int, imin: int, imax: int) -> int:
     assert imin <= imax
     if value < imin:
@@ -27,10 +29,6 @@ def clamp_int(value: int, imin: int, imax: int) -> int:
     if value > imax:
         return imax
     return value
-
-
-def gamma_to_impedance(gamma: complex, impedance: float) -> complex:
-    return impedance * ((-gamma - 1) / (gamma - 1))
 
 
 class Datapoint(NamedTuple):
@@ -43,34 +41,61 @@ class Datapoint(NamedTuple):
         """ return datapoint impedance as complex number """
         return complex(self.re, self.im)
 
-class RFTools:
-    @staticmethod
-    def normalize50(data: Datapoint):
-        result = gamma_to_impedance(data.z, 50)
-        return result.real, result.imag
-
-    @staticmethod
-    def gain(data: Datapoint) -> float:
-        mag = abs(data.z)
+    def as_gain(self) -> float:
+        mag = abs(self.z)
         if mag > 0:
             return 20 * math.log10(mag)
         return 0
 
+    def as_vswr(self) -> float:
+        mag = abs(self.z)
+        if mag == 1:
+            return 1
+        return (1 + mag) / (1 - mag)
+
+    def to_impedance(self, ref_impedance: float = 50) -> complex:
+        return ref_impedance * ((-self.z - 1) / (self.z - 1))
+
+    def to_q_factor(self, ref_impedance: float = 50) -> float:
+        imp = self.to_impedance(ref_impedance)
+        if imp.real == 0.0:
+            return -1
+        return abs(imp.imag / imp.real)
+
+    def to_capacitive_equivalent(self, ref_impedance: float = 50) -> float:
+        if self.freq == 0:
+            return math.inf
+        imp = self.to_impedance(ref_impedance)
+        if imp.imag == 0:
+            return math.inf
+        return -(1 / (self.freq * 2 * math.pi * imp.imag))
+
+    def to_inductive_equivalent(self, ref_impedance: float = 50) -> float:
+        if self.freq == 0:
+            return math.inf
+        imp = self.to_impedance(ref_impedance)
+        if imp.imag == 0:
+            return 0
+        return imp.imag * 1 / (self.freq * 2 * math.pi)
+
+
+class RFTools:
     @staticmethod
-    def qualityFactor(data: Datapoint):
-        imp = gamma_to_impedance(data.z, 50)
-        if imp.real != 0.0:
-            return abs(imp.imag / imp.real)
-        return -1
+    def normalize50(data: Datapoint):
+        result = data.to_impedance()
+        return result.real, result.imag
 
     @staticmethod
-    def calculateVSWR(data: Datapoint):
-        try:
-            mag = abs(data.z)
-            vswr = (1 + mag) / (1 - mag)
-        except ZeroDivisionError:
-            vswr = 1
-        return vswr
+    def gain(data: Datapoint) -> float:
+        return data.as_gain()
+
+    @staticmethod
+    def qualityFactor(data: Datapoint) -> float:
+        return data.to_q_factor()
+
+    @staticmethod
+    def calculateVSWR(data: Datapoint) -> float:
+        return data.as_vswr()
 
     @staticmethod
     def capacitanceEquivalent(im50, freq) -> str:
