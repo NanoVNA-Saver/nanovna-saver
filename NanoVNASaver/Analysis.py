@@ -1224,28 +1224,18 @@ class VSWRAnalysis(Analysis):
         self.results_label = QtWidgets.QLabel("<b>Results</b>")
         self.layout.addRow(self.results_label)
 
-    def runAnalysis(self):
-        max_dips_shown = 3
-        data = []
-        for d in self.app.data:
-            vswr = RFTools.calculateVSWR(d)
-            if vswr < 1:
-                vswr = float('inf')
-            data.append(vswr)
-        # min_idx = np.argmin(data)
-        #
-        # logger.debug("Minimum at %d", min_idx)
-        # logger.debug("Value at minimum: %f", data[min_idx])
-        # logger.debug("Frequency: %d", self.app.data[min_idx].freq)
-        #
-        # if self.checkbox_move_marker.isChecked():
-        #     self.app.markers[0].setFrequency(str(self.app.data[min_idx].freq))
-        #     self.app.markers[0].frequencyInput.setText(str(self.app.data[min_idx].freq))
-
+    @staticmethod
+    def _findMinimuns(data, threshold):
+        '''
+        
+        :param data: array of float
+        :param threshold: 
+        '''
+        
         minimums = []
         min_start = -1
         min_idx = -1
-        threshold = self.input_vswr_limit.value()
+        
         min_val = threshold
         for i in range(len(data)):
             d = data[i]
@@ -1263,6 +1253,29 @@ class VSWRAnalysis(Analysis):
                 min_val = threshold
 
         logger.debug("Found %d sections under %f threshold", len(minimums), threshold)
+        return minimums
+        
+
+    def runAnalysis(self):
+        max_dips_shown = 3
+        data = []
+        for d in self.app.data:
+            vswr = RFTools.calculateVSWR(d)
+            if vswr < 1:
+                vswr = float('inf')
+            data.append(vswr)
+        # min_idx = np.argmin(data)
+        #
+        # logger.debug("Minimum at %d", min_idx)
+        # logger.debug("Value at minimum: %f", data[min_idx])
+        # logger.debug("Frequency: %d", self.app.data[min_idx].freq)
+        #
+        # if self.checkbox_move_marker.isChecked():
+        #     self.app.markers[0].setFrequency(str(self.app.data[min_idx].freq))
+        #     self.app.markers[0].frequencyInput.setText(str(self.app.data[min_idx].freq))
+        threshold = self.input_vswr_limit.value()
+        minimums = self._findMinimuns(data, threshold)
+        
 
         results_header = self.layout.indexOf(self.results_label)
         logger.debug("Results start at %d, out of %d", results_header, self.layout.rowCount())
