@@ -1197,6 +1197,9 @@ class PeakSearchAnalysis(Analysis):
 
 
 class VSWRAnalysis(Analysis):
+    max_dips_shown=3
+    vswr_limit = 1.5
+    
     class QHLine(QtWidgets.QFrame):
         def __init__(self):
             super().__init__()
@@ -1210,7 +1213,7 @@ class VSWRAnalysis(Analysis):
         self._widget.setLayout(self.layout)
 
         self.input_vswr_limit = QtWidgets.QDoubleSpinBox()
-        self.input_vswr_limit.setValue(1.5)
+        self.input_vswr_limit.setValue(self.vswr_limit)
         self.input_vswr_limit.setSingleStep(0.1)
         self.input_vswr_limit.setMinimum(1)
         self.input_vswr_limit.setMaximum(25)
@@ -1227,6 +1230,8 @@ class VSWRAnalysis(Analysis):
     @staticmethod
     def _findMinimuns(data, threshold):
         '''
+        
+        return array of tuple (start index, lowest value, end index)
         
         :param data: array of float
         :param threshold: 
@@ -1256,8 +1261,9 @@ class VSWRAnalysis(Analysis):
         return minimums
         
 
-    def runAnalysis(self):
-        max_dips_shown = 3
+    def runAnalysis(self, ):
+        
+        max_dips_shown = self.max_dips_shown
         data = []
         for d in self.app.data:
             vswr = RFTools.calculateVSWR(d)
@@ -1297,6 +1303,8 @@ class VSWRAnalysis(Analysis):
                 dips.remove(dips[min_idx])
                 minimums.remove(minimums[min_idx])
             minimums = best_dips
+        self.minimums = minimums
+        self.data = data
 
         if len(minimums) > 0:
             for m in minimums:
@@ -1316,3 +1324,18 @@ class VSWRAnalysis(Analysis):
             self.layout.removeRow(self.layout.rowCount()-1)  # Remove the final separator line
         else:
             self.layout.addRow(QtWidgets.QLabel("No areas found with VSWR below " + str(round(threshold, 2)) + "."))
+
+
+class MagLoopAnalysis(VSWRAnalysis):
+    max_dips_shown = 1
+    vswr_limit = 2.56
+
+    def runAnalysis(self):
+
+        super().runAnalysis()
+
+        for m in self.minimums:
+                start, lowest, end = m
+                if start != end:
+                    Q = self.app.data[lowest].freq/(self.app.data[end].freq-self.app.data[start].freq)
+                    self.layout.addRow("Q",QtWidgets.QLabel("{}".format(int(Q))))

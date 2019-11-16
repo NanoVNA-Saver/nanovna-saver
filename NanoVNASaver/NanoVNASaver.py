@@ -38,7 +38,7 @@ from .Marker import Marker
 from .SweepWorker import SweepWorker
 from .Touchstone import Touchstone
 from .Analysis import Analysis, LowPassAnalysis, HighPassAnalysis, BandPassAnalysis, BandStopAnalysis, \
-    PeakSearchAnalysis, VSWRAnalysis, SimplePeakSearchAnalysis
+    PeakSearchAnalysis, VSWRAnalysis, SimplePeakSearchAnalysis, MagLoopAnalysis
 from .about import version as ver
 
 VID = 1155
@@ -2320,6 +2320,8 @@ class AnalysisWindow(QtWidgets.QWidget):
         # self.analysis_list.addItem("Peak search", PeakSearchAnalysis(self.app))
         self.analysis_list.addItem("Peak search", SimplePeakSearchAnalysis(self.app))
         self.analysis_list.addItem("VSWR analysis", VSWRAnalysis(self.app))
+        self.analysis_list.addItem("MagLoop analysis", MagLoopAnalysis(self.app))
+        
         select_analysis_layout.addRow("Analysis type", self.analysis_list)
         self.analysis_list.currentIndexChanged.connect(self.updateSelection)
 
