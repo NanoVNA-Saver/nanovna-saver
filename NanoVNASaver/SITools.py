@@ -17,9 +17,14 @@
 import math
 from numbers import Number
 
-PREFIXES = ("y", "z", "a", "f", "p", "n", "µ", "m",
-            "", "k", "M", "G", "T", "P", "E", "Z", "Y")
+##########################################################################
+# Full set of SI prefixes
+#PREFIXES = ("y", "z", "a", "f", "p", "n", "µ", "m",
+#            "", "k", "M", "G", "T", "P", "E", "Z", "Y")
+##########################################################################
 
+# Limited SI prefix set that makes sense for this application
+PREFIXES = ("", "k", "M", "G")
 
 class Format(object):
     def __init__(self,
@@ -92,11 +97,11 @@ class Value(object):
 
         factor = 1
         if value[-1] in PREFIXES:
-            factor = 10 ** ((PREFIXES.index(value[-1]) - 8) * 3)
+            factor = 10 ** ((PREFIXES.index(value[-1])) * 3)
             value = value[:-1]
         elif value[-1] == 'K':
             # Fix for the very common KHz
-            factor = 10 ** ((PREFIXES.index(value[-1].lower()) - 8) * 3)
+            factor = 10 ** ((PREFIXES.index(value[-1].lower())) * 3)
             value = value[:-1]
         self.value = float(value) * factor
         return self.value
