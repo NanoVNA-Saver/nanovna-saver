@@ -24,20 +24,12 @@ rft = RFTools.RFTools()
 
 class TestCases(unittest.TestCase):
 
-    '''
-    def formatSweepFrequency(freq: int,
-                             mindigits: int = 2,
-                             appendHz: bool = True,
-                             insertSpace: bool = False,
-                             countDot: bool = True,
-                             assumeInfinity: bool = True) -> str:
-    '''
-
     def test_basicIntegerValues(self):
         # simple well-formed integers with no trailing zeros. Most importantly
-        # even with default mindigits, there is no loss of accuracy in the
-        # result. Returned values are not truncated if result would lose
-        # meaningful data.
+        # there is no loss of accuracy in the result. Returned values are not
+        # truncated if result would lose meaningful data.
+        '''
+        Original Behavior:
         self.assertEqual(rft.formatSweepFrequency(1), '1Hz')
         self.assertEqual(rft.formatSweepFrequency(12), '12Hz')
         self.assertEqual(rft.formatSweepFrequency(123), '123Hz')
@@ -47,7 +39,19 @@ class TestCases(unittest.TestCase):
         self.assertEqual(rft.formatSweepFrequency(1234567), '1.234567MHz')
         self.assertEqual(rft.formatSweepFrequency(12345678), '12.345678MHz')
         self.assertEqual(rft.formatSweepFrequency(123456789), '123.456789MHz')
+        '''
+        # New Behavior: results in loss of accuracy again.
+        self.assertEqual(rft.formatSweepFrequency(1), '1.0000Hz')
+        self.assertEqual(rft.formatSweepFrequency(12), '12.000Hz')
+        self.assertEqual(rft.formatSweepFrequency(123), '123.00Hz')
+        self.assertEqual(rft.formatSweepFrequency(1234), '1.2340kHz')
+        self.assertEqual(rft.formatSweepFrequency(12345), '12.345kHz')
+        self.assertEqual(rft.formatSweepFrequency(123456), '123.46kHz')
+        self.assertEqual(rft.formatSweepFrequency(1234567), '1.2346MHz')
+        self.assertEqual(rft.formatSweepFrequency(12345678), '12.346MHz')
+        self.assertEqual(rft.formatSweepFrequency(123456789), '123.46MHz')
 
+    '''
     def test_defaultMinDigits(self):
         # simple integers with trailing zeros.
         # DEFAULT behavior retains 2 digits after the period, mindigits=2.
@@ -55,7 +59,7 @@ class TestCases(unittest.TestCase):
         self.assertEqual(rft.formatSweepFrequency(10000), '10.00kHz')
         self.assertEqual(rft.formatSweepFrequency(100000), '100.00kHz')
         self.assertEqual(rft.formatSweepFrequency(1000000), '1.00MHz')
-
+    
     def test_nonDefaultMinDigits(self):
         # simple integers with trailing zeros. setting mindigit value to something
         # other than default, where trailing zeros >= mindigits, the number of
@@ -77,7 +81,7 @@ class TestCases(unittest.TestCase):
         # TODO: Consider post-processing result for maxdigits based on SI unit.
         self.assertEqual(rft.formatSweepFrequency(1000, mindigits=5), '1.00000kHz')
         self.assertEqual(rft.formatSweepFrequency(1000, mindigits=10), '1.0000000000kHz')
-
+    '''
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
