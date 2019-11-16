@@ -852,11 +852,11 @@ class PhaseChart(FrequencyChart):
         if self.unwrap:
             rawData = []
             for d in self.data:
-                rawData.append(RFTools.phaseAngleRadians(d))
+                rawData.append(d.phase)
 
             rawReference = []
             for d in self.reference:
-                rawReference.append(RFTools.phaseAngleRadians(d))
+                rawReference.append(d.phase)
 
             self.unwrappedData = np.degrees(np.unwrap(rawData))
             self.unwrappedReference = np.degrees(np.unwrap(rawReference))
@@ -935,9 +935,9 @@ class PhaseChart(FrequencyChart):
             elif d in self.reference:
                 angle = self.unwrappedReference[self.reference.index(d)]
             else:
-                angle = RFTools.phaseAngle(d)
+                angle = math.degrees(d.phase)
         else:
-            angle = RFTools.phaseAngle(d)
+            angle = math.degrees(d.phase)
         return self.topMargin + round((self.maxAngle - angle) / self.span * self.chartHeight)
 
     def valueAtPosition(self, y) -> List[float]:
@@ -3549,11 +3549,11 @@ class GroupDelayChart(FrequencyChart):
     def calculateGroupDelay(self):
         rawData = []
         for d in self.data:
-            rawData.append(RFTools.phaseAngleRadians(d))
+            rawData.append(d.phase)
 
         rawReference = []
         for d in self.reference:
-            rawReference.append(RFTools.phaseAngleRadians(d))
+            rawReference.append(d.phase)
 
         if len(self.data) > 0:
             self.unwrappedData = np.degrees(np.unwrap(rawData))

@@ -393,14 +393,14 @@ class Marker(QtCore.QObject):
                 q_str = str(round(q, 3))
             self.quality_factor_label.setText(q_str)
             self.s11_phase_label.setText(
-                str(round(RFTools.phaseAngle(s11data[self.location]), 2)) + "\N{DEGREE SIGN}")
+                str(round(math.degrees(s11data[self.location].phase), 2)) + "\N{DEGREE SIGN}")
             fmt = SITools.Format(max_nr_digits=5, space_str=" ")
             self.s11_group_delay_label.setText(str(SITools.Value(RFTools.groupDelay(s11data, self.location), "s", fmt)))
 
             if len(s21data) == len(s11data):
                 self.gain_label.setText(str(round(RFTools.gain(s21data[self.location]), 3)) + " dB")
                 self.s21_phase_label.setText(
-                    str(round(RFTools.phaseAngle(s21data[self.location]), 2)) + "\N{DEGREE SIGN}")
+                    str(round(math.degrees(s21data[self.location].phase), 2)) + "\N{DEGREE SIGN}")
                 self.s21_group_delay_label.setText(str(SITools.Value(RFTools.groupDelay(s21data, self.location) / 2,
                                                                      "s", fmt)))
 

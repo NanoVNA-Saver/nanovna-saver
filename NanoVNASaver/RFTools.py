@@ -137,14 +137,6 @@ class RFTools:
             return -1
 
     @staticmethod
-    def phaseAngle(data: Datapoint) -> float:
-        return math.degrees(cmath.phase(data.z))
-
-    @staticmethod
-    def phaseAngleRadians(data: Datapoint) -> float:
-        return cmath.phase(data.z)
-
-    @staticmethod
     def groupDelay(data: List[Datapoint], index: int) -> float:
         idx0 = clamp_int(index - 1, 0, len(data) - 1)
         idx1 = clamp_int(index + 1, 0, len(data) - 1)
