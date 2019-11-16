@@ -15,6 +15,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
+from typing import NamedTuple
 from numbers import Number
 
 ##########################################################################
@@ -26,39 +27,29 @@ from numbers import Number
 # Limited SI prefix set that makes sense for this application
 PREFIXES = ("", "k", "M", "G")
 
-class Format(object):
-    def __init__(self,
-                 max_nr_digits: int = 6,
-                 fix_decimals: bool = False,
-                 space_str: str = "",
-                 assume_infinity: bool = True,
-                 min_offset: int = -8,
-                 max_offset: int = 8):
-        assert(min_offset >= -8 and max_offset <= 8 and min_offset < max_offset)
-        self.max_nr_digits = max_nr_digits
-        self.fix_decimals = fix_decimals
-        self.space_str = space_str
-        self.assume_infinity = assume_infinity
-        self.min_offset = min_offset
-        self.max_offset = max_offset
-
-    def __repr__(self):
-        return (f"{self.__class__.__name__}("
-                f"{self.max_nr_digits}, {self.fix_decimals}, "
-                f"'{self.space_str}', {self.assume_infinity}, "
-                f"{self.min_offset}, {self.max_offset})")
+class Format(NamedTuple):
+    max_nr_digits: int = 6
+    fix_decimals: bool = False
+    space_str: str = ""
+    assume_infinity: bool = True
+    min_offset: int = -8
+    max_offset: int = 8
+    parse_sloppy_unit: bool = False
+    parse_sloppy_kilo: bool = False
 
 
-class Value(object):
+class Value():
     def __init__(self, value: Number = 0, unit: str = "", fmt=Format()):
+        assert 3 <= fmt.max_nr_digits <= 27
+        assert -8 <= fmt.min_offset <= fmt.max_offset <= 8
         self.value = value
         self._unit = unit
         self.fmt = fmt
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.value}, '{self._unit}', {self.fmt})"
 
-    def __str__(self):
+    def __str__(self) -> str:
         fmt = self.fmt
         if fmt.assume_infinity and abs(self.value) >= 10 ** ((fmt.max_offset + 1) * 3):
             return ("-" if self.value < 0 else "") + "\N{INFINITY}" + fmt.space_str + self._unit
@@ -90,12 +81,18 @@ class Value(object):
 
         return result + fmt.space_str + PREFIXES[offset + 8] + self._unit
 
-    def parse(self, value: str):
+    def parse(self, value: str) -> float:
         value = value.replace(" ", "")  # Ignore spaces
-        if self._unit and value.endswith(self._unit) or value.lower().endswith(self._unit.lower()):  # strip unit
+
+        if self._unit and (
+                value.endswith(self._unit) or
+                (self.fmt.parse_sloppy_unit and
+                 value.lower().endswith(self._unit.lower()))):  # strip unit
             value = value[:-len(self._unit)]
 
         factor = 1
+        if self.fmt.parse_sloppy_kilo and value[-1] == "K":  # fix for e.g. KHz
+            value = value[:-1] + "k"
         if value[-1] in PREFIXES:
             factor = 10 ** ((PREFIXES.index(value[-1])) * 3)
             value = value[:-1]
@@ -104,8 +101,15 @@ class Value(object):
             factor = 10 ** ((PREFIXES.index(value[-1].lower())) * 3)
             value = value[:-1]
         self.value = float(value) * factor
+
+        if self.fmt.assume_infinity and value == "\N{INFINITY}":
+            self.value = math.inf
+        elif self.fmt.assume_infinity and value == "-\N{INFINITY}":
+            self.value = -math.inf
+        else:
+            self.value = float(value) * factor
         return self.value
 
     @property
-    def unit(self):
+    def unit(self) -> str:
         return self._unit
