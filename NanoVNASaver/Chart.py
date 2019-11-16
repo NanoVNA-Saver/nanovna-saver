@@ -24,6 +24,7 @@ from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSignal
 
 from NanoVNASaver.RFTools import Datapoint, RFTools
+from NanoVNASaver.SITools import Format, Value
 from .Marker import Marker
 logger = logging.getLogger(__name__)
 
@@ -50,6 +51,8 @@ class Chart(QtWidgets.QWidget):
     drawLines = False
     minChartHeight = 200
     minChartWidth = 200
+    chartWidth = minChartWidth
+    chartHeight = minChartHeight
     lineThickness = 1
     pointSize = 2
     markerSize = 3
@@ -314,9 +317,6 @@ class FrequencyChart(Chart):
 
     logarithmicX = False
 
-    chartWidth = Chart.minChartWidth
-    chartHeight = Chart.minChartHeight
-
     leftMargin = 30
     rightMargin = 20
     bottomMargin = 20
@@ -494,20 +494,21 @@ class FrequencyChart(Chart):
         else:
             return math.floor(self.width()/2)
 
-    def frequencyAtPosition(self, x) -> int:
+    def frequencyAtPosition(self, x, limit = True) -> int:
         """
         Calculates the frequency at a given X-position
+        :param limit: Determines whether frequencies outside the currently displayed span can be returned.
         :param x: The X position to calculate for.
-        :return: The frequency at the given position, if one exists, or -1 otherwise.  If the value is before or after
-                 the chart, returns minimum or maximum frequencies.
+        :return: The frequency at the given position, if one exists, or -1 otherwise.  If limit is True, and the value
+                 is before or after the chart, returns minimum or maximum frequencies.
         """
         if self.fstop - self.fstart > 0:
             absx = x - self.leftMargin
-            if absx < 0:
+            if limit and absx < 0:
                 return self.fstart
-            if absx > self.chartWidth:
+            elif limit and absx > self.chartWidth:
                 return self.fstop
-            if self.logarithmicX:
+            elif self.logarithmicX:
                 span = math.log(self.fstop) - math.log(self.fstart)
                 step = span/self.chartWidth
                 return round(math.exp(math.log(self.fstart) + absx * step))
@@ -528,6 +529,47 @@ class FrequencyChart(Chart):
         """
         return []
 
+    def wheelEvent(self, a0: QtGui.QWheelEvent) -> None:
+        if len(self.data) == 0 and len(self.reference) == 0:
+            a0.ignore()
+            return
+        if a0.angleDelta().y() > 0:
+            # Zoom in
+            a0.accept()
+            # Center of zoom = a0.x(), a0.y()
+            # We zoom in by 1/10 of the width/height.
+            rate = a0.angleDelta().y() / 120
+            zoomx = rate * self.chartWidth / 10
+            zoomy = rate * self.chartHeight / 10
+            absx = max(0, a0.x() - self.leftMargin)
+            absy = max(0, a0.y() - self.topMargin)
+            ratiox = absx/self.chartWidth
+            ratioy = absy/self.chartHeight
+            p1x = int(self.leftMargin + ratiox * zoomx)
+            p1y = int(self.topMargin + ratioy * zoomy)
+            p2x = int(self.leftMargin + self.chartWidth - (1 - ratiox) * zoomx)
+            p2y = int(self.topMargin + self.chartHeight - (1 - ratioy) * zoomy)
+            self.zoomTo(p1x, p1y, p2x, p2y)
+        elif a0.angleDelta().y() < 0:
+            # Zoom out
+            a0.accept()
+            # Center of zoom = a0.x(), a0.y()
+            # We zoom out by 1/9 of the width/height, to match zoom in.
+            rate = -a0.angleDelta().y() / 120
+            zoomx = rate * self.chartWidth / 9
+            zoomy = rate * self.chartHeight / 9
+            absx = max(0, a0.x() - self.leftMargin)
+            absy = max(0, a0.y() - self.topMargin)
+            ratiox = absx/self.chartWidth
+            ratioy = absy/self.chartHeight
+            p1x = int(self.leftMargin - ratiox * zoomx)
+            p1y = int(self.topMargin - ratioy * zoomy)
+            p2x = int(self.leftMargin + self.chartWidth + (1 - ratiox) * zoomx)
+            p2y = int(self.topMargin + self.chartHeight + (1 - ratioy) * zoomy)
+            self.zoomTo(p1x, p1y, p2x, p2y)
+        else:
+            a0.ignore()
+
     def zoomTo(self, x1, y1, x2, y2):
         val1 = self.valueAtPosition(y1)
         val2 = self.valueAtPosition(y2)
@@ -537,8 +579,8 @@ class FrequencyChart(Chart):
             self.maxDisplayValue = round(max(val1[0], val2[0]), 2)
             self.setFixedValues(True)
 
-        freq1 = self.frequencyAtPosition(x1)
-        freq2 = self.frequencyAtPosition(x2)
+        freq1 = max(1, self.frequencyAtPosition(x1, limit=False))
+        freq2 = max(1, self.frequencyAtPosition(x2, limit=False))
 
         if freq1 > 0 and freq2 > 0 and freq1 != freq2:
             self.minFrequency = min(freq1, freq2)
@@ -905,6 +947,10 @@ class PhaseChart(FrequencyChart):
 
 
 class VSWRChart(FrequencyChart):
+    logarithmicY = False
+    maxVSWR = 3
+    span = 2
+
     def __init__(self, name=""):
         super().__init__(name)
         self.leftMargin = 30
@@ -923,6 +969,28 @@ class VSWRChart(FrequencyChart):
         pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
+        self.y_menu.addSeparator()
+        self.y_log_lin_group = QtWidgets.QActionGroup(self.y_menu)
+        self.y_action_linear = QtWidgets.QAction("Linear")
+        self.y_action_linear.setCheckable(True)
+        self.y_action_linear.setChecked(True)
+        self.y_action_logarithmic = QtWidgets.QAction("Logarithmic")
+        self.y_action_logarithmic.setCheckable(True)
+        self.y_action_linear.triggered.connect(lambda: self.setLogarithmicY(False))
+        self.y_action_logarithmic.triggered.connect(lambda: self.setLogarithmicY(True))
+        self.y_log_lin_group.addAction(self.y_action_linear)
+        self.y_log_lin_group.addAction(self.y_action_logarithmic)
+        self.y_menu.addAction(self.y_action_linear)
+        self.y_menu.addAction(self.y_action_logarithmic)
+
+    def setLogarithmicY(self, logarithmic: bool):
+        self.logarithmicY = logarithmic
+        self.update()
+
+    def copy(self):
+        new_chart: VSWRChart = super().copy()
+        new_chart.logarithmicY = self.logarithmicY
+        return new_chart
 
     def drawChart(self, qp: QtGui.QPainter):
         qp.setPen(QtGui.QPen(self.textColor))
@@ -978,33 +1046,57 @@ class VSWRChart(FrequencyChart):
 
         target_ticks = math.floor(self.chartHeight / 60)
 
-        for i in range(target_ticks):
-            vswr = minVSWR + i/target_ticks * span
-            y = self.topMargin + round((self.maxVSWR - vswr) / self.span * self.chartHeight)
+        if self.logarithmicY:
+            for i in range(target_ticks):
+                y = int(self.topMargin + (i / target_ticks) * self.chartHeight)
+                vswr = self.valueAtPosition(y)[0]
+                qp.setPen(self.textColor)
+                if vswr != 0:
+                    digits = max(0, min(2, math.floor(3 - math.log10(abs(vswr)))))
+                    if digits == 0:
+                        vswrstr = str(round(vswr))
+                    else:
+                        vswrstr = str(round(vswr, digits))
+                    qp.drawText(3, y+3, vswrstr)
+                qp.setPen(QtGui.QPen(self.foregroundColor))
+                qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.chartWidth, y)
+            qp.drawLine(self.leftMargin - 5, self.topMargin + self.chartHeight,
+                        self.leftMargin + self.chartWidth, self.topMargin + self.chartHeight)
             qp.setPen(self.textColor)
-            if vswr != 0:
-                digits = max(0, min(2, math.floor(3 - math.log10(abs(vswr)))))
-                if digits == 0:
-                    vswrstr = str(round(vswr))
-                else:
-                    vswrstr = str(round(vswr, digits))
-                qp.drawText(3, y+3, vswrstr)
-            qp.setPen(QtGui.QPen(self.foregroundColor))
-            qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.chartWidth, y)
-        qp.drawLine(self.leftMargin - 5, self.topMargin, self.leftMargin + self.chartWidth, self.topMargin)
-        qp.setPen(self.textColor)
-        digits = max(0, min(2, math.floor(3 - math.log10(abs(maxVSWR)))))
-        if digits == 0:
-            vswrstr = str(round(maxVSWR))
+            digits = max(0, min(2, math.floor(3 - math.log10(abs(minVSWR)))))
+            if digits == 0:
+                vswrstr = str(round(minVSWR))
+            else:
+                vswrstr = str(round(minVSWR, digits))
+            qp.drawText(3, self.topMargin + self.chartHeight, vswrstr)
         else:
-            vswrstr = str(round(maxVSWR, digits))
-        qp.drawText(3, 35, vswrstr)
+            for i in range(target_ticks):
+                vswr = minVSWR + i * self.span/target_ticks
+                y = self.getYPositionFromValue(vswr)
+                qp.setPen(self.textColor)
+                if vswr != 0:
+                    digits = max(0, min(2, math.floor(3 - math.log10(abs(vswr)))))
+                    if digits == 0:
+                        vswrstr = str(round(vswr))
+                    else:
+                        vswrstr = str(round(vswr, digits))
+                    qp.drawText(3, y+3, vswrstr)
+                qp.setPen(QtGui.QPen(self.foregroundColor))
+                qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.chartWidth, y)
+            qp.drawLine(self.leftMargin - 5, self.topMargin, self.leftMargin + self.chartWidth, self.topMargin)
+            qp.setPen(self.textColor)
+            digits = max(0, min(2, math.floor(3 - math.log10(abs(maxVSWR)))))
+            if digits == 0:
+                vswrstr = str(round(maxVSWR))
+            else:
+                vswrstr = str(round(maxVSWR, digits))
+            qp.drawText(3, 35, vswrstr)
 
         self.drawFrequencyTicks(qp)
 
         qp.setPen(self.swrColor)
         for vswr in self.swrMarkers:
-            y = self.topMargin + round((self.maxVSWR - vswr) / self.span * self.chartHeight)
+            y = self.getYPositionFromValue(vswr)
             qp.drawLine(self.leftMargin, y, self.leftMargin + self.chartWidth, y)
             qp.drawText(self.leftMargin + 3, y - 1, str(vswr))
 
@@ -1012,17 +1104,38 @@ class VSWRChart(FrequencyChart):
         self.drawData(qp, self.reference, self.referenceColor)
         self.drawMarkers(qp)
 
+    def getYPositionFromValue(self, vswr) -> int:
+        if self.logarithmicY:
+            min_val = self.maxVSWR - self.span
+            if self.maxVSWR > 0 and min_val > 0 and vswr > 0:
+                span = math.log(self.maxVSWR) - math.log(min_val)
+            else:
+                return -1
+            return self.topMargin + round((math.log(self.maxVSWR) - math.log(vswr)) / span * self.chartHeight)
+        else:
+            return self.topMargin + round((self.maxVSWR - vswr) / self.span * self.chartHeight)
+
     def getYPosition(self, d: Datapoint) -> int:
         vswr = RFTools.calculateVSWR(d)
-        return self.topMargin + round((self.maxVSWR - vswr) / self.span * self.chartHeight)
+        return self.getYPositionFromValue(vswr)
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
-        val = -1 * ((absy / self.chartHeight * self.span) - self.maxVSWR)
+        if self.logarithmicY:
+            min_val = self.maxVSWR - self.span
+            if self.maxVSWR > 0 and min_val > 0:
+                span = math.log(self.maxVSWR) - math.log(min_val)
+                step = span / self.chartHeight
+                val = math.exp(math.log(self.maxVSWR) - absy * step)
+            else:
+                val = -1
+        else:
+            val = -1 * ((absy / self.chartHeight * self.span) - self.maxVSWR)
         return [val]
 
     def resetDisplayLimits(self):
         self.maxDisplayValue = 25
+        self.logarithmicY = False
         super().resetDisplayLimits()
 
 
@@ -1361,7 +1474,7 @@ class LogMagChart(FrequencyChart):
         else:
             # Find scaling
             minValue = 100
-            maxValue = 0
+            maxValue = -100
             for d in self.data:
                 logmag = self.logMag(d)
                 if logmag > maxValue:
@@ -2273,9 +2386,10 @@ class TDRChart(Chart):
 
             for i in range(y_ticks):
                 y = self.bottomMargin + int(i * y_tick_step)
-                qp.setPen(QtGui.QPen(self.foregroundColor))
+                qp.setPen(self.foregroundColor)
                 qp.drawLine(self.leftMargin, y, self.leftMargin + width, y)
                 y_val = max_impedance - y_impedance_step * i * y_tick_step
+                qp.setPen(self.textColor)
                 qp.drawText(3, y + 3, str(round(y_val, 1)))
 
             qp.drawText(3, self.topMargin + height + 3, str(round(min_impedance, 1)))
@@ -2683,8 +2797,8 @@ class RealImaginaryChart(FrequencyChart):
             self.maxDisplayImag = round(max(val1[1], val2[1]), 2)
             self.setFixedValues(True)
 
-        freq1 = self.frequencyAtPosition(x1)
-        freq2 = self.frequencyAtPosition(x2)
+        freq1 = max(1, self.frequencyAtPosition(x1, limit=False))
+        freq2 = max(1, self.frequencyAtPosition(x2, limit=False))
 
         if freq1 > 0 and freq2 > 0 and freq1 != freq2:
             self.minFrequency = min(freq1, freq2)
@@ -3101,7 +3215,7 @@ class PermeabilityChart(FrequencyChart):
         self.update()
 
     def copy(self):
-        new_chart: PermabilityChart = super().copy()
+        new_chart: PermeabilityChart = super().copy()
         new_chart.logarithmicY = self.logarithmicY
         return new_chart
 
@@ -3143,57 +3257,60 @@ class PermeabilityChart(FrequencyChart):
 
         # Find scaling
         if self.fixedValues:
-            min = self.minDisplayValue
-            max = self.maxDisplayValue
+            min_val = self.minDisplayValue
+            max_val = self.maxDisplayValue
         else:
-            min = 1000
-            max = -1000
+            min_val = 1000
+            max_val = -1000
             for d in self.data:
                 re, im = RFTools.normalize50(d)
                 re = re * 10e6 / d.freq
                 im = im * 10e6 / d.freq
-                if re > max:
-                    max = re
-                if re < min:
-                    min = re
-                if im > max:
-                    max = im
-                if im < min:
-                    min = im
+                if re > max_val:
+                    max_val = re
+                if re < min_val:
+                    min_val = re
+                if im > max_val:
+                    max_val = im
+                if im < min_val:
+                    min_val = im
             for d in self.reference:  # Also check min/max for the reference sweep
                 if d.freq < fstart or d.freq > fstop:
                     continue
                 re, im = RFTools.normalize50(d)
                 re = re * 10e6 / d.freq
                 im = im * 10e6 / d.freq
-                if re > max:
-                    max = re
-                if re < min:
-                    min = re
-                if im > max:
-                    max = im
-                if im < min:
-                    min = im
+                if re > max_val:
+                    max_val = re
+                if re < min_val:
+                    min_val = re
+                if im > max_val:
+                    max_val = im
+                if im < min_val:
+                    min_val = im
 
-        self.max = max
+        if self.logarithmicY:
+            min_val = max(0.01, min_val)
 
-        span = max - min
+        self.max = max_val
+
+        span = max_val - min_val
         if span == 0:
             span = 0.01
         self.span = span
 
         # We want one horizontal tick per 50 pixels, at most
         horizontal_ticks = math.floor(self.chartHeight/50)
-
+        fmt = Format(max_nr_digits=4)
         for i in range(horizontal_ticks):
             y = self.topMargin + round(i * self.chartHeight / horizontal_ticks)
             qp.setPen(QtGui.QPen(self.foregroundColor))
             qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.chartWidth + 5, y)
             qp.setPen(QtGui.QPen(self.textColor))
-            val = self.valueAtPosition(y)[0]
-            qp.drawText(3, y + 4, str(round(val, 1)))
+            val = Value(self.valueAtPosition(y)[0], fmt=fmt)
+            qp.drawText(3, y + 4, str(val))
 
-        qp.drawText(3, self.chartHeight + self.topMargin, str(round(min, 1)))
+        qp.drawText(3, self.chartHeight + self.topMargin, str(Value(min_val, fmt=fmt)))
 
         self.drawFrequencyTicks(qp)
 
@@ -3328,8 +3445,11 @@ class PermeabilityChart(FrequencyChart):
         _, im = RFTools.normalize50(d)
         im = im * 10e6 / d.freq
         if self.logarithmicY:
-            min = self.max - self.span
-            span = math.log(self.max) - math.log(min)
+            min_val = self.max - self.span
+            if self.max > 0 and min_val > 0 and im > 0:
+                span = math.log(self.max) - math.log(min_val)
+            else:
+                return -1
             return self.topMargin + round((math.log(self.max) - math.log(im)) / span * self.chartHeight)
         else:
             return self.topMargin + round((self.max - im) / self.span * self.chartHeight)
@@ -3338,8 +3458,11 @@ class PermeabilityChart(FrequencyChart):
         re, _ = RFTools.normalize50(d)
         re = re * 10e6 / d.freq
         if self.logarithmicY:
-            min = self.max - self.span
-            span = math.log(self.max) - math.log(min)
+            min_val = self.max - self.span
+            if self.max > 0 and min_val > 0 and re > 0:
+                span = math.log(self.max) - math.log(min_val)
+            else:
+                return -1
             return self.topMargin + round((math.log(self.max) - math.log(re)) / span * self.chartHeight)
         else:
             return self.topMargin + round((self.max - re) / self.span * self.chartHeight)
@@ -3347,10 +3470,13 @@ class PermeabilityChart(FrequencyChart):
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
         if self.logarithmicY:
-            min = self.max - self.span
-            span = math.log(self.max) - math.log(min)
-            step = span / self.chartHeight
-            val = math.exp(math.log(self.max) - absy * step)
+            min_val = self.max - self.span
+            if self.max > 0 and min_val > 0:
+                span = math.log(self.max) - math.log(min_val)
+                step = span / self.chartHeight
+                val = math.exp(math.log(self.max) - absy * step)
+            else:
+                val = -1
         else:
             val = -1 * ((absy / self.chartHeight * self.span) - self.max)
         return [val]
@@ -3374,7 +3500,7 @@ class PermeabilityChart(FrequencyChart):
 
 
 class GroupDelayChart(FrequencyChart):
-    def __init__(self, name=""):
+    def __init__(self, name="", reflective=True):
         super().__init__(name)
         self.leftMargin = 40
         self.chartWidth = 250
@@ -3384,6 +3510,8 @@ class GroupDelayChart(FrequencyChart):
         self.minDelay = 0
         self.maxDelay = 0
         self.span = 0
+
+        self.reflective = reflective
 
         self.unwrappedData = []
         self.unwrappedReference = []
@@ -3405,7 +3533,7 @@ class GroupDelayChart(FrequencyChart):
 
     def copy(self):
         new_chart: GroupDelayChart = super().copy()
-
+        new_chart.reflective = self.reflective
         return new_chart
 
     def setReference(self, data):
@@ -3441,15 +3569,29 @@ class GroupDelayChart(FrequencyChart):
                 else:
                     phase_change = self.unwrappedData[i+1] - self.unwrappedData[i-1]
                     freq_change = self.data[i+1].freq - self.data[i-1].freq
-                # TODO: Why is multiplying by 10e8, not 10e9, giving nanoseconds?
-                delay = (phase_change / (freq_change * 360)) * 10e8
+                delay = (-phase_change / (freq_change * 360)) * 10e8
+                if not self.reflective:
+                    delay /= 2
                 self.groupDelay.append(delay)
-            # TODO: Modify to show values as ps instead of $undefined?
-            # self.groupDelay = signal.convolve(self.unwrappedData, [1, -1], mode='same')
 
         if len(self.reference) > 0:
             self.unwrappedReference = np.degrees(np.unwrap(rawReference))
-            self.groupDelayReference = signal.convolve(self.unwrappedReference, [1, -1], mode='same')
+            self.groupDelayReference = []
+            for i in range(len(self.reference)):
+                if i == 0:
+                    phase_change = self.unwrappedReference[1] - self.unwrappedReference[0]
+                    freq_change = self.reference[1].freq - self.reference[0].freq
+                elif i == len(self.reference)-1:
+                    idx = len(self.reference)-1
+                    phase_change = self.unwrappedReference[idx] - self.unwrappedReference[idx-1]
+                    freq_change = self.reference[idx].freq - self.reference[idx-1].freq
+                else:
+                    phase_change = self.unwrappedReference[i+1] - self.unwrappedReference[i-1]
+                    freq_change = self.reference[i+1].freq - self.reference[i-1].freq
+                delay = (-phase_change / (freq_change * 360)) * 10e8
+                if not self.reflective:
+                    delay /= 2
+                self.groupDelayReference.append(delay)
 
         self.update()
 
