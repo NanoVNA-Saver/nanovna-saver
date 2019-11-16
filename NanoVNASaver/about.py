@@ -14,5 +14,5 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-version = '0.2.1alpha'
+version = '0.2.0'
 debug = False

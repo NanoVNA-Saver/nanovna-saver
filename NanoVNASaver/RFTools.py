@@ -15,7 +15,6 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import collections
 import math
-from numbers import Number
 from typing import List
 
 from NanoVNASaver.SITools import Value, Format
@@ -34,7 +33,7 @@ class RFTools:
         return re50, im50
 
     @staticmethod
-    def gain(data: Datapoint) -> float:
+    def gain(data: Datapoint):
         # re50, im50 = normalize50(data)
         # Calculate the gain / reflection coefficient
         # mag = math.sqrt((re50 - 50) * (re50 - 50) + im50 * im50) / \
@@ -44,7 +43,8 @@ class RFTools:
         mag = math.sqrt(data.re**2 + data.im**2)
         if mag > 0:
             return 20 * math.log10(mag)
-        return 0
+        else:
+            return 0
 
     @staticmethod
     def qualityFactor(data: Datapoint):
@@ -73,7 +73,7 @@ class RFTools:
             return "- pF"
         capacitance = 1 / (freq * 2 * math.pi * im50)
         return str(Value(-capacitance, "F", Format(max_nr_digits=5, space_str=" ")))
-
+        
     @staticmethod
     def inductanceEquivalent(im50, freq) -> str:
         if freq == 0:
@@ -82,54 +82,85 @@ class RFTools:
         return str(Value(inductance, "H", Format(max_nr_digits=5, space_str=" ")))
 
     @staticmethod
-    def formatFrequency(freq: Number) -> str:
-        return str(Value(freq, "Hz"))
+    def formatFrequency(freq):
+        return str(Value(freq, "Hz", Format(max_nr_digits=6)))
 
     @staticmethod
-    def formatShortFrequency(freq: Number) -> str:
+    def formatShortFrequency(freq):
         return str(Value(freq, "Hz", Format(max_nr_digits=4)))
 
     @staticmethod
-    def formatSweepFrequency(freq: Number) -> str:
-        return str(Value(freq, "Hz", Format(max_nr_digits=5)))
+    def formatSweepFrequency(freq: int,
+                             mindigits: int = 2,
+                             appendHz: bool = True,
+                             insertSpace: bool = False,
+                             countDot: bool = True,
+                             assumeInfinity: bool = True) -> str:
+        """ Format frequency with SI prefixes
+
+            mindigits count refers to the number of decimal place digits
+            that will be shown, padded with zeroes if needed.
+        """
+        freqstr = str(freq)
+        freqlen = len(freqstr)
+
+        # sanity checks
+        if freqlen > 15:
+            if assumeInfinity:
+                return "\N{INFINITY}"
+            raise ValueError("Frequency too big. More than 15 digits!")
+
+        if freq < 1:
+            return " - " + (" " if insertSpace else "") + ("Hz" if appendHz else "")
+
+        si_index = (freqlen - 1) // 3
+        dot_pos = freqlen % 3 or 3
+        intfstr = freqstr[:dot_pos]
+        decfstr = freqstr[dot_pos:]
+        nzdecfstr = decfstr.rstrip('0')
+        if si_index != 0:
+            while len(nzdecfstr) < mindigits:
+                nzdecfstr += '0'
+        freqstr = intfstr + ("." if len(nzdecfstr) > 0 else "") + nzdecfstr
+        return freqstr + (" " if insertSpace else "") + PREFIXES[si_index] + ("Hz" if appendHz else "")
 
     @staticmethod
     def parseFrequency(freq: str) -> int:
-        parser = Value(0, "Hz", Format(parse_sloppy_unit=True, parse_sloppy_kilo=True))
+        parser = Value(0, "Hz")
         try:
             return round(parser.parse(freq))
         except (ValueError, IndexError):
             return -1
 
     @staticmethod
-    def phaseAngle(data: Datapoint) -> float:
+    def phaseAngle(data: Datapoint):
         re = data.re
         im = data.im
         return math.degrees(math.atan2(im, re))
 
     @staticmethod
-    def phaseAngleRadians(data: Datapoint) -> float:
+    def phaseAngleRadians(data: Datapoint):
         re = data.re
         im = data.im
         return math.atan2(im, re)
 
     @staticmethod
-    def clamp_int(value: int, min: int, max: int) -> int:
-        assert min <= max
-        if value < min:
-            return min
-        if value > max:
-            return max
-        return value
-
-    @staticmethod
     def groupDelay(data: List[Datapoint], index: int) -> float:
-        index0 = RFTools.clamp_int(index - 1, 0, len(data) - 1)
-        index1 = RFTools.clamp_int(index + 1, 0, len(data) - 1)
-        angle0 = RFTools.phaseAngleRadians(data[index0])
-        angle1 = RFTools.phaseAngleRadians(data[index1])
-        freq0 = data[index0].freq
-        freq1 = data[index1].freq
+        if index == 0:
+            angle0 = RFTools.phaseAngleRadians(data[0])
+            angle1 = RFTools.phaseAngleRadians(data[1])
+            freq0 = data[0].freq
+            freq1 = data[1].freq
+        elif index == len(data) - 1:
+            angle0 = RFTools.phaseAngleRadians(data[-2])
+            angle1 = RFTools.phaseAngleRadians(data[-1])
+            freq0 = data[-2].freq
+            freq1 = data[-1].freq
+        else:
+            angle0 = RFTools.phaseAngleRadians(data[index-1])
+            angle1 = RFTools.phaseAngleRadians(data[index+1])
+            freq0 = data[index-1].freq
+            freq1 = data[index+1].freq
         delta_angle = (angle1 - angle0)
         if abs(delta_angle) > math.tau:
             if delta_angle > 0:

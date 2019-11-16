@@ -528,7 +528,7 @@ class NanoVNASaver(QtWidgets.QWidget):
     def rescanSerialPort(self):
         self.serialPortInput.clear()
         for port in self.getPort():
-            self.serialPortInput.insertItem(1, port)
+            self.serialPortInput.insertItem(1,port)
 
     # Get that windows port
     @staticmethod
@@ -625,7 +625,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def startSerial(self):
         if self.serialLock.acquire():
-            self.serialPort = self.serialPortInput.currentText()
+            self.serialPort = self.serialPortInput.text()
             logger.info("Opening serial port %s", self.serialPort)
             try:
                 self.serial = serial.Serial(port=self.serialPort, baudrate=115200)
