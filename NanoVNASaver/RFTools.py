@@ -46,7 +46,8 @@ class Datapoint(NamedTuple):
         """ return datapoints phase value """
         return cmath.phase(self.z)
 
-    def as_gain(self) -> float:
+    @property
+    def gain(self) -> float:
         mag = abs(self.z)
         if mag > 0:
             return 20 * math.log10(mag)
@@ -95,7 +96,7 @@ class RFTools:
 
     @staticmethod
     def gain(data: Datapoint) -> float:
-        return data.as_gain()
+        return data.gain
 
     @staticmethod
     def qualityFactor(data: Datapoint) -> float:
