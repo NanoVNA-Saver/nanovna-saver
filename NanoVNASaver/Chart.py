@@ -2073,7 +2073,7 @@ class QualityFactorChart(FrequencyChart):
             minQ = 0
             maxQ = 0
             for d in self.data:
-                Q = RFTools.qualityFactor(d)
+                Q = d.q_factor()
                 if Q > maxQ:
                     maxQ = Q
             scale = 0
@@ -2146,7 +2146,7 @@ class QualityFactorChart(FrequencyChart):
         self.drawMarkers(qp)
 
     def getYPosition(self, d: Datapoint) -> int:
-        Q = RFTools.qualityFactor(d)
+        Q = d.q_factor()
         return self.topMargin + round((self.maxQ - Q) / self.span * self.chartHeight)
 
     def valueAtPosition(self, y) -> List[float]:

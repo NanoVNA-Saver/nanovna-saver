@@ -380,7 +380,7 @@ class Marker(QtCore.QObject):
             if vswr < 0:
                 vswr = "-"
             self.vswr_label.setText(str(vswr))
-            q = RFTools.qualityFactor(s11data[self.location])
+            q = s11data[self.location].q_factor()
             if q > 10000 or q < 0:
                 q_str = "\N{INFINITY}"
             elif q > 1000:

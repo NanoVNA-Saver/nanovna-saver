@@ -65,7 +65,7 @@ class Datapoint(NamedTuple):
     def to_impedance(self, ref_impedance: float = 50) -> complex:
         return ref_impedance * ((-self.z - 1) / (self.z - 1))
 
-    def to_q_factor(self, ref_impedance: float = 50) -> float:
+    def q_factor(self, ref_impedance: float = 50) -> float:
         imp = self.to_impedance(ref_impedance)
         if imp.real == 0.0:
             return -1
@@ -93,10 +93,6 @@ class RFTools:
     def normalize50(data: Datapoint):
         result = data.to_impedance()
         return result.real, result.imag
-
-    @staticmethod
-    def qualityFactor(data: Datapoint) -> float:
-        return data.to_q_factor()
 
     @staticmethod
     def capacitanceEquivalent(im50, freq) -> str:
