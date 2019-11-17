@@ -16,18 +16,18 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
 import cmath
-from numbers import Number
+from numbers import Number, Real
 from typing import List, NamedTuple
 
 from NanoVNASaver.SITools import Value, Format
 
 
-def clamp_int(value: int, imin: int, imax: int) -> int:
-    assert imin <= imax
-    if value < imin:
-        return imin
-    if value > imax:
-        return imax
+def clamp_value(value: Real, rmin: Real, rmax: Real) -> Real:
+    assert rmin <= rmax
+    if value < rmin:
+        return rmin
+    if value > rmax:
+        return rmax
     return value
 
 
@@ -52,13 +52,13 @@ class Datapoint(NamedTuple):
         if mag > 0:
             return 20 * math.log10(mag)
         return 0
-    
+
     @property
     def vswr(self) -> float:
         mag = abs(self.z)
         if mag == 1:
             return 1
-        elif mag > 1:
+        if mag > 1:
             return math.inf
         return (1 + mag) / (1 - mag)
 
@@ -125,8 +125,8 @@ class RFTools:
 
     @staticmethod
     def groupDelay(data: List[Datapoint], index: int) -> float:
-        idx0 = clamp_int(index - 1, 0, len(data) - 1)
-        idx1 = clamp_int(index + 1, 0, len(data) - 1)
+        idx0 = clamp_value(index - 1, 0, len(data) - 1)
+        idx1 = clamp_value(index + 1, 0, len(data) - 1)
         delta_angle = (data[idx1].phase - data[idx0].phase)
         if abs(delta_angle) > math.tau:
             if delta_angle > 0:
