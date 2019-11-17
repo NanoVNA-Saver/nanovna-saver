@@ -71,7 +71,7 @@ class Datapoint(NamedTuple):
             return -1
         return abs(imp.imag / imp.real)
 
-    def to_capacitive_equivalent(self, ref_impedance: float = 50) -> float:
+    def capacitive_equivalent(self, ref_impedance: float = 50) -> float:
         if self.freq == 0:
             return math.inf
         imp = self.impedance(ref_impedance)
@@ -79,7 +79,7 @@ class Datapoint(NamedTuple):
             return math.inf
         return -(1 / (self.freq * 2 * math.pi * imp.imag))
 
-    def to_inductive_equivalent(self, ref_impedance: float = 50) -> float:
+    def inductive_equivalent(self, ref_impedance: float = 50) -> float:
         if self.freq == 0:
             return math.inf
         imp = self.impedance(ref_impedance)
