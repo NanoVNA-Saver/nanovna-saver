@@ -32,7 +32,7 @@ from .Hardware import VNA, InvalidVNA, Version
 from .RFTools import RFTools, Datapoint
 from .Chart import Chart, PhaseChart, VSWRChart, PolarChart, SmithChart, LogMagChart, QualityFactorChart, TDRChart, \
     RealImaginaryChart, MagnitudeChart, MagnitudeZChart, CombinedLogMagChart, SParameterChart, PermeabilityChart, \
-    GroupDelayChart
+    GroupDelayChart, CapacitanceChart, InductanceChart
 from .Calibration import CalibrationWindow, Calibration
 from .Marker import Marker
 from .SweepWorker import SweepWorker
@@ -135,6 +135,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s11Phase = PhaseChart("S11 Phase")
         self.s21Phase = PhaseChart("S21 Phase")
         self.s11GroupDelay = GroupDelayChart("S11 Group Delay")
+        self.s11CapacitanceChart = CapacitanceChart("S11 Serial C")
+        self.s11InductanceChart = InductanceChart("S11 Serial L")
         self.s21GroupDelay = GroupDelayChart("S21 Group Delay", reflective=False)
         self.permabilityChart = PermeabilityChart("S11 R/\N{GREEK SMALL LETTER OMEGA} & X/\N{GREEK SMALL LETTER OMEGA}")
         self.s11VSWR = VSWRChart("S11 VSWR")
@@ -156,6 +158,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s11charts.append(self.s11RealImaginary)
         self.s11charts.append(self.s11QualityFactor)
         self.s11charts.append(self.s11SParameterChart)
+        self.s11charts.append(self.s11CapacitanceChart)
+        self.s11charts.append(self.s11InductanceChart)
         self.s11charts.append(self.permabilityChart)
 
         # List of all the S21 charts, for selecting
