@@ -143,7 +143,7 @@ class Chart(QtWidgets.QWidget):
         self.markerSize = size
         self.update()
 
-    def getActiveMarker(self, event: QtGui.QMouseEvent) -> Marker:
+    def getActiveMarker(self) -> Marker:
         if self.draggedMarker is not None:
             return self.draggedMarker
         for m in self.markers:
@@ -409,6 +409,7 @@ class FrequencyChart(Chart):
         self.action_popout = QtWidgets.QAction("Popout chart")
         self.action_popout.triggered.connect(lambda: self.popoutRequested.emit(self))
         self.menu.addAction(self.action_popout)
+        self.setFocusPolicy(QtCore.Qt.ClickFocus)
 
     def contextMenuEvent(self, event):
         self.action_set_fixed_start.setText("Start (" + Chart.shortenFrequency(self.minFrequency) + ")")
@@ -628,7 +629,7 @@ class FrequencyChart(Chart):
             return
         else:
             a0.accept()
-            m = self.getActiveMarker(a0)
+            m = self.getActiveMarker()
             if m is not None:
                 m.setFrequency(str(f))
                 m.frequencyInput.setText(str(f))
@@ -791,6 +792,16 @@ class FrequencyChart(Chart):
         new_chart.action_set_logarithmic_x.setChecked(self.logarithmicX)
         new_chart.action_set_linear_x.setChecked(not self.logarithmicX)
         return new_chart
+
+    def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
+        m = self.getActiveMarker()
+        if m is not None and a0.modifiers() == QtCore.Qt.NoModifier:
+            if a0.key() == QtCore.Qt.Key_Down or a0.key() == QtCore.Qt.Key_Left:
+                m.frequencyInput.keyPressEvent(QtGui.QKeyEvent(a0.type(), QtCore.Qt.Key_Down, a0.modifiers()))
+            elif a0.key() == QtCore.Qt.Key_Up or a0.key() == QtCore.Qt.Key_Right:
+                m.frequencyInput.keyPressEvent(QtGui.QKeyEvent(a0.type(), QtCore.Qt.Key_Up, a0.modifiers()))
+        else:
+            super().keyPressEvent(a0)
 
 
 class SquareChart(Chart):
@@ -1278,7 +1289,7 @@ class PolarChart(SquareChart):
             positions.append(math.sqrt((x - thisx)**2 + (y - thisy)**2))
 
         minimum_position = positions.index(min(positions))
-        m = self.getActiveMarker(a0)
+        m = self.getActiveMarker()
         if m is not None:
             m.setFrequency(str(round(target[minimum_position].freq)))
             m.frequencyInput.setText(str(round(target[minimum_position].freq)))
@@ -1424,7 +1435,7 @@ class SmithChart(SquareChart):
             positions.append(math.sqrt((x - thisx)**2 + (y - thisy)**2))
 
         minimum_position = positions.index(min(positions))
-        m = self.getActiveMarker(a0)
+        m = self.getActiveMarker()
         if m is not None:
             m.setFrequency(str(round(target[minimum_position].freq)))
             m.frequencyInput.setText(str(round(target[minimum_position].freq)))
