@@ -56,6 +56,8 @@ class Datapoint(NamedTuple):
         mag = abs(self.z)
         if mag == 1:
             return 1
+        elif mag > 1:
+            return math.inf
         return (1 + mag) / (1 - mag)
 
     def to_impedance(self, ref_impedance: float = 50) -> complex:
@@ -97,10 +99,6 @@ class RFTools:
     @staticmethod
     def qualityFactor(data: Datapoint) -> float:
         return data.to_q_factor()
-
-    @staticmethod
-    def calculateVSWR(data: Datapoint) -> float:
-        return data.as_vswr()
 
     @staticmethod
     def capacitanceEquivalent(im50, freq) -> str:

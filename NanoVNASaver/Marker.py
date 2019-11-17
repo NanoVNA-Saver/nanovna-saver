@@ -307,7 +307,7 @@ class Marker(QtCore.QObject):
     def updateLabels(self, s11data: List[Datapoint], s21data: List[Datapoint]):
         if self.location != -1:
             re50, im50 = RFTools.normalize50(s11data[self.location])
-            vswr = RFTools.calculateVSWR(s11data[self.location])
+            vswr = s11data[self.location].as_vswr()
             if re50 > 0:
                 rp = (re50 ** 2 + im50 ** 2) / re50
                 rp = round(rp, 3 - max(0, math.floor(math.log10(abs(rp)))))

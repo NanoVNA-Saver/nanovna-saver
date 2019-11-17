@@ -1054,7 +1054,7 @@ class VSWRChart(FrequencyChart):
             minVSWR = 1
             maxVSWR = 3
             for d in self.data:
-                vswr = RFTools.calculateVSWR(d)
+                vswr = d.as_vswr()
                 if vswr > maxVSWR:
                     maxVSWR = vswr
             maxVSWR = min(self.maxDisplayValue, math.ceil(maxVSWR))
@@ -1136,8 +1136,7 @@ class VSWRChart(FrequencyChart):
             return self.topMargin + round((self.maxVSWR - vswr) / self.span * self.chartHeight)
 
     def getYPosition(self, d: Datapoint) -> int:
-        vswr = RFTools.calculateVSWR(d)
-        return self.getYPositionFromValue(vswr)
+        return self.getYPositionFromValue(d.as_vswr())
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
