@@ -1609,9 +1609,9 @@ class LogMagChart(FrequencyChart):
 
     def logMag(self, p: Datapoint) -> float:
         if self.isInverted:
-            return -RFTools.gain(p)
+            return -p.gain
         else:
-            return RFTools.gain(p)
+            return p.gain
 
     def copy(self):
         new_chart: LogMagChart = super().copy()
@@ -1760,9 +1760,9 @@ class SParameterChart(FrequencyChart):
 
     def logMag(self, p: Datapoint) -> float:
         if self.isInverted:
-            return -RFTools.gain(p)
+            return -p.gain
         else:
-            return RFTools.gain(p)
+            return p.gain
 
     def copy(self):
         new_chart: LogMagChart = super().copy()
@@ -2019,9 +2019,9 @@ class CombinedLogMagChart(FrequencyChart):
 
     def logMag(self, p: Datapoint) -> float:
         if self.isInverted:
-            return -RFTools.gain(p)
+            return -p.gain
         else:
-            return RFTools.gain(p)
+            return p.gain
 
     def copy(self):
         new_chart: LogMagChart = super().copy()

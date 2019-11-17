@@ -95,10 +95,6 @@ class RFTools:
         return result.real, result.imag
 
     @staticmethod
-    def gain(data: Datapoint) -> float:
-        return data.gain
-
-    @staticmethod
     def qualityFactor(data: Datapoint) -> float:
         return data.to_q_factor()
 

@@ -770,7 +770,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             max_gain = -100
             max_gain_freq = -1
             for d in self.data21:
-                gain = RFTools.gain(d)
+                gain = d.gain
                 if gain > max_gain:
                     max_gain = gain
                     max_gain_freq = d.freq
