@@ -62,11 +62,11 @@ class Datapoint(NamedTuple):
             return math.inf
         return (1 + mag) / (1 - mag)
 
-    def to_impedance(self, ref_impedance: float = 50) -> complex:
+    def impedance(self, ref_impedance: float = 50) -> complex:
         return ref_impedance * ((-self.z - 1) / (self.z - 1))
 
     def q_factor(self, ref_impedance: float = 50) -> float:
-        imp = self.to_impedance(ref_impedance)
+        imp = self.impedance(ref_impedance)
         if imp.real == 0.0:
             return -1
         return abs(imp.imag / imp.real)
@@ -74,7 +74,7 @@ class Datapoint(NamedTuple):
     def to_capacitive_equivalent(self, ref_impedance: float = 50) -> float:
         if self.freq == 0:
             return math.inf
-        imp = self.to_impedance(ref_impedance)
+        imp = self.impedance(ref_impedance)
         if imp.imag == 0:
             return math.inf
         return -(1 / (self.freq * 2 * math.pi * imp.imag))
@@ -82,18 +82,13 @@ class Datapoint(NamedTuple):
     def to_inductive_equivalent(self, ref_impedance: float = 50) -> float:
         if self.freq == 0:
             return math.inf
-        imp = self.to_impedance(ref_impedance)
+        imp = self.impedance(ref_impedance)
         if imp.imag == 0:
             return 0
         return imp.imag * 1 / (self.freq * 2 * math.pi)
 
 
 class RFTools:
-    @staticmethod
-    def normalize50(data: Datapoint):
-        result = data.to_impedance()
-        return result.real, result.imag
-
     @staticmethod
     def capacitanceEquivalent(im50, freq) -> str:
         if im50 == 0 or freq == 0:

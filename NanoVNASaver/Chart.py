@@ -2580,7 +2580,8 @@ class RealImaginaryChart(FrequencyChart):
             max_real = 0
             max_imag = -1000
             for d in self.data:
-                re, im = RFTools.normalize50(d)
+                imp = d.impedance()
+                re, im = imp.real, imp.imag
                 if re > max_real:
                     max_real = re
                 if re < min_real:
@@ -2592,7 +2593,8 @@ class RealImaginaryChart(FrequencyChart):
             for d in self.reference:  # Also check min/max for the reference sweep
                 if d.freq < fstart or d.freq > fstop:
                     continue
-                re, im = RFTools.normalize50(d)
+                imp = d.impedance()
+                re, im = imp.real, imp.imag
                 if re > max_real:
                     max_real = re
                 if re < min_real:
@@ -2792,11 +2794,11 @@ class RealImaginaryChart(FrequencyChart):
                 self.drawMarker(x, y_im, qp, m.color, self.markers.index(m)+1)
 
     def getImYPosition(self, d: Datapoint) -> int:
-        _, im = RFTools.normalize50(d)
+        im = d.impedance().imag
         return self.topMargin + round((self.max_imag - im) / self.span_imag * self.chartHeight)
 
     def getReYPosition(self, d: Datapoint) -> int:
-        re, _ = RFTools.normalize50(d)
+        re = d.impedance().real
         return self.topMargin + round((self.max_real - re) / self.span_real * self.chartHeight)
 
     def valueAtPosition(self, y) -> List[float]:
@@ -3179,8 +3181,7 @@ class MagnitudeZChart(FrequencyChart):
 
     @staticmethod
     def magnitude(p: Datapoint) -> float:
-        re, im = RFTools.normalize50(p)
-        return math.sqrt(re**2 + im**2)
+        return abs(p.impedance())
 
     def copy(self):
         new_chart: LogMagChart = super().copy()
@@ -3282,7 +3283,8 @@ class PermeabilityChart(FrequencyChart):
             min_val = 1000
             max_val = -1000
             for d in self.data:
-                re, im = RFTools.normalize50(d)
+                imp = d.impedance()
+                re, im = imp.real, imp.imag
                 re = re * 10e6 / d.freq
                 im = im * 10e6 / d.freq
                 if re > max_val:
@@ -3296,7 +3298,8 @@ class PermeabilityChart(FrequencyChart):
             for d in self.reference:  # Also check min/max for the reference sweep
                 if d.freq < fstart or d.freq > fstop:
                     continue
-                re, im = RFTools.normalize50(d)
+                imp = d.impedance()
+                re, im = imp.real, imp.imag
                 re = re * 10e6 / d.freq
                 im = im * 10e6 / d.freq
                 if re > max_val:
@@ -3461,7 +3464,7 @@ class PermeabilityChart(FrequencyChart):
                 self.drawMarker(x, y_im, qp, m.color, self.markers.index(m)+1)
 
     def getImYPosition(self, d: Datapoint) -> int:
-        _, im = RFTools.normalize50(d)
+        im = d.impedance().imag
         im = im * 10e6 / d.freq
         if self.logarithmicY:
             min_val = self.max - self.span
@@ -3474,7 +3477,7 @@ class PermeabilityChart(FrequencyChart):
             return self.topMargin + round((self.max - im) / self.span * self.chartHeight)
 
     def getReYPosition(self, d: Datapoint) -> int:
-        re, _ = RFTools.normalize50(d)
+        re = d.impedance().real
         re = re * 10e6 / d.freq
         if self.logarithmicY:
             min_val = self.max - self.span

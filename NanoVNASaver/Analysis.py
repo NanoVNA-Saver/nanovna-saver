@@ -1007,14 +1007,12 @@ class SimplePeakSearchAnalysis(Analysis):
             suffix = " \N{OHM SIGN}"
             data = []
             for d in self.app.data:
-                re, im = RFTools.normalize50(d)
-                data.append(re)
+                data.append(d.impedance().real)
         elif self.rbtn_data_reactance.isChecked():
             suffix = " \N{OHM SIGN}"
             data = []
             for d in self.app.data:
-                re, im = RFTools.normalize50(d)
-                data.append(im)
+                data.append(d.impedance().imag)
         elif self.rbtn_data_s21_gain.isChecked():
             suffix = " dB"
             data = []
