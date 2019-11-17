@@ -51,8 +51,9 @@ class Datapoint(NamedTuple):
         if mag > 0:
             return 20 * math.log10(mag)
         return 0
-
-    def as_vswr(self) -> float:
+    
+    @property
+    def vswr(self) -> float:
         mag = abs(self.z)
         if mag == 1:
             return 1

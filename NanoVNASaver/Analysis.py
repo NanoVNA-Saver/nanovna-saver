@@ -1030,7 +1030,7 @@ class SimplePeakSearchAnalysis(Analysis):
             suffix = ""
             data = []
             for d in self.app.data:
-                data.append(d.as_vswr())
+                data.append(d.vswr)
         elif self.rbtn_data_resistance.isChecked():
             suffix = " \N{OHM SIGN}"
             data = []
@@ -1134,7 +1134,7 @@ class PeakSearchAnalysis(Analysis):
         if self.rbtn_data_vswr.isChecked():
             data = []
             for d in self.app.data:
-                data.append(d.as_vswr())
+                data.append(d.vswr)
         elif self.rbtn_data_s21_gain.isChecked():
             data = []
             for d in self.app.data21:
@@ -1225,7 +1225,7 @@ class VSWRAnalysis(Analysis):
         max_dips_shown = 3
         data = []
         for d in self.app.data:
-            data.append(d.as_vswr())
+            data.append(d.vswr)
         # min_idx = np.argmin(data)
         #
         # logger.debug("Minimum at %d", min_idx)

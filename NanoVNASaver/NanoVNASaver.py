@@ -750,7 +750,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             min_vswr = 100
             min_vswr_freq = -1
             for d in self.data:
-                vswr = d.as_vswr()
+                vswr = d.vswr
                 if min_vswr > vswr > 0:
                     min_vswr = vswr
                     min_vswr_freq = d.freq
