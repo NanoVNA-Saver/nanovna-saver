@@ -306,8 +306,9 @@ class Marker(QtCore.QObject):
 
     def updateLabels(self, s11data: List[Datapoint], s21data: List[Datapoint]):
         if self.location != -1:
-            re50, im50 = RFTools.normalize50(s11data[self.location])
-            vswr = RFTools.calculateVSWR(s11data[self.location])
+            imp = s11data[self.location].impedance()
+            re50, im50 = imp.real, imp.imag
+            vswr = s11data[self.location].vswr
             if re50 > 0:
                 rp = (re50 ** 2 + im50 ** 2) / re50
                 rp = round(rp, 3 - max(0, math.floor(math.log10(abs(rp)))))
@@ -362,9 +363,9 @@ class Marker(QtCore.QObject):
             self.parallel_r_label.setText(rpstr + " \N{OHM SIGN}")
             self.parallel_x_label.setText(xpstr)
             if self.returnloss_is_positive:
-                returnloss = -round(RFTools.gain(s11data[self.location]), 3)
+                returnloss = -round(s11data[self.location].gain, 3)
             else:
-                returnloss = round(RFTools.gain(s11data[self.location]), 3)
+                returnloss = round(s11data[self.location].gain, 3)
             self.returnloss_label.setText(str(returnloss) + " dB")
             capacitance = RFTools.capacitanceEquivalent(im50, s11data[self.location].freq)
             inductance = RFTools.inductanceEquivalent(im50, s11data[self.location].freq)
@@ -380,7 +381,7 @@ class Marker(QtCore.QObject):
             if vswr < 0:
                 vswr = "-"
             self.vswr_label.setText(str(vswr))
-            q = RFTools.qualityFactor(s11data[self.location])
+            q = s11data[self.location].q_factor()
             if q > 10000 or q < 0:
                 q_str = "\N{INFINITY}"
             elif q > 1000:
@@ -398,7 +399,7 @@ class Marker(QtCore.QObject):
             self.s11_group_delay_label.setText(str(SITools.Value(RFTools.groupDelay(s11data, self.location), "s", fmt)))
 
             if len(s21data) == len(s11data):
-                self.gain_label.setText(str(round(RFTools.gain(s21data[self.location]), 3)) + " dB")
+                self.gain_label.setText(str(round(s21data[self.location].gain, 3)) + " dB")
                 self.s21_phase_label.setText(
                     str(round(math.degrees(s21data[self.location].phase), 2)) + "\N{DEGREE SIGN}")
                 self.s21_group_delay_label.setText(str(SITools.Value(RFTools.groupDelay(s21data, self.location) / 2,

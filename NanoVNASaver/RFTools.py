@@ -16,18 +16,18 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
 import cmath
-from numbers import Number
+from numbers import Number, Real
 from typing import List, NamedTuple
 
 from NanoVNASaver.SITools import Value, Format
 
 
-def clamp_int(value: int, imin: int, imax: int) -> int:
-    assert imin <= imax
-    if value < imin:
-        return imin
-    if value > imax:
-        return imax
+def clamp_value(value: Real, rmin: Real, rmax: Real) -> Real:
+    assert rmin <= rmax
+    if value < rmin:
+        return rmin
+    if value > rmax:
+        return rmax
     return value
 
 
@@ -46,62 +46,49 @@ class Datapoint(NamedTuple):
         """ return datapoints phase value """
         return cmath.phase(self.z)
 
-    def as_gain(self) -> float:
+    @property
+    def gain(self) -> float:
         mag = abs(self.z)
         if mag > 0:
             return 20 * math.log10(mag)
         return 0
 
-    def as_vswr(self) -> float:
+    @property
+    def vswr(self) -> float:
         mag = abs(self.z)
         if mag == 1:
             return 1
+        if mag > 1:
+            return math.inf
         return (1 + mag) / (1 - mag)
 
-    def to_impedance(self, ref_impedance: float = 50) -> complex:
+    def impedance(self, ref_impedance: float = 50) -> complex:
         return ref_impedance * ((-self.z - 1) / (self.z - 1))
 
-    def to_q_factor(self, ref_impedance: float = 50) -> float:
-        imp = self.to_impedance(ref_impedance)
+    def q_factor(self, ref_impedance: float = 50) -> float:
+        imp = self.impedance(ref_impedance)
         if imp.real == 0.0:
             return -1
         return abs(imp.imag / imp.real)
 
-    def to_capacitive_equivalent(self, ref_impedance: float = 50) -> float:
+    def capacitive_equivalent(self, ref_impedance: float = 50) -> float:
         if self.freq == 0:
             return math.inf
-        imp = self.to_impedance(ref_impedance)
+        imp = self.impedance(ref_impedance)
         if imp.imag == 0:
             return math.inf
         return -(1 / (self.freq * 2 * math.pi * imp.imag))
 
-    def to_inductive_equivalent(self, ref_impedance: float = 50) -> float:
+    def inductive_equivalent(self, ref_impedance: float = 50) -> float:
         if self.freq == 0:
             return math.inf
-        imp = self.to_impedance(ref_impedance)
+        imp = self.impedance(ref_impedance)
         if imp.imag == 0:
             return 0
         return imp.imag * 1 / (self.freq * 2 * math.pi)
 
 
 class RFTools:
-    @staticmethod
-    def normalize50(data: Datapoint):
-        result = data.to_impedance()
-        return result.real, result.imag
-
-    @staticmethod
-    def gain(data: Datapoint) -> float:
-        return data.as_gain()
-
-    @staticmethod
-    def qualityFactor(data: Datapoint) -> float:
-        return data.to_q_factor()
-
-    @staticmethod
-    def calculateVSWR(data: Datapoint) -> float:
-        return data.as_vswr()
-
     @staticmethod
     def capacitanceEquivalent(im50, freq) -> str:
         if im50 == 0 or freq == 0:
@@ -138,8 +125,8 @@ class RFTools:
 
     @staticmethod
     def groupDelay(data: List[Datapoint], index: int) -> float:
-        idx0 = clamp_int(index - 1, 0, len(data) - 1)
-        idx1 = clamp_int(index + 1, 0, len(data) - 1)
+        idx0 = clamp_value(index - 1, 0, len(data) - 1)
+        idx1 = clamp_value(index + 1, 0, len(data) - 1)
         delta_angle = (data[idx1].phase - data[idx0].phase)
         if abs(delta_angle) > math.tau:
             if delta_angle > 0:

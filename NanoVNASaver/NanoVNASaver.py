@@ -754,7 +754,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             min_vswr = 100
             min_vswr_freq = -1
             for d in self.data:
-                vswr = RFTools.calculateVSWR(d)
+                vswr = d.vswr
                 if min_vswr > vswr > 0:
                     min_vswr = vswr
                     min_vswr_freq = d.freq
@@ -774,7 +774,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             max_gain = -100
             max_gain_freq = -1
             for d in self.data21:
-                gain = RFTools.gain(d)
+                gain = d.gain
                 if gain > max_gain:
                     max_gain = gain
                     max_gain_freq = d.freq

@@ -1065,7 +1065,7 @@ class VSWRChart(FrequencyChart):
             minVSWR = 1
             maxVSWR = 3
             for d in self.data:
-                vswr = RFTools.calculateVSWR(d)
+                vswr = d.vswr
                 if vswr > maxVSWR:
                     maxVSWR = vswr
             maxVSWR = min(self.maxDisplayValue, math.ceil(maxVSWR))
@@ -1147,8 +1147,7 @@ class VSWRChart(FrequencyChart):
             return self.topMargin + round((self.maxVSWR - vswr) / self.span * self.chartHeight)
 
     def getYPosition(self, d: Datapoint) -> int:
-        vswr = RFTools.calculateVSWR(d)
-        return self.getYPositionFromValue(vswr)
+        return self.getYPositionFromValue(d.vswr)
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
@@ -1621,9 +1620,9 @@ class LogMagChart(FrequencyChart):
 
     def logMag(self, p: Datapoint) -> float:
         if self.isInverted:
-            return -RFTools.gain(p)
+            return -p.gain
         else:
-            return RFTools.gain(p)
+            return p.gain
 
     def copy(self):
         new_chart: LogMagChart = super().copy()
@@ -1772,9 +1771,9 @@ class SParameterChart(FrequencyChart):
 
     def logMag(self, p: Datapoint) -> float:
         if self.isInverted:
-            return -RFTools.gain(p)
+            return -p.gain
         else:
-            return RFTools.gain(p)
+            return p.gain
 
     def copy(self):
         new_chart: LogMagChart = super().copy()
@@ -2031,9 +2030,9 @@ class CombinedLogMagChart(FrequencyChart):
 
     def logMag(self, p: Datapoint) -> float:
         if self.isInverted:
-            return -RFTools.gain(p)
+            return -p.gain
         else:
-            return RFTools.gain(p)
+            return p.gain
 
     def copy(self):
         new_chart: LogMagChart = super().copy()
@@ -2085,7 +2084,7 @@ class QualityFactorChart(FrequencyChart):
             minQ = 0
             maxQ = 0
             for d in self.data:
-                Q = RFTools.qualityFactor(d)
+                Q = d.q_factor()
                 if Q > maxQ:
                     maxQ = Q
             scale = 0
@@ -2158,7 +2157,7 @@ class QualityFactorChart(FrequencyChart):
         self.drawMarkers(qp)
 
     def getYPosition(self, d: Datapoint) -> int:
-        Q = RFTools.qualityFactor(d)
+        Q = d.q_factor()
         return self.topMargin + round((self.maxQ - Q) / self.span * self.chartHeight)
 
     def valueAtPosition(self, y) -> List[float]:
@@ -2592,7 +2591,8 @@ class RealImaginaryChart(FrequencyChart):
             max_real = 0
             max_imag = -1000
             for d in self.data:
-                re, im = RFTools.normalize50(d)
+                imp = d.impedance()
+                re, im = imp.real, imp.imag
                 if re > max_real:
                     max_real = re
                 if re < min_real:
@@ -2604,7 +2604,8 @@ class RealImaginaryChart(FrequencyChart):
             for d in self.reference:  # Also check min/max for the reference sweep
                 if d.freq < fstart or d.freq > fstop:
                     continue
-                re, im = RFTools.normalize50(d)
+                imp = d.impedance()
+                re, im = imp.real, imp.imag
                 if re > max_real:
                     max_real = re
                 if re < min_real:
@@ -2804,11 +2805,11 @@ class RealImaginaryChart(FrequencyChart):
                 self.drawMarker(x, y_im, qp, m.color, self.markers.index(m)+1)
 
     def getImYPosition(self, d: Datapoint) -> int:
-        _, im = RFTools.normalize50(d)
+        im = d.impedance().imag
         return self.topMargin + round((self.max_imag - im) / self.span_imag * self.chartHeight)
 
     def getReYPosition(self, d: Datapoint) -> int:
-        re, _ = RFTools.normalize50(d)
+        re = d.impedance().real
         return self.topMargin + round((self.max_real - re) / self.span_real * self.chartHeight)
 
     def valueAtPosition(self, y) -> List[float]:
@@ -3191,8 +3192,7 @@ class MagnitudeZChart(FrequencyChart):
 
     @staticmethod
     def magnitude(p: Datapoint) -> float:
-        re, im = RFTools.normalize50(p)
-        return math.sqrt(re**2 + im**2)
+        return abs(p.impedance())
 
     def copy(self):
         new_chart: LogMagChart = super().copy()
@@ -3294,7 +3294,8 @@ class PermeabilityChart(FrequencyChart):
             min_val = 1000
             max_val = -1000
             for d in self.data:
-                re, im = RFTools.normalize50(d)
+                imp = d.impedance()
+                re, im = imp.real, imp.imag
                 re = re * 10e6 / d.freq
                 im = im * 10e6 / d.freq
                 if re > max_val:
@@ -3308,7 +3309,8 @@ class PermeabilityChart(FrequencyChart):
             for d in self.reference:  # Also check min/max for the reference sweep
                 if d.freq < fstart or d.freq > fstop:
                     continue
-                re, im = RFTools.normalize50(d)
+                imp = d.impedance()
+                re, im = imp.real, imp.imag
                 re = re * 10e6 / d.freq
                 im = im * 10e6 / d.freq
                 if re > max_val:
@@ -3473,7 +3475,7 @@ class PermeabilityChart(FrequencyChart):
                 self.drawMarker(x, y_im, qp, m.color, self.markers.index(m)+1)
 
     def getImYPosition(self, d: Datapoint) -> int:
-        _, im = RFTools.normalize50(d)
+        im = d.impedance().imag
         im = im * 10e6 / d.freq
         if self.logarithmicY:
             min_val = self.max - self.span
@@ -3486,7 +3488,7 @@ class PermeabilityChart(FrequencyChart):
             return self.topMargin + round((self.max - im) / self.span * self.chartHeight)
 
     def getReYPosition(self, d: Datapoint) -> int:
-        re, _ = RFTools.normalize50(d)
+        re = d.impedance().real
         re = re * 10e6 / d.freq
         if self.logarithmicY:
             min_val = self.max - self.span
