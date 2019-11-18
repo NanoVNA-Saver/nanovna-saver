@@ -126,7 +126,7 @@ class RFTools:
 
     @staticmethod
     def formatSweepFrequency(freq: Number) -> str:
-        return str(Value(freq, "Hz", Format(max_nr_digits=5)))
+        return str(Value(freq, "Hz", Format(max_nr_digits=9, allow_strip=True)))
 
     @staticmethod
     def parseFrequency(freq: str) -> int:
