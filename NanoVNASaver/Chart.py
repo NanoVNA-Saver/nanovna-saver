@@ -23,7 +23,7 @@ from scipy import signal
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSignal
 
-from NanoVNASaver.RFTools import Datapoint, RFTools
+from NanoVNASaver.RFTools import Datapoint, RFTools, clamp_value
 from NanoVNASaver.SITools import Format, Value
 from .Marker import Marker
 logger = logging.getLogger(__name__)
@@ -1062,18 +1062,11 @@ class VSWRChart(FrequencyChart):
             minVSWR = max(1, self.minDisplayValue)
             maxVSWR = self.maxDisplayValue
         else:
-            minVSWR = 1
-            maxVSWR = 3
-            for d in self.data:
-                vswr = d.vswr
-                if vswr > maxVSWR:
-                    maxVSWR = vswr
-            maxVSWR = min(self.maxDisplayValue, math.ceil(maxVSWR))
+            minVSWR = 1.0
+            maxVSWR = clamp_value(max([d.vswr for d in self.data]),
+                                  minVSWR + 0.01, self.maxDisplayValue)
         self.maxVSWR = maxVSWR
-        span = maxVSWR-minVSWR
-        if span == 0:
-            span = 0.01
-        self.span = span
+        self.span = maxVSWR-minVSWR
 
         target_ticks = math.floor(self.chartHeight / 60)
 
@@ -1136,6 +1129,7 @@ class VSWRChart(FrequencyChart):
         self.drawMarkers(qp)
 
     def getYPositionFromValue(self, vswr) -> int:
+        vswr = clamp_value(vswr, 1.0, self.maxVSWR)
         if self.logarithmicY:
             min_val = self.maxVSWR - self.span
             if self.maxVSWR > 0 and min_val > 0 and vswr > 0:
@@ -3647,8 +3641,14 @@ class GroupDelayChart(FrequencyChart):
             min_delay = self.minDisplayValue
             max_delay = self.maxDisplayValue
         elif self.data:
-            min_delay = math.floor(np.min(self.groupDelay))
-            max_delay = math.ceil(np.max(self.groupDelay))
+            try:
+                min_delay = math.floor(min(self.groupDelay))
+            except OverflowError:
+                min_delay = 0
+            try:
+                max_delay = math.ceil(max(self.groupDelay))
+            except OverflowError:
+                max_delay = 0
         elif self.reference:
             min_delay = math.floor(np.min(self.groupDelayReference))
             max_delay = math.ceil(np.max(self.groupDelayReference))
