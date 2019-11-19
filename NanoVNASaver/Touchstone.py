@@ -16,6 +16,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 import cmath
+import io
 from NanoVNASaver.RFTools import Datapoint
 
 logger = logging.getLogger(__name__)
@@ -61,30 +62,73 @@ class Options:
 
 class Touchstone:
 
-    def __init__(self, filename):
+    def __init__(self, filename: str):
         self.filename = filename
-        self.s11data = []
-        self.s21data = []
-        self.s12data = []
-        self.s22data = []
+        self.sdata = [[], [], [], []]  # at max 4 data pairs
         self.comments = []
         self.opts = Options()
 
+    @property
+    def s11data(self) -> list:
+        return self.sdata[0]
+
+    @s11data.setter
+    def s11data(self, data: list):
+        self.sdata[0] = data[:]
+
+    @property
+    def s21data(self) -> list:
+        return self.sdata[1]
+
+    @s21data.setter
+    def s21data(self, data: list):
+        self.sdata[1] = data[:]
+
+    @property
+    def s12data(self) -> list:
+        return self.sdata[2]
+
+    @s12data.setter
+    def s12data(self, data: list):
+        self.sdata[2] = data[:]
+
+    @property
+    def s22data(self) -> list:
+        return self.sdata[3]
+
+    @s22data.setter
+    def s22data(self, data: list):
+        self.sdata[3] = data[:]
+
+    def _parse_comments(self, fp) -> str:
+        for line in fp:
+            line = line.strip()
+            if line.startswith("!"):
+                logger.info(line)
+                self.comments.append(line)
+            else:
+                return line
+
     def load(self):
         logger.info("Attempting to open file %s", self.filename)
-        sdata = [[], [], [], []]  # at max 4 data pairs
+        try:
+            with open(self.filename) as infile:
+                self.loads(infile.read())
+        except TypeError as e:
+            logger.exception("Failed to parse %s: %s", self.filename, e)
+        except IOError as e:
+            logger.exception("Failed to open %s: %s", self.filename, e)
 
-        with open(self.filename, "r") as file:
-            for line in file:
-                line = line.strip()
-                if line.startswith("!"):
-                    logger.info(line)
-                    self.comments.append(line)
-                    continue
-                break
-            self.opts.parse(line)
+    def loads(self, s: str):
+        """Parse touchstone 1.1 string input
+           appends to existing sdata if Touchstone object exists
+        """
+        with io.StringIO(s) as file:
+            opts_line = self._parse_comments(file)
+            self.opts.parse(opts_line)
 
-            prev_freq = prev_len = 0
+            prev_freq = 0.0
+            prev_len = 0
             for line in file:
                 # ignore empty lines (even if not specified)
                 if not line.strip():
@@ -108,7 +152,7 @@ class Touchstone:
                 elif data_len != prev_len:
                     raise TypeError("Inconsistent number of pairs: " + line)
 
-                data_list = iter(sdata)
+                data_list = iter(self.sdata)
                 vals = iter(data)
                 for v in vals:
                     if self.opts.format == "ri":
@@ -117,8 +161,6 @@ class Touchstone:
                     if self.opts.format == "ma":
                         z = cmath.polar(float(v), float(next(vals)))
                         next(data_list).append(Datapoint(freq, z.real, z.imag))
-
-                self.s11data, self.s21data, self.s12data, self.s22data = sdata[:]
 
     def setFilename(self, filename):
         self.filename = filename
