@@ -94,33 +94,17 @@ class Touchstone:
     def s11data(self) -> list:
         return self.sdata[0]
 
-    @s11data.setter
-    def s11data(self, data: list):
-        self.sdata[0] = data[:]
-
     @property
     def s21data(self) -> list:
         return self.sdata[1]
-
-    @s21data.setter
-    def s21data(self, data: list):
-        self.sdata[1] = data[:]
 
     @property
     def s12data(self) -> list:
         return self.sdata[2]
 
-    @s12data.setter
-    def s12data(self, data: list):
-        self.sdata[2] = data[:]
-
     @property
     def s22data(self) -> list:
         return self.sdata[3]
-
-    @s22data.setter
-    def s22data(self, data: list):
-        self.sdata[3] = data[:]
 
     def _parse_comments(self, fp) -> str:
         for line in fp:
