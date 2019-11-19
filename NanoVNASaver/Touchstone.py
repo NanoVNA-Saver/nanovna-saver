@@ -64,12 +64,12 @@ class Options:
     def parse(self, line: str):
         if not line.startswith("#"):
             raise TypeError("Not an option line: " + line)
-        pfact = pparam = pformat = presist = False
+        punit = pparam = pformat = presist = False
         params = iter(line[1:].lower().split())
         for p in params:
-            if p in Options.VALID_UNITS and not pfact:
-                self.factor = Options.UNIT_TO_FACTOR[p]
-                pfact = True
+            if p in Options.VALID_UNITS and not punit:
+                self.unit = p
+                punit = True
             elif p in Options.VALID_PARAMETERS and not pparam:
                 self.parameter = p
                 pparam = True
