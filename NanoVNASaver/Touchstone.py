@@ -15,6 +15,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
+import math
 import cmath
 import io
 from NanoVNASaver.RFTools import Datapoint
@@ -109,6 +110,20 @@ class Touchstone:
             else:
                 return line
 
+    def _append_line_data(self, freq: float, data: list):
+        data_list = iter(self.sdata)
+        vals = iter(data)
+        for v in vals:
+            if self.opts.format == "ri":
+                next(data_list).append(
+                    Datapoint(freq, float(v), float(next(vals))))
+            if self.opts.format == "ma":
+                z = cmath.polar(float(v), float(next(vals)))
+                next(data_list).append(Datapoint(freq, z.real, z.imag))
+            if self.opts.format == "db":
+                z = cmath.polar(math.exp(float(v) / 20), float(next(vals)))
+                next(data_list).append(Datapoint(freq, z.real, z.imag))
+
     def load(self):
         logger.info("Attempting to open file %s", self.filename)
         try:
@@ -147,20 +162,12 @@ class Touchstone:
 
                 if prev_len == 0:
                     prev_len = data_len
-                if data_len % 2:
-                    raise TypeError("Data values aren't pairs: " + line)
+                    if data_len % 2:
+                        raise TypeError("Data values aren't pairs: " + line)
                 elif data_len != prev_len:
                     raise TypeError("Inconsistent number of pairs: " + line)
 
-                data_list = iter(self.sdata)
-                vals = iter(data)
-                for v in vals:
-                    if self.opts.format == "ri":
-                        next(data_list).append(
-                            Datapoint(freq, float(v), float(next(vals))))
-                    if self.opts.format == "ma":
-                        z = cmath.polar(float(v), float(next(vals)))
-                        next(data_list).append(Datapoint(freq, z.real, z.imag))
+                self._append_line_data(freq, data)
 
     def setFilename(self, filename):
         self.filename = filename
