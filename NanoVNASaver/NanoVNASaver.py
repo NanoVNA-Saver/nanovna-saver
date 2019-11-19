@@ -906,7 +906,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             t = Touchstone(filename)
             t.load()
             # shouldn't modify read file. even destroys it if read fails 
-            # self.saveData(t.s11data, t.s21data, filename)
+            self.saveData(t.s11data, t.s21data, filename)
             self.dataUpdated()
 
     def sizeHint(self) -> QtCore.QSize:
