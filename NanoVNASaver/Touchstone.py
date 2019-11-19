@@ -32,13 +32,34 @@ class Options:
         "khz": 10**3,
         "hz": 10**0,
     }
+    VALID_UNITS = UNIT_TO_FACTOR.keys()
+    VALID_PARAMETERS = "syzgh"
+    VALID_FORMATS = ("ma", "db", "ri")
 
-    def __init__(self):
+    def __init__(self,
+                 unit: str = "GHZ",
+                 parameter: str = "S",
+                 t_format: str = "ma",
+                 resistance: int = 50):
         # set defaults
-        self.factor = Options.UNIT_TO_FACTOR["ghz"]
-        self.parameter = "s"
-        self.format = "ma"
-        self.resistance = 50
+        assert unit.lower() in Options.VALID_UNITS
+        assert parameter.lower() in Options.VALID_PARAMETERS
+        assert t_format.lower() in Options.VALID_FORMATS
+        assert resistance > 0
+        self.unit = unit.lower()
+        self.parameter = parameter.lower()
+        self.format = t_format.lower()
+        self.resistance = resistance
+
+    @property
+    def factor(self):
+        return Options.UNIT_TO_FACTOR[self.unit]
+
+    def __str__(self):
+        return (
+            f"# {self.unit} {self.parameter}"
+            f" {self.format} r {self.resistance}"
+        ).upper()
 
     def parse(self, line):
         if not line.startswith("#"):
@@ -46,13 +67,13 @@ class Options:
         pfact = pparam = pformat = presist = False
         params = iter(line[1:].lower().split())
         for p in params:
-            if p in ("ghz", "mhz", "khz", "hz") and not pfact:
+            if p in Options.VALID_UNITS and not pfact:
                 self.factor = Options.UNIT_TO_FACTOR[p]
                 pfact = True
-            elif p in "syzgh" and not pparam:
+            elif p in Options.VALID_PARAMETERS and not pparam:
                 self.parameter = p
                 pparam = True
-            elif p in ("ma", "db", "ri") and not pformat:
+            elif p in Options.VALID_FORMATS and not pformat:
                 self.format = p
                 pformat = True
             elif p == "r" and not presist:
@@ -107,8 +128,8 @@ class Touchstone:
             if line.startswith("!"):
                 logger.info(line)
                 self.comments.append(line)
-            else:
-                return line
+                continue
+            return line
 
     def _append_line_data(self, freq: float, data: list):
         data_list = iter(self.sdata)
