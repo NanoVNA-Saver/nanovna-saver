@@ -28,6 +28,7 @@ class Format(NamedTuple):
     assume_infinity: bool = True
     min_offset: int = -8
     max_offset: int = 8
+    allow_strip: bool = False
     parse_sloppy_unit: bool = False
     parse_sloppy_kilo: bool = False
 
@@ -73,6 +74,9 @@ class Value():
         if float(result) == 0.0:
             offset = 0
 
+        if self.fmt.allow_strip and "." in result:
+            result = result.rstrip("0").rstrip(".")
+            
         return result + fmt.space_str + PREFIXES[offset + 8] + self._unit
 
     def parse(self, value: str) -> float:

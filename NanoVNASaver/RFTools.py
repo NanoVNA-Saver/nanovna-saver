@@ -1,4 +1,5 @@
-#  NanoVNASaver - a python program to view and export Touchstone data from a NanoVNA
+#  NanoVNASaver
+#  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019.  Rune B. Broberg
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -13,60 +14,81 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import collections
 import math
-from numbers import Number
-from typing import List
+import cmath
+from numbers import Number, Real
+from typing import List, NamedTuple
 
 from NanoVNASaver.SITools import Value, Format
 
-PREFIXES = ("", "k", "M", "G", "T")
-Datapoint = collections.namedtuple('Datapoint', 'freq re im')
+
+def clamp_value(value: Real, rmin: Real, rmax: Real) -> Real:
+    assert rmin <= rmax
+    if value < rmin:
+        return rmin
+    if value > rmax:
+        return rmax
+    return value
 
 
-class RFTools:
-    @staticmethod
-    def normalize50(data: Datapoint):
-        re = data.re
-        im = data.im
-        re50 = 50 * (1 - re * re - im * im) / (1 + re * re + im * im - 2 * re)
-        im50 = 50 * (2 * im) / (1 + re * re + im * im - 2 * re)
-        return re50, im50
+class Datapoint(NamedTuple):
+    freq: int
+    re: float
+    im: float
 
-    @staticmethod
-    def gain(data: Datapoint) -> float:
-        # re50, im50 = normalize50(data)
-        # Calculate the gain / reflection coefficient
-        # mag = math.sqrt((re50 - 50) * (re50 - 50) + im50 * im50) / \
-        #       math.sqrt((re50 + 50) * (re50 + 50) + im50 * im50)
-        #
-        #  Magnitude = |Gamma|:
-        mag = math.sqrt(data.re**2 + data.im**2)
+    @property
+    def z(self):
+        """ return datapoint impedance as complex number """
+        return complex(self.re, self.im)
+
+    @property
+    def phase(self):
+        """ return datapoints phase value """
+        return cmath.phase(self.z)
+
+    @property
+    def gain(self) -> float:
+        mag = abs(self.z)
         if mag > 0:
             return 20 * math.log10(mag)
         return 0
 
-    @staticmethod
-    def qualityFactor(data: Datapoint):
-        re50, im50 = RFTools.normalize50(data)
-        if re50 != 0:
-            Q = abs(im50 / re50)
-        else:
-            Q = -1
-        return Q
+    @property
+    def vswr(self) -> float:
+        mag = abs(self.z)
+        if mag == 1:
+            return 1
+        if mag > 1:
+            return math.inf
+        return (1 + mag) / (1 - mag)
 
-    @staticmethod
-    def calculateVSWR(data: Datapoint):
-        # re50, im50 = normalize50(data)
-        try:
-            # mag = math.sqrt((re50 - 50) * (re50 - 50) + im50 * im50) / \
-            # math.sqrt((re50 + 50) * (re50 + 50) + im50 * im50)
-            mag = math.sqrt(data.re**2 + data.im**2)
-            vswr = (1 + mag) / (1 - mag)
-        except ZeroDivisionError:
-            vswr = 1
-        return vswr
+    def impedance(self, ref_impedance: float = 50) -> complex:
+        return ref_impedance * ((-self.z - 1) / (self.z - 1))
 
+    def q_factor(self, ref_impedance: float = 50) -> float:
+        imp = self.impedance(ref_impedance)
+        if imp.real == 0.0:
+            return -1
+        return abs(imp.imag / imp.real)
+
+    def capacitive_equivalent(self, ref_impedance: float = 50) -> float:
+        if self.freq == 0:
+            return math.inf
+        imp = self.impedance(ref_impedance)
+        if imp.imag == 0:
+            return math.inf
+        return -(1 / (self.freq * 2 * math.pi * imp.imag))
+
+    def inductive_equivalent(self, ref_impedance: float = 50) -> float:
+        if self.freq == 0:
+            return math.inf
+        imp = self.impedance(ref_impedance)
+        if imp.imag == 0:
+            return 0
+        return imp.imag * 1 / (self.freq * 2 * math.pi)
+
+
+class RFTools:
     @staticmethod
     def capacitanceEquivalent(im50, freq) -> str:
         if im50 == 0 or freq == 0:
@@ -91,7 +113,7 @@ class RFTools:
 
     @staticmethod
     def formatSweepFrequency(freq: Number) -> str:
-        return str(Value(freq, "Hz", Format(max_nr_digits=5)))
+        return str(Value(freq, "Hz", Format(max_nr_digits=9, allow_strip=True)))
 
     @staticmethod
     def parseFrequency(freq: str) -> int:
@@ -102,39 +124,14 @@ class RFTools:
             return -1
 
     @staticmethod
-    def phaseAngle(data: Datapoint) -> float:
-        re = data.re
-        im = data.im
-        return math.degrees(math.atan2(im, re))
-
-    @staticmethod
-    def phaseAngleRadians(data: Datapoint) -> float:
-        re = data.re
-        im = data.im
-        return math.atan2(im, re)
-
-    @staticmethod
-    def clamp_int(value: int, min: int, max: int) -> int:
-        assert min <= max
-        if value < min:
-            return min
-        if value > max:
-            return max
-        return value
-
-    @staticmethod
     def groupDelay(data: List[Datapoint], index: int) -> float:
-        index0 = RFTools.clamp_int(index - 1, 0, len(data) - 1)
-        index1 = RFTools.clamp_int(index + 1, 0, len(data) - 1)
-        angle0 = RFTools.phaseAngleRadians(data[index0])
-        angle1 = RFTools.phaseAngleRadians(data[index1])
-        freq0 = data[index0].freq
-        freq1 = data[index1].freq
-        delta_angle = (angle1 - angle0)
+        idx0 = clamp_value(index - 1, 0, len(data) - 1)
+        idx1 = clamp_value(index + 1, 0, len(data) - 1)
+        delta_angle = (data[idx1].phase - data[idx0].phase)
         if abs(delta_angle) > math.tau:
             if delta_angle > 0:
                 delta_angle = delta_angle % math.tau
             else:
                 delta_angle = -1 * (delta_angle % math.tau)
-        val = -delta_angle / math.tau / (freq1 - freq0)
+        val = -delta_angle / math.tau / (data[idx1].freq - data[idx0].freq)
         return val
