@@ -1,4 +1,5 @@
-#  NanoVNASaver - a python program to view and export Touchstone data from a NanoVNA
+#  NanoVNASaver
+#  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019.  Rune B. Broberg
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -13,132 +14,167 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import collections
 import logging
 import math
-import re
-from typing import List
-from .RFTools import Datapoint
+import cmath
+import io
+from NanoVNASaver.RFTools import Datapoint
 
 logger = logging.getLogger(__name__)
 
 
-class Touchstone:
-    s11data: List[Datapoint] = []
-    s21data: List[Datapoint] = []
-    comments = []
-    filename = ""
+class Options:
+    # Fun fact: In Touchstone 1.1 spec all params are optional unordered.
+    # Just the line has to start with "#"
+    UNIT_TO_FACTOR = {
+        "ghz": 10**9,
+        "mhz": 10**6,
+        "khz": 10**3,
+        "hz": 10**0,
+    }
+    VALID_UNITS = UNIT_TO_FACTOR.keys()
+    VALID_PARAMETERS = "syzgh"
+    VALID_FORMATS = ("ma", "db", "ri")
 
-    def __init__(self, filename):
+    def __init__(self,
+                 unit: str = "GHZ",
+                 parameter: str = "S",
+                 t_format: str = "ma",
+                 resistance: int = 50):
+        # set defaults
+        assert unit.lower() in Options.VALID_UNITS
+        assert parameter.lower() in Options.VALID_PARAMETERS
+        assert t_format.lower() in Options.VALID_FORMATS
+        assert resistance > 0
+        self.unit = unit.lower()
+        self.parameter = parameter.lower()
+        self.format = t_format.lower()
+        self.resistance = resistance
+
+    @property
+    def factor(self) -> int:
+        return Options.UNIT_TO_FACTOR[self.unit]
+
+    def __str__(self) -> str:
+        return (
+            f"# {self.unit} {self.parameter}"
+            f" {self.format} r {self.resistance}"
+        ).upper()
+
+    def parse(self, line: str):
+        if not line.startswith("#"):
+            raise TypeError("Not an option line: " + line)
+        pfact = pparam = pformat = presist = False
+        params = iter(line[1:].lower().split())
+        for p in params:
+            if p in Options.VALID_UNITS and not pfact:
+                self.factor = Options.UNIT_TO_FACTOR[p]
+                pfact = True
+            elif p in Options.VALID_PARAMETERS and not pparam:
+                self.parameter = p
+                pparam = True
+            elif p in Options.VALID_FORMATS and not pformat:
+                self.format = p
+                pformat = True
+            elif p == "r" and not presist:
+                self.resistance = int(next(params))
+            else:
+                raise TypeError("Illegal option line: " + line)
+
+
+class Touchstone:
+
+    def __init__(self, filename: str):
         self.filename = filename
+        self.sdata = [[], [], [], []]  # at max 4 data pairs
+        self.comments = []
+        self.opts = Options()
+
+    @property
+    def s11data(self) -> list:
+        return self.sdata[0]
+
+    @property
+    def s21data(self) -> list:
+        return self.sdata[1]
+
+    @property
+    def s12data(self) -> list:
+        return self.sdata[2]
+
+    @property
+    def s22data(self) -> list:
+        return self.sdata[3]
+
+    def _parse_comments(self, fp) -> str:
+        for line in fp:
+            line = line.strip()
+            if line.startswith("!"):
+                logger.info(line)
+                self.comments.append(line)
+                continue
+            return line
+
+    def _append_line_data(self, freq: float, data: list):
+        data_list = iter(self.sdata)
+        vals = iter(data)
+        for v in vals:
+            if self.opts.format == "ri":
+                next(data_list).append(
+                    Datapoint(freq, float(v), float(next(vals))))
+            if self.opts.format == "ma":
+                z = cmath.polar(float(v),
+                                math.radians(float(next(vals))))
+                next(data_list).append(Datapoint(freq, z.real, z.imag))
+            if self.opts.format == "db":
+                z = cmath.polar(math.exp(float(v) / 20),
+                                math.radians(float(next(vals))))
+                next(data_list).append(Datapoint(freq, z.real, z.imag))
 
     def load(self):
-        self.s11data = []
-        self.s21data = []
-
-        realimaginary = False
-        magnitudeangle = False
-
-        factor = 1
+        logger.info("Attempting to open file %s", self.filename)
         try:
-            logger.info("Attempting to open file %s", self.filename)
-            file = open(self.filename, "r")
-
-            lines = file.readlines()
-            parsed_header = False
-            for line in lines:
-                line = line.strip()
-                if line.startswith("!"):
-                    logger.info(line)
-                    self.comments.append(line)
-                    continue
-                if line.startswith("#") and not parsed_header:
-                    pattern = "^# (.?HZ) (S )?RI( R 50)?$"
-                    match = re.match(pattern, line.upper())
-                    if match:
-                        logger.debug("Found header for RealImaginary and %s", match.group(1))
-                        match = match.group(1)
-                        parsed_header = True
-                        realimaginary = True
-                        if match == "HZ":
-                            factor = 1
-                        elif match == "KHZ":
-                            factor = 10**3
-                        elif match == "MHZ":
-                            factor = 10**6
-                        elif match == "GHZ":
-                            factor = 10**9
-                        else:
-                            factor = 10**9  # Default Touchstone frequency unit is GHz
-                        continue
-
-                    pattern = "^# (.?HZ) (S )?MA( R 50)?$"
-                    match = re.match(pattern, line.upper())
-                    if match:
-                        logger.debug("Found header for MagnitudeAngle and %s", match.group(1))
-                        match = match.group(1)
-                        parsed_header = True
-                        magnitudeangle = True
-                        if match == "HZ":
-                            factor = 1
-                        elif match == "KHZ":
-                            factor = 10**3
-                        elif match == "MHZ":
-                            factor = 10**6
-                        elif match == "GHZ":
-                            factor = 10**9
-                        else:
-                            factor = 10**9  # Default Touchstone frequency unit is GHz
-                        continue
-
-                    # else:
-                    # This is some other comment line
-                    logger.debug("Comment line: %s", line)
-                    continue
-                if not parsed_header:
-                    logger.warning("Read line without having read header: %s", line)
-                    continue
-
-                try:
-                    if realimaginary:
-                        values = line.split(maxsplit=5)
-                        freq = values[0]
-                        re11 = values[1]
-                        im11 = values[2]
-                        freq = int(float(freq) * factor)
-                        re11 = float(re11)
-                        im11 = float(im11)
-                        self.s11data.append(Datapoint(freq, re11, im11))
-                        if len(values) > 3:
-                            re21 = values[3]
-                            im21 = values[4]
-                            re21 = float(re21)
-                            im21 = float(im21)
-                            self.s21data.append(Datapoint(freq, re21, im21))
-                    elif magnitudeangle:
-                        values = line.split(maxsplit=5)
-                        freq = values[0]
-                        mag11 = float(values[1])
-                        angle11 = float(values[2])
-                        freq = int(float(freq) * factor)
-                        re11 = float(mag11) * math.cos(math.radians(angle11))
-                        im11 = float(mag11) * math.sin(math.radians(angle11))
-                        self.s11data.append(Datapoint(freq, re11, im11))
-                        if len(values) > 3:
-                            mag21 = float(values[3])
-                            angle21 = float(values[4])
-                            re21 = float(mag21) * math.cos(math.radians(angle21))
-                            im21 = float(mag21) * math.sin(math.radians(angle21))
-                            self.s21data.append(Datapoint(freq, re21, im21))
-
-                        continue
-                except ValueError as e:
-                    logger.exception("Failed to parse line: %s (%s)", line, e)
-
-            file.close()
+            with open(self.filename) as infile:
+                self.loads(infile.read())
+        except TypeError as e:
+            logger.exception("Failed to parse %s: %s", self.filename, e)
         except IOError as e:
             logger.exception("Failed to open %s: %s", self.filename, e)
-        return
 
-    def setFilename(self, filename):
+    def loads(self, s: str):
+        """Parse touchstone 1.1 string input
+           appends to existing sdata if Touchstone object exists
+        """
+        with io.StringIO(s) as file:
+            opts_line = self._parse_comments(file)
+            self.opts.parse(opts_line)
+
+            prev_freq = 0.0
+            prev_len = 0
+            for line in file:
+                # ignore empty lines (even if not specified)
+                if not line.strip():
+                    continue
+
+                # ignore comments at data end
+                data = line.split('!')[0]
+                data = data.split()
+                freq, data = float(data[0]) * self.opts.factor, data[1:]
+                data_len = len(data)
+
+                # consistency checks
+                if freq <= prev_freq:
+                    raise TypeError("Frequency not ascending: " + line)
+                prev_freq = freq
+
+                if prev_len == 0:
+                    prev_len = data_len
+                    if data_len % 2:
+                        raise TypeError("Data values aren't pairs: " + line)
+                elif data_len != prev_len:
+                    raise TypeError("Inconsistent number of pairs: " + line)
+
+                self._append_line_data(freq, data)
+
+    def setFilename(self, filename: str):
         self.filename = filename
