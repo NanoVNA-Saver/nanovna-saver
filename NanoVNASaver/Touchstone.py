@@ -123,10 +123,12 @@ class Touchstone:
                 next(data_list).append(
                     Datapoint(freq, float(v), float(next(vals))))
             if self.opts.format == "ma":
-                z = cmath.polar(float(v), float(next(vals)))
+                z = cmath.polar(float(v),
+                                math.radians(float(next(vals))))
                 next(data_list).append(Datapoint(freq, z.real, z.imag))
             if self.opts.format == "db":
-                z = cmath.polar(math.exp(float(v) / 20), float(next(vals)))
+                z = cmath.polar(math.exp(float(v) / 20),
+                                math.radians(float(next(vals))))
                 next(data_list).append(Datapoint(freq, z.real, z.imag))
 
     def load(self):
