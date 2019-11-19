@@ -52,16 +52,16 @@ class Options:
         self.resistance = resistance
 
     @property
-    def factor(self):
+    def factor(self) -> int:
         return Options.UNIT_TO_FACTOR[self.unit]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             f"# {self.unit} {self.parameter}"
             f" {self.format} r {self.resistance}"
         ).upper()
 
-    def parse(self, line):
+    def parse(self, line: str):
         if not line.startswith("#"):
             raise TypeError("Not an option line: " + line)
         pfact = pparam = pformat = presist = False
@@ -174,5 +174,5 @@ class Touchstone:
 
                 self._append_line_data(freq, data)
 
-    def setFilename(self, filename):
+    def setFilename(self, filename: str):
         self.filename = filename
