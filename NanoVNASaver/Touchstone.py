@@ -79,7 +79,7 @@ class Options:
             elif p == "r" and not presist:
                 self.resistance = int(next(params))
             else:
-                raise TypeError("Illegial option line: " + line)
+                raise TypeError("Illegal option line: " + line)
 
 
 class Touchstone:
@@ -162,7 +162,7 @@ class Touchstone:
 
                 # consistency checks
                 if freq <= prev_freq:
-                    raise TypeError("Frequeny not ascending: " + line)
+                    raise TypeError("Frequency not ascending: " + line)
                 prev_freq = freq
 
                 if prev_len == 0:
