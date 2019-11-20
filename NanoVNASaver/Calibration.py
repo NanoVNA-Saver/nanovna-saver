@@ -84,6 +84,13 @@ class CalibrationWindow(QtWidgets.QWidget):
         # btn_cal_isolation.setDisabled(True)
         self.cal_isolation_label = QtWidgets.QLabel("Uncalibrated")
 
+        self.input_offset_delay = QtWidgets.QDoubleSpinBox()
+        self.input_offset_delay.setValue(0)
+        self.input_offset_delay.setSuffix(" ps")
+        self.input_offset_delay.setAlignment(QtCore.Qt.AlignRight)
+        self.input_offset_delay.valueChanged.connect(self.setOffsetDelay)
+        self.input_offset_delay.setRange(-10e6, 10e6)
+
         calibration_control_layout.addRow(btn_cal_short, self.cal_short_label)
         calibration_control_layout.addRow(btn_cal_open, self.cal_open_label)
         calibration_control_layout.addRow(btn_cal_load, self.cal_load_label)
@@ -91,6 +98,7 @@ class CalibrationWindow(QtWidgets.QWidget):
         calibration_control_layout.addRow(btn_cal_through, self.cal_through_label)
 
         calibration_control_layout.addRow(QtWidgets.QLabel(""))
+        calibration_control_layout.addRow("Offset delay", self.input_offset_delay)
 
         self.btn_automatic = QtWidgets.QPushButton("Calibration assistant")
         calibration_control_layout.addRow(self.btn_automatic)
@@ -432,6 +440,10 @@ class CalibrationWindow(QtWidgets.QWidget):
             logger.debug("Saving and displaying raw data.")
             self.app.saveData(self.app.worker.rawData11, self.app.worker.rawData21, self.app.sweepSource)
             self.app.worker.signals.updated.emit()
+
+    def setOffsetDelay(self, value: float):
+        logger.debug("New offset delay value: %f ps", value)
+        self.app.worker.offsetDelay = value / 10e12
 
     def calculate(self):
         if self.app.btnStopSweep.isEnabled():
@@ -921,6 +933,18 @@ class Calibration:
                 distance = abs(self.s21through[i].freq - freq)
         s21 = (s21m - self.e30[index]) / self.e10e32[index]
         return s21.real, s21.imag
+
+    @staticmethod
+    def correctDelay11(d: Datapoint, delay):
+        input_val = np.complex(d.re, d.im)
+        output = input_val * np.exp(np.complex(0, 1) * 2 * 2 * math.pi * d.freq * delay * -1)
+        return Datapoint(d.freq, output.real, output.imag)
+
+    @staticmethod
+    def correctDelay21(d: Datapoint, delay):
+        input_val = np.complex(d.re, d.im)
+        output = input_val * np.exp(np.complex(0, 1) * 2 * math.pi * d.freq * delay * -1)
+        return Datapoint(d.freq, output.real, output.imag)
 
     def saveCalibration(self, filename):
         # Save the calibration data to file

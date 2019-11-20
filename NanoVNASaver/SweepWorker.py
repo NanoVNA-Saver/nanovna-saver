@@ -24,6 +24,7 @@ from PyQt5.QtCore import pyqtSlot, pyqtSignal
 import NanoVNASaver
 import logging
 
+from NanoVNASaver.Calibration import Calibration
 from NanoVNASaver.Hardware import VNA, InvalidVNA
 from NanoVNASaver.RFTools import RFTools, Datapoint
 
@@ -57,6 +58,7 @@ class SweepWorker(QtCore.QRunnable):
         self.averages = 3
         self.truncates = 0
         self.error_message = ""
+        self.offsetDelay = 0
 
     @pyqtSlot()
     def run(self):
@@ -183,6 +185,7 @@ class SweepWorker(QtCore.QRunnable):
                 re, im = self.app.calibration.correct11(re, im, freq)
                 if self.app.calibration.isValid2Port():
                     re21, im21 = self.app.calibration.correct21(re21, im21, freq)
+
             self.data11[offset*101 + i] = Datapoint(freq, re, im)
             self.data21[offset * 101 + i] = Datapoint(freq, re21, im21)
             self.rawData11[offset * 101 + i] = rawData11
@@ -212,6 +215,17 @@ class SweepWorker(QtCore.QRunnable):
 
     def applyCalibration(self, raw_data11: List[Datapoint], raw_data21: List[Datapoint]) ->\
                         (List[Datapoint], List[Datapoint]):
+        if self.offsetDelay != 0:
+            logger.debug("Applying offset delay of %f ps.", self.offsetDelay)
+            tmp = []
+            for d in raw_data11:
+                tmp.append(Calibration.correctDelay11(d, self.offsetDelay))
+            raw_data11 = tmp
+            tmp = []
+            for d in raw_data21:
+                tmp.append(Calibration.correctDelay21(d, self.offsetDelay))
+            raw_data21 = tmp
+
         if not self.app.calibration.isCalculated:
             return raw_data11, raw_data21
 
