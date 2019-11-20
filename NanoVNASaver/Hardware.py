@@ -200,7 +200,7 @@ class NanoVNA(VNA):
         return self.readValues("frequencies")
 
     def readValues11(self) -> List[str]:
-        return self.readValues("data 1")
+        return self.readValues("data 0")
 
     def readValues21(self) -> List[str]:
         return self.readValues("data 1")
