@@ -14,15 +14,15 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import collections
 import logging
 import math
 import os
-
-from PyQt5 import QtWidgets, QtCore
 from typing import List
-from .RFTools import Datapoint
+
 import numpy as np
+from PyQt5 import QtWidgets, QtCore
+
+from .RFTools import Datapoint
 
 logger = logging.getLogger(__name__)
 

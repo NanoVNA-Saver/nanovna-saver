@@ -13,7 +13,7 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import collections
+import logging
 from time import sleep
 from typing import List
 
@@ -22,8 +22,6 @@ from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSlot, pyqtSignal
 
 import NanoVNASaver
-import logging
-
 from NanoVNASaver.Calibration import Calibration
 from NanoVNASaver.Hardware import VNA, InvalidVNA
 from NanoVNASaver.RFTools import RFTools, Datapoint
