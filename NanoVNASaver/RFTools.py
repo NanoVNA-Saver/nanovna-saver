@@ -38,12 +38,12 @@ class Datapoint(NamedTuple):
 
     @property
     def z(self):
-        """ return datapoint impedance as complex number """
+        """ return the datapoint impedance as complex number """
         return complex(self.re, self.im)
 
     @property
     def phase(self):
-        """ return datapoints phase value """
+        """ return the datapoint's phase value """
         return cmath.phase(self.z)
 
     @property
@@ -65,13 +65,13 @@ class Datapoint(NamedTuple):
     def impedance(self, ref_impedance: float = 50) -> complex:
         return ref_impedance * ((-self.z - 1) / (self.z - 1))
 
-    def q_factor(self, ref_impedance: float = 50) -> float:
+    def qFactor(self, ref_impedance: float = 50) -> float:
         imp = self.impedance(ref_impedance)
         if imp.real == 0.0:
             return -1
         return abs(imp.imag / imp.real)
 
-    def capacitive_equivalent(self, ref_impedance: float = 50) -> float:
+    def capacitiveEquivalent(self, ref_impedance: float = 50) -> float:
         if self.freq == 0:
             return math.inf
         imp = self.impedance(ref_impedance)
@@ -79,7 +79,7 @@ class Datapoint(NamedTuple):
             return math.inf
         return -(1 / (self.freq * 2 * math.pi * imp.imag))
 
-    def inductive_equivalent(self, ref_impedance: float = 50) -> float:
+    def inductiveEquivalent(self, ref_impedance: float = 50) -> float:
         if self.freq == 0:
             return math.inf
         imp = self.impedance(ref_impedance)

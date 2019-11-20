@@ -2084,7 +2084,7 @@ class QualityFactorChart(FrequencyChart):
             minQ = 0
             maxQ = 0
             for d in self.data:
-                Q = d.q_factor()
+                Q = d.qFactor()
                 if Q > maxQ:
                     maxQ = Q
             scale = 0
@@ -2157,7 +2157,7 @@ class QualityFactorChart(FrequencyChart):
         self.drawMarkers(qp)
 
     def getYPosition(self, d: Datapoint) -> int:
-        Q = d.q_factor()
+        Q = d.qFactor()
         return self.topMargin + round((self.maxQ - Q) / self.span * self.chartHeight)
 
     def valueAtPosition(self, y) -> List[float]:
@@ -3785,7 +3785,7 @@ class CapacitanceChart(FrequencyChart):
             minValue = 1
             maxValue = -1
             for d in self.data:
-                val = d.capacitive_equivalent()
+                val = d.capacitiveEquivalent()
                 if val > maxValue:
                     maxValue = val
                 if val < minValue:
@@ -3793,7 +3793,7 @@ class CapacitanceChart(FrequencyChart):
             for d in self.reference:  # Also check min/max for the reference sweep
                 if d.freq < self.fstart or d.freq > self.fstop:
                     continue
-                val = d.capacitive_equivalent()
+                val = d.capacitiveEquivalent()
                 if val > maxValue:
                     maxValue = val
                 if val < minValue:
@@ -3832,7 +3832,7 @@ class CapacitanceChart(FrequencyChart):
         self.drawMarkers(qp)
 
     def getYPosition(self, d: Datapoint) -> int:
-        return self.topMargin + round((self.maxValue - d.capacitive_equivalent()) / self.span * self.chartHeight)
+        return self.topMargin + round((self.maxValue - d.capacitiveEquivalent()) / self.span * self.chartHeight)
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
@@ -3908,7 +3908,7 @@ class InductanceChart(FrequencyChart):
             minValue = 1
             maxValue = -1
             for d in self.data:
-                val = d.inductive_equivalent()
+                val = d.inductiveEquivalent()
                 if val > maxValue:
                     maxValue = val
                 if val < minValue:
@@ -3916,7 +3916,7 @@ class InductanceChart(FrequencyChart):
             for d in self.reference:  # Also check min/max for the reference sweep
                 if d.freq < self.fstart or d.freq > self.fstop:
                     continue
-                val = d.inductive_equivalent()
+                val = d.inductiveEquivalent()
                 if val > maxValue:
                     maxValue = val
                 if val < minValue:
@@ -3955,7 +3955,7 @@ class InductanceChart(FrequencyChart):
         self.drawMarkers(qp)
 
     def getYPosition(self, d: Datapoint) -> int:
-        return self.topMargin + round((self.maxValue - d.inductive_equivalent()) / self.span * self.chartHeight)
+        return self.topMargin + round((self.maxValue - d.inductiveEquivalent()) / self.span * self.chartHeight)
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
