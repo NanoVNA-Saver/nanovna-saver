@@ -216,7 +216,7 @@ class SweepWorker(QtCore.QRunnable):
     def applyCalibration(self, raw_data11: List[Datapoint], raw_data21: List[Datapoint]) ->\
                         (List[Datapoint], List[Datapoint]):
         if self.offsetDelay != 0:
-            logger.debug("Applying offset delay of %f ps.", self.offsetDelay)
+            logger.debug("Applying offset delay of %f ps.", self.offsetDelay * 10e12)
             tmp = []
             for d in raw_data11:
                 tmp.append(Calibration.correctDelay11(d, self.offsetDelay))
