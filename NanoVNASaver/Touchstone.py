@@ -38,6 +38,7 @@ class Touchstone:
 
         realimaginary = False
         magnitudeangle = False
+        dbangle = False
 
         factor = 1
         try:
@@ -48,53 +49,45 @@ class Touchstone:
             parsed_header = False
             for line in lines:
                 line = line.strip()
+                if len(line) < 5:
+                  continue
                 if line.startswith("!"):
                     logger.info(line)
                     self.comments.append(line)
                     continue
                 if line.startswith("#") and not parsed_header:
-                    pattern = "^# (.?HZ) (S )?RI( R 50)?$"
+                    pattern = "^\s*#\s*(.?HZ)(?:\s+S)?(:?\s+(DB|MA|RI))(:?\s+R\s+([^\s]+))?\s*$"
+                    #https://github.com/mihtjel/nanovna-saver/issues/99
                     match = re.match(pattern, line.upper())
-                    if match:
-                        logger.debug("Found header for RealImaginary and %s", match.group(1))
+                    try:
+                        snp_format = match.group(3)
                         match = match.group(1)
                         parsed_header = True
+                    except:
+                        snp_format = "Unknown format header"
+                        logger.debug("Comment line: %s", line)
+                        continue
+                    if snp_format == "RI":
+                        logger.debug("Found header for RealImaginary and %s", match)
                         realimaginary = True
-                        if match == "HZ":
-                            factor = 1
-                        elif match == "KHZ":
-                            factor = 10**3
-                        elif match == "MHZ":
-                            factor = 10**6
-                        elif match == "GHZ":
-                            factor = 10**9
-                        else:
-                            factor = 10**9  # Default Touchstone frequency unit is GHz
-                        continue
-
-                    pattern = "^# (.?HZ) (S )?MA( R 50)?$"
-                    match = re.match(pattern, line.upper())
-                    if match:
-                        logger.debug("Found header for MagnitudeAngle and %s", match.group(1))
-                        match = match.group(1)
-                        parsed_header = True
-                        magnitudeangle = True
-                        if match == "HZ":
-                            factor = 1
-                        elif match == "KHZ":
-                            factor = 10**3
-                        elif match == "MHZ":
-                            factor = 10**6
-                        elif match == "GHZ":
-                            factor = 10**9
-                        else:
-                            factor = 10**9  # Default Touchstone frequency unit is GHz
-                        continue
-
-                    # else:
-                    # This is some other comment line
-                    logger.debug("Comment line: %s", line)
+                    elif snp_format == "MA":
+                          logger.debug("Found header for MagnitudeAngle and %s", match)
+                          magnitudeangle = True
+                    elif snp_format == "DB":
+                          logger.debug("Found header for dBAngle and %s", match)
+                          dbangle = True
+                    if match == "HZ":
+                        factor = 1
+                    elif match == "KHZ":
+                        factor = 10**3
+                    elif match == "MHZ":
+                        factor = 10**6
+                    elif match == "GHZ":
+                        factor = 10**9
+                    else:
+                        factor = 10**9  # Default Touchstone frequency unit is GHz
                     continue
+
                 if not parsed_header:
                     logger.warning("Read line without having read header: %s", line)
                     continue
@@ -115,17 +108,25 @@ class Touchstone:
                             re21 = float(re21)
                             im21 = float(im21)
                             self.s21data.append(Datapoint(freq, re21, im21))
-                    elif magnitudeangle:
+                    elif magnitudeangle or dbangle:
                         values = line.split(maxsplit=5)
                         freq = values[0]
-                        mag11 = float(values[1])
+                        if dbangle:
+                            #Transform db2mag
+                            mag11 = 10**(float(values[1])/20)
+                        else:
+                            mag11 = float(values[1])
                         angle11 = float(values[2])
                         freq = int(float(freq) * factor)
                         re11 = float(mag11) * math.cos(math.radians(angle11))
                         im11 = float(mag11) * math.sin(math.radians(angle11))
                         self.s11data.append(Datapoint(freq, re11, im11))
                         if len(values) > 3:
-                            mag21 = float(values[3])
+                            if dbangle:
+                                #Transform db2mag
+                                mag21 = 10**(float(values[3])/20)
+                            else:
+                                mag21 = float(values[3])
                             angle21 = float(values[4])
                             re21 = float(mag21) * math.cos(math.radians(angle21))
                             im21 = float(mag21) * math.sin(math.radians(angle21))
