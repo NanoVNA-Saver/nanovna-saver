@@ -107,12 +107,12 @@ class Value:
             value = value[:-1]
 
         if self.fmt.assume_infinity and value == "\N{INFINITY}":
-            self.value = math.inf
+            self._value = math.inf
         elif self.fmt.assume_infinity and value == "-\N{INFINITY}":
-            self.value = -math.inf
+            self._value = -math.inf
         else:
-            self.value = decimal.Decimal(value, context=Value.CTX) * factor
-        return float(self.value)
+            self._value = decimal.Decimal(value, context=Value.CTX) * factor
+        return float(self._value)
 
     @property
     def unit(self) -> str:
