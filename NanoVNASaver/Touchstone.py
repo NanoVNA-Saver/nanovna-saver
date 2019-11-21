@@ -205,6 +205,3 @@ class Touchstone:
                 logger.warning("Reordering data")
                 for datalist in self.sdata:
                     datalist.sort(key=attrgetter("freq"))
-
-    def setFilename(self, filename: str):
-        self.filename = filename
