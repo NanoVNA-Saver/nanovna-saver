@@ -46,8 +46,8 @@ class Value:
         self.fmt = fmt
 
     def __repr__(self) -> str:
-        return (f"{self.__class__.__name__}({self.value}, "
-                f"'{self._unit}', {self.fmt})")
+        return (f"{self.__class__.__name__}(" + repr(self._value) +
+                f", '{self._unit}', {self.fmt})")
 
     def __str__(self) -> str:
         fmt = self.fmt
