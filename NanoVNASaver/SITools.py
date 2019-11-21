@@ -15,6 +15,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
+import decimal
 from typing import NamedTuple
 from numbers import Number
 
@@ -35,32 +36,37 @@ class Format(NamedTuple):
 
 
 class Value:
+    CTX = decimal.Context(prec=60, Emin=-27, Emax=27)
+
     def __init__(self, value: Number = 0, unit: str = "", fmt=Format()):
-        assert 3 <= fmt.max_nr_digits <= 27
+        assert 3 <= fmt.max_nr_digits <= 30
         assert -8 <= fmt.min_offset <= fmt.max_offset <= 8
-        self.value = value
+        self._value = decimal.Decimal(value, context=Value.CTX)
         self._unit = unit
         self.fmt = fmt
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.value}, '{self._unit}', {self.fmt})"
+        return (f"{self.__class__.__name__}({self.value}, "
+                f"'{self._unit}', {self.fmt})")
 
     def __str__(self) -> str:
         fmt = self.fmt
-        if fmt.assume_infinity and abs(self.value) >= 10 ** ((fmt.max_offset + 1) * 3):
-            return ("-" if self.value < 0 else "") + "\N{INFINITY}" + fmt.space_str + self._unit
+        if fmt.assume_infinity and \
+                abs(self._value) >= 10 ** ((fmt.max_offset + 1) * 3):
+            return (("-" if self._value < 0 else "") +
+                    "\N{INFINITY}" + fmt.space_str + self._unit)
 
-        if self.value == 0:
+        if self._value == 0:
             offset = 0
         else:
-            offset = int(math.log10(abs(self.value)) // 3)
+            offset = int(math.log10(abs(self._value)) // 3)
 
         if offset < fmt.min_offset:
             offset = fmt.min_offset
         elif offset > fmt.max_offset:
             offset = fmt.max_offset
 
-        real = self.value / (10 ** (offset * 3))
+        real = self._value / (10 ** (offset * 3))
 
         if fmt.max_nr_digits < 4:
             formstr = ".0f"
@@ -77,8 +83,12 @@ class Value:
 
         if self.fmt.allow_strip and "." in result:
             result = result.rstrip("0").rstrip(".")
-            
+
         return result + fmt.space_str + PREFIXES[offset + 8] + self._unit
+
+    @property
+    def value(self):
+        return float(self._value)
 
     def parse(self, value: str) -> float:
         value = value.replace(" ", "")  # Ignore spaces
@@ -101,8 +111,8 @@ class Value:
         elif self.fmt.assume_infinity and value == "-\N{INFINITY}":
             self.value = -math.inf
         else:
-            self.value = float(value) * factor
-        return self.value
+            self.value = decimal.Decimal(value, context=Value.CTX) * factor
+        return float(self.value)
 
     @property
     def unit(self) -> str:
