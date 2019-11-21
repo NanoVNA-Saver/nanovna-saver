@@ -14,11 +14,11 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import sys
 import unittest
 
 # Import targets to be tested
 from NanoVNASaver.Touchstone import Options, Touchstone
+
 
 class TestTouchstoneOptions(unittest.TestCase):
     def setUp(self):
@@ -52,6 +52,7 @@ class TestTouchstoneOptions(unittest.TestCase):
         self.assertEqual(str(self.opts), "# HZ Y RI R 123")
         self.assertEqual(self.opts.factor, 1)
 
+
 class TestTouchstoneTouchstone(unittest.TestCase):
 
     def test_load(self):
@@ -60,6 +61,7 @@ class TestTouchstoneTouchstone(unittest.TestCase):
         self.assertEqual(str(ts.opts), "# HZ S RI R 50")
         self.assertEqual(len(ts.s11data), 1010)
         self.assertEqual(len(ts.s21data), 0)
+        self.assertEqual(ts.r, 50)
 
         ts = Touchstone("./test/data/valid.s2p")
         ts.load()
@@ -69,6 +71,16 @@ class TestTouchstoneTouchstone(unittest.TestCase):
         self.assertEqual(len(ts.s12data), 1020)
         self.assertEqual(len(ts.s22data), 1020)
         self.assertIn("! Vector Network Analyzer VNA R2", ts.comments)
+
+    def test_load_scikit(self):
+        ts = Touchstone("./test/data/scikit_unordered.s2p")
+        ts.load()
+        print(len(ts.s("12")))
+        self.assertEqual(str(ts.opts), "# HZ S RI R 50")
+        self.assertEqual(len(ts.s11data), 101)
+        self.assertIn("!freq ReS11 ImS11 ReS21 ImS21 ReS12 ImS12 ReS22 ImS22",
+                      ts.comments)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

@@ -18,6 +18,7 @@ import logging
 import math
 import cmath
 import io
+from operator import attrgetter
 from NanoVNASaver.RFTools import Datapoint
 
 logger = logging.getLogger(__name__)
@@ -77,12 +78,18 @@ class Options:
                 self.format = p
                 pformat = True
             elif p == "r" and not presist:
-                self.resistance = int(next(params))
+                rstr = next(params)
+                try:
+                    self.resistance = int(rstr)
+                except ValueError:
+                    logger.warning("Non integer resistance value: %s", rstr)
+                    self.resistance = int(float(rstr))
             else:
                 raise TypeError("Illegal option line: " + line)
 
 
 class Touchstone:
+    FIELD_ORDER = ("11", "21", "12", "22")
 
     def __init__(self, filename: str):
         self.filename = filename
@@ -92,19 +99,26 @@ class Touchstone:
 
     @property
     def s11data(self) -> list:
-        return self.sdata[0]
-
-    @property
-    def s21data(self) -> list:
-        return self.sdata[1]
+        return self.s("11")
 
     @property
     def s12data(self) -> list:
-        return self.sdata[2]
+        return self.s("12")
+
+    @property
+    def s21data(self) -> list:
+        return self.s("21")
 
     @property
     def s22data(self) -> list:
-        return self.sdata[3]
+        return self.s("22")
+
+    @property
+    def r(self) -> int:
+        return self.opts.resistance
+
+    def s(self, name: str) -> list:
+        return self.sdata[Touchstone.FIELD_ORDER.index(name)]
 
     def _parse_comments(self, fp) -> str:
         for line in fp:
@@ -136,8 +150,6 @@ class Touchstone:
         try:
             with open(self.filename) as infile:
                 self.loads(infile.read())
-        except TypeError as e:
-            logger.exception("Failed to parse %s: %s", self.filename, e)
         except IOError as e:
             logger.exception("Failed to open %s: %s", self.filename, e)
 
@@ -145,6 +157,13 @@ class Touchstone:
         """Parse touchstone 1.1 string input
            appends to existing sdata if Touchstone object exists
         """
+        try:
+            self._loads(s)
+        except TypeError as e:
+            logger.exception("Failed to parse %s: %s", self.filename, e)
+
+    def _loads(self, s: str):
+        need_reorder = False
         with io.StringIO(s) as file:
             opts_line = self._parse_comments(file)
             self.opts.parse(opts_line)
@@ -152,8 +171,14 @@ class Touchstone:
             prev_freq = 0.0
             prev_len = 0
             for line in file:
+                line = line.strip()
                 # ignore empty lines (even if not specified)
-                if not line.strip():
+                if line == "":
+                    continue
+                # accept comment lines after header
+                if line.startswith("!"):
+                    logger.warning("Comment after header: %s", line)
+                    self.comments.append(line)
                     continue
 
                 # ignore comments at data end
@@ -164,7 +189,8 @@ class Touchstone:
 
                 # consistency checks
                 if freq <= prev_freq:
-                    raise TypeError("Frequency not ascending: " + line)
+                    logger.warning("Frequency not ascending: %s", line)
+                    need_reorder = True
                 prev_freq = freq
 
                 if prev_len == 0:
@@ -175,6 +201,7 @@ class Touchstone:
                     raise TypeError("Inconsistent number of pairs: " + line)
 
                 self._append_line_data(freq, data)
-
-    def setFilename(self, filename: str):
-        self.filename = filename
+            if need_reorder:
+                logger.warning("Reordering data")
+                for datalist in self.sdata:
+                    datalist.sort(key=attrgetter("freq"))
