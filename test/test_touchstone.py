@@ -61,6 +61,7 @@ class TestTouchstoneTouchstone(unittest.TestCase):
         self.assertEqual(str(ts.opts), "# HZ S RI R 50")
         self.assertEqual(len(ts.s11data), 1010)
         self.assertEqual(len(ts.s21data), 0)
+        self.assertEqual(ts.r, 50)
 
         ts = Touchstone("./test/data/valid.s2p")
         ts.load()

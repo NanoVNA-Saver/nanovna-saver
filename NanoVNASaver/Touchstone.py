@@ -113,7 +113,11 @@ class Touchstone:
     def s22data(self) -> list:
         return self.s("22")
 
-    def s(self, name: str):
+    @property
+    def r(self) -> int:
+        return self.opts.resistance
+
+    def s(self, name: str) -> list:
         return self.sdata[Touchstone.FIELD_ORDER.index(name)]
 
     def _parse_comments(self, fp) -> str:
