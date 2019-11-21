@@ -1,12 +1,11 @@
 /venv/
 .idea
+.vscode
 /build/
 /dist/
 /nanovna-saver.spec
 *.egg-info/
 *.pyc
 *.cal
-*.s1p
 settings.json
-.vscode
 .gitignore
