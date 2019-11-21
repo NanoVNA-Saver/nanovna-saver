@@ -21,6 +21,8 @@ from numbers import Number
 PREFIXES = ("y", "z", "a", "f", "p", "n", "µ", "m",
             "", "k", "M", "G", "T", "P", "E", "Z", "Y")
 
+# reduced set of prefixes for user entry (used by def parse)
+PARSE_PREFIXES = ("", "k", "M", "G")
 
 class Format(NamedTuple):
     max_nr_digits: int = 6
@@ -32,6 +34,7 @@ class Format(NamedTuple):
     allow_strip: bool = False
     parse_sloppy_unit: bool = False
     parse_sloppy_kilo: bool = False
+    parse_allow_neg: bool = True
 
 
 class Value:
@@ -72,16 +75,32 @@ class Value:
 
         result = format(real, formstr)
 
+        # handle corner-case of overflow during string format rounding.
+        if result[:2] == '10' and str(real)[:1] == '9':
+            # if overflow was 999 -> 1000, both digits and units will be wrong
+            if float(result) > 999:
+                real /= 1000.0
+                offset += 1
+                max_digits += 2
+            # otherwise, only digits will be wrong
+            else:
+                max_digits -= 1
+            formstr = "." + str(max_digits - 3) + "f"
+            result = format(real, formstr)
+
         if float(result) == 0.0:
             offset = 0
 
         if self.fmt.allow_strip and "." in result:
             result = result.rstrip("0").rstrip(".")
-            
+
         return result + fmt.space_str + PREFIXES[offset + 8] + self._unit
 
     def parse(self, value: str) -> float:
         value = value.replace(" ", "")  # Ignore spaces
+
+        if not self.fmt.parse_allow_neg:
+            if value.startswith('-'): return -1
 
         if self._unit and (
                 value.endswith(self._unit) or
@@ -92,8 +111,8 @@ class Value:
         factor = 1
         if self.fmt.parse_sloppy_kilo and value[-1] == "K":  # fix for e.g. KHz
             value = value[:-1] + "k"
-        if value[-1] in PREFIXES:
-            factor = 10 ** ((PREFIXES.index(value[-1]) - 8) * 3)
+        if value[-1] in PARSE_PREFIXES:
+            factor = 10 ** ((PARSE_PREFIXES.index(value[-1])) * 3)
             value = value[:-1]
 
         if self.fmt.assume_infinity and value == "\N{INFINITY}":

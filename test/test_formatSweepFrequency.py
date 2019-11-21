@@ -24,12 +24,26 @@ rft = RFTools.RFTools()
 
 class TestCases(unittest.TestCase):
 
-    def test_basicIntegerValues(self):
+    '''
+    INTENDED USE:
+    The formatSweepFrequency function is intended to be used to fill the sweep
+    control text fields, where the displayed values should be short and easily
+    readable if possible, but must maintain accuracy to single Hz precision.
+    DESIRED BEHAVIOR:
+    1) The output (string) shall represent the input (number) using the smallest
+    appropriate SI unit (e.g. Hz, kHz, MHz, GHz), down to at most 1 Hz resolution,
+    such that the integer part of the result is always between 1 and 999.
+    2) The fractional part of the result shall be as short as possible, without loss
+    of accuracy, inludding the possibility that no fractional part is returned.
+    3) If no fractional part is returned, the decimal shall also not be displayed.
+    4) Minimum supported return value shall be >= 1 Hz
+    4) Maximum supported return value shall be < 10 GHz.
+    '''
+
+    def test_standardIntegerValues(self):
         # simple well-formed integers with no trailing zeros. Most importantly
         # there is no loss of accuracy in the result. Returned values are not
         # truncated if result would lose meaningful data.
-        '''
-        Original Behavior:
         self.assertEqual(rft.formatSweepFrequency(1), '1Hz')
         self.assertEqual(rft.formatSweepFrequency(12), '12Hz')
         self.assertEqual(rft.formatSweepFrequency(123), '123Hz')
@@ -39,49 +53,35 @@ class TestCases(unittest.TestCase):
         self.assertEqual(rft.formatSweepFrequency(1234567), '1.234567MHz')
         self.assertEqual(rft.formatSweepFrequency(12345678), '12.345678MHz')
         self.assertEqual(rft.formatSweepFrequency(123456789), '123.456789MHz')
-        '''
-        # New Behavior: results in loss of accuracy again.
-        self.assertEqual(rft.formatSweepFrequency(1), '1.0000Hz')
-        self.assertEqual(rft.formatSweepFrequency(12), '12.000Hz')
-        self.assertEqual(rft.formatSweepFrequency(123), '123.00Hz')
-        self.assertEqual(rft.formatSweepFrequency(1234), '1.2340kHz')
-        self.assertEqual(rft.formatSweepFrequency(12345), '12.345kHz')
-        self.assertEqual(rft.formatSweepFrequency(123456), '123.46kHz')
-        self.assertEqual(rft.formatSweepFrequency(1234567), '1.2346MHz')
-        self.assertEqual(rft.formatSweepFrequency(12345678), '12.346MHz')
-        self.assertEqual(rft.formatSweepFrequency(123456789), '123.46MHz')
+        self.assertEqual(rft.formatSweepFrequency(1023456789), '1.023456789GHz')
 
-    '''
-    def test_defaultMinDigits(self):
-        # simple integers with trailing zeros.
-        # DEFAULT behavior retains 2 digits after the period, mindigits=2.
-        self.assertEqual(rft.formatSweepFrequency(1000), '1.00kHz')
-        self.assertEqual(rft.formatSweepFrequency(10000), '10.00kHz')
-        self.assertEqual(rft.formatSweepFrequency(100000), '100.00kHz')
-        self.assertEqual(rft.formatSweepFrequency(1000000), '1.00MHz')
-    
-    def test_nonDefaultMinDigits(self):
-        # simple integers with trailing zeros. setting mindigit value to something
-        # other than default, where trailing zeros >= mindigits, the number of
-        # zeros shown is equal to mindigits value.
-        self.assertEqual(rft.formatSweepFrequency(1000000, mindigits=0), '1MHz')
-        self.assertEqual(rft.formatSweepFrequency(1000000, mindigits=1), '1.0MHz')
-        self.assertEqual(rft.formatSweepFrequency(1000000, mindigits=3), '1.000MHz')
-        self.assertEqual(rft.formatSweepFrequency(10000000, mindigits=4), '10.0000MHz')
-        self.assertEqual(rft.formatSweepFrequency(100000000, mindigits=5), '100.00000MHz')
-        self.assertEqual(rft.formatSweepFrequency(1000000000, mindigits=6), '1.000000GHz')
-        # where trailing zeros < mindigits, only available zeros are shown, if the
-        # result includes no decimal places (i.e. Hz values).
-        self.assertEqual(rft.formatSweepFrequency(1, mindigits=4), '1Hz')
-        self.assertEqual(rft.formatSweepFrequency(10, mindigits=4), '10Hz')
-        self.assertEqual(rft.formatSweepFrequency(100, mindigits=4), '100Hz')
-        # but where a decimal exists, and mindigits > number of available zeroes,
-        # this results in extra zeroes being padded into result, even into sub-Hz
-        # resolution. This is not useful for this application.
-        # TODO: Consider post-processing result for maxdigits based on SI unit.
-        self.assertEqual(rft.formatSweepFrequency(1000, mindigits=5), '1.00000kHz')
-        self.assertEqual(rft.formatSweepFrequency(1000, mindigits=10), '1.0000000000kHz')
-    '''
+    def test_largeIntegerValues(self):
+        self.assertEqual(rft.formatSweepFrequency(10023456789), '10.02345679GHz')
+        self.assertEqual(rft.formatSweepFrequency(100023456789), '100.0234568GHz')
+        self.assertEqual(rft.formatSweepFrequency(1000023456789), '1.000023457THz')
+
+    def test_smallIntegerValues(self):
+        self.assertEqual(rft.formatSweepFrequency(0.1), '100mHz')
+        self.assertEqual(rft.formatSweepFrequency(0.0001), '100µHz')
+        self.assertEqual(rft.formatSweepFrequency(0.0000001), '100nHz')
+
+    def test_trailingZeroesNoFrac(self):
+        # simple integers with trailing zeros and no fractional parts, results
+        # in stripping all trailing zeros, and the decimal point.
+        self.assertEqual(rft.formatSweepFrequency(1000), '1kHz')
+        self.assertEqual(rft.formatSweepFrequency(10000), '10kHz')
+        self.assertEqual(rft.formatSweepFrequency(100000), '100kHz')
+        self.assertEqual(rft.formatSweepFrequency(1000000), '1MHz')
+
+    def test_trailingZeroesWithFrac(self):
+        # simple integers with trailing zeros that also have some fractional parts.
+        # result retains all parts required for accuracy, but strips remaining
+        # trailing zeros.
+        self.assertEqual(rft.formatSweepFrequency(1200), '1.2kHz')
+        self.assertEqual(rft.formatSweepFrequency(10200), '10.2kHz')
+        self.assertEqual(rft.formatSweepFrequency(100020), '100.02kHz')
+        self.assertEqual(rft.formatSweepFrequency(1000200), '1.0002MHz')
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

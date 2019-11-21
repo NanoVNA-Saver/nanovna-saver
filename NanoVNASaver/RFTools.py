@@ -113,11 +113,11 @@ class RFTools:
 
     @staticmethod
     def formatSweepFrequency(freq: Number) -> str:
-        return str(Value(freq, "Hz", Format(max_nr_digits=9, allow_strip=True)))
+        return str(Value(freq, "Hz", Format(max_nr_digits=10, allow_strip=True)))
 
     @staticmethod
     def parseFrequency(freq: str) -> int:
-        parser = Value(0, "Hz", Format(parse_sloppy_unit=True, parse_sloppy_kilo=True))
+        parser = Value(0, "Hz", Format(parse_sloppy_unit=True, parse_sloppy_kilo=True, parse_allow_neg=False))
         try:
             return round(parser.parse(freq))
         except (ValueError, IndexError):

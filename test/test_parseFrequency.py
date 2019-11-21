@@ -23,6 +23,20 @@ rft = RFTools.RFTools()
 
 class TestCases(unittest.TestCase):
 
+    '''
+    INTENDED USE:
+    The parseFrequency function is intended to interpret a frequency text string,
+    which may include SI units (e.g. Hz, kHz, MHz...) or exponential notation
+    (e.g. 10e3, 45e6...) and returns a positive integer number as a result, or an
+    error code (e.g. -1)
+    DESIRED BEHAVIOR:
+    1) The output (integer) value shall represent the input (string) representation,
+    based on the use of the SI units Hz, kHz, MHz or GHz, or exponential notation, or
+    a numeric value.
+    2) If the input string is malformed (i.e. not made up of logical legal values) then
+    the output returned shall be the error code -1.
+    '''
+
     def test_basicSIUnits(self):
         # simple well-formed integers with correct SI units
         self.assertEqual(rft.parseFrequency('123Hz'), 123)
@@ -33,6 +47,11 @@ class TestCases(unittest.TestCase):
         self.assertEqual(rft.parseFrequency('123456MHz'), 123456000000)
         self.assertEqual(rft.parseFrequency('123GHz'), 123000000000)
         self.assertEqual(rft.parseFrequency('123456GHz'), 123456000000000)
+
+    def test_regularIntegers(self):
+        self.assertEqual(rft.parseFrequency('123'), 123)
+        self.assertEqual(rft.parseFrequency('123456'), 123456)
+        self.assertEqual(rft.parseFrequency('123456789'), 123456789)
 
     def test_commonMistakeKHz_vs_kHz(self):
         # some poorly formatted values that still work as expected
@@ -45,6 +64,11 @@ class TestCases(unittest.TestCase):
         self.assertEqual(rft.parseFrequency('Garbage'), -1)
         self.assertEqual(rft.parseFrequency('123.Junk'), -1)
 
+    def test_rejectNegativeFreqValues(self):
+        # negative frequencies are not useful for this application, return -1
+        self.assertEqual(rft.parseFrequency('-123'), -1)
+        self.assertEqual(rft.parseFrequency('-123KHz'), -1)
+
     def test_missingDigitsAfterPeriod(self):
         # some poorly formatted values that still work as expected
         self.assertEqual(rft.parseFrequency('123.'), 123)
@@ -53,34 +77,10 @@ class TestCases(unittest.TestCase):
         self.assertEqual(rft.parseFrequency('123.MHz'), 123000000)
         self.assertEqual(rft.parseFrequency('123.GHz'), 123000000000)
 
-    def test_unusualSIUnits(self):
-        #######################################################################
-        # Current behavior: unusual SI values that are legal, but inappropriate
-        # for this application provide unexpected outputs. This behavior is
-        # based on the FULL set of SI prefixes defined in SITools (below).
-        #PREFIXES = ("y", "z", "a", "f", "p", "n", "µ", "m",
-        #            "", "k", "M", "G", "T", "P", "E", "Z", "Y")
-        #######################################################################
-        self.assertEqual(rft.parseFrequency('123EHz'), 123000000000000000000)
-        self.assertEqual(rft.parseFrequency('123PHz'), 123000000000000000)
-        self.assertEqual(rft.parseFrequency('123THz'), 123000000000000)
-        self.assertEqual(rft.parseFrequency('123YHz'), 122999999999999998473273344)
-        self.assertEqual(rft.parseFrequency('123ZHz'), 123000000000000002097152)
-        self.assertEqual(rft.parseFrequency('123aHz'), 0)
-        self.assertEqual(rft.parseFrequency('123fHz'), 0)
-        self.assertEqual(rft.parseFrequency('123mHz'), 0)
-        self.assertEqual(rft.parseFrequency('123nHz'), 0)
-        self.assertEqual(rft.parseFrequency('123pHz'), 0)
-        self.assertEqual(rft.parseFrequency('123yHz'), 0)
-        self.assertEqual(rft.parseFrequency('123zHz'), 0)
-
-        #######################################################################
-        # Recommend: Reducing the legal SI values defined in SITools (see
-        # below). This makes it more likely that typos will result in a -1
-        # failure code instead of being interpreted as an SI unit.
-        # PREFIXES = ("", "k", "M", "G")
-        #######################################################################
-        '''
+    def test_illegalSIUnits(self):
+        # The legal set of SI prefixes was redused for parseFrequency to reduce
+        # the potential that typos will result in unexpected output. This tests
+        # the illegal SI Units to verify a -1 error code result.
         self.assertEqual(rft.parseFrequency('123EHz'), -1)
         self.assertEqual(rft.parseFrequency('123PHz'), -1)
         self.assertEqual(rft.parseFrequency('123THz'), -1)
@@ -93,23 +93,15 @@ class TestCases(unittest.TestCase):
         self.assertEqual(rft.parseFrequency('123pHz'), -1)
         self.assertEqual(rft.parseFrequency('123yHz'), -1)
         self.assertEqual(rft.parseFrequency('123zHz'), -1)
-    '''
 
     def test_partialHzText(self):
-        #######################################################################
-        # The current behavior for accidentally missing the H in Hz, is a
-        # detection of 'z' SI unit (zepto = 10^-21), which then rounded to 0.
-        # After reduction of legal SI values in SITools, this would return
+        # Accidentally missing the H in Hz, previously resulted in detection
+        # of the 'z' SI unit (zepto = 10^-21), which then rounded to 0.
+        # After reduction of legal SI values in SITools, this now returns
         # a -1 failure code instead.
-        #######################################################################
-        self.assertEqual(rft.parseFrequency('123z'), 0)
-        self.assertEqual(rft.parseFrequency('123.z'), 0)
-        self.assertEqual(rft.parseFrequency('1.23z'), 0)
-        '''
         self.assertEqual(rft.parseFrequency('123z'), -1)
         self.assertEqual(rft.parseFrequency('123.z'), -1)
         self.assertEqual(rft.parseFrequency('1.23z'), -1)
-        '''
 
     def test_basicExponentialNotation(self):
         # check basic exponential notation
