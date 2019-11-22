@@ -1,4 +1,5 @@
-#  NanoVNASaver - a python program to view and export Touchstone data from a NanoVNA
+#  NanoVNASaver
+#  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019.  Rune B. Broberg
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -14,13 +15,20 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import sys
 import unittest
 
 # Import targets to be tested
-from NanoVNASaver import RFTools
-rft = RFTools.RFTools()
+from NanoVNASaver.RFTools import RFTools
+rft = RFTools()
 
+
+# TODO: should be tested against SITools.Value
+# RFTools.parseFrequency will hopefully go away in future
+# and be specialised by input field and device, like
+# parse_clamp_min=50000 for sweep input with
+# a nanovna version 1 attached ...
+# the hardware developer already announced a successor
+# which will have different limits
 class TestCases(unittest.TestCase):
 
     def test_basicSIUnits(self):
@@ -58,7 +66,7 @@ class TestCases(unittest.TestCase):
         # Current behavior: unusual SI values that are legal, but inappropriate
         # for this application provide unexpected outputs. This behavior is
         # based on the FULL set of SI prefixes defined in SITools (below).
-        #PREFIXES = ("y", "z", "a", "f", "p", "n", "µ", "m",
+        # PREFIXES = ("y", "z", "a", "f", "p", "n", "µ", "m",
         #            "", "k", "M", "G", "T", "P", "E", "Z", "Y")
         #######################################################################
         self.assertEqual(rft.parseFrequency('123EHz'), 123000000000000000000)

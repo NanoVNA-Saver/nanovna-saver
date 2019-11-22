@@ -33,6 +33,8 @@ class Format(NamedTuple):
     allow_strip: bool = False
     parse_sloppy_unit: bool = False
     parse_sloppy_kilo: bool = False
+    parse_clamp_min: float = -math.inf
+    parse_clamp_max: float = math.inf
 
 
 class Value:
@@ -66,7 +68,7 @@ class Value:
         elif offset > fmt.max_offset:
             offset = fmt.max_offset
 
-        real = self._value / (10 ** (offset * 3))
+        real = float(self._value) / (10 ** (offset * 3))
 
         if fmt.max_nr_digits < 4:
             formstr = ".0f"
@@ -111,7 +113,17 @@ class Value:
         elif self.fmt.assume_infinity and value == "-\N{INFINITY}":
             self._value = -math.inf
         else:
-            self._value = decimal.Decimal(value, context=Value.CTX) * factor
+            try:
+                self._value = (decimal.Decimal(value, context=Value.CTX) *
+                               decimal.Decimal(factor, context=Value.CTX))
+            except decimal.InvalidOperation:
+                raise ValueError
+            # TODO: get formating out of RFTools to be able to import clamp
+            #       and reuse code
+            if self._value < self.fmt.parse_clamp_min:
+                self._value = self.fmt.parse_clamp_min
+            elif self._value > self.fmt.parse_clamp_max:
+                self._value = self.fmt.parse_clamp_max
         return float(self._value)
 
     @property
