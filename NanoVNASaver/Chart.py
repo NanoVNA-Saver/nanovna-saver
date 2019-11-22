@@ -514,7 +514,7 @@ class FrequencyChart(Chart):
         else:
             return math.floor(self.width()/2)
 
-    def frequencyAtPosition(self, x, limit = True) -> int:
+    def frequencyAtPosition(self, x, limit=True) -> int:
         """
         Calculates the frequency at a given X-position
         :param limit: Determines whether frequencies outside the currently displayed span can be returned.
@@ -553,14 +553,25 @@ class FrequencyChart(Chart):
         if len(self.data) == 0 and len(self.reference) == 0:
             a0.ignore()
             return
+        do_zoom_x = do_zoom_y = True
+        if a0.modifiers() == QtCore.Qt.ShiftModifier:
+            do_zoom_x = False
+        if a0.modifiers() == QtCore.Qt.ControlModifier:
+            do_zoom_y = False
         if a0.angleDelta().y() > 0:
             # Zoom in
             a0.accept()
             # Center of zoom = a0.x(), a0.y()
             # We zoom in by 1/10 of the width/height.
             rate = a0.angleDelta().y() / 120
-            zoomx = rate * self.chartWidth / 10
-            zoomy = rate * self.chartHeight / 10
+            if do_zoom_x:
+                zoomx = rate * self.chartWidth / 10
+            else:
+                zoomx = 0
+            if do_zoom_y:
+                zoomy = rate * self.chartHeight / 10
+            else:
+                zoomy = 0
             absx = max(0, a0.x() - self.leftMargin)
             absy = max(0, a0.y() - self.topMargin)
             ratiox = absx/self.chartWidth
@@ -576,8 +587,14 @@ class FrequencyChart(Chart):
             # Center of zoom = a0.x(), a0.y()
             # We zoom out by 1/9 of the width/height, to match zoom in.
             rate = -a0.angleDelta().y() / 120
-            zoomx = rate * self.chartWidth / 9
-            zoomy = rate * self.chartHeight / 9
+            if do_zoom_x:
+                zoomx = rate * self.chartWidth / 9
+            else:
+                zoomx = 0
+            if do_zoom_y:
+                zoomy = rate * self.chartHeight / 9
+            else:
+                zoomy = 0
             absx = max(0, a0.x() - self.leftMargin)
             absy = max(0, a0.y() - self.topMargin)
             ratiox = absx/self.chartWidth
