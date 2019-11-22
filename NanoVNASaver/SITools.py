@@ -43,6 +43,7 @@ class Value:
     def __init__(self, value: Number = 0, unit: str = "", fmt=Format()):
         assert 3 <= fmt.max_nr_digits <= 30
         assert -8 <= fmt.min_offset <= fmt.max_offset <= 8
+        assert fmt.parse_clamp_min < fmt.parse_clamp_max
         self._value = decimal.Decimal(value, context=Value.CTX)
         self._unit = unit
         self.fmt = fmt
