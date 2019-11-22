@@ -16,7 +16,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
 import decimal
-from typing import NamedTuple
+from typing import NamedTuple, Union
 from numbers import Number
 
 PREFIXES = ("y", "z", "a", "f", "p", "n", "µ", "m",
@@ -40,13 +40,20 @@ class Format(NamedTuple):
 class Value:
     CTX = decimal.Context(prec=60, Emin=-27, Emax=27)
 
-    def __init__(self, value: Number = 0, unit: str = "", fmt=Format()):
+    def __init__(self,
+                 value: Union[Number, str] = 0,
+                 unit: str = "",
+                 fmt=Format()):
         assert 3 <= fmt.max_nr_digits <= 30
         assert -8 <= fmt.min_offset <= fmt.max_offset <= 8
         assert fmt.parse_clamp_min < fmt.parse_clamp_max
-        self._value = decimal.Decimal(value, context=Value.CTX)
         self._unit = unit
         self.fmt = fmt
+        if isinstance(value, str):
+            self._value = math.nan
+            self.parse(value)
+        else:
+            self._value = decimal.Decimal(value, context=Value.CTX)
 
     def __repr__(self) -> str:
         return (f"{self.__class__.__name__}(" + repr(self._value) +
