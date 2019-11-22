@@ -63,24 +63,24 @@ class CalibrationWindow(QtWidgets.QWidget):
         calibration_control_group = QtWidgets.QGroupBox("Calibrate")
         calibration_control_layout = QtWidgets.QFormLayout(calibration_control_group)
         btn_cal_short = QtWidgets.QPushButton("Short")
-        btn_cal_short.clicked.connect(self.saveShort)
+        btn_cal_short.clicked.connect(self.manualSaveShort)
         self.cal_short_label = QtWidgets.QLabel("Uncalibrated")
         
         btn_cal_open = QtWidgets.QPushButton("Open")
-        btn_cal_open.clicked.connect(self.saveOpen)
+        btn_cal_open.clicked.connect(self.manualSaveOpen)
         self.cal_open_label = QtWidgets.QLabel("Uncalibrated")
         
         btn_cal_load = QtWidgets.QPushButton("Load")
-        btn_cal_load.clicked.connect(self.saveLoad)
+        btn_cal_load.clicked.connect(self.manualSaveLoad)
         self.cal_load_label = QtWidgets.QLabel("Uncalibrated")
 
         btn_cal_through = QtWidgets.QPushButton("Through")
-        btn_cal_through.clicked.connect(self.saveThrough)
+        btn_cal_through.clicked.connect(self.manualSaveThrough)
         # btn_cal_through.setDisabled(True)
         self.cal_through_label = QtWidgets.QLabel("Uncalibrated")
 
         btn_cal_isolation = QtWidgets.QPushButton("Isolation")
-        btn_cal_isolation.clicked.connect(self.saveIsolation)
+        btn_cal_isolation.clicked.connect(self.manualSaveIsolation)
         # btn_cal_isolation.setDisabled(True)
         self.cal_isolation_label = QtWidgets.QLabel("Uncalibrated")
 
@@ -222,21 +222,63 @@ class CalibrationWindow(QtWidgets.QWidget):
         cal_standard_layout.addWidget(self.cal_standard_save_box)
         right_layout.addWidget(cal_standard_box)
 
+    def checkExpertUser(self):
+        if not self.app.settings.value("ExpertCalibrationUser", False, bool):
+            response = QtWidgets.QMessageBox.question(self, "Are you sure?", "Use of the manual calibration buttons " +
+                                                      "is non-intuitive, and primarily suited for users with very " +
+                                                      "specialized needs. The buttons do not sweep for you, nor do " +
+                                                      "they interact with the NanoVNA calibration.\n\n" +
+                                                      "If you are trying to do a calibration of the NanoVNA, do so " +
+                                                      "on the device itself instead. If you are trying to do a " +
+                                                      "calibration with NanoVNA-Saver, use the Calibration Assistant " +
+                                                      "if possible.\n\n" +
+                                                      "If you are certain you know what you are doing, click Yes.",
+                                                      QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Cancel,
+                                                      QtWidgets.QMessageBox.Cancel)
+
+            if response == QtWidgets.QMessageBox.Yes:
+                self.app.settings.setValue("ExpertCalibrationUser", True)
+                return True
+            else:
+                return False
+        else:
+            return True
+
+    def manualSaveShort(self):
+        if self.checkExpertUser():
+            self.saveShort()
+
     def saveShort(self):
         self.app.calibration.s11short = self.app.data
         self.cal_short_label.setText("Data set (" + str(len(self.app.calibration.s11short)) + " points)")
+
+    def manualSaveOpen(self):
+        if self.checkExpertUser():
+            self.saveOpen()
 
     def saveOpen(self):
         self.app.calibration.s11open = self.app.data
         self.cal_open_label.setText("Data set (" + str(len(self.app.calibration.s11open)) + " points)")
 
+    def manualSaveLoad(self):
+        if self.checkExpertUser():
+            self.saveLoad()
+
     def saveLoad(self):
         self.app.calibration.s11load = self.app.data
         self.cal_load_label.setText("Data set (" + str(len(self.app.calibration.s11load)) + " points)")
 
+    def manualSaveIsolation(self):
+        if self.checkExpertUser():
+            self.saveIsolation()
+
     def saveIsolation(self):
         self.app.calibration.s21isolation = self.app.data21
         self.cal_isolation_label.setText("Data set (" + str(len(self.app.calibration.s21isolation)) + " points)")
+
+    def manualSaveThrough(self):
+        if self.checkExpertUser():
+            self.saveThrough()
 
     def saveThrough(self):
         self.app.calibration.s21through = self.app.data21
