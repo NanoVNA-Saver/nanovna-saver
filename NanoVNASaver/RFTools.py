@@ -22,14 +22,22 @@ from typing import List, NamedTuple
 from NanoVNASaver.SITools import Value, Format
 
 
-def clamp_value(value: Real, rmin: Real, rmax: Real) -> Real:
-    assert rmin <= rmax
-    if value < rmin:
-        return rmin
-    if value > rmax:
-        return rmax
-    return value
+def normalize(z: complex, ref_impedance: float=50) -> complex:
+    """Normalize from ref_impedance to z"""
+    return z / ref_impedance
 
+
+def norm_to_impedance(z: complex, ref_impedance: float = 50) -> complex:
+    """Calculate impedance from normalized z"""
+    return z * ref_impedance
+
+def reflection_coefficient(z: complex, ref_impedance: float = 50) -> complex:
+    """Calculate reflection coefficient for z"""
+    return (z - ref_impedance) / (z + ref_impedance)
+
+def gamma_to_impedance(gamma: complex, ref_impedance: float = 50) -> complex:
+    """Calculate reflection coefficient for z"""
+    return ((-gamma - 1) / (gamma - 1)) * ref_impedance
 
 class Datapoint(NamedTuple):
     freq: int
@@ -63,7 +71,7 @@ class Datapoint(NamedTuple):
         return (1 + mag) / (1 - mag)
 
     def impedance(self, ref_impedance: float = 50) -> complex:
-        return ref_impedance * ((-self.z - 1) / (self.z - 1))
+        return gamma_to_impedance(self.z, ref_impedance)
 
     def qFactor(self, ref_impedance: float = 50) -> float:
         imp = self.impedance(ref_impedance)
@@ -86,6 +94,28 @@ class Datapoint(NamedTuple):
         if imp.imag == 0:
             return 0
         return imp.imag * 1 / (self.freq * 2 * math.pi)
+
+def clamp_value(value: Real, rmin: Real, rmax: Real) -> Real:
+    assert rmin <= rmax
+    if value < rmin:
+        return rmin
+    if value > rmax:
+        return rmax
+    return value
+
+
+
+def groupDelay(data: List[Datapoint], index: int) -> float:
+    idx0 = clamp_value(index - 1, 0, len(data) - 1)
+    idx1 = clamp_value(index + 1, 0, len(data) - 1)
+    delta_angle = (data[idx1].phase - data[idx0].phase)
+    if abs(delta_angle) > math.tau:
+        if delta_angle > 0:
+            delta_angle = delta_angle % math.tau
+        else:
+            delta_angle = -1 * (delta_angle % math.tau)
+    val = -delta_angle / math.tau / (data[idx1].freq - data[idx0].freq)
+    return val
 
 
 class RFTools:
@@ -122,16 +152,3 @@ class RFTools:
             return round(parser.parse(freq))
         except (ValueError, IndexError):
             return -1
-
-    @staticmethod
-    def groupDelay(data: List[Datapoint], index: int) -> float:
-        idx0 = clamp_value(index - 1, 0, len(data) - 1)
-        idx1 = clamp_value(index + 1, 0, len(data) - 1)
-        delta_angle = (data[idx1].phase - data[idx0].phase)
-        if abs(delta_angle) > math.tau:
-            if delta_angle > 0:
-                delta_angle = delta_angle % math.tau
-            else:
-                delta_angle = -1 * (delta_angle % math.tau)
-        val = -delta_angle / math.tau / (data[idx1].freq - data[idx0].freq)
-        return val
