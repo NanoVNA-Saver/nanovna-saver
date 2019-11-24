@@ -1874,6 +1874,11 @@ class CombinedLogMagChart(FrequencyChart):
         self.reference21 = data21
         self.update()
 
+    def resetReference(self):
+        self.reference11 = []
+        self.reference21 = []
+        self.update()
+
     def resetDisplayLimits(self):
         self.reference11 = []
         self.reference21 = []

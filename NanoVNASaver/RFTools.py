@@ -127,11 +127,14 @@ class RFTools:
     def groupDelay(data: List[Datapoint], index: int) -> float:
         idx0 = clamp_value(index - 1, 0, len(data) - 1)
         idx1 = clamp_value(index + 1, 0, len(data) - 1)
-        delta_angle = (data[idx1].phase - data[idx0].phase)
+        delta_angle = data[idx1].phase - data[idx0].phase
+        delta_freq = data[idx1].freq - data[idx0].freq
+        if delta_freq == 0:
+            return 0
         if abs(delta_angle) > math.tau:
             if delta_angle > 0:
                 delta_angle = delta_angle % math.tau
             else:
                 delta_angle = -1 * (delta_angle % math.tau)
-        val = -delta_angle / math.tau / (data[idx1].freq - data[idx0].freq)
+        val = -delta_angle / math.tau / delta_freq
         return val
