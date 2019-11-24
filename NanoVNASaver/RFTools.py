@@ -18,13 +18,17 @@ import math
 import cmath
 from numbers import Number, Real
 from typing import List, NamedTuple
-
+upstream_Development
 from NanoVNASaver.SITools import Value, Format
 
 
-def normalize(z: complex, ref_impedance: float=50) -> complex:
-    """Normalize from ref_impedance to z"""
-    return z / ref_impedance
+def clamp_value(value: Real, rmin: Real, rmax: Real) -> Real:
+    assert rmin <= rmax
+    if value < rmin:
+        return rmin
+    if value > rmax:
+        return rmax
+    return value
 
 
 def norm_to_impedance(z: complex, ref_impedance: float = 50) -> complex:
@@ -104,17 +108,19 @@ def clamp_value(value: Real, rmin: Real, rmax: Real) -> Real:
     return value
 
 
-
 def groupDelay(data: List[Datapoint], index: int) -> float:
     idx0 = clamp_value(index - 1, 0, len(data) - 1)
     idx1 = clamp_value(index + 1, 0, len(data) - 1)
-    delta_angle = (data[idx1].phase - data[idx0].phase)
+    delta_angle = data[idx1].phase - data[idx0].phase
+    delta_freq = data[idx1].freq - data[idx0].freq
+    if delta_freq == 0:
+        return 0
     if abs(delta_angle) > math.tau:
         if delta_angle > 0:
             delta_angle = delta_angle % math.tau
         else:
             delta_angle = -1 * (delta_angle % math.tau)
-    val = -delta_angle / math.tau / (data[idx1].freq - data[idx0].freq)
+    val = -delta_angle / math.tau / delta_freq
     return val
 
 
