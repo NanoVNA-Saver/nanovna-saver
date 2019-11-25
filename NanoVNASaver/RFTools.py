@@ -154,6 +154,6 @@ class RFTools:
     def parseFrequency(freq: str) -> int:
         parser = Value(0, "Hz", Format(parse_sloppy_unit=True, parse_sloppy_kilo=True))
         try:
-            return round(parser.parse(freq))
+            return round(parser.parse(freq).value)
         except (ValueError, IndexError):
             return -1

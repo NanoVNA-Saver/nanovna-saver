@@ -31,6 +31,7 @@ class Format(NamedTuple):
     min_offset: int = -8
     max_offset: int = 8
     allow_strip: bool = False
+    allways_signed: bool = False
     parse_sloppy_unit: bool = False
     parse_sloppy_kilo: bool = False
     parse_clamp_min: float = -math.inf
@@ -86,6 +87,8 @@ class Value:
                 (1 if not fmt.fix_decimals and abs(real) < 100 else 0))
             formstr = "." + str(max_digits - 3) + "f"
 
+        if self.fmt.allways_signed:
+            formstr = "+" + formstr
         result = format(real, formstr)
 
         if float(result) == 0.0:
@@ -96,11 +99,22 @@ class Value:
 
         return result + fmt.space_str + PREFIXES[offset + 8] + self._unit
 
-    @property
-    def value(self):
+    def __float__(self):
         return float(self._value)
 
-    def parse(self, value: str) -> float:
+    @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, value: Number):
+        self._value = decimal.Decimal(value, context=Value.CTX)
+
+    def parse(self, value: str) -> Value:
+        if isinstance(value, Number):
+            self.value = value
+            return self
+
         value = value.replace(" ", "")  # Ignore spaces
 
         if self._unit and (
@@ -132,7 +146,7 @@ class Value:
                 self._value = self.fmt.parse_clamp_min
             elif self._value > self.fmt.parse_clamp_max:
                 self._value = self.fmt.parse_clamp_max
-        return float(self._value)
+        return self
 
     @property
     def unit(self) -> str:
