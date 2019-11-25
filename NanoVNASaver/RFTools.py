@@ -21,26 +21,20 @@ from typing import List, NamedTuple
 from NanoVNASaver.SITools import Value, Format
 
 
-def clamp_value(value: Real, rmin: Real, rmax: Real) -> Real:
-    assert rmin <= rmax
-    if value < rmin:
-        return rmin
-    if value > rmax:
-        return rmax
-    return value
-
-
 def norm_to_impedance(z: complex, ref_impedance: float = 50) -> complex:
     """Calculate impedance from normalized z"""
     return z * ref_impedance
+
 
 def reflection_coefficient(z: complex, ref_impedance: float = 50) -> complex:
     """Calculate reflection coefficient for z"""
     return (z - ref_impedance) / (z + ref_impedance)
 
+
 def gamma_to_impedance(gamma: complex, ref_impedance: float = 50) -> complex:
     """Calculate reflection coefficient for z"""
     return ((-gamma - 1) / (gamma - 1)) * ref_impedance
+
 
 class Datapoint(NamedTuple):
     freq: int
@@ -97,6 +91,7 @@ class Datapoint(NamedTuple):
         if imp.imag == 0:
             return 0
         return imp.imag * 1 / (self.freq * 2 * math.pi)
+
 
 def clamp_value(value: Real, rmin: Real, rmax: Real) -> Real:
     assert rmin <= rmax
