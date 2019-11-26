@@ -15,6 +15,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import unittest
+import logging
 
 # Import targets to be tested
 from NanoVNASaver.Touchstone import Options, Touchstone
@@ -74,8 +75,14 @@ class TestTouchstoneTouchstone(unittest.TestCase):
 
     def test_load_scikit(self):
         ts = Touchstone("./test/data/scikit_unordered.s2p")
-        ts.load()
-        print(len(ts.s("12")))
+        with self.assertLogs(level=logging.WARNING) as cm:
+            ts.load()
+        self.assertEqual(cm.output, [
+            'WARNING:NanoVNASaver.Touchstone:Non integer resistance value: 50.0',
+            'WARNING:NanoVNASaver.Touchstone:Comment after header: !freq ReS11 ImS11 ReS21 ImS21 ReS12 ImS12 ReS22 ImS22',
+            'WARNING:NanoVNASaver.Touchstone:Frequency not ascending: 15000000.0 0.849810063 -0.4147357 -0.000306106 0.0041482 0.0 0.0 0.0 0.0',
+            'WARNING:NanoVNASaver.Touchstone:Reordering data',
+            ])
         self.assertEqual(str(ts.opts), "# HZ S RI R 50")
         self.assertEqual(len(ts.s11data), 101)
         self.assertIn("!freq ReS11 ImS11 ReS21 ImS21 ReS12 ImS12 ReS22 ImS22",

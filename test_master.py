@@ -29,6 +29,7 @@ import unittest
 ###############################################################################
 
 if __name__ == '__main__':
+    sys.path.append('.')
     loader = unittest.TestLoader()
     tests = loader.discover('.')
     testRunner = unittest.runner.TextTestRunner(
