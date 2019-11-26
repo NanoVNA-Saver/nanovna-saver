@@ -99,6 +99,3 @@ class TestTSIToolsValue(unittest.TestCase):
         self.assertEqual(str(v.parse("1e-2")), "10m")
         self.assertEqual(str(v.parse("1e-3")), "1m")
 
-
-if __name__ == '__main__':
-    unittest.main(verbosity=2)
