@@ -110,7 +110,7 @@ class Value:
     def value(self, value: Number):
         self._value = decimal.Decimal(value, context=Value.CTX)
 
-    def parse(self, value: str) -> Value:
+    def parse(self, value: str) -> "Value":
         if isinstance(value, Number):
             self.value = value
             return self
