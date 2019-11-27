@@ -3665,6 +3665,7 @@ class GroupDelayChart(FrequencyChart):
             self.unwrappedData = np.degrees(np.unwrap(rawData))
             self.groupDelay = []
             for i in range(len(self.data)):
+                # TODO: Replace with call to RFTools.groupDelay
                 if i == 0:
                     phase_change = self.unwrappedData[1] - self.unwrappedData[0]
                     freq_change = self.data[1].freq - self.data[0].freq

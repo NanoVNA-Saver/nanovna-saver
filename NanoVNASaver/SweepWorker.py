@@ -168,14 +168,13 @@ class SweepWorker(QtCore.QRunnable):
         self.signals.finished.emit()
         return
 
-    def updateData(self, values11, values21, offset):
+    def updateData(self, values11, values21, offset, segment_size = 101):
         # Update the data from (i*101) to (i+1)*101
-        # TODO: Get rid of the 101 point assumptions
         logger.debug("Calculating data and inserting in existing data at offset %d", offset)
         for i in range(len(values11)):
             re, im = values11[i]
             re21, im21 = values21[i]
-            freq = self.data11[offset*101 + i].freq
+            freq = self.data11[offset * segment_size + i].freq
             rawData11 = Datapoint(freq, re, im)
             rawData21 = Datapoint(freq, re21, im21)
             # TODO: Use applyCalibration instead
@@ -184,10 +183,10 @@ class SweepWorker(QtCore.QRunnable):
                 if self.app.calibration.isValid2Port():
                     re21, im21 = self.app.calibration.correct21(re21, im21, freq)
 
-            self.data11[offset*101 + i] = Datapoint(freq, re, im)
-            self.data21[offset * 101 + i] = Datapoint(freq, re21, im21)
-            self.rawData11[offset * 101 + i] = rawData11
-            self.rawData21[offset * 101 + i] = rawData21
+            self.data11[offset * segment_size + i] = Datapoint(freq, re, im)
+            self.data21[offset * segment_size + i] = Datapoint(freq, re21, im21)
+            self.rawData11[offset * segment_size + i] = rawData11
+            self.rawData21[offset * segment_size + i] = rawData21
         logger.debug("Saving data to application (%d and %d points)", len(self.data11), len(self.data21))
         self.app.saveData(self.data11, self.data21)
         logger.debug("Sending \"updated\" signal")

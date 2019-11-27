@@ -26,8 +26,9 @@ from NanoVNASaver.RFTools import Datapoint, RFTools, groupDelay
 FMT_Q_FACTOR = SITools.Format(max_nr_digits=4, assume_infinity=False,
                               min_offset=0, max_offset=0, allow_strip=True)
 
+
 def format_q_factor(val: float) -> str:
-    if 0 > val or val  > 10000.0:
+    if 0 > val or val > 10000.0:
         return "\N{INFINITY}"
     return str(SITools.Value(val, fmt=FMT_Q_FACTOR))
 
@@ -275,7 +276,7 @@ class Marker(QtCore.QObject):
 
         min_distance = max_freq
         for i in range(len(data)):
-            if abs(data[i].freq - self.frequency) < min_distance:
+            if abs(data[i].freq - self.frequency) <= min_distance:
                 min_distance = abs(data[i].freq - self.frequency)
             else:
                 # We have now started moving away from the nearest point
