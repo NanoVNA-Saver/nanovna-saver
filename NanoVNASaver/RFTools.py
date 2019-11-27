@@ -63,8 +63,6 @@ class Datapoint(NamedTuple):
         mag = abs(self.z)
         if mag == 1:
             return 1
-        if mag > 1:
-            return math.inf
         return (1 + mag) / (1 - mag)
 
     def impedance(self, ref_impedance: float = 50) -> complex:
