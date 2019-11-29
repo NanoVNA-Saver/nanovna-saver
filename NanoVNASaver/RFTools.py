@@ -26,13 +26,18 @@ def norm_to_impedance(z: complex, ref_impedance: float = 50) -> complex:
     return z * ref_impedance
 
 
+def impedance_to_norm(z: complex, ref_impedance: float = 50) -> complex:
+    """Calculate normalized z from impedance"""
+    return z / ref_impedance
+
+
 def reflection_coefficient(z: complex, ref_impedance: float = 50) -> complex:
     """Calculate reflection coefficient for z"""
     return (z - ref_impedance) / (z + ref_impedance)
 
 
 def gamma_to_impedance(gamma: complex, ref_impedance: float = 50) -> complex:
-    """Calculate reflection coefficient for z"""
+    """Calculate impedance from gamma"""
     return ((-gamma - 1) / (gamma - 1)) * ref_impedance
 
 
