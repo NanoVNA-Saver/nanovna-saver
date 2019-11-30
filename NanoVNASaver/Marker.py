@@ -25,11 +25,17 @@ from NanoVNASaver.RFTools import Datapoint, RFTools, groupDelay
 
 FMT_Q_FACTOR = SITools.Format(max_nr_digits=4, assume_infinity=False,
                               min_offset=0, max_offset=0, allow_strip=True)
+FMT_GROUP_DELAY = SITools.Format(max_nr_digits=5, space_str=" ")
+
 
 def format_q_factor(val: float) -> str:
-    if 0 > val or val  > 10000.0:
+    if val < 0 or val > 10000.0:
         return "\N{INFINITY}"
     return str(SITools.Value(val, fmt=FMT_Q_FACTOR))
+
+
+def format_group_delay(val: float) -> str:
+    return str(SITools.Value(val, "s", fmt=FMT_GROUP_DELAY))
 
 
 class Marker(QtCore.QObject):
@@ -56,7 +62,8 @@ class Marker(QtCore.QObject):
                     self.setText(str(self.nextFrequency))
                     self.textEdited.emit(self.text())
                     return
-                elif a0.key() == QtCore.Qt.Key_Down and self.previousFrequency != -1:
+                elif a0.key() == QtCore.Qt.Key_Down and \
+                        self.previousFrequency != -1:
                     a0.accept()
                     self.setText(str(self.previousFrequency))
                     self.textEdited.emit(self.text())
@@ -74,9 +81,9 @@ class Marker(QtCore.QObject):
         self.frequencyInput.setAlignment(QtCore.Qt.AlignRight)
         self.frequencyInput.textEdited.connect(self.setFrequency)
 
-        ################################################################################################################
+        ###############################################################
         # Data display label
-        ################################################################################################################
+        ###############################################################
 
         self.frequency_label = QtWidgets.QLabel("")
         self.frequency_label.setMinimumWidth(100)
@@ -100,34 +107,38 @@ class Marker(QtCore.QObject):
         self.s21_group_delay_label = QtWidgets.QLabel("")
         self.quality_factor_label = QtWidgets.QLabel("")
 
-        self.fields = {"actualfreq": ("Frequency:", self.frequency_label),
-                       "impedance": ("Impedance:", self.impedance_label),
-                       "admittance": ("Admittance:", self.admittance_label),
-                       "serr": ("Series R:", self.series_r_label),
-                       "serl": ("Series L:", self.inductance_label),
-                       "serc": ("Series C:", self.capacitance_label),
-                       "serlc": ("Series L/C:", self.series_lc_label),
-                       "parr": ("Parallel R:", self.parallel_r_label),
-                       "parc": ("Parallel C:", self.parallel_c_label),
-                       "parl": ("Parallel L:", self.parallel_l_label),
-                       "parlc": ("Parallel L/C:", self.parallel_x_label),
-                       "returnloss": ("Return loss:", self.returnloss_label),
-                       "vswr": ("VSWR:", self.vswr_label),
-                       "s11q": ("Quality factor:", self.quality_factor_label),
-                       "s11phase": ("S11 Phase:", self.s11_phase_label),
-                       "s11groupdelay": ("S11 Group Delay:", self.s11_group_delay_label),
-                       "s21gain": ("S21 Gain:", self.gain_label),
-                       "s21phase": ("S21 Phase:", self.s21_phase_label),
-                       "s21groupdelay": ("S21 Group Delay:", self.s21_group_delay_label),
-                       }
+        self.fields = {
+            "actualfreq": ("Frequency:", self.frequency_label),
+            "impedance": ("Impedance:", self.impedance_label),
+            "admittance": ("Admittance:", self.admittance_label),
+            "serr": ("Series R:", self.series_r_label),
+            "serl": ("Series L:", self.inductance_label),
+            "serc": ("Series C:", self.capacitance_label),
+            "serlc": ("Series L/C:", self.series_lc_label),
+            "parr": ("Parallel R:", self.parallel_r_label),
+            "parc": ("Parallel C:", self.parallel_c_label),
+            "parl": ("Parallel L:", self.parallel_l_label),
+            "parlc": ("Parallel L/C:", self.parallel_x_label),
+            "returnloss": ("Return loss:", self.returnloss_label),
+            "vswr": ("VSWR:", self.vswr_label),
+            "s11q": ("Quality factor:", self.quality_factor_label),
+            "s11phase": ("S11 Phase:", self.s11_phase_label),
+            "s11groupdelay": ("S11 Group Delay:", self.s11_group_delay_label),
+            "s21gain": ("S21 Gain:", self.gain_label),
+            "s21phase": ("S21 Phase:", self.s21_phase_label),
+            "s21groupdelay": ("S21 Group Delay:", self.s21_group_delay_label),
+        }
 
-        ################################################################################################################
+        ###############################################################
         # Marker control layout
-        ################################################################################################################
+        ###############################################################
 
         self.btnColorPicker = QtWidgets.QPushButton("█")
         self.btnColorPicker.setFixedWidth(20)
-        self.btnColorPicker.clicked.connect(lambda: self.setColor(QtWidgets.QColorDialog.getColor(self.color, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
+        self.btnColorPicker.clicked.connect(
+            lambda: self.setColor(QtWidgets.QColorDialog.getColor(
+                self.color, options=QtWidgets.QColorDialog.ShowAlphaChannel))
+        )
         self.isMouseControlledRadioButton = QtWidgets.QRadioButton()
 
         self.layout = QtWidgets.QHBoxLayout()
@@ -135,9 +146,10 @@ class Marker(QtCore.QObject):
         self.layout.addWidget(self.btnColorPicker)
         self.layout.addWidget(self.isMouseControlledRadioButton)
 
-        ################################################################################################################
+        ###############################################################
         # Data display layout
-        ################################################################################################################
+        ###############################################################
+
         self.group_box = QtWidgets.QGroupBox(self.name)
         self.group_box.setMaximumWidth(340)
         box_layout = QtWidgets.QHBoxLayout(self.group_box)
@@ -155,6 +167,9 @@ class Marker(QtCore.QObject):
 
         self.buildForm()
 
+    def _size_str(self) -> str:
+        return str(self.group_box.font().pointSize())
+
     def setScale(self, scale):
         self.group_box.setMaximumWidth(int(340 * scale))
         self.frequency_label.setMinimumWidth(int(100 * scale))
@@ -162,11 +177,14 @@ class Marker(QtCore.QObject):
         if self.coloredText:
             color_string = QtCore.QVariant(self.color)
             color_string.convert(QtCore.QVariant.String)
-
-            self.group_box.setStyleSheet('QGroupBox { color: ' + color_string.value() + '; font-size: ' +
-                                         str(self.group_box.font().pointSize()) + '};')
+            self.group_box.setStyleSheet(
+                f"QGroupBox {{ color: {color_string.value()}; "
+                f"font-size: {self._size_str()}}};"
+            )
         else:
-            self.group_box.setStyleSheet('QGroupBox { font-size: ' + str(self.group_box.font().pointSize()) + '};')
+            self.group_box.setStyleSheet(
+                f"QGroupBox {{ font-size: {self._size_str()}}};"
+            )
 
     def buildForm(self):
         while self.left_form.count() > 0:
@@ -235,17 +253,17 @@ class Marker(QtCore.QObject):
             p = self.btnColorPicker.palette()
             p.setColor(QtGui.QPalette.ButtonText, self.color)
             self.btnColorPicker.setPalette(p)
-
         if self.coloredText:
             color_string = QtCore.QVariant(color)
             color_string.convert(QtCore.QVariant.String)
             self.group_box.setStyleSheet(
-                'QGroupBox { color: ' + color_string.value() +
-                '; font-size: ' + str(self.group_box.font().pointSize()) +
-                '};'
+                f"QGroupBox {{ color: {color_string.value()}; "
+                f"font-size: {self._size_str()}}};"
             )
         else:
-            self.group_box.setStyleSheet('QGroupBox { font-size: ' + str(self.group_box.font().pointSize()) + '};')
+            self.group_box.setStyleSheet(
+                f"QGroupBox {{ font-size: {self._size_str()}}};"
+            )
 
     def setColoredText(self, colored_text):
         self.coloredText = colored_text
@@ -256,7 +274,8 @@ class Marker(QtCore.QObject):
 
     def findLocation(self, data: List[Datapoint]):
         self.location = -1
-        self.frequencyInput.nextFrequency = self.frequencyInput.previousFrequency = -1
+        self.frequencyInput.nextFrequency = -1
+        self.frequencyInput.previousFrequency = -1
         if self.frequency == 0:
             # No frequency set for this marker
             return
@@ -269,8 +288,9 @@ class Marker(QtCore.QObject):
         lower_stepsize = data[1].freq - data[0].freq
         upper_stepsize = data[len(data)-1].freq - data[len(data)-2].freq
 
-        if self.frequency + lower_stepsize/2 < min_freq or self.frequency - upper_stepsize/2 > max_freq:
-            # We are outside the bounds of the data, so we can't put in a marker
+        # We are outside the bounds of the data, so we can't put in a marker
+        if (self.frequency + lower_stepsize/2 < min_freq or
+                self.frequency - upper_stepsize/2 > max_freq):
             return
 
         min_distance = max_freq
@@ -347,9 +367,15 @@ class Marker(QtCore.QObject):
 
         if im50 != 0:
             xp = (re50 ** 2 + im50 ** 2) / im50
-            xp = round(xp, 3 - max(0, math.floor(math.log10(abs(xp)))))
-            xpcstr = RFTools.capacitanceEquivalent(xp, s11data[self.location].freq)
-            xplstr = RFTools.inductanceEquivalent(xp, s11data[self.location].freq)
+            xp = round(
+                xp, 3 - max(0, math.floor(math.log10(abs(xp))))
+            )
+            xpcstr = RFTools.capacitanceEquivalent(
+                xp, s11data[self.location].freq
+            )
+            xplstr = RFTools.inductanceEquivalent(
+                xp, s11data[self.location].freq
+            )
             if xp < 0:
                 xpstr = xpcstr
                 xp50str = " -j" + str(-1 * xp)
@@ -362,7 +388,10 @@ class Marker(QtCore.QObject):
             xpstr = xpcstr = xplstr = "-"
 
         if im50 != 0:
-            im50 = round(im50, 3 - max(0, math.floor(math.log10(abs(im50)))))
+            im50 = round(
+                im50,
+                3 - max(0, math.floor(math.log10(abs(im50))))
+            )
 
         if im50 < 0:
             im50str = " -j" + str(-1 * im50)
@@ -370,19 +399,24 @@ class Marker(QtCore.QObject):
             im50str = " +j" + str(im50)
         im50str += " \N{OHM SIGN}"
 
-        self.frequency_label.setText(RFTools.formatFrequency(s11data[self.location].freq))
+        self.frequency_label.setText(
+            RFTools.formatFrequency(s11.freq))
         self.impedance_label.setText(re50str + im50str)
         self.admittance_label.setText(rpstr + xp50str)
         self.series_r_label.setText(re50str + " \N{OHM SIGN}")
         self.parallel_r_label.setText(rpstr + " \N{OHM SIGN}")
         self.parallel_x_label.setText(xpstr)
         if self.returnloss_is_positive:
-            returnloss = -round(s11data[self.location].gain, 3)
+            returnloss = -round(s11.gain, 3)
         else:
-            returnloss = round(s11data[self.location].gain, 3)
+            returnloss = round(s11.gain, 3)
         self.returnloss_label.setText(str(returnloss) + " dB")
-        capacitance = RFTools.capacitanceEquivalent(im50, s11data[self.location].freq)
-        inductance = RFTools.inductanceEquivalent(im50, s11data[self.location].freq)
+        capacitance = RFTools.capacitanceEquivalent(
+            im50, s11data[self.location].freq
+        )
+        inductance = RFTools.inductanceEquivalent(
+            im50, s11data[self.location].freq
+        )
         self.inductance_label.setText(inductance)
         self.capacitance_label.setText(capacitance)
         self.parallel_c_label.setText(xpcstr)
@@ -392,19 +426,23 @@ class Marker(QtCore.QObject):
         else:
             self.series_lc_label.setText(capacitance)
         vswr = round(vswr, 3)
-        if vswr < 0:
-            vswr = "-"
         self.vswr_label.setText(str(vswr))
         q = s11data[self.location].qFactor()
         self.quality_factor_label.setText(format_q_factor(q))
         self.s11_phase_label.setText(
-            str(round(math.degrees(s11data[self.location].phase), 2)) + "\N{DEGREE SIGN}")
-        fmt = SITools.Format(max_nr_digits=5, space_str=" ")
-        self.s11_group_delay_label.setText(str(SITools.Value(groupDelay(s11data, self.location), "s", fmt)))
+            str(round(math.degrees(s11.phase), 2)) + "\N{DEGREE SIGN}")
+        self.s11_group_delay_label.setText(
+            format_group_delay(groupDelay(s11data, self.location))
+        )
 
-        if len(s21data) == len(s11data):
-            self.gain_label.setText(str(round(s21data[self.location].gain, 3)) + " dB")
-            self.s21_phase_label.setText(
-                str(round(math.degrees(s21data[self.location].phase), 2)) + "\N{DEGREE SIGN}")
-            self.s21_group_delay_label.setText(str(SITools.Value(groupDelay(s21data, self.location) / 2,
-                                                                    "s", fmt)))
+        # skip if no valid s21 data
+        if len(s21data) != len(s11data):
+            return
+
+        self.gain_label.setText(str(round(s21.gain, 3)) + " dB")
+        self.s21_phase_label.setText(
+            str(round(math.degrees(s21.phase), 2)) + "\N{DEGREE SIGN}")
+        # TODO: figure out if calculation is right (S11 no division by 2)
+        self.s21_group_delay_label.setText(
+            format_group_delay(groupDelay(s21data, self.location) / 2)
+        )
