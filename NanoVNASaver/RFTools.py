@@ -21,14 +21,14 @@ from typing import List, NamedTuple
 from NanoVNASaver.SITools import Value, Format
 
 
-def norm_to_impedance(z: complex, ref_impedance: float = 50) -> complex:
-    """Calculate impedance from normalized z"""
-    return z * ref_impedance
-
-
 def impedance_to_norm(z: complex, ref_impedance: float = 50) -> complex:
     """Calculate normalized z from impedance"""
     return z / ref_impedance
+
+
+def norm_to_impedance(z: complex, ref_impedance: float = 50) -> complex:
+    """Calculate impedance from normalized z"""
+    return z * ref_impedance
 
 
 def reflection_coefficient(z: complex, ref_impedance: float = 50) -> complex:

@@ -29,8 +29,8 @@ F_ASSERT_OFFSET_3 = Format(min_offset=9)
 F_ASSERT_CLAMP = Format(parse_clamp_min=10, parse_clamp_max=9)
 
 F_DIGITS_3 = Format(max_nr_digits=3)
-F_DIGITS_4 = Format(max_nr_digits=3)
-F_DIGITS_31 = Format(max_nr_digits=30)
+F_DIGITS_4 = Format(max_nr_digits=4)
+F_DIGITS_31 = Format(max_nr_digits=31)
 
 F_WITH_SPACE = Format(space_str=" ")
 F_WITH_UNDERSCORE = Format(space_str="_")
@@ -38,7 +38,7 @@ F_WITH_UNDERSCORE = Format(space_str="_")
 
 class TestTSIToolsValue(unittest.TestCase):
 
-    def test_format_asssertions(self):
+    def test_format_assertions(self):
         self.assertRaises(AssertionError, Value, fmt=F_ASSERT_DIGITS_1)
         self.assertRaises(AssertionError, Value, fmt=F_ASSERT_DIGITS_2)
         self.assertRaises(AssertionError, Value, fmt=F_ASSERT_OFFSET_1)
@@ -99,3 +99,18 @@ class TestTSIToolsValue(unittest.TestCase):
         self.assertEqual(str(v.parse("1e-2")), "10m")
         self.assertEqual(str(v.parse("1e-3")), "1m")
 
+    def test_format_digits_4(self):
+        v = Value(fmt=F_DIGITS_4)
+        self.assertEqual(str(v.parse("1")), "1.000")
+        self.assertEqual(str(v.parse("10")), "10.00")
+        self.assertEqual(str(v.parse("100")), "100.0")
+        self.assertEqual(str(v.parse("1e3")), "1.000k")
+        self.assertEqual(str(v.parse("1e4")), "10.00k")
+        self.assertEqual(str(v.parse("1e5")), "100.0k")
+        self.assertEqual(str(v.parse("1e-1")), "100.0m")
+        self.assertEqual(str(v.parse("1e-2")), "10.00m")
+        self.assertEqual(str(v.parse("1e-3")), "1.000m")
+
+# TODO: test F_DIGITS_31
+#            F_WITH_SPACE
+#            F_WITH_UNDERSCORE
