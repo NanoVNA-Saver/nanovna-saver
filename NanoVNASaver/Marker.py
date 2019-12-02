@@ -25,7 +25,10 @@ from NanoVNASaver.RFTools import Datapoint, RFTools, groupDelay
 
 FMT_Q_FACTOR = SITools.Format(max_nr_digits=4, assume_infinity=False,
                               min_offset=0, max_offset=0, allow_strip=True)
-FMT_GROUP_DELAY = SITools.Format(max_nr_digits=5, space_str=" ")
+FMT_IMPEDANCE = SITools.Format(max_nr_digits=4, assume_infinity=False,
+                               min_offset=-1, max_offset=2, allow_strip=True)
+FMT_IND_CAP = SITools.Format(max_nr_digits=5, allow_strip=True)
+FMT_GROUP_DELAY = SITools.Format(max_nr_digits=5)
 
 
 def format_q_factor(val: float) -> str:
@@ -36,6 +39,10 @@ def format_q_factor(val: float) -> str:
 
 def format_group_delay(val: float) -> str:
     return str(SITools.Value(val, "s", fmt=FMT_GROUP_DELAY))
+
+
+def format_phase(val: float) -> str:
+    return f"{math.degrees(val):.2f}\N{DEGREE SIGN}"
 
 
 class Marker(QtCore.QObject):
@@ -97,7 +104,7 @@ class Marker(QtCore.QObject):
         self.returnloss_label.setMinimumWidth(80)
         self.vswr_label = QtWidgets.QLabel("")
         self.series_r_label = QtWidgets.QLabel("")
-        self.series_lc_label = QtWidgets.QLabel("")
+        self.series_x_label = QtWidgets.QLabel("")
         self.inductance_label = QtWidgets.QLabel("")
         self.capacitance_label = QtWidgets.QLabel("")
         self.gain_label = QtWidgets.QLabel("")
@@ -114,11 +121,11 @@ class Marker(QtCore.QObject):
             "serr": ("Series R:", self.series_r_label),
             "serl": ("Series L:", self.inductance_label),
             "serc": ("Series C:", self.capacitance_label),
-            "serlc": ("Series L/C:", self.series_lc_label),
+            "serlc": ("Series X:", self.series_x_label),
             "parr": ("Parallel R:", self.parallel_r_label),
             "parc": ("Parallel C:", self.parallel_c_label),
             "parl": ("Parallel L:", self.parallel_l_label),
-            "parlc": ("Parallel L/C:", self.parallel_x_label),
+            "parlc": ("Parallel X:", self.parallel_x_label),
             "returnloss": ("Return loss:", self.returnloss_label),
             "vswr": ("VSWR:", self.vswr_label),
             "s11q": ("Quality factor:", self.quality_factor_label),
@@ -321,7 +328,7 @@ class Marker(QtCore.QObject):
         self.parallel_x_label.setText("")
         self.parallel_l_label.setText("")
         self.parallel_c_label.setText("")
-        self.series_lc_label.setText("")
+        self.series_x_label.setText("")
         self.series_r_label.setText("")
         self.inductance_label.setText("")
         self.capacitance_label.setText("")
@@ -342,28 +349,17 @@ class Marker(QtCore.QObject):
             s21 = s21data[self.location]
         imp = s11.impedance()
         re50, im50 = imp.real, imp.imag
-        vswr = s11.vswr
         if re50 > 0:
             rp = (re50 ** 2 + im50 ** 2) / re50
             rp = round(rp, 3 - max(0, math.floor(math.log10(abs(rp)))))
-            if rp > 10000:
-                rpstr = str(round(rp/1000, 2)) + "k"
-            elif rp > 1000:
-                rpstr = str(round(rp))
-            else:
-                rpstr = str(rp)
+            rpstr = str(SITools.Value(rp, fmt=FMT_IMPEDANCE))
 
             re50 = round(re50, 3 - max(0, math.floor(math.log10(abs(re50)))))
-            if re50 > 10000:
-                re50str = str(round(re50/1000, 2)) + "k"
-            elif re50 > 1000:
-                re50str = str(round(re50))  # Remove the ".0"
-            else:
-                re50str = str(re50)
+            re50str = str(SITools.Value(rp, fmt=FMT_IMPEDANCE))
         else:
-            rpstr = "-"
+            rpstr = "- "
             re50 = 0
-            re50str = "-"
+            re50str = "- "
 
         if im50 != 0:
             xp = (re50 ** 2 + im50 ** 2) / im50
@@ -378,14 +374,14 @@ class Marker(QtCore.QObject):
             )
             if xp < 0:
                 xpstr = xpcstr
-                xp50str = " -j" + str(-1 * xp)
+                xp50str = "-j" + str(-1 * xp)
             else:
                 xpstr = xplstr
-                xp50str = " +j" + str(xp)
-            xp50str += " \N{OHM SIGN}"
+                xp50str = "+j" + str(xp)
+            xp50str += "\N{OHM SIGN}"
         else:
-            xp50str = " +j ? \N{OHM SIGN}"
-            xpstr = xpcstr = xplstr = "-"
+            xp50str = "+j ?\N{OHM SIGN}"
+            xpstr = xpcstr = xplstr = "- "
 
         if im50 != 0:
             im50 = round(
@@ -394,43 +390,38 @@ class Marker(QtCore.QObject):
             )
 
         if im50 < 0:
-            im50str = " -j" + str(-1 * im50)
+            im50str = "-j" + str(-1 * im50)
         else:
-            im50str = " +j" + str(im50)
-        im50str += " \N{OHM SIGN}"
+            im50str = "+j" + str(im50)
+        im50str += "\N{OHM SIGN}"
 
         self.frequency_label.setText(
             RFTools.formatFrequency(s11.freq))
         self.impedance_label.setText(re50str + im50str)
         self.admittance_label.setText(rpstr + xp50str)
-        self.series_r_label.setText(re50str + " \N{OHM SIGN}")
-        self.parallel_r_label.setText(rpstr + " \N{OHM SIGN}")
+        self.series_r_label.setText(re50str + "\N{OHM SIGN}")
+        self.parallel_r_label.setText(rpstr + "\N{OHM SIGN}")
         self.parallel_x_label.setText(xpstr)
+        rloss = s11.gain
         if self.returnloss_is_positive:
-            returnloss = -round(s11.gain, 3)
-        else:
-            returnloss = round(s11.gain, 3)
-        self.returnloss_label.setText(str(returnloss) + " dB")
-        capacitance = RFTools.capacitanceEquivalent(
-            im50, s11data[self.location].freq
-        )
-        inductance = RFTools.inductanceEquivalent(
-            im50, s11data[self.location].freq
-        )
+            rloss = -rloss
+        self.returnloss_label.setText(f"{rloss:.3f}dB")
+        capacitance = str(SITools.Value(
+            s11.capacitiveEquivalent(), "F", fmt=FMT_IND_CAP))
+        inductance = str(SITools.Value(
+            s11.inductiveEquivalent(), "H", fmt=FMT_IND_CAP))
         self.inductance_label.setText(inductance)
         self.capacitance_label.setText(capacitance)
         self.parallel_c_label.setText(xpcstr)
         self.parallel_l_label.setText(xplstr)
         if im50 > 0:
-            self.series_lc_label.setText(inductance)
+            self.series_x_label.setText(inductance)
         else:
-            self.series_lc_label.setText(capacitance)
-        vswr = round(vswr, 3)
-        self.vswr_label.setText(str(vswr))
+            self.series_x_label.setText(capacitance)
+        self.vswr_label.setText(f"{s11.vswr:.3f}")
         q = s11data[self.location].qFactor()
         self.quality_factor_label.setText(format_q_factor(q))
-        self.s11_phase_label.setText(
-            str(round(math.degrees(s11.phase), 2)) + "\N{DEGREE SIGN}")
+        self.s11_phase_label.setText(format_phase(s11.phase))
         self.s11_group_delay_label.setText(
             format_group_delay(groupDelay(s11data, self.location))
         )
@@ -439,9 +430,8 @@ class Marker(QtCore.QObject):
         if len(s21data) != len(s11data):
             return
 
-        self.gain_label.setText(str(round(s21.gain, 3)) + " dB")
-        self.s21_phase_label.setText(
-            str(round(math.degrees(s21.phase), 2)) + "\N{DEGREE SIGN}")
+        self.gain_label.setText(f"{s21.gain:.3f}dB")
+        self.s21_phase_label.setText(format_phase(s21.phase))
         # TODO: figure out if calculation is right (S11 no division by 2)
         self.s21_group_delay_label.setText(
             format_group_delay(groupDelay(s21data, self.location) / 2)
