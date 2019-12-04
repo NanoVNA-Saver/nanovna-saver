@@ -15,60 +15,69 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
+import decimal
+from typing import NamedTuple, Union
 from numbers import Number
 
 PREFIXES = ("y", "z", "a", "f", "p", "n", "µ", "m",
             "", "k", "M", "G", "T", "P", "E", "Z", "Y")
 
 
-class Format(object):
+class Format(NamedTuple):
+    max_nr_digits: int = 6
+    fix_decimals: bool = False
+    space_str: str = ""
+    assume_infinity: bool = True
+    min_offset: int = -8
+    max_offset: int = 8
+    allow_strip: bool = False
+    allways_signed: bool = False
+    parse_sloppy_unit: bool = False
+    parse_sloppy_kilo: bool = False
+    parse_clamp_min: float = -math.inf
+    parse_clamp_max: float = math.inf
+
+
+class Value:
+    CTX = decimal.Context(prec=60, Emin=-27, Emax=27)
+
     def __init__(self,
-                 max_nr_digits: int = 6,
-                 fix_decimals: bool = False,
-                 space_str: str = "",
-                 assume_infinity: bool = True,
-                 min_offset: int = -8,
-                 max_offset: int = 8):
-        assert(min_offset >= -8 and max_offset <= 8 and min_offset < max_offset)
-        self.max_nr_digits = max_nr_digits
-        self.fix_decimals = fix_decimals
-        self.space_str = space_str
-        self.assume_infinity = assume_infinity
-        self.min_offset = min_offset
-        self.max_offset = max_offset
-
-    def __repr__(self):
-        return (f"{self.__class__.__name__}("
-                f"{self.max_nr_digits}, {self.fix_decimals}, "
-                f"'{self.space_str}', {self.assume_infinity}, "
-                f"{self.min_offset}, {self.max_offset})")
-
-
-class Value(object):
-    def __init__(self, value: Number = 0, unit: str = "", fmt=Format()):
-        self.value = value
+                 value: Union[Number, str] = 0,
+                 unit: str = "",
+                 fmt=Format()):
+        assert 3 <= fmt.max_nr_digits <= 30
+        assert -8 <= fmt.min_offset <= fmt.max_offset <= 8
+        assert fmt.parse_clamp_min < fmt.parse_clamp_max
         self._unit = unit
         self.fmt = fmt
+        if isinstance(value, str):
+            self._value = math.nan
+            self.parse(value)
+        else:
+            self._value = decimal.Decimal(value, context=Value.CTX)
 
-    def __repr__(self):
-        return f"{self.__class__.__name__}({self.value}, '{self._unit}', {self.fmt})"
+    def __repr__(self) -> str:
+        return (f"{self.__class__.__name__}(" + repr(self._value) +
+                f", '{self._unit}', {self.fmt})")
 
-    def __str__(self):
+    def __str__(self) -> str:
         fmt = self.fmt
-        if fmt.assume_infinity and abs(self.value) >= 10 ** ((fmt.max_offset + 1) * 3):
-            return ("-" if self.value < 0 else "") + "\N{INFINITY}" + fmt.space_str + self._unit
+        if fmt.assume_infinity and \
+                abs(self._value) >= 10 ** ((fmt.max_offset + 1) * 3):
+            return (("-" if self._value < 0 else "") +
+                    "\N{INFINITY}" + fmt.space_str + self._unit)
 
-        if self.value == 0:
+        if self._value == 0:
             offset = 0
         else:
-            offset = int(math.log10(abs(self.value)) // 3)
+            offset = int(math.log10(abs(self._value)) // 3)
 
         if offset < fmt.min_offset:
             offset = fmt.min_offset
         elif offset > fmt.max_offset:
             offset = fmt.max_offset
 
-        real = self.value / (10 ** (offset * 3))
+        real = float(self._value) / (10 ** (offset * 3))
 
         if fmt.max_nr_digits < 4:
             formstr = ".0f"
@@ -78,29 +87,67 @@ class Value(object):
                 (1 if not fmt.fix_decimals and abs(real) < 100 else 0))
             formstr = "." + str(max_digits - 3) + "f"
 
+        if self.fmt.allways_signed:
+            formstr = "+" + formstr
         result = format(real, formstr)
 
         if float(result) == 0.0:
             offset = 0
 
+        if self.fmt.allow_strip and "." in result:
+            result = result.rstrip("0").rstrip(".")
+
         return result + fmt.space_str + PREFIXES[offset + 8] + self._unit
 
-    def parse(self, value: str):
+    def __float__(self):
+        return float(self._value)
+
+    @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, value: Number):
+        self._value = decimal.Decimal(value, context=Value.CTX)
+
+    def parse(self, value: str) -> "Value":
+        if isinstance(value, Number):
+            self.value = value
+            return self
+
         value = value.replace(" ", "")  # Ignore spaces
-        if self._unit and value.endswith(self._unit) or value.lower().endswith(self._unit.lower()):  # strip unit
+
+        if self._unit and (
+                value.endswith(self._unit) or
+                (self.fmt.parse_sloppy_unit and
+                 value.lower().endswith(self._unit.lower()))):  # strip unit
             value = value[:-len(self._unit)]
 
         factor = 1
+        if self.fmt.parse_sloppy_kilo and value[-1] == "K":  # fix for e.g. KHz
+            value = value[:-1] + "k"
         if value[-1] in PREFIXES:
             factor = 10 ** ((PREFIXES.index(value[-1]) - 8) * 3)
             value = value[:-1]
-        elif value[-1] == 'K':
-            # Fix for the very common KHz
-            factor = 10 ** ((PREFIXES.index(value[-1].lower()) - 8) * 3)
-            value = value[:-1]
-        self.value = float(value) * factor
-        return self.value
+
+        if self.fmt.assume_infinity and value == "\N{INFINITY}":
+            self._value = math.inf
+        elif self.fmt.assume_infinity and value == "-\N{INFINITY}":
+            self._value = -math.inf
+        else:
+            try:
+                self._value = (decimal.Decimal(value, context=Value.CTX) *
+                               decimal.Decimal(factor, context=Value.CTX))
+            except decimal.InvalidOperation:
+                raise ValueError
+            # TODO: get formating out of RFTools to be able to import clamp
+            #       and reuse code
+            if self._value < self.fmt.parse_clamp_min:
+                self._value = self.fmt.parse_clamp_min
+            elif self._value > self.fmt.parse_clamp_max:
+                self._value = self.fmt.parse_clamp_max
+        return self
 
     @property
-    def unit(self):
+    def unit(self) -> str:
         return self._unit

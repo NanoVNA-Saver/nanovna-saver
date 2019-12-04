@@ -100,10 +100,7 @@ For most users, this is already installed.
         git clone https://github.com/mihtjel/nanovna-saver
         cd nanovna-saver
         
-4. Change PyQt restriction in setup.py
-			`PyQt5==5.11.2` to `PyQt5`
-			        
-5. Install local pip packages
+4. Install local pip packages
 
         python3 -m pip install .
         NanoVNASaver
@@ -171,6 +168,8 @@ changes back to the community.
 
 ## Credits
 Original application by Rune B. Broberg (5Q5R)
+
+Contributions and changes by Holger Müller, David Hunt and others.
 
 TDR inspiration shamelessly stolen from the work of Salil (VU2CWA) at https://nuclearrambo.com/wordpress/accurately-measuring-cable-length-with-nanovna/
 

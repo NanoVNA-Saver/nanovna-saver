@@ -32,7 +32,7 @@ from .Hardware import VNA, InvalidVNA, Version
 from .RFTools import RFTools, Datapoint
 from .Chart import Chart, PhaseChart, VSWRChart, PolarChart, SmithChart, LogMagChart, QualityFactorChart, TDRChart, \
     RealImaginaryChart, MagnitudeChart, MagnitudeZChart, CombinedLogMagChart, SParameterChart, PermeabilityChart, \
-    GroupDelayChart
+    GroupDelayChart, CapacitanceChart, InductanceChart
 from .Calibration import CalibrationWindow, Calibration
 from .Marker import Marker
 from .SweepWorker import SweepWorker
@@ -135,6 +135,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s11Phase = PhaseChart("S11 Phase")
         self.s21Phase = PhaseChart("S21 Phase")
         self.s11GroupDelay = GroupDelayChart("S11 Group Delay")
+        self.s11CapacitanceChart = CapacitanceChart("S11 Serial C")
+        self.s11InductanceChart = InductanceChart("S11 Serial L")
         self.s21GroupDelay = GroupDelayChart("S21 Group Delay", reflective=False)
         self.permabilityChart = PermeabilityChart("S11 R/\N{GREEK SMALL LETTER OMEGA} & X/\N{GREEK SMALL LETTER OMEGA}")
         self.s11VSWR = VSWRChart("S11 VSWR")
@@ -156,6 +158,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s11charts.append(self.s11RealImaginary)
         self.s11charts.append(self.s11QualityFactor)
         self.s11charts.append(self.s11SParameterChart)
+        self.s11charts.append(self.s11CapacitanceChart)
+        self.s11charts.append(self.s11InductanceChart)
         self.s11charts.append(self.permabilityChart)
 
         # List of all the S21 charts, for selecting
@@ -433,8 +437,9 @@ class NanoVNASaver(QtWidgets.QWidget):
         serial_control_box.setMaximumWidth(250)
         serial_control_box.setTitle("Serial port control")
         serial_control_layout = QtWidgets.QFormLayout(serial_control_box)
-        self.serialPortInput = QtWidgets.QLineEdit(self.serialPort)
-        self.serialPortInput.setAlignment(QtCore.Qt.AlignRight)
+        self.serialPortInput = QtWidgets.QComboBox()
+        self.rescanSerialPort()
+        self.serialPortInput.setEditable(True)
         btn_rescan_serial_port = QtWidgets.QPushButton("Rescan")
         btn_rescan_serial_port.setFixedWidth(60)
         btn_rescan_serial_port.clicked.connect(self.rescanSerialPort)
@@ -525,21 +530,22 @@ class NanoVNASaver(QtWidgets.QWidget):
         logger.debug("Finished building interface")
 
     def rescanSerialPort(self):
-        serial_port = self.getPort()
-        self.serialPort = serial_port
-        self.serialPortInput.setText(serial_port)
+        self.serialPortInput.clear()
+        for port in self.getPort():
+            self.serialPortInput.insertItem(1, port)
 
     # Get that windows port
     @staticmethod
-    def getPort() -> str:
+    def getPort() -> list:
+        return_ports = []
         device_list = list_ports.comports()
         for d in device_list:
             if (d.vid == VID and
                     d.pid == PID):
                 port = d.device
                 logger.info("Found NanoVNA (%04x %04x) on port %s", d.vid, d.pid, d.device)
-                return port
-        return ""
+                return_ports.append(port)
+        return return_ports
 
     def exportFileS1P(self):
         if len(self.data) == 0:
@@ -623,7 +629,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def startSerial(self):
         if self.serialLock.acquire():
-            self.serialPort = self.serialPortInput.text()
+            self.serialPort = self.serialPortInput.currentText()
             logger.info("Opening serial port %s", self.serialPort)
             try:
                 self.serial = serial.Serial(port=self.serialPort, baudrate=115200)
@@ -748,7 +754,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             min_vswr = 100
             min_vswr_freq = -1
             for d in self.data:
-                vswr = RFTools.calculateVSWR(d)
+                vswr = d.vswr
                 if min_vswr > vswr > 0:
                     min_vswr = vswr
                     min_vswr_freq = d.freq
@@ -768,7 +774,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             max_gain = -100
             max_gain_freq = -1
             for d in self.data21:
-                gain = RFTools.gain(d)
+                gain = d.gain
                 if gain > max_gain:
                     max_gain = gain
                     max_gain_freq = d.freq

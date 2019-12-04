@@ -13,7 +13,6 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import collections
 import logging
 import re
 from time import sleep
@@ -200,7 +199,7 @@ class NanoVNA(VNA):
         return self.readValues("frequencies")
 
     def readValues11(self) -> List[str]:
-        return self.readValues("data 1")
+        return self.readValues("data 0")
 
     def readValues21(self) -> List[str]:
         return self.readValues("data 1")

@@ -14,15 +14,15 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import collections
 import logging
 import math
 import os
-
-from PyQt5 import QtWidgets, QtCore
 from typing import List
-from .RFTools import Datapoint
+
 import numpy as np
+from PyQt5 import QtWidgets, QtCore
+
+from .RFTools import Datapoint
 
 logger = logging.getLogger(__name__)
 
@@ -63,26 +63,33 @@ class CalibrationWindow(QtWidgets.QWidget):
         calibration_control_group = QtWidgets.QGroupBox("Calibrate")
         calibration_control_layout = QtWidgets.QFormLayout(calibration_control_group)
         btn_cal_short = QtWidgets.QPushButton("Short")
-        btn_cal_short.clicked.connect(self.saveShort)
+        btn_cal_short.clicked.connect(self.manualSaveShort)
         self.cal_short_label = QtWidgets.QLabel("Uncalibrated")
         
         btn_cal_open = QtWidgets.QPushButton("Open")
-        btn_cal_open.clicked.connect(self.saveOpen)
+        btn_cal_open.clicked.connect(self.manualSaveOpen)
         self.cal_open_label = QtWidgets.QLabel("Uncalibrated")
         
         btn_cal_load = QtWidgets.QPushButton("Load")
-        btn_cal_load.clicked.connect(self.saveLoad)
+        btn_cal_load.clicked.connect(self.manualSaveLoad)
         self.cal_load_label = QtWidgets.QLabel("Uncalibrated")
 
         btn_cal_through = QtWidgets.QPushButton("Through")
-        btn_cal_through.clicked.connect(self.saveThrough)
+        btn_cal_through.clicked.connect(self.manualSaveThrough)
         # btn_cal_through.setDisabled(True)
         self.cal_through_label = QtWidgets.QLabel("Uncalibrated")
 
         btn_cal_isolation = QtWidgets.QPushButton("Isolation")
-        btn_cal_isolation.clicked.connect(self.saveIsolation)
+        btn_cal_isolation.clicked.connect(self.manualSaveIsolation)
         # btn_cal_isolation.setDisabled(True)
         self.cal_isolation_label = QtWidgets.QLabel("Uncalibrated")
+
+        self.input_offset_delay = QtWidgets.QDoubleSpinBox()
+        self.input_offset_delay.setValue(0)
+        self.input_offset_delay.setSuffix(" ps")
+        self.input_offset_delay.setAlignment(QtCore.Qt.AlignRight)
+        self.input_offset_delay.valueChanged.connect(self.setOffsetDelay)
+        self.input_offset_delay.setRange(-10e6, 10e6)
 
         calibration_control_layout.addRow(btn_cal_short, self.cal_short_label)
         calibration_control_layout.addRow(btn_cal_open, self.cal_open_label)
@@ -91,6 +98,7 @@ class CalibrationWindow(QtWidgets.QWidget):
         calibration_control_layout.addRow(btn_cal_through, self.cal_through_label)
 
         calibration_control_layout.addRow(QtWidgets.QLabel(""))
+        calibration_control_layout.addRow("Offset delay", self.input_offset_delay)
 
         self.btn_automatic = QtWidgets.QPushButton("Calibration assistant")
         calibration_control_layout.addRow(self.btn_automatic)
@@ -214,21 +222,63 @@ class CalibrationWindow(QtWidgets.QWidget):
         cal_standard_layout.addWidget(self.cal_standard_save_box)
         right_layout.addWidget(cal_standard_box)
 
+    def checkExpertUser(self):
+        if not self.app.settings.value("ExpertCalibrationUser", False, bool):
+            response = QtWidgets.QMessageBox.question(self, "Are you sure?", "Use of the manual calibration buttons " +
+                                                      "is non-intuitive, and primarily suited for users with very " +
+                                                      "specialized needs. The buttons do not sweep for you, nor do " +
+                                                      "they interact with the NanoVNA calibration.\n\n" +
+                                                      "If you are trying to do a calibration of the NanoVNA, do so " +
+                                                      "on the device itself instead. If you are trying to do a " +
+                                                      "calibration with NanoVNA-Saver, use the Calibration Assistant " +
+                                                      "if possible.\n\n" +
+                                                      "If you are certain you know what you are doing, click Yes.",
+                                                      QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Cancel,
+                                                      QtWidgets.QMessageBox.Cancel)
+
+            if response == QtWidgets.QMessageBox.Yes:
+                self.app.settings.setValue("ExpertCalibrationUser", True)
+                return True
+            else:
+                return False
+        else:
+            return True
+
+    def manualSaveShort(self):
+        if self.checkExpertUser():
+            self.saveShort()
+
     def saveShort(self):
         self.app.calibration.s11short = self.app.data
         self.cal_short_label.setText("Data set (" + str(len(self.app.calibration.s11short)) + " points)")
+
+    def manualSaveOpen(self):
+        if self.checkExpertUser():
+            self.saveOpen()
 
     def saveOpen(self):
         self.app.calibration.s11open = self.app.data
         self.cal_open_label.setText("Data set (" + str(len(self.app.calibration.s11open)) + " points)")
 
+    def manualSaveLoad(self):
+        if self.checkExpertUser():
+            self.saveLoad()
+
     def saveLoad(self):
         self.app.calibration.s11load = self.app.data
         self.cal_load_label.setText("Data set (" + str(len(self.app.calibration.s11load)) + " points)")
 
+    def manualSaveIsolation(self):
+        if self.checkExpertUser():
+            self.saveIsolation()
+
     def saveIsolation(self):
         self.app.calibration.s21isolation = self.app.data21
         self.cal_isolation_label.setText("Data set (" + str(len(self.app.calibration.s21isolation)) + " points)")
+
+    def manualSaveThrough(self):
+        if self.checkExpertUser():
+            self.saveThrough()
 
     def saveThrough(self):
         self.app.calibration.s21through = self.app.data21
@@ -433,6 +483,18 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.app.saveData(self.app.worker.rawData11, self.app.worker.rawData21, self.app.sweepSource)
             self.app.worker.signals.updated.emit()
 
+    def setOffsetDelay(self, value: float):
+        logger.debug("New offset delay value: %f ps", value)
+        self.app.worker.offsetDelay = value / 10e12
+        if len(self.app.worker.rawData11) > 0:
+            # There's raw data, so we can get corrected data
+            logger.debug("Applying new offset to existing sweep data.")
+            self.app.worker.data11, self.app.worker.data21 = self.app.worker.applyCalibration(self.app.worker.rawData11,
+                                                                                              self.app.worker.rawData21)
+            logger.debug("Saving and displaying corrected data.")
+            self.app.saveData(self.app.worker.data11, self.app.worker.data21, self.app.sweepSource)
+            self.app.worker.signals.updated.emit()
+
     def calculate(self):
         if self.app.btnStopSweep.isEnabled():
             # Currently sweeping
@@ -500,7 +562,8 @@ class CalibrationWindow(QtWidgets.QWidget):
             if len(self.app.worker.rawData11) > 0:
                 # There's raw data, so we can get corrected data
                 logger.debug("Applying calibration to existing sweep data.")
-                self.app.worker.data11, self.app.worker.data21 = self.app.worker.applyCalibration(self.app.worker.rawData11, self.app.worker.rawData21)
+                self.app.worker.data11, self.app.worker.data21 = self.app.worker.applyCalibration(
+                    self.app.worker.rawData11, self.app.worker.rawData21)
                 logger.debug("Saving and displaying corrected data.")
                 self.app.saveData(self.app.worker.data11, self.app.worker.data21, self.app.sweepSource)
                 self.app.worker.signals.updated.emit()
@@ -921,6 +984,18 @@ class Calibration:
                 distance = abs(self.s21through[i].freq - freq)
         s21 = (s21m - self.e30[index]) / self.e10e32[index]
         return s21.real, s21.imag
+
+    @staticmethod
+    def correctDelay11(d: Datapoint, delay):
+        input_val = np.complex(d.re, d.im)
+        output = input_val * np.exp(np.complex(0, 1) * 2 * 2 * math.pi * d.freq * delay * -1)
+        return Datapoint(d.freq, output.real, output.imag)
+
+    @staticmethod
+    def correctDelay21(d: Datapoint, delay):
+        input_val = np.complex(d.re, d.im)
+        output = input_val * np.exp(np.complex(0, 1) * 2 * math.pi * d.freq * delay * -1)
+        return Datapoint(d.freq, output.real, output.imag)
 
     def saveCalibration(self, filename):
         # Save the calibration data to file
