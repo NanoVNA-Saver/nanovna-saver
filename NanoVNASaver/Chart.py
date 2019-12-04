@@ -3619,9 +3619,6 @@ class GroupDelayChart(FrequencyChart):
 
         self.reflective = reflective
 
-        self.unwrappedData = []
-        self.unwrappedReference = []
-
         self.groupDelay = []
         self.groupDelayReference = []
 
@@ -3640,6 +3637,8 @@ class GroupDelayChart(FrequencyChart):
     def copy(self):
         new_chart: GroupDelayChart = super().copy()
         new_chart.reflective = self.reflective
+        new_chart.groupDelay = self.groupDelay.copy()
+        new_chart.groupDelayReference = self.groupDelay.copy()
         return new_chart
 
     def setReference(self, data):
@@ -3662,19 +3661,19 @@ class GroupDelayChart(FrequencyChart):
             rawReference.append(d.phase)
 
         if len(self.data) > 0:
-            self.unwrappedData = np.degrees(np.unwrap(rawData))
+            unwrappedData = np.degrees(np.unwrap(rawData))
             self.groupDelay = []
             for i in range(len(self.data)):
                 # TODO: Replace with call to RFTools.groupDelay
                 if i == 0:
-                    phase_change = self.unwrappedData[1] - self.unwrappedData[0]
+                    phase_change = unwrappedData[1] - unwrappedData[0]
                     freq_change = self.data[1].freq - self.data[0].freq
                 elif i == len(self.data)-1:
                     idx = len(self.data)-1
-                    phase_change = self.unwrappedData[idx] - self.unwrappedData[idx-1]
+                    phase_change = unwrappedData[idx] - unwrappedData[idx-1]
                     freq_change = self.data[idx].freq - self.data[idx-1].freq
                 else:
-                    phase_change = self.unwrappedData[i+1] - self.unwrappedData[i-1]
+                    phase_change = unwrappedData[i+1] - unwrappedData[i-1]
                     freq_change = self.data[i+1].freq - self.data[i-1].freq
                 delay = (-phase_change / (freq_change * 360)) * 10e8
                 if not self.reflective:
@@ -3682,18 +3681,18 @@ class GroupDelayChart(FrequencyChart):
                 self.groupDelay.append(delay)
 
         if len(self.reference) > 0:
-            self.unwrappedReference = np.degrees(np.unwrap(rawReference))
+            unwrappedReference = np.degrees(np.unwrap(rawReference))
             self.groupDelayReference = []
             for i in range(len(self.reference)):
                 if i == 0:
-                    phase_change = self.unwrappedReference[1] - self.unwrappedReference[0]
+                    phase_change = unwrappedReference[1] - unwrappedReference[0]
                     freq_change = self.reference[1].freq - self.reference[0].freq
                 elif i == len(self.reference)-1:
                     idx = len(self.reference)-1
-                    phase_change = self.unwrappedReference[idx] - self.unwrappedReference[idx-1]
+                    phase_change = unwrappedReference[idx] - unwrappedReference[idx-1]
                     freq_change = self.reference[idx].freq - self.reference[idx-1].freq
                 else:
-                    phase_change = self.unwrappedReference[i+1] - self.unwrappedReference[i-1]
+                    phase_change = unwrappedReference[i+1] - unwrappedReference[i-1]
                     freq_change = self.reference[i+1].freq - self.reference[i-1].freq
                 delay = (-phase_change / (freq_change * 360)) * 10e8
                 if not self.reflective:
