@@ -129,20 +129,17 @@ class Touchstone:
                 continue
             return line
 
-    def _append_line_data(self, freq: float, data: list):
+    def _append_line_data(self, freq: int, data: list):
         data_list = iter(self.sdata)
         vals = iter(data)
         for v in vals:
             if self.opts.format == "ri":
-                next(data_list).append(
-                    Datapoint(freq, float(v), float(next(vals))))
+                next(data_list).append(Datapoint(freq, float(v), float(next(vals))))
             if self.opts.format == "ma":
-                z = cmath.polar(float(v),
-                                math.radians(float(next(vals))))
+                z = cmath.rect(float(v), math.radians(float(next(vals))))
                 next(data_list).append(Datapoint(freq, z.real, z.imag))
             if self.opts.format == "db":
-                z = cmath.polar(math.exp(float(v) / 20),
-                                math.radians(float(next(vals))))
+                z = cmath.rect(math.exp(float(v) / 20), math.radians(float(next(vals))))
                 next(data_list).append(Datapoint(freq, z.real, z.imag))
 
     def load(self):
@@ -184,7 +181,7 @@ class Touchstone:
                 # ignore comments at data end
                 data = line.split('!')[0]
                 data = data.split()
-                freq, data = float(data[0]) * self.opts.factor, data[1:]
+                freq, data = round(float(data[0]) * self.opts.factor), data[1:]
                 data_len = len(data)
 
                 # consistency checks

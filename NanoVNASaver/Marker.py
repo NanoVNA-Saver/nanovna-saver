@@ -31,6 +31,7 @@ FMT_IND_CAP = SITools.Format(max_nr_digits=5, allow_strip=True)
 FMT_GROUP_DELAY = SITools.Format(max_nr_digits=5)
 
 
+
 def format_q_factor(val: float) -> str:
     if val < 0 or val > 10000.0:
         return "\N{INFINITY}"
@@ -302,7 +303,7 @@ class Marker(QtCore.QObject):
 
         min_distance = max_freq
         for i in range(len(data)):
-            if abs(data[i].freq - self.frequency) < min_distance:
+            if abs(data[i].freq - self.frequency) <= min_distance:
                 min_distance = abs(data[i].freq - self.frequency)
             else:
                 # We have now started moving away from the nearest point
