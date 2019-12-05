@@ -485,7 +485,7 @@ class CalibrationWindow(QtWidgets.QWidget):
 
     def setOffsetDelay(self, value: float):
         logger.debug("New offset delay value: %f ps", value)
-        self.app.worker.offsetDelay = value / 10e12
+        self.app.worker.offsetDelay = value / 1e12
         if len(self.app.worker.rawData11) > 0:
             # There's raw data, so we can get corrected data
             logger.debug("Applying new offset to existing sweep data.")
