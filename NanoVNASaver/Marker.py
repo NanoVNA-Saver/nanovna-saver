@@ -29,8 +29,27 @@ FMT_IMPEDANCE = SITools.Format(max_nr_digits=4, assume_infinity=False,
                                min_offset=-1, max_offset=2, allow_strip=True)
 FMT_IND_CAP = SITools.Format(max_nr_digits=5, allow_strip=True)
 FMT_GROUP_DELAY = SITools.Format(max_nr_digits=5)
+FMT_REACT = SITools.Format(max_nr_digits=5, space_str=" ")
 
 
+def format_q_factor(val: float) -> str:
+    if 0 > val or val  > 10000.0:
+        return "\N{INFINITY}"
+    return str(SITools.Value(val, fmt=FMT_Q_FACTOR))
+
+
+def format_cap_equiv(im50, freq) -> str:
+    if im50 == 0 or freq == 0:
+        return "- pF"
+    capacitance = 1 / (freq * 2 * math.pi * im50)
+    return str(SITools.Value(-capacitance, "F", FMT_REACT))
+
+
+def format_ind_equiv(im50, freq) -> str:
+    if freq == 0:
+        return "- nH"
+    inductance = im50 * 1 / (freq * 2 * math.pi)
+    return str(SITools.Value(inductance, "H", FMT_REACT))
 
 def format_q_factor(val: float) -> str:
     if val < 0 or val > 10000.0:
@@ -367,10 +386,10 @@ class Marker(QtCore.QObject):
             xp = round(
                 xp, 3 - max(0, math.floor(math.log10(abs(xp))))
             )
-            xpcstr = RFTools.capacitanceEquivalent(
+            xpcstr = format_cap_equiv(
                 xp, s11data[self.location].freq
             )
-            xplstr = RFTools.inductanceEquivalent(
+            xplstr = format_ind_equiv(
                 xp, s11data[self.location].freq
             )
             if xp < 0:

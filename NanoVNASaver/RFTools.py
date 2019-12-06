@@ -20,6 +20,11 @@ from numbers import Number, Real
 from typing import List, NamedTuple
 from NanoVNASaver.SITools import Value, Format
 
+FMT_FREQ = Format()
+FMT_SHORT = Format(max_nr_digits=4)
+FMT_SWEEP = Format(max_nr_digits=9, allow_strip=True)
+FMT_PARSE = Format(parse_sloppy_unit=True, parse_sloppy_kilo=True)
+
 
 def impedance_to_norm(z: complex, ref_impedance: float = 50) -> complex:
     """Calculate normalized z from impedance"""
@@ -123,35 +128,20 @@ def groupDelay(data: List[Datapoint], index: int) -> float:
 
 class RFTools:
     @staticmethod
-    def capacitanceEquivalent(im50, freq) -> str:
-        if im50 == 0 or freq == 0:
-            return "- pF"
-        capacitance = 1 / (freq * 2 * math.pi * im50)
-        return str(Value(-capacitance, "F", Format(max_nr_digits=5, space_str=" ")))
-
-    @staticmethod
-    def inductanceEquivalent(im50, freq) -> str:
-        if freq == 0:
-            return "- nH"
-        inductance = im50 * 1 / (freq * 2 * math.pi)
-        return str(Value(inductance, "H", Format(max_nr_digits=5, space_str=" ")))
-
-    @staticmethod
     def formatFrequency(freq: Number) -> str:
-        return str(Value(freq, "Hz"))
+        return str(Value(freq, "Hz", FMT_FREQ))
 
     @staticmethod
     def formatShortFrequency(freq: Number) -> str:
-        return str(Value(freq, "Hz", Format(max_nr_digits=4)))
+        return str(Value(freq, "Hz", FMT_SHORT))
 
     @staticmethod
     def formatSweepFrequency(freq: Number) -> str:
-        return str(Value(freq, "Hz", Format(max_nr_digits=9, allow_strip=True)))
+        return str(Value(freq, "Hz", FMT_SWEEP))
 
     @staticmethod
     def parseFrequency(freq: str) -> int:
-        parser = Value(0, "Hz", Format(parse_sloppy_unit=True, parse_sloppy_kilo=True))
         try:
-            return round(parser.parse(freq).value)
+            return int(Value(freq, "Hz", FMT_PARSE))
         except (ValueError, IndexError):
             return -1
