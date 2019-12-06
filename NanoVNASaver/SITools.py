@@ -100,6 +100,9 @@ class Value:
 
         return result + fmt.space_str + PREFIXES[offset + 8] + self._unit
 
+    def __int__(self):
+        return round(self._value)
+
     def __float__(self):
         return float(self._value)
 
