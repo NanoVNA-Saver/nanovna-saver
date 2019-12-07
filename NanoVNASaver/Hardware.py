@@ -17,6 +17,7 @@ import logging
 import re
 from time import sleep
 from typing import List
+from PyQt5 import QtGui
 
 import serial
 
@@ -25,28 +26,32 @@ logger = logging.getLogger(__name__)
 
 class VNA:
     name = "VNA"
+    validateInput = True
 
-    def __init__(self, app, serialPort: serial.Serial):
+    def __init__(self, app, serial_port: serial.Serial):
         from NanoVNASaver.NanoVNASaver import NanoVNASaver
         self.app: NanoVNASaver = app
-        self.serial = serialPort
+        self.serial = serial_port
         self.version: Version = Version("0.0.0")
 
     @staticmethod
-    def getVNA(app, serialPort: serial.Serial) -> 'VNA':
+    def getVNA(app, serial_port: serial.Serial) -> 'VNA':
         logger.info("Finding correct VNA type")
-        tmp_vna = VNA(app, serialPort)
+        tmp_vna = VNA(app, serial_port)
         tmp_vna.flushSerialBuffers()
         firmware = tmp_vna.readFirmware()
         if firmware.find("NanoVNA-H") > 0:
-            return NanoVNA_H(app, serialPort)
+            logger.info("Type: NanoVNA-H")
+            return NanoVNA_H(app, serial_port)
         if firmware.find("NanoVNA-F") > 0:
-            return NanoVNA_F(app, serialPort)
+            logger.info("Type: NanoVNA-F")
+            return NanoVNA_F(app, serial_port)
         elif firmware.find("NanoVNA") > 0:
-            return NanoVNA(app, serialPort)
+            logger.info("Type: Generic NanoVNA")
+            return NanoVNA(app, serial_port)
         else:
             logger.warning("Did not recognize NanoVNA type from firmware.")
-            return NanoVNA(app, serialPort)
+            return NanoVNA(app, serial_port)
 
     def readFrequencies(self) -> List[str]:
         pass
@@ -62,6 +67,12 @@ class VNA:
 
     def isValid(self):
         return False
+
+    def getFeatures(self) -> List[str]:
+        return []
+
+    def getScreenshot(self) -> QtGui.QPixmap:
+        return QtGui.QPixmap()
 
     def flushSerialBuffers(self):
         if self.app.serialLock.acquire():
@@ -177,8 +188,8 @@ class InvalidVNA(VNA):
 class NanoVNA(VNA):
     name = "NanoVNA"
 
-    def __init__(self, app, serialPort):
-        super().__init__(app, serialPort)
+    def __init__(self, app, serial_port):
+        super().__init__(app, serial_port)
         self.version = Version(self.readVersion())
 
         logger.debug("Testing against 0.2.0")

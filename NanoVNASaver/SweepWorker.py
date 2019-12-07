@@ -51,6 +51,7 @@ class SweepWorker(QtCore.QRunnable):
         self.rawData11: List[Datapoint] = []
         self.rawData21: List[Datapoint] = []
         self.stopped = False
+        self.running = False
         self.continuousSweep = False
         self.averaging = False
         self.averages = 3
@@ -61,9 +62,11 @@ class SweepWorker(QtCore.QRunnable):
     @pyqtSlot()
     def run(self):
         logger.info("Initializing SweepWorker")
+        self.running = True
         self.percentage = 0
         if not self.app.serial.is_open:
             logger.debug("Attempted to run without being connected to the NanoVNA")
+            self.running = False
             return
 
         if int(self.app.sweepCountInput.text()) > 0:
@@ -88,6 +91,7 @@ class SweepWorker(QtCore.QRunnable):
                                self.app.sweepEndInput.text())
                 self.error_message = "Unable to parse frequency inputs - check start and stop fields."
                 self.stopped = True
+                self.running = False
                 self.signals.sweepError.emit()
                 return
 
@@ -137,6 +141,7 @@ class SweepWorker(QtCore.QRunnable):
                 except NanoVNAValueException as e:
                     self.error_message = str(e)
                     self.stopped = True
+                    self.running = False
                     self.signals.fatalSweepError.emit()
 
         while self.continuousSweep and not self.stopped:
@@ -154,6 +159,7 @@ class SweepWorker(QtCore.QRunnable):
                 except NanoVNAValueException as e:
                     self.error_message = str(e)
                     self.stopped = True
+                    self.running = False
                     self.signals.fatalSweepError.emit()
 
         # Reset the device to show the full range
@@ -166,6 +172,7 @@ class SweepWorker(QtCore.QRunnable):
         self.percentage = 100
         logger.debug("Sending \"finished\" signal")
         self.signals.finished.emit()
+        self.running = False
         return
 
     def updateData(self, values11, values21, offset, segment_size = 101):
@@ -336,11 +343,11 @@ class SweepWorker(QtCore.QRunnable):
             for d in tmpdata:
                 a, b = d.split(" ")
                 try:
-                    if float(a) < -9.5 or float(a) > 9.5:
+                    if self.vna.validateInput and float(a) < -9.5 or float(a) > 9.5:
                         logger.warning("Got a non-float data value: %s (%s)", d, a)
                         logger.debug("Re-reading %s", data)
                         done = False
-                    elif float(b) < -9.5 or float(b) > 9.5:
+                    elif self.vna.validateInput and float(b) < -9.5 or float(b) > 9.5:
                         logger.warning("Got a non-float data value: %s (%s)", d, b)
                         logger.debug("Re-reading %s", data)
                         done = False
