@@ -17,9 +17,7 @@
 import unittest
 
 # Import targets to be tested
-from NanoVNASaver.RFTools import \
-    norm_to_impedance, impedance_to_norm, \
-    reflection_coefficient, gamma_to_impedance
+from NanoVNASaver.RFTools import *
 
 
 class TestRFTools(unittest.TestCase):
@@ -61,3 +59,8 @@ class TestRFTools(unittest.TestCase):
         self.assertEqual(gamma_to_impedance(0), 50)
         self.assertAlmostEqual(gamma_to_impedance(0.2), 75)
         # TODO: insert more test values here
+
+    def test_clamp_value(self):
+        self.assertEqual(clamp_value(1, 0, 10), 1)
+        self.assertEqual(clamp_value(1, 2, 10), 2)
+        self.assertEqual(clamp_value(1, -10, -1), -1)
