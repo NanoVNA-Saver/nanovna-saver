@@ -41,7 +41,7 @@ def format_gain(val: float, invert: bool = False) -> str:
 
 
 def format_q_factor(val: float) -> str:
-    if 0 > val or val > 10000.0:
+    if val < 0 or val > 10000.0:
         return "\N{INFINITY}"
     return str(SITools.Value(val, fmt=FMT_Q_FACTOR))
 
@@ -112,7 +112,7 @@ class Marker(QtCore.QObject):
                     self.setText(str(self.nextFrequency))
                     self.textEdited.emit(self.text())
                     return
-                elif a0.key() == QtCore.Qt.Key_Down and \
+                if a0.key() == QtCore.Qt.Key_Down and \
                         self.previousFrequency != -1:
                     a0.accept()
                     self.setText(str(self.previousFrequency))
@@ -289,7 +289,7 @@ class Marker(QtCore.QObject):
         # self.right_form.addRow("S21 Phase:", self.s21_phase_label)
 
     def setFrequency(self, frequency):
-        f = RFTools.parseFrequency(frequency)
+        f = RFTools.RFTools.parseFrequency(frequency)
         self.frequency = max(f, 0)
         self.updated.emit(self)
 
