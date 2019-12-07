@@ -26,6 +26,36 @@ FMT_SWEEP = Format(max_nr_digits=9, allow_strip=True)
 FMT_PARSE = Format(parse_sloppy_unit=True, parse_sloppy_kilo=True)
 
 
+def parallel_to_serial(z: complex) -> complex:
+    """Convert parallel impedance to serial impedance equivalent"""
+    z_sq_sum = z.real ** 2 + z.imag ** 2
+    return complex(z.real * z.imag ** 2 / z_sq_sum,
+                   z.real ** 2 * z.imag / z_sq_sum)
+
+
+def serial_to_parallel(z: complex) -> complex:
+    """Convert serial impedance to parallel impedance equivalent"""
+    z_sq_sum = z.real ** 2 + z.imag ** 2
+    return complex(z_sq_sum / z.real,
+                   z_sq_sum / z.imag)
+
+
+def impedance_to_capacity(z: complex, freq: float) -> float:
+    """Calculate capacitve equivalent for reactance"""
+    if freq == 0:
+        return -math.inf
+    if z.imag == 0:
+        return math.inf
+    return -(1 / (freq * 2 * math.pi * z.imag))
+
+
+def impedance_to_inductance(z: complex, freq: float) -> float:
+    """Calculate inductive equivalent for reactance"""
+    if freq == 0:
+        return 0
+    return z.imag * 1 / (freq * 2 * math.pi)
+
+
 def impedance_to_norm(z: complex, ref_impedance: float = 50) -> complex:
     """Calculate normalized z from impedance"""
     return z / ref_impedance
@@ -85,20 +115,12 @@ class Datapoint(NamedTuple):
         return abs(imp.imag / imp.real)
 
     def capacitiveEquivalent(self, ref_impedance: float = 50) -> float:
-        if self.freq == 0:
-            return -math.inf
-        imp = self.impedance(ref_impedance)
-        if imp.imag == 0:
-            return math.inf
-        return -(1 / (self.freq * 2 * math.pi * imp.imag))
+        return impedance_to_capacity(
+            self.impedance(ref_impedance), self.freq)
 
     def inductiveEquivalent(self, ref_impedance: float = 50) -> float:
-        if self.freq == 0:
-            return math.inf
-        imp = self.impedance(ref_impedance)
-        if imp.imag == 0:
-            return 0
-        return imp.imag * 1 / (self.freq * 2 * math.pi)
+        return impedance_to_inductance(
+            self.impedance(ref_impedance), self.freq)
 
 
 def clamp_value(value: Real, rmin: Real, rmax: Real) -> Real:

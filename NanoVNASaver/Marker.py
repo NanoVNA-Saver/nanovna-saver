@@ -21,40 +21,51 @@ from PyQt5 import QtGui, QtWidgets, QtCore
 from PyQt5.QtCore import pyqtSignal
 
 from NanoVNASaver import SITools
-from NanoVNASaver.RFTools import Datapoint, RFTools, groupDelay
+from NanoVNASaver import RFTools
 
+FMT_FREQ = SITools.Format(space_str=" ")
 FMT_Q_FACTOR = SITools.Format(max_nr_digits=4, assume_infinity=False,
                               min_offset=0, max_offset=0, allow_strip=True)
-FMT_IMPEDANCE = SITools.Format(max_nr_digits=4, assume_infinity=False,
-                               min_offset=-1, max_offset=2, allow_strip=True)
-FMT_IND_CAP = SITools.Format(max_nr_digits=5, allow_strip=True)
 FMT_GROUP_DELAY = SITools.Format(max_nr_digits=5)
-FMT_REACT = SITools.Format(max_nr_digits=5, space_str=" ")
+FMT_REACT = SITools.Format(max_nr_digits=5, space_str=" ", allow_strip=True)
+
+
+def formatFrequency(freq: float) -> str:
+    return str(SITools.Value(freq, "Hz", FMT_FREQ))
+
+
+def format_gain(val: float, invert: bool = False) -> str:
+    if invert:
+        val = -val
+    return f"{val:.3f}dB"
 
 
 def format_q_factor(val: float) -> str:
-    if 0 > val or val  > 10000.0:
+    if 0 > val or val > 10000.0:
         return "\N{INFINITY}"
     return str(SITools.Value(val, fmt=FMT_Q_FACTOR))
 
 
-def format_cap_equiv(im50, freq) -> str:
-    if im50 == 0 or freq == 0:
+def format_vswr(val: float) -> str:
+    return f"{val:.3f}"
+
+
+def format_resistance(val: float) -> str:
+    if val < 0:
+        return "- \N{OHM SIGN}"
+    return str(SITools.Value(val, "\N{OHM SIGN}", FMT_REACT))
+
+
+def format_capacity(val: float) -> str:
+    if val < 0:
         return "- pF"
-    capacitance = 1 / (freq * 2 * math.pi * im50)
-    return str(SITools.Value(-capacitance, "F", FMT_REACT))
+    return str(SITools.Value(val, "F", FMT_REACT))
 
 
-def format_ind_equiv(im50, freq) -> str:
-    if freq == 0:
+def format_inductance(val: float) -> str:
+    if val < 0:
         return "- nH"
-    inductance = im50 * 1 / (freq * 2 * math.pi)
-    return str(SITools.Value(inductance, "H", FMT_REACT))
-
-def format_q_factor(val: float) -> str:
-    if val < 0 or val > 10000.0:
-        return "\N{INFINITY}"
-    return str(SITools.Value(val, fmt=FMT_Q_FACTOR))
+    return str(SITools.Value(val, "H", FMT_REACT))
 
 
 def format_group_delay(val: float) -> str:
@@ -63,6 +74,18 @@ def format_group_delay(val: float) -> str:
 
 def format_phase(val: float) -> str:
     return f"{math.degrees(val):.2f}\N{DEGREE SIGN}"
+
+
+def format_complex_imp(z: complex) -> str:
+    if z.real > 0:
+        s = f"{z.real:.4g}"
+    else:
+        s = "- "
+    if z.imag < 0:
+        s += "-j"
+    else:
+        s += "+j"
+    return s + f"{abs(z.imag):.4g}\N{OHM SIGN}"
 
 
 class Marker(QtCore.QObject):
@@ -299,7 +322,7 @@ class Marker(QtCore.QObject):
     def getRow(self):
         return QtWidgets.QLabel(self.name), self.layout
 
-    def findLocation(self, data: List[Datapoint]):
+    def findLocation(self, data: List[RFTools.Datapoint]):
         self.location = -1
         self.frequencyInput.nextFrequency = -1
         self.frequencyInput.previousFrequency = -1
@@ -361,98 +384,69 @@ class Marker(QtCore.QObject):
         self.s21_group_delay_label.setText("")
         self.quality_factor_label.setText("")
 
-    def updateLabels(self, s11data: List[Datapoint], s21data: List[Datapoint]):
+    def updateLabels(self,
+                     s11data: List[RFTools.Datapoint],
+                     s21data: List[RFTools.Datapoint]):
         if self.location == -1:
             return
         s11 = s11data[self.location]
         if s21data:
             s21 = s21data[self.location]
+
         imp = s11.impedance()
-        re50, im50 = imp.real, imp.imag
-        if re50 > 0:
-            rp = (re50 ** 2 + im50 ** 2) / re50
-            rp = round(rp, 3 - max(0, math.floor(math.log10(abs(rp)))))
-            rpstr = str(SITools.Value(rp, fmt=FMT_IMPEDANCE))
+        cap_str = format_capacity(
+            RFTools.impedance_to_capacity(imp, s11.freq))
+        ind_str = format_inductance(
+            RFTools.impedance_to_inductance(imp, s11.freq))
 
-            re50 = round(re50, 3 - max(0, math.floor(math.log10(abs(re50)))))
-            re50str = str(SITools.Value(rp, fmt=FMT_IMPEDANCE))
+        imp_p = RFTools.serial_to_parallel(imp)
+        cap_p_str = format_capacity(
+            RFTools.impedance_to_capacity(imp_p, s11.freq))
+        ind_p_str = format_inductance(
+            RFTools.impedance_to_inductance(imp_p, s11.freq))
+
+        if imp.imag < 0:
+            x_str = cap_str
         else:
-            rpstr = "- "
-            re50 = 0
-            re50str = "- "
+            x_str = ind_str
 
-        if im50 != 0:
-            xp = (re50 ** 2 + im50 ** 2) / im50
-            xp = round(
-                xp, 3 - max(0, math.floor(math.log10(abs(xp))))
-            )
-            xpcstr = format_cap_equiv(
-                xp, s11data[self.location].freq
-            )
-            xplstr = format_ind_equiv(
-                xp, s11data[self.location].freq
-            )
-            if xp < 0:
-                xpstr = xpcstr
-                xp50str = "-j" + str(-1 * xp)
-            else:
-                xpstr = xplstr
-                xp50str = "+j" + str(xp)
-            xp50str += "\N{OHM SIGN}"
+        if imp_p.imag < 0:
+            x_p_str = cap_p_str
         else:
-            xp50str = "+j ?\N{OHM SIGN}"
-            xpstr = xpcstr = xplstr = "- "
+            x_p_str = ind_p_str
 
-        if im50 != 0:
-            im50 = round(
-                im50,
-                3 - max(0, math.floor(math.log10(abs(im50))))
-            )
+        self.frequency_label.setText(formatFrequency(s11.freq))
 
-        if im50 < 0:
-            im50str = "-j" + str(-1 * im50)
-        else:
-            im50str = "+j" + str(im50)
-        im50str += "\N{OHM SIGN}"
+        self.impedance_label.setText(format_complex_imp(imp))
+        self.series_r_label.setText(format_resistance(imp.real))
+        self.series_x_label.setText(x_str)
+        self.capacitance_label.setText(cap_str)
+        self.inductance_label.setText(ind_str)
 
-        self.frequency_label.setText(
-            RFTools.formatFrequency(s11.freq))
-        self.impedance_label.setText(re50str + im50str)
-        self.admittance_label.setText(rpstr + xp50str)
-        self.series_r_label.setText(re50str + "\N{OHM SIGN}")
-        self.parallel_r_label.setText(rpstr + "\N{OHM SIGN}")
-        self.parallel_x_label.setText(xpstr)
-        rloss = s11.gain
-        if self.returnloss_is_positive:
-            rloss = -rloss
-        self.returnloss_label.setText(f"{rloss:.3f}dB")
-        capacitance = str(SITools.Value(
-            s11.capacitiveEquivalent(), "F", fmt=FMT_IND_CAP))
-        inductance = str(SITools.Value(
-            s11.inductiveEquivalent(), "H", fmt=FMT_IND_CAP))
-        self.inductance_label.setText(inductance)
-        self.capacitance_label.setText(capacitance)
-        self.parallel_c_label.setText(xpcstr)
-        self.parallel_l_label.setText(xplstr)
-        if im50 > 0:
-            self.series_x_label.setText(inductance)
-        else:
-            self.series_x_label.setText(capacitance)
-        self.vswr_label.setText(f"{s11.vswr:.3f}")
-        q = s11data[self.location].qFactor()
-        self.quality_factor_label.setText(format_q_factor(q))
+        self.admittance_label.setText(format_complex_imp(imp_p))
+        self.parallel_r_label.setText(format_resistance(imp_p.real))
+        self.parallel_x_label.setText(x_p_str)
+        self.parallel_c_label.setText(cap_p_str)
+        self.parallel_l_label.setText(ind_p_str)
+
+        self.vswr_label.setText(format_vswr(s11.vswr))
         self.s11_phase_label.setText(format_phase(s11.phase))
+        self.quality_factor_label.setText(
+            format_q_factor(s11.qFactor()))
+
+        self.returnloss_label.setText(
+            format_gain(s11.gain, self.returnloss_is_positive))
         self.s11_group_delay_label.setText(
-            format_group_delay(groupDelay(s11data, self.location))
+            format_group_delay(RFTools.groupDelay(s11data, self.location))
         )
 
         # skip if no valid s21 data
         if len(s21data) != len(s11data):
             return
 
-        self.gain_label.setText(f"{s21.gain:.3f}dB")
         self.s21_phase_label.setText(format_phase(s21.phase))
+        self.gain_label.setText(format_gain(s21.gain))
         # TODO: figure out if calculation is right (S11 no division by 2)
         self.s21_group_delay_label.setText(
-            format_group_delay(groupDelay(s21data, self.location) / 2)
+            format_group_delay(RFTools.groupDelay(s21data, self.location) / 2)
         )
