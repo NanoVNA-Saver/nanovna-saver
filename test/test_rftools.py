@@ -17,7 +17,10 @@
 import unittest
 
 # Import targets to be tested
-from NanoVNASaver.RFTools import *
+from NanoVNASaver.RFTools import norm_to_impedance, impedance_to_norm, \
+    reflection_coefficient, gamma_to_impedance, clamp_value, \
+    impedance_to_capacity, impedance_to_inductance
+import math
 
 
 class TestRFTools(unittest.TestCase):
@@ -64,3 +67,6 @@ class TestRFTools(unittest.TestCase):
         self.assertEqual(clamp_value(1, 0, 10), 1)
         self.assertEqual(clamp_value(1, 2, 10), 2)
         self.assertEqual(clamp_value(1, -10, -1), -1)
+
+    def test_impedance_to_capacity(self):
+        self.assertEqual(impedance_to_capacity(0, 0), -math.inf)

@@ -23,4 +23,6 @@ jobs:
         pylint --exit-zero NanoVNASaver
     - name: Unittests
       run: |
-        python3 ./test_master.py
+        pip install coverage
+        coverage run ./test_master.py
+        coverage report --fail-under=90 -m --skip-covered
