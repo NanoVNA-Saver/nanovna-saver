@@ -329,14 +329,15 @@ class Marker(QtCore.QObject):
         if self.frequency == 0:
             # No frequency set for this marker
             return
-        if len(data) == 0:
+        datasize = len(data)
+        if datasize == 0:
             # Set the frequency before loading any data
             return
 
         min_freq = data[0].freq
-        max_freq = data[len(data)-1].freq
+        max_freq = data[-1].freq
         lower_stepsize = data[1].freq - data[0].freq
-        upper_stepsize = data[len(data)-1].freq - data[len(data)-2].freq
+        upper_stepsize = data[-1].freq - data[-2].freq
 
         # We are outside the bounds of the data, so we can't put in a marker
         if (self.frequency + lower_stepsize/2 < min_freq or
@@ -344,21 +345,20 @@ class Marker(QtCore.QObject):
             return
 
         min_distance = max_freq
-        for i in range(len(data)):
-            if abs(data[i].freq - self.frequency) <= min_distance:
-                min_distance = abs(data[i].freq - self.frequency)
+        for i, item in enumerate(data):
+            if abs(item.freq - self.frequency) <= min_distance:
+                min_distance = abs(item.freq - self.frequency)
             else:
                 # We have now started moving away from the nearest point
                 self.location = i-1
-                if i < len(data):
-                    self.frequencyInput.nextFrequency = data[i].freq
+                if i < datasize:
+                    self.frequencyInput.nextFrequency = item.freq
                 if (i-2) >= 0:
                     self.frequencyInput.previousFrequency = data[i-2].freq
                 return
         # If we still didn't find a best spot, it was the last value
-        self.location = len(data)-1
-        self.frequencyInput.previousFrequency = data[len(data)-2].freq
-        return
+        self.location = datasize - 1
+        self.frequencyInput.previousFrequency = data[-2].freq
 
     def getGroupBox(self) -> QtWidgets.QGroupBox:
         return self.group_box
