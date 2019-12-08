@@ -88,6 +88,3 @@ class TestTouchstoneTouchstone(unittest.TestCase):
         self.assertIn("!freq ReS11 ImS11 ReS21 ImS21 ReS12 ImS12 ReS22 ImS22",
                       ts.comments)
 
-
-if __name__ == '__main__':
-    unittest.main(verbosity=2)

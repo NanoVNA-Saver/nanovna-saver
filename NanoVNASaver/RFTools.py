@@ -16,9 +16,49 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
 import cmath
-from numbers import Number, Real
+from numbers import Number
 from typing import List, NamedTuple
-from NanoVNASaver.SITools import Value, Format
+from NanoVNASaver.SITools import Value, Format, clamp_value
+
+FMT_FREQ = Format()
+FMT_SHORT = Format(max_nr_digits=4)
+FMT_SWEEP = Format(max_nr_digits=9, allow_strip=True)
+FMT_PARSE = Format(parse_sloppy_unit=True, parse_sloppy_kilo=True)
+
+
+def parallel_to_serial(z: complex) -> complex:
+    """Convert parallel impedance to serial impedance equivalent"""
+    z_sq_sum = z.real ** 2 + z.imag ** 2
+    return complex(z.real * z.imag ** 2 / z_sq_sum,
+                   z.real ** 2 * z.imag / z_sq_sum)
+
+
+def serial_to_parallel(z: complex) -> complex:
+    """Convert serial impedance to parallel impedance equivalent"""
+    z_sq_sum = z.real ** 2 + z.imag ** 2
+    return complex(z_sq_sum / z.real,
+                   z_sq_sum / z.imag)
+
+
+def impedance_to_capacity(z: complex, freq: float) -> float:
+    """Calculate capacitve equivalent for reactance"""
+    if freq == 0:
+        return -math.inf
+    if z.imag == 0:
+        return math.inf
+    return -(1 / (freq * 2 * math.pi * z.imag))
+
+
+def impedance_to_inductance(z: complex, freq: float) -> float:
+    """Calculate inductive equivalent for reactance"""
+    if freq == 0:
+        return 0
+    return z.imag * 1 / (freq * 2 * math.pi)
+
+
+def impedance_to_norm(z: complex, ref_impedance: float = 50) -> complex:
+    """Calculate normalized z from impedance"""
+    return z / ref_impedance
 
 
 def norm_to_impedance(z: complex, ref_impedance: float = 50) -> complex:
@@ -32,7 +72,7 @@ def reflection_coefficient(z: complex, ref_impedance: float = 50) -> complex:
 
 
 def gamma_to_impedance(gamma: complex, ref_impedance: float = 50) -> complex:
-    """Calculate reflection coefficient for z"""
+    """Calculate impedance from gamma"""
     return ((-gamma - 1) / (gamma - 1)) * ref_impedance
 
 
@@ -42,12 +82,12 @@ class Datapoint(NamedTuple):
     im: float
 
     @property
-    def z(self):
+    def z(self) -> complex:
         """ return the datapoint impedance as complex number """
         return complex(self.re, self.im)
 
     @property
-    def phase(self):
+    def phase(self) -> float:
         """ return the datapoint's phase value """
         return cmath.phase(self.z)
 
@@ -75,29 +115,12 @@ class Datapoint(NamedTuple):
         return abs(imp.imag / imp.real)
 
     def capacitiveEquivalent(self, ref_impedance: float = 50) -> float:
-        if self.freq == 0:
-            return math.inf
-        imp = self.impedance(ref_impedance)
-        if imp.imag == 0:
-            return math.inf
-        return -(1 / (self.freq * 2 * math.pi * imp.imag))
+        return impedance_to_capacity(
+            self.impedance(ref_impedance), self.freq)
 
     def inductiveEquivalent(self, ref_impedance: float = 50) -> float:
-        if self.freq == 0:
-            return math.inf
-        imp = self.impedance(ref_impedance)
-        if imp.imag == 0:
-            return 0
-        return imp.imag * 1 / (self.freq * 2 * math.pi)
-
-
-def clamp_value(value: Real, rmin: Real, rmax: Real) -> Real:
-    assert rmin <= rmax
-    if value < rmin:
-        return rmin
-    if value > rmax:
-        return rmax
-    return value
+        return impedance_to_inductance(
+            self.impedance(ref_impedance), self.freq)
 
 
 def groupDelay(data: List[Datapoint], index: int) -> float:
@@ -118,35 +141,20 @@ def groupDelay(data: List[Datapoint], index: int) -> float:
 
 class RFTools:
     @staticmethod
-    def capacitanceEquivalent(im50, freq) -> str:
-        if im50 == 0 or freq == 0:
-            return "- pF"
-        capacitance = 1 / (freq * 2 * math.pi * im50)
-        return str(Value(-capacitance, "F", Format(max_nr_digits=5, space_str=" ")))
-
-    @staticmethod
-    def inductanceEquivalent(im50, freq) -> str:
-        if freq == 0:
-            return "- nH"
-        inductance = im50 * 1 / (freq * 2 * math.pi)
-        return str(Value(inductance, "H", Format(max_nr_digits=5, space_str=" ")))
-
-    @staticmethod
     def formatFrequency(freq: Number) -> str:
-        return str(Value(freq, "Hz"))
+        return str(Value(freq, "Hz", FMT_FREQ))
 
     @staticmethod
     def formatShortFrequency(freq: Number) -> str:
-        return str(Value(freq, "Hz", Format(max_nr_digits=4)))
+        return str(Value(freq, "Hz", FMT_SHORT))
 
     @staticmethod
     def formatSweepFrequency(freq: Number) -> str:
-        return str(Value(freq, "Hz", Format(max_nr_digits=9, allow_strip=True)))
+        return str(Value(freq, "Hz", FMT_SWEEP))
 
     @staticmethod
     def parseFrequency(freq: str) -> int:
-        parser = Value(0, "Hz", Format(parse_sloppy_unit=True, parse_sloppy_kilo=True))
         try:
-            return round(parser.parse(freq).value)
+            return int(Value(freq, "Hz", FMT_PARSE))
         except (ValueError, IndexError):
             return -1
