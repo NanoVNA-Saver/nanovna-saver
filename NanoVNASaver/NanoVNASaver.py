@@ -2580,6 +2580,9 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         self.statusLabel = QtWidgets.QLabel("Not connected.")
         status_layout.addRow("Status:", self.statusLabel)
 
+        self.calibrationStatusLabel = QtWidgets.QLabel("Not connected.")
+        status_layout.addRow("Calibration:", self.calibrationStatusLabel)
+
         status_layout.addRow(QtWidgets.QLabel("Features:"))
         self.featureList = QtWidgets.QListWidget()
         status_layout.addRow(self.featureList)
@@ -2597,6 +2600,11 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         self.btnRefresh.clicked.connect(self.updateFields)
         control_layout.addWidget(self.btnRefresh)
 
+        self.screenshotWindow = ScreenshotWindow()
+        self.btnCaptureScreenshot = QtWidgets.QPushButton("Screenshot")
+        self.btnCaptureScreenshot.clicked.connect(self.captureScreenshot)
+        control_layout.addWidget(self.btnCaptureScreenshot)
+
         layout.addWidget(status_box)
         layout.addWidget(settings_box)
         layout.addLayout(control_layout)
@@ -2608,14 +2616,68 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
     def updateFields(self):
         if self.app.vna.isValid():
             self.statusLabel.setText("Connected to " + self.app.vna.name + ".")
-            if not self.app.worker.running:
-                self.featureList.clear()
-                for item in self.app.vna.getFeatures():
-                    self.featureList.addItem(item)
+            if self.app.worker.running:
+                self.calibrationStatusLabel.setText("(Sweep running)")
+            else:
+                self.calibrationStatusLabel.setText(self.app.vna.getCalibration())
+
+            self.featureList.clear()
+            self.featureList.addItem(self.app.vna.name + " v" + str(self.app.vna.version))
+            for item in self.app.vna.getFeatures():
+                self.featureList.addItem(item)
         else:
             self.statusLabel.setText("Not connected.")
+            self.calibrationStatusLabel.setText("Not connected.")
             self.featureList.clear()
             self.featureList.addItem("Not connected.")
 
     def updateValidation(self, validate_data: bool):
         self.app.vna.validateInput = validate_data
+
+    def captureScreenshot(self):
+        if not self.app.worker.running:
+            pixmap = self.app.vna.getScreenshot()
+            self.screenshotWindow.setScreenshot(pixmap)
+            self.screenshotWindow.show()
+        else:
+            # TODO: Tell the user no screenshots while sweep is running?
+            # TODO: Consider having a list of widgets that want to be disabled when a sweep is running?
+            pass
+
+
+class ScreenshotWindow(QtWidgets.QLabel):
+    pix = None
+
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Screenshot")
+        # TODO : self.setWindowIcon(self.app.icon)
+
+        shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
+        self.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
+        self.action_save_screenshot = QtWidgets.QAction("Save image")
+        self.action_save_screenshot.triggered.connect(self.saveScreenshot)
+        self.addAction(self.action_save_screenshot)
+
+    def setScreenshot(self, pixmap: QtGui.QPixmap):
+        if self.pix is None:
+            self.resize(pixmap.size())
+        self.pix = pixmap
+        self.setPixmap(self.pix.scaled(self.size(), QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation))
+
+    def saveScreenshot(self):
+        if self.pix is not None:
+            logger.info("Saving screenshot to file...")
+            filename, _ = QtWidgets.QFileDialog.getSaveFileName(parent=self, caption="Save image",
+                                                                filter="PNG (*.png);;All files (*.*)")
+
+            logger.debug("Filename: %s", filename)
+            if filename != "":
+                self.pix.save(filename)
+        else:
+            logger.warning("The user got shown an empty screenshot window?")
+
+    def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
+        super().resizeEvent(a0)
+        if self.pixmap() is not None:
+            self.setPixmap(self.pix.scaled(self.size(), QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation))

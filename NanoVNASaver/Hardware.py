@@ -15,8 +15,11 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 import re
+import struct
 from time import sleep
 from typing import List
+
+import numpy as np
 from PyQt5 import QtGui
 
 import serial
@@ -27,6 +30,7 @@ logger = logging.getLogger(__name__)
 class VNA:
     name = "VNA"
     validateInput = True
+    features = []
 
     def __init__(self, app, serial_port: serial.Serial):
         from NanoVNASaver.NanoVNASaver import NanoVNASaver
@@ -69,7 +73,10 @@ class VNA:
         return False
 
     def getFeatures(self) -> List[str]:
-        return []
+        return self.features
+
+    def getCalibration(self) -> str:
+        return "Unknown"
 
     def getScreenshot(self) -> QtGui.QPixmap:
         return QtGui.QPixmap()
@@ -195,16 +202,73 @@ class NanoVNA(VNA):
         logger.debug("Testing against 0.2.0")
         if self.version.version_string.find("extended with scan") > 0:
             logger.debug("Incompatible scan command detected.")
+            self.features.append("Incompatible scan command")
             self.useScan = False
         elif self.version >= Version("0.2.0"):
             logger.debug("Newer than 0.2.0, using new scan command.")
+            self.features.append("New scan command")
             self.useScan = True
         else:
             logger.debug("Older than 0.2.0, using old sweep command.")
+            self.features.append("Original sweep method")
             self.useScan = False
 
     def isValid(self):
         return True
+
+    def getCalibration(self) -> str:
+        logger.debug("Reading calibration info.")
+        if not self.serial.is_open:
+            return "Not connected."
+        if self.app.serialLock.acquire():
+            try:
+                data = "a"
+                while data != "":
+                    data = self.serial.readline().decode('ascii')
+                self.serial.write("cal\r".encode('ascii'))
+                result = ""
+                data = ""
+                sleep(0.1)
+                while "ch>" not in data:
+                    data = self.serial.readline().decode('ascii')
+                    result += data
+                values = result.splitlines()
+                return values[1]
+            except serial.SerialException as exc:
+                logger.exception("Exception while reading calibration info: %s", exc)
+            finally:
+                self.app.serialLock.release()
+        return "Unknown"
+
+    def getScreenshot(self) -> QtGui.QPixmap:
+        logger.debug("Capturing screenshot...")
+        if not self.serial.is_open:
+            return QtGui.QPixmap()
+        if self.app.serialLock.acquire():
+            try:
+                data = "a"
+                while data != "":
+                    data = self.serial.readline().decode('ascii')
+                self.serial.write("capture\r".encode('ascii'))
+                timeout = self.serial.timeout
+                self.serial.timeout = 2
+                self.serial.readline()
+                image_data = self.serial.read(320 * 240 * 2)
+                self.serial.timeout = timeout
+                rgb_data = struct.unpack(">76800H", image_data)
+                rgb_array = np.array(rgb_data, dtype=np.uint32)
+                rgba_array = (0xFF000000 +
+                              ((rgb_array & 0xF800) << 8) +
+                              ((rgb_array & 0x07E0) << 5) +
+                              ((rgb_array & 0x001F) << 3))
+                image = QtGui.QImage(rgba_array, 320, 240, QtGui.QImage.Format_ARGB32)
+                logger.debug("Captured screenshot")
+                return QtGui.QPixmap(image)
+            except serial.SerialException as exc:
+                logger.exception("Exception while capturing screenshot: %s", exc)
+            finally:
+                self.app.serialLock.release()
+        return QtGui.QPixmap()
 
     def readFrequencies(self) -> List[str]:
         return self.readValues("frequencies")
@@ -265,7 +329,7 @@ class Version:
     minor = 0
     revision = 0
     note = ""
-    version_string =""
+    version_string = ""
 
     def __init__(self, version_string):
         self.version_string = version_string
@@ -297,3 +361,6 @@ class Version:
     def __eq__(self, other: "Version"):
         return self.major == other.major and self.minor == other.minor and self.revision == other.revision and \
                self.note == other.note
+
+    def __str__(self):
+        return str(self.major) + "." + str(self.minor) + "." + str(self.revision) + str(self.note)

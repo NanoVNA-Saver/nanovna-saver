@@ -175,43 +175,39 @@ class SweepWorker(QtCore.QRunnable):
         self.running = False
         return
 
-    def updateData(self, values11, values21, offset, segment_size = 101):
+    def updateData(self, values11, values21, offset, segment_size=101):
         # Update the data from (i*101) to (i+1)*101
         logger.debug("Calculating data and inserting in existing data at offset %d", offset)
         for i in range(len(values11)):
             re, im = values11[i]
             re21, im21 = values21[i]
             freq = self.data11[offset * segment_size + i].freq
-            rawData11 = Datapoint(freq, re, im)
-            rawData21 = Datapoint(freq, re21, im21)
-            # TODO: Use applyCalibration instead
-            if self.app.calibration.isCalculated:
-                re, im = self.app.calibration.correct11(re, im, freq)
-                if self.app.calibration.isValid2Port():
-                    re21, im21 = self.app.calibration.correct21(re21, im21, freq)
+            raw_data11 = Datapoint(freq, re, im)
+            raw_data21 = Datapoint(freq, re21, im21)
+            data11, data21 = self.applyCalibration([raw_data11], [raw_data21])
 
-            self.data11[offset * segment_size + i] = Datapoint(freq, re, im)
-            self.data21[offset * segment_size + i] = Datapoint(freq, re21, im21)
-            self.rawData11[offset * segment_size + i] = rawData11
-            self.rawData21[offset * segment_size + i] = rawData21
+            self.data11[offset * segment_size + i] = data11
+            self.data21[offset * segment_size + i] = data21
+            self.rawData11[offset * segment_size + i] = raw_data11
+            self.rawData21[offset * segment_size + i] = raw_data21
         logger.debug("Saving data to application (%d and %d points)", len(self.data11), len(self.data21))
         self.app.saveData(self.data11, self.data21)
         logger.debug("Sending \"updated\" signal")
         self.signals.updated.emit()
 
     def saveData(self, frequencies, values11, values21):
-        rawData11 = []
-        rawData21 = []
+        raw_data11 = []
+        raw_data21 = []
         logger.debug("Calculating data including corrections")
         for i in range(len(values11)):
             re, im = values11[i]
             re21, im21 = values21[i]
             freq = frequencies[i]
-            rawData11 += [Datapoint(freq, re, im)]
-            rawData21 += [Datapoint(freq, re21, im21)]
-        self.data11, self.data21 = self.applyCalibration(rawData11, rawData21)
-        self.rawData11 = rawData11
-        self.rawData21 = rawData21
+            raw_data11 += [Datapoint(freq, re, im)]
+            raw_data21 += [Datapoint(freq, re21, im21)]
+        self.data11, self.data21 = self.applyCalibration(raw_data11, raw_data21)
+        self.rawData11 = raw_data11
+        self.rawData21 = raw_data21
         logger.debug("Saving data to application (%d and %d points)", len(self.data11), len(self.data21))
         self.app.saveData(self.data11, self.data21)
         logger.debug("Sending \"updated\" signal")
@@ -220,7 +216,6 @@ class SweepWorker(QtCore.QRunnable):
     def applyCalibration(self, raw_data11: List[Datapoint], raw_data21: List[Datapoint]) ->\
                         (List[Datapoint], List[Datapoint]):
         if self.offsetDelay != 0:
-            logger.debug("Applying offset delay of %f ps.", self.offsetDelay * 10e12)
             tmp = []
             for d in raw_data11:
                 tmp.append(Calibration.correctDelay11(d, self.offsetDelay))
@@ -237,7 +232,6 @@ class SweepWorker(QtCore.QRunnable):
         data21: List[Datapoint] = []
 
         if self.app.calibration.isValid1Port():
-            logger.debug("Applying S11 calibration.")
             for d in raw_data11:
                 re, im = self.app.calibration.correct11(d.re, d.im, d.freq)
                 data11.append(Datapoint(d.freq, re, im))
@@ -245,7 +239,6 @@ class SweepWorker(QtCore.QRunnable):
             data11 = raw_data11
 
         if self.app.calibration.isValid2Port():
-            logger.debug("Applying S21 calibration.")
             for d in raw_data21:
                 re, im = self.app.calibration.correct21(d.re, d.im, d.freq)
                 data21.append(Datapoint(d.freq, re, im))
@@ -280,7 +273,8 @@ class SweepWorker(QtCore.QRunnable):
 
         return freq, return11, return21
 
-    def truncate(self, values: List[List[tuple]], count):
+    @staticmethod
+    def truncate(values: List[List[tuple]], count):
         logger.debug("Truncating from %d values to %d", len(values), len(values) - count)
         if count < 1:
             return values
@@ -396,15 +390,15 @@ class SweepWorker(QtCore.QRunnable):
                     returnfreq.append(int(f))
         return returnfreq
 
-    def setContinuousSweep(self, continuousSweep: bool):
-        self.continuousSweep = continuousSweep
+    def setContinuousSweep(self, continuous_sweep: bool):
+        self.continuousSweep = continuous_sweep
 
     def setAveraging(self, averaging: bool, averages: str, truncates: str):
         self.averaging = averaging
         try:
             self.averages = int(averages)
             self.truncates = int(truncates)
-        except:
+        except ValueError:
             return
 
     def setVNA(self, vna):
