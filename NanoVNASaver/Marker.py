@@ -24,12 +24,13 @@ from NanoVNASaver import SITools
 from NanoVNASaver import RFTools
 
 FMT_FREQ = SITools.Format(space_str=" ")
-FMT_FREQ_INPUT = SITools.Format(
-    max_nr_digits=10, printable_min=0, unprintable_under="- ")
+FMT_FREQ_INPUT = SITools.Format(max_nr_digits=10, allow_strip=True,
+                                printable_min=0, unprintable_under="- ")
 FMT_Q_FACTOR = SITools.Format(max_nr_digits=4, assume_infinity=False,
                               min_offset=0, max_offset=0, allow_strip=True)
 FMT_GROUP_DELAY = SITools.Format(max_nr_digits=5)
 FMT_REACT = SITools.Format(max_nr_digits=5, space_str=" ", allow_strip=True)
+COLOR_DEFAULT = QtGui.QColor()
 
 
 def format_frequency(freq: float, fmt=FMT_FREQ) -> str:
@@ -117,21 +118,18 @@ class FrequencyInput(QtWidgets.QLineEdit):
 
 
 class Marker(QtCore.QObject):
-    name = "Marker"
-    frequency = 0
-    color: QtGui.QColor = QtGui.QColor()
-    coloredText = True
-    location = -1
-
-    returnloss_is_positive = False
-
+    fieldSelection = []  # class variable for all markers
     updated = pyqtSignal(object)
 
-    fieldSelection = []
-
-    def __init__(self, name, initialColor, frequency=""):
+    def __init__(self, name: str = "Marker",
+                 initialColor: QtGui.QColor = COLOR_DEFAULT,
+                 frequency=-1.0):
         super().__init__()
         self.name = name
+        self.location = -1
+        self.coloredText = True
+        self.returnloss_is_positive = False
+
 
         self.frequency = RFTools.RFTools.parseFrequency(frequency)
 
