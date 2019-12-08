@@ -57,7 +57,7 @@ class VNA:
             return 'nanovnav2'
 
         logger.error('Unknown VNA type: hardware responded to \r with: ' + data)
-        return None
+        return 'unknown'
 
     @staticmethod
     def getVNA(app, serialPort: serial.Serial) -> 'VNA':
@@ -337,7 +337,8 @@ class NanoVNAV2(VNA):
             # serial .read() will wait for exactly nBytes bytes
             arr = self.serial.read(nBytes)
             if nBytes != len(arr):
-                raise LengthError("expected %d bytes, got %d" % (nBytes, len(arr)))
+                logger.error("expected %d bytes, got %d" % (nBytes, len(arr)))
+                return []
 
             for i in range(self.sweepPoints):
                 b = arr[i*32:]
