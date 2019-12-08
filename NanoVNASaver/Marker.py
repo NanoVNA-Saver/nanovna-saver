@@ -56,7 +56,7 @@ def format_resistance(val: float) -> str:
     return str(SITools.Value(val, "\N{OHM SIGN}", FMT_REACT))
 
 
-def format_capacity(val: float, allow_negative: bool=True) -> str:
+def format_capacitance(val: float, allow_negative: bool=True) -> str:
     if not allow_negative and val < 0:
         return "- pF"
     return str(SITools.Value(val, "F", FMT_REACT))
@@ -400,11 +400,11 @@ class Marker(QtCore.QObject):
             s21 = s21data[self.location]
 
         imp = s11.impedance()
-        cap_str = format_capacity(RFTools.impedance_to_capacity(imp, s11.freq))
+        cap_str = format_capacitance(RFTools.impedance_to_capacitance(imp, s11.freq))
         ind_str = format_inductance(RFTools.impedance_to_inductance(imp, s11.freq))
 
         imp_p = RFTools.serial_to_parallel(imp)
-        cap_p_str = format_capacity(RFTools.impedance_to_capacity(imp_p, s11.freq))
+        cap_p_str = format_capacitance(RFTools.impedance_to_capacitance(imp_p, s11.freq))
         ind_p_str = format_inductance(RFTools.impedance_to_inductance(imp_p, s11.freq))
 
         if imp.imag < 0:

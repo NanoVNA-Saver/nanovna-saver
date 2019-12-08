@@ -40,8 +40,8 @@ def serial_to_parallel(z: complex) -> complex:
                    z_sq_sum / z.imag)
 
 
-def impedance_to_capacity(z: complex, freq: float) -> float:
-    """Calculate capacitve equivalent for reactance"""
+def impedance_to_capacitance(z: complex, freq: float) -> float:
+    """Calculate capacitive equivalent for reactance"""
     if freq == 0:
         return -math.inf
     if z.imag == 0:
@@ -122,7 +122,7 @@ class Datapoint(NamedTuple):
         return abs(imp.imag / imp.real)
 
     def capacitiveEquivalent(self, ref_impedance: float = 50) -> float:
-        return impedance_to_capacity(
+        return impedance_to_capacitance(
             self.impedance(ref_impedance), self.freq)
 
     def inductiveEquivalent(self, ref_impedance: float = 50) -> float:
