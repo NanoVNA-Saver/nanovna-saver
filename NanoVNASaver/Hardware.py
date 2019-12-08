@@ -304,7 +304,8 @@ class NanoVNAV2(VNA):
         self.sweepData = [(0, 0)] * self.sweepPoints
 
         tty.setraw(self.serial.fd)
-        self.serial.timeout = 10
+        self.serial.timeout = 3
+        self._updateSweep()
 
     def isValid(self):
         return True
@@ -369,19 +370,25 @@ class NanoVNAV2(VNA):
     def readVersion(self):
         return
 
-    def setSweep(self, start, stop):
+    def setSweep(self, start, stop, points=-1):
+        if points == -1:
+            points = self.sweepPoints
+
         step = (stop - start) / (self.sweepPoints - 1)
-        if start == self.sweepStartHz and step == self.sweepStepHz:
+        if start == self.sweepStartHz and step == self.sweepStepHz and points == self.sweepPoints:
             return
         self.sweepStartHz = start
         self.sweepStepHz = step
+        self.sweepPoints = points
+        logger.info('NanoVNAV2: set sweep start %d step %d' % (self.sweepStartHz, self.sweepStepHz))
+        self._updateSweep()
+        return
+
+    def _updateSweep(self):
         cmd = b"\x23\x00" + int.to_bytes(int(self.sweepStartHz), 8, 'little')
         cmd += b"\x23\x10" + int.to_bytes(int(self.sweepStepHz), 8, 'little')
         cmd += b"\x21\x20" + int.to_bytes(int(self.sweepPoints), 2, 'little')
-
-        logger.info('NanoVNAV2: set sweep start %d step %d' % (self.sweepStartHz, self.sweepStepHz))
         self.serial.write(cmd)
-        return
 
 
 
