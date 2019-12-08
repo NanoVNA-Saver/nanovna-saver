@@ -56,14 +56,14 @@ def format_resistance(val: float) -> str:
     return str(SITools.Value(val, "\N{OHM SIGN}", FMT_REACT))
 
 
-def format_capacity(val: float) -> str:
-    if val < 0:
+def format_capacity(val: float, allow_negative: bool=True) -> str:
+    if not allow_negative and val < 0:
         return "- pF"
     return str(SITools.Value(val, "F", FMT_REACT))
 
 
-def format_inductance(val: float) -> str:
-    if val < 0:
+def format_inductance(val: float, allow_negative: bool=True) -> str:
+    if not allow_negative and val < 0:
         return "- nH"
     return str(SITools.Value(val, "H", FMT_REACT))
 
