@@ -81,19 +81,18 @@ class Value:
                 abs(self._value) >= 10 ** ((fmt.max_offset + 1) * 3):
             return (("-" if self._value < 0 else "") +
                     "\N{INFINITY}" + fmt.space_str + self._unit)
-        if (self._value < fmt.printable_min or
-                self._value > fmt.printable_max):
-            return fmt.unprintable_str + self._unit
+        if self._value < fmt.printable_min:
+            return fmt.unprintable_under + self._unit
+        if self._value > fmt.printable_max:
+            return fmt.unprintable_over + self._unit
 
         if self._value == 0:
             offset = 0
         else:
-            offset = int(math.log10(abs(self._value)) // 3)
-
-        if offset < fmt.min_offset:
-            offset = fmt.min_offset
-        elif offset > fmt.max_offset:
-            offset = fmt.max_offset
+            offset = clamp_value(
+                int(math.log10(abs(self._value)) // 3),
+                fmt.min_offset,
+                fmt.max_offset)
 
         real = float(self._value) / (10 ** (offset * 3))
 
