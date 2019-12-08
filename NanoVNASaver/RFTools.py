@@ -76,6 +76,13 @@ def gamma_to_impedance(gamma: complex, ref_impedance: float = 50) -> complex:
     return ((-gamma - 1) / (gamma - 1)) * ref_impedance
 
 
+def parseFrequency(freq: str) -> int:
+    try:
+        return int(Value(freq, "Hz", FMT_PARSE))
+    except (ValueError, IndexError):
+        return -1
+
+
 class Datapoint(NamedTuple):
     freq: int
     re: float
@@ -140,6 +147,7 @@ def groupDelay(data: List[Datapoint], index: int) -> float:
 
 
 class RFTools:
+    # TODO: Remove this class when unused
     @staticmethod
     def formatFrequency(freq: Number) -> str:
         return str(Value(freq, "Hz", FMT_FREQ))
@@ -154,7 +162,4 @@ class RFTools:
 
     @staticmethod
     def parseFrequency(freq: str) -> int:
-        try:
-            return int(Value(freq, "Hz", FMT_PARSE))
-        except (ValueError, IndexError):
-            return -1
+        return parseFrequency(freq)

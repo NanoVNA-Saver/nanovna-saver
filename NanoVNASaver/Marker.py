@@ -26,7 +26,7 @@ from NanoVNASaver import RFTools
 FMT_FREQ = SITools.Format(space_str=" ")
 FMT_Q_FACTOR = SITools.Format(max_nr_digits=4, assume_infinity=False,
                               min_offset=0, max_offset=0, allow_strip=True)
-FMT_GROUP_DELAY = SITools.Format(max_nr_digits=5)
+FMT_GROUP_DELAY = SITools.Format(max_nr_digits=5, space_str=" ")
 FMT_REACT = SITools.Format(max_nr_digits=5, space_str=" ", allow_strip=True)
 
 
@@ -37,7 +37,7 @@ def formatFrequency(freq: float) -> str:
 def format_gain(val: float, invert: bool = False) -> str:
     if invert:
         val = -val
-    return f"{val:.3f}dB"
+    return f"{val:.3f} dB"
 
 
 def format_q_factor(val: float) -> str:
@@ -78,14 +78,23 @@ def format_phase(val: float) -> str:
 
 def format_complex_imp(z: complex) -> str:
     if z.real > 0:
-        s = f"{z.real:.4g}"
+        if z.real >= 1000:
+            s = f"{z.real/1000:.3g}k"
+        else:
+            s = f"{z.real:.4g}"
     else:
         s = "- "
     if z.imag < 0:
-        s += "-j"
+        s += " -j"
     else:
-        s += "+j"
-    return s + f"{abs(z.imag):.4g}\N{OHM SIGN}"
+        s += " +j"
+    if abs(z.imag) >= 1000:
+        s += f"{abs(z.imag)/1000:.3g}k"
+    elif abs(z.imag) < 0.1:
+        s += f"{abs(z.imag)*1000:.3g}m"
+    else:
+        s += f"{abs(z.imag):.3g}"
+    return s + " \N{OHM SIGN}"
 
 
 class Marker(QtCore.QObject):
@@ -131,9 +140,9 @@ class Marker(QtCore.QObject):
         self.frequencyInput.setAlignment(QtCore.Qt.AlignRight)
         self.frequencyInput.textEdited.connect(self.setFrequency)
 
-        ###############################################################
+        ################################################################################################################
         # Data display label
-        ###############################################################
+        ################################################################################################################
 
         self.frequency_label = QtWidgets.QLabel("")
         self.frequency_label.setMinimumWidth(100)
@@ -179,9 +188,9 @@ class Marker(QtCore.QObject):
             "s21groupdelay": ("S21 Group Delay:", self.s21_group_delay_label),
         }
 
-        ###############################################################
+        ################################################################################################################
         # Marker control layout
-        ###############################################################
+        ################################################################################################################
 
         self.btnColorPicker = QtWidgets.QPushButton("█")
         self.btnColorPicker.setFixedWidth(20)
@@ -196,9 +205,9 @@ class Marker(QtCore.QObject):
         self.layout.addWidget(self.btnColorPicker)
         self.layout.addWidget(self.isMouseControlledRadioButton)
 
-        ###############################################################
+        ################################################################################################################
         # Data display layout
-        ###############################################################
+        ################################################################################################################
 
         self.group_box = QtWidgets.QGroupBox(self.name)
         self.group_box.setMaximumWidth(340)
@@ -289,7 +298,7 @@ class Marker(QtCore.QObject):
         # self.right_form.addRow("S21 Phase:", self.s21_phase_label)
 
     def setFrequency(self, frequency):
-        f = RFTools.RFTools.parseFrequency(frequency)
+        f = RFTools.parseFrequency(frequency)
         self.frequency = max(f, 0)
         self.updated.emit(self)
 
@@ -340,8 +349,7 @@ class Marker(QtCore.QObject):
         upper_stepsize = data[-1].freq - data[-2].freq
 
         # We are outside the bounds of the data, so we can't put in a marker
-        if (self.frequency + lower_stepsize/2 < min_freq or
-                self.frequency - upper_stepsize/2 > max_freq):
+        if self.frequency + lower_stepsize/2 < min_freq or self.frequency - upper_stepsize/2 > max_freq:
             return
 
         min_distance = max_freq
@@ -384,9 +392,7 @@ class Marker(QtCore.QObject):
         self.s21_group_delay_label.setText("")
         self.quality_factor_label.setText("")
 
-    def updateLabels(self,
-                     s11data: List[RFTools.Datapoint],
-                     s21data: List[RFTools.Datapoint]):
+    def updateLabels(self, s11data: List[RFTools.Datapoint], s21data: List[RFTools.Datapoint]):
         if self.location == -1:
             return
         s11 = s11data[self.location]
@@ -394,16 +400,12 @@ class Marker(QtCore.QObject):
             s21 = s21data[self.location]
 
         imp = s11.impedance()
-        cap_str = format_capacity(
-            RFTools.impedance_to_capacity(imp, s11.freq))
-        ind_str = format_inductance(
-            RFTools.impedance_to_inductance(imp, s11.freq))
+        cap_str = format_capacity(RFTools.impedance_to_capacity(imp, s11.freq))
+        ind_str = format_inductance(RFTools.impedance_to_inductance(imp, s11.freq))
 
         imp_p = RFTools.serial_to_parallel(imp)
-        cap_p_str = format_capacity(
-            RFTools.impedance_to_capacity(imp_p, s11.freq))
-        ind_p_str = format_inductance(
-            RFTools.impedance_to_inductance(imp_p, s11.freq))
+        cap_p_str = format_capacity(RFTools.impedance_to_capacity(imp_p, s11.freq))
+        ind_p_str = format_inductance(RFTools.impedance_to_inductance(imp_p, s11.freq))
 
         if imp.imag < 0:
             x_str = cap_str
@@ -431,14 +433,10 @@ class Marker(QtCore.QObject):
 
         self.vswr_label.setText(format_vswr(s11.vswr))
         self.s11_phase_label.setText(format_phase(s11.phase))
-        self.quality_factor_label.setText(
-            format_q_factor(s11.qFactor()))
+        self.quality_factor_label.setText(format_q_factor(s11.qFactor()))
 
-        self.returnloss_label.setText(
-            format_gain(s11.gain, self.returnloss_is_positive))
-        self.s11_group_delay_label.setText(
-            format_group_delay(RFTools.groupDelay(s11data, self.location))
-        )
+        self.returnloss_label.setText(format_gain(s11.gain, self.returnloss_is_positive))
+        self.s11_group_delay_label.setText(format_group_delay(RFTools.groupDelay(s11data, self.location)))
 
         # skip if no valid s21 data
         if len(s21data) != len(s11data):
@@ -446,7 +444,4 @@ class Marker(QtCore.QObject):
 
         self.s21_phase_label.setText(format_phase(s21.phase))
         self.gain_label.setText(format_gain(s21.gain))
-        # TODO: figure out if calculation is right (S11 no division by 2)
-        self.s21_group_delay_label.setText(
-            format_group_delay(RFTools.groupDelay(s21data, self.location) / 2)
-        )
+        self.s21_group_delay_label.setText(format_group_delay(RFTools.groupDelay(s21data, self.location) / 2))
