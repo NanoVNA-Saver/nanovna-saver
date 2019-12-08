@@ -17,8 +17,10 @@
 import unittest
 
 # Import targets to be tested
-from NanoVNASaver.RFTools import norm_to_impedance, impedance_to_norm, \
+from NanoVNASaver.RFTools import Datapoint, \
+    norm_to_impedance, impedance_to_norm, \
     reflection_coefficient, gamma_to_impedance, clamp_value, \
+    parallel_to_serial, serial_to_parallel, \
     impedance_to_capacity, impedance_to_inductance
 import math
 
@@ -68,5 +70,49 @@ class TestRFTools(unittest.TestCase):
         self.assertEqual(clamp_value(1, 2, 10), 2)
         self.assertEqual(clamp_value(1, -10, -1), -1)
 
+    def test_parallel_to_serial(self):
+        self.assertRaises(ZeroDivisionError, parallel_to_serial, 0)
+        self.assertAlmostEqual(
+            parallel_to_serial(complex(52, 260)),
+            complex(50, 10))
+
+    def test_serial_to_parallel(self):
+        self.assertRaises(ZeroDivisionError, serial_to_parallel, 0)
+        self.assertAlmostEqual(
+            serial_to_parallel(complex(50, 10)),
+            complex(52, 260))
+
     def test_impedance_to_capacity(self):
         self.assertEqual(impedance_to_capacity(0, 0), -math.inf)
+        self.assertEqual(impedance_to_capacity(0, 10), math.inf)
+        self.assertAlmostEqual(
+            impedance_to_capacity(complex(50, 159.1549), 100000),
+            1e-8)
+
+    def test_impedance_to_inductance(self):
+        self.assertEqual(impedance_to_inductance(0, 0), 0)
+        self.assertAlmostEqual(
+            impedance_to_inductance(complex(50, 159.1549), 100000),
+            2.533e-4)
+
+
+class TestRFToolsDatapoint(unittest.TestCase):
+
+    def setUp(self):
+        self.dp = Datapoint(100000, 0.1091, 0.3118)
+        self.dp0 = Datapoint(100000, 0, 0)
+        self.dp50 = Datapoint(100000, 1, 0)
+
+    def test_properties(self):
+        self.assertEqual(self.dp.z, complex(0.1091, 0.3118))
+        self.assertAlmostEqual(self.dp.phase, 1.23420722)
+        self.assertEqual(self.dp0.gain, 0.0)
+        self.assertAlmostEqual(self.dp.gain, -9.6208748)
+        self.assertEqual(self.dp50.vswr, 1.0)
+        self.assertAlmostEqual(self.dp.vswr, 1.9865736)
+        self.assertAlmostEqual(self.dp.impedance(),
+                               complex(49.997525, 34.9974501))
+        self.assertAlmostEqual(self.dp.impedance(75),
+                               complex(74.99628755, 52.49617517))
+        self.assertEqual(self.dp0.qFactor(), 0.0)
+        self.assertAlmostEqual(self.dp.qFactor(), 0.6999837)
