@@ -2655,6 +2655,23 @@ class ScreenshotWindow(QtWidgets.QLabel):
 
         shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
         self.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
+
+        self.action_original_size = QtWidgets.QAction("Original size")
+        self.action_original_size.triggered.connect(lambda: self.setScale(1))
+        self.action_2x_size = QtWidgets.QAction("2x size")
+        self.action_2x_size.triggered.connect(lambda: self.setScale(2))
+        self.action_3x_size = QtWidgets.QAction("3x size")
+        self.action_3x_size.triggered.connect(lambda: self.setScale(3))
+        self.action_4x_size = QtWidgets.QAction("4x size")
+        self.action_4x_size.triggered.connect(lambda: self.setScale(4))
+        self.action_5x_size = QtWidgets.QAction("5x size")
+        self.action_5x_size.triggered.connect(lambda: self.setScale(5))
+
+        self.addAction(self.action_original_size)
+        self.addAction(self.action_2x_size)
+        self.addAction(self.action_3x_size)
+        self.addAction(self.action_4x_size)
+        self.addAction(self.action_5x_size)
         self.action_save_screenshot = QtWidgets.QAction("Save image")
         self.action_save_screenshot.triggered.connect(self.saveScreenshot)
         self.addAction(self.action_save_screenshot)
@@ -2664,6 +2681,12 @@ class ScreenshotWindow(QtWidgets.QLabel):
             self.resize(pixmap.size())
         self.pix = pixmap
         self.setPixmap(self.pix.scaled(self.size(), QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation))
+        w, h = pixmap.width(), pixmap.height()
+        self.action_original_size.setText("Original size (" + str(w) + "x" + str(h) + ")")
+        self.action_2x_size.setText("2x size (" + str(w * 2) + "x" + str(h * 2) + ")")
+        self.action_3x_size.setText("3x size (" + str(w * 3) + "x" + str(h * 3) + ")")
+        self.action_4x_size.setText("4x size (" + str(w * 4) + "x" + str(h * 4) + ")")
+        self.action_5x_size.setText("5x size (" + str(w * 5) + "x" + str(h * 5) + ")")
 
     def saveScreenshot(self):
         if self.pix is not None:
@@ -2673,7 +2696,7 @@ class ScreenshotWindow(QtWidgets.QLabel):
 
             logger.debug("Filename: %s", filename)
             if filename != "":
-                self.pix.save(filename)
+                self.pixmap().save(filename)
         else:
             logger.warning("The user got shown an empty screenshot window?")
 
@@ -2681,3 +2704,7 @@ class ScreenshotWindow(QtWidgets.QLabel):
         super().resizeEvent(a0)
         if self.pixmap() is not None:
             self.setPixmap(self.pix.scaled(self.size(), QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation))
+
+    def setScale(self, scale):
+        width, height = self.pix.size().width() * scale, self.pix.size().height() * scale
+        self.resize(width, height)
