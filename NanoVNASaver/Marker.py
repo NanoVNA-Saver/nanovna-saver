@@ -56,13 +56,13 @@ def format_resistance(val: float) -> str:
     return str(SITools.Value(val, "\N{OHM SIGN}", FMT_REACT))
 
 
-def format_capacitance(val: float, allow_negative: bool=True) -> str:
+def format_capacitance(val: float, allow_negative: bool = True) -> str:
     if not allow_negative and val < 0:
         return "- pF"
     return str(SITools.Value(val, "F", FMT_REACT))
 
 
-def format_inductance(val: float, allow_negative: bool=True) -> str:
+def format_inductance(val: float, allow_negative: bool = True) -> str:
     if not allow_negative and val < 0:
         return "- nH"
     return str(SITools.Value(val, "H", FMT_REACT))
@@ -396,8 +396,6 @@ class Marker(QtCore.QObject):
         if self.location == -1:
             return
         s11 = s11data[self.location]
-        if s21data:
-            s21 = s21data[self.location]
 
         imp = s11.impedance()
         cap_str = format_capacitance(RFTools.impedance_to_capacitance(imp, s11.freq))
@@ -441,6 +439,8 @@ class Marker(QtCore.QObject):
         # skip if no valid s21 data
         if len(s21data) != len(s11data):
             return
+
+        s21 = s21data[self.location]
 
         self.s21_phase_label.setText(format_phase(s21.phase))
         self.gain_label.setText(format_gain(s21.gain))
