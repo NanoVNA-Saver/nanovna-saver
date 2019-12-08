@@ -48,7 +48,7 @@ class VNA:
         # will wait up to 0.1 seconds
         data = serialPort.readline().decode('ascii')
 
-        if data == 'ch >':
+        if data == 'ch> ':
             # this is an original nanovna
             return 'nanovna'
 
