@@ -24,8 +24,9 @@ from NanoVNASaver import SITools
 from NanoVNASaver import RFTools
 
 FMT_FREQ = SITools.Format(space_str=" ")
-FMT_FREQ_INPUT = SITools.Format(
-    max_nr_digits=10, printable_min=0, unprintable_under="- ")
+FMT_FREQ_INPUT = SITools.Format(max_nr_digits=10, allow_strip=True,
+                                printable_min=0, unprintable_under="- ")
+
 FMT_Q_FACTOR = SITools.Format(max_nr_digits=4, assume_infinity=False,
                               min_offset=0, max_offset=0, allow_strip=True)
 FMT_GROUP_DELAY = SITools.Format(max_nr_digits=5)
@@ -134,9 +135,9 @@ class Marker(QtCore.QObject):
         self.name = name
 
         self.frequency = RFTools.RFTools.parseFrequency(frequency)
-
         self.frequencyInput = FrequencyInput(
             format_frequency(self.frequency, FMT_FREQ_INPUT))
+
         self.frequencyInput.setAlignment(QtCore.Qt.AlignRight)
         self.frequencyInput.textEdited.connect(self.setFrequency)
 
