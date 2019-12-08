@@ -3,7 +3,7 @@
 #  Copyright (C) 2019.  Rune B. Broberg
 #
 #  This program is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
+#  it under the terms of the GNU General Public License as published bynanovna
 #  the Free Software Foundation, either version 3 of the License, or
 #  (at your option) any later version.
 #
@@ -18,10 +18,19 @@ from __future__ import annotations
 import math
 import decimal
 from typing import NamedTuple, Union
-from numbers import Number
+from numbers import Number, Real
 
 PREFIXES = ("y", "z", "a", "f", "p", "n", "µ", "m",
             "", "k", "M", "G", "T", "P", "E", "Z", "Y")
+
+
+def clamp_value(value: Real, rmin: Real, rmax: Real) -> Real:
+    assert rmin <= rmax
+    if value < rmin:
+        return rmin
+    if value > rmax:
+        return rmax
+    return value
 
 
 class Format(NamedTuple):
@@ -144,12 +153,9 @@ class Value:
                                decimal.Decimal(factor, context=Value.CTX))
             except decimal.InvalidOperation:
                 raise ValueError
-            # TODO: get formating out of RFTools to be able to import clamp
-            #       and reuse code
-            if self._value < self.fmt.parse_clamp_min:
-                self._value = self.fmt.parse_clamp_min
-            elif self._value > self.fmt.parse_clamp_max:
-                self._value = self.fmt.parse_clamp_max
+            self._value = clamp_value(self._value,
+                                      self.fmt.parse_clamp_min,
+                                      self.fmt.parse_clamp_max)
         return self
 
     @property

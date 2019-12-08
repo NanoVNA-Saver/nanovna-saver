@@ -16,9 +16,9 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
 import cmath
-from numbers import Number, Real
+from numbers import Number
 from typing import List, NamedTuple
-from NanoVNASaver.SITools import Value, Format
+from NanoVNASaver.SITools import Value, Format, clamp_value
 
 FMT_FREQ = Format()
 FMT_SHORT = Format(max_nr_digits=4)
@@ -121,15 +121,6 @@ class Datapoint(NamedTuple):
     def inductiveEquivalent(self, ref_impedance: float = 50) -> float:
         return impedance_to_inductance(
             self.impedance(ref_impedance), self.freq)
-
-
-def clamp_value(value: Real, rmin: Real, rmax: Real) -> Real:
-    assert rmin <= rmax
-    if value < rmin:
-        return rmin
-    if value > rmax:
-        return rmax
-    return value
 
 
 def groupDelay(data: List[Datapoint], index: int) -> float:
