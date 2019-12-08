@@ -23,7 +23,8 @@ from NanoVNASaver.SITools import Value, Format, clamp_value
 FMT_FREQ = Format()
 FMT_SHORT = Format(max_nr_digits=4)
 FMT_SWEEP = Format(max_nr_digits=9, allow_strip=True)
-FMT_PARSE = Format(parse_sloppy_unit=True, parse_sloppy_kilo=True)
+FMT_PARSE = Format(parse_sloppy_unit=True, parse_sloppy_kilo=True,
+                   parse_clamp_min=0)
 
 
 def parallel_to_serial(z: complex) -> complex:
