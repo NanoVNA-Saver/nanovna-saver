@@ -650,6 +650,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
             frequencies = self.vna.readFrequencies()
             if frequencies:
+                self.frequencies = frequencies
                 logger.info("Read starting frequency %s and end frequency %s", frequencies[0], frequencies[100])
                 if int(frequencies[0]) == int(frequencies[100]) and (self.sweepStartInput.text() == "" or
                                                                      self.sweepEndInput.text() == ""):
@@ -824,13 +825,17 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.sweepEndInput.setText(RFTools.formatSweepFrequency(fstop))
 
     def updateStepSize(self):
+        sweepPoints = 101
+        if self.frequencies:
+            sweepPoints = len(self.frequencies)
+
         fspan = RFTools.parseFrequency(self.sweepSpanInput.text())
         if fspan < 0:
             return
         if self.sweepCountInput.text().isdigit():
             segments = int(self.sweepCountInput.text())
             if segments > 0:
-                fstep = fspan / (segments * 101)
+                fstep = fspan / (segments * (sweepPoints - 1))
                 self.sweepStepLabel.setText(RFTools.formatShortFrequency(fstep) + "/step")
 
     def setReference(self, s11data=None, s21data=None, source=None):
