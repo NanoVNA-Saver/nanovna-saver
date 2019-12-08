@@ -24,14 +24,16 @@ from NanoVNASaver import SITools
 from NanoVNASaver import RFTools
 
 FMT_FREQ = SITools.Format(space_str=" ")
+FMT_FREQ_INPUT = SITools.Format(
+    max_nr_digits=10, printable_min=0, unprintable_under="- ")
 FMT_Q_FACTOR = SITools.Format(max_nr_digits=4, assume_infinity=False,
                               min_offset=0, max_offset=0, allow_strip=True)
 FMT_GROUP_DELAY = SITools.Format(max_nr_digits=5)
 FMT_REACT = SITools.Format(max_nr_digits=5, space_str=" ", allow_strip=True)
 
 
-def formatFrequency(freq: float) -> str:
-    return str(SITools.Value(freq, "Hz", FMT_FREQ))
+def format_frequency(freq: float, fmt=FMT_FREQ) -> str:
+    return str(SITools.Value(freq, "Hz", fmt))
 
 
 def format_gain(val: float, invert: bool = False) -> str:
@@ -56,13 +58,13 @@ def format_resistance(val: float) -> str:
     return str(SITools.Value(val, "\N{OHM SIGN}", FMT_REACT))
 
 
-def format_capacity(val: float, allow_negative: bool=True) -> str:
+def format_capacity(val: float, allow_negative: bool = True) -> str:
     if not allow_negative and val < 0:
         return "- pF"
     return str(SITools.Value(val, "F", FMT_REACT))
 
 
-def format_inductance(val: float, allow_negative: bool=True) -> str:
+def format_inductance(val: float, allow_negative: bool = True) -> str:
     if not allow_negative and val < 0:
         return "- nH"
     return str(SITools.Value(val, "H", FMT_REACT))
@@ -88,6 +90,32 @@ def format_complex_imp(z: complex) -> str:
     return s + f"{abs(z.imag):.4g}\N{OHM SIGN}"
 
 
+class FrequencyInput(QtWidgets.QLineEdit):
+
+    def __init__(self, text=""):
+        super().__init__(text)
+        self.nextFrequency = -1
+        self.previousFrequency = -1
+
+    def setText(self, text: str) -> None:
+        super().setText(format_frequency(text, FMT_FREQ_INPUT))
+
+    def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
+        if a0.type() == QtCore.QEvent.KeyPress:
+            if a0.key() == QtCore.Qt.Key_Up and self.nextFrequency != -1:
+                a0.accept()
+                self.setText(self.nextFrequency)
+                self.textEdited.emit(self.text())
+                return
+            if a0.key() == QtCore.Qt.Key_Down and \
+                    self.previousFrequency != -1:
+                a0.accept()
+                self.setText(self.previousFrequency)
+                self.textEdited.emit(self.text())
+                return
+        super().keyPressEvent(a0)
+
+
 class Marker(QtCore.QObject):
     name = "Marker"
     frequency = 0
@@ -101,33 +129,14 @@ class Marker(QtCore.QObject):
 
     fieldSelection = []
 
-    class FrequencyInput(QtWidgets.QLineEdit):
-        nextFrequency = -1
-        previousFrequency = -1
-
-        def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
-            if a0.type() == QtCore.QEvent.KeyPress:
-                if a0.key() == QtCore.Qt.Key_Up and self.nextFrequency != -1:
-                    a0.accept()
-                    self.setText(str(self.nextFrequency))
-                    self.textEdited.emit(self.text())
-                    return
-                if a0.key() == QtCore.Qt.Key_Down and \
-                        self.previousFrequency != -1:
-                    a0.accept()
-                    self.setText(str(self.previousFrequency))
-                    self.textEdited.emit(self.text())
-                    return
-            super().keyPressEvent(a0)
-
     def __init__(self, name, initialColor, frequency=""):
         super().__init__()
         self.name = name
 
-        if frequency.isnumeric():
-            self.frequency = int(frequency)
-        self.frequencyInput = Marker.FrequencyInput(frequency)
+        self.frequency = RFTools.RFTools.parseFrequency(frequency)
 
+        self.frequencyInput = FrequencyInput(
+            format_frequency(self.frequency, FMT_FREQ_INPUT))
         self.frequencyInput.setAlignment(QtCore.Qt.AlignRight)
         self.frequencyInput.textEdited.connect(self.setFrequency)
 
@@ -415,7 +424,7 @@ class Marker(QtCore.QObject):
         else:
             x_p_str = ind_p_str
 
-        self.frequency_label.setText(formatFrequency(s11.freq))
+        self.frequency_label.setText(format_frequency(s11.freq))
 
         self.impedance_label.setText(format_complex_imp(imp))
         self.series_r_label.setText(format_resistance(imp.real))
