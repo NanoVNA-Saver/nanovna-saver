@@ -26,6 +26,7 @@ from NanoVNASaver import RFTools
 FMT_FREQ = SITools.Format(space_str=" ")
 FMT_FREQ_INPUT = SITools.Format(max_nr_digits=10, allow_strip=True,
                                 printable_min=0, unprintable_under="- ")
+
 FMT_Q_FACTOR = SITools.Format(max_nr_digits=4, assume_infinity=False,
                               min_offset=0, max_offset=0, allow_strip=True)
 FMT_GROUP_DELAY = SITools.Format(max_nr_digits=5)
@@ -118,18 +119,21 @@ class FrequencyInput(QtWidgets.QLineEdit):
 
 
 class Marker(QtCore.QObject):
-    fieldSelection = []  # class variable for all markers
+    name = "Marker"
+    frequency = 0
+    color: QtGui.QColor = QtGui.QColor()
+    coloredText = True
+    location = -1
+
+    returnloss_is_positive = False
+
     updated = pyqtSignal(object)
 
-    def __init__(self, name: str = "Marker",
-                 initialColor: QtGui.QColor = COLOR_DEFAULT,
-                 frequency=-1.0):
+    fieldSelection = []
+
+    def __init__(self, name, initialColor, frequency=""):
         super().__init__()
         self.name = name
-        self.location = -1
-        self.coloredText = True
-        self.returnloss_is_positive = False
-
 
         self.frequency = RFTools.RFTools.parseFrequency(frequency)
 
@@ -275,6 +279,25 @@ class Marker(QtCore.QObject):
                     label, value = self.fields[field]
                     self.right_form.addRow(label, value)
                     value.show()
+
+        # Left side
+        # self.left_form.addRow("Frequency:", self.frequency_label)
+        # self.left_form.addRow("Impedance:", self.impedance_label)
+        # # left_form.addRow("Admittance:", self.admittance_label)
+        # self.left_form.addRow("Parallel R:", self.parallel_r_label)
+        # self.left_form.addRow("Parallel X:", self.parallel_x_label)
+        # self.left_form.addRow("L equiv.:", self.inductance_label)
+        # self.left_form.addRow("C equiv.:", self.capacitance_label)
+        #
+        # # Right side
+        # self.right_form.addRow("Return loss:", self.returnloss_label)
+        # if "vswr" in self.fieldSelection:
+        #     self.right_form.addRow("VSWR:", self.vswr_label)
+        #     self.vswr_label.show()
+        # self.right_form.addRow("Q:", self.quality_factor_label)
+        # self.right_form.addRow("S11 Phase:", self.s11_phase_label)
+        # self.right_form.addRow("S21 Gain:", self.gain_label)
+        # self.right_form.addRow("S21 Phase:", self.s21_phase_label)
 
     def setFrequency(self, frequency):
         self.frequency = RFTools.RFTools.parseFrequency(frequency)
