@@ -325,8 +325,8 @@ class NanoVNAV2(VNA):
             # reset protocol to known state
             self.serial.write([0,0,0,0,0,0,0,0])
 
-            # cmd: write register 0x38 to clear FIFO
-            self.serial.write([0x20, 0x38, 0x01])
+            # cmd: write register 0x30 to clear FIFO
+            self.serial.write([0x20, 0x30, 0x00])
 
             # cmd: read FIFO, addr 0x30
             self.serial.write([0x13, 0x30, self.sweepPoints])
