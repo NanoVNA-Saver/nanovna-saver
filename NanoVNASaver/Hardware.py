@@ -57,6 +57,18 @@ class VNA:
             logger.warning("Did not recognize NanoVNA type from firmware.")
             return NanoVNA(app, serial_port)
 
+    def readFeatures(self) -> List[str]:
+        features = []
+        raw_help = self.readFromCommand("help")
+        logger.debug("Help command output:")
+        logger.debug(raw_help)
+
+        #  Detect features from the help command
+        if "capture" in raw_help:
+            features.append("Screenshots")
+
+        return features
+
     def readFrequencies(self) -> List[str]:
         pass
 
@@ -111,6 +123,29 @@ class VNA:
             return result
         else:
             logger.error("Unable to acquire serial lock to read firmware.")
+            return ""
+
+    def readFromCommand(self, command) -> str:
+        if self.app.serialLock.acquire():
+            result = ""
+            try:
+                data = "a"
+                while data != "":
+                    data = self.serial.readline().decode('ascii')
+                self.serial.write((command + "\r").encode('ascii'))
+                result = ""
+                data = ""
+                sleep(0.01)
+                while data != "ch> ":
+                    data = self.serial.readline().decode('ascii')
+                    result += data
+            except serial.SerialException as exc:
+                logger.exception("Exception while reading " + command + ": %s", exc)
+            finally:
+                self.app.serialLock.release()
+            return result
+        else:
+            logger.error("Unable to acquire serial lock to read " + command + ".")
             return ""
 
     def readValues(self, value) -> List[str]:
@@ -212,6 +247,7 @@ class NanoVNA(VNA):
             logger.debug("Older than 0.2.0, using old sweep command.")
             self.features.append("Original sweep method")
             self.useScan = False
+        self.features.extend(self.readFeatures())
 
     def isValid(self):
         return True

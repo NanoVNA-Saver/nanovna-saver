@@ -2623,13 +2623,20 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
 
             self.featureList.clear()
             self.featureList.addItem(self.app.vna.name + " v" + str(self.app.vna.version))
-            for item in self.app.vna.getFeatures():
+            features = self.app.vna.getFeatures()
+            for item in features:
                 self.featureList.addItem(item)
+
+            if "Screenshots" in features:
+                self.btnCaptureScreenshot.setDisabled(False)
+            else:
+                self.btnCaptureScreenshot.setDisabled(True)
         else:
             self.statusLabel.setText("Not connected.")
             self.calibrationStatusLabel.setText("Not connected.")
             self.featureList.clear()
             self.featureList.addItem("Not connected.")
+            self.btnCaptureScreenshot.setDisabled(True)
 
     def updateValidation(self, validate_data: bool):
         self.app.vna.validateInput = validate_data
