@@ -48,6 +48,7 @@ class Chart(QtWidgets.QWidget):
     bands = None
     draggedMarker: Marker = None
     name = ""
+    sweepTitle = ""
     drawLines = False
     minChartHeight = 200
     minChartWidth = 200
@@ -141,6 +142,10 @@ class Chart(QtWidgets.QWidget):
 
     def setMarkerSize(self, size):
         self.markerSize = size
+        self.update()
+
+    def setSweepTitle(self, title):
+        self.sweepTitle = title
         self.update()
 
     def getActiveMarker(self) -> Marker:
@@ -308,6 +313,15 @@ class Chart(QtWidgets.QWidget):
             number_x = x - 3
             number_y = y - self.markerSize - 3
             qp.drawText(number_x, number_y, str(number))
+
+    def drawTitle(self, qp: QtGui.QPainter, position: QtCore.QPoint = None):
+        if self.sweepTitle != "":
+            qp.setPen(self.textColor)
+            if position is None:
+                qf = QtGui.QFontMetricsF(self.font())
+                width = qf.boundingRect(self.sweepTitle).width()
+                position = QtCore.QPointF(self.width()/2 - width/2, 15)
+            qp.drawText(position, self.sweepTitle)
 
 
 class FrequencyChart(Chart):
@@ -691,6 +705,16 @@ class FrequencyChart(Chart):
             qp.drawRect(rect)
         qp.end()
 
+    def drawChart(self, qp: QtGui.QPainter):
+        qp.setPen(QtGui.QPen(self.textColor))
+        qp.drawText(3, 15, self.name)
+        qp.setPen(QtGui.QPen(self.foregroundColor))
+        qp.drawLine(self.leftMargin, self.topMargin - 5,
+                    self.leftMargin, self.topMargin + self.chartHeight + 5)
+        qp.drawLine(self.leftMargin-5, self.topMargin + self.chartHeight,
+                    self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)
+        self.drawTitle(qp)
+
     def drawFrequencyTicks(self, qp):
         fspan = self.fstop - self.fstart
         qp.setPen(self.textColor)
@@ -896,14 +920,6 @@ class PhaseChart(FrequencyChart):
         self.unwrap = unwrap
         self.update()
 
-    def drawChart(self, qp: QtGui.QPainter):
-        qp.setPen(QtGui.QPen(self.textColor))
-        qp.drawText(3, 15, self.name)
-        qp.setPen(QtGui.QPen(self.foregroundColor))
-        qp.drawLine(self.leftMargin, 20, self.leftMargin, self.topMargin + self.chartHeight + 5)
-        qp.drawLine(self.leftMargin-5, self.topMargin+self.chartHeight,
-                    self.leftMargin + self.chartWidth, self.topMargin + self.chartHeight)
-
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
@@ -1054,15 +1070,6 @@ class VSWRChart(FrequencyChart):
         new_chart: VSWRChart = super().copy()
         new_chart.logarithmicY = self.logarithmicY
         return new_chart
-
-    def drawChart(self, qp: QtGui.QPainter):
-        qp.setPen(QtGui.QPen(self.textColor))
-        qp.drawText(3, 15, self.name)
-        qp.setPen(QtGui.QPen(self.foregroundColor))
-        qp.drawLine(self.leftMargin, self.topMargin - 5,
-                    self.leftMargin, self.topMargin + self.chartHeight + 5)
-        qp.drawLine(self.leftMargin-5, self.topMargin + self.chartHeight,
-                    self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
@@ -1240,6 +1247,8 @@ class PolarChart(SquareChart):
                     centerX - int(self.chartHeight / 2 * math.sin(math.pi / 4)),
                     centerY + int(self.chartHeight / 2 * math.sin(math.pi / 4)))
 
+        self.drawTitle(qp)
+
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
@@ -1388,6 +1397,8 @@ class SmithChart(SquareChart):
         qp.drawArc(centerX - self.chartWidth*2, centerY,
                    self.chartWidth*5, -self.chartHeight*5, int(-93.85 * 16), int(-18.85 * 16))  # Im(Z) = 0.2
 
+        self.drawTitle(qp)
+
         qp.setPen(self.swrColor)
         for swr in self.swrMarkers:
             if swr <= 1:
@@ -1515,9 +1526,11 @@ class LogMagChart(FrequencyChart):
         qp.setPen(QtGui.QPen(self.textColor))
         qp.drawText(3, 15, self.name + " (dB)")
         qp.setPen(QtGui.QPen(self.foregroundColor))
-        qp.drawLine(self.leftMargin, 20, self.leftMargin, self.topMargin+self.chartHeight+5)
+        qp.drawLine(self.leftMargin, self.topMargin - 5,
+                    self.leftMargin, self.topMargin+self.chartHeight+5)
         qp.drawLine(self.leftMargin-5, self.topMargin+self.chartHeight,
                     self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)
+        self.drawTitle(qp)
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
@@ -1714,7 +1727,8 @@ class SParameterChart(FrequencyChart):
         qp.drawText(10, 15, "Real")
         qp.drawText(self.leftMargin + self.chartWidth - 15, 15, "Imag")
         qp.setPen(QtGui.QPen(self.foregroundColor))
-        qp.drawLine(self.leftMargin, 20, self.leftMargin, self.topMargin+self.chartHeight+5)
+        qp.drawLine(self.leftMargin, self.topMargin - 5,
+                    self.leftMargin, self.topMargin+self.chartHeight+5)
         qp.drawLine(self.leftMargin-5, self.topMargin+self.chartHeight,
                     self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)
 
@@ -1890,7 +1904,8 @@ class CombinedLogMagChart(FrequencyChart):
         qp.drawText(10, 15, "S11")
         qp.drawText(self.leftMargin + self.chartWidth - 8, 15, "S21")
         qp.setPen(QtGui.QPen(self.foregroundColor))
-        qp.drawLine(self.leftMargin, 20, self.leftMargin, self.topMargin+self.chartHeight+5)
+        qp.drawLine(self.leftMargin, self.topMargin - 5,
+                    self.leftMargin, self.topMargin+self.chartHeight+5)
         qp.drawLine(self.leftMargin-5, self.topMargin+self.chartHeight,
                     self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)
 
@@ -2129,12 +2144,7 @@ class QualityFactorChart(FrequencyChart):
         self.setAutoFillBackground(True)
 
     def drawChart(self, qp: QtGui.QPainter):
-        qp.setPen(QtGui.QPen(self.textColor))
-        qp.drawText(3, 15, self.name)
-        qp.setPen(QtGui.QPen(self.foregroundColor))
-        qp.drawLine(self.leftMargin, self.topMargin - 5, self.leftMargin, self.topMargin + self.chartHeight + 5)
-        qp.drawLine(self.leftMargin-5, self.topMargin + self.chartHeight,
-                    self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)
+        super().drawChart(qp)
 
         # Make up some sensible scaling here
         if self.fixedValues:
@@ -2464,6 +2474,8 @@ class TDRChart(Chart):
 
         ticks = math.floor((self.width() - self.leftMargin)/100)  # Number of ticks does not include the origin
 
+        self.drawTitle(qp)
+
         if len(self.tdrWindow.td) > 0:
             if self.fixedSpan:
                 max_index = np.searchsorted(self.tdrWindow.distance_axis, self.maxDisplayLength * 2)
@@ -2772,6 +2784,7 @@ class RealImaginaryChart(FrequencyChart):
         qp.drawLine(self.leftMargin, self.topMargin - 5, self.leftMargin, self.topMargin + self.chartHeight + 5)
         qp.drawLine(self.leftMargin-5, self.topMargin + self.chartHeight,
                     self.leftMargin + self.chartWidth + 5, self.topMargin + self.chartHeight)
+        self.drawTitle(qp)
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
@@ -3165,14 +3178,6 @@ class MagnitudeChart(FrequencyChart):
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
-    def drawChart(self, qp: QtGui.QPainter):
-        qp.setPen(QtGui.QPen(self.textColor))
-        qp.drawText(3, 15, self.name)
-        qp.setPen(QtGui.QPen(self.foregroundColor))
-        qp.drawLine(self.leftMargin, 20, self.leftMargin, self.topMargin+self.chartHeight+5)
-        qp.drawLine(self.leftMargin-5, self.topMargin+self.chartHeight,
-                    self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)
-
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
@@ -3310,14 +3315,6 @@ class MagnitudeZChart(FrequencyChart):
         pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
-
-    def drawChart(self, qp: QtGui.QPainter):
-        qp.setPen(QtGui.QPen(self.textColor))
-        qp.drawText(3, 15, self.name)
-        qp.setPen(QtGui.QPen(self.foregroundColor))
-        qp.drawLine(self.leftMargin, 20, self.leftMargin, self.topMargin+self.chartHeight+5)
-        qp.drawLine(self.leftMargin-5, self.topMargin+self.chartHeight,
-                    self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
@@ -3482,9 +3479,11 @@ class PermeabilityChart(FrequencyChart):
         qp.drawText(10, 15, "R")
         qp.drawText(self.leftMargin + self.chartWidth + 10, 15, "X")
         qp.setPen(QtGui.QPen(self.foregroundColor))
-        qp.drawLine(self.leftMargin, self.topMargin - 5, self.leftMargin, self.topMargin + self.chartHeight + 5)
+        qp.drawLine(self.leftMargin, self.topMargin - 5,
+                    self.leftMargin, self.topMargin + self.chartHeight + 5)
         qp.drawLine(self.leftMargin-5, self.topMargin + self.chartHeight,
                     self.leftMargin + self.chartWidth + 5, self.topMargin + self.chartHeight)
+        self.drawTitle(qp)
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
@@ -3861,6 +3860,7 @@ class GroupDelayChart(FrequencyChart):
         qp.drawLine(self.leftMargin, 20, self.leftMargin, self.topMargin+self.chartHeight+5)
         qp.drawLine(self.leftMargin-5, self.topMargin+self.chartHeight,
                     self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)
+        self.drawTitle(qp)
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
@@ -4029,6 +4029,7 @@ class CapacitanceChart(FrequencyChart):
         qp.drawLine(self.leftMargin, 20, self.leftMargin, self.topMargin+self.chartHeight+5)
         qp.drawLine(self.leftMargin-5, self.topMargin+self.chartHeight,
                     self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)
+        self.drawTitle(qp)
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
@@ -4155,6 +4156,7 @@ class InductanceChart(FrequencyChart):
         qp.drawLine(self.leftMargin, 20, self.leftMargin, self.topMargin+self.chartHeight+5)
         qp.drawLine(self.leftMargin-5, self.topMargin+self.chartHeight,
                     self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)
+        self.drawTitle(qp)
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:

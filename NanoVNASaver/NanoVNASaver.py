@@ -59,6 +59,8 @@ class NanoVNASaver(QtWidgets.QWidget):
     dataAvailable = QtCore.pyqtSignal()
     scaleFactor = 1
 
+    sweepTitle = ""
+
     def __init__(self):
         super().__init__()
         if getattr(sys, 'frozen', False):
@@ -651,6 +653,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             sleep(0.05)
 
             self.vna = VNA.getVNA(self, self.serial)
+            self.vna.validateInput = self.settings.value("SerialInputValidation", True, bool)
             self.worker.setVNA(self.vna)
 
             logger.info(self.vna.readFirmware())
@@ -724,6 +727,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.dataLock.release()
         if source is not None:
             self.sweepSource = source
+        elif self.sweepTitle != "":
+            self.sweepSource = self.sweepTitle + " " + strftime("%Y-%m-%d %H:%M:%S", localtime())
         else:
             self.sweepSource = strftime("%Y-%m-%d %H:%M:%S", localtime())
 
@@ -961,6 +966,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def showSweepError(self):
         self.showError(self.worker.error_message)
+        self.serial.flushInput()  # Remove any left-over data
         self.sweepFinished()
 
     def popoutChart(self, chart: Chart):
@@ -1010,6 +1016,11 @@ class NanoVNASaver(QtWidgets.QWidget):
         for m in self.markers:
             m.getGroupBox().setFont(font)
             m.setScale(self.scaleFactor)
+
+    def setSweepTitle(self, title):
+        self.sweepTitle = title
+        for c in self.subscribing_charts:
+            c.setSweepTitle(title)
 
 
 class DisplaySettingsWindow(QtWidgets.QWidget):
@@ -2020,6 +2031,20 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         layout = QtWidgets.QVBoxLayout()
         self.setLayout(layout)
 
+        title_box = QtWidgets.QGroupBox("Sweep name")
+        title_layout = QtWidgets.QFormLayout(title_box)
+        self.sweep_title_input = QtWidgets.QLineEdit()
+        title_layout.addRow("Sweep name", self.sweep_title_input)
+        title_button_layout = QtWidgets.QHBoxLayout()
+        btn_set_sweep_title = QtWidgets.QPushButton("Set")
+        btn_set_sweep_title.clicked.connect(lambda: self.app.setSweepTitle(self.sweep_title_input.text()))
+        btn_reset_sweep_title = QtWidgets.QPushButton("Reset")
+        btn_reset_sweep_title.clicked.connect(lambda: self.app.setSweepTitle(""))
+        title_button_layout.addWidget(btn_set_sweep_title)
+        title_button_layout.addWidget(btn_reset_sweep_title)
+        title_layout.addRow(title_button_layout)
+        layout.addWidget(title_box)
+
         settings_box = QtWidgets.QGroupBox("Settings")
         settings_layout = QtWidgets.QFormLayout(settings_box)
 
@@ -2591,7 +2616,8 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         settings_layout = QtWidgets.QFormLayout(settings_box)
 
         self.chkValidateInputData = QtWidgets.QCheckBox("Validate received data")
-        self.chkValidateInputData.setChecked(True)
+        validate_input = self.app.settings.value("SerialInputValidation", True, bool)
+        self.chkValidateInputData.setChecked(validate_input)
         self.chkValidateInputData.stateChanged.connect(self.updateValidation)
         settings_layout.addRow("Validation", self.chkValidateInputData)
 
@@ -2640,6 +2666,7 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
 
     def updateValidation(self, validate_data: bool):
         self.app.vna.validateInput = validate_data
+        self.app.settings.setValue("SerialInputValidation", validate_data)
 
     def captureScreenshot(self):
         if not self.app.worker.running:
