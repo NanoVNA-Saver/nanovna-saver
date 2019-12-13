@@ -34,8 +34,8 @@ FMT_REACT = SITools.Format(max_nr_digits=5, space_str=" ", allow_strip=True)
 COLOR_DEFAULT = QtGui.QColor()
 
 
-def formatFrequency(freq: float) -> str:
-    return str(SITools.Value(freq, "Hz", FMT_FREQ))
+def format_frequency(freq: float, fmt=FMT_FREQ) -> str:
+    return str(SITools.Value(freq, "Hz", fmt))
 
 
 def format_gain(val: float, invert: bool = False) -> str:
@@ -101,6 +101,32 @@ def format_complex_imp(z: complex) -> str:
     return s + " \N{OHM SIGN}"
 
 
+class FrequencyInput(QtWidgets.QLineEdit):
+
+    def __init__(self, text=""):
+        super().__init__(text)
+        self.nextFrequency = -1
+        self.previousFrequency = -1
+
+    def setText(self, text: str) -> None:
+        super().setText(format_frequency(text, FMT_FREQ_INPUT))
+
+    def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
+        if a0.type() == QtCore.QEvent.KeyPress:
+            if a0.key() == QtCore.Qt.Key_Up and self.nextFrequency != -1:
+                a0.accept()
+                self.setText(self.nextFrequency)
+                self.textEdited.emit(self.text())
+                return
+            if a0.key() == QtCore.Qt.Key_Down and \
+                    self.previousFrequency != -1:
+                a0.accept()
+                self.setText(self.previousFrequency)
+                self.textEdited.emit(self.text())
+                return
+        super().keyPressEvent(a0)
+
+
 class Marker(QtCore.QObject):
     name = "Marker"
     frequency = 0
@@ -113,25 +139,6 @@ class Marker(QtCore.QObject):
     updated = pyqtSignal(object)
 
     fieldSelection = []
-
-    class FrequencyInput(QtWidgets.QLineEdit):
-        nextFrequency = -1
-        previousFrequency = -1
-
-        def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
-            if a0.type() == QtCore.QEvent.KeyPress:
-                if a0.key() == QtCore.Qt.Key_Up and self.nextFrequency != -1:
-                    a0.accept()
-                    self.setText(str(self.nextFrequency))
-                    self.textEdited.emit(self.text())
-                    return
-                if a0.key() == QtCore.Qt.Key_Down and \
-                        self.previousFrequency != -1:
-                    a0.accept()
-                    self.setText(str(self.previousFrequency))
-                    self.textEdited.emit(self.text())
-                    return
-            super().keyPressEvent(a0)
 
     def __init__(self, name, initialColor, frequency=""):
         super().__init__()
@@ -404,13 +411,13 @@ class Marker(QtCore.QObject):
         s11 = s11data[self.location]
 
         imp = s11.impedance()
-        cap_str = format_capacity(
+        cap_str = format_capacitance(
             RFTools.impedance_to_capacity(imp, s11.freq))
         ind_str = format_inductance(
             RFTools.impedance_to_inductance(imp, s11.freq))
 
         imp_p = RFTools.serial_to_parallel(imp)
-        cap_p_str = format_capacity(
+        cap_p_str = format_capacitance(
             RFTools.impedance_to_capacity(imp_p, s11.freq))
         ind_p_str = format_inductance(
             RFTools.impedance_to_inductance(imp_p, s11.freq))
@@ -458,7 +465,6 @@ class Marker(QtCore.QObject):
 
         self.s21_phase_label.setText(format_phase(s21.phase))
         self.gain_label.setText(format_gain(s21.gain))
-        # TODO: figure out if calculation is right (S11 no division by 2)
         self.s21_group_delay_label.setText(
             format_group_delay(RFTools.groupDelay(s21data, self.location) / 2)
         )
