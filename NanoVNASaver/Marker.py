@@ -29,19 +29,19 @@ FMT_FREQ_INPUT = SITools.Format(max_nr_digits=10, allow_strip=True,
 
 FMT_Q_FACTOR = SITools.Format(max_nr_digits=4, assume_infinity=False,
                               min_offset=0, max_offset=0, allow_strip=True)
-FMT_GROUP_DELAY = SITools.Format(max_nr_digits=5)
+FMT_GROUP_DELAY = SITools.Format(max_nr_digits=5, space_str=" ")
 FMT_REACT = SITools.Format(max_nr_digits=5, space_str=" ", allow_strip=True)
 COLOR_DEFAULT = QtGui.QColor()
 
 
-def format_frequency(freq: float, fmt=FMT_FREQ) -> str:
-    return str(SITools.Value(freq, "Hz", fmt))
+def formatFrequency(freq: float) -> str:
+    return str(SITools.Value(freq, "Hz", FMT_FREQ))
 
 
 def format_gain(val: float, invert: bool = False) -> str:
     if invert:
         val = -val
-    return f"{val:.3f}dB"
+    return f"{val:.3f} dB"
 
 
 def format_q_factor(val: float) -> str:
@@ -60,7 +60,7 @@ def format_resistance(val: float) -> str:
     return str(SITools.Value(val, "\N{OHM SIGN}", FMT_REACT))
 
 
-def format_capacity(val: float, allow_negative: bool = True) -> str:
+def format_capacitance(val: float, allow_negative: bool = True) -> str:
     if not allow_negative and val < 0:
         return "- pF"
     return str(SITools.Value(val, "F", FMT_REACT))
@@ -82,40 +82,23 @@ def format_phase(val: float) -> str:
 
 def format_complex_imp(z: complex) -> str:
     if z.real > 0:
-        s = f"{z.real:.4g}"
+        if z.real >= 1000:
+            s = f"{z.real/1000:.3g}k"
+        else:
+            s = f"{z.real:.4g}"
     else:
         s = "- "
     if z.imag < 0:
-        s += "-j"
+        s += " -j"
     else:
-        s += "+j"
-    return s + f"{abs(z.imag):.4g}\N{OHM SIGN}"
-
-
-class FrequencyInput(QtWidgets.QLineEdit):
-
-    def __init__(self, text=""):
-        super().__init__(text)
-        self.nextFrequency = -1
-        self.previousFrequency = -1
-
-    def setText(self, text: str) -> None:
-        super().setText(format_frequency(text, FMT_FREQ_INPUT))
-
-    def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
-        if a0.type() == QtCore.QEvent.KeyPress:
-            if a0.key() == QtCore.Qt.Key_Up and self.nextFrequency != -1:
-                a0.accept()
-                self.setText(self.nextFrequency)
-                self.textEdited.emit(self.text())
-                return
-            if a0.key() == QtCore.Qt.Key_Down and \
-                    self.previousFrequency != -1:
-                a0.accept()
-                self.setText(self.previousFrequency)
-                self.textEdited.emit(self.text())
-                return
-        super().keyPressEvent(a0)
+        s += " +j"
+    if abs(z.imag) >= 1000:
+        s += f"{abs(z.imag)/1000:.3g}k"
+    elif abs(z.imag) < 0.1:
+        s += f"{abs(z.imag)*1000:.3g}m"
+    else:
+        s += f"{abs(z.imag):.3g}"
+    return s + " \N{OHM SIGN}"
 
 
 class Marker(QtCore.QObject):
@@ -130,6 +113,25 @@ class Marker(QtCore.QObject):
     updated = pyqtSignal(object)
 
     fieldSelection = []
+
+    class FrequencyInput(QtWidgets.QLineEdit):
+        nextFrequency = -1
+        previousFrequency = -1
+
+        def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
+            if a0.type() == QtCore.QEvent.KeyPress:
+                if a0.key() == QtCore.Qt.Key_Up and self.nextFrequency != -1:
+                    a0.accept()
+                    self.setText(str(self.nextFrequency))
+                    self.textEdited.emit(self.text())
+                    return
+                if a0.key() == QtCore.Qt.Key_Down and \
+                        self.previousFrequency != -1:
+                    a0.accept()
+                    self.setText(str(self.previousFrequency))
+                    self.textEdited.emit(self.text())
+                    return
+            super().keyPressEvent(a0)
 
     def __init__(self, name, initialColor, frequency=""):
         super().__init__()
@@ -400,8 +402,6 @@ class Marker(QtCore.QObject):
         if self.location == -1:
             return
         s11 = s11data[self.location]
-        if s21data:
-            s21 = s21data[self.location]
 
         imp = s11.impedance()
         cap_str = format_capacity(
@@ -453,6 +453,8 @@ class Marker(QtCore.QObject):
         # skip if no valid s21 data
         if len(s21data) != len(s11data):
             return
+
+        s21 = s21data[self.location]
 
         self.s21_phase_label.setText(format_phase(s21.phase))
         self.gain_label.setText(format_gain(s21.gain))

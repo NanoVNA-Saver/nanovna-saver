@@ -21,7 +21,7 @@ from NanoVNASaver.RFTools import Datapoint, \
     norm_to_impedance, impedance_to_norm, \
     reflection_coefficient, gamma_to_impedance, clamp_value, \
     parallel_to_serial, serial_to_parallel, \
-    impedance_to_capacity, impedance_to_inductance
+    impedance_to_capacitance, impedance_to_inductance
 import math
 
 
@@ -83,10 +83,10 @@ class TestRFTools(unittest.TestCase):
             complex(52, 260))
 
     def test_impedance_to_capacity(self):
-        self.assertEqual(impedance_to_capacity(0, 0), -math.inf)
-        self.assertEqual(impedance_to_capacity(0, 10), math.inf)
+        self.assertEqual(impedance_to_capacitance(0, 0), -math.inf)
+        self.assertEqual(impedance_to_capacitance(0, 10), math.inf)
         self.assertAlmostEqual(
-            impedance_to_capacity(complex(50, 159.1549), 100000),
+            impedance_to_capacitance(complex(50, 159.1549), 100000),
             1e-8)
 
     def test_impedance_to_inductance(self):

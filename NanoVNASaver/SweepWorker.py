@@ -142,7 +142,12 @@ class SweepWorker(QtCore.QRunnable):
                     self.error_message = str(e)
                     self.stopped = True
                     self.running = False
-                    self.signals.fatalSweepError.emit()
+                    self.signals.sweepError.emit()
+                except NanoVNASerialException as e:
+                    self.error_message = str(e)
+                    self.stopped = True
+                    self.running = False
+                    self.signals.sweepFatalError.emit()
 
         while self.continuousSweep and not self.stopped:
             logger.debug("Continuous sweeping")
@@ -160,7 +165,12 @@ class SweepWorker(QtCore.QRunnable):
                     self.error_message = str(e)
                     self.stopped = True
                     self.running = False
-                    self.signals.fatalSweepError.emit()
+                    self.signals.sweepError.emit()
+                except NanoVNASerialException as e:
+                    self.error_message = str(e)
+                    self.stopped = True
+                    self.running = False
+                    self.signals.sweepFatalError.emit()
 
         # Reset the device to show the full range
         logger.debug("Resetting NanoVNA sweep to full range: %d to %d",
@@ -332,16 +342,16 @@ class SweepWorker(QtCore.QRunnable):
             tmpdata = self.vna.readValues(data)
             if not tmpdata:
                 logger.warning("Read no values")
-                raise NanoVNAValueException("Failed reading data: Returned no values.")
+                raise NanoVNASerialException("Failed reading data: Returned no values.")
             logger.debug("Read %d values", len(tmpdata))
             for d in tmpdata:
                 a, b = d.split(" ")
                 try:
-                    if self.vna.validateInput and float(a) < -9.5 or float(a) > 9.5:
+                    if self.vna.validateInput and (float(a) < -9.5 or float(a) > 9.5):
                         logger.warning("Got a non-float data value: %s (%s)", d, a)
                         logger.debug("Re-reading %s", data)
                         done = False
-                    elif self.vna.validateInput and float(b) < -9.5 or float(b) > 9.5:
+                    elif self.vna.validateInput and (float(b) < -9.5 or float(b) > 9.5):
                         logger.warning("Got a non-float data value: %s (%s)", d, b)
                         logger.debug("Re-reading %s", data)
                         done = False
@@ -359,7 +369,8 @@ class SweepWorker(QtCore.QRunnable):
                 if count >= 20:
                     logger.critical("Tried and failed to read %s %d times. Giving up.", data, count)
                     raise NanoVNAValueException("Failed reading " + str(data) + " " + str(count) + " times.\n" +
-                                                "Data outside expected valid ranges, or in an unexpected format.")
+                                                "Data outside expected valid ranges, or in an unexpected format.\n\n" +
+                                                "You can disable data validation on the device settings screen.")
         return returndata
 
     def readFreq(self):
@@ -374,7 +385,7 @@ class SweepWorker(QtCore.QRunnable):
             tmpfreq = self.vna.readFrequencies()
             if not tmpfreq:
                 logger.warning("Read no frequencies")
-                raise NanoVNAValueException("Failed reading frequencies: Returned no values.")
+                raise NanoVNASerialException("Failed reading frequencies: Returned no values.")
             for f in tmpfreq:
                 if not f.isdigit():
                     logger.warning("Got a non-digit frequency: %s", f)
@@ -406,4 +417,8 @@ class SweepWorker(QtCore.QRunnable):
 
 
 class NanoVNAValueException(Exception):
+    pass
+
+
+class NanoVNASerialException(Exception):
     pass

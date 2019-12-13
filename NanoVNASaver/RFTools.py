@@ -41,8 +41,8 @@ def serial_to_parallel(z: complex) -> complex:
                    z_sq_sum / z.imag)
 
 
-def impedance_to_capacity(z: complex, freq: float) -> float:
-    """Calculate capacitve equivalent for reactance"""
+def impedance_to_capacitance(z: complex, freq: float) -> float:
+    """Calculate capacitive equivalent for reactance"""
     if freq == 0:
         return -math.inf
     if z.imag == 0:
@@ -75,6 +75,13 @@ def reflection_coefficient(z: complex, ref_impedance: float = 50) -> complex:
 def gamma_to_impedance(gamma: complex, ref_impedance: float = 50) -> complex:
     """Calculate impedance from gamma"""
     return ((-gamma - 1) / (gamma - 1)) * ref_impedance
+
+
+def parseFrequency(freq: str) -> int:
+    try:
+        return int(Value(freq, "Hz", FMT_PARSE))
+    except (ValueError, IndexError):
+        return -1
 
 
 class Datapoint(NamedTuple):
@@ -116,7 +123,7 @@ class Datapoint(NamedTuple):
         return abs(imp.imag / imp.real)
 
     def capacitiveEquivalent(self, ref_impedance: float = 50) -> float:
-        return impedance_to_capacity(
+        return impedance_to_capacitance(
             self.impedance(ref_impedance), self.freq)
 
     def inductiveEquivalent(self, ref_impedance: float = 50) -> float:
@@ -141,6 +148,7 @@ def groupDelay(data: List[Datapoint], index: int) -> float:
 
 
 class RFTools:
+    # TODO: Remove this class when unused
     @staticmethod
     def formatFrequency(freq: Number) -> str:
         return str(Value(freq, "Hz", FMT_FREQ))
@@ -155,7 +163,4 @@ class RFTools:
 
     @staticmethod
     def parseFrequency(freq: str) -> int:
-        try:
-            return int(Value(freq, "Hz", FMT_PARSE))
-        except (ValueError, IndexError):
-            return -1
+        return parseFrequency(freq)
