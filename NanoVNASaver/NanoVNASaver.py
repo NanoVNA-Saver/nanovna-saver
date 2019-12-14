@@ -35,6 +35,7 @@ from .Chart import Chart, PhaseChart, VSWRChart, PolarChart, SmithChart, LogMagC
     GroupDelayChart, CapacitanceChart, InductanceChart
 from .Calibration import CalibrationWindow, Calibration
 from .Marker import Marker
+from .SITools import clamp_value
 from .SweepWorker import SweepWorker
 from .Touchstone import Touchstone
 from .Analysis import Analysis, LowPassAnalysis, HighPassAnalysis, BandPassAnalysis, BandStopAnalysis, \
@@ -291,16 +292,17 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         left_column.addWidget(sweep_control_box)
 
-        ################################################################################################################
+        #######################################################################
         #  Marker control
-        ################################################################################################################
+        #######################################################################
 
         marker_control_box = QtWidgets.QGroupBox()
         marker_control_box.setTitle("Markers")
         marker_control_box.setMaximumWidth(250)
         self.marker_control_layout = QtWidgets.QFormLayout(marker_control_box)
 
-        marker_count = self.settings.value("MarkerCount", 3, int)
+        marker_count = clamp_value(
+            self.settings.value("MarkerCount", 3, int), 1, 1000)
         for i in range(marker_count):
             if i < len(self.default_marker_colors):
                 default_color = self.default_marker_colors[i]
