@@ -22,6 +22,8 @@ from PyQt5.QtCore import pyqtSignal
 
 from NanoVNASaver import SITools
 from NanoVNASaver import RFTools
+from NanoVNASaver.Inputs import MarkerFrequencyInputWidget as \
+    FrequencyInput
 
 FMT_FREQ = SITools.Format(space_str=" ")
 FMT_FREQ_INPUT = SITools.Format(max_nr_digits=10, allow_strip=True,
@@ -99,32 +101,6 @@ def format_complex_imp(z: complex) -> str:
     else:
         s += f"{abs(z.imag):.3g}"
     return s + " \N{OHM SIGN}"
-
-
-class FrequencyInput(QtWidgets.QLineEdit):
-
-    def __init__(self, text=""):
-        super().__init__(text)
-        self.nextFrequency = -1
-        self.previousFrequency = -1
-
-    def setText(self, text: str) -> None:
-        super().setText(format_frequency(text, FMT_FREQ_INPUT))
-
-    def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
-        if a0.type() == QtCore.QEvent.KeyPress:
-            if a0.key() == QtCore.Qt.Key_Up and self.nextFrequency != -1:
-                a0.accept()
-                self.setText(self.nextFrequency)
-                self.textEdited.emit(self.text())
-                return
-            if a0.key() == QtCore.Qt.Key_Down and \
-                    self.previousFrequency != -1:
-                a0.accept()
-                self.setText(self.previousFrequency)
-                self.textEdited.emit(self.text())
-                return
-        super().keyPressEvent(a0)
 
 
 class Marker(QtCore.QObject):
@@ -412,13 +388,13 @@ class Marker(QtCore.QObject):
 
         imp = s11.impedance()
         cap_str = format_capacitance(
-            RFTools.impedance_to_capacity(imp, s11.freq))
+            RFTools.impedance_to_capacitance(imp, s11.freq))
         ind_str = format_inductance(
             RFTools.impedance_to_inductance(imp, s11.freq))
 
         imp_p = RFTools.serial_to_parallel(imp)
         cap_p_str = format_capacitance(
-            RFTools.impedance_to_capacity(imp_p, s11.freq))
+            RFTools.impedance_to_capacitance(imp_p, s11.freq))
         ind_p_str = format_inductance(
             RFTools.impedance_to_inductance(imp_p, s11.freq))
 

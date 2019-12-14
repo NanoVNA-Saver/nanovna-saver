@@ -34,7 +34,8 @@ from .Chart import Chart, PhaseChart, VSWRChart, PolarChart, SmithChart, LogMagC
     RealImaginaryChart, MagnitudeChart, MagnitudeZChart, CombinedLogMagChart, SParameterChart, PermeabilityChart, \
     GroupDelayChart, CapacitanceChart, InductanceChart
 from .Calibration import CalibrationWindow, Calibration
-from .Marker import Marker, FrequencyInput
+from .Inputs import FrequencyInputWidget
+from .Marker import Marker
 from .SweepWorker import SweepWorker
 from .Touchstone import Touchstone
 from .Analysis import Analysis, LowPassAnalysis, HighPassAnalysis, BandPassAnalysis, BandStopAnalysis, \
@@ -204,9 +205,9 @@ class NanoVNASaver(QtWidgets.QWidget):
         layout.addWidget(self.marker_frame, 0, 1)
         layout.addLayout(right_column, 0, 2)
 
-        ################################################################################################################
+        #######################################################################
         #  Sweep control
-        ################################################################################################################
+        #######################################################################
 
         sweep_control_box = QtWidgets.QGroupBox()
         sweep_control_box.setMaximumWidth(250)
@@ -216,42 +217,39 @@ class NanoVNASaver(QtWidgets.QWidget):
         line = QtWidgets.QFrame()
         line.setFrameShape(QtWidgets.QFrame.VLine)
 
-        # sweep_input_layout = QtWidgets.QHBoxLayout()
-        sweep_input_layout = QtWidgets.QFormLayout()
-        # sweep_input_left_layout = QtWidgets.QFormLayout()
-        # sweep_input_right_layout = QtWidgets.QFormLayout()
-        # sweep_input_layout.addLayout(sweep_input_left_layout)
-        # sweep_input_layout.addWidget(line)
-        # sweep_input_layout.addLayout(sweep_input_right_layout)
+        sweep_input_layout = QtWidgets.QHBoxLayout()
+        sweep_input_left_layout = QtWidgets.QFormLayout()
+        sweep_input_right_layout = QtWidgets.QFormLayout()
+        sweep_input_layout.addLayout(sweep_input_left_layout)
+        sweep_input_layout.addWidget(line)
+        sweep_input_layout.addLayout(sweep_input_right_layout)
         sweep_control_layout.addRow(sweep_input_layout)
 
-        self.sweepStartInput = FrequencyInput()
+        self.sweepStartInput = FrequencyInputWidget()
         self.sweepStartInput.setMinimumWidth(60)
         self.sweepStartInput.setAlignment(QtCore.Qt.AlignRight)
         self.sweepStartInput.textEdited.connect(self.updateCenterSpan)
         self.sweepStartInput.textChanged.connect(self.updateStepSize)
-        # sweep_input_left_layout.addRow(QtWidgets.QLabel("Start"), self.sweepStartInput)
-        sweep_input_layout.addRow(QtWidgets.QLabel("Start"), self.sweepStartInput)
+        sweep_input_left_layout.addRow(QtWidgets.QLabel("Start"), self.sweepStartInput)
 
-        self.sweepEndInput = FrequencyInput()
+        self.sweepEndInput = FrequencyInputWidget()
         self.sweepEndInput.setAlignment(QtCore.Qt.AlignRight)
         self.sweepEndInput.textEdited.connect(self.updateCenterSpan)
         self.sweepEndInput.textChanged.connect(self.updateStepSize)
-        # sweep_input_left_layout.addRow(QtWidgets.QLabel("Stop"), self.sweepEndInput)
-        sweep_input_layout.addRow(QtWidgets.QLabel("Stop"), self.sweepEndInput)
+        sweep_input_left_layout.addRow(QtWidgets.QLabel("Stop"), self.sweepEndInput)
 
-        self.sweepCenterInput = FrequencyInput()
+        self.sweepCenterInput = FrequencyInputWidget()
         self.sweepCenterInput.setMinimumWidth(60)
         self.sweepCenterInput.setAlignment(QtCore.Qt.AlignRight)
         self.sweepCenterInput.textEdited.connect(self.updateStartEnd)
-        # sweep_input_right_layout.addRow(QtWidgets.QLabel("Center"), self.sweepCenterInput)
-        sweep_input_layout.addRow(QtWidgets.QLabel("Center"), self.sweepCenterInput)
 
-        self.sweepSpanInput = FrequencyInput()
+        sweep_input_right_layout.addRow(QtWidgets.QLabel("Center"), self.sweepCenterInput)
+        
+        self.sweepSpanInput = FrequencyInputWidget()
         self.sweepSpanInput.setAlignment(QtCore.Qt.AlignRight)
         self.sweepSpanInput.textEdited.connect(self.updateStartEnd)
-        # sweep_input_right_layout.addRow(QtWidgets.QLabel("Span"), self.sweepSpanInput)
-        sweep_input_layout.addRow(QtWidgets.QLabel("Span"), self.sweepSpanInput)
+
+        sweep_input_right_layout.addRow(QtWidgets.QLabel("Span"), self.sweepSpanInput)
 
         self.sweepCountInput = QtWidgets.QLineEdit(self.settings.value("Segments", "1"))
         self.sweepCountInput.setAlignment(QtCore.Qt.AlignRight)
