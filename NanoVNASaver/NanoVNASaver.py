@@ -1694,14 +1694,12 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.btn_remove_marker.setDisabled(False)
 
     def removeMarker(self):
-        if len(self.app.markers) == 0:
-            # How did we even get here? Better handle it anyway.
-            self.btn_remove_marker.setDisabled(True)
+        # keep at least one marker
+        if len(self.app.markers) <= 1:
             return
-        last_marker = self.app.markers.pop()
-        if len(self.app.markers) == 0:
-            # Last marker removed.
+        if len(self.app.markers) == 2:
             self.btn_remove_marker.setDisabled(True)
+        last_marker = self.app.markers.pop()
 
         last_marker.updated.disconnect(self.app.markerUpdated)
         self.app.marker_data_layout.removeWidget(last_marker.getGroupBox())
