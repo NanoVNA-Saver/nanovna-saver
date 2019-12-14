@@ -20,87 +20,14 @@ from typing import List
 from PyQt5 import QtGui, QtWidgets, QtCore
 from PyQt5.QtCore import pyqtSignal
 
-from NanoVNASaver import SITools
 from NanoVNASaver import RFTools
+from NanoVNASaver.Formatting import \
+    format_frequency, format_capacitance, format_inductance, \
+    format_complex_imp, format_resistance, format_vswr, format_phase, \
+    format_q_factor, format_gain, format_group_delay
+
 from NanoVNASaver.Inputs import MarkerFrequencyInputWidget as \
     FrequencyInput
-
-FMT_FREQ = SITools.Format(space_str=" ")
-FMT_FREQ_INPUT = SITools.Format(max_nr_digits=10, allow_strip=True,
-                                printable_min=0, unprintable_under="- ")
-
-FMT_Q_FACTOR = SITools.Format(max_nr_digits=4, assume_infinity=False,
-                              min_offset=0, max_offset=0, allow_strip=True)
-FMT_GROUP_DELAY = SITools.Format(max_nr_digits=5, space_str=" ")
-FMT_REACT = SITools.Format(max_nr_digits=5, space_str=" ", allow_strip=True)
-COLOR_DEFAULT = QtGui.QColor()
-
-
-def format_frequency(freq: float, fmt=FMT_FREQ) -> str:
-    return str(SITools.Value(freq, "Hz", fmt))
-
-
-def format_gain(val: float, invert: bool = False) -> str:
-    if invert:
-        val = -val
-    return f"{val:.3f} dB"
-
-
-def format_q_factor(val: float) -> str:
-    if val < 0 or val > 10000.0:
-        return "\N{INFINITY}"
-    return str(SITools.Value(val, fmt=FMT_Q_FACTOR))
-
-
-def format_vswr(val: float) -> str:
-    return f"{val:.3f}"
-
-
-def format_resistance(val: float) -> str:
-    if val < 0:
-        return "- \N{OHM SIGN}"
-    return str(SITools.Value(val, "\N{OHM SIGN}", FMT_REACT))
-
-
-def format_capacitance(val: float, allow_negative: bool = True) -> str:
-    if not allow_negative and val < 0:
-        return "- pF"
-    return str(SITools.Value(val, "F", FMT_REACT))
-
-
-def format_inductance(val: float, allow_negative: bool = True) -> str:
-    if not allow_negative and val < 0:
-        return "- nH"
-    return str(SITools.Value(val, "H", FMT_REACT))
-
-
-def format_group_delay(val: float) -> str:
-    return str(SITools.Value(val, "s", fmt=FMT_GROUP_DELAY))
-
-
-def format_phase(val: float) -> str:
-    return f"{math.degrees(val):.2f}\N{DEGREE SIGN}"
-
-
-def format_complex_imp(z: complex) -> str:
-    if z.real > 0:
-        if z.real >= 1000:
-            s = f"{z.real/1000:.3g}k"
-        else:
-            s = f"{z.real:.4g}"
-    else:
-        s = "- "
-    if z.imag < 0:
-        s += " -j"
-    else:
-        s += " +j"
-    if abs(z.imag) >= 1000:
-        s += f"{abs(z.imag)/1000:.3g}k"
-    elif abs(z.imag) < 0.1:
-        s += f"{abs(z.imag)*1000:.3g}m"
-    else:
-        s += f"{abs(z.imag):.3g}"
-    return s + " \N{OHM SIGN}"
 
 
 class Marker(QtCore.QObject):
@@ -122,8 +49,7 @@ class Marker(QtCore.QObject):
 
         self.frequency = RFTools.RFTools.parseFrequency(frequency)
 
-        self.frequencyInput = FrequencyInput(
-            format_frequency(self.frequency, FMT_FREQ_INPUT))
+        self.frequencyInput = FrequencyInput()
         self.frequencyInput.setAlignment(QtCore.Qt.AlignRight)
         self.frequencyInput.textEdited.connect(self.setFrequency)
 
