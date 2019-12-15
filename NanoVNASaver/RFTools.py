@@ -117,9 +117,9 @@ class Datapoint(NamedTuple):
         return gamma_to_impedance(self.z, ref_impedance)
 
     def qFactor(self, ref_impedance: float = 50) -> float:
+        if self.z.real == 0.0:
+            return math.inf
         imp = self.impedance(ref_impedance)
-        if imp.real == 0.0:
-            return -1
         return abs(imp.imag / imp.real)
 
     def capacitiveEquivalent(self, ref_impedance: float = 50) -> float:
