@@ -20,81 +20,14 @@ from typing import List
 from PyQt5 import QtGui, QtWidgets, QtCore
 from PyQt5.QtCore import pyqtSignal
 
-from NanoVNASaver import SITools
 from NanoVNASaver import RFTools
+from NanoVNASaver.Formatting import \
+    format_frequency, format_capacitance, format_inductance, \
+    format_complex_imp, format_resistance, format_vswr, format_phase, \
+    format_q_factor, format_gain, format_group_delay
 
-FMT_FREQ = SITools.Format(space_str=" ")
-FMT_Q_FACTOR = SITools.Format(max_nr_digits=4, assume_infinity=False,
-                              min_offset=0, max_offset=0, allow_strip=True)
-FMT_GROUP_DELAY = SITools.Format(max_nr_digits=5, space_str=" ")
-FMT_REACT = SITools.Format(max_nr_digits=5, space_str=" ", allow_strip=True)
-
-
-def formatFrequency(freq: float) -> str:
-    return str(SITools.Value(freq, "Hz", FMT_FREQ))
-
-
-def format_gain(val: float, invert: bool = False) -> str:
-    if invert:
-        val = -val
-    return f"{val:.3f} dB"
-
-
-def format_q_factor(val: float) -> str:
-    if val < 0 or val > 10000.0:
-        return "\N{INFINITY}"
-    return str(SITools.Value(val, fmt=FMT_Q_FACTOR))
-
-
-def format_vswr(val: float) -> str:
-    return f"{val:.3f}"
-
-
-def format_resistance(val: float) -> str:
-    if val < 0:
-        return "- \N{OHM SIGN}"
-    return str(SITools.Value(val, "\N{OHM SIGN}", FMT_REACT))
-
-
-def format_capacitance(val: float, allow_negative: bool = True) -> str:
-    if not allow_negative and val < 0:
-        return "- pF"
-    return str(SITools.Value(val, "F", FMT_REACT))
-
-
-def format_inductance(val: float, allow_negative: bool = True) -> str:
-    if not allow_negative and val < 0:
-        return "- nH"
-    return str(SITools.Value(val, "H", FMT_REACT))
-
-
-def format_group_delay(val: float) -> str:
-    return str(SITools.Value(val, "s", fmt=FMT_GROUP_DELAY))
-
-
-def format_phase(val: float) -> str:
-    return f"{math.degrees(val):.2f}\N{DEGREE SIGN}"
-
-
-def format_complex_imp(z: complex) -> str:
-    if z.real > 0:
-        if z.real >= 1000:
-            s = f"{z.real/1000:.3g}k"
-        else:
-            s = f"{z.real:.4g}"
-    else:
-        s = "- "
-    if z.imag < 0:
-        s += " -j"
-    else:
-        s += " +j"
-    if abs(z.imag) >= 1000:
-        s += f"{abs(z.imag)/1000:.3g}k"
-    elif abs(z.imag) < 0.1:
-        s += f"{abs(z.imag)*1000:.3g}m"
-    else:
-        s += f"{abs(z.imag):.3g}"
-    return s + " \N{OHM SIGN}"
+from NanoVNASaver.Inputs import MarkerFrequencyInputWidget as \
+    FrequencyInput
 
 
 class Marker(QtCore.QObject):
@@ -110,39 +43,19 @@ class Marker(QtCore.QObject):
 
     fieldSelection = []
 
-    class FrequencyInput(QtWidgets.QLineEdit):
-        nextFrequency = -1
-        previousFrequency = -1
-
-        def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
-            if a0.type() == QtCore.QEvent.KeyPress:
-                if a0.key() == QtCore.Qt.Key_Up and self.nextFrequency != -1:
-                    a0.accept()
-                    self.setText(str(self.nextFrequency))
-                    self.textEdited.emit(self.text())
-                    return
-                if a0.key() == QtCore.Qt.Key_Down and \
-                        self.previousFrequency != -1:
-                    a0.accept()
-                    self.setText(str(self.previousFrequency))
-                    self.textEdited.emit(self.text())
-                    return
-            super().keyPressEvent(a0)
-
     def __init__(self, name, initialColor, frequency=""):
         super().__init__()
         self.name = name
 
-        if frequency.isnumeric():
-            self.frequency = int(frequency)
-        self.frequencyInput = Marker.FrequencyInput(frequency)
+        self.frequency = RFTools.RFTools.parseFrequency(frequency)
 
+        self.frequencyInput = FrequencyInput()
         self.frequencyInput.setAlignment(QtCore.Qt.AlignRight)
         self.frequencyInput.textEdited.connect(self.setFrequency)
 
-        ################################################################################################################
+        ###############################################################
         # Data display label
-        ################################################################################################################
+        ###############################################################
 
         self.frequency_label = QtWidgets.QLabel("")
         self.frequency_label.setMinimumWidth(100)
@@ -188,9 +101,9 @@ class Marker(QtCore.QObject):
             "s21groupdelay": ("S21 Group Delay:", self.s21_group_delay_label),
         }
 
-        ################################################################################################################
+        ###############################################################
         # Marker control layout
-        ################################################################################################################
+        ###############################################################
 
         self.btnColorPicker = QtWidgets.QPushButton("█")
         self.btnColorPicker.setFixedWidth(20)
@@ -205,9 +118,9 @@ class Marker(QtCore.QObject):
         self.layout.addWidget(self.btnColorPicker)
         self.layout.addWidget(self.isMouseControlledRadioButton)
 
-        ################################################################################################################
+        ###############################################################
         # Data display layout
-        ################################################################################################################
+        ###############################################################
 
         self.group_box = QtWidgets.QGroupBox(self.name)
         self.group_box.setMaximumWidth(340)
@@ -278,28 +191,8 @@ class Marker(QtCore.QObject):
                     self.right_form.addRow(label, value)
                     value.show()
 
-        # Left side
-        # self.left_form.addRow("Frequency:", self.frequency_label)
-        # self.left_form.addRow("Impedance:", self.impedance_label)
-        # # left_form.addRow("Admittance:", self.admittance_label)
-        # self.left_form.addRow("Parallel R:", self.parallel_r_label)
-        # self.left_form.addRow("Parallel X:", self.parallel_x_label)
-        # self.left_form.addRow("L equiv.:", self.inductance_label)
-        # self.left_form.addRow("C equiv.:", self.capacitance_label)
-        #
-        # # Right side
-        # self.right_form.addRow("Return loss:", self.returnloss_label)
-        # if "vswr" in self.fieldSelection:
-        #     self.right_form.addRow("VSWR:", self.vswr_label)
-        #     self.vswr_label.show()
-        # self.right_form.addRow("Q:", self.quality_factor_label)
-        # self.right_form.addRow("S11 Phase:", self.s11_phase_label)
-        # self.right_form.addRow("S21 Gain:", self.gain_label)
-        # self.right_form.addRow("S21 Phase:", self.s21_phase_label)
-
     def setFrequency(self, frequency):
-        f = RFTools.parseFrequency(frequency)
-        self.frequency = max(f, 0)
+        self.frequency = RFTools.RFTools.parseFrequency(frequency)
         self.updated.emit(self)
 
     def setFieldSelection(self, fields):
@@ -349,7 +242,8 @@ class Marker(QtCore.QObject):
         upper_stepsize = data[-1].freq - data[-2].freq
 
         # We are outside the bounds of the data, so we can't put in a marker
-        if self.frequency + lower_stepsize/2 < min_freq or self.frequency - upper_stepsize/2 > max_freq:
+        if (self.frequency + lower_stepsize/2 < min_freq or
+                self.frequency - upper_stepsize/2 > max_freq):
             return
 
         min_distance = max_freq
@@ -392,18 +286,24 @@ class Marker(QtCore.QObject):
         self.s21_group_delay_label.setText("")
         self.quality_factor_label.setText("")
 
-    def updateLabels(self, s11data: List[RFTools.Datapoint], s21data: List[RFTools.Datapoint]):
+    def updateLabels(self,
+                     s11data: List[RFTools.Datapoint],
+                     s21data: List[RFTools.Datapoint]):
         if self.location == -1:
             return
         s11 = s11data[self.location]
 
         imp = s11.impedance()
-        cap_str = format_capacitance(RFTools.impedance_to_capacitance(imp, s11.freq))
-        ind_str = format_inductance(RFTools.impedance_to_inductance(imp, s11.freq))
+        cap_str = format_capacitance(
+            RFTools.impedance_to_capacitance(imp, s11.freq))
+        ind_str = format_inductance(
+            RFTools.impedance_to_inductance(imp, s11.freq))
 
         imp_p = RFTools.serial_to_parallel(imp)
-        cap_p_str = format_capacitance(RFTools.impedance_to_capacitance(imp_p, s11.freq))
-        ind_p_str = format_inductance(RFTools.impedance_to_inductance(imp_p, s11.freq))
+        cap_p_str = format_capacitance(
+            RFTools.impedance_to_capacitance(imp_p, s11.freq))
+        ind_p_str = format_inductance(
+            RFTools.impedance_to_inductance(imp_p, s11.freq))
 
         if imp.imag < 0:
             x_str = cap_str
@@ -415,7 +315,7 @@ class Marker(QtCore.QObject):
         else:
             x_p_str = ind_p_str
 
-        self.frequency_label.setText(formatFrequency(s11.freq))
+        self.frequency_label.setText(format_frequency(s11.freq))
 
         self.impedance_label.setText(format_complex_imp(imp))
         self.series_r_label.setText(format_resistance(imp.real))
@@ -431,10 +331,14 @@ class Marker(QtCore.QObject):
 
         self.vswr_label.setText(format_vswr(s11.vswr))
         self.s11_phase_label.setText(format_phase(s11.phase))
-        self.quality_factor_label.setText(format_q_factor(s11.qFactor()))
+        self.quality_factor_label.setText(
+            format_q_factor(s11.qFactor()))
 
-        self.returnloss_label.setText(format_gain(s11.gain, self.returnloss_is_positive))
-        self.s11_group_delay_label.setText(format_group_delay(RFTools.groupDelay(s11data, self.location)))
+        self.returnloss_label.setText(
+            format_gain(s11.gain, self.returnloss_is_positive))
+        self.s11_group_delay_label.setText(
+            format_group_delay(RFTools.groupDelay(s11data, self.location))
+        )
 
         # skip if no valid s21 data
         if len(s21data) != len(s11data):
@@ -444,4 +348,6 @@ class Marker(QtCore.QObject):
 
         self.s21_phase_label.setText(format_phase(s21.phase))
         self.gain_label.setText(format_gain(s21.gain))
-        self.s21_group_delay_label.setText(format_group_delay(RFTools.groupDelay(s21data, self.location) / 2))
+        self.s21_group_delay_label.setText(
+            format_group_delay(RFTools.groupDelay(s21data, self.location) / 2)
+        )

@@ -42,6 +42,10 @@ class Format(NamedTuple):
     max_offset: int = 8
     allow_strip: bool = False
     allways_signed: bool = False
+    printable_min: float = -math.inf
+    printable_max: float = math.inf
+    unprintable_under: str = ""
+    unprintable_over: str = ""
     parse_sloppy_unit: bool = False
     parse_sloppy_kilo: bool = False
     parse_clamp_min: float = -math.inf
@@ -58,6 +62,7 @@ class Value:
         assert 3 <= fmt.max_nr_digits <= 30
         assert -8 <= fmt.min_offset <= fmt.max_offset <= 8
         assert fmt.parse_clamp_min < fmt.parse_clamp_max
+        assert fmt.printable_min < fmt.printable_max
         self._unit = unit
         self.fmt = fmt
         if isinstance(value, str):
@@ -76,16 +81,18 @@ class Value:
                 abs(self._value) >= 10 ** ((fmt.max_offset + 1) * 3):
             return (("-" if self._value < 0 else "") +
                     "\N{INFINITY}" + fmt.space_str + self._unit)
+        if self._value < fmt.printable_min:
+            return fmt.unprintable_under + self._unit
+        if self._value > fmt.printable_max:
+            return fmt.unprintable_over + self._unit
 
         if self._value == 0:
             offset = 0
         else:
-            offset = int(math.log10(abs(self._value)) // 3)
-
-        if offset < fmt.min_offset:
-            offset = fmt.min_offset
-        elif offset > fmt.max_offset:
-            offset = fmt.max_offset
+            offset = clamp_value(
+                int(math.log10(abs(self._value)) // 3),
+                fmt.min_offset,
+                fmt.max_offset)
 
         real = float(self._value) / (10 ** (offset * 3))
 
