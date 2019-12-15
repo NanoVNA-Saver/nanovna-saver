@@ -191,25 +191,6 @@ class Marker(QtCore.QObject):
                     self.right_form.addRow(label, value)
                     value.show()
 
-        # Left side
-        # self.left_form.addRow("Frequency:", self.frequency_label)
-        # self.left_form.addRow("Impedance:", self.impedance_label)
-        # # left_form.addRow("Admittance:", self.admittance_label)
-        # self.left_form.addRow("Parallel R:", self.parallel_r_label)
-        # self.left_form.addRow("Parallel X:", self.parallel_x_label)
-        # self.left_form.addRow("L equiv.:", self.inductance_label)
-        # self.left_form.addRow("C equiv.:", self.capacitance_label)
-        #
-        # # Right side
-        # self.right_form.addRow("Return loss:", self.returnloss_label)
-        # if "vswr" in self.fieldSelection:
-        #     self.right_form.addRow("VSWR:", self.vswr_label)
-        #     self.vswr_label.show()
-        # self.right_form.addRow("Q:", self.quality_factor_label)
-        # self.right_form.addRow("S11 Phase:", self.s11_phase_label)
-        # self.right_form.addRow("S21 Gain:", self.gain_label)
-        # self.right_form.addRow("S21 Phase:", self.s21_phase_label)
-
     def setFrequency(self, frequency):
         self.frequency = RFTools.RFTools.parseFrequency(frequency)
         self.updated.emit(self)
