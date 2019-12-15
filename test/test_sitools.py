@@ -96,7 +96,7 @@ class TestTSIToolsValue(unittest.TestCase):
         self.assertEqual(str(Value(-1e-29)), "-0.00001y")
         self.assertEqual(str(Value(1e-30)), "0.00000")
         self.assertEqual(float(Value(1e-30)), 1e-30)
-    
+
     def test_format_digits_1(self):
         v = Value(fmt=F_DIGITS_1)
         self.assertEqual(str(v.parse("1")), "1")

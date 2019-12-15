@@ -47,6 +47,7 @@ class TestCases(unittest.TestCase):
         self.assertEqual(fmt.format_gain(12), '12.000 dB')
         self.assertEqual(fmt.format_gain(1.23456), '1.235 dB')
         self.assertEqual(fmt.format_gain(-1), '-1.000 dB')
+        self.assertEqual(fmt.format_gain(-1, invert=True), '1.000 dB')
 
     def test_format_q_factor(self):
         self.assertEqual(fmt.format_q_factor(1), '1')
@@ -69,6 +70,8 @@ class TestCases(unittest.TestCase):
         self.assertEqual(fmt.format_resistance(1234), '1.234 k\N{OHM SIGN}')
         self.assertEqual(fmt.format_resistance(12345), '12.345 k\N{OHM SIGN}')
         self.assertEqual(fmt.format_resistance(123456), '123.46 k\N{OHM SIGN}')
+        self.assertEqual(fmt.format_resistance(-1), '- \N{OHM SIGN}')
+
 
     def test_format_capacitance(self):
         self.assertEqual(fmt.format_capacitance(1), '1 F')
