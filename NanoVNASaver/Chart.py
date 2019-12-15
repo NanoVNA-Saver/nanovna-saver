@@ -4090,7 +4090,7 @@ class CapacitanceChart(FrequencyChart):
         self.span = span
 
         target_ticks = math.floor(self.chartHeight / 60)
-        fmt = Format(max_nr_digits=3)
+        fmt = Format(max_nr_digits=1)
         for i in range(target_ticks):
             val = minValue + (i / target_ticks) * span
             y = self.topMargin + round((self.maxValue - val) / self.span * self.chartHeight)
@@ -4217,7 +4217,7 @@ class InductanceChart(FrequencyChart):
         self.span = span
 
         target_ticks = math.floor(self.chartHeight / 60)
-        fmt = Format(max_nr_digits=3)
+        fmt = Format(max_nr_digits=1)
         for i in range(target_ticks):
             val = minValue + (i / target_ticks) * span
             y = self.topMargin + round((self.maxValue - val) / self.span * self.chartHeight)
