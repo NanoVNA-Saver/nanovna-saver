@@ -81,6 +81,6 @@ def format_phase(val: float) -> str:
 
 
 def format_complex_imp(z: complex) -> str:
-    re_s = str(SITools.Value(z.real, fmt=FMT_COMPLEX))
-    im_s = str(SITools.Value(abs(z.imag), fmt=FMT_COMPLEX))
-    return f"{re_s}{'-' if z.imag < 0 else '+'}j{im_s} \N{OHM SIGN}"
+    re = SITools.Value(z.real, fmt=FMT_COMPLEX)
+    im = SITools.Value(abs(z.imag), fmt=FMT_COMPLEX)
+    return f"{re}{'-' if z.imag < 0 else '+'}j{im} \N{OHM SIGN}"
