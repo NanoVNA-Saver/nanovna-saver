@@ -31,7 +31,7 @@ import unittest
 if __name__ == '__main__':
     sys.path.append('.')
     loader = unittest.TestLoader()
-    tests = loader.discover('.')
+    tests = loader.discover('./test')
     testRunner = unittest.runner.TextTestRunner(
         failfast=False,
         verbosity=2)
