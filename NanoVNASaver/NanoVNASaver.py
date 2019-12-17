@@ -36,6 +36,7 @@ from .Chart import Chart, PhaseChart, VSWRChart, PolarChart, SmithChart, LogMagC
 from .Calibration import CalibrationWindow, Calibration
 from .Inputs import FrequencyInputWidget
 from .Marker import Marker, MarkerSettingsWindow
+from .SITools import clamp_value
 from .SweepWorker import SweepWorker
 from .Touchstone import Touchstone
 from .Analysis import Analysis, LowPassAnalysis, HighPassAnalysis, BandPassAnalysis, BandStopAnalysis, \
@@ -292,16 +293,17 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         left_column.addWidget(sweep_control_box)
 
-        ################################################################################################################
+        #######################################################################
         #  Marker control
-        ################################################################################################################
+        #######################################################################
 
         marker_control_box = QtWidgets.QGroupBox()
         marker_control_box.setTitle("Markers")
         marker_control_box.setMaximumWidth(250)
         self.marker_control_layout = QtWidgets.QFormLayout(marker_control_box)
 
-        marker_count = self.settings.value("MarkerCount", 3, int)
+        marker_count = clamp_value(
+            self.settings.value("MarkerCount", 3, int), 1, 1000)
         for i in range(marker_count):
             if i < len(self.default_marker_colors):
                 default_color = self.default_marker_colors[i]
@@ -1693,14 +1695,12 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.btn_remove_marker.setDisabled(False)
 
     def removeMarker(self):
-        if len(self.app.markers) == 0:
-            # How did we even get here? Better handle it anyway.
-            self.btn_remove_marker.setDisabled(True)
+        # keep at least one marker
+        if len(self.app.markers) <= 1:
             return
-        last_marker = self.app.markers.pop()
-        if len(self.app.markers) == 0:
-            # Last marker removed.
+        if len(self.app.markers) == 2:
             self.btn_remove_marker.setDisabled(True)
+        last_marker = self.app.markers.pop()
 
         last_marker.updated.disconnect(self.app.markerUpdated)
         self.app.marker_data_layout.removeWidget(last_marker.getGroupBox())
