@@ -225,7 +225,7 @@ class Marker(QtCore.QObject):
         self.location = -1
         self.frequencyInput.nextFrequency = -1
         self.frequencyInput.previousFrequency = -1
-        if self.frequency == 0:
+        if self.frequency <= 0:
             # No frequency set for this marker
             return
         datasize = len(data)
