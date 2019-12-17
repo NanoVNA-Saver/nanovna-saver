@@ -123,12 +123,10 @@ class Datapoint(NamedTuple):
         return abs(imp.imag / imp.real)
 
     def capacitiveEquivalent(self, ref_impedance: float = 50) -> float:
-        return impedance_to_capacitance(
-            self.impedance(ref_impedance), self.freq)
+        return impedance_to_capacitance(self.impedance(ref_impedance), self.freq)
 
     def inductiveEquivalent(self, ref_impedance: float = 50) -> float:
-        return impedance_to_inductance(
-            self.impedance(ref_impedance), self.freq)
+        return impedance_to_inductance(self.impedance(ref_impedance), self.freq)
 
 
 def groupDelay(data: List[Datapoint], index: int) -> float:

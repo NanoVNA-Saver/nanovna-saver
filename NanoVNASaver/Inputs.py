@@ -20,29 +20,27 @@ from NanoVNASaver.Formatting import format_frequency_inputs
 
 
 class FrequencyInputWidget(QtWidgets.QLineEdit):
-
     def __init__(self, text=""):
         super().__init__(text)
         self.nextFrequency = -1
         self.previousFrequency = -1
 
     def setText(self, text: str) -> None:
+        # TODO: Fix wrong type here
         super().setText(format_frequency_inputs(text))
 
 
 class MarkerFrequencyInputWidget(FrequencyInputWidget):
-
     def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
         if a0.type() == QtCore.QEvent.KeyPress:
             if a0.key() == QtCore.Qt.Key_Up and self.nextFrequency != -1:
                 a0.accept()
-                self.setText(self.nextFrequency)
+                self.setText(str(self.nextFrequency))
                 self.textEdited.emit(self.text())
                 return
-            if a0.key() == QtCore.Qt.Key_Down and \
-                    self.previousFrequency != -1:
+            if a0.key() == QtCore.Qt.Key_Down and self.previousFrequency != -1:
                 a0.accept()
-                self.setText(self.previousFrequency)
+                self.setText(str(self.previousFrequency))
                 self.textEdited.emit(self.text())
                 return
         super().keyPressEvent(a0)

@@ -19,11 +19,8 @@ import math
 from NanoVNASaver import SITools
 
 FMT_FREQ = SITools.Format(space_str=" ")
-FMT_FREQ_INPUTS = SITools.Format(max_nr_digits=10, allow_strip=True,
-                                 printable_min=0, unprintable_under="- ")
-
-FMT_Q_FACTOR = SITools.Format(max_nr_digits=4, assume_infinity=False,
-                              min_offset=0, max_offset=0, allow_strip=True)
+FMT_FREQ_INPUTS = SITools.Format(max_nr_digits=10, allow_strip=True, printable_min=0, unprintable_under="- ")
+FMT_Q_FACTOR = SITools.Format(max_nr_digits=4, assume_infinity=False, min_offset=0, max_offset=0, allow_strip=True)
 FMT_GROUP_DELAY = SITools.Format(max_nr_digits=5, space_str=" ")
 FMT_REACT = SITools.Format(max_nr_digits=5, space_str=" ", allow_strip=True)
 
