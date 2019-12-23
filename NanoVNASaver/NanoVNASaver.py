@@ -2584,6 +2584,7 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
                 item.setCheckState(QtCore.Qt.Checked)
             self.model.appendRow(item)
         self.fieldSelectionView.setModel(self.model)
+        self.model.itemChanged.connect(self.updateField)
 
 
 class DeviceSettingsWindow(QtWidgets.QWidget):
