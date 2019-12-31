@@ -99,6 +99,9 @@ class VNA:
     def isValid(self):
         return False
 
+    def isDFU(self):
+        return False
+
     def flushSerialBuffers(self):
         if self.app.serialLock.acquire():
             self.serial.write(b"\r\n\r\n")
@@ -297,6 +300,13 @@ class NanoVNAV2(VNA):
 
     def __init__(self, app, serialPort):
         super().__init__(app, serialPort)
+
+        devType = self.readVersion()
+        if devType == 0xff:
+            self._isDFU = True
+            return
+
+        self._isDFU = False
         self.version = '0.0.0'
         self.sweepStartHz = 200e6
         self.sweepStepHz = 1e6
@@ -307,18 +317,31 @@ class NanoVNAV2(VNA):
         self.serial.timeout = 3
         self._updateSweep()
 
+
     def isValid(self):
+        if self.isDFU():
+            return False
         return True
+
+    def isDFU(self):
+        return self._isDFU
+
+    def checkValid(self):
+        if self.isDFU():
+            raise IOError('Device is in DFU mode')
 
     def readFirmware(self) -> str:
         return ""
 
     def readFrequencies(self) -> List[str]:
+        self.checkValid()
         freqs = [self.sweepStartHz + i*self.sweepStepHz for i in range(self.sweepPoints)]
         return [str(int(f)) for f in freqs]
 
 
     def readValues(self, value) -> List[str]:
+        self.checkValid()
+
         # Actually grab the data only when requesting channel 0.
         # The hardware will return all channels which we will store.
         if value == "data 0":
@@ -329,7 +352,7 @@ class NanoVNAV2(VNA):
             self.serial.write([0x20, 0x30, 0x00])
 
             # cmd: read FIFO, addr 0x30
-            self.serial.write([0x13, 0x30, self.sweepPoints])
+            self.serial.write([0x18, 0x30, self.sweepPoints])
 
             # each value is 32 bytes
             nBytes = self.sweepPoints * 32
@@ -368,8 +391,20 @@ class NanoVNAV2(VNA):
         self.setSweep(start, stop)
         return
 
+    # returns device variant (0x01 for NanoVNA V2)
     def readVersion(self):
-        return
+        # reset protocol to known state
+        self.serial.write([0,0,0,0,0,0,0,0])
+
+        # read register 0xf0
+        cmd = b"\x10\xf0"
+        self.serial.write(cmd)
+
+        resp = self.serial.read(1)
+        if 1 != len(resp):
+            logger.error("Timeout reading device type register")
+            return None
+        return resp[0]
 
     def setSweep(self, start, stop, points=-1):
         if points == -1:
@@ -386,6 +421,8 @@ class NanoVNAV2(VNA):
         return
 
     def _updateSweep(self):
+        self.checkValid()
+
         cmd = b"\x23\x00" + int.to_bytes(int(self.sweepStartHz), 8, 'little')
         cmd += b"\x23\x10" + int.to_bytes(int(self.sweepStepHz), 8, 'little')
         cmd += b"\x21\x20" + int.to_bytes(int(self.sweepPoints), 2, 'little')

@@ -646,6 +646,11 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.vna = VNA.getVNA(self, self.serial)
             self.worker.setVNA(self.vna)
 
+            if self.vna.isDFU():
+                self.showError('Device is in DFU mode')
+                self.stopSerial()
+                return
+
             logger.info(self.vna.readFirmware())
 
             frequencies = self.vna.readFrequencies()
