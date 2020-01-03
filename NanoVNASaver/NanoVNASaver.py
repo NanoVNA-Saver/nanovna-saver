@@ -647,7 +647,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.worker.setVNA(self.vna)
 
             if self.vna.isDFU():
-                self.showError('Device is in DFU mode')
+                self.showError('Device is in DFU mode.')
                 self.stopSerial()
                 return
 

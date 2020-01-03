@@ -301,20 +301,25 @@ class NanoVNAV2(VNA):
     def __init__(self, app, serialPort):
         super().__init__(app, serialPort)
 
-        devType = self.readVersion()
-        if devType == 0xff:
+        tty.setraw(self.serial.fd)
+        self.serial.timeout = 3
+
+        # reset protocol to known state
+        self.serial.write([0,0,0,0,0,0,0,0])
+
+        self.version = self.readVersion()
+        self.firmware = self.readFirmware()
+
+        # firmware major version of 0xff indicates dfu mode
+        if self.firmware.major == 0xff:
             self._isDFU = True
             return
 
         self._isDFU = False
-        self.version = '0.0.0'
         self.sweepStartHz = 200e6
         self.sweepStepHz = 1e6
         self.sweepPoints = 101
         self.sweepData = [(0, 0)] * self.sweepPoints
-
-        tty.setraw(self.serial.fd)
-        self.serial.timeout = 3
         self._updateSweep()
 
 
@@ -331,7 +336,15 @@ class NanoVNAV2(VNA):
             raise IOError('Device is in DFU mode')
 
     def readFirmware(self) -> str:
-        return ""
+        # read register 0xf3 and 0xf4 (firmware major and minor version)
+        cmd = b"\x10\xf3\x10\xf4"
+        self.serial.write(cmd)
+
+        resp = self.serial.read(2)
+        if 2 != len(resp):
+            logger.error("Timeout reading version registers")
+            return None
+        return Version.getVersion(major=resp[0], minor=resp[1], revision=0)
 
     def readFrequencies(self) -> List[str]:
         self.checkValid()
@@ -391,20 +404,17 @@ class NanoVNAV2(VNA):
         self.setSweep(start, stop)
         return
 
-    # returns device variant (0x01 for NanoVNA V2)
+    # returns device variant
     def readVersion(self):
-        # reset protocol to known state
-        self.serial.write([0,0,0,0,0,0,0,0])
-
-        # read register 0xf0
-        cmd = b"\x10\xf0"
+        # read register 0xf0 (device type), 0xf2 (board revision)
+        cmd = b"\x10\xf0\x10\xf2"
         self.serial.write(cmd)
 
-        resp = self.serial.read(1)
-        if 1 != len(resp):
-            logger.error("Timeout reading device type register")
+        resp = self.serial.read(2)
+        if 2 != len(resp):
+            logger.error("Timeout reading version registers")
             return None
-        return resp[0]
+        return Version.getVersion(major=resp[0], minor=0, revision=resp[1])
 
     def setSweep(self, start, stop, points=-1):
         if points == -1:
