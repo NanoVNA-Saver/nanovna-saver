@@ -30,6 +30,7 @@ FMT_PARSE = Format(parse_sloppy_unit=True, parse_sloppy_kilo=True,
 def parallel_to_serial(z: complex) -> complex:
     """Convert parallel impedance to serial impedance equivalent"""
     z_sq_sum = z.real ** 2 + z.imag ** 2
+    # TODO: Fix divide by zero
     return complex(z.real * z.imag ** 2 / z_sq_sum,
                    z.real ** 2 * z.imag / z_sq_sum)
 
@@ -37,8 +38,20 @@ def parallel_to_serial(z: complex) -> complex:
 def serial_to_parallel(z: complex) -> complex:
     """Convert serial impedance to parallel impedance equivalent"""
     z_sq_sum = z.real ** 2 + z.imag ** 2
-    return complex(z_sq_sum / z.real,
-                   z_sq_sum / z.imag)
+    if z.real != 0 and z.imag != 0:
+        return complex(z_sq_sum / z.real, z_sq_sum / z.imag)
+    elif z.real != 0 and z_sq_sum > 0:
+        return complex(z_sq_sum / z.real, math.inf)
+    elif z.real != 0 and z_sq_sum < 0:
+        return complex(z_sq_sum / z.real, -math.inf)
+    elif z.imag != 0 and z_sq_sum > 0:
+        return complex(math.inf, z_sq_sum / z.real)
+    elif z.imag != 0 and z_sq_sum < 0:
+        return complex(-math.inf, z_sq_sum / z.real)
+    elif z_sq_sum == 0:
+        return complex(0, 0)
+    else:
+        return complex(math.inf, math.inf)
 
 
 def impedance_to_capacitance(z: complex, freq: float) -> float:

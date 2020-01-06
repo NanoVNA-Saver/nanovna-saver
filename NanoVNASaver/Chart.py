@@ -2366,7 +2366,7 @@ class TDRChart(Chart):
     def setMaximumLength(self):
         max_val, selected = QtWidgets.QInputDialog.getDouble(self, "Stop length (m)",
                                                              "Set stop length (m)", value=self.minDisplayLength,
-                                                             min=0, decimals=1)
+                                                             min=0.1, decimals=1)
         if not selected:
             return
         if not (self.fixedSpan and max_val <= self.minDisplayLength):
@@ -2394,7 +2394,7 @@ class TDRChart(Chart):
         max_val, selected = QtWidgets.QInputDialog.getDouble(self, "Maximum impedance (\N{OHM SIGN})",
                                                              "Set maximum impedance (\N{OHM SIGN})",
                                                              value=self.minDisplayLength,
-                                                             min=0, decimals=1)
+                                                             min=0.1, decimals=1)
         if not selected:
             return
         if not (self.fixedValues and max_val <= self.minImpedance):
@@ -2478,8 +2478,14 @@ class TDRChart(Chart):
 
         if len(self.tdrWindow.td) > 0:
             if self.fixedSpan:
-                max_index = np.searchsorted(self.tdrWindow.distance_axis, self.maxDisplayLength * 2)
+                max_length = max(0.1, self.maxDisplayLength)
+                max_index = np.searchsorted(self.tdrWindow.distance_axis, max_length * 2)
                 min_index = np.searchsorted(self.tdrWindow.distance_axis, self.minDisplayLength * 2)
+                if max_index == min_index:
+                    if max_index < len(self.tdrWindow.distance_axis) - 1:
+                        max_index += 1
+                    else:
+                        min_index -= 1
                 x_step = (max_index - min_index) / width
             else:
                 min_index = 0
@@ -2487,8 +2493,8 @@ class TDRChart(Chart):
                 x_step = max_index / width
 
             if self.fixedValues:
-                min_impedance = self.minImpedance
-                max_impedance = self.maxImpedance
+                min_impedance = max(0, self.minImpedance)
+                max_impedance = max(0.1, self.maxImpedance)
             else:
                 # TODO: Limit the search to the selected span?
                 min_impedance = max(0, np.min(self.tdrWindow.step_response_Z) / 1.05)

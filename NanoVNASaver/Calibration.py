@@ -953,7 +953,7 @@ class Calibration:
                 self.e30[i] = np.complex(self.s21isolation[i].re, self.s21isolation[i].im)
                 s21m = np.complex(self.s21through[i].re, self.s21through[i].im)
                 if not self.useIdealThrough:
-                    gammaThrough = np.exp(np.complex(0, 1) * 2 * 2 * math.pi * self.throughLength * f * -1)
+                    gammaThrough = np.exp(np.complex(0, 1) * 2 * math.pi * self.throughLength * f * -1)
                     s21m = s21m / gammaThrough
                 self.e10e32[i] = (s21m - self.e30[i]) * (1 - (self.e11[i]*self.e11[i]))
 
