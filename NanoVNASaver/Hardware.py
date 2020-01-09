@@ -234,6 +234,8 @@ class NanoVNA(VNA):
         super().__init__(app, serial_port)
         self.version = Version(self.readVersion())
 
+        self.features = []
+
         logger.debug("Testing against 0.2.0")
         if self.version.version_string.find("extended with scan") > 0:
             logger.debug("Incompatible scan command detected.")
