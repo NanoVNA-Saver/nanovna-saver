@@ -74,12 +74,16 @@ class Marker(QtCore.QObject):
         self.s21_phase_label = QtWidgets.QLabel("")
         self.s11_group_delay_label = QtWidgets.QLabel("")
         self.s21_group_delay_label = QtWidgets.QLabel("")
+        self.s11_polar_label = QtWidgets.QLabel("")
+        self.s21_polar_label = QtWidgets.QLabel("")
         self.quality_factor_label = QtWidgets.QLabel("")
 
         self.fields = {
             "actualfreq": ("Frequency:", self.frequency_label),
             "impedance": ("Impedance:", self.impedance_label),
             "admittance": ("Admittance:", self.admittance_label),
+            "s11polar": ("S11 Polar:", self.s11_polar_label),
+            "s21polar": ("S21 Polar:", self.s21_polar_label),
             "serr": ("Series R:", self.series_r_label),
             "serl": ("Series L:", self.inductance_label),
             "serc": ("Series C:", self.capacitance_label),
@@ -265,6 +269,8 @@ class Marker(QtCore.QObject):
         self.frequency_label.setText("")
         self.impedance_label.setText("")
         self.admittance_label.setText("")
+        self.s11_polar_label.setText("")
+        self.s21_polar_label.setText("")
         self.parallel_r_label.setText("")
         self.parallel_x_label.setText("")
         self.parallel_l_label.setText("")
@@ -328,12 +334,14 @@ class Marker(QtCore.QObject):
         self.returnloss_label.setText(format_gain(s11.gain, self.returnloss_is_positive))
         self.s11_group_delay_label.setText(format_group_delay(RFTools.groupDelay(s11data, self.location)))
 
-        # skip if no valid s21 data
-        if len(s21data) != len(s11data):
-            return
+        self.s11_polar_label.setText(str(round(abs(s11.z), 2)) + "∠" + format_phase(s11.phase))
 
-        s21 = s21data[self.location]
+        if len(s21data) == len(s11data):
 
-        self.s21_phase_label.setText(format_phase(s21.phase))
-        self.gain_label.setText(format_gain(s21.gain))
-        self.s21_group_delay_label.setText(format_group_delay(RFTools.groupDelay(s21data, self.location) / 2))
+            s21 = s21data[self.location]
+
+            self.s21_phase_label.setText(format_phase(s21.phase))
+            self.gain_label.setText(format_gain(s21.gain))
+            self.s21_group_delay_label.setText(format_group_delay(RFTools.groupDelay(s21data, self.location) / 2))
+            self.s21_polar_label.setText(str(round(abs(s21.z), 2)) + "∠" + format_phase(s21.phase))
+

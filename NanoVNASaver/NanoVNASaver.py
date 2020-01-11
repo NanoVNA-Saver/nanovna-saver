@@ -2420,6 +2420,8 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
     fieldList = {"actualfreq": "Actual frequency",
                  "impedance": "Impedance",
                  "admittance": "Admittance",
+                 "s11polar": "S11 Polar Form",
+                 "s21polar": "S21 Polar Form",
                  "serr": "Series R",
                  "serlc": "Series equivalent L/C",
                  "serl": "Series equivalent L",
