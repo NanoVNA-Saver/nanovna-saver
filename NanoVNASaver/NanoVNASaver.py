@@ -34,6 +34,7 @@ from .Chart import Chart, PhaseChart, VSWRChart, PolarChart, SmithChart, LogMagC
     RealImaginaryChart, MagnitudeChart, MagnitudeZChart, CombinedLogMagChart, SParameterChart, PermeabilityChart, \
     GroupDelayChart, CapacitanceChart, InductanceChart
 from .Calibration import CalibrationWindow, Calibration
+from .Inputs import FrequencyInputWidget
 from .Marker import Marker
 from .SweepWorker import SweepWorker
 from .Touchstone import Touchstone
@@ -58,6 +59,8 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     dataAvailable = QtCore.pyqtSignal()
     scaleFactor = 1
+
+    sweepTitle = ""
 
     def __init__(self):
         super().__init__()
@@ -222,27 +225,27 @@ class NanoVNASaver(QtWidgets.QWidget):
         sweep_input_layout.addLayout(sweep_input_right_layout)
         sweep_control_layout.addRow(sweep_input_layout)
 
-        self.sweepStartInput = QtWidgets.QLineEdit("")
+        self.sweepStartInput = FrequencyInputWidget()
         self.sweepStartInput.setMinimumWidth(60)
         self.sweepStartInput.setAlignment(QtCore.Qt.AlignRight)
         self.sweepStartInput.textEdited.connect(self.updateCenterSpan)
         self.sweepStartInput.textChanged.connect(self.updateStepSize)
         sweep_input_left_layout.addRow(QtWidgets.QLabel("Start"), self.sweepStartInput)
 
-        self.sweepEndInput = QtWidgets.QLineEdit("")
+        self.sweepEndInput = FrequencyInputWidget()
         self.sweepEndInput.setAlignment(QtCore.Qt.AlignRight)
         self.sweepEndInput.textEdited.connect(self.updateCenterSpan)
         self.sweepEndInput.textChanged.connect(self.updateStepSize)
         sweep_input_left_layout.addRow(QtWidgets.QLabel("Stop"), self.sweepEndInput)
 
-        self.sweepCenterInput = QtWidgets.QLineEdit("")
+        self.sweepCenterInput = FrequencyInputWidget()
         self.sweepCenterInput.setMinimumWidth(60)
         self.sweepCenterInput.setAlignment(QtCore.Qt.AlignRight)
         self.sweepCenterInput.textEdited.connect(self.updateStartEnd)
 
         sweep_input_right_layout.addRow(QtWidgets.QLabel("Center"), self.sweepCenterInput)
         
-        self.sweepSpanInput = QtWidgets.QLineEdit("")
+        self.sweepSpanInput = FrequencyInputWidget()
         self.sweepSpanInput.setAlignment(QtCore.Qt.AlignRight)
         self.sweepSpanInput.textEdited.connect(self.updateStartEnd)
 
@@ -298,7 +301,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         marker_control_box.setMaximumWidth(250)
         self.marker_control_layout = QtWidgets.QFormLayout(marker_control_box)
 
-        marker_count = self.settings.value("MarkerCount", 3, int)
+        marker_count = max(self.settings.value("MarkerCount", 3, int), 1)
         for i in range(marker_count):
             if i < len(self.default_marker_colors):
                 default_color = self.default_marker_colors[i]
@@ -448,10 +451,17 @@ class NanoVNASaver(QtWidgets.QWidget):
         serial_port_input_layout.addWidget(btn_rescan_serial_port)
         serial_control_layout.addRow(QtWidgets.QLabel("Serial port"), serial_port_input_layout)
 
+        serial_button_layout = QtWidgets.QHBoxLayout()
+
         self.btnSerialToggle = QtWidgets.QPushButton("Connect to NanoVNA")
         self.btnSerialToggle.clicked.connect(self.serialButtonClick)
-        serial_control_layout.addRow(self.btnSerialToggle)
+        serial_button_layout.addWidget(self.btnSerialToggle, stretch=1)
 
+        self.deviceSettingsWindow = DeviceSettingsWindow(self)
+        self.btnDeviceSettings = QtWidgets.QPushButton("Manage")
+        self.btnDeviceSettings.clicked.connect(self.displayDeviceSettingsWindow)
+        serial_button_layout.addWidget(self.btnDeviceSettings, stretch=0)
+        serial_control_layout.addRow(serial_button_layout)
         left_column.addWidget(serial_control_box)
 
         ################################################################################################################
@@ -644,6 +654,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             sleep(0.05)
 
             self.vna = VNA.getVNA(self, self.serial)
+            self.vna.validateInput = self.settings.value("SerialInputValidation", True, bool)
             self.worker.setVNA(self.vna)
 
             logger.info(self.vna.readFirmware())
@@ -717,6 +728,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.dataLock.release()
         if source is not None:
             self.sweepSource = source
+        elif self.sweepTitle != "":
+            self.sweepSource = self.sweepTitle + " " + strftime("%Y-%m-%d %H:%M:%S", localtime())
         else:
             self.sweepSource = strftime("%Y-%m-%d %H:%M:%S", localtime())
 
@@ -783,8 +796,10 @@ class NanoVNASaver(QtWidgets.QWidget):
                     min_gain_freq = d.freq
 
             if max_gain_freq > -1:
-                self.s21_min_gain_label.setText(str(round(min_gain, 3)) + " dB @ " + RFTools.formatFrequency(min_gain_freq))
-                self.s21_max_gain_label.setText(str(round(max_gain, 3)) + " dB @ " + RFTools.formatFrequency(max_gain_freq))
+                self.s21_min_gain_label.setText(
+                    str(round(min_gain, 3)) + " dB @ " + RFTools.formatFrequency(min_gain_freq))
+                self.s21_max_gain_label.setText(
+                    str(round(max_gain, 3)) + " dB @ " + RFTools.formatFrequency(max_gain_freq))
             else:
                 self.s21_min_gain_label.setText("")
                 self.s21_max_gain_label.setText("")
@@ -830,7 +845,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         if self.sweepCountInput.text().isdigit():
             segments = int(self.sweepCountInput.text())
             if segments > 0:
-                fstep = fspan / (segments * 101)
+                fstep = fspan / (segments * 101 - 1)
                 self.sweepStepLabel.setText(RFTools.formatShortFrequency(fstep) + "/step")
 
     def setReference(self, s11data=None, s21data=None, source=None):
@@ -919,6 +934,10 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.sweepSettingsWindow.show()
         QtWidgets.QApplication.setActiveWindow(self.sweepSettingsWindow)
 
+    def displayDeviceSettingsWindow(self):
+        self.deviceSettingsWindow.show()
+        QtWidgets.QApplication.setActiveWindow(self.deviceSettingsWindow)
+
     def displayCalibrationWindow(self):
         self.calibrationWindow.show()
         QtWidgets.QApplication.setActiveWindow(self.calibrationWindow)
@@ -948,6 +967,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def showSweepError(self):
         self.showError(self.worker.error_message)
+        self.serial.flushInput()  # Remove any left-over data
         self.sweepFinished()
 
     def popoutChart(self, chart: Chart):
@@ -997,6 +1017,11 @@ class NanoVNASaver(QtWidgets.QWidget):
         for m in self.markers:
             m.getGroupBox().setFont(font)
             m.setScale(self.scaleFactor)
+
+    def setSweepTitle(self, title):
+        self.sweepTitle = title
+        for c in self.subscribing_charts:
+            c.setSweepTitle(title)
 
 
 class DisplaySettingsWindow(QtWidgets.QWidget):
@@ -1668,14 +1693,12 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.btn_remove_marker.setDisabled(False)
 
     def removeMarker(self):
-        if len(self.app.markers) == 0:
-            # How did we even get here? Better handle it anyway.
-            self.btn_remove_marker.setDisabled(True)
+        # keep at least one marker
+        if len(self.app.markers) <= 1:
             return
-        last_marker = self.app.markers.pop()
-        if len(self.app.markers) == 0:
-            # Last marker removed.
+        if len(self.app.markers) == 2:
             self.btn_remove_marker.setDisabled(True)
+        last_marker = self.app.markers.pop()
 
         last_marker.updated.disconnect(self.app.markerUpdated)
         self.app.marker_data_layout.removeWidget(last_marker.getGroupBox())
@@ -2007,6 +2030,20 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         layout = QtWidgets.QVBoxLayout()
         self.setLayout(layout)
 
+        title_box = QtWidgets.QGroupBox("Sweep name")
+        title_layout = QtWidgets.QFormLayout(title_box)
+        self.sweep_title_input = QtWidgets.QLineEdit()
+        title_layout.addRow("Sweep name", self.sweep_title_input)
+        title_button_layout = QtWidgets.QHBoxLayout()
+        btn_set_sweep_title = QtWidgets.QPushButton("Set")
+        btn_set_sweep_title.clicked.connect(lambda: self.app.setSweepTitle(self.sweep_title_input.text()))
+        btn_reset_sweep_title = QtWidgets.QPushButton("Reset")
+        btn_reset_sweep_title.clicked.connect(lambda: self.app.setSweepTitle(""))
+        title_button_layout.addWidget(btn_set_sweep_title)
+        title_button_layout.addWidget(btn_reset_sweep_title)
+        title_layout.addRow(title_button_layout)
+        layout.addWidget(title_box)
+
         settings_box = QtWidgets.QGroupBox("Settings")
         settings_layout = QtWidgets.QFormLayout(settings_box)
 
@@ -2027,7 +2064,8 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         settings_layout.addRow(QtWidgets.QLabel("Averaging allows discarding outlying samples to get better averages."))
         settings_layout.addRow(QtWidgets.QLabel("Common values are 3/0, 5/2, 9/4 and 25/6."))
 
-        self.continuous_sweep_radiobutton.toggled.connect(lambda: self.app.worker.setContinuousSweep(self.continuous_sweep_radiobutton.isChecked()))
+        self.continuous_sweep_radiobutton.toggled.connect(
+            lambda: self.app.worker.setContinuousSweep(self.continuous_sweep_radiobutton.isChecked()))
         self.averaged_sweep_radiobutton.toggled.connect(self.updateAveraging)
         self.averages.textEdited.connect(self.updateAveraging)
         self.truncates.textEdited.connect(self.updateAveraging)
@@ -2382,6 +2420,8 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
     fieldList = {"actualfreq": "Actual frequency",
                  "impedance": "Impedance",
                  "admittance": "Admittance",
+                 "s11polar": "S11 Polar Form",
+                 "s21polar": "S21 Polar Form",
                  "serr": "Series R",
                  "serlc": "Series equivalent L/C",
                  "serl": "Series equivalent L",
@@ -2546,3 +2586,161 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
                 item.setCheckState(QtCore.Qt.Checked)
             self.model.appendRow(item)
         self.fieldSelectionView.setModel(self.model)
+        self.model.itemChanged.connect(self.updateField)
+
+
+class DeviceSettingsWindow(QtWidgets.QWidget):
+    def __init__(self, app: NanoVNASaver):
+        super().__init__()
+
+        self.app = app
+        self.setWindowTitle("Device settings")
+        self.setWindowIcon(self.app.icon)
+
+        shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
+
+        layout = QtWidgets.QVBoxLayout()
+        self.setLayout(layout)
+
+        status_box = QtWidgets.QGroupBox("Status")
+        status_layout = QtWidgets.QFormLayout(status_box)
+        self.statusLabel = QtWidgets.QLabel("Not connected.")
+        status_layout.addRow("Status:", self.statusLabel)
+
+        self.calibrationStatusLabel = QtWidgets.QLabel("Not connected.")
+        status_layout.addRow("Calibration:", self.calibrationStatusLabel)
+
+        status_layout.addRow(QtWidgets.QLabel("Features:"))
+        self.featureList = QtWidgets.QListWidget()
+        status_layout.addRow(self.featureList)
+
+        settings_box = QtWidgets.QGroupBox("Settings")
+        settings_layout = QtWidgets.QFormLayout(settings_box)
+
+        self.chkValidateInputData = QtWidgets.QCheckBox("Validate received data")
+        validate_input = self.app.settings.value("SerialInputValidation", True, bool)
+        self.chkValidateInputData.setChecked(validate_input)
+        self.chkValidateInputData.stateChanged.connect(self.updateValidation)
+        settings_layout.addRow("Validation", self.chkValidateInputData)
+
+        control_layout = QtWidgets.QHBoxLayout()
+        self.btnRefresh = QtWidgets.QPushButton("Refresh")
+        self.btnRefresh.clicked.connect(self.updateFields)
+        control_layout.addWidget(self.btnRefresh)
+
+        self.screenshotWindow = ScreenshotWindow()
+        self.btnCaptureScreenshot = QtWidgets.QPushButton("Screenshot")
+        self.btnCaptureScreenshot.clicked.connect(self.captureScreenshot)
+        control_layout.addWidget(self.btnCaptureScreenshot)
+
+        layout.addWidget(status_box)
+        layout.addWidget(settings_box)
+        layout.addLayout(control_layout)
+
+    def show(self):
+        super().show()
+        self.updateFields()
+
+    def updateFields(self):
+        if self.app.vna.isValid():
+            self.statusLabel.setText("Connected to " + self.app.vna.name + ".")
+            if self.app.worker.running:
+                self.calibrationStatusLabel.setText("(Sweep running)")
+            else:
+                self.calibrationStatusLabel.setText(self.app.vna.getCalibration())
+
+            self.featureList.clear()
+            self.featureList.addItem(self.app.vna.name + " v" + str(self.app.vna.version))
+            features = self.app.vna.getFeatures()
+            for item in features:
+                self.featureList.addItem(item)
+
+            if "Screenshots" in features:
+                self.btnCaptureScreenshot.setDisabled(False)
+            else:
+                self.btnCaptureScreenshot.setDisabled(True)
+        else:
+            self.statusLabel.setText("Not connected.")
+            self.calibrationStatusLabel.setText("Not connected.")
+            self.featureList.clear()
+            self.featureList.addItem("Not connected.")
+            self.btnCaptureScreenshot.setDisabled(True)
+
+    def updateValidation(self, validate_data: bool):
+        self.app.vna.validateInput = validate_data
+        self.app.settings.setValue("SerialInputValidation", validate_data)
+
+    def captureScreenshot(self):
+        if not self.app.worker.running:
+            pixmap = self.app.vna.getScreenshot()
+            self.screenshotWindow.setScreenshot(pixmap)
+            self.screenshotWindow.show()
+        else:
+            # TODO: Tell the user no screenshots while sweep is running?
+            # TODO: Consider having a list of widgets that want to be disabled when a sweep is running?
+            pass
+
+
+class ScreenshotWindow(QtWidgets.QLabel):
+    pix = None
+
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Screenshot")
+        # TODO : self.setWindowIcon(self.app.icon)
+
+        shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
+        self.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
+
+        self.action_original_size = QtWidgets.QAction("Original size")
+        self.action_original_size.triggered.connect(lambda: self.setScale(1))
+        self.action_2x_size = QtWidgets.QAction("2x size")
+        self.action_2x_size.triggered.connect(lambda: self.setScale(2))
+        self.action_3x_size = QtWidgets.QAction("3x size")
+        self.action_3x_size.triggered.connect(lambda: self.setScale(3))
+        self.action_4x_size = QtWidgets.QAction("4x size")
+        self.action_4x_size.triggered.connect(lambda: self.setScale(4))
+        self.action_5x_size = QtWidgets.QAction("5x size")
+        self.action_5x_size.triggered.connect(lambda: self.setScale(5))
+
+        self.addAction(self.action_original_size)
+        self.addAction(self.action_2x_size)
+        self.addAction(self.action_3x_size)
+        self.addAction(self.action_4x_size)
+        self.addAction(self.action_5x_size)
+        self.action_save_screenshot = QtWidgets.QAction("Save image")
+        self.action_save_screenshot.triggered.connect(self.saveScreenshot)
+        self.addAction(self.action_save_screenshot)
+
+    def setScreenshot(self, pixmap: QtGui.QPixmap):
+        if self.pix is None:
+            self.resize(pixmap.size())
+        self.pix = pixmap
+        self.setPixmap(self.pix.scaled(self.size(), QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation))
+        w, h = pixmap.width(), pixmap.height()
+        self.action_original_size.setText("Original size (" + str(w) + "x" + str(h) + ")")
+        self.action_2x_size.setText("2x size (" + str(w * 2) + "x" + str(h * 2) + ")")
+        self.action_3x_size.setText("3x size (" + str(w * 3) + "x" + str(h * 3) + ")")
+        self.action_4x_size.setText("4x size (" + str(w * 4) + "x" + str(h * 4) + ")")
+        self.action_5x_size.setText("5x size (" + str(w * 5) + "x" + str(h * 5) + ")")
+
+    def saveScreenshot(self):
+        if self.pix is not None:
+            logger.info("Saving screenshot to file...")
+            filename, _ = QtWidgets.QFileDialog.getSaveFileName(parent=self, caption="Save image",
+                                                                filter="PNG (*.png);;All files (*.*)")
+
+            logger.debug("Filename: %s", filename)
+            if filename != "":
+                self.pixmap().save(filename)
+        else:
+            logger.warning("The user got shown an empty screenshot window?")
+
+    def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
+        super().resizeEvent(a0)
+        if self.pixmap() is not None:
+            self.setPixmap(self.pix.scaled(self.size(), QtCore.Qt.KeepAspectRatio, QtCore.Qt.FastTransformation))
+
+    def setScale(self, scale):
+        width, height = self.pix.size().width() * scale, self.pix.size().height() * scale
+        self.resize(width, height)

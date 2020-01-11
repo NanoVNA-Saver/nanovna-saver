@@ -68,5 +68,3 @@ class TestCases(unittest.TestCase):
     #     self.assertEqual(rft.formatSweepFrequency(1000, mindigits=5), '1.00000kHz')
     #     self.assertEqual(rft.formatSweepFrequency(1000, mindigits=10), '1.0000000000kHz')
 
-if __name__ == '__main__':
-    unittest.main(verbosity=2)

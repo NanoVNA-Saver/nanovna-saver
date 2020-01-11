@@ -48,6 +48,7 @@ class Chart(QtWidgets.QWidget):
     bands = None
     draggedMarker: Marker = None
     name = ""
+    sweepTitle = ""
     drawLines = False
     minChartHeight = 200
     minChartWidth = 200
@@ -141,6 +142,10 @@ class Chart(QtWidgets.QWidget):
 
     def setMarkerSize(self, size):
         self.markerSize = size
+        self.update()
+
+    def setSweepTitle(self, title):
+        self.sweepTitle = title
         self.update()
 
     def getActiveMarker(self) -> Marker:
@@ -308,6 +313,15 @@ class Chart(QtWidgets.QWidget):
             number_x = x - 3
             number_y = y - self.markerSize - 3
             qp.drawText(number_x, number_y, str(number))
+
+    def drawTitle(self, qp: QtGui.QPainter, position: QtCore.QPoint = None):
+        if self.sweepTitle != "":
+            qp.setPen(self.textColor)
+            if position is None:
+                qf = QtGui.QFontMetricsF(self.font())
+                width = qf.boundingRect(self.sweepTitle).width()
+                position = QtCore.QPointF(self.width()/2 - width/2, 15)
+            qp.drawText(position, self.sweepTitle)
 
 
 class FrequencyChart(Chart):
@@ -691,6 +705,16 @@ class FrequencyChart(Chart):
             qp.drawRect(rect)
         qp.end()
 
+    def drawChart(self, qp: QtGui.QPainter):
+        qp.setPen(QtGui.QPen(self.textColor))
+        qp.drawText(3, 15, self.name)
+        qp.setPen(QtGui.QPen(self.foregroundColor))
+        qp.drawLine(self.leftMargin, self.topMargin - 5,
+                    self.leftMargin, self.topMargin + self.chartHeight + 5)
+        qp.drawLine(self.leftMargin-5, self.topMargin + self.chartHeight,
+                    self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)
+        self.drawTitle(qp)
+
     def drawFrequencyTicks(self, qp):
         fspan = self.fstop - self.fstart
         qp.setPen(self.textColor)
@@ -896,14 +920,6 @@ class PhaseChart(FrequencyChart):
         self.unwrap = unwrap
         self.update()
 
-    def drawChart(self, qp: QtGui.QPainter):
-        qp.setPen(QtGui.QPen(self.textColor))
-        qp.drawText(3, 15, self.name)
-        qp.setPen(QtGui.QPen(self.foregroundColor))
-        qp.drawLine(self.leftMargin, 20, self.leftMargin, self.topMargin + self.chartHeight + 5)
-        qp.drawLine(self.leftMargin-5, self.topMargin+self.chartHeight,
-                    self.leftMargin + self.chartWidth, self.topMargin + self.chartHeight)
-
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
@@ -1054,15 +1070,6 @@ class VSWRChart(FrequencyChart):
         new_chart: VSWRChart = super().copy()
         new_chart.logarithmicY = self.logarithmicY
         return new_chart
-
-    def drawChart(self, qp: QtGui.QPainter):
-        qp.setPen(QtGui.QPen(self.textColor))
-        qp.drawText(3, 15, self.name)
-        qp.setPen(QtGui.QPen(self.foregroundColor))
-        qp.drawLine(self.leftMargin, self.topMargin - 5,
-                    self.leftMargin, self.topMargin + self.chartHeight + 5)
-        qp.drawLine(self.leftMargin-5, self.topMargin + self.chartHeight,
-                    self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
@@ -1240,6 +1247,8 @@ class PolarChart(SquareChart):
                     centerX - int(self.chartHeight / 2 * math.sin(math.pi / 4)),
                     centerY + int(self.chartHeight / 2 * math.sin(math.pi / 4)))
 
+        self.drawTitle(qp)
+
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
@@ -1388,6 +1397,8 @@ class SmithChart(SquareChart):
         qp.drawArc(centerX - self.chartWidth*2, centerY,
                    self.chartWidth*5, -self.chartHeight*5, int(-93.85 * 16), int(-18.85 * 16))  # Im(Z) = 0.2
 
+        self.drawTitle(qp)
+
         qp.setPen(self.swrColor)
         for swr in self.swrMarkers:
             if swr <= 1:
@@ -1515,9 +1526,11 @@ class LogMagChart(FrequencyChart):
         qp.setPen(QtGui.QPen(self.textColor))
         qp.drawText(3, 15, self.name + " (dB)")
         qp.setPen(QtGui.QPen(self.foregroundColor))
-        qp.drawLine(self.leftMargin, 20, self.leftMargin, self.topMargin+self.chartHeight+5)
+        qp.drawLine(self.leftMargin, self.topMargin - 5,
+                    self.leftMargin, self.topMargin+self.chartHeight+5)
         qp.drawLine(self.leftMargin-5, self.topMargin+self.chartHeight,
                     self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)
+        self.drawTitle(qp)
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
@@ -1714,7 +1727,8 @@ class SParameterChart(FrequencyChart):
         qp.drawText(10, 15, "Real")
         qp.drawText(self.leftMargin + self.chartWidth - 15, 15, "Imag")
         qp.setPen(QtGui.QPen(self.foregroundColor))
-        qp.drawLine(self.leftMargin, 20, self.leftMargin, self.topMargin+self.chartHeight+5)
+        qp.drawLine(self.leftMargin, self.topMargin - 5,
+                    self.leftMargin, self.topMargin+self.chartHeight+5)
         qp.drawLine(self.leftMargin-5, self.topMargin+self.chartHeight,
                     self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)
 
@@ -1890,7 +1904,8 @@ class CombinedLogMagChart(FrequencyChart):
         qp.drawText(10, 15, "S11")
         qp.drawText(self.leftMargin + self.chartWidth - 8, 15, "S21")
         qp.setPen(QtGui.QPen(self.foregroundColor))
-        qp.drawLine(self.leftMargin, 20, self.leftMargin, self.topMargin+self.chartHeight+5)
+        qp.drawLine(self.leftMargin, self.topMargin - 5,
+                    self.leftMargin, self.topMargin+self.chartHeight+5)
         qp.drawLine(self.leftMargin-5, self.topMargin+self.chartHeight,
                     self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)
 
@@ -2129,12 +2144,7 @@ class QualityFactorChart(FrequencyChart):
         self.setAutoFillBackground(True)
 
     def drawChart(self, qp: QtGui.QPainter):
-        qp.setPen(QtGui.QPen(self.textColor))
-        qp.drawText(3, 15, self.name)
-        qp.setPen(QtGui.QPen(self.foregroundColor))
-        qp.drawLine(self.leftMargin, self.topMargin - 5, self.leftMargin, self.topMargin + self.chartHeight + 5)
-        qp.drawLine(self.leftMargin-5, self.topMargin + self.chartHeight,
-                    self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)
+        super().drawChart(qp)
 
         # Make up some sensible scaling here
         if self.fixedValues:
@@ -2315,6 +2325,9 @@ class TDRChart(Chart):
         self.action_popout.triggered.connect(lambda: self.popoutRequested.emit(self))
         self.menu.addAction(self.action_popout)
 
+        self.chartWidth = self.width() - self.leftMargin - self.rightMargin
+        self.chartHeight = self.height() - self.bottomMargin - self.topMargin
+
     def contextMenuEvent(self, event):
         self.action_set_fixed_start.setText("Start (" + str(self.minDisplayLength) + ")")
         self.action_set_fixed_stop.setText("Stop (" + str(self.maxDisplayLength) + ")")
@@ -2353,7 +2366,7 @@ class TDRChart(Chart):
     def setMaximumLength(self):
         max_val, selected = QtWidgets.QInputDialog.getDouble(self, "Stop length (m)",
                                                              "Set stop length (m)", value=self.minDisplayLength,
-                                                             min=0, decimals=1)
+                                                             min=0.1, decimals=1)
         if not selected:
             return
         if not (self.fixedSpan and max_val <= self.minDisplayLength):
@@ -2381,7 +2394,7 @@ class TDRChart(Chart):
         max_val, selected = QtWidgets.QInputDialog.getDouble(self, "Maximum impedance (\N{OHM SIGN})",
                                                              "Set maximum impedance (\N{OHM SIGN})",
                                                              value=self.minDisplayLength,
-                                                             min=0, decimals=1)
+                                                             min=0.1, decimals=1)
         if not selected:
             return
         if not (self.fixedValues and max_val <= self.minImpedance):
@@ -2405,6 +2418,27 @@ class TDRChart(Chart):
         if a0.buttons() == QtCore.Qt.RightButton:
             a0.ignore()
             return
+        if a0.buttons() == QtCore.Qt.MiddleButton:
+            # Drag the display
+            a0.accept()
+            if self.moveStartX != -1 and self.moveStartY != -1:
+                dx = self.moveStartX - a0.x()
+                dy = self.moveStartY - a0.y()
+                self.zoomTo(self.leftMargin + dx, self.topMargin + dy,
+                            self.leftMargin + self.chartWidth + dx, self.topMargin + self.chartHeight + dy)
+
+            self.moveStartX = a0.x()
+            self.moveStartY = a0.y()
+            return
+        if a0.modifiers() == QtCore.Qt.ControlModifier:
+            # Dragging a box
+            if not self.draggedBox:
+                self.draggedBoxStart = (a0.x(), a0.y())
+            self.draggedBoxCurrent = (a0.x(), a0.y())
+            self.update()
+            a0.accept()
+            return
+
         x = a0.x()
         absx = x - self.leftMargin
         if absx < 0 or absx > self.width() - self.rightMargin:
@@ -2440,10 +2474,18 @@ class TDRChart(Chart):
 
         ticks = math.floor((self.width() - self.leftMargin)/100)  # Number of ticks does not include the origin
 
+        self.drawTitle(qp)
+
         if len(self.tdrWindow.td) > 0:
             if self.fixedSpan:
-                max_index = np.searchsorted(self.tdrWindow.distance_axis, self.maxDisplayLength * 2)
+                max_length = max(0.1, self.maxDisplayLength)
+                max_index = np.searchsorted(self.tdrWindow.distance_axis, max_length * 2)
                 min_index = np.searchsorted(self.tdrWindow.distance_axis, self.minDisplayLength * 2)
+                if max_index == min_index:
+                    if max_index < len(self.tdrWindow.distance_axis) - 1:
+                        max_index += 1
+                    else:
+                        min_index -= 1
                 x_step = (max_index - min_index) / width
             else:
                 min_index = 0
@@ -2451,8 +2493,8 @@ class TDRChart(Chart):
                 x_step = max_index / width
 
             if self.fixedValues:
-                min_impedance = self.minImpedance
-                max_impedance = self.maxImpedance
+                min_impedance = max(0, self.minImpedance)
+                max_impedance = max(0.1, self.maxImpedance)
             else:
                 # TODO: Limit the search to the selected span?
                 min_impedance = max(0, np.min(self.tdrWindow.step_response_Z) / 1.05)
@@ -2529,7 +2571,136 @@ class TDRChart(Chart):
                 qp.drawText(marker_point.x() - 10, marker_point.y() - 5,
                             str(round(self.tdrWindow.distance_axis[self.markerLocation] / 2, 2)) + "m")
 
+        if self.draggedBox and self.draggedBoxCurrent[0] != -1:
+            dashed_pen = QtGui.QPen(self.foregroundColor, 1, QtCore.Qt.DashLine)
+            qp.setPen(dashed_pen)
+            top_left = QtCore.QPoint(self.draggedBoxStart[0], self.draggedBoxStart[1])
+            bottom_right = QtCore.QPoint(self.draggedBoxCurrent[0], self.draggedBoxCurrent[1])
+            rect = QtCore.QRect(top_left, bottom_right)
+            qp.drawRect(rect)
+
         qp.end()
+
+    def valueAtPosition(self, y):
+        if len(self.tdrWindow.td) > 0:
+            height = self.height() - self.topMargin - self.bottomMargin
+            absy = (self.height() - y) - self.bottomMargin
+            if self.fixedValues:
+                min_impedance = self.minImpedance
+                max_impedance = self.maxImpedance
+            else:
+                min_impedance = max(0, np.min(self.tdrWindow.step_response_Z) / 1.05)
+                max_impedance = min(1000, np.max(self.tdrWindow.step_response_Z) * 1.05)
+            y_step = (max_impedance - min_impedance) / height
+            return y_step * absy + min_impedance
+        else:
+            return 0
+
+    def lengthAtPosition(self, x, limit=True):
+        if len(self.tdrWindow.td) > 0:
+            width = self.width() - self.leftMargin - self.rightMargin
+            absx = x - self.leftMargin
+            if self.fixedSpan:
+                max_length = self.maxDisplayLength
+                min_length = self.minDisplayLength
+                x_step = (max_length - min_length) / width
+            else:
+                min_length = 0
+                max_length = self.tdrWindow.distance_axis[math.ceil(len(self.tdrWindow.distance_axis) / 2)]/2
+                x_step = max_length / width
+            if limit and absx < 0:
+                return min_length
+            if limit and absx > width:
+                return max_length
+            return absx * x_step + min_length
+        else:
+            return 0
+
+    def zoomTo(self, x1, y1, x2, y2):
+        logger.debug("Zoom to (x,y) by (x,y): (%d, %d) by (%d, %d)", x1, y1, x2, y2)
+        val1 = self.valueAtPosition(y1)
+        val2 = self.valueAtPosition(y2)
+
+        if val1 != val2:
+            self.minImpedance = round(min(val1, val2), 3)
+            self.maxImpedance = round(max(val1, val2), 3)
+            self.setFixedValues(True)
+
+        len1 = max(0, self.lengthAtPosition(x1, limit=False))
+        len2 = max(0, self.lengthAtPosition(x2, limit=False))
+
+        if len1 >= 0 and len2 >= 0 and len1 != len2:
+            self.minDisplayLength = min(len1, len2)
+            self.maxDisplayLength = max(len1, len2)
+            self.setFixedSpan(True)
+
+        self.update()
+
+    def wheelEvent(self, a0: QtGui.QWheelEvent) -> None:
+        if len(self.tdrWindow.td) == 0:
+            a0.ignore()
+            return
+        chart_height = self.chartHeight
+        chart_width = self.chartWidth
+        do_zoom_x = do_zoom_y = True
+        if a0.modifiers() == QtCore.Qt.ShiftModifier:
+            do_zoom_x = False
+        if a0.modifiers() == QtCore.Qt.ControlModifier:
+            do_zoom_y = False
+        if a0.angleDelta().y() > 0:
+            # Zoom in
+            a0.accept()
+            # Center of zoom = a0.x(), a0.y()
+            # We zoom in by 1/10 of the width/height.
+            rate = a0.angleDelta().y() / 120
+            if do_zoom_x:
+                zoomx = rate * chart_width / 10
+            else:
+                zoomx = 0
+            if do_zoom_y:
+                zoomy = rate * chart_height / 10
+            else:
+                zoomy = 0
+            absx = max(0, a0.x() - self.leftMargin)
+            absy = max(0, a0.y() - self.topMargin)
+            ratiox = absx/chart_width
+            ratioy = absy/chart_height
+            # TODO: Change zoom to center on the mouse if possible, or extend box to the side that has room if not.
+            p1x = int(self.leftMargin + ratiox * zoomx)
+            p1y = int(self.topMargin + ratioy * zoomy)
+            p2x = int(self.leftMargin + chart_width - (1 - ratiox) * zoomx)
+            p2y = int(self.topMargin + chart_height - (1 - ratioy) * zoomy)
+            self.zoomTo(p1x, p1y, p2x, p2y)
+        elif a0.angleDelta().y() < 0:
+            # Zoom out
+            a0.accept()
+            # Center of zoom = a0.x(), a0.y()
+            # We zoom out by 1/9 of the width/height, to match zoom in.
+            rate = -a0.angleDelta().y() / 120
+            if do_zoom_x:
+                zoomx = rate * chart_width / 9
+            else:
+                zoomx = 0
+            if do_zoom_y:
+                zoomy = rate * chart_height / 9
+            else:
+                zoomy = 0
+            absx = max(0, a0.x() - self.leftMargin)
+            absy = max(0, a0.y() - self.topMargin)
+            ratiox = absx/chart_width
+            ratioy = absy/chart_height
+            p1x = int(self.leftMargin - ratiox * zoomx)
+            p1y = int(self.topMargin - ratioy * zoomy)
+            p2x = int(self.leftMargin + chart_width + (1 - ratiox) * zoomx)
+            p2y = int(self.topMargin + chart_height + (1 - ratioy) * zoomy)
+            self.zoomTo(p1x, p1y, p2x, p2y)
+        else:
+            a0.ignore()
+
+    def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
+        super().resizeEvent(a0)
+        self.chartWidth = self.width() - self.leftMargin - self.rightMargin
+        self.chartHeight = self.height() - self.bottomMargin - self.topMargin
 
 
 class RealImaginaryChart(FrequencyChart):
@@ -2619,6 +2790,7 @@ class RealImaginaryChart(FrequencyChart):
         qp.drawLine(self.leftMargin, self.topMargin - 5, self.leftMargin, self.topMargin + self.chartHeight + 5)
         qp.drawLine(self.leftMargin-5, self.topMargin + self.chartHeight,
                     self.leftMargin + self.chartWidth + 5, self.topMargin + self.chartHeight)
+        self.drawTitle(qp)
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
@@ -3012,14 +3184,6 @@ class MagnitudeChart(FrequencyChart):
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
-    def drawChart(self, qp: QtGui.QPainter):
-        qp.setPen(QtGui.QPen(self.textColor))
-        qp.drawText(3, 15, self.name)
-        qp.setPen(QtGui.QPen(self.foregroundColor))
-        qp.drawLine(self.leftMargin, 20, self.leftMargin, self.topMargin+self.chartHeight+5)
-        qp.drawLine(self.leftMargin-5, self.topMargin+self.chartHeight,
-                    self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)
-
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
@@ -3157,14 +3321,6 @@ class MagnitudeZChart(FrequencyChart):
         pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
-
-    def drawChart(self, qp: QtGui.QPainter):
-        qp.setPen(QtGui.QPen(self.textColor))
-        qp.drawText(3, 15, self.name)
-        qp.setPen(QtGui.QPen(self.foregroundColor))
-        qp.drawLine(self.leftMargin, 20, self.leftMargin, self.topMargin+self.chartHeight+5)
-        qp.drawLine(self.leftMargin-5, self.topMargin+self.chartHeight,
-                    self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
@@ -3329,9 +3485,11 @@ class PermeabilityChart(FrequencyChart):
         qp.drawText(10, 15, "R")
         qp.drawText(self.leftMargin + self.chartWidth + 10, 15, "X")
         qp.setPen(QtGui.QPen(self.foregroundColor))
-        qp.drawLine(self.leftMargin, self.topMargin - 5, self.leftMargin, self.topMargin + self.chartHeight + 5)
+        qp.drawLine(self.leftMargin, self.topMargin - 5,
+                    self.leftMargin, self.topMargin + self.chartHeight + 5)
         qp.drawLine(self.leftMargin-5, self.topMargin + self.chartHeight,
                     self.leftMargin + self.chartWidth + 5, self.topMargin + self.chartHeight)
+        self.drawTitle(qp)
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
@@ -3708,6 +3866,7 @@ class GroupDelayChart(FrequencyChart):
         qp.drawLine(self.leftMargin, 20, self.leftMargin, self.topMargin+self.chartHeight+5)
         qp.drawLine(self.leftMargin-5, self.topMargin+self.chartHeight,
                     self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)
+        self.drawTitle(qp)
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
@@ -3776,8 +3935,56 @@ class GroupDelayChart(FrequencyChart):
 
         self.drawFrequencyTicks(qp)
 
-        self.drawData(qp, self.data, self.sweepColor)
-        self.drawData(qp, self.reference, self.referenceColor)
+        color = self.sweepColor
+        pen = QtGui.QPen(color)
+        pen.setWidth(self.pointSize)
+        line_pen = QtGui.QPen(color)
+        line_pen.setWidth(self.lineThickness)
+        qp.setPen(pen)
+        for i in range(len(self.data)):
+            x = self.getXPosition(self.data[i])
+            y = self.getYPositionFromDelay(self.groupDelay[i])
+            if self.isPlotable(x, y):
+                qp.drawPoint(int(x), int(y))
+            if self.drawLines and i > 0:
+                prevx = self.getXPosition(self.data[i - 1])
+                prevy = self.getYPositionFromDelay(self.groupDelay[i - 1])
+                qp.setPen(line_pen)
+                if self.isPlotable(x, y) and self.isPlotable(prevx, prevy):
+                    qp.drawLine(x, y, prevx, prevy)
+                elif self.isPlotable(x, y) and not self.isPlotable(prevx, prevy):
+                    new_x, new_y = self.getPlotable(x, y, prevx, prevy)
+                    qp.drawLine(x, y, new_x, new_y)
+                elif not self.isPlotable(x, y) and self.isPlotable(prevx, prevy):
+                    new_x, new_y = self.getPlotable(prevx, prevy, x, y)
+                    qp.drawLine(prevx, prevy, new_x, new_y)
+                qp.setPen(pen)
+
+        color = self.referenceColor
+        pen = QtGui.QPen(color)
+        pen.setWidth(self.pointSize)
+        line_pen = QtGui.QPen(color)
+        line_pen.setWidth(self.lineThickness)
+        qp.setPen(pen)
+        for i in range(len(self.reference)):
+            x = self.getXPosition(self.reference[i])
+            y = self.getYPositionFromDelay(self.groupDelayReference[i])
+            if self.isPlotable(x, y):
+                qp.drawPoint(int(x), int(y))
+            if self.drawLines and i > 0:
+                prevx = self.getXPosition(self.reference[i - 1])
+                prevy = self.getYPositionFromDelay(self.groupDelayReference[i - 1])
+                qp.setPen(line_pen)
+                if self.isPlotable(x, y) and self.isPlotable(prevx, prevy):
+                    qp.drawLine(x, y, prevx, prevy)
+                elif self.isPlotable(x, y) and not self.isPlotable(prevx, prevy):
+                    new_x, new_y = self.getPlotable(x, y, prevx, prevy)
+                    qp.drawLine(x, y, new_x, new_y)
+                elif not self.isPlotable(x, y) and self.isPlotable(prevx, prevy):
+                    new_x, new_y = self.getPlotable(prevx, prevy, x, y)
+                    qp.drawLine(prevx, prevy, new_x, new_y)
+                qp.setPen(pen)
+
         self.drawMarkers(qp)
 
     def getYPosition(self, d: Datapoint) -> int:
@@ -3788,6 +3995,9 @@ class GroupDelayChart(FrequencyChart):
             delay = self.groupDelayReference[self.reference.index(d)]
         else:
             delay = 0
+        return self.getYPositionFromDelay(delay)
+
+    def getYPositionFromDelay(self, delay: float):
         return self.topMargin + round((self.maxDelay - delay) / self.span * self.chartHeight)
 
     def valueAtPosition(self, y) -> List[float]:
@@ -3825,6 +4035,7 @@ class CapacitanceChart(FrequencyChart):
         qp.drawLine(self.leftMargin, 20, self.leftMargin, self.topMargin+self.chartHeight+5)
         qp.drawLine(self.leftMargin-5, self.topMargin+self.chartHeight,
                     self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)
+        self.drawTitle(qp)
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
@@ -3951,6 +4162,7 @@ class InductanceChart(FrequencyChart):
         qp.drawLine(self.leftMargin, 20, self.leftMargin, self.topMargin+self.chartHeight+5)
         qp.drawLine(self.leftMargin-5, self.topMargin+self.chartHeight,
                     self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)
+        self.drawTitle(qp)
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:

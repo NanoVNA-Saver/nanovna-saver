@@ -18,6 +18,8 @@ import unittest
 
 # Import targets to be tested
 from NanoVNASaver.SITools import Format, Value
+from decimal import Decimal
+from math import inf
 
 F_DEFAULT = Format()
 
@@ -28,9 +30,10 @@ F_ASSERT_OFFSET_2 = Format(max_offset=9)
 F_ASSERT_OFFSET_3 = Format(min_offset=9)
 F_ASSERT_CLAMP = Format(parse_clamp_min=10, parse_clamp_max=9)
 
-F_DIGITS_3 = Format(max_nr_digits=3)
-F_DIGITS_4 = Format(max_nr_digits=3)
-F_DIGITS_31 = Format(max_nr_digits=30)
+F_DIGITS_3 = Format(max_nr_digits=3, min_offset=-2,
+                    max_offset=2, assume_infinity=False)
+F_DIGITS_4 = Format(max_nr_digits=4)
+F_DIGITS_31 = Format(max_nr_digits=31)
 
 F_WITH_SPACE = Format(space_str=" ")
 F_WITH_UNDERSCORE = Format(space_str="_")
@@ -38,13 +41,18 @@ F_WITH_UNDERSCORE = Format(space_str="_")
 
 class TestTSIToolsValue(unittest.TestCase):
 
-    def test_format_asssertions(self):
+    def test_format_assertions(self):
         self.assertRaises(AssertionError, Value, fmt=F_ASSERT_DIGITS_1)
         self.assertRaises(AssertionError, Value, fmt=F_ASSERT_DIGITS_2)
         self.assertRaises(AssertionError, Value, fmt=F_ASSERT_OFFSET_1)
         self.assertRaises(AssertionError, Value, fmt=F_ASSERT_OFFSET_2)
         self.assertRaises(AssertionError, Value, fmt=F_ASSERT_OFFSET_3)
         self.assertRaises(AssertionError, Value, fmt=F_ASSERT_CLAMP)
+
+    def test_representation(self):
+        a = Value(1)
+        b = eval(repr(a))
+        self.assertEqual(repr(a), repr(b))
 
     def test_default_format(self):
         self.assertEqual(str(Value(0)), "0.00000")
@@ -95,7 +103,24 @@ class TestTSIToolsValue(unittest.TestCase):
         self.assertEqual(str(v.parse("1e3")), "1k")
         self.assertEqual(str(v.parse("1e4")), "10k")
         self.assertEqual(str(v.parse("1e5")), "100k")
+        self.assertEqual(str(v.parse("1e9")), "1000M")
         self.assertEqual(str(v.parse("1e-1")), "100m")
         self.assertEqual(str(v.parse("1e-2")), "10m")
         self.assertEqual(str(v.parse("1e-3")), "1m")
+        self.assertEqual(str(v.parse("1e-9")), "0")
 
+    def test_format_digits_4(self):
+        v = Value(fmt=F_DIGITS_4)
+        self.assertEqual(str(v.parse("1")), "1.000")
+        self.assertEqual(str(v.parse("10")), "10.00")
+        self.assertEqual(str(v.parse("100")), "100.0")
+        self.assertEqual(str(v.parse("1e3")), "1.000k")
+        self.assertEqual(str(v.parse("1e4")), "10.00k")
+        self.assertEqual(str(v.parse("1e5")), "100.0k")
+        self.assertEqual(str(v.parse("1e-1")), "100.0m")
+        self.assertEqual(str(v.parse("1e-2")), "10.00m")
+        self.assertEqual(str(v.parse("1e-3")), "1.000m")
+
+# TODO: test F_DIGITS_31
+#            F_WITH_SPACE
+#            F_WITH_UNDERSCORE
