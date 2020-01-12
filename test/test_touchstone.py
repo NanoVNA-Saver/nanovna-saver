@@ -73,6 +73,18 @@ class TestTouchstoneTouchstone(unittest.TestCase):
         self.assertEqual(len(ts.s22data), 1020)
         self.assertIn("! Vector Network Analyzer VNA R2", ts.comments)
 
+        ts = Touchstone("./test/data/ma.s2p")
+        ts.load()
+        self.assertEqual(str(ts.opts), "# MHZ S MA R 50")
+
+        ts = Touchstone("./test/data/db.s2p")
+        ts.load()
+        self.assertEqual(str(ts.opts), "# HZ S DB R 50")
+
+        # ts = Touchstone("./test/data/nosudhfile")
+        # self.assertRaises(FileNotFoundError, ts.load)
+
+
     def test_load_scikit(self):
         ts = Touchstone("./test/data/scikit_unordered.s2p")
         with self.assertLogs(level=logging.WARNING) as cm:
