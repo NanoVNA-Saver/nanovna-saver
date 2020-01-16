@@ -1746,9 +1746,6 @@ class AboutWindow(QtWidgets.QWidget):
         top_layout = QtWidgets.QHBoxLayout()
         self.setLayout(top_layout)
         #self.setAutoFillBackground(True)
-        pal = self.palette()
-        pal.setColor(QtGui.QPalette.Background, QtGui.QColor("white"))
-        self.setPalette(pal)
         shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
         icon_layout = QtWidgets.QVBoxLayout()
