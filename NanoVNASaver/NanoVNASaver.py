@@ -42,8 +42,7 @@ from .Analysis import Analysis, LowPassAnalysis, HighPassAnalysis, BandPassAnaly
     PeakSearchAnalysis, VSWRAnalysis, SimplePeakSearchAnalysis
 from .about import version as ver
 
-VID = 1155
-PID = 22336
+VIDPIDs = set([(1155, 22336), (0x04b4, 0x0008)])
 
 logger = logging.getLogger(__name__)
 
@@ -550,8 +549,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         return_ports = []
         device_list = list_ports.comports()
         for d in device_list:
-            if (d.vid == VID and
-                    d.pid == PID):
+            if ((d.vid, d.pid) in VIDPIDs):
                 port = d.device
                 logger.info("Found NanoVNA (%04x %04x) on port %s", d.vid, d.pid, d.device)
                 return_ports.append(port)
