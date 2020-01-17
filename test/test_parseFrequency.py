@@ -148,6 +148,3 @@ class TestCases(unittest.TestCase):
         self.assertEqual(rft.parseFrequency('123....Hz'), -1)
         self.assertEqual(rft.parseFrequency('1.23.Hz'), -1)
 
-
-if __name__ == '__main__':
-    unittest.main(verbosity=2)

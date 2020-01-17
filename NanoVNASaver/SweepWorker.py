@@ -51,6 +51,7 @@ class SweepWorker(QtCore.QRunnable):
         self.rawData11: List[Datapoint] = []
         self.rawData21: List[Datapoint] = []
         self.stopped = False
+        self.running = False
         self.continuousSweep = False
         self.averaging = False
         self.averages = 3
@@ -61,9 +62,11 @@ class SweepWorker(QtCore.QRunnable):
     @pyqtSlot()
     def run(self):
         logger.info("Initializing SweepWorker")
+        self.running = True
         self.percentage = 0
         if not self.app.serial.is_open:
             logger.debug("Attempted to run without being connected to the NanoVNA")
+            self.running = False
             return
 
         if int(self.app.sweepCountInput.text()) > 0:
@@ -88,6 +91,7 @@ class SweepWorker(QtCore.QRunnable):
                                self.app.sweepEndInput.text())
                 self.error_message = "Unable to parse frequency inputs - check start and stop fields."
                 self.stopped = True
+                self.running = False
                 self.signals.sweepError.emit()
                 return
 
@@ -137,7 +141,13 @@ class SweepWorker(QtCore.QRunnable):
                 except NanoVNAValueException as e:
                     self.error_message = str(e)
                     self.stopped = True
-                    self.signals.fatalSweepError.emit()
+                    self.running = False
+                    self.signals.sweepError.emit()
+                except NanoVNASerialException as e:
+                    self.error_message = str(e)
+                    self.stopped = True
+                    self.running = False
+                    self.signals.sweepFatalError.emit()
 
         while self.continuousSweep and not self.stopped:
             logger.debug("Continuous sweeping")
@@ -154,7 +164,13 @@ class SweepWorker(QtCore.QRunnable):
                 except NanoVNAValueException as e:
                     self.error_message = str(e)
                     self.stopped = True
-                    self.signals.fatalSweepError.emit()
+                    self.running = False
+                    self.signals.sweepError.emit()
+                except NanoVNASerialException as e:
+                    self.error_message = str(e)
+                    self.stopped = True
+                    self.running = False
+                    self.signals.sweepFatalError.emit()
 
         # Reset the device to show the full range
         logger.debug("Resetting NanoVNA sweep to full range: %d to %d",
@@ -166,45 +182,42 @@ class SweepWorker(QtCore.QRunnable):
         self.percentage = 100
         logger.debug("Sending \"finished\" signal")
         self.signals.finished.emit()
+        self.running = False
         return
 
-    def updateData(self, values11, values21, offset, segment_size = 101):
+    def updateData(self, values11, values21, offset, segment_size=101):
         # Update the data from (i*101) to (i+1)*101
         logger.debug("Calculating data and inserting in existing data at offset %d", offset)
         for i in range(len(values11)):
             re, im = values11[i]
             re21, im21 = values21[i]
             freq = self.data11[offset * segment_size + i].freq
-            rawData11 = Datapoint(freq, re, im)
-            rawData21 = Datapoint(freq, re21, im21)
-            # TODO: Use applyCalibration instead
-            if self.app.calibration.isCalculated:
-                re, im = self.app.calibration.correct11(re, im, freq)
-                if self.app.calibration.isValid2Port():
-                    re21, im21 = self.app.calibration.correct21(re21, im21, freq)
+            raw_data11 = Datapoint(freq, re, im)
+            raw_data21 = Datapoint(freq, re21, im21)
+            data11, data21 = self.applyCalibration([raw_data11], [raw_data21])
 
-            self.data11[offset * segment_size + i] = Datapoint(freq, re, im)
-            self.data21[offset * segment_size + i] = Datapoint(freq, re21, im21)
-            self.rawData11[offset * segment_size + i] = rawData11
-            self.rawData21[offset * segment_size + i] = rawData21
+            self.data11[offset * segment_size + i] = data11
+            self.data21[offset * segment_size + i] = data21
+            self.rawData11[offset * segment_size + i] = raw_data11
+            self.rawData21[offset * segment_size + i] = raw_data21
         logger.debug("Saving data to application (%d and %d points)", len(self.data11), len(self.data21))
         self.app.saveData(self.data11, self.data21)
         logger.debug("Sending \"updated\" signal")
         self.signals.updated.emit()
 
     def saveData(self, frequencies, values11, values21):
-        rawData11 = []
-        rawData21 = []
+        raw_data11 = []
+        raw_data21 = []
         logger.debug("Calculating data including corrections")
         for i in range(len(values11)):
             re, im = values11[i]
             re21, im21 = values21[i]
             freq = frequencies[i]
-            rawData11 += [Datapoint(freq, re, im)]
-            rawData21 += [Datapoint(freq, re21, im21)]
-        self.data11, self.data21 = self.applyCalibration(rawData11, rawData21)
-        self.rawData11 = rawData11
-        self.rawData21 = rawData21
+            raw_data11 += [Datapoint(freq, re, im)]
+            raw_data21 += [Datapoint(freq, re21, im21)]
+        self.data11, self.data21 = self.applyCalibration(raw_data11, raw_data21)
+        self.rawData11 = raw_data11
+        self.rawData21 = raw_data21
         logger.debug("Saving data to application (%d and %d points)", len(self.data11), len(self.data21))
         self.app.saveData(self.data11, self.data21)
         logger.debug("Sending \"updated\" signal")
@@ -213,7 +226,6 @@ class SweepWorker(QtCore.QRunnable):
     def applyCalibration(self, raw_data11: List[Datapoint], raw_data21: List[Datapoint]) ->\
                         (List[Datapoint], List[Datapoint]):
         if self.offsetDelay != 0:
-            logger.debug("Applying offset delay of %f ps.", self.offsetDelay * 10e12)
             tmp = []
             for d in raw_data11:
                 tmp.append(Calibration.correctDelay11(d, self.offsetDelay))
@@ -230,7 +242,6 @@ class SweepWorker(QtCore.QRunnable):
         data21: List[Datapoint] = []
 
         if self.app.calibration.isValid1Port():
-            logger.debug("Applying S11 calibration.")
             for d in raw_data11:
                 re, im = self.app.calibration.correct11(d.re, d.im, d.freq)
                 data11.append(Datapoint(d.freq, re, im))
@@ -238,7 +249,6 @@ class SweepWorker(QtCore.QRunnable):
             data11 = raw_data11
 
         if self.app.calibration.isValid2Port():
-            logger.debug("Applying S21 calibration.")
             for d in raw_data21:
                 re, im = self.app.calibration.correct21(d.re, d.im, d.freq)
                 data21.append(Datapoint(d.freq, re, im))
@@ -273,7 +283,8 @@ class SweepWorker(QtCore.QRunnable):
 
         return freq, return11, return21
 
-    def truncate(self, values: List[List[tuple]], count):
+    @staticmethod
+    def truncate(values: List[List[tuple]], count):
         logger.debug("Truncating from %d values to %d", len(values), len(values) - count)
         if count < 1:
             return values
@@ -331,16 +342,16 @@ class SweepWorker(QtCore.QRunnable):
             tmpdata = self.vna.readValues(data)
             if not tmpdata:
                 logger.warning("Read no values")
-                raise NanoVNAValueException("Failed reading data: Returned no values.")
+                raise NanoVNASerialException("Failed reading data: Returned no values.")
             logger.debug("Read %d values", len(tmpdata))
             for d in tmpdata:
                 a, b = d.split(" ")
                 try:
-                    if float(a) < -9.5 or float(a) > 9.5:
+                    if self.vna.validateInput and (float(a) < -9.5 or float(a) > 9.5):
                         logger.warning("Got a non-float data value: %s (%s)", d, a)
                         logger.debug("Re-reading %s", data)
                         done = False
-                    elif float(b) < -9.5 or float(b) > 9.5:
+                    elif self.vna.validateInput and (float(b) < -9.5 or float(b) > 9.5):
                         logger.warning("Got a non-float data value: %s (%s)", d, b)
                         logger.debug("Re-reading %s", data)
                         done = False
@@ -358,7 +369,8 @@ class SweepWorker(QtCore.QRunnable):
                 if count >= 20:
                     logger.critical("Tried and failed to read %s %d times. Giving up.", data, count)
                     raise NanoVNAValueException("Failed reading " + str(data) + " " + str(count) + " times.\n" +
-                                                "Data outside expected valid ranges, or in an unexpected format.")
+                                                "Data outside expected valid ranges, or in an unexpected format.\n\n" +
+                                                "You can disable data validation on the device settings screen.")
         return returndata
 
     def readFreq(self):
@@ -373,7 +385,7 @@ class SweepWorker(QtCore.QRunnable):
             tmpfreq = self.vna.readFrequencies()
             if not tmpfreq:
                 logger.warning("Read no frequencies")
-                raise NanoVNAValueException("Failed reading frequencies: Returned no values.")
+                raise NanoVNASerialException("Failed reading frequencies: Returned no values.")
             for f in tmpfreq:
                 if not f.isdigit():
                     logger.warning("Got a non-digit frequency: %s", f)
@@ -389,15 +401,15 @@ class SweepWorker(QtCore.QRunnable):
                     returnfreq.append(int(f))
         return returnfreq
 
-    def setContinuousSweep(self, continuousSweep: bool):
-        self.continuousSweep = continuousSweep
+    def setContinuousSweep(self, continuous_sweep: bool):
+        self.continuousSweep = continuous_sweep
 
     def setAveraging(self, averaging: bool, averages: str, truncates: str):
         self.averaging = averaging
         try:
             self.averages = int(averages)
             self.truncates = int(truncates)
-        except:
+        except ValueError:
             return
 
     def setVNA(self, vna):
@@ -405,4 +417,8 @@ class SweepWorker(QtCore.QRunnable):
 
 
 class NanoVNAValueException(Exception):
+    pass
+
+
+class NanoVNASerialException(Exception):
     pass
