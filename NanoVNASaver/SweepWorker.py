@@ -196,8 +196,8 @@ class SweepWorker(QtCore.QRunnable):
             raw_data21 = Datapoint(freq, re21, im21)
             data11, data21 = self.applyCalibration([raw_data11], [raw_data21])
 
-            self.data11[offset * segment_size + i] = data11
-            self.data21[offset * segment_size + i] = data21
+            self.data11[offset * segment_size + i] = data11[0]
+            self.data21[offset * segment_size + i] = data21[0]
             self.rawData11[offset * segment_size + i] = raw_data11
             self.rawData21[offset * segment_size + i] = raw_data21
         logger.debug("Saving data to application (%d and %d points)", len(self.data11), len(self.data21))
