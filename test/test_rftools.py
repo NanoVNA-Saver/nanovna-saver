@@ -130,7 +130,7 @@ class TestRFToolsDatapoint(unittest.TestCase):
                                complex(49.997525, 34.9974501))
         self.assertAlmostEqual(self.dp.impedance(75),
                                complex(74.99628755, 52.49617517))
-        self.assertEqual(self.dp0.qFactor(), math.inf)
+        self.assertEqual(self.dp0.qFactor(), 0.0)
         self.assertEqual(self.dp75.qFactor(), 0.0)
         self.assertAlmostEqual(self.dp.qFactor(), 0.6999837)
         self.assertAlmostEqual(self.dp.capacitiveEquivalent(), -4.54761539e-08)
