@@ -81,8 +81,14 @@ class TestTouchstoneTouchstone(unittest.TestCase):
         ts.load()
         self.assertEqual(str(ts.opts), "# HZ S DB R 50")
 
-        # ts = Touchstone("./test/data/nosudhfile")
-        # self.assertRaises(FileNotFoundError, ts.load)
+    def test_db_conversation(self):
+        ts_db = Touchstone("./test/data/attenuator-0643_DB.s2p")
+        ts_db.load()
+        ts_ri = Touchstone("./test/data/attenuator-0643_RI.s2p")
+        ts_ri.load()
+        self.assertEqual(len(ts_db.s11data), len(ts_ri.s11data))
+        for dps_db, dps_ri in zip(ts_db.s11data, ts_ri.s11data):
+            self.assertAlmostEqual(dps_db.z, dps_ri.z, places=5)
 
 
     def test_load_scikit(self):

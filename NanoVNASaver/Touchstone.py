@@ -139,7 +139,7 @@ class Touchstone:
                 z = cmath.rect(float(v), math.radians(float(next(vals))))
                 next(data_list).append(Datapoint(freq, z.real, z.imag))
             if self.opts.format == "db":
-                z = cmath.rect(math.exp(float(v) / 20), math.radians(float(next(vals))))
+                z = cmath.rect(10 ** (float(v) / 20), math.radians(float(next(vals))))
                 next(data_list).append(Datapoint(freq, z.real, z.imag))
 
     def load(self):
