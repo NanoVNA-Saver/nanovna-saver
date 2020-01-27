@@ -23,6 +23,8 @@ FMT_FREQ_INPUTS = SITools.Format(max_nr_digits=10, allow_strip=True, printable_m
 FMT_Q_FACTOR = SITools.Format(max_nr_digits=4, assume_infinity=False, min_offset=0, max_offset=0, allow_strip=True)
 FMT_GROUP_DELAY = SITools.Format(max_nr_digits=5, space_str=" ")
 FMT_REACT = SITools.Format(max_nr_digits=5, space_str=" ", allow_strip=True)
+FMT_COMPLEX = SITools.Format(max_nr_digits=3, allow_strip=True,
+                             printable_min=0, unprintable_under="- ")
 
 
 def format_frequency(freq: float, fmt=FMT_FREQ) -> str:
@@ -68,7 +70,7 @@ def format_inductance(val: float, allow_negative: bool = True) -> str:
 
 
 def format_group_delay(val: float) -> str:
-    return str(SITools.Value(val, "s", fmt=FMT_GROUP_DELAY))
+    return str(SITools.Value(val, "s", FMT_GROUP_DELAY))
 
 
 def format_phase(val: float) -> str:
@@ -76,21 +78,6 @@ def format_phase(val: float) -> str:
 
 
 def format_complex_imp(z: complex) -> str:
-    if z.real > 0:
-        if z.real >= 1000:
-            s = f"{z.real/1000:.3g}k"
-        else:
-            s = f"{z.real:.4g}"
-    else:
-        s = "- "
-    if z.imag < 0:
-        s += " -j"
-    else:
-        s += " +j"
-    if abs(z.imag) >= 1000:
-        s += f"{abs(z.imag)/1000:.3g}k"
-    elif abs(z.imag) < 0.1:
-        s += f"{abs(z.imag)*1000:.3g}m"
-    else:
-        s += f"{abs(z.imag):.3g}"
-    return s + " \N{OHM SIGN}"
+    re = SITools.Value(z.real, fmt=FMT_COMPLEX)
+    im = SITools.Value(abs(z.imag), fmt=FMT_COMPLEX)
+    return f"{re}{'-' if z.imag < 0 else '+'}j{im} \N{OHM SIGN}"
