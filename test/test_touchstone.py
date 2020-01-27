@@ -88,7 +88,6 @@ class TestTouchstoneTouchstone(unittest.TestCase):
         ts_ri.load()
         ts_ma = Touchstone("./test/data/attenuator-0643_MA.s2p")
         ts_ma.load()
-
         self.assertEqual(len(ts_db.s11data), len(ts_ri.s11data))
         for dps_db, dps_ri in zip(ts_db.s11data, ts_ri.s11data):
             self.assertAlmostEqual(dps_db.z, dps_ri.z, places=5)
@@ -96,7 +95,6 @@ class TestTouchstoneTouchstone(unittest.TestCase):
         self.assertEqual(len(ts_db.s11data), len(ts_ma.s11data))
         for dps_db, dps_ma in zip(ts_db.s11data, ts_ma.s11data):
             self.assertAlmostEqual(dps_db.z, dps_ma.z, places=5)
-
 
     def test_load_scikit(self):
         ts = Touchstone("./test/data/scikit_unordered.s2p")
