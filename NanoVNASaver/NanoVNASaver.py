@@ -2064,6 +2064,14 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         settings_layout.addRow(QtWidgets.QLabel("Averaging allows discarding outlying samples to get better averages."))
         settings_layout.addRow(QtWidgets.QLabel("Common values are 3/0, 5/2, 9/4 and 25/6."))
 
+        self.s21att = QtWidgets.QLineEdit("0")
+
+        settings_layout.addRow(QtWidgets.QLabel(""))
+        settings_layout.addRow(QtWidgets.QLabel("Some times when you measure amplifiers you need to use an attenuator"))
+        settings_layout.addRow(QtWidgets.QLabel("in line with  the S21 input (CH1) here you can specify it."))
+
+        settings_layout.addRow("Attenuator in port CH1 (s21) in dB", self.s21att)
+
         self.continuous_sweep_radiobutton.toggled.connect(
             lambda: self.app.worker.setContinuousSweep(self.continuous_sweep_radiobutton.isChecked()))
         self.averaged_sweep_radiobutton.toggled.connect(self.updateAveraging)
