@@ -493,11 +493,11 @@ class NanoVNASaver(QtWidgets.QWidget):
         save_file_control_box.setMaximumWidth(300)
         save_file_control_layout = QtWidgets.QFormLayout(save_file_control_box)
 
-        btn_export_file = QtWidgets.QPushButton("Save file (S1P)")
+        btn_export_file = QtWidgets.QPushButton("Save 1-Port file (S1P)")
         btn_export_file.clicked.connect(self.exportFileS1P)
         save_file_control_layout.addRow(btn_export_file)
 
-        btn_export_file = QtWidgets.QPushButton("Save file (S2P)")
+        btn_export_file = QtWidgets.QPushButton("Save 2-Port file (S2P)")
         btn_export_file.clicked.connect(self.exportFileS2P)
         save_file_control_layout.addRow(btn_export_file)
 
@@ -565,7 +565,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         filedialog = QtWidgets.QFileDialog(self)
         filedialog.setDefaultSuffix("s1p")
-        filedialog.setNameFilter("Touchstone Files (*.s1p *.s2p);;All files (*.*)")
+        filedialog.setNameFilter("Touchstone 1-Port Files (*.s1p);;All files (*.*)")
         filedialog.setAcceptMode(QtWidgets.QFileDialog.AcceptSave)
         selected = filedialog.exec()
         if selected:
@@ -601,7 +601,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         filedialog = QtWidgets.QFileDialog(self)
         filedialog.setDefaultSuffix("s2p")
-        filedialog.setNameFilter("Touchstone Files (*.s1p *.s2p);;All files (*.*)")
+        filedialog.setNameFilter("Touchstone 2-Port Files (*.s2p);;All files (*.*)")
         filedialog.setAcceptMode(QtWidgets.QFileDialog.AcceptSave)
         selected = filedialog.exec()
         if selected:
