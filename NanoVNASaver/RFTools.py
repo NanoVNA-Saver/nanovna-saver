@@ -175,3 +175,20 @@ class RFTools:
     @staticmethod
     def parseFrequency(freq: str) -> int:
         return parseFrequency(freq)
+
+
+def corrAttData(data: Datapoint, att: float):
+    """Correct the ratio for a given attenuation on s21 input"""
+
+    if att <= 0:
+        return data
+
+    ndata = []
+    for i in range(len(data)):
+        freq, re, im = data[i]
+        gain = data[i].gain + att
+        t = gain/20.0
+        re = 10**t
+        ndata.append(Datapoint(freq, re, im))
+
+    return ndata

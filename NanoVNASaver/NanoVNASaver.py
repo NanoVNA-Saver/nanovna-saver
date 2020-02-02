@@ -29,7 +29,7 @@ from PyQt5.QtCore import QModelIndex
 from serial.tools import list_ports
 
 from .Hardware import VNA, InvalidVNA, Version
-from .RFTools import RFTools, Datapoint
+from .RFTools import RFTools, Datapoint, corrAttData
 from .Chart import Chart, PhaseChart, VSWRChart, PolarChart, SmithChart, LogMagChart, QualityFactorChart, TDRChart, \
     RealImaginaryChart, MagnitudeChart, MagnitudeZChart, CombinedLogMagChart, SParameterChart, PermeabilityChart, \
     GroupDelayChart, CapacitanceChart, InductanceChart
@@ -291,6 +291,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         sweep_control_layout.addRow(btn_layout_widget)
 
         left_column.addWidget(sweep_control_box)
+
+        self.s21att = 0.0
 
         ################################################################################################################
         #  Marker control
@@ -722,7 +724,11 @@ class NanoVNASaver(QtWidgets.QWidget):
     def saveData(self, data, data12, source=None):
         if self.dataLock.acquire(blocking=True):
             self.data = data
-            self.data21 = data12
+            if self.s21att > 0:
+                corData12 = corrAttData(data12, self.s21att)
+                self.data21 = corData12
+            else:
+                self.data21 = data12
         else:
             logger.error("Failed acquiring data lock while saving.")
         self.dataLock.release()
@@ -918,6 +924,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         if filename != "":
             self.data = []
             self.data21 = []
+            self.sweepSettingsWindow.s21attv.setText("0")
             t = Touchstone(filename)
             t.load()
             self.saveData(t.s11data, t.s21data, filename)
@@ -2064,19 +2071,20 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         settings_layout.addRow(QtWidgets.QLabel("Averaging allows discarding outlying samples to get better averages."))
         settings_layout.addRow(QtWidgets.QLabel("Common values are 3/0, 5/2, 9/4 and 25/6."))
 
-        self.s21att = QtWidgets.QLineEdit("0")
+        self.s21attv = QtWidgets.QLineEdit("0")
 
         settings_layout.addRow(QtWidgets.QLabel(""))
         settings_layout.addRow(QtWidgets.QLabel("Some times when you measure amplifiers you need to use an attenuator"))
         settings_layout.addRow(QtWidgets.QLabel("in line with  the S21 input (CH1) here you can specify it."))
 
-        settings_layout.addRow("Attenuator in port CH1 (s21) in dB", self.s21att)
+        settings_layout.addRow("Attenuator inline on port CH1 (dB)", self.s21attv)
 
         self.continuous_sweep_radiobutton.toggled.connect(
             lambda: self.app.worker.setContinuousSweep(self.continuous_sweep_radiobutton.isChecked()))
         self.averaged_sweep_radiobutton.toggled.connect(self.updateAveraging)
         self.averages.textEdited.connect(self.updateAveraging)
         self.truncates.textEdited.connect(self.updateAveraging)
+        self.s21attv.textEdited.connect(self.setS21Attenuator)
 
         layout.addWidget(settings_box)
 
@@ -2171,6 +2179,19 @@ class SweepSettingsWindow(QtWidgets.QWidget):
                                      self.averages.text(),
                                      self.truncates.text())
 
+    def setS21Attenuator(self):
+        s21att = 0
+        try:
+            s21att = float(self.s21attv.text())
+        except:
+            pass
+
+        if (s21att < 0):
+            logger.warning("Values for attenuator are absolute and with no minus sign, resetting.")
+            self.s21attv.setText("0")
+        else:
+            logger.info("Setting an attenuator of %.2f dB inline with the CH1/S21 input", s21att)
+            self.app.s21att = s21att
 
 class BandsWindow(QtWidgets.QWidget):
     def __init__(self, app):
