@@ -9,3 +9,4 @@
 *.cal
 settings.json
 .gitignore
+.coverage
