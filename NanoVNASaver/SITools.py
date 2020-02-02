@@ -59,7 +59,7 @@ class Value:
                  value: Union[Number, str] = 0,
                  unit: str = "",
                  fmt=Format()):
-        assert 3 <= fmt.max_nr_digits <= 30
+        assert 1 <= fmt.max_nr_digits <= 30
         assert -8 <= fmt.min_offset <= fmt.max_offset <= 8
         assert fmt.parse_clamp_min < fmt.parse_clamp_max
         assert fmt.printable_min < fmt.printable_max
@@ -91,7 +91,7 @@ class Value:
 
         real = float(self._value) / (10 ** (offset * 3))
 
-        if fmt.max_nr_digits < 4:
+        if fmt.max_nr_digits < 3:
             formstr = ".0f"
         else:
             max_digits = fmt.max_nr_digits + (
