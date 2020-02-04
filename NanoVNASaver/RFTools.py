@@ -178,7 +178,8 @@ def corrAttData(data: Datapoint, att: float):
     if att <= 0:
         return data
 
-    ndata = []
+    ndata: List[Datapoint] = []
+
     for i in range(len(data)):
         freq, re, im = data[i]
         gain = data[i].gain + att
