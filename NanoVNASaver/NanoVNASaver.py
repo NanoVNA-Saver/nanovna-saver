@@ -2074,8 +2074,9 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         self.s21attv = QtWidgets.QLineEdit("0")
 
         settings_layout.addRow(QtWidgets.QLabel(""))
-        settings_layout.addRow(QtWidgets.QLabel("Attenuator inline with S21 (CH1) input, but <b>Warning!</b>"))
-        settings_layout.addRow(QtWidgets.QLabel("When you use an attenuator the reactance part of the S21 is <u>useless</u>."))
+        settings_layout.addRow(QtWidgets.QLabel("Some times yu need an attenuator inline with the RF path, but <b>beware!</b>"))
+        settings_layout.addRow(QtWidgets.QLabel("When you use an attenuator the reactance part of the S11 & S21 readings"))
+        settings_layout.addRow(QtWidgets.QLabel("may be <u>affected</u>, so use attenuators wisely."))
         
 
         settings_layout.addRow("Attenuator inline on port CH1 (dB)", self.s21attv)
