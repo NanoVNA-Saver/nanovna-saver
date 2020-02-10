@@ -22,8 +22,8 @@ from PyQt5.QtCore import pyqtSignal
 
 from NanoVNASaver import RFTools
 from NanoVNASaver.Formatting import format_frequency, format_capacitance, format_inductance, format_complex_imp, \
-    format_resistance, format_vswr, format_phase, format_q_factor, format_gain, format_group_delay
-
+    format_resistance, format_vswr, format_phase, format_q_factor, format_gain, format_group_delay, \
+    format_magnitude
 from NanoVNASaver.Inputs import MarkerFrequencyInputWidget as FrequencyInput
 
 
@@ -58,6 +58,7 @@ class Marker(QtCore.QObject):
         self.frequency_label.setMinimumWidth(100)
         self.impedance_label = QtWidgets.QLabel("")
         self.admittance_label = QtWidgets.QLabel("")
+        self.s11_z_label = QtWidgets.QLabel("")
         self.parallel_r_label = QtWidgets.QLabel("")
         self.parallel_x_label = QtWidgets.QLabel("")
         self.parallel_c_label = QtWidgets.QLabel("")
@@ -76,12 +77,15 @@ class Marker(QtCore.QObject):
         self.s21_group_delay_label = QtWidgets.QLabel("")
         self.s11_polar_label = QtWidgets.QLabel("")
         self.s21_polar_label = QtWidgets.QLabel("")
+        self.s11_mag_label = QtWidgets.QLabel("")
+        self.s21_mag_label = QtWidgets.QLabel("")
         self.quality_factor_label = QtWidgets.QLabel("")
 
         self.fields = {
             "actualfreq": ("Frequency:", self.frequency_label),
             "impedance": ("Impedance:", self.impedance_label),
             "admittance": ("Admittance:", self.admittance_label),
+            "s11z": ("S11 |Z|:", self.s11_z_label),
             "s11polar": ("S11 Polar:", self.s11_polar_label),
             "s21polar": ("S21 Polar:", self.s21_polar_label),
             "serr": ("Series R:", self.series_r_label),
@@ -99,6 +103,8 @@ class Marker(QtCore.QObject):
             "s11groupdelay": ("S11 Group Delay:", self.s11_group_delay_label),
             "s21gain": ("S21 Gain:", self.gain_label),
             "s21phase": ("S21 Phase:", self.s21_phase_label),
+            "s11mag": ("|S11|:", self.s11_mag_label),
+            "s21mag": ("|S21|:", self.s21_mag_label),
             "s21groupdelay": ("S21 Group Delay:", self.s21_group_delay_label),
         }
 
@@ -268,6 +274,7 @@ class Marker(QtCore.QObject):
     def resetLabels(self):
         self.frequency_label.setText("")
         self.impedance_label.setText("")
+        self.s11_z_label.setText("")
         self.admittance_label.setText("")
         self.s11_polar_label.setText("")
         self.s21_polar_label.setText("")
@@ -286,6 +293,8 @@ class Marker(QtCore.QObject):
         self.s21_phase_label.setText("")
         self.s11_group_delay_label.setText("")
         self.s21_group_delay_label.setText("")
+        self.s11_mag_label.setText("")
+        self.s21_mag_label.setText("")
         self.quality_factor_label.setText("")
 
     def updateLabels(self,
@@ -316,6 +325,7 @@ class Marker(QtCore.QObject):
         self.frequency_label.setText(format_frequency(s11.freq))
 
         self.impedance_label.setText(format_complex_imp(imp))
+        self.s11_z_label.setText(format_resistance(abs(imp)))
         self.series_r_label.setText(format_resistance(imp.real))
         self.series_x_label.setText(x_str)
         self.capacitance_label.setText(cap_str)
@@ -335,6 +345,7 @@ class Marker(QtCore.QObject):
         self.s11_group_delay_label.setText(format_group_delay(RFTools.groupDelay(s11data, self.location)))
 
         self.s11_polar_label.setText(str(round(abs(s11.z), 2)) + "∠" + format_phase(s11.phase))
+        self.s11_mag_label.setText(format_magnitude(abs(s11.z)))
 
         if len(s21data) == len(s11data):
 
@@ -344,4 +355,5 @@ class Marker(QtCore.QObject):
             self.gain_label.setText(format_gain(s21.gain))
             self.s21_group_delay_label.setText(format_group_delay(RFTools.groupDelay(s21data, self.location) / 2))
             self.s21_polar_label.setText(str(round(abs(s21.z), 2)) + "∠" + format_phase(s21.phase))
+            self.s21_mag_label.setText(format_magnitude(abs(s21.z)))
 

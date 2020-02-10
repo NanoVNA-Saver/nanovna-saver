@@ -1,4 +1,5 @@
-#  NanoVNASaver - a python program to view and export Touchstone data from a NanoVNA
+#  NanoVNASaver 
+#  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019.  Rune B. Broberg
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -51,6 +52,9 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
                  "s11groupdelay": "S11 Group Delay",
                  "s21gain": "S21 Gain",
                  "s21phase": "S21 Phase",
+                 "s11z": "S11 |Z|",
+                 "s11mag": "|S11|",
+                 "s21mag": "|S21|",
                  "s21groupdelay": "S21 Group Delay",
                 }
 

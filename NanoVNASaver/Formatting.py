@@ -50,6 +50,8 @@ def format_q_factor(val: float) -> str:
 def format_vswr(val: float) -> str:
     return f"{val:.3f}"
 
+def format_magnitude(val: float) -> str:
+    return f"{val:.3f}"
 
 def format_resistance(val: float) -> str:
     if val < 0:
