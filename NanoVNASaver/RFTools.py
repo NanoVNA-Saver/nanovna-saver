@@ -45,7 +45,7 @@ def serial_to_parallel(z: complex) -> complex:
     if z.imag == 0:
         return complex(z_sq_sum / z.real, math.copysign(math.inf, z_sq_sum))
     if z.real == 0:
-        return complex(math.copysign(math.inf,z_sq_sum), z_sq_sum / z.real)
+        return complex(math.copysign(math.inf, z_sq_sum), z_sq_sum / z.real)
     return complex(z_sq_sum / z.real, z_sq_sum / z.imag)
 
 
@@ -112,7 +112,8 @@ class Datapoint(NamedTuple):
         mag = abs(self.z)
         if mag > 0:
             return 20 * math.log10(mag)
-        return 0
+        return -math.inf
+
 
     @property
     def vswr(self) -> float:
