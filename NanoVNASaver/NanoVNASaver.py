@@ -50,13 +50,6 @@ logger = logging.getLogger(__name__)
 
 class NanoVNASaver(QtWidgets.QWidget):
     version = ver
-    default_marker_colors = [QtGui.QColor(255, 0, 0),
-                             QtGui.QColor(0, 255, 0),
-                             QtGui.QColor(0, 0, 255),
-                             QtGui.QColor(0, 255, 255),
-                             QtGui.QColor(255, 0, 255),
-                             QtGui.QColor(255, 255, 0)]
-
     dataAvailable = QtCore.pyqtSignal()
     scaleFactor = 1
 
@@ -303,12 +296,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         marker_count = max(self.settings.value("MarkerCount", 3, int), 1)
         for i in range(marker_count):
-            if i < len(self.default_marker_colors):
-                default_color = self.default_marker_colors[i]
-            else:
-                default_color = QtGui.QColor(QtCore.Qt.darkGray)
-            color = self.settings.value("Marker" + str(i+1) + "Color", default_color)
-            marker = Marker("Marker " + str(i+1), color)
+            marker = Marker("", self.settings)
             marker.updated.connect(self.markerUpdated)
             label, layout = marker.getRow()
             self.marker_control_layout.addRow(label, layout)
@@ -991,9 +979,9 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
         self.worker.stopped = True
-        self.settings.setValue("MarkerCount", len(self.markers))
-        for i in range(len(self.markers)):
-            self.settings.setValue("Marker" + str(i+1) + "Color", self.markers[i].color)
+        self.settings.setValue("MarkerCount", Marker.count())
+        for marker in self.markers:
+            marker.update_settings()
 
         self.settings.setValue("WindowHeight", self.height())
         self.settings.setValue("WindowWidth", self.width())
@@ -1671,38 +1659,27 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         QtWidgets.QApplication.setActiveWindow(self.marker_window)
 
     def addMarker(self):
-        marker_count = len(self.app.markers)
-        if marker_count < 6:
-            color = NanoVNASaver.default_marker_colors[marker_count]
-        else:
-            color = QtGui.QColor(QtCore.Qt.darkGray)
-        new_marker = Marker("Marker " + str(marker_count+1), color)
-        new_marker.setColoredText(self.app.settings.value("ColoredMarkerNames", True, bool))
-        new_marker.setFieldSelection(self.app.settings.value("MarkerFields",
-                                                             defaultValue=self.marker_window.defaultValue))
+        new_marker = Marker("", self.app.settings)
         new_marker.setScale(self.app.scaleFactor)
         self.app.markers.append(new_marker)
         self.app.marker_data_layout.addWidget(new_marker.getGroupBox())
 
         new_marker.updated.connect(self.app.markerUpdated)
         label, layout = new_marker.getRow()
-        self.app.marker_control_layout.insertRow(marker_count, label, layout)
-        if marker_count == 0:
-            new_marker.isMouseControlledRadioButton.setChecked(True)
-
+        self.app.marker_control_layout.insertRow(Marker.count() - 1, label, layout)
         self.btn_remove_marker.setDisabled(False)
 
     def removeMarker(self):
         # keep at least one marker
-        if len(self.app.markers) <= 1:
+        if Marker.count() <= 1:
             return
-        if len(self.app.markers) == 2:
+        if Marker.count() == 2:
             self.btn_remove_marker.setDisabled(True)
         last_marker = self.app.markers.pop()
 
         last_marker.updated.disconnect(self.app.markerUpdated)
         self.app.marker_data_layout.removeWidget(last_marker.getGroupBox())
-        self.app.marker_control_layout.removeRow(len(self.app.markers))
+        self.app.marker_control_layout.removeRow(Marker.count()-1)
         last_marker.getGroupBox().hide()
         last_marker.getGroupBox().destroy()
         label, layout = last_marker.getRow()

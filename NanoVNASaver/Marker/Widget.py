@@ -44,7 +44,7 @@ COLORS = (
     QtGui.QColor(0, 0, 255),
     QtGui.QColor(0, 255, 255),
     QtGui.QColor(255, 0, 255),
-    QtGui.QColor(255, 255, 0)
+    QtGui.QColor(255, 255, 0),
 )
 
 
@@ -158,7 +158,7 @@ class Marker(QtCore.QObject, Value):
 
     def _size_str(self) -> str:
         return str(self.group_box.font().pointSize())
-        
+
     def update_settings(self):
         self.qsettings.setValue(f"Marker{self.index}Color", self.color)
 
@@ -204,7 +204,7 @@ class Marker(QtCore.QObject, Value):
                 self._add_active_labels(label_id, self.right_form)
 
     def setFrequency(self, frequency):
-        self.frequency = RFTools.RFTools.parseFrequency(frequency)
+        self.freq = RFTools.RFTools.parseFrequency(frequency)
         self.updated.emit(self)
 
     def setFieldSelection(self, fields):
@@ -312,11 +312,14 @@ class Marker(QtCore.QObject, Value):
         self.label['parl'].setText(ind_p_str)
         self.label['parlc'].setText(x_p_str)
         self.label['parr'].setText(format_resistance(imp_p.real))
-        self.label['returnloss'].setText(format_gain(s11.gain, self.returnloss_is_positive))
-        self.label['s11groupdelay'].setText(format_group_delay(RFTools.groupDelay(s11data, self.location)))
+        self.label['returnloss'].setText(
+            format_gain(s11.gain, self.returnloss_is_positive))
+        self.label['s11groupdelay'].setText(
+            format_group_delay(RFTools.groupDelay(s11data, self.location)))
         self.label['s11mag'].setText(format_magnitude(abs(s11.z)))
         self.label['s11phase'].setText(format_phase(s11.phase))
-        self.label['s11polar'].setText(str(round(abs(s11.z), 2)) + "∠" + format_phase(s11.phase))
+        self.label['s11polar'].setText(
+            str(round(abs(s11.z), 2)) + "∠" + format_phase(s11.phase))
         self.label['s11q'].setText(format_q_factor(s11.qFactor()))
         self.label['s11z'].setText(format_resistance(abs(imp)))
         self.label['serc'].setText(cap_str)
@@ -327,9 +330,10 @@ class Marker(QtCore.QObject, Value):
 
         if len(s21data) == len(s11data):
             s21 = s21data[self.location]
-
             self.label['s21gain'].setText(format_gain(s21.gain))
-            self.label['s21groupdelay'].setText(format_group_delay(RFTools.groupDelay(s21data, self.location) / 2))
+            self.label['s21groupdelay'].setText(
+                format_group_delay(RFTools.groupDelay(s21data, self.location) / 2))
             self.label['s21mag'].setText(format_magnitude(abs(s21.z)))
             self.label['s21phase'].setText(format_phase(s21.phase))
-            self.label['s21polar'].setText(str(round(abs(s21.z), 2)) + "∠" + format_phase(s21.phase))
+            self.label['s21polar'].setText(
+                str(round(abs(s21.z), 2)) + "∠" + format_phase(s21.phase))
