@@ -64,6 +64,7 @@ class TestRFTools(unittest.TestCase):
     def test_gamma_to_impedance(self):
         self.assertEqual(gamma_to_impedance(0), 50)
         self.assertAlmostEqual(gamma_to_impedance(0.2), 75)
+        self.assertEqual(gamma_to_impedance(1), math.inf)
         # TODO: insert more test values here
 
     def test_clamp_value(self):
