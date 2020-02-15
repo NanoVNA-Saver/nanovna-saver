@@ -555,6 +555,11 @@ class NanoVNASaver(QtWidgets.QWidget):
                 port = d.device
                 logger.info("Found NanoVNA (%04x %04x) on port %s", d.vid, d.pid, d.device)
                 return_ports.append(port)
+            if (d.vid == 5824 and
+                    d.pid == 1155):
+                port = d.device
+                logger.info("Found NanoVNA (%04x %04x) on port %s", d.vid, d.pid, d.device)
+                return_ports.append(port)
         return return_ports
 
     def exportFileS1P(self):
@@ -2412,7 +2417,6 @@ class AnalysisWindow(QtWidgets.QWidget):
 class DeviceSettingsWindow(QtWidgets.QWidget):
     def __init__(self, app: NanoVNASaver):
         super().__init__()
-
         self.app = app
         self.setWindowTitle("Device settings")
         self.setWindowIcon(self.app.icon)
