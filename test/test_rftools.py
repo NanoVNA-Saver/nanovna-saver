@@ -77,7 +77,6 @@ class TestRFTools(unittest.TestCase):
             complex(50, 10))
 
     def test_serial_to_parallel(self):
-        self.assertRaises(ZeroDivisionError, serial_to_parallel, 0)
         self.assertAlmostEqual(
             serial_to_parallel(complex(50, 10)),
             complex(52, 260))
