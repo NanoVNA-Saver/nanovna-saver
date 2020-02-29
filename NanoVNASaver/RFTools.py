@@ -82,7 +82,10 @@ def reflection_coefficient(z: complex, ref_impedance: float = 50) -> complex:
 
 def gamma_to_impedance(gamma: complex, ref_impedance: float = 50) -> complex:
     """Calculate impedance from gamma"""
-    return ((-gamma - 1) / (gamma - 1)) * ref_impedance
+    try:
+        return ((-gamma - 1) / (gamma - 1)) * ref_impedance
+    except ZeroDivisionError:
+        return math.inf
 
 
 def parseFrequency(freq: str) -> int:
@@ -113,7 +116,6 @@ class Datapoint(NamedTuple):
         if mag > 0:
             return 20 * math.log10(mag)
         return -math.inf
-
 
     @property
     def vswr(self) -> float:

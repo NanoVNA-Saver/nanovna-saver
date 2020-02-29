@@ -3839,7 +3839,7 @@ class GroupDelayChart(FrequencyChart):
         for d in self.reference:
             rawReference.append(d.phase)
 
-        if len(self.data) > 0:
+        if len(self.data) > 1:
             unwrappedData = np.degrees(np.unwrap(rawData))
             self.groupDelay = []
             for i in range(len(self.data)):
@@ -3859,7 +3859,7 @@ class GroupDelayChart(FrequencyChart):
                     delay /= 2
                 self.groupDelay.append(delay)
 
-        if len(self.reference) > 0:
+        if len(self.reference) > 1:
             unwrappedReference = np.degrees(np.unwrap(rawReference))
             self.groupDelayReference = []
             for i in range(len(self.reference)):
