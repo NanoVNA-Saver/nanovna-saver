@@ -9,13 +9,14 @@ NanoVNASaver
 A multiplatform tool to save Touchstone files from the NanoVNA, sweep frequency spans in segments to gain more than
 101 data points, and generally display and analyze the resulting data.
 
-Copyright 2019 Rune B. Broberg
+Copyright 2019, 2020 Rune B. Broberg
 
 ## Introduction
 This software connects to a NanoVNA and extracts the data for display on a computer, and for saving to Touchstone files.
 
 Current features:
 - Reading data from a NanoVNA
+-- Compatible devices: NanoVNA, NanoVNA-H, NanoVNA-H4, NanoVNA-F, AVNA via Teensy
 - Splitting a frequency range into multiple segments to increase resolution (tried up to >10k points)
 - Averaging data for better results particularly at higher frequencies
 - Displaying data on multiple chart types, such as Smith, LogMag, Phase and VSWR-charts, for both S11 and S21
@@ -45,6 +46,9 @@ You can find the latest binary (.exe) release for Windows at https://github.com/
 The downloadable executable runs directly, and requires no installation. For Windows 7, it does require Service Pack 1
 and [Microsoft VC++ Redistributable](https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads).
 For most users, this is already installed.
+
+Windows versions older than Windows 7 are not known to work.
+It may be possible to run on those directly from the python code:
 
 #### Installation and Use with pip
 
