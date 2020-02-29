@@ -96,7 +96,7 @@ class SweepWorker(QtCore.QRunnable):
                 return
 
         span = sweep_to - sweep_from
-        stepsize = int(span / (100 + (self.noSweeps-1)*101))
+        stepsize = int(span / (self.vna.datapoints-1 + (self.noSweeps-1)*self.vna.datapoints))
 
         #  Setup complete
 
@@ -110,14 +110,14 @@ class SweepWorker(QtCore.QRunnable):
                 if self.stopped:
                     logger.debug("Stopping sweeping as signalled")
                     break
-                start = sweep_from + i * 101 * stepsize
-                freq, val11, val21 = self.readAveragedSegment(start, start + 100 * stepsize, self.averages)
+                start = sweep_from + i * self.vna.datapoints * stepsize
+                freq, val11, val21 = self.readAveragedSegment(start, start + (self.vna.datapoints-1) * stepsize, self.averages)
 
                 frequencies += freq
                 values += val11
                 values21 += val21
 
-                self.percentage = (i + 1) * 100 / self.noSweeps
+                self.percentage = (i + 1) * (self.vna.datapoints-1) / self.noSweeps
                 logger.debug("Saving acquired data")
                 self.saveData(frequencies, values, values21)
 
@@ -127,9 +127,9 @@ class SweepWorker(QtCore.QRunnable):
                 if self.stopped:
                     logger.debug("Stopping sweeping as signalled")
                     break
-                start = sweep_from + i*101*stepsize
+                start = sweep_from + i*self.vna.datapoints*stepsize
                 try:
-                    freq, val11, val21 = self.readSegment(start, start+100*stepsize)
+                    freq, val11, val21 = self.readSegment(start, start+(self.vna.datapoints-1)*stepsize)
 
                     frequencies += freq
                     values += val11
@@ -156,11 +156,11 @@ class SweepWorker(QtCore.QRunnable):
                 if self.stopped:
                     logger.debug("Stopping sweeping as signalled")
                     break
-                start = sweep_from + i * 101 * stepsize
+                start = sweep_from + i * self.vna.datapoints * stepsize
                 try:
-                    _, values, values21 = self.readSegment(start, start + 100 * stepsize)
+                    _, values, values21 = self.readSegment(start, start + (self.vna.datapoints-1) * stepsize)
                     logger.debug("Updating acquired data")
-                    self.updateData(values, values21, i)
+                    self.updateData(values, values21, i, self.vna.datapoints)
                 except NanoVNAValueException as e:
                     self.error_message = str(e)
                     self.stopped = True

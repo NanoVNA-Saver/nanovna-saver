@@ -31,6 +31,7 @@ class VNA:
     name = "VNA"
     validateInput = True
     features = []
+    datapoints = 101
 
     def __init__(self, app, serial_port: serial.Serial):
         from NanoVNASaver.NanoVNASaver import NanoVNASaver
@@ -44,6 +45,9 @@ class VNA:
         tmp_vna = VNA(app, serial_port)
         tmp_vna.flushSerialBuffers()
         firmware = tmp_vna.readFirmware()
+        if firmware.find("AVNA + Teensy") > 0:
+            logger.info("Type: AVNA")
+            return AVNA(app, serial_port)
         if firmware.find("NanoVNA-H") > 0:
             logger.info("Type: NanoVNA-H")
             return NanoVNA_H(app, serial_port)
@@ -190,11 +194,12 @@ class VNA:
         return
 
     def setSweep(self, start, stop):
-        self.writeSerial("sweep " + str(start) + " " + str(stop) + " 101")
+        self.writeSerial("sweep " + str(start) + " " + str(stop) + " " + str(self.datapoints))
 
 
 class InvalidVNA(VNA):
     name = "Invalid"
+    datapoints = 0
 
     def __init__(self):
         pass
@@ -227,8 +232,92 @@ class InvalidVNA(VNA):
         return
 
 
+class AVNA(VNA):
+    name = "AVNA"
+    datapoints = 101
+
+    def __init__(self, app, serial_port):
+        super().__init__(app, serial_port)
+        self.version = Version(self.readVersion())
+
+        self.features = []
+        self.features.append("Customizable data points")
+
+    def isValid(self):
+        return True
+
+    def getCalibration(self) -> str:
+        logger.debug("Reading calibration info.")
+        if not self.serial.is_open:
+            return "Not connected."
+        if self.app.serialLock.acquire():
+            try:
+                data = "a"
+                while data != "":
+                    data = self.serial.readline().decode('ascii')
+                self.serial.write("cal\r".encode('ascii'))
+                result = ""
+                data = ""
+                sleep(0.1)
+                while "ch>" not in data:
+                    data = self.serial.readline().decode('ascii')
+                    result += data
+                values = result.splitlines()
+                return values[1]
+            except serial.SerialException as exc:
+                logger.exception("Exception while reading calibration info: %s", exc)
+            finally:
+                self.app.serialLock.release()
+        return "Unknown"
+
+    def readFrequencies(self) -> List[str]:
+        return self.readValues("frequencies")
+
+    def readValues11(self) -> List[str]:
+        return self.readValues("data 0")
+
+    def readValues21(self) -> List[str]:
+        return self.readValues("data 1")
+
+    def resetSweep(self, start: int, stop: int):
+        self.writeSerial("sweep " + str(start) + " " + str(stop) + " " + str(self.datapoints))
+        self.writeSerial("resume")
+
+    def readVersion(self):
+        logger.debug("Reading version info.")
+        if not self.serial.is_open:
+            return
+        if self.app.serialLock.acquire():
+            try:
+                data = "a"
+                while data != "":
+                    data = self.serial.readline().decode('ascii')
+                self.serial.write("version\r".encode('ascii'))
+                result = ""
+                data = ""
+                sleep(0.1)
+                while "ch>" not in data:
+                    data = self.serial.readline().decode('ascii')
+                    result += data
+                values = result.splitlines()
+                logger.debug("Found version info: %s", values[1])
+                return values[1]
+            except serial.SerialException as exc:
+                logger.exception("Exception while reading firmware version: %s", exc)
+            finally:
+                self.app.serialLock.release()
+        return
+
+    def setSweep(self, start, stop):
+        self.writeSerial("sweep " + str(start) + " " + str(stop) + " " + str(self.datapoints))
+        sleep(1)
+
+
 class NanoVNA(VNA):
     name = "NanoVNA"
+    datapoints = 101
+    screenwidth = 320
+    screenheight = 240
 
     def __init__(self, app, serial_port):
         super().__init__(app, serial_port)
@@ -289,17 +378,17 @@ class NanoVNA(VNA):
                     data = self.serial.readline().decode('ascii')
                 self.serial.write("capture\r".encode('ascii'))
                 timeout = self.serial.timeout
-                self.serial.timeout = 2
+                self.serial.timeout = 4
                 self.serial.readline()
-                image_data = self.serial.read(320 * 240 * 2)
+                image_data = self.serial.read(self.screenwidth * self.screenheight * 2)
                 self.serial.timeout = timeout
-                rgb_data = struct.unpack(">76800H", image_data)
+                rgb_data = struct.unpack(">" + str(self.screenwidth * self.screenheight) + "H", image_data)
                 rgb_array = np.array(rgb_data, dtype=np.uint32)
                 rgba_array = (0xFF000000 +
                               ((rgb_array & 0xF800) << 8) +
                               ((rgb_array & 0x07E0) << 5) +
                               ((rgb_array & 0x001F) << 3))
-                image = QtGui.QImage(rgba_array, 320, 240, QtGui.QImage.Format_ARGB32)
+                image = QtGui.QImage(rgba_array, self.screenwidth, self.screenheight, QtGui.QImage.Format_ARGB32)
                 logger.debug("Captured screenshot")
                 return QtGui.QPixmap(image)
             except serial.SerialException as exc:
@@ -318,7 +407,7 @@ class NanoVNA(VNA):
         return self.readValues("data 1")
 
     def resetSweep(self, start: int, stop: int):
-        self.writeSerial("sweep " + str(start) + " " + str(stop) + " 101")
+        self.writeSerial("sweep " + str(start) + " " + str(stop) + " " + str(self.datapoints))
         self.writeSerial("resume")
 
     def readVersion(self):
@@ -348,9 +437,9 @@ class NanoVNA(VNA):
 
     def setSweep(self, start, stop):
         if self.useScan:
-            self.writeSerial("scan " + str(start) + " " + str(stop) + " 101")
+            self.writeSerial("scan " + str(start) + " " + str(stop) + " " + str(self.datapoints))
         else:
-            self.writeSerial("sweep " + str(start) + " " + str(stop) + " 101")
+            self.writeSerial("sweep " + str(start) + " " + str(stop) + " " + str(self.datapoints))
             sleep(1)
 
 
@@ -358,8 +447,75 @@ class NanoVNA_H(NanoVNA):
     name = "NanoVNA-H"
 
 
+class NanoVNA_H4(NanoVNA):
+    name = "NanoVNA-H4"
+    screenwidth = 640
+    screenheight = 240
+
+
 class NanoVNA_F(NanoVNA):
     name = "NanoVNA-F"
+    screenwidth = 800
+    screenheight = 480
+
+    def getScreenshot(self) -> QtGui.QPixmap:
+        logger.debug("Capturing screenshot...")
+        if not self.serial.is_open:
+            return QtGui.QPixmap()
+        if self.app.serialLock.acquire():
+            try:
+                data = "a"
+                while data != "":
+                    data = self.serial.readline().decode('ascii')
+                self.serial.write("capture\r".encode('ascii'))
+                timeout = self.serial.timeout
+                self.serial.timeout = 4
+                self.serial.readline()
+                image_data = self.serial.read(self.screenwidth * self.screenheight * 2)
+                self.serial.timeout = timeout
+                rgb_data = struct.unpack("<" + str(self.screenwidth * self.screenheight) + "H", image_data)
+                rgb_array = np.array(rgb_data, dtype=np.uint32)
+                rgba_array = (0xFF000000 +
+                              ((rgb_array & 0xF800) << 8) +  # G?!
+                              ((rgb_array & 0x07E0) >> 3) +  # B
+                              ((rgb_array & 0x001F) << 11))  # G
+
+                # logger.debug("Value yellow: %s", hex(rgb_array[10*400+36]))  # This ought to be yellow
+                # logger.debug("Value white: %s", hex(rgb_array[50*400+261]))  # This ought to be white
+                # logger.debug("Value cyan: %s", hex(rgb_array[10*400+252]))  # This ought to be cyan
+                #
+                # rgba_array = (0xFF000000 + ((rgb_array & 0x001F) << 11))  # Exclusively green?
+                # rgba_array[10*400+36] = 0xFFFF0000
+                # rgba_array[50*400+261] = 0xFFFF0000
+                # rgba_array[10*400+252] = 0xFFFF0000
+
+                # At this point, the RGBA array is structured as 4 small images:
+                # 13
+                # 24
+                # each of which represents the pixels in a differently structured larger image:
+                # 12
+                # 34
+                # Let us unwrap.
+
+                unwrapped_array = np.empty(self.screenwidth*self.screenheight, dtype=np.uint32)
+                for y in range(self.screenheight//2):
+                    for x in range(self.screenwidth//2):
+                        unwrapped_array[2 * x + 2 * y * self.screenwidth] = rgba_array[x + y * self.screenwidth]
+                        unwrapped_array[(2 * x) + 1 + 2 * y * self.screenwidth] = \
+                            rgba_array[x + (self.screenheight//2 + y) * self.screenwidth]
+                        unwrapped_array[2 * x + (2 * y + 1) * self.screenwidth] = \
+                            rgba_array[x + self.screenwidth//2 + y * self.screenwidth]
+                        unwrapped_array[(2 * x) + 1 + (2 * y + 1) * self.screenwidth] = \
+                            rgba_array[x + self.screenwidth//2 + (self.screenheight//2 + y) * self.screenwidth]
+
+                image = QtGui.QImage(unwrapped_array, self.screenwidth, self.screenheight, QtGui.QImage.Format_ARGB32)
+                logger.debug("Captured screenshot")
+                return QtGui.QPixmap(image)
+            except serial.SerialException as exc:
+                logger.exception("Exception while capturing screenshot: %s", exc)
+            finally:
+                self.app.serialLock.release()
+        return QtGui.QPixmap()
 
 
 class Version:
