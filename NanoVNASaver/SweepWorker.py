@@ -319,11 +319,6 @@ class SweepWorker(QtCore.QRunnable):
 
         # Let's check the frequencies first:
         frequencies = self.readFreq()
-        #  TODO: Set up checks for getting the right frequencies. Challenge: We don't set frequency to single-Hz
-        #        accuracy, but rather "quite close". Ex: 106213728 vs 106213726
-        # if start != int(frequencies[i*101]):
-        #     # We got the wrong frequencies? Let's just log it for now.
-        #     logger.warning("Wrong frequency received - %d is not %d", int(frequencies[i*101]), start)
         # S11
         values11 = self.readData("data 0")
         # S21
