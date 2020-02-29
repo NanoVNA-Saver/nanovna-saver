@@ -122,7 +122,7 @@ class TestRFToolsDatapoint(unittest.TestCase):
     def test_properties(self):
         self.assertEqual(self.dp.z, complex(0.1091, 0.3118))
         self.assertAlmostEqual(self.dp.phase, 1.23420722)
-        self.assertEqual(self.dp0.gain, 0.0)
+        self.assertEqual(self.dp0.gain, -math.inf)
         self.assertAlmostEqual(self.dp.gain, -9.6208748)
         self.assertEqual(self.dp50.vswr, 1.0)
         self.assertAlmostEqual(self.dp.vswr, 1.9865736)

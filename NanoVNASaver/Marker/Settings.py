@@ -1,4 +1,4 @@
-#  NanoVNASaver 
+#  NanoVNASaver
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019.  Rune B. Broberg
 #
@@ -20,6 +20,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.Marker import Marker
+from NanoVNASaver.Marker.Values import TYPES, default_label_ids
 
 logger = logging.getLogger(__name__)
 
@@ -32,46 +33,6 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
                      Datapoint(123456000, -0.3, 0.5),
                      Datapoint(124000000, -0.2, 0.5)]
 
-    fieldList = {"actualfreq": "Actual frequency",
-                 "impedance": "Impedance",
-                 "admittance": "Admittance",
-                 "s11polar": "S11 Polar Form",
-                 "s21polar": "S21 Polar Form",
-                 "serr": "Series R",
-                 "serlc": "Series equivalent L/C",
-                 "serl": "Series equivalent L",
-                 "serc": "Series equivalent C",
-                 "parr": "Parallel R",
-                 "parlc": "Parallel equivalent L/C",
-                 "parl": "Parallel equivalent L",
-                 "parc": "Parallel equivalent C",
-                 "vswr": "VSWR",
-                 "returnloss": "Return loss",
-                 "s11q": "S11 Quality factor",
-                 "s11phase": "S11 Phase",
-                 "s11groupdelay": "S11 Group Delay",
-                 "s21gain": "S21 Gain",
-                 "s21phase": "S21 Phase",
-                 "s11z": "S11 |Z|",
-                 "s11mag": "|S11|",
-                 "s21mag": "|S21|",
-                 "s21groupdelay": "S21 Group Delay",
-                }
-
-    defaultValue = ["actualfreq",
-                    "impedance",
-                    "serl",
-                    "serc",
-                    "parr",
-                    "parlc",
-                    "vswr",
-                    "returnloss",
-                    "s11q",
-                    "s11phase",
-                    "s21gain",
-                    "s21phase"
-                    ]
-
     def __init__(self, app: QtWidgets.QWidget):
         super().__init__()
         self.app = app
@@ -79,15 +40,9 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
         self.setWindowTitle("Marker settings")
         self.setWindowIcon(self.app.icon)
 
-        shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.cancelButtonClick)
+        QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.cancelButtonClick)
 
-        if len(self.app.markers) > 0:
-            color = self.app.markers[0].color
-        else:
-            color = self.app.default_marker_colors[0]
-
-        self.exampleMarker = Marker("Example marker", initialColor=color, frequency="123456000")
-
+        self.exampleMarker = Marker("Example marker")
         layout = QtWidgets.QVBoxLayout()
         self.setLayout(layout)
 
@@ -101,28 +56,19 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
         fields_group_box = QtWidgets.QGroupBox("Displayed data")
         fields_group_box_layout = QtWidgets.QFormLayout(fields_group_box)
 
-        self.savedFieldSelection = self.app.settings.value("MarkerFields", defaultValue=self.defaultValue)
+        self.savedFieldSelection = self.app.settings.value(
+            "MarkerFields", defaultValue=default_label_ids()
+        )
 
         if self.savedFieldSelection == "":
             self.savedFieldSelection = []
 
-        self.currentFieldSelection = self.savedFieldSelection.copy()
+        self.currentFieldSelection = self.savedFieldSelection[:]
 
-        self.fieldSelectionView = QtWidgets.QListView()
-        self.model = QtGui.QStandardItemModel()
-        for field in self.fieldList:
-            item = QtGui.QStandardItem(self.fieldList[field])
-            item.setData(field)
-            item.setCheckable(True)
-            item.setEditable(False)
-            if field in self.currentFieldSelection:
-                item.setCheckState(QtCore.Qt.Checked)
-            self.model.appendRow(item)
-        self.fieldSelectionView.setModel(self.model)
+        self.active_labels_view = QtWidgets.QListView()
+        self.update_displayed_data_form()
 
-        self.model.itemChanged.connect(self.updateField)
-
-        fields_group_box_layout.addRow(self.fieldSelectionView)
+        fields_group_box_layout.addRow(self.active_labels_view)
 
         layout.addWidget(settings_group_box)
         layout.addWidget(fields_group_box)
@@ -151,6 +97,7 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
             m.setColoredText(self.checkboxColouredMarker.isChecked())
 
     def updateMarker(self):
+        self.exampleMarker.setFrequency(123456000)
         self.exampleMarker.setColoredText(self.checkboxColouredMarker.isChecked())
         self.exampleMarker.setFieldSelection(self.currentFieldSelection)
         self.exampleMarker.findLocation(self.exampleData11)
@@ -171,7 +118,7 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
         self.updateMarker()
 
     def applyButtonClick(self):
-        self.savedFieldSelection = self.currentFieldSelection.copy()
+        self.savedFieldSelection = self.currentFieldSelection[:]
         self.app.settings.setValue("MarkerFields", self.savedFieldSelection)
         self.app.settings.setValue("ColoredMarkerNames", self.checkboxColouredMarker.isChecked())
         for m in self.app.markers:
@@ -183,25 +130,25 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
         self.close()
 
     def cancelButtonClick(self):
-        self.currentFieldSelection = self.savedFieldSelection.copy()
-        self.resetModel()
+        self.currentFieldSelection = self.savedFieldSelection[:]
+        self.update_displayed_data_form()
         self.updateMarker()
         self.close()
 
     def defaultButtonClick(self):
-        self.currentFieldSelection = self.defaultValue.copy()
-        self.resetModel()
+        self.currentFieldSelection = default_label_ids()
+        self.update_displayed_data_form()
         self.updateMarker()
 
-    def resetModel(self):
+    def update_displayed_data_form(self):
         self.model = QtGui.QStandardItemModel()
-        for field in self.fieldList:
-            item = QtGui.QStandardItem(self.fieldList[field])
-            item.setData(field)
+        for label in TYPES:
+            item = QtGui.QStandardItem(label.description)
+            item.setData(label.label_id)
             item.setCheckable(True)
             item.setEditable(False)
-            if field in self.currentFieldSelection:
+            if label.label_id in self.currentFieldSelection:
                 item.setCheckState(QtCore.Qt.Checked)
             self.model.appendRow(item)
-        self.fieldSelectionView.setModel(self.model)
+        self.active_labels_view.setModel(self.model)
         self.model.itemChanged.connect(self.updateField)
