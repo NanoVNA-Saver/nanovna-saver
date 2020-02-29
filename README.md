@@ -113,7 +113,7 @@ It may be possible to run on those directly from the python code:
 
 Connect your NanoVNA to a serial port, and enter this serial port in the serial port box.  If the NanoVNA is
 connected before the application starts, it should be automatically detected. Otherwise, click "Rescan". Click
-"Connect to NanoVNA" to connect.
+"Connect to device" to connect.
 
 The app can collect multiple segments to get more accurate measurements. Enter the number of segments to be done in the
 "Segments" box. Each segment is 101 data points, and takes about 1.5 seconds to complete.

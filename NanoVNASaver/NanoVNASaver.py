@@ -17,6 +17,7 @@ import logging
 import math
 import sys
 import threading
+from collections import namedtuple
 from time import sleep, strftime, localtime
 from typing import List, Tuple
 
@@ -42,8 +43,11 @@ from .Analysis import Analysis, LowPassAnalysis, HighPassAnalysis, BandPassAnaly
     PeakSearchAnalysis, VSWRAnalysis, SimplePeakSearchAnalysis
 from .about import version as ver
 
-VID = 1155
-PID = 22336
+Device = namedtuple("Device", "vid pid name")
+DEVICETYPES = (
+    Device(1155, 22336, "NanoVNA"),
+    Device(5824, 1155, "AVNA")
+)
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +100,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.markers = []
 
-        self.serialPort = self.getPort()
+        self.serialPort = ""
 
         logger.debug("Building user interface")
 
@@ -441,7 +445,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         serial_button_layout = QtWidgets.QHBoxLayout()
 
-        self.btnSerialToggle = QtWidgets.QPushButton("Connect to NanoVNA")
+        self.btnSerialToggle = QtWidgets.QPushButton("Connect to device")
         self.btnSerialToggle.clicked.connect(self.serialButtonClick)
         serial_button_layout.addWidget(self.btnSerialToggle, stretch=1)
 
@@ -530,19 +534,19 @@ class NanoVNASaver(QtWidgets.QWidget):
     def rescanSerialPort(self):
         self.serialPortInput.clear()
         for port in self.getPort():
-            self.serialPortInput.insertItem(1, port)
+            self.serialPortInput.insertItem(1, port[1], port[0])
 
     # Get that windows port
     @staticmethod
-    def getPort() -> list:
+    def getPort() -> List[Tuple[str, str]]:
         return_ports = []
         device_list = list_ports.comports()
         for d in device_list:
-            if (d.vid == VID and
-                    d.pid == PID):
-                port = d.device
-                logger.info("Found NanoVNA (%04x %04x) on port %s", d.vid, d.pid, d.device)
-                return_ports.append(port)
+            for t in DEVICETYPES:
+                if d.vid == t.vid and d.pid == t.pid:
+                    port = d.device
+                    logger.info("Found " + t.name + " (%04x %04x) on port %s", d.vid, d.pid, d.device)
+                    return_ports.append((port, port + " (" + t.name + ")"))
         return return_ports
 
     def exportFileS1P(self):
@@ -627,7 +631,9 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def startSerial(self):
         if self.serialLock.acquire():
-            self.serialPort = self.serialPortInput.currentText()
+            self.serialPort = self.serialPortInput.currentData()
+            if self.serialPort == "":
+                self.serialPort = self.serialPortInput.currentText()
             logger.info("Opening serial port %s", self.serialPort)
             try:
                 self.serial = serial.Serial(port=self.serialPort, baudrate=115200)
