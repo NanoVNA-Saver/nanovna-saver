@@ -35,7 +35,7 @@ from .Chart import Chart, PhaseChart, VSWRChart, PolarChart, SmithChart, LogMagC
     GroupDelayChart, CapacitanceChart, InductanceChart
 from .Calibration import CalibrationWindow, Calibration
 from .Inputs import FrequencyInputWidget
-from .Marker import Marker
+from .Marker import Marker, MarkerSettingsWindow
 from .SweepWorker import SweepWorker
 from .Touchstone import Touchstone
 from .Analysis import Analysis, LowPassAnalysis, HighPassAnalysis, BandPassAnalysis, BandStopAnalysis, \
@@ -50,13 +50,6 @@ logger = logging.getLogger(__name__)
 
 class NanoVNASaver(QtWidgets.QWidget):
     version = ver
-    default_marker_colors = [QtGui.QColor(255, 0, 0),
-                             QtGui.QColor(0, 255, 0),
-                             QtGui.QColor(0, 0, 255),
-                             QtGui.QColor(0, 255, 255),
-                             QtGui.QColor(255, 0, 255),
-                             QtGui.QColor(255, 255, 0)]
-
     dataAvailable = QtCore.pyqtSignal()
     scaleFactor = 1
 
@@ -303,12 +296,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         marker_count = max(self.settings.value("MarkerCount", 3, int), 1)
         for i in range(marker_count):
-            if i < len(self.default_marker_colors):
-                default_color = self.default_marker_colors[i]
-            else:
-                default_color = QtGui.QColor(QtCore.Qt.darkGray)
-            color = self.settings.value("Marker" + str(i+1) + "Color", default_color)
-            marker = Marker("Marker " + str(i+1), color)
+            marker = Marker("", self.settings)
             marker.updated.connect(self.markerUpdated)
             label, layout = marker.getRow()
             self.marker_control_layout.addRow(label, layout)
@@ -493,11 +481,11 @@ class NanoVNASaver(QtWidgets.QWidget):
         save_file_control_box.setMaximumWidth(300)
         save_file_control_layout = QtWidgets.QFormLayout(save_file_control_box)
 
-        btn_export_file = QtWidgets.QPushButton("Save file (S1P)")
+        btn_export_file = QtWidgets.QPushButton("Save 1-Port file (S1P)")
         btn_export_file.clicked.connect(self.exportFileS1P)
         save_file_control_layout.addRow(btn_export_file)
 
-        btn_export_file = QtWidgets.QPushButton("Save file (S2P)")
+        btn_export_file = QtWidgets.QPushButton("Save 2-Port file (S2P)")
         btn_export_file.clicked.connect(self.exportFileS2P)
         save_file_control_layout.addRow(btn_export_file)
 
@@ -565,7 +553,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         filedialog = QtWidgets.QFileDialog(self)
         filedialog.setDefaultSuffix("s1p")
-        filedialog.setNameFilter("Touchstone Files (*.s1p *.s2p);;All files (*.*)")
+        filedialog.setNameFilter("Touchstone 1-Port Files (*.s1p);;All files (*.*)")
         filedialog.setAcceptMode(QtWidgets.QFileDialog.AcceptSave)
         selected = filedialog.exec()
         if selected:
@@ -601,7 +589,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         filedialog = QtWidgets.QFileDialog(self)
         filedialog.setDefaultSuffix("s2p")
-        filedialog.setNameFilter("Touchstone Files (*.s1p *.s2p);;All files (*.*)")
+        filedialog.setNameFilter("Touchstone 2-Port Files (*.s2p);;All files (*.*)")
         filedialog.setAcceptMode(QtWidgets.QFileDialog.AcceptSave)
         selected = filedialog.exec()
         if selected:
@@ -991,9 +979,9 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
         self.worker.stopped = True
-        self.settings.setValue("MarkerCount", len(self.markers))
-        for i in range(len(self.markers)):
-            self.settings.setValue("Marker" + str(i+1) + "Color", self.markers[i].color)
+        self.settings.setValue("MarkerCount", Marker.count())
+        for marker in self.markers:
+            marker.update_settings()
 
         self.settings.setValue("WindowHeight", self.height())
         self.settings.setValue("WindowWidth", self.width())
@@ -1671,38 +1659,27 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         QtWidgets.QApplication.setActiveWindow(self.marker_window)
 
     def addMarker(self):
-        marker_count = len(self.app.markers)
-        if marker_count < 6:
-            color = NanoVNASaver.default_marker_colors[marker_count]
-        else:
-            color = QtGui.QColor(QtCore.Qt.darkGray)
-        new_marker = Marker("Marker " + str(marker_count+1), color)
-        new_marker.setColoredText(self.app.settings.value("ColoredMarkerNames", True, bool))
-        new_marker.setFieldSelection(self.app.settings.value("MarkerFields",
-                                                             defaultValue=self.marker_window.defaultValue))
+        new_marker = Marker("", self.app.settings)
         new_marker.setScale(self.app.scaleFactor)
         self.app.markers.append(new_marker)
         self.app.marker_data_layout.addWidget(new_marker.getGroupBox())
 
         new_marker.updated.connect(self.app.markerUpdated)
         label, layout = new_marker.getRow()
-        self.app.marker_control_layout.insertRow(marker_count, label, layout)
-        if marker_count == 0:
-            new_marker.isMouseControlledRadioButton.setChecked(True)
-
+        self.app.marker_control_layout.insertRow(Marker.count() - 1, label, layout)
         self.btn_remove_marker.setDisabled(False)
 
     def removeMarker(self):
         # keep at least one marker
-        if len(self.app.markers) <= 1:
+        if Marker.count() <= 1:
             return
-        if len(self.app.markers) == 2:
+        if Marker.count() == 2:
             self.btn_remove_marker.setDisabled(True)
         last_marker = self.app.markers.pop()
 
         last_marker.updated.disconnect(self.app.markerUpdated)
         self.app.marker_data_layout.removeWidget(last_marker.getGroupBox())
-        self.app.marker_control_layout.removeRow(len(self.app.markers))
+        self.app.marker_control_layout.removeRow(Marker.count()-1)
         last_marker.getGroupBox().hide()
         last_marker.getGroupBox().destroy()
         label, layout = last_marker.getRow()
@@ -2407,186 +2384,6 @@ class AnalysisWindow(QtWidgets.QWidget):
         else:
             self.analysis_list.setDisabled(False)
             self.app.dataAvailable.disconnect(self.runAnalysis)
-
-
-class MarkerSettingsWindow(QtWidgets.QWidget):
-    exampleData11 = [Datapoint(123000000, 0.89, -0.11),
-                     Datapoint(123500000, 0.9, -0.1),
-                     Datapoint(124000000, 0.91, -0.95)]
-    exampleData21 = [Datapoint(123000000, -0.25, 0.49),
-                     Datapoint(123456000, -0.3, 0.5),
-                     Datapoint(124000000, -0.2, 0.5)]
-
-    fieldList = {"actualfreq": "Actual frequency",
-                 "impedance": "Impedance",
-                 "admittance": "Admittance",
-                 "s11polar": "S11 Polar Form",
-                 "s21polar": "S21 Polar Form",
-                 "serr": "Series R",
-                 "serlc": "Series equivalent L/C",
-                 "serl": "Series equivalent L",
-                 "serc": "Series equivalent C",
-                 "parr": "Parallel R",
-                 "parlc": "Parallel equivalent L/C",
-                 "parl": "Parallel equivalent L",
-                 "parc": "Parallel equivalent C",
-                 "vswr": "VSWR",
-                 "returnloss": "Return loss",
-                 "s11q": "S11 Quality factor",
-                 "s11phase": "S11 Phase",
-                 "s11groupdelay": "S11 Group Delay",
-                 "s21gain": "S21 Gain",
-                 "s21phase": "S21 Phase",
-                 "s21groupdelay": "S21 Group Delay",
-                }
-
-    defaultValue = ["actualfreq",
-                    "impedance",
-                    "serl",
-                    "serc",
-                    "parr",
-                    "parlc",
-                    "vswr",
-                    "returnloss",
-                    "s11q",
-                    "s11phase",
-                    "s21gain",
-                    "s21phase"
-                    ]
-
-    def __init__(self, app: NanoVNASaver):
-        super().__init__()
-        self.app = app
-
-        self.setWindowTitle("Marker settings")
-        self.setWindowIcon(self.app.icon)
-
-        shortcut = QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.cancelButtonClick)
-
-        if len(self.app.markers) > 0:
-            color = self.app.markers[0].color
-        else:
-            color = self.app.default_marker_colors[0]
-
-        self.exampleMarker = Marker("Example marker", initialColor=color, frequency="123456000")
-
-        layout = QtWidgets.QVBoxLayout()
-        self.setLayout(layout)
-
-        settings_group_box = QtWidgets.QGroupBox("Settings")
-        settings_group_box_layout = QtWidgets.QFormLayout(settings_group_box)
-        self.checkboxColouredMarker = QtWidgets.QCheckBox("Colored marker name")
-        self.checkboxColouredMarker.setChecked(self.app.settings.value("ColoredMarkerNames", True, bool))
-        self.checkboxColouredMarker.stateChanged.connect(self.updateMarker)
-        settings_group_box_layout.addRow(self.checkboxColouredMarker)
-
-        fields_group_box = QtWidgets.QGroupBox("Displayed data")
-        fields_group_box_layout = QtWidgets.QFormLayout(fields_group_box)
-
-        self.savedFieldSelection = self.app.settings.value("MarkerFields", defaultValue=self.defaultValue)
-
-        if self.savedFieldSelection == "":
-            self.savedFieldSelection = []
-
-        self.currentFieldSelection = self.savedFieldSelection.copy()
-
-        self.fieldSelectionView = QtWidgets.QListView()
-        self.model = QtGui.QStandardItemModel()
-        for field in self.fieldList:
-            item = QtGui.QStandardItem(self.fieldList[field])
-            item.setData(field)
-            item.setCheckable(True)
-            item.setEditable(False)
-            if field in self.currentFieldSelection:
-                item.setCheckState(QtCore.Qt.Checked)
-            self.model.appendRow(item)
-        self.fieldSelectionView.setModel(self.model)
-
-        self.model.itemChanged.connect(self.updateField)
-
-        fields_group_box_layout.addRow(self.fieldSelectionView)
-
-        layout.addWidget(settings_group_box)
-        layout.addWidget(fields_group_box)
-        layout.addWidget(self.exampleMarker.getGroupBox())
-
-        btn_layout = QtWidgets.QHBoxLayout()
-        layout.addLayout(btn_layout)
-        btn_ok = QtWidgets.QPushButton("OK")
-        btn_apply = QtWidgets.QPushButton("Apply")
-        btn_default = QtWidgets.QPushButton("Defaults")
-        btn_cancel = QtWidgets.QPushButton("Cancel")
-
-        btn_ok.clicked.connect(self.okButtonClick)
-        btn_apply.clicked.connect(self.applyButtonClick)
-        btn_default.clicked.connect(self.defaultButtonClick)
-        btn_cancel.clicked.connect(self.cancelButtonClick)
-
-        btn_layout.addWidget(btn_ok)
-        btn_layout.addWidget(btn_apply)
-        btn_layout.addWidget(btn_default)
-        btn_layout.addWidget(btn_cancel)
-
-        self.updateMarker()
-        for m in self.app.markers:
-            m.setFieldSelection(self.currentFieldSelection)
-            m.setColoredText(self.checkboxColouredMarker.isChecked())
-
-    def updateMarker(self):
-        self.exampleMarker.setColoredText(self.checkboxColouredMarker.isChecked())
-        self.exampleMarker.setFieldSelection(self.currentFieldSelection)
-        self.exampleMarker.findLocation(self.exampleData11)
-        self.exampleMarker.resetLabels()
-        self.exampleMarker.updateLabels(self.exampleData11, self.exampleData21)
-
-    def updateField(self, field: QtGui.QStandardItem):
-        if field.checkState() == QtCore.Qt.Checked:
-            if not field.data() in self.currentFieldSelection:
-                self.currentFieldSelection = []
-                for i in range(self.model.rowCount()):
-                    field = self.model.item(i, 0)
-                    if field.checkState() == QtCore.Qt.Checked:
-                        self.currentFieldSelection.append(field.data())
-        else:
-            if field.data() in self.currentFieldSelection:
-                self.currentFieldSelection.remove(field.data())
-        self.updateMarker()
-
-    def applyButtonClick(self):
-        self.savedFieldSelection = self.currentFieldSelection.copy()
-        self.app.settings.setValue("MarkerFields", self.savedFieldSelection)
-        self.app.settings.setValue("ColoredMarkerNames", self.checkboxColouredMarker.isChecked())
-        for m in self.app.markers:
-            m.setFieldSelection(self.savedFieldSelection)
-            m.setColoredText(self.checkboxColouredMarker.isChecked())
-
-    def okButtonClick(self):
-        self.applyButtonClick()
-        self.close()
-
-    def cancelButtonClick(self):
-        self.currentFieldSelection = self.savedFieldSelection.copy()
-        self.resetModel()
-        self.updateMarker()
-        self.close()
-
-    def defaultButtonClick(self):
-        self.currentFieldSelection = self.defaultValue.copy()
-        self.resetModel()
-        self.updateMarker()
-
-    def resetModel(self):
-        self.model = QtGui.QStandardItemModel()
-        for field in self.fieldList:
-            item = QtGui.QStandardItem(self.fieldList[field])
-            item.setData(field)
-            item.setCheckable(True)
-            item.setEditable(False)
-            if field in self.currentFieldSelection:
-                item.setCheckState(QtCore.Qt.Checked)
-            self.model.appendRow(item)
-        self.fieldSelectionView.setModel(self.model)
-        self.model.itemChanged.connect(self.updateField)
 
 
 class DeviceSettingsWindow(QtWidgets.QWidget):

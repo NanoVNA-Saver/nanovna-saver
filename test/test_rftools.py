@@ -21,7 +21,8 @@ from NanoVNASaver.RFTools import Datapoint, \
     norm_to_impedance, impedance_to_norm, \
     reflection_coefficient, gamma_to_impedance, clamp_value, \
     parallel_to_serial, serial_to_parallel, \
-    impedance_to_capacitance, impedance_to_inductance
+    impedance_to_capacitance, impedance_to_inductance, \
+    groupDelay
 import math
 
 
@@ -63,6 +64,7 @@ class TestRFTools(unittest.TestCase):
     def test_gamma_to_impedance(self):
         self.assertEqual(gamma_to_impedance(0), 50)
         self.assertAlmostEqual(gamma_to_impedance(0.2), 75)
+        self.assertEqual(gamma_to_impedance(1), math.inf)
         # TODO: insert more test values here
 
     def test_clamp_value(self):
@@ -94,6 +96,20 @@ class TestRFTools(unittest.TestCase):
             impedance_to_inductance(complex(50, 159.1549), 100000),
             2.533e-4)
 
+    def test_groupDelay(self):
+        dpoints = [
+            Datapoint(100000, 0.1091, 0.3118),
+            Datapoint(100001, 0.1091, 0.3124),
+            Datapoint(100002, 0.1091, 0.3130),
+        ]
+        dpoints0 = [
+            Datapoint(100000, 0.1091, 0.3118),
+            Datapoint(100000, 0.1091, 0.3124),
+            Datapoint(100000, 0.1091, 0.3130),
+        ]
+        self.assertAlmostEqual(groupDelay(dpoints, 1), -9.514e-5)
+        self.assertEqual(groupDelay(dpoints0, 1), 0.0)
+
 
 class TestRFToolsDatapoint(unittest.TestCase):
 
@@ -101,11 +117,12 @@ class TestRFToolsDatapoint(unittest.TestCase):
         self.dp = Datapoint(100000, 0.1091, 0.3118)
         self.dp0 = Datapoint(100000, 0, 0)
         self.dp50 = Datapoint(100000, 1, 0)
+        self.dp75 = Datapoint(100000, 0.2, 0)
 
     def test_properties(self):
         self.assertEqual(self.dp.z, complex(0.1091, 0.3118))
         self.assertAlmostEqual(self.dp.phase, 1.23420722)
-        self.assertEqual(self.dp0.gain, 0.0)
+        self.assertEqual(self.dp0.gain, -math.inf)
         self.assertAlmostEqual(self.dp.gain, -9.6208748)
         self.assertEqual(self.dp50.vswr, 1.0)
         self.assertAlmostEqual(self.dp.vswr, 1.9865736)
@@ -114,4 +131,7 @@ class TestRFToolsDatapoint(unittest.TestCase):
         self.assertAlmostEqual(self.dp.impedance(75),
                                complex(74.99628755, 52.49617517))
         self.assertEqual(self.dp0.qFactor(), 0.0)
+        self.assertEqual(self.dp75.qFactor(), 0.0)
         self.assertAlmostEqual(self.dp.qFactor(), 0.6999837)
+        self.assertAlmostEqual(self.dp.capacitiveEquivalent(), -4.54761539e-08)
+        self.assertAlmostEqual(self.dp.inductiveEquivalent(), 5.57001e-05)

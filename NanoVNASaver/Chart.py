@@ -764,11 +764,15 @@ class FrequencyChart(Chart):
         for i in range(len(data)):
             x = self.getXPosition(data[i])
             y = y_function(data[i])
+            if y is None:
+                continue
             if self.isPlotable(x, y):
                 qp.drawPoint(int(x), int(y))
             if self.drawLines and i > 0:
                 prevx = self.getXPosition(data[i - 1])
                 prevy = y_function(data[i - 1])
+                if prevy is None:
+                    continue
                 qp.setPen(line_pen)
                 if self.isPlotable(x, y) and self.isPlotable(prevx, prevy):
                     qp.drawLine(x, y, prevx, prevy)
@@ -795,7 +799,8 @@ class FrequencyChart(Chart):
                     self.drawMarker(x, y, qp, m.color, self.markers.index(m)+1)
 
     def isPlotable(self, x, y):
-        return self.leftMargin <= x <= self.leftMargin + self.chartWidth and \
+        return y is not None and x is not None and \
+               self.leftMargin <= x <= self.leftMargin + self.chartWidth and \
                self.topMargin <= y <= self.topMargin + self.chartHeight
 
     def getPlotable(self, x, y, distantx, distanty):
@@ -1569,6 +1574,8 @@ class LogMagChart(FrequencyChart):
             maxValue = -100
             for d in self.data:
                 logmag = self.logMag(d)
+                if math.isinf(logmag):
+                    continue
                 if logmag > maxValue:
                     maxValue = logmag
                 if logmag < minValue:
@@ -1577,6 +1584,8 @@ class LogMagChart(FrequencyChart):
                 if d.freq < self.fstart or d.freq > self.fstop:
                     continue
                 logmag = self.logMag(d)
+                if math.isinf(logmag):
+                    continue
                 if logmag > maxValue:
                     maxValue = logmag
                 if logmag < minValue:
@@ -1673,6 +1682,8 @@ class LogMagChart(FrequencyChart):
 
     def getYPosition(self, d: Datapoint) -> int:
         logMag = self.logMag(d)
+        if math.isinf(logMag):
+            return None
         return self.topMargin + round((self.maxValue - logMag) / self.span * self.chartHeight)
 
     def valueAtPosition(self, y) -> List[float]:
@@ -1946,29 +1957,37 @@ class CombinedLogMagChart(FrequencyChart):
             maxValue = 0
             for d in self.data11:
                 logmag = self.logMag(d)
+                if math.isinf(logmag):
+                    continue
                 if logmag > maxValue:
                     maxValue = logmag
                 if logmag < minValue:
                     minValue = logmag
             for d in self.data21:
                 logmag = self.logMag(d)
+                if math.isinf(logmag):
+                    continue
                 if logmag > maxValue:
                     maxValue = logmag
                 if logmag < minValue:
                     minValue = logmag
 
-            for d in self.reference11:  # Also check min/max for the reference sweep
+            for d in self.reference11:
                 if d.freq < self.fstart or d.freq > self.fstop:
                     continue
                 logmag = self.logMag(d)
+                if math.isinf(logmag):
+                    continue
                 if logmag > maxValue:
                     maxValue = logmag
                 if logmag < minValue:
                     minValue = logmag
-            for d in self.reference21:  # Also check min/max for the reference sweep
+            for d in self.reference21:
                 if d.freq < self.fstart or d.freq > self.fstop:
                     continue
                 logmag = self.logMag(d)
+                if math.isinf(logmag):
+                    continue
                 if logmag > maxValue:
                     maxValue = logmag
                 if logmag < minValue:
@@ -2096,6 +2115,8 @@ class CombinedLogMagChart(FrequencyChart):
 
     def getYPosition(self, d: Datapoint) -> int:
         logMag = self.logMag(d)
+        if math.isinf(logMag):
+            return None
         return self.topMargin + round((self.maxValue - logMag) / self.span * self.chartHeight)
 
     def valueAtPosition(self, y) -> List[float]:
@@ -3818,7 +3839,7 @@ class GroupDelayChart(FrequencyChart):
         for d in self.reference:
             rawReference.append(d.phase)
 
-        if len(self.data) > 0:
+        if len(self.data) > 1:
             unwrappedData = np.degrees(np.unwrap(rawData))
             self.groupDelay = []
             for i in range(len(self.data)):
@@ -3838,7 +3859,7 @@ class GroupDelayChart(FrequencyChart):
                     delay /= 2
                 self.groupDelay.append(delay)
 
-        if len(self.reference) > 0:
+        if len(self.reference) > 1:
             unwrappedReference = np.degrees(np.unwrap(rawReference))
             self.groupDelayReference = []
             for i in range(len(self.reference)):
@@ -4096,7 +4117,7 @@ class CapacitanceChart(FrequencyChart):
         self.span = span
 
         target_ticks = math.floor(self.chartHeight / 60)
-        fmt = Format(max_nr_digits=3)
+        fmt = Format(max_nr_digits=1)
         for i in range(target_ticks):
             val = minValue + (i / target_ticks) * span
             y = self.topMargin + round((self.maxValue - val) / self.span * self.chartHeight)
@@ -4223,7 +4244,7 @@ class InductanceChart(FrequencyChart):
         self.span = span
 
         target_ticks = math.floor(self.chartHeight / 60)
-        fmt = Format(max_nr_digits=3)
+        fmt = Format(max_nr_digits=1)
         for i in range(target_ticks):
             val = minValue + (i / target_ticks) * span
             y = self.topMargin + round((self.maxValue - val) / self.span * self.chartHeight)

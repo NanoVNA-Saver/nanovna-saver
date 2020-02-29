@@ -21,8 +21,7 @@ jobs:
       run: |
         pip install pylint
         pylint --exit-zero NanoVNASaver
-    - name: Unittests
+    - name: Unittests / Coverage
       run: |
-        pip install coverage
-        coverage run ./test_master.py
-        coverage report --fail-under=90 -m --skip-covered
+        pip install pytest-cov
+        pytest  --cov=NanoVNASaver

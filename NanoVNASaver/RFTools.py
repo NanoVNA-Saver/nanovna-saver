@@ -38,20 +38,15 @@ def parallel_to_serial(z: complex) -> complex:
 def serial_to_parallel(z: complex) -> complex:
     """Convert serial impedance to parallel impedance equivalent"""
     z_sq_sum = z.real ** 2 + z.imag ** 2
-    if z.real != 0 and z.imag != 0:
-        return complex(z_sq_sum / z.real, z_sq_sum / z.imag)
-    elif z.real != 0 and z_sq_sum > 0:
-        return complex(z_sq_sum / z.real, math.inf)
-    elif z.real != 0 and z_sq_sum < 0:
-        return complex(z_sq_sum / z.real, -math.inf)
-    elif z.imag != 0 and z_sq_sum > 0:
-        return complex(math.inf, z_sq_sum / z.real)
-    elif z.imag != 0 and z_sq_sum < 0:
-        return complex(-math.inf, z_sq_sum / z.real)
-    elif z_sq_sum == 0:
-        return complex(0, 0)
-    else:
+    if z.real == 0 and z.imag == 0:
         return complex(math.inf, math.inf)
+    if z_sq_sum == 0:
+        return complex(0, 0)
+    if z.imag == 0:
+        return complex(z_sq_sum / z.real, math.copysign(math.inf, z_sq_sum))
+    if z.real == 0:
+        return complex(math.copysign(math.inf, z_sq_sum), z_sq_sum / z.real)
+    return complex(z_sq_sum / z.real, z_sq_sum / z.imag)
 
 
 def impedance_to_capacitance(z: complex, freq: float) -> float:
@@ -87,7 +82,10 @@ def reflection_coefficient(z: complex, ref_impedance: float = 50) -> complex:
 
 def gamma_to_impedance(gamma: complex, ref_impedance: float = 50) -> complex:
     """Calculate impedance from gamma"""
-    return ((-gamma - 1) / (gamma - 1)) * ref_impedance
+    try:
+        return ((-gamma - 1) / (gamma - 1)) * ref_impedance
+    except ZeroDivisionError:
+        return math.inf
 
 
 def parseFrequency(freq: str) -> int:
@@ -117,7 +115,7 @@ class Datapoint(NamedTuple):
         mag = abs(self.z)
         if mag > 0:
             return 20 * math.log10(mag)
-        return 0
+        return -math.inf
 
     @property
     def vswr(self) -> float:
