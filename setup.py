@@ -50,7 +50,7 @@ setup(
     },
     install_requires=[
         'pyserial',
-        'PyQt5',
+        'PyQt5==5.14.0',
         'numpy',
         'scipy'
     ],
