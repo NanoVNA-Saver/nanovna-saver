@@ -95,6 +95,7 @@ def parseFrequency(freq: str) -> int:
         return -1
 
 
+
 class Datapoint(NamedTuple):
     freq: int
     re: float
@@ -173,3 +174,21 @@ class RFTools:
     @staticmethod
     def parseFrequency(freq: str) -> int:
         return parseFrequency(freq)
+
+def corrAttData(data: Datapoint, att: float):                                   
+    """Correct the ratio for a given attenuation on s21 input"""
+
+    if att <= 0:
+        return data
+    else:
+        att = 10**(att/20)
+
+    ndata = []
+    for i in range(len(data)):
+        freq, re, im = data[i]
+        orig = complex(re, im)
+        corrected = orig * att
+        ndata.append(Datapoint(freq, corrected.real, corrected.imag))
+
+    return ndata
+

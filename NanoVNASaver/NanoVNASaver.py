@@ -44,6 +44,7 @@ from .SweepWorker import SweepWorker
 from .Settings import BandsModel
 from .Touchstone import Touchstone
 from .about import version as ver
+from NanoVNASaver.RFTools import corrAttData
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +58,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def __init__(self):
         super().__init__()
+        self.s21att = 0.0
         if getattr(sys, 'frozen', False):
             logger.debug("Running from pyinstaller bundle")
             self.icon = QtGui.QIcon(f"{sys._MEIPASS}/icon_48x48.png")  # pylint: disable=no-member
@@ -684,7 +686,11 @@ class NanoVNASaver(QtWidgets.QWidget):
     def saveData(self, data, data12, source=None):
         if self.dataLock.acquire(blocking=True):
             self.data = data
-            self.data21 = data12
+            if self.s21att > 0:
+                corData12 = corrAttData(data12, self.s21att)
+                self.data21 = corData12
+            else:
+                self.data21 = data12
         else:
             logger.error("Failed acquiring data lock while saving.")
         self.dataLock.release()
