@@ -85,6 +85,14 @@ For most users, this is already installed.
     
     
 ### Mac OS:
+#### MacPorts
+1. Install MacPorts following the [install guide](https://www.macports.org/install.php)
+2. Install NanoVNASaver :
+
+        sudo port install NanoVNASaver
+
+3. Now you can run the software from shell `NanoVNASaver` or run as app `/Applications/MacPorts/NanoVNASaver.app`
+
 #### Homebrew
 1. Install Homebrew
 		From : https://brew.sh/
