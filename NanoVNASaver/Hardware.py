@@ -17,14 +17,37 @@ import logging
 import re
 import struct
 from time import sleep
-from typing import List
+from typing import List, Tuple
+
+from collections import namedtuple
+import serial
+from serial.tools import list_ports
 
 import numpy as np
 from PyQt5 import QtGui
 
-import serial
-
 logger = logging.getLogger(__name__)
+
+Device = namedtuple("Device", "vid pid name")
+
+DEVICETYPES = (
+    Device(0x0483, 0x5740, "NanoVNA"),
+    Device(0x16c0, 0x0483, "AVNA"),
+    Device(0x04b4, 0x0008, "NanaVNA-V2"),
+)
+
+
+# Get list of interfaces with VNAs connected
+def get_interfaces() -> List[Tuple[str, str]]:
+    return_ports = []
+    device_list = serial.tools.list_ports.comports()
+    for d in device_list:
+        for t in DEVICETYPES:
+            if d.vid == t.vid and d.pid == t.pid:
+                port = d.device
+                logger.info("Found " + t.name + " (%04x %04x) on port %s", d.vid, d.pid, d.device)
+                return_ports.append((port, port + " (" + t.name + ")"))
+    return return_ports
 
 
 class VNA:

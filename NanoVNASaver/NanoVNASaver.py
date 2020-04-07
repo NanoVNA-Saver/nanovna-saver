@@ -27,9 +27,8 @@ import serial
 import typing
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import QModelIndex
-from serial.tools import list_ports
 
-from .Hardware import VNA, InvalidVNA, Version
+from .Hardware import VNA, InvalidVNA, Version, get_interfaces
 from .RFTools import RFTools, Datapoint
 from .Chart import Chart, PhaseChart, VSWRChart, PolarChart, SmithChart, LogMagChart, QualityFactorChart, TDRChart, \
     RealImaginaryChart, MagnitudeChart, MagnitudeZChart, CombinedLogMagChart, SParameterChart, PermeabilityChart, \
@@ -42,13 +41,6 @@ from .Touchstone import Touchstone
 from .Analysis import Analysis, LowPassAnalysis, HighPassAnalysis, BandPassAnalysis, BandStopAnalysis, \
     PeakSearchAnalysis, VSWRAnalysis, SimplePeakSearchAnalysis
 from .about import version as ver
-
-Device = namedtuple("Device", "vid pid name")
-DEVICETYPES = (
-    Device(0x0483, 0x5740, "NanoVNA"),
-    Device(0x16c0, 0x0483, "AVNA"),
-    Device(0x04b4, 0x0008, "NanaVNA-V2"),
-)
 
 logger = logging.getLogger(__name__)
 
@@ -534,21 +526,8 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def rescanSerialPort(self):
         self.serialPortInput.clear()
-        for port in self.getPort():
+        for port in get_interfaces():
             self.serialPortInput.insertItem(1, port[1], port[0])
-
-    # Get that windows port
-    @staticmethod
-    def getPort() -> List[Tuple[str, str]]:
-        return_ports = []
-        device_list = list_ports.comports()
-        for d in device_list:
-            for t in DEVICETYPES:
-                if d.vid == t.vid and d.pid == t.pid:
-                    port = d.device
-                    logger.info("Found " + t.name + " (%04x %04x) on port %s", d.vid, d.pid, d.device)
-                    return_ports.append((port, port + " (" + t.name + ")"))
-        return return_ports
 
     def exportFileS1P(self):
         if len(self.data) == 0:
