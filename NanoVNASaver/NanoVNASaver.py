@@ -45,8 +45,9 @@ from .about import version as ver
 
 Device = namedtuple("Device", "vid pid name")
 DEVICETYPES = (
-    Device(1155, 22336, "NanoVNA"),
-    Device(5824, 1155, "AVNA")
+    Device(0x0483, 0x5740, "NanoVNA"),
+    Device(0x16c0, 0x0483, "AVNA"),
+    Device(0x04b4, 0x0008, "NanaVNA-V2"),
 )
 
 logger = logging.getLogger(__name__)
