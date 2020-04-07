@@ -16,15 +16,15 @@
 import logging
 import re
 import struct
+import tty
 from time import sleep
 from typing import List, Tuple
-
 from collections import namedtuple
-import serial
-from serial.tools import list_ports
 
+import serial
 import numpy as np
 from PyQt5 import QtWidgets, QtGui
+from serial.tools import list_ports
 
 logger = logging.getLogger(__name__)
 
@@ -40,14 +40,39 @@ DEVICETYPES = (
 # Get list of interfaces with VNAs connected
 def get_interfaces() -> List[Tuple[str, str]]:
     return_ports = []
-    device_list = list_ports.comports()
-    for d in device_list:
+    for d in list_ports.comports():
         for t in DEVICETYPES:
             if d.vid == t.vid and d.pid == t.pid:
                 port = d.device
                 logger.info("Found %s (%04x %04x) on port %s", t.name, d.vid, d.pid, d.device)
                 return_ports.append((port, port + " (" + t.name + ")"))
     return return_ports
+
+
+def detect_version(serialPort: serial.Serial) -> str:
+    serialPort.timeout = 0.1
+
+    # drain any outstanding data in the serial incoming buffer
+    data = "a"
+    while len(data) != 0:
+        data = serialPort.read(128)
+
+    # send a \r and see what we get
+    serialPort.write(b"\r")
+
+    # will wait up to 0.1 seconds
+    data = serialPort.readline().decode('ascii')
+
+    if data == 'ch> ':
+        # this is an original nanovna
+        return 'nanovna'
+
+    if data == '2':
+        # this is a nanovna v2
+        return 'nanovnav2'
+
+    logger.error('Unknown VNA type: hardware responded to \r with: %s', data)
+    return 'unknown'
 
 
 class VNA:
@@ -63,7 +88,15 @@ class VNA:
 
     @staticmethod
     def getVNA(app, serial_port: serial.Serial) -> 'VNA':
-        logger.info("Finding correct VNA type")
+        logger.info("Finding correct VNA type...")
+        vnaType = detect_version(serial_port)
+
+        if vnaType == 'nanovnav2':
+            logger.info("Type: NanoVNA-V2")
+            return NanoVNAV2(app, serial_port)
+
+        logger.info("Finding firmware variant...")
+        serial_port.timeout = 0.05
         tmp_vna = VNA(app, serial_port)
         tmp_vna.flushSerialBuffers()
         firmware = tmp_vna.readFirmware()
@@ -108,6 +141,9 @@ class VNA:
         pass
 
     def isValid(self):
+        return False
+
+    def isDFU(self):
         return False
 
     def getFeatures(self) -> List[str]:
@@ -535,6 +571,155 @@ class NanoVNA_F(NanoVNA):
             finally:
                 self.app.serialLock.release()
         return QtGui.QPixmap()
+
+
+def _unpackSigned32(b):
+    return int.from_bytes(b[0:4], 'little', signed=True)
+
+def _unpackUnsigned16(b):
+    return int.from_bytes(b[0:2], 'little', signed=False)
+
+class NanoVNAV2(VNA):
+    name = "NanoVNA-V2"
+    datapoints = 101
+    screenwidth = 320
+    screenheight = 240
+
+    def __init__(self, app, serialPort):
+        super().__init__(app, serialPort)
+
+        tty.setraw(self.serial.fd)
+        self.serial.timeout = 3
+
+        # reset protocol to known state
+        self.serial.write([0, 0, 0, 0, 0, 0, 0, 0])
+
+        self.version = self.readVersion()
+        self.firmware = self.readFirmware()
+
+        # firmware major version of 0xff indicates dfu mode
+        if self.firmware.major == 0xff:
+            self._isDFU = True
+            return
+
+        self._isDFU = False
+        self.sweepStartHz = 200e6
+        self.sweepStepHz = 1e6
+        self.sweepData = [(0, 0)] * self.datapoints
+        self._updateSweep()
+
+
+    def isValid(self):
+        if self.isDFU():
+            return False
+        return True
+
+    def isDFU(self):
+        return self._isDFU
+
+    def checkValid(self):
+        if self.isDFU():
+            raise IOError('Device is in DFU mode')
+
+    def readFirmware(self) -> str:
+        # read register 0xf3 and 0xf4 (firmware major and minor version)
+        cmd = b"\x10\xf3\x10\xf4"
+        self.serial.write(cmd)
+
+        resp = self.serial.read(2)
+        if len(resp) != 2:
+            logger.error("Timeout reading version registers")
+            return None
+        return Version.getVersion(major=resp[0], minor=resp[1], revision=0)
+
+    def readFrequencies(self) -> List[str]:
+        self.checkValid()
+        freqs = [self.sweepStartHz + i*self.sweepStepHz for i in range(self.datapoints)]
+        return [str(int(f)) for f in freqs]
+
+
+    def readValues(self, value) -> List[str]:
+        self.checkValid()
+
+        # Actually grab the data only when requesting channel 0.
+        # The hardware will return all channels which we will store.
+        if value == "data 0":
+            # reset protocol to known state
+            self.serial.write([0, 0, 0, 0, 0, 0, 0, 0])
+
+            # cmd: write register 0x30 to clear FIFO
+            self.serial.write([0x20, 0x30, 0x00])
+
+            # cmd: read FIFO, addr 0x30
+            self.serial.write([0x18, 0x30, self.datapoints])
+
+            # each value is 32 bytes
+            nBytes = self.datapoints * 32
+
+            # serial .read() will wait for exactly nBytes bytes
+            arr = self.serial.read(nBytes)
+            if nBytes != len(arr):
+                logger.error("expected %d bytes, got %d", nBytes, len(arr))
+                return []
+
+            for i in range(self.datapoints):
+                b = arr[i*32:]
+                fwd = complex(_unpackSigned32(b[0:]), _unpackSigned32(b[4:]))
+                refl = complex(_unpackSigned32(b[8:]), _unpackSigned32(b[12:]))
+                thru = complex(_unpackSigned32(b[16:]), _unpackSigned32(b[20:]))
+                freqIndex = _unpackUnsigned16(b[24:])
+                #print('freqIndex', freqIndex)
+                self.sweepData[freqIndex] = (refl / fwd, thru / fwd)
+
+            ret = [x[0] for x in self.sweepData]
+            ret = [str(x.real) + ' ' + str(x.imag) for x in ret]
+            return ret
+
+        if value == "data 1":
+            ret = [x[1] for x in self.sweepData]
+            ret = [str(x.real) + ' ' + str(x.imag) for x in ret]
+            return ret
+
+    def readValues11(self) -> List[str]:
+        return self.readValues("data 0")
+
+    def readValues21(self) -> List[str]:
+        return self.readValues("data 1")
+
+    def resetSweep(self, start: int, stop: int):
+        self.setSweep(start, stop)
+        return
+
+    # returns device variant
+    def readVersion(self):
+        # read register 0xf0 (device type), 0xf2 (board revision)
+        cmd = b"\x10\xf0\x10\xf2"
+        self.serial.write(cmd)
+
+        resp = self.serial.read(2)
+        if len(resp) != 2:
+            logger.error("Timeout reading version registers")
+            return None
+        return Version.getVersion(major=resp[0], minor=0, revision=resp[1])
+
+    def setSweep(self, start, stop):
+        step = (stop - start) / (self.datapoints - 1)
+        if start == self.sweepStartHz and step == self.sweepStepHz:
+            return
+        self.sweepStartHz = start
+        self.sweepStepHz = step
+        logger.info('NanoVNAV2: set sweep start %d step %d', self.sweepStartHz, self.sweepStepHz)
+        self._updateSweep()
+        return
+
+    def _updateSweep(self):
+        self.checkValid()
+
+        cmd = b"\x23\x00" + int.to_bytes(int(self.sweepStartHz), 8, 'little')
+        cmd += b"\x23\x10" + int.to_bytes(int(self.sweepStepHz), 8, 'little')
+        cmd += b"\x21\x20" + int.to_bytes(int(self.datapoints), 2, 'little')
+        self.serial.write(cmd)
+
 
 
 class Version:
