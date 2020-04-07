@@ -42,7 +42,7 @@ class SweepWorker(QtCore.QRunnable):
         logger.info("Initializing SweepWorker")
         self.signals = WorkerSignals()
         self.app = app
-        self.vna: VNA = InvalidVNA()
+        self.vna: app.vna
         self.noSweeps = 1
         self.setAutoDelete(False)
         self.percentage = 0

@@ -65,7 +65,6 @@ class NanoVNASaver(QtWidgets.QWidget):
                                          "NanoVNASaver", "NanoVNASaver")
         print("Settings: " + self.settings.fileName())
         self.threadpool = QtCore.QThreadPool()
-        self.vna: VNA = InvalidVNA()
         self.worker = SweepWorker(self)
 
         self.worker.signals.updated.connect(self.dataUpdated)
@@ -79,6 +78,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.serialLock = threading.Lock()
         self.serial = serial.Serial()
+        self.vna: VNA = InvalidVNA(self, self.serial)
 
         self.dataLock = threading.Lock()
         self.data: List[Datapoint] = []
