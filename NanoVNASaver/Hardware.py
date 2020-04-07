@@ -24,7 +24,7 @@ import serial
 from serial.tools import list_ports
 
 import numpy as np
-from PyQt5 import QtGui
+from PyQt5 import QtWidgets, QtGui
 
 logger = logging.getLogger(__name__)
 
@@ -40,12 +40,12 @@ DEVICETYPES = (
 # Get list of interfaces with VNAs connected
 def get_interfaces() -> List[Tuple[str, str]]:
     return_ports = []
-    device_list = serial.tools.list_ports.comports()
+    device_list = list_ports.comports()
     for d in device_list:
         for t in DEVICETYPES:
             if d.vid == t.vid and d.pid == t.pid:
                 port = d.device
-                logger.info("Found " + t.name + " (%04x %04x) on port %s", d.vid, d.pid, d.device)
+                logger.info("Found %s (%04x %04x) on port %s", t.name, d.vid, d.pid, d.device)
                 return_ports.append((port, port + " (" + t.name + ")"))
     return return_ports
 
@@ -56,9 +56,8 @@ class VNA:
     features = []
     datapoints = 101
 
-    def __init__(self, app, serial_port: serial.Serial):
-        from NanoVNASaver.NanoVNASaver import NanoVNASaver
-        self.app: NanoVNASaver = app
+    def __init__(self, app: QtWidgets.QWidget, serial_port: serial.Serial):
+        self.app = app
         self.serial = serial_port
         self.version: Version = Version("0.0.0")
 
@@ -167,12 +166,12 @@ class VNA:
                     data = self.serial.readline().decode('ascii')
                     result += data
             except serial.SerialException as exc:
-                logger.exception("Exception while reading " + command + ": %s", exc)
+                logger.exception("Exception while reading %s: %s", command, exc)
             finally:
                 self.app.serialLock.release()
             return result
         else:
-            logger.error("Unable to acquire serial lock to read " + command + ".")
+            logger.error("Unable to acquire serial lock to read %s", command)
             return ""
 
     def readValues(self, value) -> List[str]:
@@ -223,9 +222,6 @@ class VNA:
 class InvalidVNA(VNA):
     name = "Invalid"
     datapoints = 0
-
-    def __init__(self):
-        pass
 
     def setSweep(self, start, stop):
         return
