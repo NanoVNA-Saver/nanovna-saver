@@ -16,7 +16,7 @@
 import logging
 import re
 import struct
-import tty
+import platform
 from time import sleep
 from typing import List, Tuple
 from collections import namedtuple
@@ -588,7 +588,9 @@ class NanoVNAV2(VNA):
     def __init__(self, app, serialPort):
         super().__init__(app, serialPort)
 
-        tty.setraw(self.serial.fd)
+        if platform.system() != 'Windows':
+            import tty
+            tty.setraw(self.serial.fd)
         self.serial.timeout = 3
 
         # reset protocol to known state
