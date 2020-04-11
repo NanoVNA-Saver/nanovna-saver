@@ -89,7 +89,11 @@ class VNA:
     @staticmethod
     def getVNA(app, serial_port: serial.Serial) -> 'VNA':
         logger.info("Finding correct VNA type...")
-        vnaType = detect_version(serial_port)
+
+        for retry in range(3):
+            vnaType = detect_version(serial_port)
+            if vnaType != "unkown":
+                break
 
         if vnaType == 'nanovnav2':
             logger.info("Type: NanoVNA-V2")
