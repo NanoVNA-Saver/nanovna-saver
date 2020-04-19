@@ -51,7 +51,7 @@ def _fix_v2_hwinfo(dev):
 def get_interfaces() -> List[Tuple[str, str]]:
     return_ports = []
     for d in list_ports.comports():
-        if platform.system() == 'Windows' and d.vid == None:
+        if platform.system() == 'Windows' and d.vid is None:
             d = _fix_v2_hwinfo(d)
         for t in DEVICETYPES:
             if d.vid == t.vid and d.pid == t.pid:
