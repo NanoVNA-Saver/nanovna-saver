@@ -37,10 +37,22 @@ DEVICETYPES = (
 )
 
 
+# The USB Driver for NanoVNA V2 seems to deliver an
+# incompatible hardware info like:
+# 'PORTS\\VID_04B4&PID_0008\\DEMO'
+# This function will fix it.
+def _fix_v2_hwinfo(dev):
+    if dev.hwid == r'PORTS\VID_04B4&PID_0008\DEMO':
+        dev.vid, dev.pid = 0x04b4, 0x0008
+    return dev
+
+
 # Get list of interfaces with VNAs connected
 def get_interfaces() -> List[Tuple[str, str]]:
     return_ports = []
     for d in list_ports.comports():
+        if platform.system() == 'Windows' and d.vid == None:
+            d = _fix_v2_hwinfo(d)
         for t in DEVICETYPES:
             if d.vid == t.vid and d.pid == t.pid:
                 port = d.device
