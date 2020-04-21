@@ -53,6 +53,7 @@ class SweepWorker(QtCore.QRunnable):
         self.stopped = False
         self.running = False
         self.continuousSweep = False
+        self.autoPauseSweep = False
         self.averaging = False
         self.averages = 3
         self.truncates = 0
@@ -178,6 +179,9 @@ class SweepWorker(QtCore.QRunnable):
                      RFTools.parseFrequency(self.app.sweepEndInput.text()))
         self.vna.resetSweep(RFTools.parseFrequency(self.app.sweepStartInput.text()),
                             RFTools.parseFrequency(self.app.sweepEndInput.text()))
+
+        if self.autoPauseSweep:
+            self.vna.pauseSweep()
 
         self.percentage = 100
         logger.debug("Sending \"finished\" signal")
@@ -329,6 +333,8 @@ class SweepWorker(QtCore.QRunnable):
         # S21
         values21 = self.readData("data 1")
 
+        if self.autoPauseSweep:
+            self.vna.pauseSweep()
         return frequencies, values11, values21
 
     def readData(self, data):
@@ -371,6 +377,8 @@ class SweepWorker(QtCore.QRunnable):
                     raise NanoVNAValueException("Failed reading " + str(data) + " " + str(count) + " times.\n" +
                                                 "Data outside expected valid ranges, or in an unexpected format.\n\n" +
                                                 "You can disable data validation on the device settings screen.")
+        if self.autoPauseSweep:
+            self.vna.pauseSweep()
         return returndata
 
     def readFreq(self):
@@ -399,6 +407,9 @@ class SweepWorker(QtCore.QRunnable):
                         raise NanoVNAValueException("Failed reading frequencies " + str(count) + " times.")
                 else:
                     returnfreq.append(int(f))
+
+        if self.autoPauseSweep:
+            self.vna.pauseSweep()
         return returnfreq
 
     def setContinuousSweep(self, continuous_sweep: bool):
@@ -411,6 +422,9 @@ class SweepWorker(QtCore.QRunnable):
             self.truncates = int(truncates)
         except ValueError:
             return
+            
+    def setAutoPauseSweep(self, auto_pause_sweep: bool):
+        self.autoPauseSweep = auto_pause_sweep
 
     def setVNA(self, vna):
         self.vna = vna

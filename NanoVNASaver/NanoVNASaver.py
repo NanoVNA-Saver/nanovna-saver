@@ -2050,11 +2050,14 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         self.single_sweep_radiobutton = QtWidgets.QRadioButton("Single sweep")
         self.continuous_sweep_radiobutton = QtWidgets.QRadioButton("Continuous sweep")
         self.averaged_sweep_radiobutton = QtWidgets.QRadioButton("Averaged sweep")
+        self.auto_pause_sweep_checkbox = QtWidgets.QCheckBox("Pause hardware sweep after completion")
 
         settings_layout.addWidget(self.single_sweep_radiobutton)
         self.single_sweep_radiobutton.setChecked(True)
         settings_layout.addWidget(self.continuous_sweep_radiobutton)
         settings_layout.addWidget(self.averaged_sweep_radiobutton)
+        settings_layout.addWidget(self.auto_pause_sweep_checkbox)
+        self.auto_pause_sweep_checkbox.setChecked(False)
 
         self.averages = QtWidgets.QLineEdit("3")
         self.truncates = QtWidgets.QLineEdit("0")
@@ -2066,6 +2069,7 @@ class SweepSettingsWindow(QtWidgets.QWidget):
 
         self.continuous_sweep_radiobutton.toggled.connect(
             lambda: self.app.worker.setContinuousSweep(self.continuous_sweep_radiobutton.isChecked()))
+        self.auto_pause_sweep_checkbox.toggled.connect(self.updateAutoPauseSweep)
         self.averaged_sweep_radiobutton.toggled.connect(self.updateAveraging)
         self.averages.textEdited.connect(self.updateAveraging)
         self.truncates.textEdited.connect(self.updateAveraging)
@@ -2162,6 +2166,9 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         self.app.worker.setAveraging(self.averaged_sweep_radiobutton.isChecked(),
                                      self.averages.text(),
                                      self.truncates.text())
+                                     
+    def updateAutoPauseSweep(self):
+        self.app.worker.setAutoPauseSweep(self.auto_pause_sweep_checkbox.isChecked())
 
 
 class BandsWindow(QtWidgets.QWidget):

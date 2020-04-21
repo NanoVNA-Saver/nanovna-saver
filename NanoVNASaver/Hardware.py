@@ -192,6 +192,9 @@ class VNA:
     def setSweep(self, start, stop):
         self.writeSerial("sweep " + str(start) + " " + str(stop) + " 101")
 
+    def pauseSweep(self):
+        self.writeSerial("pause")
+
 
 class InvalidVNA(VNA):
     name = "Invalid"
@@ -200,6 +203,9 @@ class InvalidVNA(VNA):
         pass
 
     def setSweep(self, start, stop):
+        return
+        
+    def pauseSweep(self):
         return
 
     def resetSweep(self, start, stop):
@@ -352,6 +358,9 @@ class NanoVNA(VNA):
         else:
             self.writeSerial("sweep " + str(start) + " " + str(stop) + " 101")
             sleep(1)
+
+    def pauseSweep(self):
+        self.writeSerial("pause")
 
 
 class NanoVNA_H(NanoVNA):
