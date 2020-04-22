@@ -2050,7 +2050,7 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         self.single_sweep_radiobutton = QtWidgets.QRadioButton("Single sweep")
         self.continuous_sweep_radiobutton = QtWidgets.QRadioButton("Continuous sweep")
         self.averaged_sweep_radiobutton = QtWidgets.QRadioButton("Averaged sweep")
-        self.auto_pause_sweep_checkbox = QtWidgets.QCheckBox("Pause hardware sweep after completion")
+        self.auto_pause_sweep_checkbox = QtWidgets.QCheckBox("Pause hardware stimulus after completion")
 
         settings_layout.addWidget(self.single_sweep_radiobutton)
         self.single_sweep_radiobutton.setChecked(True)
