@@ -41,6 +41,7 @@ from .Touchstone import Touchstone
 from .Analysis import Analysis, LowPassAnalysis, HighPassAnalysis, BandPassAnalysis, BandStopAnalysis, \
     PeakSearchAnalysis, VSWRAnalysis, SimplePeakSearchAnalysis
 from .about import version as ver
+from .sark110 import *          #++EA4FRB
 
 VID = 1155
 PID = 22336
@@ -61,6 +62,7 @@ class NanoVNASaver(QtWidgets.QWidget):
     scaleFactor = 1
 
     sweepTitle = ""
+    sark110 = Sark110()             #++EA4FRB
 
     def __init__(self):
         super().__init__()
@@ -453,7 +455,10 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         serial_button_layout = QtWidgets.QHBoxLayout()
 
-        self.btnSerialToggle = QtWidgets.QPushButton("Connect to NanoVNA")
+        if self.sark110.is_connected > 0:                                     #++EA4FRB
+            self.btnSerialToggle = QtWidgets.QPushButton("Connect to Sark110")  #++EA4FRB
+        else:                                                                   #++EA4FRB
+            self.btnSerialToggle = QtWidgets.QPushButton("Connect to NanoVNA")
         self.btnSerialToggle.clicked.connect(self.serialButtonClick)
         serial_button_layout.addWidget(self.btnSerialToggle, stretch=1)
 
@@ -540,6 +545,10 @@ class NanoVNASaver(QtWidgets.QWidget):
         logger.debug("Finished building interface")
 
     def rescanSerialPort(self):
+        self.sark110.open()                                 #++EA4FRB
+        if self.sark110.connect() > 0:                      #++EA4FRB
+            self.serialPortInput.insertItem(1, 'SARK110')   #++EA4FRB
+            return                                          #++EA4FRB
         self.serialPortInput.clear()
         for port in self.getPort():
             self.serialPortInput.insertItem(1, port)
@@ -641,13 +650,16 @@ class NanoVNASaver(QtWidgets.QWidget):
         if self.serialLock.acquire():
             self.serialPort = self.serialPortInput.currentText()
             logger.info("Opening serial port %s", self.serialPort)
-            try:
-                self.serial = serial.Serial(port=self.serialPort, baudrate=115200)
-                self.serial.timeout = 0.05
-            except serial.SerialException as exc:
-                logger.error("Tried to open %s and failed: %s", self.serialPort, exc)
-                self.serialLock.release()
-                return
+            if self.sark110.is_connected:   ##++EA4FRB
+                self.serial.is_open = True  ##++EA4FRB
+            else:                           ##++EA4FRB
+                try:
+                    self.serial = serial.Serial(port=self.serialPort, baudrate=115200)
+                    self.serial.timeout = 0.05
+                except serial.SerialException as exc:
+                    logger.error("Tried to open %s and failed: %s", self.serialPort, exc)
+                    self.serialLock.release()
+                    return
             self.btnSerialToggle.setText("Disconnect")
 
             self.serialLock.release()

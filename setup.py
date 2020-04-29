@@ -52,6 +52,9 @@ setup(
         'pyserial',
         'PyQt5',
         'numpy',
-        'scipy'
+        'scipy',
+        'pywinusb',
+        'hidapi',
+        'cython'
     ],
 )

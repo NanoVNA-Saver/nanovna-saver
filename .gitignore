@@ -3,9 +3,12 @@
 .vscode
 /build/
 /dist/
+/iss/
 /nanovna-saver.spec
 *.egg-info/
 *.pyc
 *.cal
+*.exe
 settings.json
 .gitignore
+*.spec

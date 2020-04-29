@@ -9,6 +9,10 @@ verify_ssl = true
 pyserial = "*"
 pyqt5 = "*"
 numpy = "*"
+scipy = "*"
+pywinusb = "*"
+hidapi = "*"
+cython = "*"
 
 [requires]
 python_version = "3.7"

@@ -2,3 +2,6 @@ scipy
 pyqt5
 pyserial
 numpy
+pywinusb
+hidapi
+cython

@@ -18,11 +18,10 @@ import re
 import struct
 from time import sleep
 from typing import List
-
 import numpy as np
 from PyQt5 import QtGui
-
 import serial
+from .sark110 import *
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +41,8 @@ class VNA:
     def getVNA(app, serial_port: serial.Serial) -> 'VNA':
         logger.info("Finding correct VNA type")
         tmp_vna = VNA(app, serial_port)
+        if app.sark110.is_connected:                    #++EA4FRB
+            return HSark110(app, serial_port)            #++EA4FRB
         tmp_vna.flushSerialBuffers()
         firmware = tmp_vna.readFirmware()
         if firmware.find("NanoVNA-H") > 0:
@@ -402,3 +403,110 @@ class Version:
 
     def __str__(self):
         return str(self.major) + "." + str(self.minor) + "." + str(self.revision) + str(self.note)
+
+
+
+#++EA4FRB
+class HSark110(VNA):
+    name = ""
+    _sweep_start = 100000
+    _sweep_stop = 230000000
+    _freq_values = []
+    _read_values = []
+
+    def __init__(self, app, serialPort):
+        super().__init__(app, serialPort)
+        self._sark110 = app.sark110
+        self.version = Version(self.readVersion())
+        if self._sark110.is_connected:
+            self.name = self._sark110.dev_name
+
+    def isValid(self):
+        return True
+
+    def readFrequencies(self) -> List[str]:
+        if not self._freq_values:
+            result = ''
+            for f in range(101):
+                result += str(int(self._sweep_start + f*(self._sweep_stop-self._sweep_start)/100)) + '\r\n'
+            self._freq_values = result.split("\r\n")
+        return self._freq_values[0:101]
+
+    def readValues11(self) -> List[str]:
+        return self.readValues()
+
+    def readValues21(self) -> List[str]:
+        return
+
+    def resetSweep(self, start: int, stop: int):
+        if start != self._sweep_start or stop != self._sweep_stop:
+            self._freq_values = []
+        if start < self._sark110.min_freq:
+            start = self._sark110.min_freq
+        if stop > self._sark110.max_freq:
+            stop = self._sark110.max_freq
+        self._sweep_start = start
+        self._sweep_stop = stop
+        return
+
+    def readVersion(self) -> str:
+         self._sark110.buzzer()
+         return self._sark110.fw_version + ".0"
+
+    def setSweep(self, start, stop):
+        if start != self._sweep_start or stop != self._sweep_stop:
+            self._freq_values = []
+        if start < self._sark110.min_freq:
+            start = self._sark110.min_freq
+        if stop > self._sark110.max_freq:
+            stop = self._sark110.max_freq
+        self._sweep_start = start
+        self._sweep_stop = stop
+
+    def readValues(self, value):
+        if value == "data 1":
+            return self._read_values[0:101]
+        self._read_values = []
+        rs = [0]
+        xs = [0]
+        for k in range(101):
+            if self._sark110.measure(int(self._sweep_start + k * (self._sweep_stop-self._sweep_start)/100), rs, xs) < 0:
+                return []
+            gamma = self.z2gamma(rs[0][0], xs[0][0])
+            self._read_values.append(str(gamma.real) + " " + str(gamma.imag))
+        return self._read_values[0:101]
+        """
+        #alternative implementation (slightly faster)
+        values = []
+        rs = [0] * 4
+        xs = [0] * 4
+        for k in range(25):
+            if self._sark110.measure_ext(int(self._sweep_start + (k*4) * (self._sweep_stop-self._sweep_start)/100),
+                                      int((self._sweep_stop-self._sweep_start)/100), rs, xs) < 0:
+                return []
+
+            gamma = self.z2gamma(rs[0],xs[0])
+            values.append(str(gamma.real) + " " + str(gamma.imag))
+            gamma = self.z2gamma(rs[1],xs[1])
+            values.append(str(gamma.real) + " " + str(gamma.imag))
+            gamma = self.z2gamma(rs[2],xs[2])
+            values.append(str(gamma.real) + " " + str(gamma.imag))
+            gamma = self.z2gamma(rs[3],xs[3])
+            values.append(str(gamma.real) + " " + str(gamma.imag))
+
+        if self._sark110.measure(int(self._sweep_start + 100 * (self._sweep_stop - self._sweep_start) / 100),rs, xs) < 0:
+            return []
+        gamma = self.z2gamma(rs[0][0], xs[0][0])
+        values.append(str(gamma.real) + " " + str(gamma.imag))
+        return values[0:101]
+        """
+
+    def readFirmware(self) -> str:
+        return
+
+    def getCalibration(self) -> str:
+        return "Unknown"
+
+    def z2gamma(self, r, x):
+        z = complex(r, x)
+        return (z - 50.0)/(z + 50.0)
