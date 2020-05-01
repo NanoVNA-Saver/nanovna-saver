@@ -359,7 +359,7 @@ class SweepWorker(QtCore.QRunnable):
                         logger.debug("Re-reading %s", data)
                         done = False
                     else:
-                        returndata.append((math.exp((float(a)-10)/10), float(b)))
+                        returndata.append((10**((float(a)/20)), float(b)))
                 except Exception as e:
                     logger.exception("An exception occurred reading %s: %s", data, e)
                     logger.debug("Re-reading %s", data)
