@@ -190,7 +190,7 @@ class VNA:
         return
 
     def setSweep(self, start, stop):
-        self.writeSerial("sweep " + str(start) + " " + str(stop) + " 101")
+        self.writeSerial("sweep " + str(start) + " " + str(stop) + " 290")
 
 
 class InvalidVNA(VNA):
@@ -312,13 +312,13 @@ class NanoVNA(VNA):
         return self.readValues("frequencies")
 
     def readValues11(self) -> List[str]:
-        return self.readValues("data 0")
-
-    def readValues21(self) -> List[str]:
         return self.readValues("data 1")
 
+    def readValues21(self) -> List[str]:
+        return self.readValues("data 2")
+
     def resetSweep(self, start: int, stop: int):
-        self.writeSerial("sweep " + str(start) + " " + str(stop) + " 101")
+        self.writeSerial("sweep " + str(start) + " " + str(stop) + " 290")
         self.writeSerial("resume")
 
     def readVersion(self):
@@ -348,9 +348,9 @@ class NanoVNA(VNA):
 
     def setSweep(self, start, stop):
         if self.useScan:
-            self.writeSerial("scan " + str(start) + " " + str(stop) + " 101")
+            self.writeSerial("scan " + str(start) + " " + str(stop) + " 290")
         else:
-            self.writeSerial("sweep " + str(start) + " " + str(stop) + " 101")
+            self.writeSerial("sweep " + str(start) + " " + str(stop) + " 290")
             sleep(1)
 
 

@@ -1,4 +1,5 @@
 #  NanoVNASaver - a python program to view and export Touchstone data from a NanoVNA
+#  NanoVNASaver - a python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019.  Rune B. Broberg
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -16,7 +17,7 @@
 import logging
 from time import sleep
 from typing import List
-
+import math
 import numpy as np
 from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSlot, pyqtSignal
@@ -96,7 +97,7 @@ class SweepWorker(QtCore.QRunnable):
                 return
 
         span = sweep_to - sweep_from
-        stepsize = int(span / (100 + (self.noSweeps-1)*101))
+        stepsize = int(span / (100 + (self.noSweeps-1)*290))
 
         #  Setup complete
 
@@ -110,7 +111,7 @@ class SweepWorker(QtCore.QRunnable):
                 if self.stopped:
                     logger.debug("Stopping sweeping as signalled")
                     break
-                start = sweep_from + i * 101 * stepsize
+                start = sweep_from + i * 290 * stepsize
                 freq, val11, val21 = self.readAveragedSegment(start, start + 100 * stepsize, self.averages)
 
                 frequencies += freq
@@ -127,7 +128,7 @@ class SweepWorker(QtCore.QRunnable):
                 if self.stopped:
                     logger.debug("Stopping sweeping as signalled")
                     break
-                start = sweep_from + i*101*stepsize
+                start = sweep_from + i*290*stepsize
                 try:
                     freq, val11, val21 = self.readSegment(start, start+100*stepsize)
 
@@ -156,7 +157,7 @@ class SweepWorker(QtCore.QRunnable):
                 if self.stopped:
                     logger.debug("Stopping sweeping as signalled")
                     break
-                start = sweep_from + i * 101 * stepsize
+                start = sweep_from + i * 290 * stepsize
                 try:
                     _, values, values21 = self.readSegment(start, start + 100 * stepsize)
                     logger.debug("Updating acquired data")
@@ -185,8 +186,8 @@ class SweepWorker(QtCore.QRunnable):
         self.running = False
         return
 
-    def updateData(self, values11, values21, offset, segment_size=101):
-        # Update the data from (i*101) to (i+1)*101
+    def updateData(self, values11, values21, offset, segment_size=290):
+        # Update the data from (i*290) to (i+1)*290
         logger.debug("Calculating data and inserting in existing data at offset %d", offset)
         for i in range(len(values11)):
             re, im = values11[i]
@@ -321,13 +322,13 @@ class SweepWorker(QtCore.QRunnable):
         frequencies = self.readFreq()
         #  TODO: Set up checks for getting the right frequencies. Challenge: We don't set frequency to single-Hz
         #        accuracy, but rather "quite close". Ex: 106213728 vs 106213726
-        # if start != int(frequencies[i*101]):
+        # if start != int(frequencies[i*290]):
         #     # We got the wrong frequencies? Let's just log it for now.
-        #     logger.warning("Wrong frequency received - %d is not %d", int(frequencies[i*101]), start)
+        #     logger.warning("Wrong frequency received - %d is not %d", int(frequencies[i*290]), start)
         # S11
         values11 = self.readData("data 0")
         # S21
-        values21 = self.readData("data 1")
+        values21 = self.readData("data 0")
 
         return frequencies, values11, values21
 
@@ -345,7 +346,9 @@ class SweepWorker(QtCore.QRunnable):
                 raise NanoVNASerialException("Failed reading data: Returned no values.")
             logger.debug("Read %d values", len(tmpdata))
             for d in tmpdata:
-                a, b = d.split(" ")
+ #               a, b = d.split(" ")
+                a = d
+                b = 0
                 try:
                     if self.vna.validateInput and (float(a) < -9.5 or float(a) > 9.5):
                         logger.warning("Got a non-float data value: %s (%s)", d, a)
@@ -356,7 +359,7 @@ class SweepWorker(QtCore.QRunnable):
                         logger.debug("Re-reading %s", data)
                         done = False
                     else:
-                        returndata.append((float(a), float(b)))
+                        returndata.append((math.exp((float(a)-10)/10), float(b)))
                 except Exception as e:
                     logger.exception("An exception occurred reading %s: %s", data, e)
                     logger.debug("Re-reading %s", data)

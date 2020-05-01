@@ -845,7 +845,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         if self.sweepCountInput.text().isdigit():
             segments = int(self.sweepCountInput.text())
             if segments > 0:
-                fstep = fspan / (segments * 101 - 1)
+                fstep = fspan / (segments * 290 - 1)
                 self.sweepStepLabel.setText(RFTools.formatShortFrequency(fstep) + "/step")
 
     def setReference(self, s11data=None, s21data=None, source=None):
@@ -2223,7 +2223,7 @@ class BandsModel(QtCore.QAbstractTableModel):
                      "80 m;3500000;3800000",
                      "60 m;5250000;5450000",
                      "40 m;7000000;7200000",
-                     "30 m;10100000;10150000",
+                     "30 m;29000000;29050000",
                      "20 m;14000000;14350000",
                      "17 m;18068000;18168000",
                      "15 m;21000000;21450000",
