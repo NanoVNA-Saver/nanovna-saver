@@ -73,7 +73,8 @@ For most users, this is already installed.
 
 3. Clone repo and cd into the directory 
 		
-        git clone https://github.com/mihtjel/nanovna-saver
+        ~~git clone https://github.com/mihtjel/nanovna-saver~~
+		git clone https://github.com/EA4FRB/nanovna-saver-sark110.git
         cd nanovna-saver
 
 4. Run the pip installation
@@ -100,8 +101,9 @@ For most users, this is already installed.
 
 3. NanoVNASaver Installation
 
-        git clone https://github.com/mihtjel/nanovna-saver
-        cd nanovna-saver
+        ~~git clone https://github.com/mihtjel/nanovna-saver~~
+		git clone https://github.com/EA4FRB/nanovna-saver-sark110.git 
+		cd nanovna-saver
         
 4. Install local pip packages
 
