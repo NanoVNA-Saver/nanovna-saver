@@ -40,9 +40,10 @@ Current features:
 The software was written in Python on Windows, using Pycharm, and the modules PyQT5, numpy, scipy and pyserial.
 
 #### Binary releases
-You can find the latest binary (.exe) release for Windows at https://github.com/mihtjel/nanovna-saver/releases/latest
+You can find the latest binary (.exe) release for Windows at ~~https://github.com/mihtjel/nanovna-saver/releases/latest~~ https://github.com/EA4FRB/nanovna-saver-sark110/releases
 
-The downloadable executable runs directly, and requires no installation. For Windows 7, it does require Service Pack 1
+~~ The downloadable executable runs directly, and requires no installation.~~ The program includes an installer. 
+For Windows 7, it does require Service Pack 1
 and [Microsoft VC++ Redistributable](https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads).
 For most users, this is already installed.
 
@@ -50,7 +51,8 @@ For most users, this is already installed.
 
 1. Clone repo and cd into the directory
 
-        git clone https://github.com/mihtjel/nanovna-saver
+        ~~git clone https://github.com/mihtjel/nanovna-saver~~
+		git clone https://github.com/EA4FRB/nanovna-saver-sark110.git
         cd nanovna-saver
 
 3. Run the pip installation
@@ -107,7 +109,7 @@ For most users, this is already installed.
 
 ## Using the software
 
-Connect your NanoVNA to a serial port, and enter this serial port in the serial port box.  If the NanoVNA is
+Connect your NanoVNA (or SARK-110) to a serial port, and enter this serial port in the serial port box.  If the NanoVNA is
 connected before the application starts, it should be automatically detected. Otherwise, click "Rescan". Click
 "Connect to NanoVNA" to connect.
 
