@@ -42,7 +42,7 @@ The software was written in Python on Windows, using Pycharm, and the modules Py
 #### Binary releases
 You can find the latest binary (.exe) release for Windows at ~~https://github.com/mihtjel/nanovna-saver/releases/latest~~ https://github.com/EA4FRB/nanovna-saver-sark110/releases
 
-~~ The downloadable executable runs directly, and requires no installation.~~ The program includes an installer. 
+~~The downloadable executable runs directly, and requires no installation.~~ The program includes an installer. 
 For Windows 7, it does require Service Pack 1
 and [Microsoft VC++ Redistributable](https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads).
 For most users, this is already installed.
