@@ -102,7 +102,7 @@ class VNA:
     def getVNA(app, serial_port: serial.Serial) -> 'VNA':
         logger.info("Finding correct VNA type...")
 
-        for retry in range(3):
+        for _ in range(3):
             vnaType = detect_version(serial_port)
             if vnaType != "unkown":
                 break
