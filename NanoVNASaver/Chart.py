@@ -245,6 +245,8 @@ class Chart(QtWidgets.QWidget):
 
         logger.debug("Filename: %s", filename)
         if filename != "":
+            if not QtCore.QFileInfo(filename).suffix():
+                filename += ".png"
             self.grab().save(filename)
 
     def copy(self):
