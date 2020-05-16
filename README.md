@@ -79,6 +79,10 @@ For most users, this is already installed.
     
     (You may need to install the additional packages python3-distutils, python3-setuptools and python3-wheel for this command to work on some distributions.)
     
+    Mint Linux 19.3 in addition to the above (Mint is fussy when installing these via pip3)
+
+        python3.7 -m pip install --upgrade pip numpy scipy
+    
 5. Once completed run with the following command
 
         python3.7 nanovna-saver.py
