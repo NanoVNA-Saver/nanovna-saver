@@ -39,7 +39,7 @@ setup(
     version=version,
     author='Rune B. Broberg',
     author_email='',
-    packages=find_packages(),
+    packages=find_packages(exclude=["test", ]),
     long_description=long_description,
     long_description_content_type="text/markdown",
     license='LICENSE.txt',
