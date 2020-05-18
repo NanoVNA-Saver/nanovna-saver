@@ -4,15 +4,18 @@ on: [push]
 
 jobs:
   build:
-
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: [3.7, 3.8]
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Set up Python 3.8
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v2
       with:
-        python-version: 3.8
+        python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -24,4 +27,4 @@ jobs:
     - name: Unittests / Coverage
       run: |
         pip install pytest-cov
-        pytest  --cov=NanoVNASaver
+        pytest --cov=NanoVNASaver
