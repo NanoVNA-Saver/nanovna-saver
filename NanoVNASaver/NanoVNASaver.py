@@ -30,9 +30,10 @@ from PyQt5.QtCore import QModelIndex
 
 from .Hardware import VNA, InvalidVNA, Version, get_interfaces
 from .RFTools import RFTools, Datapoint
-from .Chart import Chart, PhaseChart, VSWRChart, PolarChart, SmithChart, LogMagChart, QualityFactorChart, TDRChart, \
-    RealImaginaryChart, MagnitudeChart, MagnitudeZChart, CombinedLogMagChart, SParameterChart, PermeabilityChart, \
-    GroupDelayChart, CapacitanceChart, InductanceChart
+from .Charts import Chart, CapacitanceChart, CombinedLogMagChart, \
+    GroupDelayChart, InductanceChart, LogMagChart, MagnitudeChart, MagnitudeZChart, \
+    PermeabilityChart, PhaseChart, PolarChart, QualityFactorChart, \
+    RealImaginaryChart, SmithChart, SParameterChart, TDRChart, VSWRChart
 from .Calibration import CalibrationWindow, Calibration
 from .Inputs import FrequencyInputWidget
 from .Marker import Marker, MarkerSettingsWindow
@@ -56,7 +57,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         super().__init__()
         if getattr(sys, 'frozen', False):
             logger.debug("Running from pyinstaller bundle")
-            self.icon = QtGui.QIcon(sys._MEIPASS + "/icon_48x48.png")
+            self.icon = QtGui.QIcon(sys._MEIPASS + "/icon_48x48.png")  # pylint: disable=no-member
         else:
             self.icon = QtGui.QIcon("icon_48x48.png")
         self.setWindowIcon(self.icon)
@@ -627,7 +628,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.serialLock.release()
             sleep(0.05)
 
-            self.vna = VNA.getVNA(self, self.serial)
+            self.vna = get_VNA(self, self.serial)
             self.vna.validateInput = self.settings.value("SerialInputValidation", True, bool)
             self.worker.setVNA(self.vna)
 

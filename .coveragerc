@@ -3,7 +3,7 @@
 omit =
     NanoVNASaver/Analysis.py
     NanoVNASaver/Calibration.py
-    NanoVNASaver/Chart.py
+    NanoVNASaver/Charts/*.py
     NanoVNASaver/Hardware/*.py
     NanoVNASaver/Inputs.py
     NanoVNASaver/Marker/Settings.py
