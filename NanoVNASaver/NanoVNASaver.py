@@ -28,7 +28,7 @@ import typing
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import QModelIndex
 
-from .Hardware import VNA, InvalidVNA, Version, get_interfaces
+from .Hardware import get_VNA, InvalidVNA, Version, get_interfaces
 from .RFTools import RFTools, Datapoint
 from .Charts import Chart, CapacitanceChart, CombinedLogMagChart, \
     GroupDelayChart, InductanceChart, LogMagChart, MagnitudeChart, MagnitudeZChart, \
