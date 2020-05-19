@@ -80,8 +80,8 @@ class SweepWorker(QtCore.QRunnable):
         if self.app.sweepStartInput.text() == "" or self.app.sweepEndInput.text() == "":
             logger.debug("First sweep - standard range")
             # We should handle the first startup by reading frequencies?
-            sweep_from = 1000000
-            sweep_to = 800000000
+            sweep_from = 100000
+            sweep_to = 350000000
         else:
             sweep_from = RFTools.parseFrequency(self.app.sweepStartInput.text())
             sweep_to = RFTools.parseFrequency(self.app.sweepEndInput.text())
@@ -97,7 +97,7 @@ class SweepWorker(QtCore.QRunnable):
                 return
 
         span = sweep_to - sweep_from
-        stepsize = int(span / (100 + (self.noSweeps-1)*290))
+        stepsize = int(span / (290 + (self.noSweeps-1)*290))
 
         #  Setup complete
 
@@ -112,7 +112,7 @@ class SweepWorker(QtCore.QRunnable):
                     logger.debug("Stopping sweeping as signalled")
                     break
                 start = sweep_from + i * 290 * stepsize
-                freq, val11, val21 = self.readAveragedSegment(start, start + 100 * stepsize, self.averages)
+                freq, val11, val21 = self.readAveragedSegment(start, start + 290 * stepsize, self.averages)
 
                 frequencies += freq
                 values += val11
@@ -130,7 +130,7 @@ class SweepWorker(QtCore.QRunnable):
                     break
                 start = sweep_from + i*290*stepsize
                 try:
-                    freq, val11, val21 = self.readSegment(start, start+100*stepsize)
+                    freq, val11, val21 = self.readSegment(start, start+290*stepsize)
 
                     frequencies += freq
                     values += val11
@@ -159,7 +159,7 @@ class SweepWorker(QtCore.QRunnable):
                     break
                 start = sweep_from + i * 290 * stepsize
                 try:
-                    _, values, values21 = self.readSegment(start, start + 100 * stepsize)
+                    _, values, values21 = self.readSegment(start, start + 290 * stepsize)
                     logger.debug("Updating acquired data")
                     self.updateData(values, values21, i)
                 except NanoVNAValueException as e:
