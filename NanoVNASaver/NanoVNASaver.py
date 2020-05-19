@@ -28,7 +28,7 @@ import typing
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import QModelIndex
 
-from .Hardware import VNA, InvalidVNA, Version, get_interfaces
+from .Hardware import get_VNA, InvalidVNA, Version, get_interfaces
 from .RFTools import RFTools, Datapoint
 from .Chart import Chart, PhaseChart, VSWRChart, PolarChart, SmithChart, LogMagChart, QualityFactorChart, TDRChart, \
     RealImaginaryChart, MagnitudeChart, MagnitudeZChart, CombinedLogMagChart, SParameterChart, PermeabilityChart, \
@@ -627,7 +627,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.serialLock.release()
             sleep(0.05)
 
-            self.vna = VNA.getVNA(self, self.serial)
+            self.vna = get_VNA(self, self.serial)
             self.vna.validateInput = self.settings.value("SerialInputValidation", True, bool)
             self.worker.setVNA(self.vna)
 
