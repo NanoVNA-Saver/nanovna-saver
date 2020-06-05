@@ -34,7 +34,7 @@ def _unpackUnsigned16(b):
 
 class NanoVNAV2(VNA):
     name = "NanoVNA-V2"
-    datapoints = 101
+    datapoints = 255
     screenwidth = 320
     screenheight = 240
 
@@ -43,7 +43,7 @@ class NanoVNAV2(VNA):
 
         if platform.system() != 'Windows':
             tty.setraw(self.serial.fd)
-        self.serial.timeout = 3
+        self.serial.timeout = 6 # for this much data we need a longer timeout
 
         # reset protocol to known state
         self.serial.write([0, 0, 0, 0, 0, 0, 0, 0])
@@ -174,4 +174,5 @@ class NanoVNAV2(VNA):
         cmd = b"\x23\x00" + int.to_bytes(int(self.sweepStartHz), 8, 'little')
         cmd += b"\x23\x10" + int.to_bytes(int(self.sweepStepHz), 8, 'little')
         cmd += b"\x21\x20" + int.to_bytes(int(self.datapoints), 2, 'little')
+        cmd += b"\x21\x22" + int.to_bytes(1, 2, 'little') # number of samples
         self.serial.write(cmd)

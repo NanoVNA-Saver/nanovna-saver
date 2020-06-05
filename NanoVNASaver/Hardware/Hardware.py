@@ -127,5 +127,5 @@ def detect_version(serialPort: serial.Serial) -> str:
         # this is a nanovna v2
         return 'nanovnav2'
 
-    logger.error('Unknown VNA type: hardware responded to \r with: %s', data)
+    logger.error('Unknown VNA type: hardware responded to CR with: %s', data)
     return 'unknown'
