@@ -105,26 +105,33 @@ class NanoVNAV2(VNA):
             # cmd: write register 0x30 to clear FIFO
             self.serial.write([0x20, 0x30, 0x00])
 
-            # cmd: read FIFO, addr 0x30
-            self.serial.write([0x18, 0x30, self.datapoints])
+            bytesleft = self.datapoints
+            while bytesleft > 0 :
 
-            # each value is 32 bytes
-            nBytes = self.datapoints * 32
+                logger.info("reading values")
+                bytestoread = min(255, bytesleft)
+                # cmd: read FIFO, addr 0x30
+                self.serial.write([0x18, 0x30, bytestoread])
 
-            # serial .read() will wait for exactly nBytes bytes
-            arr = self.serial.read(nBytes)
-            if nBytes != len(arr):
-                logger.error("expected %d bytes, got %d", nBytes, len(arr))
-                return []
+                # each value is 32 bytes
+                nBytes = bytestoread * 32
 
-            for i in range(self.datapoints):
-                b = arr[i*32:]
-                fwd = complex(_unpackSigned32(b[0:]), _unpackSigned32(b[4:]))
-                refl = complex(_unpackSigned32(b[8:]), _unpackSigned32(b[12:]))
-                thru = complex(_unpackSigned32(b[16:]), _unpackSigned32(b[20:]))
-                freqIndex = _unpackUnsigned16(b[24:])
-                #print('freqIndex', freqIndex)
-                self.sweepData[freqIndex] = (refl / fwd, thru / fwd)
+                # serial .read() will wait for exactly nBytes bytes
+                arr = self.serial.read(nBytes)
+                if nBytes != len(arr):
+                    logger.error("expected %d bytes, got %d", nBytes, len(arr))
+                    return []
+
+                for i in range(bytestoread):
+                    b = arr[i*32:]
+                    fwd = complex(_unpackSigned32(b[0:]), _unpackSigned32(b[4:]))
+                    refl = complex(_unpackSigned32(b[8:]), _unpackSigned32(b[12:]))
+                    thru = complex(_unpackSigned32(b[16:]), _unpackSigned32(b[20:]))
+                    freqIndex = _unpackUnsigned16(b[24:])
+                    #print('freqIndex', freqIndex)
+                    self.sweepData[freqIndex] = (refl / fwd, thru / fwd)
+
+                bytesleft = bytesleft - bytestoread
 
             ret = [x[0] for x in self.sweepData]
             ret = [str(x.real) + ' ' + str(x.imag) for x in ret]
