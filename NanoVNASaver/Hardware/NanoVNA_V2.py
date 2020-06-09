@@ -34,7 +34,7 @@ def _unpackUnsigned16(b):
 
 class NanoVNAV2(VNA):
     name = "NanoVNA-V2"
-    datapoints = 101
+    datapoints = 255
     screenwidth = 320
     screenheight = 240
 
@@ -43,7 +43,7 @@ class NanoVNAV2(VNA):
 
         if platform.system() != 'Windows':
             tty.setraw(self.serial.fd)
-        self.serial.timeout = 3
+        self.serial.timeout = 6 # for this much data we need a longer timeout
 
         # reset protocol to known state
         self.serial.write([0, 0, 0, 0, 0, 0, 0, 0])
@@ -105,26 +105,33 @@ class NanoVNAV2(VNA):
             # cmd: write register 0x30 to clear FIFO
             self.serial.write([0x20, 0x30, 0x00])
 
-            # cmd: read FIFO, addr 0x30
-            self.serial.write([0x18, 0x30, self.datapoints])
+            pointstodo = self.datapoints
+            while pointstodo > 0 :
 
-            # each value is 32 bytes
-            nBytes = self.datapoints * 32
+                logger.info("reading values")
+                pointstoread = min(255, pointstodo)
+                # cmd: read FIFO, addr 0x30
+                self.serial.write([0x18, 0x30, pointstoread])
 
-            # serial .read() will wait for exactly nBytes bytes
-            arr = self.serial.read(nBytes)
-            if nBytes != len(arr):
-                logger.error("expected %d bytes, got %d", nBytes, len(arr))
-                return []
+                # each value is 32 bytes
+                nBytes = pointstoread * 32
 
-            for i in range(self.datapoints):
-                b = arr[i*32:]
-                fwd = complex(_unpackSigned32(b[0:]), _unpackSigned32(b[4:]))
-                refl = complex(_unpackSigned32(b[8:]), _unpackSigned32(b[12:]))
-                thru = complex(_unpackSigned32(b[16:]), _unpackSigned32(b[20:]))
-                freqIndex = _unpackUnsigned16(b[24:])
-                #print('freqIndex', freqIndex)
-                self.sweepData[freqIndex] = (refl / fwd, thru / fwd)
+                # serial .read() will wait for exactly nBytes bytes
+                arr = self.serial.read(nBytes)
+                if nBytes != len(arr):
+                    logger.error("expected %d bytes, got %d", nBytes, len(arr))
+                    return []
+
+                for i in range(pointstoread):
+                    b = arr[i*32:]
+                    fwd = complex(_unpackSigned32(b[0:]), _unpackSigned32(b[4:]))
+                    refl = complex(_unpackSigned32(b[8:]), _unpackSigned32(b[12:]))
+                    thru = complex(_unpackSigned32(b[16:]), _unpackSigned32(b[20:]))
+                    freqIndex = _unpackUnsigned16(b[24:])
+                    #print('freqIndex', freqIndex)
+                    self.sweepData[freqIndex] = (refl / fwd, thru / fwd)
+
+                pointstodo = pointstodo - pointstoread
 
             ret = [x[0] for x in self.sweepData]
             ret = [str(x.real) + ' ' + str(x.imag) for x in ret]
@@ -174,4 +181,5 @@ class NanoVNAV2(VNA):
         cmd = b"\x23\x00" + int.to_bytes(int(self.sweepStartHz), 8, 'little')
         cmd += b"\x23\x10" + int.to_bytes(int(self.sweepStepHz), 8, 'little')
         cmd += b"\x21\x20" + int.to_bytes(int(self.datapoints), 2, 'little')
+        cmd += b"\x21\x22" + int.to_bytes(1, 2, 'little') # number of samples
         self.serial.write(cmd)
