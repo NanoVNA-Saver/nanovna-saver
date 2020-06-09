@@ -105,16 +105,16 @@ class NanoVNAV2(VNA):
             # cmd: write register 0x30 to clear FIFO
             self.serial.write([0x20, 0x30, 0x00])
 
-            bytesleft = self.datapoints
-            while bytesleft > 0 :
+            pointstodo = self.datapoints
+            while pointstodo > 0 :
 
                 logger.info("reading values")
-                bytestoread = min(255, bytesleft)
+                pointstoread = min(255, pointstodo)
                 # cmd: read FIFO, addr 0x30
-                self.serial.write([0x18, 0x30, bytestoread])
+                self.serial.write([0x18, 0x30, pointstoread])
 
                 # each value is 32 bytes
-                nBytes = bytestoread * 32
+                nBytes = pointstoread * 32
 
                 # serial .read() will wait for exactly nBytes bytes
                 arr = self.serial.read(nBytes)
@@ -122,7 +122,7 @@ class NanoVNAV2(VNA):
                     logger.error("expected %d bytes, got %d", nBytes, len(arr))
                     return []
 
-                for i in range(bytestoread):
+                for i in range(pointstoread):
                     b = arr[i*32:]
                     fwd = complex(_unpackSigned32(b[0:]), _unpackSigned32(b[4:]))
                     refl = complex(_unpackSigned32(b[8:]), _unpackSigned32(b[12:]))
@@ -131,7 +131,7 @@ class NanoVNAV2(VNA):
                     #print('freqIndex', freqIndex)
                     self.sweepData[freqIndex] = (refl / fwd, thru / fwd)
 
-                bytesleft = bytesleft - bytestoread
+                pointstodo = pointstodo - pointstoread
 
             ret = [x[0] for x in self.sweepData]
             ret = [str(x.real) + ' ' + str(x.imag) for x in ret]

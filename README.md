@@ -11,6 +11,9 @@ A multiplatform tool to save Touchstone files from the NanoVNA, sweep frequency 
 
 Copyright 2019, 2020 Rune B. Broberg
 
+## Changes in this fork
+This fork adds support for the saa2, a vna loosely based on the original nanovna with frequency range up to 3Ghz. 
+
 ## Introduction
 This software connects to a NanoVNA and extracts the data for display on a computer, and for saving to Touchstone files.
 
