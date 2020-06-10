@@ -16,7 +16,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 import platform
-from struct import pack
+from struct import pack, unpack_from
 from typing import List
 
 from NanoVNASaver.Hardware.VNA import VNA, Version
@@ -50,12 +50,6 @@ _ADDR_HARDWARE_REVISION = 0xf2
 _ADDR_FW_MAJOR = 0xf3
 _ADDR_FW_MINOR = 0xf4
 
-
-def _unpackSigned32(b):
-    return int.from_bytes(b[0:4], 'little', signed=True)
-
-def _unpackUnsigned16(b):
-    return int.from_bytes(b[0:2], 'little', signed=False)
 
 class NanoVNAV2(VNA):
     name = "NanoVNA-V2"
@@ -136,7 +130,6 @@ class NanoVNAV2(VNA):
             self.serial.write(pack("<BBB", _CMD_WRITE, _ADDR_VALUES_FIFO, 0))
             pointstodo = self.datapoints
             while pointstodo > 0:
-
                 logger.info("reading values")
                 pointstoread = min(255, pointstodo)
                 # cmd: read FIFO, addr 0x30
@@ -150,15 +143,15 @@ class NanoVNAV2(VNA):
                 if nBytes != len(arr):
                     logger.error("expected %d bytes, got %d", nBytes, len(arr))
                     return []
-
+                
                 for i in range(pointstoread):
-                    b = arr[i*32:]
-                    fwd = complex(_unpackSigned32(b[0:]), _unpackSigned32(b[4:]))
-                    refl = complex(_unpackSigned32(b[8:]), _unpackSigned32(b[12:]))
-                    thru = complex(_unpackSigned32(b[16:]), _unpackSigned32(b[20:]))
-                    freqIndex = _unpackUnsigned16(b[24:])
-                    #print('freqIndex', freqIndex)
-                    self.sweepData[freqIndex] = (refl / fwd, thru / fwd)
+                    (fwd_real, fwd_imag, rev0_real, rev0_imag, rev1_real,
+                     rev1_imag, freq_index) = unpack_from(
+                         "<iiiiiihxxxxxx", arr, i * 32)
+                    fwd = complex(fwd_real, fwd_imag)
+                    refl = complex(rev0_real, rev0_imag)
+                    thru = complex(rev1_real, rev1_imag)
+                    self.sweepData[freq_index] = (refl / fwd, thru / fwd)
 
                 pointstodo = pointstodo - pointstoread
 
