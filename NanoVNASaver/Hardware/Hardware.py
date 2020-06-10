@@ -72,12 +72,13 @@ def get_VNA(app, serial_port: serial.Serial) -> 'VNA':
         if vnaType != "unkown":
             break
 
+    serial_port.timeout = 0.2
+
     if vnaType == 'nanovnav2':
         logger.info("Type: NanoVNA-V2")
         return NanoVNAV2(app, serial_port)
 
     logger.info("Finding firmware variant...")
-    serial_port.timeout = 0.05
     tmp_vna = VNA(app, serial_port)
     tmp_vna.flushSerialBuffers()
     firmware = tmp_vna.readFirmware()
@@ -91,7 +92,7 @@ def get_VNA(app, serial_port: serial.Serial) -> 'VNA':
         logger.info("Type: NanoVNA-H")
         vna = NanoVNA_H(app, serial_port)
         if firmware.find("sweep_points 201") > 0:
-            logger.info("VNA has 201 datapoints capability") 
+            logger.info("VNA has 201 datapoints capability")
             vna.datapoints = 201
         return vna
     if firmware.find("NanoVNA-F") > 0:

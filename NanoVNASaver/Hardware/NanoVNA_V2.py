@@ -16,6 +16,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 import platform
+from struct import pack, unpack_from
 from typing import List
 
 from NanoVNASaver.Hardware.VNA import VNA, Version
@@ -25,16 +26,34 @@ if platform.system() != 'Windows':
 
 logger = logging.getLogger(__name__)
 
+_CMD_NOP = 0x00
+_CMD_INDICATE = 0x0d
+_CMD_READ = 0x10
+_CMD_READ2 = 0x11
+_CMD_READ4 = 0x12
+_CMD_READFIFO = 0x18
+_CMD_WRITE = 0x20
+_CMD_WRITE2 = 0x21
+_CMD_WRITE4 = 0x22
+_CMD_WRITE8 = 0x23
+_CMD_WRITEFIFO = 0x28
 
-def _unpackSigned32(b):
-    return int.from_bytes(b[0:4], 'little', signed=True)
+_ADDR_SWEEP_START = 0x00
+_ADDR_SWEEP_STEP = 0x10
+_ADDR_SWEEP_POINTS = 0x20
+_ADDR_SWEEP_VALS_PER_FREQ = 0x22
+_ADDR_RAW_SAMPLES_MODE = 0x26
+_ADDR_VALUES_FIFO = 0x30
+_ADDR_DEVICE_VARIANT = 0xf0
+_ADDR_PROTOCOL_VERSION = 0xf1
+_ADDR_HARDWARE_REVISION = 0xf2
+_ADDR_FW_MAJOR = 0xf3
+_ADDR_FW_MINOR = 0xf4
 
-def _unpackUnsigned16(b):
-    return int.from_bytes(b[0:2], 'little', signed=False)
 
 class NanoVNAV2(VNA):
     name = "NanoVNA-V2"
-    datapoints = 255
+    DEFAULT_DATAPOINTS = 300
     screenwidth = 320
     screenheight = 240
 
@@ -43,13 +62,17 @@ class NanoVNAV2(VNA):
 
         if platform.system() != 'Windows':
             tty.setraw(self.serial.fd)
-        self.serial.timeout = 6 # for this much data we need a longer timeout
 
         # reset protocol to known state
-        self.serial.write([0, 0, 0, 0, 0, 0, 0, 0])
+        self.serial.write(pack("<Q", 0))
 
         self.version = self.readVersion()
         self.firmware = self.readFirmware()
+        self.features.add("Customizable data points")
+        # TODO: more than one dp per freq
+        self.features.add("Multi data points")
+
+        self.datapoints = NanoVNAV2.DEFAULT_DATAPOINTS
 
         # firmware major version of 0xff indicates dfu mode
         if self.firmware.major == 0xff:
@@ -61,7 +84,6 @@ class NanoVNAV2(VNA):
         self.sweepStepHz = 1e6
         self.sweepData = [(0, 0)] * self.datapoints
         self._updateSweep()
-
 
     def isValid(self):
         if self.isDFU():
@@ -77,7 +99,7 @@ class NanoVNAV2(VNA):
 
     def readFirmware(self) -> str:
         # read register 0xf3 and 0xf4 (firmware major and minor version)
-        cmd = b"\x10\xf3\x10\xf4"
+        cmd = pack("<BBBB", _CMD_READ, _ADDR_FW_MAJOR, _CMD_READ, _ADDR_FW_MINOR)
         self.serial.write(cmd)
 
         resp = self.serial.read(2)
@@ -95,23 +117,23 @@ class NanoVNAV2(VNA):
 
     def readValues(self, value) -> List[str]:
         self.checkValid()
+        self.serial.timeout = round(self.datapoints / 40)
+
 
         # Actually grab the data only when requesting channel 0.
         # The hardware will return all channels which we will store.
         if value == "data 0":
             # reset protocol to known state
-            self.serial.write([0, 0, 0, 0, 0, 0, 0, 0])
+            self.serial.write(pack("<Q", 0))
 
             # cmd: write register 0x30 to clear FIFO
-            self.serial.write([0x20, 0x30, 0x00])
-
+            self.serial.write(pack("<BBB", _CMD_WRITE, _ADDR_VALUES_FIFO, 0))
             pointstodo = self.datapoints
-            while pointstodo > 0 :
-
+            while pointstodo > 0:
                 logger.info("reading values")
                 pointstoread = min(255, pointstodo)
                 # cmd: read FIFO, addr 0x30
-                self.serial.write([0x18, 0x30, pointstoread])
+                self.serial.write(pack("<BBB", _CMD_READFIFO, _ADDR_VALUES_FIFO, pointstoread))
 
                 # each value is 32 bytes
                 nBytes = pointstoread * 32
@@ -121,15 +143,15 @@ class NanoVNAV2(VNA):
                 if nBytes != len(arr):
                     logger.error("expected %d bytes, got %d", nBytes, len(arr))
                     return []
-
+                
                 for i in range(pointstoread):
-                    b = arr[i*32:]
-                    fwd = complex(_unpackSigned32(b[0:]), _unpackSigned32(b[4:]))
-                    refl = complex(_unpackSigned32(b[8:]), _unpackSigned32(b[12:]))
-                    thru = complex(_unpackSigned32(b[16:]), _unpackSigned32(b[20:]))
-                    freqIndex = _unpackUnsigned16(b[24:])
-                    #print('freqIndex', freqIndex)
-                    self.sweepData[freqIndex] = (refl / fwd, thru / fwd)
+                    (fwd_real, fwd_imag, rev0_real, rev0_imag, rev1_real,
+                     rev1_imag, freq_index) = unpack_from(
+                         "<iiiiiihxxxxxx", arr, i * 32)
+                    fwd = complex(fwd_real, fwd_imag)
+                    refl = complex(rev0_real, rev0_imag)
+                    thru = complex(rev1_real, rev1_imag)
+                    self.sweepData[freq_index] = (refl / fwd, thru / fwd)
 
                 pointstodo = pointstodo - pointstoread
 
@@ -178,8 +200,8 @@ class NanoVNAV2(VNA):
     def _updateSweep(self):
         self.checkValid()
 
-        cmd = b"\x23\x00" + int.to_bytes(int(self.sweepStartHz), 8, 'little')
-        cmd += b"\x23\x10" + int.to_bytes(int(self.sweepStepHz), 8, 'little')
-        cmd += b"\x21\x20" + int.to_bytes(int(self.datapoints), 2, 'little')
-        cmd += b"\x21\x22" + int.to_bytes(1, 2, 'little') # number of samples
+        cmd = pack("<BBQ", _CMD_WRITE8, _ADDR_SWEEP_START, int(self.sweepStartHz))
+        cmd += pack("<BBQ", _CMD_WRITE8, _ADDR_SWEEP_STEP, int(self.sweepStepHz))
+        cmd += pack("<BBH", _CMD_WRITE2, _ADDR_SWEEP_POINTS, self.datapoints)
+        cmd += pack("<BBH", _CMD_WRITE2, _ADDR_SWEEP_VALS_PER_FREQ, 1)
         self.serial.write(cmd)
