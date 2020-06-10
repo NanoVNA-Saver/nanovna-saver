@@ -50,7 +50,7 @@ class NanoVNA(VNA):
             logger.debug("Older than 0.2.0, using old sweep command.")
             self.features.add("Original sweep method")
             self.useScan = False
-        self.features.extend(self.readFeatures())
+        self.readFeatures()
 
     def isValid(self):
         return True
