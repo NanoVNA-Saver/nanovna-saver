@@ -26,14 +26,11 @@ logger = logging.getLogger(__name__)
 
 class AVNA(VNA):
     name = "AVNA"
-    datapoints = 101
 
     def __init__(self, app, serial_port):
         super().__init__(app, serial_port)
         self.version = Version(self.readVersion())
-
-        self.features = []
-        self.features.append("Customizable data points")
+        self.features.add("Customizable data points")
 
     def isValid(self):
         return True

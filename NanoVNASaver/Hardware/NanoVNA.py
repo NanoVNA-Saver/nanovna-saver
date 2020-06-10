@@ -30,7 +30,6 @@ logger = logging.getLogger(__name__)
 
 class NanoVNA(VNA):
     name = "NanoVNA"
-    datapoints = 101
     screenwidth = 320
     screenheight = 240
 
@@ -38,20 +37,18 @@ class NanoVNA(VNA):
         super().__init__(app, serial_port)
         self.version = Version(self.readVersion())
 
-        self.features = []
-
         logger.debug("Testing against 0.2.0")
         if self.version.version_string.find("extended with scan") > 0:
             logger.debug("Incompatible scan command detected.")
-            self.features.append("Incompatible scan command")
+            self.features.add("Incompatible scan command")
             self.useScan = False
         elif self.version >= Version("0.2.0"):
             logger.debug("Newer than 0.2.0, using new scan command.")
-            self.features.append("New scan command")
+            self.features.add("New scan command")
             self.useScan = True
         else:
             logger.debug("Older than 0.2.0, using old sweep command.")
-            self.features.append("Original sweep method")
+            self.features.add("Original sweep method")
             self.useScan = False
         self.features.extend(self.readFeatures())
 
