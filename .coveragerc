@@ -11,7 +11,9 @@ omit =
     NanoVNASaver/Marker/Widget.py
     NanoVNASaver/Marker/__init__.py
     NanoVNASaver/NanoVNASaver.py
+    NanoVNASaver/Settings.py
     NanoVNASaver/SweepWorker.py
+    NanoVNASaver/Windows/*.py
     NanoVNASaver/__init__.py
     NanoVNASaver/__main__.py
     NanoVNASaver/about.py
