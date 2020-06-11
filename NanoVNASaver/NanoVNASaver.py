@@ -84,6 +84,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.vna = InvalidVNA(self, serial)
 
         self.dataLock = threading.Lock()
+        # TODO: use Touchstone class as data container
         self.data: List[Datapoint] = []
         self.data21: List[Datapoint] = []
         self.referenceS11data: List[Datapoint] = []
@@ -532,81 +533,48 @@ class NanoVNASaver(QtWidgets.QWidget):
         for port in get_interfaces():
             self.serialPortInput.insertItem(1, port[1], port[0])
 
-    def exportFileS1P(self):
+    def exportFile(self, nr_params: int = 1):
         if len(self.data) == 0:
-            # No data to save, alert the user
             QtWidgets.QMessageBox.warning(self, "No data to save", "There is no data to save.")
             return
-
-        filedialog = QtWidgets.QFileDialog(self)
-        filedialog.setDefaultSuffix("s1p")
-        filedialog.setNameFilter("Touchstone 1-Port Files (*.s1p);;All files (*.*)")
-        filedialog.setAcceptMode(QtWidgets.QFileDialog.AcceptSave)
-        selected = filedialog.exec()
-        if selected:
-            filename = filedialog.selectedFiles()[0]
-        else:
-            return
-        if filename == "":
-            logger.debug("No file name selected.")
-            return
-        logger.debug("Save S1P file to %s", filename)
-        if len(self.data) == 0:
-            logger.warning("No data stored, nothing written.")
-            return
-        # TODO: should be delegated to Touchstone module
-        try:
-            logger.debug("Opening %s for writing", filename)
-            with open(filename, "w+") as tsfile:
-                logger.debug("Writing file")
-                tsfile.write("# Hz S RI R 50\n")
-                freq_prev = 0
-                for data in self.data:
-                    if data.freq <= freq_prev:
-                        continue
-                    tsfile.write(f"{data.freq} {data.re} {data.im}\n")
-            logger.debug("File written")
-        except Exception as e:
-            logger.exception("Error during file export: %s", e)
-            return
-
-    def exportFileS2P(self):
-        if len(self.data21) == 0:
-            # No S21 data to save, alert the user
+        if nr_params > 2 and len(self.data21) == 0:
             QtWidgets.QMessageBox.warning(self, "No S21 data to save", "There is no S21 data to save.")
             return
 
         filedialog = QtWidgets.QFileDialog(self)
-        filedialog.setDefaultSuffix("s2p")
-        filedialog.setNameFilter("Touchstone 2-Port Files (*.s2p);;All files (*.*)")
+        if nr_params == 1:
+            filedialog.setDefaultSuffix("s1p")
+            filedialog.setNameFilter("Touchstone 1-Port Files (*.s1p);;All files (*.*)")
+        else:
+            filedialog.setDefaultSuffix("s2p")
+            filedialog.setNameFilter("Touchstone 2-Port Files (*.s2p);;All files (*.*)")
         filedialog.setAcceptMode(QtWidgets.QFileDialog.AcceptSave)
         selected = filedialog.exec()
-        if selected:
-            filename = filedialog.selectedFiles()[0]
-        else:
+        if not selected:
             return
+        filename = filedialog.selectedFiles()[0]
         if filename == "":
             logger.debug("No file name selected.")
             return
-        logger.debug("Save S2P file to %s", filename)
-        if len(self.data) == 0 or len(self.data21) == 0:
-            logger.warning("No data stored, nothing written.")
-            return
-        # TODO: should be delegated to Touchstone module
+
+        ts = Touchstone(filename)
+        ts.sdata[0] = self.data
+        if nr_params > 1:
+            ts.sdata[1] = self.data
+            for dp in self.data:
+                ts.sdata[2].append(Datapoint(dp.freq, 0, 0))
+                ts.sdata[3].append(Datapoint(dp.freq, 0, 0))
         try:
-            logger.debug("Opening %s for writing", filename)
-            file = open(filename, "w+")
-            logger.debug("Writing file")
-            file.write("# Hz S RI R 50\n")
-            for i in range(len(self.data)):
-                if i == 0 or self.data[i].freq != self.data[i-1].freq:
-                    file.write(str(self.data[i].freq) + " " + str(self.data[i].re) + " " + str(self.data[i].im) + " " +
-                               str(self.data21[i].re) + " " + str(self.data21[i].im) + " 0 0 0 0\n")
-            file.close()
-            logger.debug("File written")
-        except Exception as e:
+            ts.save(nr_params)
+        except IOError as e:
             logger.exception("Error during file export: %s", e)
             return
+
+    def exportFileS1P(self):
+        self.exportFile()
+
+    def exportFileS2P(self):
+        self.exportFile(4)
 
     def serialButtonClick(self):
         if self.serial.is_open:
