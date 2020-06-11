@@ -202,3 +202,34 @@ class Touchstone:
                 logger.warning("Reordering data")
                 for datalist in self.sdata:
                     datalist.sort(key=attrgetter("freq"))
+
+    def save(self, nr_params: int = 1):
+        """Save touchstone data to file.
+
+        Args:
+            nr_params: Number of s-parameters. 2 for s1p, 4 for s2p
+        """
+
+        logger.info("Attempting to open file %s for writing",
+                    self.filename)
+        with open(self.filename, "w") as outfile:
+            outfile.write(self.saves(nr_params))
+
+    def saves(self, nr_params: int = 1  ) -> str:
+        """Returns touchstone data as string.
+
+        Args:
+            nr_params: Number of s-parameters. 1 for s1p, 4 for s2p
+        """
+        assert nr_params in (1, 4)
+
+        ts_str = "# HZ S RI R 50\n"
+        for i, dp_s11 in enumerate(self.s11data):
+            ts_str += f"{dp_s11.freq} {dp_s11.re} {dp_s11.im}"
+            for j in range(1, nr_params):
+                dp = self.sdata[j][i]
+                if dp.freq != dp_s11.freq:
+                    raise LookupError("Frequencies of sdata not correlated")
+                ts_str +=f" {dp.re} {dp.im}"
+            ts_str += "\n"
+        return ts_str
