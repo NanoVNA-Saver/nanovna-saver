@@ -96,7 +96,7 @@ class SweepWorker(QtCore.QRunnable):
                 return
 
         span = sweep_to - sweep_from
-        stepsize = int(span / (self.vna.datapoints-1 + (self.noSweeps-1)*self.vna.datapoints))
+        stepsize = int(span / (self.noSweeps * self.vna.datapoints - 1))
 
         #  Setup complete
 
@@ -172,11 +172,12 @@ class SweepWorker(QtCore.QRunnable):
                     self.running = False
                     self.signals.sweepFatalError.emit()
 
-        # Reset the device to show the full range
-        logger.debug("Resetting NanoVNA sweep to full range: %d to %d",
+        # Reset the device to show the full range if we were multisegment
+        if self.noSweeps > 1 :
+            logger.debug("Resetting NanoVNA sweep to full range: %d to %d",
                      RFTools.parseFrequency(self.app.sweepStartInput.text()),
                      RFTools.parseFrequency(self.app.sweepEndInput.text()))
-        self.vna.resetSweep(RFTools.parseFrequency(self.app.sweepStartInput.text()),
+            self.vna.resetSweep(RFTools.parseFrequency(self.app.sweepStartInput.text()),
                             RFTools.parseFrequency(self.app.sweepEndInput.text()))
 
         self.percentage = 100
