@@ -56,6 +56,7 @@ jobs:
         pip install -r requirements.txt
         pip install PyInstaller
     - name: Build binary
+      run: |
         pyinstall nanovna-saver.py
 
     - name: Archive production artifacts
