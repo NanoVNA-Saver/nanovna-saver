@@ -47,14 +47,15 @@ class VNA:
 
         return self.features
 
-    def readFrequencies(self) -> List[str]:
-        pass
+    # TODO: check return types
+    def readFrequencies(self) -> List[int]:
+        return []
 
     def readValues11(self) -> List[str]:
-        pass
+        return []
 
     def readValues21(self) -> List[str]:
-        pass
+        return []
 
     def resetSweep(self, start: int, stop: int):
         pass
@@ -173,7 +174,8 @@ class VNA:
     def setSweep(self, start, stop):
         self.writeSerial("sweep " + str(start) + " " + str(stop) + " " + str(self.datapoints))
 
-
+# TODO: should be dropped and the serial part should be a connection class which handles
+#       unconnected devices
 class InvalidVNA(VNA):
     name = "Invalid"
 
