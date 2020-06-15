@@ -24,7 +24,7 @@ from typing import List
 import serial
 from PyQt5 import QtWidgets, QtCore, QtGui
 
-from .Windows import AboutWindow, AnalysisWindow, \
+from .Windows import AboutWindow, AnalysisWindow, CalibrationWindow, \
     DeviceSettingsWindow, DisplaySettingsWindow, SweepSettingsWindow, \
     TDRWindow
 from .Hardware import get_interfaces, get_VNA, InvalidVNA
@@ -37,7 +37,7 @@ from .Charts import CapacitanceChart, \
     QualityFactorChart, VSWRChart, PermeabilityChart, PolarChart, \
     RealImaginaryChart, \
     SmithChart, SParameterChart, TDRChart
-from .Calibration import CalibrationWindow, Calibration
+from .Calibration import Calibration
 from .Inputs import FrequencyInputWidget
 from .Marker import Marker
 from .SweepWorker import SweepWorker
