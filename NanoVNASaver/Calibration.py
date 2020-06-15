@@ -93,8 +93,7 @@ class Calibration:
                 return (False,
                         "All of short, open and load calibration steps"
                         "must be completed for calibration to be applied.")
-            else:
-                return False, "All calibration data sets must be the same size."
+            return False, "All calibration data sets must be the same size."
         self.frequencies = [int] * len(self.s11short)
         self.e00 = [np.complex] * len(self.s11short)
         self.e11 = [np.complex] * len(self.s11short)
@@ -308,14 +307,11 @@ class Calibration:
                     if line == ("# Hz ShortR ShortI OpenR OpenI LoadR Load"
                                 " ThroughR ThroughI IsolationR IsolationI"):
                         parsed_header = True
-                        continue
-                    else:
-                        # This is some other comment line
-                        continue
-                if not parsed_header:
-                    logger.warning("Warning: Read line without having read header: %s", line)
                     continue
-
+                if not parsed_header:
+                    logger.warning(
+                        "Warning: Read line without having read header: %s", line)
+                    continue
                 try:
                     if line.count(" ") == 6:
                         freq, shortr, shorti, openr, openi, loadr, loadi = line.split(

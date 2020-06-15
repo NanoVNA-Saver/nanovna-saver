@@ -88,13 +88,11 @@ class BandsModel(QtCore.QAbstractTableModel):
         if (role == QtCore.Qt.DisplayRole or
                 role == QtCore.Qt.ItemDataRole or role == QtCore.Qt.EditRole):
             return QtCore.QVariant(self.bands[index.row()][index.column()])
-        elif role == QtCore.Qt.TextAlignmentRole:
+        if role == QtCore.Qt.TextAlignmentRole:
             if index.column() == 0:
                 return QtCore.QVariant(QtCore.Qt.AlignCenter)
-            else:
-                return QtCore.QVariant(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-        else:
-            return QtCore.QVariant()
+            return QtCore.QVariant(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+        return QtCore.QVariant()
 
     def setData(self, index: QModelIndex, value: typing.Any, role: int = ...) -> bool:
         if role == QtCore.Qt.EditRole and index.isValid():
@@ -128,18 +126,18 @@ class BandsModel(QtCore.QAbstractTableModel):
         self.saveSettings()
         return True
 
-    def headerData(self, section: int, orientation: QtCore.Qt.Orientation, role: int = ...):
-        if role == QtCore.Qt.DisplayRole and orientation == QtCore.Qt.Horizontal:
+    def headerData(self, section: int,
+                   orientation: QtCore.Qt.Orientation, role: int = ...):
+        if (role == QtCore.Qt.DisplayRole and
+                orientation == QtCore.Qt.Horizontal):
             if section == 0:
                 return "Band"
             if section == 1:
                 return "Start (Hz)"
             if section == 2:
                 return "End (Hz)"
-            else:
-                return "Invalid"
-        else:
-            super().headerData(section, orientation, role)
+            return "Invalid"
+        super().headerData(section, orientation, role)
 
     def flags(self, index: QModelIndex) -> QtCore.Qt.ItemFlags:
         if index.isValid():
@@ -147,8 +145,7 @@ class BandsModel(QtCore.QAbstractTableModel):
                 QtCore.Qt.ItemIsEditable |
                 QtCore.Qt.ItemIsEnabled |
                 QtCore.Qt.ItemIsSelectable)
-        else:
-            super().flags(index)
+        super().flags(index)
 
     def setColor(self, color):
         self.color = color

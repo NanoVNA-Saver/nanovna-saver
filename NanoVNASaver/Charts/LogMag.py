@@ -217,8 +217,7 @@ class LogMagChart(FrequencyChart):
     def logMag(self, p: Datapoint) -> float:
         if self.isInverted:
             return -p.gain
-        else:
-            return p.gain
+        return p.gain
 
     def copy(self):
         new_chart: LogMagChart = super().copy()

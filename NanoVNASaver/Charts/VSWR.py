@@ -187,8 +187,7 @@ class VSWRChart(FrequencyChart):
             return (
                 self.topMargin +
                 round((math.log(self.maxVSWR) - math.log(vswr)) / span * self.chartHeight))
-        else:
-            return self.topMargin + round((self.maxVSWR - vswr) / self.span * self.chartHeight)
+        return self.topMargin + round((self.maxVSWR - vswr) / self.span * self.chartHeight)
 
     def getYPosition(self, d: Datapoint) -> int:
         return self.getYPositionFromValue(d.vswr)

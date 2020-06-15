@@ -236,10 +236,8 @@ class CalibrationWindow(QtWidgets.QWidget):
             if response == QtWidgets.QMessageBox.Yes:
                 self.app.settings.setValue("ExpertCalibrationUser", True)
                 return True
-            else:
-                return False
-        else:
-            return True
+            return False
+        return True
 
     def manualSaveShort(self):
         if self.checkExpertUser():
@@ -722,6 +720,8 @@ class CalibrationWindow(QtWidgets.QWidget):
     def automaticCalibrationStep(self):
         if self.nextStep == -1:
             self.app.worker.signals.finished.disconnect(self.automaticCalibrationStep)
+            return
+
         if self.nextStep == 0:
             # Short
             self.saveShort()
@@ -743,11 +743,10 @@ class CalibrationWindow(QtWidgets.QWidget):
                 self.app.worker.signals.finished.disconnect(
                     self.automaticCalibrationStep)
                 return
-            else:
-                self.app.sweep()
-                return
+            self.app.sweep()
+            return
 
-        elif self.nextStep == 1:
+        if self.nextStep == 1:
             # Open
             self.saveOpen()
             self.nextStep = 2
@@ -765,9 +764,8 @@ class CalibrationWindow(QtWidgets.QWidget):
                 self.app.worker.signals.finished.disconnect(
                     self.automaticCalibrationStep)
                 return
-            else:
-                self.app.sweep()
-                return
+            self.app.sweep()
+            return
 
         if self.nextStep == 2:
             # Load
@@ -789,32 +787,31 @@ class CalibrationWindow(QtWidgets.QWidget):
                 self.app.worker.signals.finished.disconnect(self.automaticCalibrationStep)
                 self.btn_automatic.setDisabled(False)
                 return
-            elif response != QtWidgets.QMessageBox.Yes:
+            if response != QtWidgets.QMessageBox.Yes:
                 self.btn_automatic.setDisabled(False)
                 self.nextStep = -1
                 self.app.worker.signals.finished.disconnect(self.automaticCalibrationStep)
                 return
-            else:
-                isolation_step = QtWidgets.QMessageBox(
-                    QtWidgets.QMessageBox.Information,
-                    "Calibrate isolation",
-                    "Please connect the \"load\" standard to port 1 of the NanoVNA.\n\n"
-                    "If available, also connect a load standard to port 0.\n\n"
-                    "Press Ok when you are ready to continue.",
-                    QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
 
-                response = isolation_step.exec()
-                if response != QtWidgets.QMessageBox.Ok:
-                    self.btn_automatic.setDisabled(False)
-                    self.nextStep = -1
-                    self.app.worker.signals.finished.disconnect(
-                        self.automaticCalibrationStep)
-                    return
-                else:
-                    self.app.sweep()
-                    return
+            isolation_step = QtWidgets.QMessageBox(
+                QtWidgets.QMessageBox.Information,
+                "Calibrate isolation",
+                "Please connect the \"load\" standard to port 1 of the NanoVNA.\n\n"
+                "If available, also connect a load standard to port 0.\n\n"
+                "Press Ok when you are ready to continue.",
+                QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
 
-        elif self.nextStep == 3:
+            response = isolation_step.exec()
+            if response != QtWidgets.QMessageBox.Ok:
+                self.btn_automatic.setDisabled(False)
+                self.nextStep = -1
+                self.app.worker.signals.finished.disconnect(
+                    self.automaticCalibrationStep)
+                return
+            self.app.sweep()
+            return
+
+        if self.nextStep == 3:
             # Isolation
             self.saveIsolation()
             self.nextStep = 4
@@ -833,11 +830,10 @@ class CalibrationWindow(QtWidgets.QWidget):
                 self.app.worker.signals.finished.disconnect(
                     self.automaticCalibrationStep)
                 return
-            else:
-                self.app.sweep()
-                return
+            self.app.sweep()
+            return
 
-        elif self.nextStep == 4:
+        if self.nextStep == 4:
             # Done
             self.saveThrough()
             apply_step = QtWidgets.QMessageBox(
@@ -854,11 +850,9 @@ class CalibrationWindow(QtWidgets.QWidget):
                 self.app.worker.signals.finished.disconnect(
                     self.automaticCalibrationStep)
                 return
-            else:
-                self.calculate()
-                self.btn_automatic.setDisabled(False)
-                self.nextStep = -1
-                self.app.worker.signals.finished.disconnect(
-                    self.automaticCalibrationStep)
-                return
-        return
+            self.calculate()
+            self.btn_automatic.setDisabled(False)
+            self.nextStep = -1
+            self.app.worker.signals.finished.disconnect(
+                self.automaticCalibrationStep)
+            return

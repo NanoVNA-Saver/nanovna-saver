@@ -58,17 +58,32 @@ class NanoVNA_F(NanoVNA):
                 unwrapped_array = np.empty(
                     self.screenwidth*self.screenheight,
                     dtype=np.uint32)
-                for y in range(self.screenheight//2):
-                    for x in range(self.screenwidth//2):
-                        unwrapped_array[2 * x + 2 * y * self.screenwidth] = rgba_array[x + y * self.screenwidth]
-                        unwrapped_array[(2 * x) + 1 + 2 * y * self.screenwidth] = \
-                            rgba_array[x + (self.screenheight//2 + y) * self.screenwidth]
-                        unwrapped_array[2 * x + (2 * y + 1) * self.screenwidth] = \
-                            rgba_array[x + self.screenwidth//2 + y * self.screenwidth]
-                        unwrapped_array[(2 * x) + 1 + (2 * y + 1) * self.screenwidth] = \
-                            rgba_array[x + self.screenwidth//2 + (self.screenheight//2 + y) * self.screenwidth]
+                for y in range(self.screenheight // 2):
+                    for x in range(self.screenwidth // 2):
+                        unwrapped_array[
+                            2 * x + 2 * y * self.screenwidth
+                        ] = rgba_array[x + y * self.screenwidth]
+                        unwrapped_array[
+                            (2 * x) + 1 + 2 * y * self.screenwidth
+                        ] = rgba_array[
+                            x + (self.screenheight//2 + y) * self.screenwidth
+                        ]
+                        unwrapped_array[
+                            2 * x + (2 * y + 1) * self.screenwidth
+                        ] = rgba_array[
+                            x + self.screenwidth // 2 + y * self.screenwidth
+                        ]
+                        unwrapped_array[
+                            (2 * x) + 1 + (2 * y + 1) * self.screenwidth
+                        ] = rgba_array[
+                            x + self.screenwidth // 2 +
+                            (self.screenheight//2 + y) * self.screenwidth
+                        ]
 
-                image = QtGui.QImage(unwrapped_array, self.screenwidth, self.screenheight, QtGui.QImage.Format_ARGB32)
+                image = QtGui.QImage(
+                    unwrapped_array,
+                    self.screenwidth, self.screenheight, 
+                    QtGui.QImage.Format_ARGB32)
                 logger.debug("Captured screenshot")
                 return QtGui.QPixmap(image)
             except serial.SerialException as exc:

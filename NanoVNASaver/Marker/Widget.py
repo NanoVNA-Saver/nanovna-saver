@@ -117,9 +117,9 @@ class Marker(QtCore.QObject, Value):
         self.layout.addWidget(self.btnColorPicker)
         self.layout.addWidget(self.isMouseControlledRadioButton)
 
-        ################################################################################################################
+        ###############################################################
         # Data display layout
-        ################################################################################################################
+        ###############################################################
 
         self.group_box = QtWidgets.QGroupBox(self.name)
         self.group_box.setMaximumWidth(340)

@@ -50,8 +50,14 @@ class SmithChart(SquareChart):
         qp.setPen(QtGui.QPen(self.textColor))
         qp.drawText(3, 15, self.name)
         qp.setPen(QtGui.QPen(self.foregroundColor))
-        qp.drawEllipse(QtCore.QPoint(centerX, centerY), int(self.chartWidth/2), int(self.chartHeight/2))
-        qp.drawLine(centerX - int(self.chartWidth/2), centerY, centerX + int(self.chartWidth/2), centerY)
+        qp.drawEllipse(QtCore.QPoint(centerX, centerY),
+                       int(self.chartWidth / 2),
+                       int(self.chartHeight / 2))
+        qp.drawLine(
+            centerX - int(self.chartWidth / 2),
+            centerY,
+            centerX + int(self.chartWidth / 2),
+            centerY)
 
         qp.drawEllipse(QtCore.QPoint(centerX + int(self.chartWidth/4), centerY),
                        int(self.chartWidth/4), int(self.chartHeight/4))  # Re(Z) = 1
@@ -75,16 +81,24 @@ class SmithChart(SquareChart):
                    int(self.chartHeight/2), 90*16, 127*16)  # Im(Z) = -2
         qp.drawArc(centerX + int(self.chartWidth/4), centerY, int(self.chartWidth/2),
                    -int(self.chartHeight/2), -90*16, -127*16)  # Im(Z) = 2
-        qp.drawArc(centerX, centerY, self.chartWidth, self.chartHeight, 90*16, 90*16)  # Im(Z) = -1
-        qp.drawArc(centerX, centerY, self.chartWidth, -self.chartHeight, -90 * 16, -90 * 16)  # Im(Z) = 1
-        qp.drawArc(centerX - int(self.chartWidth/2), centerY,
-                   self.chartWidth*2, self.chartHeight*2, int(99.5*16), int(43.5*16))  # Im(Z) = -0.5
-        qp.drawArc(centerX - int(self.chartWidth/2), centerY,
-                   self.chartWidth*2, -self.chartHeight*2, int(-99.5 * 16), int(-43.5 * 16))  # Im(Z) = 0.5
+        qp.drawArc(centerX, centerY,
+                   self.chartWidth, self.chartHeight,
+                   90*16, 90*16)  # Im(Z) = -1
+        qp.drawArc(centerX, centerY,
+                   self.chartWidth, -self.chartHeight,
+                   -90 * 16, -90 * 16)  # Im(Z) = 1
+        qp.drawArc(centerX - int(self.chartWidth / 2), centerY,
+                   self.chartWidth * 2, self.chartHeight * 2,
+                   int(99.5*16), int(43.5*16))  # Im(Z) = -0.5
+        qp.drawArc(centerX - int(self.chartWidth / 2), centerY,
+                   self.chartWidth * 2, -self.chartHeight * 2,
+                   int(-99.5 * 16), int(-43.5 * 16))  # Im(Z) = 0.5
+        qp.drawArc(centerX - self.chartWidth * 2, centerY,
+                   self.chartWidth * 5, self.chartHeight * 5,
+                   int(93.85 * 16), int(18.85 * 16))  # Im(Z) = -0.2
         qp.drawArc(centerX - self.chartWidth*2, centerY,
-                   self.chartWidth*5, self.chartHeight*5, int(93.85*16), int(18.85*16))  # Im(Z) = -0.2
-        qp.drawArc(centerX - self.chartWidth*2, centerY,
-                   self.chartWidth*5, -self.chartHeight*5, int(-93.85 * 16), int(-18.85 * 16))  # Im(Z) = 0.2
+                   self.chartWidth*5, -self.chartHeight*5,
+                   int(-93.85 * 16), int(-18.85 * 16))  # Im(Z) = 0.2
 
         self.drawTitle(qp)
 
@@ -95,7 +109,9 @@ class SmithChart(SquareChart):
             gamma = (swr - 1)/(swr + 1)
             r = round(gamma * self.chartWidth/2)
             qp.drawEllipse(QtCore.QPoint(centerX, centerY), r, r)
-            qp.drawText(QtCore.QRect(centerX - 50, centerY - 4 + r, 100, 20), QtCore.Qt.AlignCenter, str(swr))
+            qp.drawText(
+                QtCore.QRect(centerX - 50, centerY - 4 + r, 100, 20),
+                QtCore.Qt.AlignCenter, str(swr))
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:

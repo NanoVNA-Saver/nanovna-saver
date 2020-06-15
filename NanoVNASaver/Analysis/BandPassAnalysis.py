@@ -35,14 +35,16 @@ class BandPassAnalysis(Analysis):
         layout = QtWidgets.QFormLayout()
         self._widget.setLayout(layout)
         layout.addRow(QtWidgets.QLabel("Band pass filter analysis"))
-        layout.addRow(QtWidgets.QLabel("Please place " + self.app.markers[0].name + " in the filter passband."))
+        layout.addRow(
+            QtWidgets.QLabel(
+                f"Please place {self.app.markers[0].name} in the filter passband."))
         self.result_label = QtWidgets.QLabel()
         self.lower_cutoff_label = QtWidgets.QLabel()
         self.lower_six_db_label = QtWidgets.QLabel()
         self.lower_sixty_db_label = QtWidgets.QLabel()
         self.lower_db_per_octave_label = QtWidgets.QLabel()
         self.lower_db_per_decade_label = QtWidgets.QLabel()
-        
+
         self.upper_cutoff_label = QtWidgets.QLabel()
         self.upper_six_db_label = QtWidgets.QLabel()
         self.upper_sixty_db_label = QtWidgets.QLabel()
@@ -111,7 +113,8 @@ class BandPassAnalysis(Analysis):
 
         if pass_band_location < 0:
             logger.debug("No location for %s", self.app.markers[0].name)
-            self.result_label.setText("Please place " + self.app.markers[0].name  + " in the passband.")
+            self.result_label.setText(
+                f"Please place {self.app.markers[0].name} in the passband.")
             return
 
         pass_band_db = self.app.data21[pass_band_location].gain
@@ -170,9 +173,9 @@ class BandPassAnalysis(Analysis):
         lower_cutoff_gain = self.app.data21[lower_cutoff_location].gain - pass_band_db
 
         if lower_cutoff_gain < -4:
-            logger.debug("Lower cutoff frequency found at %f dB - insufficient data points for true -3 dB point.",
+            logger.debug("Lower cutoff frequency found at %f dB"
+                         " - insufficient data points for true -3 dB point.",
                          lower_cutoff_gain)
-
         logger.debug("Found true lower cutoff frequency at %d", lower_cutoff_frequency)
 
         self.lower_cutoff_label.setText(RFTools.formatFrequency(lower_cutoff_frequency) +
@@ -192,13 +195,15 @@ class BandPassAnalysis(Analysis):
         upper_cutoff_frequency = self.app.data21[upper_cutoff_location].freq
         upper_cutoff_gain = self.app.data21[upper_cutoff_location].gain - pass_band_db
         if upper_cutoff_gain < -4:
-            logger.debug("Upper cutoff frequency found at %f dB - insufficient data points for true -3 dB point.",
+            logger.debug("Upper cutoff frequency found at %f dB"
+                         " - insufficient data points for true -3 dB point.",
                          upper_cutoff_gain)
 
         logger.debug("Found true upper cutoff frequency at %d", upper_cutoff_frequency)
 
-        self.upper_cutoff_label.setText(RFTools.formatFrequency(upper_cutoff_frequency) +
-                                        " (" + str(round(upper_cutoff_gain, 1)) + " dB)")
+        self.upper_cutoff_label.setText(
+            RFTools.formatFrequency(upper_cutoff_frequency) +
+            f" ({round(upper_cutoff_gain, 1)} dB)")
         self.app.markers[2].setFrequency(str(upper_cutoff_frequency))
         self.app.markers[2].frequencyInput.setText(str(upper_cutoff_frequency))
 
@@ -252,19 +257,25 @@ class BandPassAnalysis(Analysis):
         if sixty_db_location > 0:
             if sixty_db_location > 0:
                 sixty_db_cutoff_frequency = self.app.data21[sixty_db_location].freq
-                self.lower_sixty_db_label.setText(RFTools.formatFrequency(sixty_db_cutoff_frequency))
+                self.lower_sixty_db_label.setText(
+                    RFTools.formatFrequency(sixty_db_cutoff_frequency))
             elif ten_db_location != -1 and twenty_db_location != -1:
                 ten = self.app.data21[ten_db_location].freq
                 twenty = self.app.data21[twenty_db_location].freq
-                sixty_db_frequency = ten * 10 ** (5 * (math.log10(twenty) - math.log10(ten)))
-                self.lower_sixty_db_label.setText(RFTools.formatFrequency(sixty_db_frequency) + " (derived)")
+                sixty_db_frequency = ten * \
+                    10 ** (5 * (math.log10(twenty) - math.log10(ten)))
+                self.lower_sixty_db_label.setText(
+                    RFTools.formatFrequency(sixty_db_frequency) + " (derived)")
             else:
                 self.lower_sixty_db_label.setText("Not calculated")
 
         if ten_db_location > 0 and twenty_db_location > 0 and ten_db_location != twenty_db_location:
-            octave_attenuation, decade_attenuation = self.calculateRolloff(ten_db_location, twenty_db_location)
-            self.lower_db_per_octave_label.setText(str(round(octave_attenuation, 3)) + " dB / octave")
-            self.lower_db_per_decade_label.setText(str(round(decade_attenuation, 3)) + " dB / decade")
+            octave_attenuation, decade_attenuation = self.calculateRolloff(
+                ten_db_location, twenty_db_location)
+            self.lower_db_per_octave_label.setText(
+                str(round(octave_attenuation, 3)) + " dB / octave")
+            self.lower_db_per_decade_label.setText(
+                str(round(decade_attenuation, 3)) + " dB / decade")
         else:
             self.lower_db_per_octave_label.setText("Not calculated")
             self.lower_db_per_decade_label.setText("Not calculated")
@@ -311,25 +322,33 @@ class BandPassAnalysis(Analysis):
 
         if sixty_db_location > 0:
             sixty_db_cutoff_frequency = self.app.data21[sixty_db_location].freq
-            self.upper_sixty_db_label.setText(RFTools.formatFrequency(sixty_db_cutoff_frequency))
+            self.upper_sixty_db_label.setText(
+                RFTools.formatFrequency(sixty_db_cutoff_frequency))
         elif ten_db_location != -1 and twenty_db_location != -1:
             ten = self.app.data21[ten_db_location].freq
             twenty = self.app.data21[twenty_db_location].freq
-            sixty_db_frequency = ten * 10 ** (5 * (math.log10(twenty) - math.log10(ten)))
-            self.upper_sixty_db_label.setText(RFTools.formatFrequency(sixty_db_frequency) + " (derived)")
+            sixty_db_frequency = ten * \
+                10 ** (5 * (math.log10(twenty) - math.log10(ten)))
+            self.upper_sixty_db_label.setText(
+                RFTools.formatFrequency(sixty_db_frequency) + " (derived)")
         else:
             self.upper_sixty_db_label.setText("Not calculated")
 
         if ten_db_location > 0 and twenty_db_location > 0 and ten_db_location != twenty_db_location:
-            octave_attenuation, decade_attenuation = self.calculateRolloff(ten_db_location, twenty_db_location)
-            self.upper_db_per_octave_label.setText(str(round(octave_attenuation, 3)) + " dB / octave")
-            self.upper_db_per_decade_label.setText(str(round(decade_attenuation, 3)) + " dB / decade")
+            octave_attenuation, decade_attenuation = self.calculateRolloff(
+                ten_db_location, twenty_db_location)
+            self.upper_db_per_octave_label.setText(
+                f"{round(octave_attenuation, 3)} dB / octave")
+            self.upper_db_per_decade_label.setText(
+                f"{round(decade_attenuation, 3)} dB / decade")
         else:
             self.upper_db_per_octave_label.setText("Not calculated")
             self.upper_db_per_decade_label.setText("Not calculated")
 
         if upper_cutoff_gain < -4 or lower_cutoff_gain < -4:
-            self.result_label.setText("Analysis complete (" + str(len(self.app.data)) + " points)\n" +
-                                      "Insufficient data for analysis. Increase segment count.")
+            self.result_label.setText(
+                f"Analysis complete ({len(self.app.data)} points)\n"
+                f"Insufficient data for analysis. Increase segment count.")
         else:
-            self.result_label.setText("Analysis complete (" + str(len(self.app.data)) + " points)")
+            self.result_label.setText(
+                f"Analysis complete ({len(self.app.data)} points)")
