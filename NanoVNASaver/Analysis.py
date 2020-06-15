@@ -1,4 +1,5 @@
-#  NanoVNASaver - a python program to view and export Touchstone data from a NanoVNA
+#  NanoVNASaver
+#  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019.  Rune B. Broberg
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -1129,7 +1130,7 @@ class PeakSearchAnalysis(Analysis):
 
         for p in peaks:
             logger.debug("Peak at %d", p)
-        prominences, left_bases, right_bases = signal.peak_prominences(data, peaks)
+        prominences = signal.peak_prominences(data, peaks)[0]
         logger.debug("%d prominences", len(prominences))
 
         # Find the peaks with the most extreme values
