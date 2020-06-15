@@ -710,7 +710,6 @@ class NanoVNASaver(QtWidgets.QWidget):
     def dataUpdated(self):
         if self.dataLock.acquire(blocking=True):
             for m in self.markers:
-                m.findLocation(self.data)
                 m.resetLabels()
                 m.updateLabels(self.data, self.data21)
 

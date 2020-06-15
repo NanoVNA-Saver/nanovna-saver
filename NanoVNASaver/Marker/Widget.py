@@ -68,7 +68,7 @@ class Marker(QtCore.QObject, Value):
         return cls._instances
 
     def __init__(self, name: str = "", qsettings: QtCore.QSettings = None):
-        super(QtCore.QObject, self).__init__()
+        super().__init__()
         self.name = name
         self.qsettings = qsettings
         self.name = name
