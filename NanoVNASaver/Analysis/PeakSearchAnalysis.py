@@ -15,13 +15,13 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-import math
 
 from PyQt5 import QtWidgets
-
-from NanoVNASaver.RFTools import RFTools
 from scipy import signal
 import numpy as np
+
+from NanoVNASaver.Analysis import Analysis
+
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +107,10 @@ class PeakSearchAnalysis(Analysis):
         #     peaks_min, _ = signal.find_peaks(np.array(data)*-1, width=3, distance=3, prominence=1)
         #     peaks = np.concatenate((peaks_max, peaks_min))
         else:
-            logger.warning("Searching for peaks, but neither looking at positive nor negative?")  # Both is not yet in
+            # Both is not yet in
+            logger.warning(
+                "Searching for peaks,"
+                " but neither looking at positive nor negative?")
             return
 
         # Having found the peaks, get the prominence data
@@ -132,8 +135,10 @@ class PeakSearchAnalysis(Analysis):
             if count > len(self.app.markers):
                 logger.warning("More peaks found than there are markers")
             for i in range(min(count, len(self.app.markers))):
-                self.app.markers[i].setFrequency(str(self.app.data[peaks[indices[i]]].freq))
-                self.app.markers[i].frequencyInput.setText(str(self.app.data[peaks[indices[i]]].freq))
+                self.app.markers[i].setFrequency(
+                    str(self.app.data[peaks[indices[i]]].freq))
+                self.app.markers[i].frequencyInput.setText(
+                    str(self.app.data[peaks[indices[i]]].freq))
 
         max_val = -10**10
         max_idx = -1

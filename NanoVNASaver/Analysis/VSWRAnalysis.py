@@ -15,13 +15,12 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-import math
 
 from PyQt5 import QtWidgets
-
-from NanoVNASaver.RFTools import RFTools
-from scipy import signal
 import numpy as np
+
+from NanoVNASaver.Analysis import Analysis, PeakSearchAnalysis
+from NanoVNASaver.RFTools import RFTools
 
 logger = logging.getLogger(__name__)
 
@@ -74,8 +73,7 @@ class VSWRAnalysis(Analysis):
         min_idx = -1
         threshold = self.input_vswr_limit.value()
         min_val = threshold
-        for i in range(len(data)):
-            d = data[i]
+        for i, d in enumerate(data):
             if d < threshold and i < len(data)-1:
                 if d < min_val:
                     min_val = d
@@ -116,17 +114,29 @@ class VSWRAnalysis(Analysis):
             for m in minimums:
                 start, lowest, end = m
                 if start != end:
-                    logger.debug("Section from %d to %d, lowest at %d", start, end, lowest)
-                    self.layout.addRow("Start", QtWidgets.QLabel(RFTools.formatFrequency(self.app.data[start].freq)))
-                    self.layout.addRow("Minimum", QtWidgets.QLabel(RFTools.formatFrequency(self.app.data[lowest].freq) +
-                                                                   " (" + str(round(data[lowest], 2)) + ")"))
-                    self.layout.addRow("End", QtWidgets.QLabel(RFTools.formatFrequency(self.app.data[end].freq)))
-                    self.layout.addRow("Span", QtWidgets.QLabel(RFTools.formatFrequency(self.app.data[end].freq -\
-                                                                                        self.app.data[start].freq)))
+                    logger.debug(
+                        "Section from %d to %d, lowest at %d", start, end, lowest)
+                    self.layout.addRow("Start", QtWidgets.QLabel(
+                        RFTools.formatFrequency(self.app.data[start].freq)))
+                    self.layout.addRow(
+                        "Minimum",
+                        QtWidgets.QLabel(
+                            RFTools.formatFrequency(self.app.data[lowest].freq) +
+                            " (" + str(round(data[lowest], 2)) + ")"))
+                    self.layout.addRow("End", QtWidgets.QLabel(
+                        RFTools.formatFrequency(self.app.data[end].freq)))
+                    self.layout.addRow(
+                        "Span",
+                        QtWidgets.QLabel(
+                            RFTools.formatFrequency(self.app.data[end].freq -
+                                                    self.app.data[start].freq)))
                     self.layout.addWidget(PeakSearchAnalysis.QHLine())
                 else:
-                    self.layout.addRow("Low spot", QtWidgets.QLabel(RFTools.formatFrequency(self.app.data[lowest].freq)))
+                    self.layout.addRow("Low spot", QtWidgets.QLabel(
+                        RFTools.formatFrequency(self.app.data[lowest].freq)))
                     self.layout.addWidget(PeakSearchAnalysis.QHLine())
-            self.layout.removeRow(self.layout.rowCount()-1)  # Remove the final separator line
+            # Remove the final separator line
+            self.layout.removeRow(self.layout.rowCount()-1)
         else:
-            self.layout.addRow(QtWidgets.QLabel("No areas found with VSWR below " + str(round(threshold, 2)) + "."))
+            self.layout.addRow(QtWidgets.QLabel(
+                "No areas found with VSWR below " + str(round(threshold, 2)) + "."))

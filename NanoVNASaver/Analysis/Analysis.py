@@ -19,19 +19,14 @@ import math
 
 from PyQt5 import QtWidgets
 
-from NanoVNASaver.RFTools import RFTools
-from scipy import signal
-import numpy as np
-
 logger = logging.getLogger(__name__)
 
 
 class Analysis:
     _widget = None
 
-    def __init__(self, app):
-        from NanoVNASaver.NanoVNASaver import NanoVNASaver
-        self.app: NanoVNASaver = app
+    def __init__(self, app: QtWidgets.QWidget):
+        self.app = app
 
     def widget(self) -> QtWidgets.QWidget:
         return self._widget

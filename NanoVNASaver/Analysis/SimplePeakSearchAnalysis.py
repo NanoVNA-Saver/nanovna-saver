@@ -15,13 +15,13 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-import math
 
 from PyQt5 import QtWidgets
-
-from NanoVNASaver.RFTools import RFTools
-from scipy import signal
 import numpy as np
+
+from NanoVNASaver.Analysis import Analysis, PeakSearchAnalysis
+from NanoVNASaver.RFTools import RFTools
+
 
 logger = logging.getLogger(__name__)
 
@@ -108,12 +108,17 @@ class SimplePeakSearchAnalysis(Analysis):
         elif self.rbtn_peak_negative.isChecked():
             idx_peak = np.argmin(data)
         else:
-            logger.warning("Searching for peaks, but neither looking at positive nor negative?")  # Both is not yet in
+            # Both is not yet in
+            logger.warning(
+                "Searching for peaks,"
+                " but neither looking at positive nor negative?")
             return
 
-        self.peak_frequency.setText(RFTools.formatFrequency(self.app.data[idx_peak].freq))
+        self.peak_frequency.setText(
+            RFTools.formatFrequency(self.app.data[idx_peak].freq))
         self.peak_value.setText(str(round(data[idx_peak], 3)) + suffix)
 
         if self.checkbox_move_marker.isChecked() and len(self.app.markers) >= 1:
             self.app.markers[0].setFrequency(str(self.app.data[idx_peak].freq))
-            self.app.markers[0].frequencyInput.setText(RFTools.formatFrequency(self.app.data[idx_peak].freq))
+            self.app.markers[0].frequencyInput.setText(
+                RFTools.formatFrequency(self.app.data[idx_peak].freq))

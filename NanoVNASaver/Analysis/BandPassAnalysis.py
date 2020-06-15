@@ -20,8 +20,8 @@ import math
 from PyQt5 import QtWidgets
 
 from NanoVNASaver.RFTools import RFTools
-from scipy import signal
-import numpy as np
+
+from NanoVNASaver.Analysis import Analysis
 
 logger = logging.getLogger(__name__)
 

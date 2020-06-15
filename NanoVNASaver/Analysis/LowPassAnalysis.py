@@ -19,9 +19,8 @@ import math
 
 from PyQt5 import QtWidgets
 
+from NanoVNASaver.Analysis import Analysis
 from NanoVNASaver.RFTools import RFTools
-from scipy import signal
-import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +35,10 @@ class LowPassAnalysis(Analysis):
         layout = QtWidgets.QFormLayout()
         self._widget.setLayout(layout)
         layout.addRow(QtWidgets.QLabel("Low pass filter analysis"))
-        layout.addRow(QtWidgets.QLabel("Please place " + self.app.markers[0].name + " in the filter passband."))
+        layout.addRow(
+            QtWidgets.QLabel(
+                f"Please place {self.app.markers[0].name}"
+                f" in the filter passband."))
         self.result_label = QtWidgets.QLabel()
         self.cutoff_label = QtWidgets.QLabel()
         self.six_db_label = QtWidgets.QLabel()
@@ -69,8 +71,10 @@ class LowPassAnalysis(Analysis):
             return
 
         if pass_band_location < 0:
-            logger.debug("No location for %s", self.app.markers[0].name)
-            self.result_label.setText("Please place " + self.app.markers[0].name  + " in the passband.")
+            logger.debug("No location for %s",
+                         self.app.markers[0].name)
+            self.result_label.setText(
+                f"Please place {self.app.markers[0].name} in the passband.")
             return
 
         pass_band_db = self.app.data21[pass_band_location].gain
@@ -118,8 +122,10 @@ class LowPassAnalysis(Analysis):
         cutoff_frequency = self.app.data21[cutoff_location].freq
         cutoff_gain = self.app.data21[cutoff_location].gain - pass_band_db
         if cutoff_gain < -4:
-            logger.debug("Cutoff frequency found at %f dB - insufficient data points for true -3 dB point.",
-                         cutoff_gain)
+            logger.debug(
+                "Cutoff frequency found at %f dB"
+                " - insufficient data points for true -3 dB point.",
+                cutoff_gain)
         logger.debug("Found true cutoff frequency at %d", cutoff_frequency)
 
         self.cutoff_label.setText(RFTools.formatFrequency(cutoff_frequency) +
@@ -167,21 +173,30 @@ class LowPassAnalysis(Analysis):
 
         if sixty_db_location > 0:
             sixty_db_cutoff_frequency = self.app.data21[sixty_db_location].freq
-            self.sixty_db_label.setText(RFTools.formatFrequency(sixty_db_cutoff_frequency))
+            self.sixty_db_label.setText(
+                RFTools.formatFrequency(sixty_db_cutoff_frequency))
         elif ten_db_location != -1 and twenty_db_location != -1:
             ten = self.app.data21[ten_db_location].freq
             twenty = self.app.data21[twenty_db_location].freq
-            sixty_db_frequency = ten * 10 ** (5 * (math.log10(twenty) - math.log10(ten)))
-            self.sixty_db_label.setText(RFTools.formatFrequency(sixty_db_frequency) + " (derived)")
+            sixty_db_frequency = ten * \
+                10 ** (5 * (math.log10(twenty) - math.log10(ten)))
+            self.sixty_db_label.setText(RFTools.formatFrequency(
+                sixty_db_frequency) + " (derived)")
         else:
             self.sixty_db_label.setText("Not calculated")
 
-        if ten_db_location > 0 and twenty_db_location > 0 and ten_db_location != twenty_db_location:
-            octave_attenuation, decade_attenuation = self.calculateRolloff(ten_db_location, twenty_db_location)
-            self.db_per_octave_label.setText(str(round(octave_attenuation, 3)) + " dB / octave")
-            self.db_per_decade_label.setText(str(round(decade_attenuation, 3)) + " dB / decade")
+        if (ten_db_location > 0 and
+                twenty_db_location > 0 and
+                ten_db_location != twenty_db_location):
+            octave_attenuation, decade_attenuation = self.calculateRolloff(
+                ten_db_location, twenty_db_location)
+            self.db_per_octave_label.setText(
+                str(round(octave_attenuation, 3)) + " dB / octave")
+            self.db_per_decade_label.setText(
+                str(round(decade_attenuation, 3)) + " dB / decade")
         else:
             self.db_per_octave_label.setText("Not calculated")
             self.db_per_decade_label.setText("Not calculated")
 
-        self.result_label.setText("Analysis complete (" + str(len(self.app.data)) + " points)")
+        self.result_label.setText(
+            "Analysis complete (" + str(len(self.app.data)) + " points)")
