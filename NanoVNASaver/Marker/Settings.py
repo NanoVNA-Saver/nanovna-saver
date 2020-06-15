@@ -49,7 +49,8 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
         settings_group_box = QtWidgets.QGroupBox("Settings")
         settings_group_box_layout = QtWidgets.QFormLayout(settings_group_box)
         self.checkboxColouredMarker = QtWidgets.QCheckBox("Colored marker name")
-        self.checkboxColouredMarker.setChecked(self.app.settings.value("ColoredMarkerNames", True, bool))
+        self.checkboxColouredMarker.setChecked(
+            self.app.settings.value("ColoredMarkerNames", True, bool))
         self.checkboxColouredMarker.stateChanged.connect(self.updateMarker)
         settings_group_box_layout.addRow(self.checkboxColouredMarker)
 

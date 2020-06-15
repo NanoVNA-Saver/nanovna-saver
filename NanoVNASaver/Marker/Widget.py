@@ -68,7 +68,7 @@ class Marker(QtCore.QObject, Value):
         return cls._instances
 
     def __init__(self, name: str = "", qsettings: QtCore.QSettings = None):
-        super(QtCore.QObject, self).__init__()
+        super().__init__()
         self.name = name
         self.qsettings = qsettings
         self.name = name
@@ -117,9 +117,9 @@ class Marker(QtCore.QObject, Value):
         self.layout.addWidget(self.btnColorPicker)
         self.layout.addWidget(self.isMouseControlledRadioButton)
 
-        ################################################################################################################
+        ###############################################################
         # Data display layout
-        ################################################################################################################
+        ###############################################################
 
         self.group_box = QtWidgets.QGroupBox(self.name)
         self.group_box.setMaximumWidth(340)

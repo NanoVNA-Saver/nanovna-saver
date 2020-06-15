@@ -48,21 +48,24 @@ class PolarChart(SquareChart):
         qp.setPen(QtGui.QPen(self.textColor))
         qp.drawText(3, 15, self.name)
         qp.setPen(QtGui.QPen(self.foregroundColor))
-        qp.drawEllipse(QtCore.QPoint(centerX, centerY), int(self.chartWidth/2), int(self.chartHeight/2))
-        qp.drawEllipse(QtCore.QPoint(centerX, centerY), int(self.chartWidth/4), int(self.chartHeight/4))
-        qp.drawLine(centerX - int(self.chartWidth/2), centerY, centerX + int(self.chartWidth/2), centerY)
-        qp.drawLine(centerX, centerY - int(self.chartHeight/2), centerX, centerY + int(self.chartHeight/2))
-
+        qp.drawEllipse(QtCore.QPoint(centerX, centerY),
+                       int(self.chartWidth / 2),
+                       int(self.chartHeight / 2))
+        qp.drawEllipse(QtCore.QPoint(centerX, centerY),
+                       int(self.chartWidth / 4),
+                       int(self.chartHeight / 4))
+        qp.drawLine(centerX - int(self.chartWidth / 2), centerY,
+                    centerX + int(self.chartWidth / 2), centerY)
+        qp.drawLine(centerX, centerY - int(self.chartHeight / 2),
+                    centerX, centerY + int(self.chartHeight / 2))
         qp.drawLine(centerX + int(self.chartHeight / 2 * math.sin(math.pi / 4)),
                     centerY + int(self.chartHeight / 2 * math.sin(math.pi / 4)),
                     centerX - int(self.chartHeight / 2 * math.sin(math.pi / 4)),
                     centerY - int(self.chartHeight / 2 * math.sin(math.pi / 4)))
-
         qp.drawLine(centerX + int(self.chartHeight / 2 * math.sin(math.pi / 4)),
                     centerY - int(self.chartHeight / 2 * math.sin(math.pi / 4)),
                     centerX - int(self.chartHeight / 2 * math.sin(math.pi / 4)),
                     centerY + int(self.chartHeight / 2 * math.sin(math.pi / 4)))
-
         self.drawTitle(qp)
 
     def drawValues(self, qp: QtGui.QPainter):
@@ -90,10 +93,10 @@ class PolarChart(SquareChart):
         qp.setPen(pen)
         if len(self.data) > 0:
             fstart = self.data[0].freq
-            fstop  = self.data[len(self.data)-1].freq
+            fstop = self.data[len(self.data) -1].freq
         else:
             fstart = self.reference[0].freq
-            fstop  = self.reference[len(self.reference)-1].freq
+            fstop = self.reference[len(self.reference) - 1].freq
         for i in range(len(self.reference)):
             data = self.reference[i]
             if data.freq < fstart or data.freq > fstop:

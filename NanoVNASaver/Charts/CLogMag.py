@@ -242,8 +242,10 @@ class CombinedLogMagChart(FrequencyChart):
             logMag = 20 * math.log10((vswr-1)/(vswr+1))
             if self.isInverted:
                 logMag = logMag * -1
-            y = self.topMargin + round((self.maxValue - logMag) / self.span * self.chartHeight)
-            qp.drawLine(self.leftMargin, y, self.leftMargin + self.chartWidth, y)
+            y = self.topMargin + round((self.maxValue - logMag) /
+                                       self.span * self.chartHeight)
+            qp.drawLine(self.leftMargin, y,
+                        self.leftMargin + self.chartWidth, y)
             qp.drawText(self.leftMargin + 3, y - 1, "VSWR: " + str(vswr))
 
         if len(self.data11) > 0:
@@ -258,7 +260,8 @@ class CombinedLogMagChart(FrequencyChart):
             pen = QtGui.QPen(c)
             pen.setWidth(2)
             qp.setPen(pen)
-            qp.drawLine(self.leftMargin + self.chartWidth - 20, 9, self.leftMargin + self.chartWidth - 15, 9)
+            qp.drawLine(self.leftMargin + self.chartWidth - 20, 9,
+                        self.leftMargin + self.chartWidth - 15, 9)
 
         if len(self.reference11) > 0:
             c = QtGui.QColor(self.referenceColor)
@@ -272,7 +275,8 @@ class CombinedLogMagChart(FrequencyChart):
             pen = QtGui.QPen(c)
             pen.setWidth(2)
             qp.setPen(pen)
-            qp.drawLine(self.leftMargin + self.chartWidth - 20, 14, self.leftMargin + self.chartWidth - 15, 14)
+            qp.drawLine(self.leftMargin + self.chartWidth - 20, 14,
+                        self.leftMargin + self.chartWidth - 15, 14)
 
         self.drawData(qp, self.data11, self.sweepColor)
         self.drawData(qp, self.data21, self.secondarySweepColor)
@@ -295,8 +299,7 @@ class CombinedLogMagChart(FrequencyChart):
     def logMag(self, p: Datapoint) -> float:
         if self.isInverted:
             return -p.gain
-        else:
-            return p.gain
+        return p.gain
 
     def copy(self):
         new_chart: LogMagChart = super().copy()

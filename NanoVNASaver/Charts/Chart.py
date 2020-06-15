@@ -1,4 +1,5 @@
-#  NanoVNASaver - a python program to view and export Touchstone data from a NanoVNA
+#  NanoVNASaver
+#  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019.  Rune B. Broberg
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -196,18 +197,17 @@ class Chart(QtWidgets.QWidget):
     def shortenFrequency(frequency: int) -> str:
         if frequency < 50000:
             return str(frequency)
-        elif frequency < 5000000:
+        if frequency < 5000000:
             return str(round(frequency / 1000)) + "k"
-        elif frequency < 50000000:
+        if frequency < 50000000:
             return str(round(frequency / 1000000, 2)) + "M"
-        else:
-            return str(round(frequency / 1000000, 1)) + "M"
+        return str(round(frequency / 1000000, 1)) + "M"
 
     def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
         if event.buttons() == QtCore.Qt.RightButton:
             event.ignore()
             return
-        elif event.buttons() == QtCore.Qt.MiddleButton:
+        if event.buttons() == QtCore.Qt.MiddleButton:
             # Drag event
             event.accept()
             self.moveStartX = event.x()

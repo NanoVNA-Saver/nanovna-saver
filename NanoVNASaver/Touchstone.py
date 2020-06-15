@@ -215,7 +215,7 @@ class Touchstone:
         with open(self.filename, "w") as outfile:
             outfile.write(self.saves(nr_params))
 
-    def saves(self, nr_params: int = 1  ) -> str:
+    def saves(self, nr_params: int = 1) -> str:
         """Returns touchstone data as string.
 
         Args:
@@ -230,6 +230,6 @@ class Touchstone:
                 dp = self.sdata[j][i]
                 if dp.freq != dp_s11.freq:
                     raise LookupError("Frequencies of sdata not correlated")
-                ts_str +=f" {dp.re} {dp.im}"
+                ts_str += f" {dp.re} {dp.im}"
             ts_str += "\n"
         return ts_str

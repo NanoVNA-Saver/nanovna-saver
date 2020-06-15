@@ -1,4 +1,5 @@
-#  NanoVNASaver - a python program to view and export Touchstone data from a NanoVNA
+#  NanoVNASaver
+#  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019.  Rune B. Broberg
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -23,7 +24,6 @@ from PyQt5.QtCore import pyqtSlot, pyqtSignal
 
 import NanoVNASaver
 from NanoVNASaver.Calibration import Calibration
-from NanoVNASaver.Hardware import VNA, InvalidVNA
 from NanoVNASaver.RFTools import RFTools, Datapoint
 
 logger = logging.getLogger(__name__)
@@ -89,7 +89,8 @@ class SweepWorker(QtCore.QRunnable):
                 logger.warning("Can't sweep from %s to %s",
                                self.app.sweepStartInput.text(),
                                self.app.sweepEndInput.text())
-                self.error_message = "Unable to parse frequency inputs - check start and stop fields."
+                self.error_message = \
+                    "Unable to parse frequency inputs - check start and stop fields."
                 self.stopped = True
                 self.running = False
                 self.signals.sweepError.emit()
@@ -111,7 +112,8 @@ class SweepWorker(QtCore.QRunnable):
                     logger.debug("Stopping sweeping as signalled")
                     break
                 start = sweep_from + i * self.vna.datapoints * stepsize
-                freq, val11, val21 = self.readAveragedSegment(start, start + (self.vna.datapoints-1) * stepsize, self.averages)
+                freq, val11, val21 = self.readAveragedSegment(
+                    start, start + (self.vna.datapoints-1) * stepsize, self.averages)
 
                 frequencies += freq
                 values += val11
@@ -129,7 +131,8 @@ class SweepWorker(QtCore.QRunnable):
                     break
                 start = sweep_from + i*self.vna.datapoints*stepsize
                 try:
-                    freq, val11, val21 = self.readSegment(start, start+(self.vna.datapoints-1)*stepsize)
+                    freq, val11, val21 = self.readSegment(
+                        start, start+(self.vna.datapoints-1)*stepsize)
 
                     frequencies += freq
                     values += val11
@@ -158,7 +161,8 @@ class SweepWorker(QtCore.QRunnable):
                     break
                 start = sweep_from + i * self.vna.datapoints * stepsize
                 try:
-                    _, values, values21 = self.readSegment(start, start + (self.vna.datapoints-1) * stepsize)
+                    _, values, values21 = self.readSegment(
+                        start, start + (self.vna.datapoints-1) * stepsize)
                     logger.debug("Updating acquired data")
                     self.updateData(values, values21, i, self.vna.datapoints)
                 except NanoVNAValueException as e:
@@ -173,12 +177,13 @@ class SweepWorker(QtCore.QRunnable):
                     self.signals.sweepFatalError.emit()
 
         # Reset the device to show the full range if we were multisegment
-        if self.noSweeps > 1 :
+        if self.noSweeps > 1:
             logger.debug("Resetting NanoVNA sweep to full range: %d to %d",
-                     RFTools.parseFrequency(self.app.sweepStartInput.text()),
-                     RFTools.parseFrequency(self.app.sweepEndInput.text()))
+                         RFTools.parseFrequency(
+                             self.app.sweepStartInput.text()),
+                         RFTools.parseFrequency(self.app.sweepEndInput.text()))
             self.vna.resetSweep(RFTools.parseFrequency(self.app.sweepStartInput.text()),
-                            RFTools.parseFrequency(self.app.sweepEndInput.text()))
+                                RFTools.parseFrequency(self.app.sweepEndInput.text()))
 
         self.percentage = 100
         logger.debug("Sending \"finished\" signal")
@@ -189,8 +194,8 @@ class SweepWorker(QtCore.QRunnable):
     def updateData(self, values11, values21, offset, segment_size=101):
         # Update the data from (i*101) to (i+1)*101
         logger.debug("Calculating data and inserting in existing data at offset %d", offset)
-        for i in range(len(values11)):
-            re, im = values11[i]
+        for i, val11 in enumerate(values11):
+            re, im = val11
             re21, im21 = values21[i]
             freq = self.data11[offset * segment_size + i].freq
             raw_data11 = Datapoint(freq, re, im)
@@ -201,7 +206,8 @@ class SweepWorker(QtCore.QRunnable):
             self.data21[offset * segment_size + i] = data21[0]
             self.rawData11[offset * segment_size + i] = raw_data11
             self.rawData21[offset * segment_size + i] = raw_data21
-        logger.debug("Saving data to application (%d and %d points)", len(self.data11), len(self.data21))
+        logger.debug("Saving data to application (%d and %d points)",
+                     len(self.data11), len(self.data21))
         self.app.saveData(self.data11, self.data21)
         logger.debug("Sending \"updated\" signal")
         self.signals.updated.emit()
@@ -210,8 +216,8 @@ class SweepWorker(QtCore.QRunnable):
         raw_data11 = []
         raw_data21 = []
         logger.debug("Calculating data including corrections")
-        for i in range(len(values11)):
-            re, im = values11[i]
+        for i, val11 in enumerate(values11):
+            re, im = val11
             re21, im21 = values21[i]
             freq = frequencies[i]
             raw_data11 += [Datapoint(freq, re, im)]
@@ -219,7 +225,8 @@ class SweepWorker(QtCore.QRunnable):
         self.data11, self.data21 = self.applyCalibration(raw_data11, raw_data21)
         self.rawData11 = raw_data11
         self.rawData21 = raw_data21
-        logger.debug("Saving data to application (%d and %d points)", len(self.data11), len(self.data21))
+        logger.debug("Saving data to application (%d and %d points)",
+                     len(self.data11), len(self.data21))
         self.app.saveData(self.data11, self.data21)
         logger.debug("Sending \"updated\" signal")
         self.signals.updated.emit()
@@ -293,20 +300,22 @@ class SweepWorker(QtCore.QRunnable):
         return_values = []
 
         for valueset in values:
-            avg = np.average(valueset, 0)  # avg becomes a 2-value array of the location of the average
+            # avg becomes a 2-value array of the location of the average
+            avg = np.average(valueset, 0)
             new_valueset = valueset
-            for n in range(count):
+            for _ in range(count):
                 max_deviance = 0
                 max_idx = -1
-                for i in range(len(new_valueset)):
-                    deviance = abs(new_valueset[i][0] - avg[0])**2 + abs(new_valueset[i][1] - avg[1])**2
+                for i, valset in enumerate(new_valueset):
+                    deviance = abs(valset[0] - avg[0])**2 + abs(valset[1] - avg[1])**2
                     if deviance > max_deviance:
                         max_deviance = deviance
                         max_idx = i
                 next_valueset = []
-                for i in range(len(new_valueset)):
+                # TODO: find out if valset is always a two element array
+                for i, valset in enumerate(new_valueset):
                     if i != max_idx:
-                        next_valueset.append((new_valueset[i][0], new_valueset[i][1]))
+                        next_valueset.append((valset[0], valueset[1]))
                 new_valueset = next_valueset
 
             return_values.append(new_valueset)
@@ -364,9 +373,10 @@ class SweepWorker(QtCore.QRunnable):
                     logger.error("Tried and failed to read %s %d times.", data, count)
                 if count >= 20:
                     logger.critical("Tried and failed to read %s %d times. Giving up.", data, count)
-                    raise NanoVNAValueException("Failed reading " + str(data) + " " + str(count) + " times.\n" +
-                                                "Data outside expected valid ranges, or in an unexpected format.\n\n" +
-                                                "You can disable data validation on the device settings screen.")
+                    raise NanoVNAValueException(
+                        f"Failed reading {data} {count} times.\n"
+                        f"Data outside expected valid ranges, or in an unexpected format.\n\n"
+                        f"You can disable data validation on the device settings screen.")
         return returndata
 
     def readFreq(self):
@@ -391,8 +401,11 @@ class SweepWorker(QtCore.QRunnable):
                     if count == 10:
                         logger.error("Tried and failed %d times to read frequencies.", count)
                     if count >= 20:
-                        logger.critical("Tried and failed to read frequencies from the NanoVNA %d times.", count)
-                        raise NanoVNAValueException("Failed reading frequencies " + str(count) + " times.")
+                        logger.critical(
+                            "Tried and failed to read frequencies from the NanoVNA %d times.",
+                            count)
+                        raise NanoVNAValueException(
+                            f"Failed reading frequencies {count} times.")
                 else:
                     returnfreq.append(int(f))
         return returnfreq

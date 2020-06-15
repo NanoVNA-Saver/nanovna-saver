@@ -87,7 +87,8 @@ class Value:
         if self._value == 0:
             offset = 0
         else:
-            offset = clamp_value(int(math.log10(abs(self._value)) // 3), fmt.min_offset, fmt.max_offset)
+            offset = clamp_value(
+                int(math.log10(abs(self._value)) // 3), fmt.min_offset, fmt.max_offset)
 
         real = float(self._value) / (10 ** (offset * 3))
 
@@ -151,10 +152,12 @@ class Value:
             self._value = -math.inf
         else:
             try:
-                self._value = (decimal.Decimal(value, context=Value.CTX) * decimal.Decimal(factor, context=Value.CTX))
+                self._value = (decimal.Decimal(value, context=Value.CTX)
+                               * decimal.Decimal(factor, context=Value.CTX))
             except decimal.InvalidOperation:
                 raise ValueError
-            self._value = clamp_value(self._value, self.fmt.parse_clamp_min, self.fmt.parse_clamp_max)
+            self._value = clamp_value(
+                self._value, self.fmt.parse_clamp_min, self.fmt.parse_clamp_max)
         return self
 
     @property

@@ -98,12 +98,11 @@ def get_VNA(app, serial_port: serial.Serial) -> 'VNA':
     if firmware.find("NanoVNA-F") > 0:
         logger.info("Type: NanoVNA-F")
         return NanoVNA_F(app, serial_port)
-    elif firmware.find("NanoVNA") > 0:
+    if firmware.find("NanoVNA") > 0:
         logger.info("Type: Generic NanoVNA")
         return NanoVNA(app, serial_port)
-    else:
-        logger.warning("Did not recognize NanoVNA type from firmware.")
-        return NanoVNA(app, serial_port)
+    logger.warning("Did not recognize NanoVNA type from firmware.")
+    return NanoVNA(app, serial_port)
 
 
 def detect_version(serialPort: serial.Serial) -> str:

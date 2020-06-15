@@ -143,7 +143,7 @@ class NanoVNAV2(VNA):
                 if nBytes != len(arr):
                     logger.error("expected %d bytes, got %d", nBytes, len(arr))
                     return []
-                
+
                 for i in range(pointstoread):
                     (fwd_real, fwd_imag, rev0_real, rev0_imag, rev1_real,
                      rev1_imag, freq_index) = unpack_from(

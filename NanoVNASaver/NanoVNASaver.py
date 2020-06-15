@@ -24,7 +24,7 @@ from typing import List
 import serial
 from PyQt5 import QtWidgets, QtCore, QtGui
 
-from .Windows import AboutWindow, AnalysisWindow, \
+from .Windows import AboutWindow, AnalysisWindow, CalibrationWindow, \
     DeviceSettingsWindow, DisplaySettingsWindow, SweepSettingsWindow, \
     TDRWindow
 from .Hardware import get_interfaces, get_VNA, InvalidVNA
@@ -37,7 +37,7 @@ from .Charts import CapacitanceChart, \
     QualityFactorChart, VSWRChart, PermeabilityChart, PolarChart, \
     RealImaginaryChart, \
     SmithChart, SParameterChart, TDRChart
-from .Calibration import CalibrationWindow, Calibration
+from .Calibration import Calibration
 from .Inputs import FrequencyInputWidget
 from .Marker import Marker
 from .SweepWorker import SweepWorker
@@ -59,14 +59,14 @@ class NanoVNASaver(QtWidgets.QWidget):
         super().__init__()
         if getattr(sys, 'frozen', False):
             logger.debug("Running from pyinstaller bundle")
-            self.icon = QtGui.QIcon(sys._MEIPASS + "/icon_48x48.png")  # pylint: disable=no-member
+            self.icon = QtGui.QIcon(f"{sys._MEIPASS}/icon_48x48.png")  # pylint: disable=no-member
         else:
             self.icon = QtGui.QIcon("icon_48x48.png")
         self.setWindowIcon(self.icon)
         self.settings = QtCore.QSettings(QtCore.QSettings.IniFormat,
                                          QtCore.QSettings.UserScope,
                                          "NanoVNASaver", "NanoVNASaver")
-        print("Settings: " + self.settings.fileName())
+        print(f"Settings: {self.settings.fileName()}")
         self.threadpool = QtCore.QThreadPool()
         self.worker = SweepWorker(self)
 
@@ -101,7 +101,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         logger.debug("Building user interface")
 
-        self.baseTitle = "NanoVNA Saver " + NanoVNASaver.version
+        self.baseTitle = f"NanoVNA Saver {NanoVNASaver.version}"
         self.updateTitle()
         layout = QtWidgets.QGridLayout()
         scrollarea = QtWidgets.QScrollArea()
@@ -112,8 +112,10 @@ class NanoVNASaver(QtWidgets.QWidget):
         window_width = self.settings.value("WindowWidth", 1350, type=int)
         window_height = self.settings.value("WindowHeight", 950, type=int)
         self.resize(window_width, window_height)
-        scrollarea.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
-        self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
+        scrollarea.setSizePolicy(
+            QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
+        self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
+                           QtWidgets.QSizePolicy.MinimumExpanding)
         widget = QtWidgets.QWidget()
         widget.setLayout(layout)
         scrollarea.setWidget(widget)
@@ -134,8 +136,10 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s11GroupDelay = GroupDelayChart("S11 Group Delay")
         self.s11CapacitanceChart = CapacitanceChart("S11 Serial C")
         self.s11InductanceChart = InductanceChart("S11 Serial L")
-        self.s21GroupDelay = GroupDelayChart("S21 Group Delay", reflective=False)
-        self.permabilityChart = PermeabilityChart("S11 R/\N{GREEK SMALL LETTER OMEGA} & X/\N{GREEK SMALL LETTER OMEGA}")
+        self.s21GroupDelay = GroupDelayChart(
+            "S21 Group Delay", reflective=False)
+        self.permabilityChart = PermeabilityChart(
+            "S11 R/\N{GREEK SMALL LETTER OMEGA} & X/\N{GREEK SMALL LETTER OMEGA}")
         self.s11VSWR = VSWRChart("S11 VSWR")
         self.s11QualityFactor = QualityFactorChart("S11 Quality Factor")
         self.s11RealImaginary = RealImaginaryChart("S11 R+jX")
@@ -199,9 +203,9 @@ class NanoVNASaver(QtWidgets.QWidget):
         layout.addWidget(self.marker_frame, 0, 1)
         layout.addLayout(right_column, 0, 2)
 
-        ################################################################################################################
+        ###############################################################
         #  Sweep control
-        ################################################################################################################
+        ###############################################################
 
         sweep_control_box = QtWidgets.QGroupBox()
         sweep_control_box.setMaximumWidth(250)
@@ -286,9 +290,9 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         left_column.addWidget(sweep_control_box)
 
-        ################################################################################################################
+        ###############################################################
         #  Marker control
-        ################################################################################################################
+        ###############################################################
 
         marker_control_box = QtWidgets.QGroupBox()
         marker_control_box.setTitle("Markers")
@@ -313,7 +317,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.showMarkerButton.clicked.connect(self.toggleMarkerFrame)
         lock_radiobutton = QtWidgets.QRadioButton("Locked")
         lock_radiobutton.setLayoutDirection(QtCore.Qt.RightToLeft)
-        lock_radiobutton.setSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Preferred)
+        lock_radiobutton.setSizePolicy(
+            QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Preferred)
         hbox = QtWidgets.QHBoxLayout()
         hbox.addWidget(self.showMarkerButton)
         hbox.addWidget(lock_radiobutton)
@@ -332,9 +337,9 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.marker_column.addLayout(self.marker_data_layout)
 
-        ################################################################################################################
+        ###############################################################
         #  Statistics/analysis
-        ################################################################################################################
+        ###############################################################
 
         s11_control_box = QtWidgets.QGroupBox()
         s11_control_box.setTitle("S11")
@@ -368,9 +373,9 @@ class NanoVNASaver(QtWidgets.QWidget):
         btn_show_analysis.clicked.connect(self.displayAnalysisWindow)
         self.marker_column.addWidget(btn_show_analysis)
 
-        ################################################################################################################
+        ###############################################################
         # TDR
-        ################################################################################################################
+        ###############################################################
 
         self.tdr_window = TDRWindow(self)
         self.tdr_chart.tdrWindow = self.tdr_window
@@ -394,16 +399,17 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         left_column.addWidget(tdr_control_box)
 
-        ################################################################################################################
+        ###############################################################
         #  Spacer
-        ################################################################################################################
+        ###############################################################
 
-        left_column.addSpacerItem(QtWidgets.QSpacerItem(1, 1, QtWidgets.QSizePolicy.Fixed,
-                                                        QtWidgets.QSizePolicy.Expanding))
+        left_column.addSpacerItem(
+            QtWidgets.QSpacerItem(1, 1, QtWidgets.QSizePolicy.Fixed,
+                                  QtWidgets.QSizePolicy.Expanding))
 
-        ################################################################################################################
+        ###############################################################
         #  Reference control
-        ################################################################################################################
+        ###############################################################
 
         reference_control_box = QtWidgets.QGroupBox()
         reference_control_box.setMaximumWidth(250)
@@ -421,9 +427,9 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         left_column.addWidget(reference_control_box)
 
-        ################################################################################################################
+        ###############################################################
         #  Serial control
-        ################################################################################################################
+        ###############################################################
 
         serial_control_box = QtWidgets.QGroupBox()
         serial_control_box.setMaximumWidth(250)
@@ -438,7 +444,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         serial_port_input_layout = QtWidgets.QHBoxLayout()
         serial_port_input_layout.addWidget(self.serialPortInput)
         serial_port_input_layout.addWidget(btn_rescan_serial_port)
-        serial_control_layout.addRow(QtWidgets.QLabel("Serial port"), serial_port_input_layout)
+        serial_control_layout.addRow(
+            QtWidgets.QLabel("Serial port"), serial_port_input_layout)
 
         serial_button_layout = QtWidgets.QHBoxLayout()
 
@@ -453,9 +460,9 @@ class NanoVNASaver(QtWidgets.QWidget):
         serial_control_layout.addRow(serial_button_layout)
         left_column.addWidget(serial_control_box)
 
-        ################################################################################################################
+        ###############################################################
         #  File control
-        ################################################################################################################
+        ###############################################################
 
         self.fileWindow = QtWidgets.QWidget()
         self.fileWindow.setWindowTitle("Files")
@@ -483,11 +490,11 @@ class NanoVNASaver(QtWidgets.QWidget):
         save_file_control_layout = QtWidgets.QFormLayout(save_file_control_box)
 
         btn_export_file = QtWidgets.QPushButton("Save 1-Port file (S1P)")
-        btn_export_file.clicked.connect(self.exportFileS1P)
+        btn_export_file.clicked.connect(lambda: self.exportFile(1))
         save_file_control_layout.addRow(btn_export_file)
 
         btn_export_file = QtWidgets.QPushButton("Save 2-Port file (S2P)")
-        btn_export_file.clicked.connect(self.exportFileS2P)
+        btn_export_file.clicked.connect(lambda: self.exportFile(4))
         save_file_control_layout.addRow(btn_export_file)
 
         file_window_layout.addWidget(save_file_control_box)
@@ -495,17 +502,17 @@ class NanoVNASaver(QtWidgets.QWidget):
         btn_open_file_window = QtWidgets.QPushButton("Files ...")
         btn_open_file_window.clicked.connect(self.displayFileWindow)
 
-        ################################################################################################################
+        ###############################################################
         #  Calibration
-        ################################################################################################################
+        ###############################################################
 
         btnOpenCalibrationWindow = QtWidgets.QPushButton("Calibration ...")
         self.calibrationWindow = CalibrationWindow(self)
         btnOpenCalibrationWindow.clicked.connect(self.displayCalibrationWindow)
 
-        ################################################################################################################
+        ###############################################################
         #  Display setup
-        ################################################################################################################
+        ###############################################################
 
         btn_display_setup = QtWidgets.QPushButton("Display setup ...")
         btn_display_setup.setMaximumWidth(250)
@@ -535,19 +542,23 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def exportFile(self, nr_params: int = 1):
         if len(self.data) == 0:
-            QtWidgets.QMessageBox.warning(self, "No data to save", "There is no data to save.")
+            QtWidgets.QMessageBox.warning(
+                self, "No data to save", "There is no data to save.")
             return
         if nr_params > 2 and len(self.data21) == 0:
-            QtWidgets.QMessageBox.warning(self, "No S21 data to save", "There is no S21 data to save.")
+            QtWidgets.QMessageBox.warning(
+                self, "No S21 data to save", "There is no S21 data to save.")
             return
 
         filedialog = QtWidgets.QFileDialog(self)
         if nr_params == 1:
             filedialog.setDefaultSuffix("s1p")
-            filedialog.setNameFilter("Touchstone 1-Port Files (*.s1p);;All files (*.*)")
+            filedialog.setNameFilter(
+                "Touchstone 1-Port Files (*.s1p);;All files (*.*)")
         else:
             filedialog.setDefaultSuffix("s2p")
-            filedialog.setNameFilter("Touchstone 2-Port Files (*.s2p);;All files (*.*)")
+            filedialog.setNameFilter(
+                "Touchstone 2-Port Files (*.s2p);;All files (*.*)")
         filedialog.setAcceptMode(QtWidgets.QFileDialog.AcceptSave)
         selected = filedialog.exec()
         if not selected:
@@ -569,12 +580,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         except IOError as e:
             logger.exception("Error during file export: %s", e)
             return
-
-    def exportFileS1P(self):
-        self.exportFile()
-
-    def exportFileS2P(self):
-        self.exportFile(4)
 
     def serialButtonClick(self):
         if self.serial.is_open:
@@ -609,16 +614,25 @@ class NanoVNASaver(QtWidgets.QWidget):
 
             frequencies = self.vna.readFrequencies()
             if frequencies:
-                logger.info("Read starting frequency %s and end frequency %s", frequencies[0], frequencies[100])
-                if int(frequencies[0]) == int(frequencies[100]) and (self.sweepStartInput.text() == "" or
-                                                                     self.sweepEndInput.text() == ""):
-                    self.sweepStartInput.setText(RFTools.formatSweepFrequency(int(frequencies[0])))
-                    self.sweepEndInput.setText(RFTools.formatSweepFrequency(int(frequencies[100]) + 100000))
-                elif self.sweepStartInput.text() == "" or self.sweepEndInput.text() == "":
-                    self.sweepStartInput.setText(RFTools.formatSweepFrequency(int(frequencies[0])))
-                    self.sweepEndInput.setText(RFTools.formatSweepFrequency(int(frequencies[100])))
-                self.sweepStartInput.textEdited.emit(self.sweepStartInput.text())
-                self.sweepStartInput.textChanged.emit(self.sweepStartInput.text())
+                logger.info("Read starting frequency %s and end frequency %s",
+                            frequencies[0], frequencies[100])
+                if int(frequencies[0]) == int(frequencies[100]) and (
+                        self.sweepStartInput.text() == "" or
+                        self.sweepEndInput.text() == ""):
+                    self.sweepStartInput.setText(
+                        RFTools.formatSweepFrequency(int(frequencies[0])))
+                    self.sweepEndInput.setText(
+                        RFTools.formatSweepFrequency(int(frequencies[100]) + 100000))
+                elif (self.sweepStartInput.text() == "" or
+                      self.sweepEndInput.text() == ""):
+                    self.sweepStartInput.setText(
+                        RFTools.formatSweepFrequency(int(frequencies[0])))
+                    self.sweepEndInput.setText(
+                        RFTools.formatSweepFrequency(int(frequencies[100])))
+                self.sweepStartInput.textEdited.emit(
+                    self.sweepStartInput.text())
+                self.sweepStartInput.textChanged.emit(
+                    self.sweepStartInput.text())
             else:
                 logger.warning("No frequencies read")
                 return
@@ -676,10 +690,11 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.dataLock.release()
         if source is not None:
             self.sweepSource = source
-        elif self.sweepTitle != "":
-            self.sweepSource = self.sweepTitle + " " + strftime("%Y-%m-%d %H:%M:%S", localtime())
         else:
-            self.sweepSource = strftime("%Y-%m-%d %H:%M:%S", localtime())
+            self.sweepSource = (
+                f"{self.sweepTitle}"
+                f" {strftime('%Y-%m-%d %H:%M:%S', localtime())}"
+            ).lstrip()
 
     def markerUpdated(self, marker: Marker):
         if self.dataLock.acquire(blocking=True):
@@ -695,7 +710,6 @@ class NanoVNASaver(QtWidgets.QWidget):
     def dataUpdated(self):
         if self.dataLock.acquire(blocking=True):
             for m in self.markers:
-                m.findLocation(self.data)
                 m.resetLabels()
                 m.updateLabels(self.data, self.data21)
 
@@ -721,9 +735,11 @@ class NanoVNASaver(QtWidgets.QWidget):
                     min_vswr_freq = d.freq
 
             if min_vswr_freq > -1:
-                self.s11_min_swr_label.setText(str(round(min_vswr, 3)) + " @ " + RFTools.formatFrequency(min_vswr_freq))
+                self.s11_min_swr_label.setText(
+                    f"{round(min_vswr, 3)} @ {RFTools.formatFrequency(min_vswr_freq)}")
                 if min_vswr > 1:
-                    self.s11_min_rl_label.setText(str(round(20*math.log10((min_vswr-1)/(min_vswr+1)), 3)) + " dB")
+                    self.s11_min_rl_label.setText(
+                        f"{round(20*math.log10((min_vswr-1)/(min_vswr+1)), 3)} dB")
                 else:
                     # Infinite return loss?
                     self.s11_min_rl_label.setText("\N{INFINITY} dB")
@@ -745,9 +761,9 @@ class NanoVNASaver(QtWidgets.QWidget):
 
             if max_gain_freq > -1:
                 self.s21_min_gain_label.setText(
-                    str(round(min_gain, 3)) + " dB @ " + RFTools.formatFrequency(min_gain_freq))
+                    f"{round(min_gain, 3)} dB @ {RFTools.formatFrequency(min_gain_freq)}")
                 self.s21_max_gain_label.setText(
-                    str(round(max_gain, 3)) + " dB @ " + RFTools.formatFrequency(max_gain_freq))
+                    f"{round(max_gain, 3)} dB @ {RFTools.formatFrequency(max_gain_freq)}")
             else:
                 self.s21_min_gain_label.setText("")
                 self.s21_max_gain_label.setText("")
@@ -794,7 +810,8 @@ class NanoVNASaver(QtWidgets.QWidget):
             segments = int(self.sweepCountInput.text())
             if segments > 0:
                 fstep = fspan / (segments * 101 - 1)
-                self.sweepStepLabel.setText(RFTools.formatShortFrequency(fstep) + "/step")
+                self.sweepStepLabel.setText(
+                    f"{RFTools.formatShortFrequency(fstep)}/step")
 
     def setReference(self, s11data=None, s21data=None, source=None):
         if not s11data:
@@ -825,11 +842,11 @@ class NanoVNASaver(QtWidgets.QWidget):
         title = self.baseTitle
         insert = ""
         if self.sweepSource != "":
-            insert += "Sweep: " + self.sweepSource + " @ " + str(len(self.data)) + " points"
+            insert += f"Sweep: {self.sweepSource} @ {len(self.data)} points"
         if self.referenceSource != "":
             if insert != "":
                 insert += ", "
-            insert += "Reference: " + self.referenceSource + " @ " + str(len(self.referenceS11data)) + " points"
+            insert += f"Reference: {self.referenceSource} @ {len(self.referenceS11data)} points"
         if insert != "":
             title = title + " (" + insert + ")"
         self.setWindowTitle(title)
@@ -854,7 +871,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.btnResetReference.setDisabled(True)
 
     def loadReferenceFile(self):
-        filename, _ = QtWidgets.QFileDialog.getOpenFileName(filter="Touchstone Files (*.s1p *.s2p);;All files (*.*)")
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(
+            filter="Touchstone Files (*.s1p *.s2p);;All files (*.*)")
         if filename != "":
             self.resetReference()
             t = Touchstone(filename)
@@ -862,7 +880,8 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.setReference(t.s11data, t.s21data, filename)
 
     def loadSweepFile(self):
-        filename, _ = QtWidgets.QFileDialog.getOpenFileName(filter="Touchstone Files (*.s1p *.s2p);;All files (*.*)")
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(
+            filter="Touchstone Files (*.s1p *.s2p);;All files (*.*)")
         if filename != "":
             self.data = []
             self.data21 = []
@@ -956,11 +975,13 @@ class NanoVNASaver(QtWidgets.QWidget):
         normal_font = QtGui.QFont(font)
         normal_font.setPointSize(8)
         qf_normal = QtGui.QFontMetricsF(normal_font)
-        standard_string = "0.123456789 0.123456789 MHz \N{OHM SIGN}"  # Characters we would normally display
+        # Characters we would normally display
+        standard_string = "0.123456789 0.123456789 MHz \N{OHM SIGN}"
         new_width = qf_new.boundingRect(standard_string).width()
         old_width = qf_normal.boundingRect(standard_string).width()
         self.scaleFactor = new_width / old_width
-        logger.debug("New font width: %f, normal font: %f, factor: %f", new_width, old_width, self.scaleFactor)
+        logger.debug("New font width: %f, normal font: %f, factor: %f",
+                     new_width, old_width, self.scaleFactor)
         # TODO: Update all the fixed widths to account for the scaling
         for m in self.markers:
             m.getGroupBox().setFont(font)

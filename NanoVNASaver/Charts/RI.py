@@ -57,10 +57,12 @@ class RealImaginaryChart(FrequencyChart):
         self.y_action_automatic = QtWidgets.QAction("Automatic")
         self.y_action_automatic.setCheckable(True)
         self.y_action_automatic.setChecked(True)
-        self.y_action_automatic.changed.connect(lambda: self.setFixedValues(self.y_action_fixed_span.isChecked()))
+        self.y_action_automatic.changed.connect(
+            lambda: self.setFixedValues(self.y_action_fixed_span.isChecked()))
         self.y_action_fixed_span = QtWidgets.QAction("Fixed span")
         self.y_action_fixed_span.setCheckable(True)
-        self.y_action_fixed_span.changed.connect(lambda: self.setFixedValues(self.y_action_fixed_span.isChecked()))
+        self.y_action_fixed_span.changed.connect(
+            lambda: self.setFixedValues(self.y_action_fixed_span.isChecked()))
         mode_group = QtWidgets.QActionGroup(self)
         mode_group.addAction(self.y_action_automatic)
         mode_group.addAction(self.y_action_fixed_span)
@@ -68,17 +70,25 @@ class RealImaginaryChart(FrequencyChart):
         self.y_menu.addAction(self.y_action_fixed_span)
         self.y_menu.addSeparator()
 
-        self.action_set_fixed_maximum_real = QtWidgets.QAction("Maximum R (" + str(self.maxDisplayReal) + ")")
-        self.action_set_fixed_maximum_real.triggered.connect(self.setMaximumRealValue)
+        self.action_set_fixed_maximum_real = QtWidgets.QAction(
+            f"Maximum R ({self.maxDisplayReal})")
+        self.action_set_fixed_maximum_real.triggered.connect(
+            self.setMaximumRealValue)
 
-        self.action_set_fixed_minimum_real = QtWidgets.QAction("Minimum R (" + str(self.minDisplayReal) + ")")
-        self.action_set_fixed_minimum_real.triggered.connect(self.setMinimumRealValue)
+        self.action_set_fixed_minimum_real = QtWidgets.QAction(
+            f"Minimum R ({self.minDisplayReal})")
+        self.action_set_fixed_minimum_real.triggered.connect(
+            self.setMinimumRealValue)
 
-        self.action_set_fixed_maximum_imag = QtWidgets.QAction("Maximum jX (" + str(self.maxDisplayImag) + ")")
-        self.action_set_fixed_maximum_imag.triggered.connect(self.setMaximumImagValue)
+        self.action_set_fixed_maximum_imag = QtWidgets.QAction(
+            f"Maximum jX ({self.maxDisplayImag})")
+        self.action_set_fixed_maximum_imag.triggered.connect(
+            self.setMaximumImagValue)
 
-        self.action_set_fixed_minimum_imag = QtWidgets.QAction("Minimum jX (" + str(self.minDisplayImag) + ")")
-        self.action_set_fixed_minimum_imag.triggered.connect(self.setMinimumImagValue)
+        self.action_set_fixed_minimum_imag = QtWidgets.QAction(
+            f"Minimum jX ({self.minDisplayImag})")
+        self.action_set_fixed_minimum_imag.triggered.connect(
+            self.setMinimumImagValue)
 
         self.y_menu.addAction(self.action_set_fixed_maximum_real)
         self.y_menu.addAction(self.action_set_fixed_minimum_real)
@@ -90,9 +100,13 @@ class RealImaginaryChart(FrequencyChart):
         # Set up size policy and palette
         #
 
-        self.setMinimumSize(self.chartWidth + self.leftMargin + self.rightMargin, self.chartHeight + 40)
-        self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
-                                                 QtWidgets.QSizePolicy.MinimumExpanding))
+        self.setMinimumSize(
+            self.chartWidth + self.leftMargin + self.rightMargin,
+            self.chartHeight + 40)
+        self.setSizePolicy(
+            QtWidgets.QSizePolicy(
+                QtWidgets.QSizePolicy.MinimumExpanding,
+                QtWidgets.QSizePolicy.MinimumExpanding))
         pal = QtGui.QPalette()
         pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
         self.setPalette(pal)
@@ -109,13 +123,19 @@ class RealImaginaryChart(FrequencyChart):
 
     def drawChart(self, qp: QtGui.QPainter):
         qp.setPen(QtGui.QPen(self.textColor))
-        qp.drawText(self.leftMargin + 5, 15, self.name + " (\N{OHM SIGN})")
+        qp.drawText(self.leftMargin + 5, 15,
+                    f"{self.name} (\N{OHM SIGN})")
         qp.drawText(10, 15, "R")
         qp.drawText(self.leftMargin + self.chartWidth + 10, 15, "X")
         qp.setPen(QtGui.QPen(self.foregroundColor))
-        qp.drawLine(self.leftMargin, self.topMargin - 5, self.leftMargin, self.topMargin + self.chartHeight + 5)
-        qp.drawLine(self.leftMargin-5, self.topMargin + self.chartHeight,
-                    self.leftMargin + self.chartWidth + 5, self.topMargin + self.chartHeight)
+        qp.drawLine(self.leftMargin,
+                    self.topMargin - 5,
+                    self.leftMargin,
+                    self.topMargin + self.chartHeight + 5)
+        qp.drawLine(self.leftMargin-5,
+                    self.topMargin + self.chartHeight,
+                    self.leftMargin + self.chartWidth + 5,
+                    self.topMargin + self.chartHeight)
         self.drawTitle(qp)
 
     def drawValues(self, qp: QtGui.QPainter):
@@ -180,7 +200,8 @@ class RealImaginaryChart(FrequencyChart):
                 if im < min_imag:
                     min_imag = im
 
-            max_real = max(8, math.ceil(max_real))   # Always have at least 8 numbered horizontal lines
+            # Always have at least 8 numbered horizontal lines
+            max_real = max(8, math.ceil(max_real))
             min_real = max(0, math.floor(min_real))  # Negative real resistance? No.
             max_imag = math.ceil(max_imag)
             min_imag = math.floor(min_imag)
@@ -238,7 +259,9 @@ class RealImaginaryChart(FrequencyChart):
             qp.drawText(self.leftMargin + self.chartWidth + 8, y + 4, str(round(im, 1)))
 
         qp.drawText(3, self.chartHeight + self.topMargin, str(round(min_real, 1)))
-        qp.drawText(self.leftMargin + self.chartWidth + 8, self.chartHeight + self.topMargin, str(round(min_imag, 1)))
+        qp.drawText(self.leftMargin + self.chartWidth + 8,
+                    self.chartHeight + self.topMargin,
+                    str(round(min_imag, 1)))
 
         self.drawFrequencyTicks(qp)
 
@@ -255,7 +278,8 @@ class RealImaginaryChart(FrequencyChart):
             c.setAlpha(255)
             pen.setColor(c)
             qp.setPen(pen)
-            qp.drawLine(self.leftMargin + self.chartWidth, 9, self.leftMargin + self.chartWidth + 5, 9)
+            qp.drawLine(self.leftMargin + self.chartWidth, 9,
+                        self.leftMargin + self.chartWidth + 5, 9)
 
         primary_pen.setWidth(self.pointSize)
         secondary_pen.setWidth(self.pointSize)
@@ -316,7 +340,8 @@ class RealImaginaryChart(FrequencyChart):
             pen = QtGui.QPen(c)
             pen.setWidth(2)
             qp.setPen(pen)
-            qp.drawLine(self.leftMargin + self.chartWidth, 14, self.leftMargin + self.chartWidth + 5, 14)
+            qp.drawLine(self.leftMargin + self.chartWidth, 14,
+                        self.leftMargin + self.chartWidth + 5, 14)
 
         for i in range(len(self.reference)):
             if self.reference[i].freq < fstart or self.reference[i].freq > fstop:
@@ -422,9 +447,10 @@ class RealImaginaryChart(FrequencyChart):
         return nearest
 
     def setMinimumRealValue(self):
-        min_val, selected = QtWidgets.QInputDialog.getDouble(self, "Minimum real value",
-                                                             "Set minimum real value", value=self.minDisplayReal,
-                                                             decimals=2)
+        min_val, selected = QtWidgets.QInputDialog.getDouble(
+            self, "Minimum real value",
+            "Set minimum real value", value=self.minDisplayReal,
+            decimals=2)
         if not selected:
             return
         if not (self.fixedValues and min_val >= self.maxDisplayReal):
@@ -433,9 +459,10 @@ class RealImaginaryChart(FrequencyChart):
             self.update()
 
     def setMaximumRealValue(self):
-        max_val, selected = QtWidgets.QInputDialog.getDouble(self, "Maximum real value",
-                                                             "Set maximum real value", value=self.maxDisplayReal,
-                                                             decimals=2)
+        max_val, selected = QtWidgets.QInputDialog.getDouble(
+            self, "Maximum real value",
+            "Set maximum real value", value=self.maxDisplayReal,
+            decimals=2)
         if not selected:
             return
         if not (self.fixedValues and max_val <= self.minDisplayReal):
@@ -444,9 +471,10 @@ class RealImaginaryChart(FrequencyChart):
             self.update()
 
     def setMinimumImagValue(self):
-        min_val, selected = QtWidgets.QInputDialog.getDouble(self, "Minimum imaginary value",
-                                                             "Set minimum imaginary value", value=self.minDisplayImag,
-                                                             decimals=2)
+        min_val, selected = QtWidgets.QInputDialog.getDouble(
+            self, "Minimum imaginary value",
+            "Set minimum imaginary value", value=self.minDisplayImag,
+            decimals=2)
         if not selected:
             return
         if not (self.fixedValues and min_val >= self.maxDisplayImag):
@@ -455,9 +483,10 @@ class RealImaginaryChart(FrequencyChart):
             self.update()
 
     def setMaximumImagValue(self):
-        max_val, selected = QtWidgets.QInputDialog.getDouble(self, "Maximum imaginary value",
-                                                             "Set maximum imaginary value", value=self.maxDisplayImag,
-                                                             decimals=2)
+        max_val, selected = QtWidgets.QInputDialog.getDouble(
+            self, "Maximum imaginary value",
+            "Set maximum imaginary value", value=self.maxDisplayImag,
+            decimals=2)
         if not selected:
             return
         if not (self.fixedValues and max_val <= self.minDisplayImag):
@@ -467,18 +496,25 @@ class RealImaginaryChart(FrequencyChart):
 
     def setFixedValues(self, fixed_values: bool):
         self.fixedValues = fixed_values
-        if fixed_values and (self.minDisplayReal >= self.maxDisplayReal or self.minDisplayImag > self.maxDisplayImag):
+        if (fixed_values and
+                (self.minDisplayReal >= self.maxDisplayReal or
+                 self.minDisplayImag > self.maxDisplayImag)):
             self.fixedValues = False
             self.y_action_automatic.setChecked(True)
             self.y_action_fixed_span.setChecked(False)
         self.update()
 
     def contextMenuEvent(self, event):
-        self.action_set_fixed_start.setText("Start (" + Chart.shortenFrequency(self.minFrequency) + ")")
-        self.action_set_fixed_stop.setText("Stop (" + Chart.shortenFrequency(self.maxFrequency) + ")")
-        self.action_set_fixed_minimum_real.setText("Minimum R (" + str(self.minDisplayReal) + ")")
-        self.action_set_fixed_maximum_real.setText("Maximum R (" + str(self.maxDisplayReal) + ")")
-        self.action_set_fixed_minimum_imag.setText("Minimum jX (" + str(self.minDisplayImag) + ")")
-        self.action_set_fixed_maximum_imag.setText("Maximum jX (" + str(self.maxDisplayImag) + ")")
-
+        self.action_set_fixed_start.setText(
+            f"Start ({Chart.shortenFrequency(self.minFrequency)})")
+        self.action_set_fixed_stop.setText(
+            f"Stop ({Chart.shortenFrequency(self.maxFrequency)})")
+        self.action_set_fixed_minimum_real.setText(
+            f"Minimum R ({self.minDisplayReal})")
+        self.action_set_fixed_maximum_real.setText(
+            f"Maximum R ({self.maxDisplayReal})")
+        self.action_set_fixed_minimum_imag.setText(
+            f"Minimum jX ({self.minDisplayImag})")
+        self.action_set_fixed_maximum_imag.setText(
+            f"Maximum jX ({self.maxDisplayImag})")
         self.menu.exec_(event.globalPos())

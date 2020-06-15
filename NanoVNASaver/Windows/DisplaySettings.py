@@ -18,7 +18,7 @@ from typing import List
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 
-from NanoVNASaver.Windows.Bands import BandsWindow 
+from NanoVNASaver.Windows.Bands import BandsWindow
 from NanoVNASaver.Windows.MarkerSettings import MarkerSettingsWindow
 from NanoVNASaver.Marker import Marker
 logger = logging.getLogger(__name__)
@@ -73,18 +73,21 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         self.btnColorPicker = QtWidgets.QPushButton("█")
         self.btnColorPicker.setFixedWidth(20)
-        self.sweepColor = self.app.settings.value("SweepColor", defaultValue=QtGui.QColor(160, 140, 20, 128),
-                                                  type=QtGui.QColor)
+        self.sweepColor = self.app.settings.value(
+            "SweepColor", defaultValue=QtGui.QColor(160, 140, 20, 128),
+            type=QtGui.QColor)
         self.setSweepColor(self.sweepColor)
         self.btnColorPicker.clicked.connect(lambda: self.setSweepColor(
-            QtWidgets.QColorDialog.getColor(self.sweepColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
+            QtWidgets.QColorDialog.getColor(
+                self.sweepColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
 
         display_options_layout.addRow("Sweep color", self.btnColorPicker)
 
         self.btnSecondaryColorPicker = QtWidgets.QPushButton("█")
         self.btnSecondaryColorPicker.setFixedWidth(20)
         self.secondarySweepColor = self.app.settings.value("SecondarySweepColor",
-                                                           defaultValue=QtGui.QColor(20, 160, 140, 128),
+                                                           defaultValue=QtGui.QColor(
+                                                               20, 160, 140, 128),
                                                            type=QtGui.QColor)
         self.setSecondarySweepColor(self.secondarySweepColor)
         self.btnSecondaryColorPicker.clicked.connect(lambda: self.setSecondarySweepColor(
@@ -95,25 +98,32 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         self.btnReferenceColorPicker = QtWidgets.QPushButton("█")
         self.btnReferenceColorPicker.setFixedWidth(20)
-        self.referenceColor = self.app.settings.value("ReferenceColor", defaultValue=QtGui.QColor(0, 0, 255, 48),
-                                                      type=QtGui.QColor)
+        self.referenceColor = self.app.settings.value(
+            "ReferenceColor", defaultValue=QtGui.QColor(0, 0, 255, 48),
+            type=QtGui.QColor)
         self.setReferenceColor(self.referenceColor)
         self.btnReferenceColorPicker.clicked.connect(lambda: self.setReferenceColor(
-            QtWidgets.QColorDialog.getColor(self.referenceColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
+            QtWidgets.QColorDialog.getColor(
+                self.referenceColor, options=QtWidgets.QColorDialog.ShowAlphaChannel)))
 
         display_options_layout.addRow("Reference color", self.btnReferenceColorPicker)
 
         self.btnSecondaryReferenceColorPicker = QtWidgets.QPushButton("█")
         self.btnSecondaryReferenceColorPicker.setFixedWidth(20)
-        self.secondaryReferenceColor = self.app.settings.value("SecondaryReferenceColor",
-                                                               defaultValue=QtGui.QColor(0, 0, 255, 48),
-                                                               type=QtGui.QColor)
+        self.secondaryReferenceColor = self.app.settings.value(
+            "SecondaryReferenceColor",
+            defaultValue=QtGui.QColor(0, 0, 255, 48),
+            type=QtGui.QColor)
         self.setSecondaryReferenceColor(self.secondaryReferenceColor)
-        self.btnSecondaryReferenceColorPicker.clicked.connect(lambda: self.setSecondaryReferenceColor(
-            QtWidgets.QColorDialog.getColor(self.secondaryReferenceColor,
-                                            options=QtWidgets.QColorDialog.ShowAlphaChannel)))
+        self.btnSecondaryReferenceColorPicker.clicked.connect(
+            lambda: self.setSecondaryReferenceColor(
+                QtWidgets.QColorDialog.getColor(
+                    self.secondaryReferenceColor,
+                    options=QtWidgets.QColorDialog.ShowAlphaChannel)))
 
-        display_options_layout.addRow("Second reference color", self.btnSecondaryReferenceColorPicker)
+        display_options_layout.addRow(
+            "Second reference color",
+            self.btnSecondaryReferenceColorPicker)
 
         self.pointSizeInput = QtWidgets.QSpinBox()
         pointsize = self.app.settings.value("PointSize", 2, int)
@@ -347,7 +357,8 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             chart00_selection.setCurrentText(chart00)
         else:
             chart00_selection.setCurrentText("S11 Smith Chart")
-        chart00_selection.currentTextChanged.connect(lambda: self.changeChart(0, 0, chart00_selection.currentText()))
+        chart00_selection.currentTextChanged.connect(
+            lambda: self.changeChart(0, 0, chart00_selection.currentText()))
         charts_layout.addWidget(chart00_selection, 0, 0)
 
         chart01_selection = QtWidgets.QComboBox()
@@ -357,7 +368,8 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             chart01_selection.setCurrentText(chart01)
         else:
             chart01_selection.setCurrentText("S11 Return Loss")
-        chart01_selection.currentTextChanged.connect(lambda: self.changeChart(0, 1, chart01_selection.currentText()))
+        chart01_selection.currentTextChanged.connect(
+            lambda: self.changeChart(0, 1, chart01_selection.currentText()))
         charts_layout.addWidget(chart01_selection, 0, 1)
 
         chart02_selection = QtWidgets.QComboBox()
@@ -367,7 +379,8 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             chart02_selection.setCurrentText(chart02)
         else:
             chart02_selection.setCurrentText("None")
-        chart02_selection.currentTextChanged.connect(lambda: self.changeChart(0, 2, chart02_selection.currentText()))
+        chart02_selection.currentTextChanged.connect(
+            lambda: self.changeChart(0, 2, chart02_selection.currentText()))
         charts_layout.addWidget(chart02_selection, 0, 2)
 
         chart10_selection = QtWidgets.QComboBox()
@@ -377,7 +390,8 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             chart10_selection.setCurrentText(chart10)
         else:
             chart10_selection.setCurrentText("S21 Polar Plot")
-        chart10_selection.currentTextChanged.connect(lambda: self.changeChart(1, 0, chart10_selection.currentText()))
+        chart10_selection.currentTextChanged.connect(
+            lambda: self.changeChart(1, 0, chart10_selection.currentText()))
         charts_layout.addWidget(chart10_selection, 1, 0)
 
         chart11_selection = QtWidgets.QComboBox()
@@ -387,7 +401,8 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             chart11_selection.setCurrentText(chart11)
         else:
             chart11_selection.setCurrentText("S21 Gain")
-        chart11_selection.currentTextChanged.connect(lambda: self.changeChart(1, 1, chart11_selection.currentText()))
+        chart11_selection.currentTextChanged.connect(
+            lambda: self.changeChart(1, 1, chart11_selection.currentText()))
         charts_layout.addWidget(chart11_selection, 1, 1)
 
         chart12_selection = QtWidgets.QComboBox()
@@ -397,7 +412,8 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             chart12_selection.setCurrentText(chart12)
         else:
             chart12_selection.setCurrentText("None")
-        chart12_selection.currentTextChanged.connect(lambda: self.changeChart(1, 2, chart12_selection.currentText()))
+        chart12_selection.currentTextChanged.connect(
+            lambda: self.changeChart(1, 2, chart12_selection.currentText()))
         charts_layout.addWidget(chart12_selection, 1, 2)
 
         self.changeChart(0, 0, chart00_selection.currentText())
@@ -407,24 +423,34 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.changeChart(1, 1, chart11_selection.currentText())
         self.changeChart(1, 2, chart12_selection.currentText())
 
-        self.backgroundColor = self.app.settings.value("BackgroundColor", defaultValue=QtGui.QColor("white"),
-                                                       type=QtGui.QColor)
-        self.foregroundColor = self.app.settings.value("ForegroundColor", defaultValue=QtGui.QColor("lightgray"),
-                                                       type=QtGui.QColor)
-        self.textColor = self.app.settings.value("TextColor", defaultValue=QtGui.QColor("black"),
-                                                 type=QtGui.QColor)
-        self.bandsColor = self.app.settings.value("BandsColor", defaultValue=QtGui.QColor(128, 128, 128, 48),
-                                                  type=QtGui.QColor)
+        self.backgroundColor = self.app.settings.value(
+            "BackgroundColor", defaultValue=QtGui.QColor("white"),
+            type=QtGui.QColor)
+        self.foregroundColor = self.app.settings.value(
+            "ForegroundColor", defaultValue=QtGui.QColor("lightgray"),
+            type=QtGui.QColor)
+        self.textColor = self.app.settings.value(
+            "TextColor", defaultValue=QtGui.QColor("black"),
+            type=QtGui.QColor)
+        self.bandsColor = self.app.settings.value(
+            "BandsColor", defaultValue=QtGui.QColor(128, 128, 128, 48),
+            type=QtGui.QColor)
         self.app.bands.color = self.bandsColor
-        self.vswrColor = self.app.settings.value("VSWRColor", defaultValue=QtGui.QColor(192, 0, 0, 128),
-                                                 type=QtGui.QColor)
+        self.vswrColor = self.app.settings.value(
+            "VSWRColor", defaultValue=QtGui.QColor(192, 0, 0, 128),
+            type=QtGui.QColor)
 
-        self.dark_mode_option.setChecked(self.app.settings.value("DarkMode", False, bool))
-        self.show_lines_option.setChecked(self.app.settings.value("ShowLines", False, bool))
-        self.show_marker_number_option.setChecked(self.app.settings.value("ShowMarkerNumbers", False, bool))
-        self.filled_marker_option.setChecked(self.app.settings.value("FilledMarkers", False, bool))
+        self.dark_mode_option.setChecked(
+            self.app.settings.value("DarkMode", False, bool))
+        self.show_lines_option.setChecked(
+            self.app.settings.value("ShowLines", False, bool))
+        self.show_marker_number_option.setChecked(
+            self.app.settings.value("ShowMarkerNumbers", False, bool))
+        self.filled_marker_option.setChecked(
+            self.app.settings.value("FilledMarkers", False, bool))
 
-        if self.app.settings.value("UseCustomColors", defaultValue=False, type=bool):
+        if self.app.settings.value("UseCustomColors",
+                                   defaultValue=False, type=bool):
             self.dark_mode_option.setDisabled(True)
             self.dark_mode_option.setChecked(False)
             self.use_custom_colors.setChecked(True)
@@ -713,8 +739,8 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         label.hide()
 
     def addVSWRMarker(self):
-        value, selected = QtWidgets.QInputDialog.getDouble(self, "Add VSWR Marker",
-                                                           "VSWR value to show:", min=1.001, decimals=3)
+        value, selected = QtWidgets.QInputDialog.getDouble(
+            self, "Add VSWR Marker", "VSWR value to show:", min=1.001, decimals=3)
         if selected:
             self.vswrMarkers.append(value)
             if self.vswr_marker_dropdown.itemText(0) == "None":
@@ -738,4 +764,3 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
                 self.app.settings.setValue("VSWRMarkers", self.vswrMarkers)
             for c in self.app.s11charts:
                 c.removeSWRMarker(value)
-

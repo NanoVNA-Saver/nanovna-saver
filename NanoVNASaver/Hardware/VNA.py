@@ -47,14 +47,15 @@ class VNA:
 
         return self.features
 
-    def readFrequencies(self) -> List[str]:
-        pass
+    # TODO: check return types
+    def readFrequencies(self) -> List[int]:
+        return []
 
     def readValues11(self) -> List[str]:
-        pass
+        return []
 
     def readValues21(self) -> List[str]:
-        pass
+        return []
 
     def resetSweep(self, start: int, stop: int):
         pass
@@ -98,13 +99,13 @@ class VNA:
                     data = self.serial.readline().decode('ascii')
                     result += data
             except serial.SerialException as exc:
-                logger.exception("Exception while reading firmware data: %s", exc)
+                logger.exception(
+                    "Exception while reading firmware data: %s", exc)
             finally:
                 self.app.serialLock.release()
             return result
-        else:
-            logger.error("Unable to acquire serial lock to read firmware.")
-            return ""
+        logger.error("Unable to acquire serial lock to read firmware.")
+        return ""
 
     def readFromCommand(self, command) -> str:
         if self.app.serialLock.acquire():
@@ -121,13 +122,13 @@ class VNA:
                     data = self.serial.readline().decode('ascii')
                     result += data
             except serial.SerialException as exc:
-                logger.exception("Exception while reading %s: %s", command, exc)
+                logger.exception(
+                    "Exception while reading %s: %s", command, exc)
             finally:
                 self.app.serialLock.release()
             return result
-        else:
-            logger.error("Unable to acquire serial lock to read %s", command)
-            return ""
+        logger.error("Unable to acquire serial lock to read %s", command)
+        return ""
 
     def readValues(self, value) -> List[str]:
         logger.debug("VNA reading %s", value)
@@ -146,26 +147,31 @@ class VNA:
                     result += data
                 values = result.split("\r\n")
             except serial.SerialException as exc:
-                logger.exception("Exception while reading %s: %s", value, exc)
+                logger.exception(
+                    "Exception while reading %s: %s", value, exc)
                 return []
             finally:
                 self.app.serialLock.release()
-            logger.debug("VNA done reading %s (%d values)", value, len(values)-2)
+            logger.debug(
+                "VNA done reading %s (%d values)",
+                value, len(values)-2)
             return values[1:-1]
-        else:
-            logger.error("Unable to acquire serial lock to read %s", value)
-            return []
+        logger.error("Unable to acquire serial lock to read %s", value)
+        return []
 
     def writeSerial(self, command):
         if not self.serial.is_open:
-            logger.warning("Writing without serial port being opened (%s)", command)
+            logger.warning("Writing without serial port being opened (%s)",
+                           command)
             return
         if self.app.serialLock.acquire():
             try:
                 self.serial.write(str(command + "\r").encode('ascii'))
                 self.serial.readline()
             except serial.SerialException as exc:
-                logger.exception("Exception while writing to serial port (%s): %s", command, exc)
+                logger.exception(
+                    "Exception while writing to serial port (%s): %s",
+                    command, exc)
             finally:
                 self.app.serialLock.release()
         return
@@ -173,7 +179,8 @@ class VNA:
     def setSweep(self, start, stop):
         self.writeSerial("sweep " + str(start) + " " + str(stop) + " " + str(self.datapoints))
 
-
+# TODO: should be dropped and the serial part should be a connection class which handles
+#       unconnected devices
 class InvalidVNA(VNA):
     name = "Invalid"
 

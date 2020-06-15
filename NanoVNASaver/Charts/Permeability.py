@@ -47,8 +47,11 @@ class PermeabilityChart(FrequencyChart):
         # Set up size policy and palette
         #
 
-        self.setMinimumSize(self.chartWidth + self.leftMargin + self.rightMargin, self.chartHeight + 40)
-        self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding))
+        self.setMinimumSize(self.chartWidth + self.leftMargin +
+                            self.rightMargin, self.chartHeight + 40)
+        self.setSizePolicy(QtWidgets.QSizePolicy(
+            QtWidgets.QSizePolicy.MinimumExpanding,
+            QtWidgets.QSizePolicy.MinimumExpanding))
         pal = QtGui.QPalette()
         pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
         self.setPalette(pal)
@@ -167,12 +170,15 @@ class PermeabilityChart(FrequencyChart):
         for i in range(horizontal_ticks):
             y = self.topMargin + round(i * self.chartHeight / horizontal_ticks)
             qp.setPen(QtGui.QPen(self.foregroundColor))
-            qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.chartWidth + 5, y)
+            qp.drawLine(self.leftMargin - 5, y,
+                        self.leftMargin + self.chartWidth + 5, y)
             qp.setPen(QtGui.QPen(self.textColor))
             val = Value(self.valueAtPosition(y)[0], fmt=fmt)
             qp.drawText(3, y + 4, str(val))
 
-        qp.drawText(3, self.chartHeight + self.topMargin, str(Value(min_val, fmt=fmt)))
+        qp.drawText(3,
+                    self.chartHeight + self.topMargin,
+                    str(Value(min_val, fmt=fmt)))
 
         self.drawFrequencyTicks(qp)
 
@@ -189,7 +195,9 @@ class PermeabilityChart(FrequencyChart):
             c.setAlpha(255)
             pen.setColor(c)
             qp.setPen(pen)
-            qp.drawLine(self.leftMargin + self.chartWidth, 9, self.leftMargin + self.chartWidth + 5, 9)
+            qp.drawLine(
+                self.leftMargin + self.chartWidth, 9,
+                self.leftMargin + self.chartWidth + 5, 9)
 
         primary_pen.setWidth(self.pointSize)
         secondary_pen.setWidth(self.pointSize)
@@ -250,7 +258,8 @@ class PermeabilityChart(FrequencyChart):
             pen = QtGui.QPen(c)
             pen.setWidth(2)
             qp.setPen(pen)
-            qp.drawLine(self.leftMargin + self.chartWidth, 14, self.leftMargin + self.chartWidth + 5, 14)
+            qp.drawLine(self.leftMargin + self.chartWidth, 14,
+                        self.leftMargin + self.chartWidth + 5, 14)
 
         for i in range(len(self.reference)):
             if self.reference[i].freq < fstart or self.reference[i].freq > fstop:
@@ -312,9 +321,11 @@ class PermeabilityChart(FrequencyChart):
                 span = math.log(self.max) - math.log(min_val)
             else:
                 return -1
-            return self.topMargin + round((math.log(self.max) - math.log(im)) / span * self.chartHeight)
-        else:
-            return self.topMargin + round((self.max - im) / self.span * self.chartHeight)
+            return self.topMargin + round(
+                (math.log(self.max) - math.log(im)) /
+                span * self.chartHeight)
+        return self.topMargin + round(
+            (self.max - im) / self.span * self.chartHeight)
 
     def getReYPosition(self, d: Datapoint) -> int:
         re = d.impedance().real
@@ -325,9 +336,11 @@ class PermeabilityChart(FrequencyChart):
                 span = math.log(self.max) - math.log(min_val)
             else:
                 return -1
-            return self.topMargin + round((math.log(self.max) - math.log(re)) / span * self.chartHeight)
-        else:
-            return self.topMargin + round((self.max - re) / self.span * self.chartHeight)
+            return self.topMargin + round(
+                (math.log(self.max) - math.log(re)) /
+                span * self.chartHeight)
+        return self.topMargin + round(
+            (self.max - re) / self.span * self.chartHeight)
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin

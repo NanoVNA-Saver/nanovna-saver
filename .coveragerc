@@ -1,7 +1,7 @@
 [run]
 # ignore GUI code atm.
 omit =
-    NanoVNASaver/Analysis.py
+    NanoVNASaver/Analysis/*.py
     NanoVNASaver/Calibration.py
     NanoVNASaver/Charts/*.py
     NanoVNASaver/Hardware/*.py
