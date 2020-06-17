@@ -88,8 +88,8 @@ class NanoVNA(VNA):
                 data = "a"
                 while data != "":
                     data = self.serial.readline().decode('ascii')
-                self.serial.write("capture\r".encode('ascii'))
                 timeout = self.serial.timeout
+                self.serial.write("capture\r".encode('ascii'))
                 self.serial.timeout = 4
                 self.serial.readline()
                 image_data = self.serial.read(

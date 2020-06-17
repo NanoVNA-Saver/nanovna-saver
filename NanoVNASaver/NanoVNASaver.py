@@ -809,7 +809,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         if self.sweepCountInput.text().isdigit():
             segments = int(self.sweepCountInput.text())
             if segments > 0:
-                fstep = fspan / (segments * 101 - 1)
+                fstep = fspan / (segments * self.vna.datapoints - 1)
                 self.sweepStepLabel.setText(
                     f"{RFTools.formatShortFrequency(fstep)}/step")
 

@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 class VNA:
     name = "VNA"
+    _datapoints = (101, )
 
     def __init__(self, app: QtWidgets.QWidget, serial_port: serial.Serial):
         self.app = app
@@ -34,7 +35,7 @@ class VNA:
         self.version: Version = Version("0.0.0")
         self.features = set()
         self.validateInput = True
-        self.datapoints = 101
+        self.datapoints = self._datapoints[0]
 
     def readFeatures(self) -> List[str]:
         raw_help = self.readFromCommand("help")
@@ -44,6 +45,8 @@ class VNA:
         #  Detect features from the help command
         if "capture" in raw_help:
             self.features.add("Screenshots")
+        if len(self._datapoints) > 1:
+            self.features.add("Customizable data points")
 
         return self.features
 
@@ -183,10 +186,9 @@ class VNA:
 #       unconnected devices
 class InvalidVNA(VNA):
     name = "Invalid"
-
+    _datapoints = (0, )
     def __init__(self, app: QtWidgets.QWidget, serial_port: serial.Serial):
         super().__init__(app, serial_port)
-        self.datapoints = 0
 
     def setSweep(self, start, stop):
         return
