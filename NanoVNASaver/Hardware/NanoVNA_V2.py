@@ -53,7 +53,7 @@ _ADDR_FW_MINOR = 0xf4
 
 class NanoVNAV2(VNA):
     name = "NanoVNA-V2"
-    DEFAULT_DATAPOINTS = 300
+    _datapoints = (303, 101, 256, 512, 1023)
     screenwidth = 320
     screenheight = 240
 
@@ -72,8 +72,6 @@ class NanoVNAV2(VNA):
         # TODO: more than one dp per freq
         self.features.add("Multi data points")
 
-        self.datapoints = NanoVNAV2.DEFAULT_DATAPOINTS
-
         # firmware major version of 0xff indicates dfu mode
         if self.firmware.major == 0xff:
             self._isDFU = True
@@ -82,7 +80,7 @@ class NanoVNAV2(VNA):
         self._isDFU = False
         self.sweepStartHz = 200e6
         self.sweepStepHz = 1e6
-        self.sweepData = [(0, 0)] * self.datapoints
+        self.sweepData = [(0, 0)] * max(self._datapoints)
         self._updateSweep()
 
     def isValid(self):
@@ -117,8 +115,7 @@ class NanoVNAV2(VNA):
 
     def readValues(self, value) -> List[str]:
         self.checkValid()
-        self.serial.timeout = round(self.datapoints / 40)
-
+        self.serial.timeout = 8  # should be enough
 
         # Actually grab the data only when requesting channel 0.
         # The hardware will return all channels which we will store.
