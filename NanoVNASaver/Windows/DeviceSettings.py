@@ -32,8 +32,12 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
 
         QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
-        layout = QtWidgets.QVBoxLayout()
-        self.setLayout(layout)
+        top_layout = QtWidgets.QHBoxLayout()
+        left_layout = QtWidgets.QVBoxLayout()
+        right_layout = QtWidgets.QVBoxLayout()
+        top_layout.addLayout(left_layout)
+        top_layout.addLayout(right_layout)
+        self.setLayout(top_layout)
 
         status_box = QtWidgets.QGroupBox("Status")
         status_layout = QtWidgets.QFormLayout(status_box)
@@ -66,9 +70,20 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         self.btnCaptureScreenshot.clicked.connect(self.captureScreenshot)
         control_layout.addWidget(self.btnCaptureScreenshot)
 
-        layout.addWidget(status_box)
-        layout.addWidget(settings_box)
-        layout.addLayout(control_layout)
+        left_layout.addWidget(status_box)
+        left_layout.addLayout(control_layout)
+
+        self.datapoints = QtWidgets.QComboBox()
+        self.datapoints.addItem(str(self.app.vna.datapoints))
+        self.datapoints.currentIndexChanged.connect(self.updateNrDatapoints)
+        form_layout = QtWidgets.QFormLayout()
+        form_layout.addRow(QtWidgets.QLabel("Datapoints"), self.datapoints)
+        right_layout.addWidget(settings_box)
+        settings_layout.addRow(form_layout)
+
+    def _set_datapoint_index(self, dpoints: int):
+        self.datapoints.setCurrentIndex(
+            self.datapoints.findText(str(dpoints)))
 
     def show(self):
         super().show()
@@ -88,10 +103,14 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
             for item in features:
                 self.featureList.addItem(item)
 
-            if "Screenshots" in features:
-                self.btnCaptureScreenshot.setDisabled(False)
-            else:
-                self.btnCaptureScreenshot.setDisabled(True)
+            self.btnCaptureScreenshot.setDisabled(not "Screenshots" in features)
+            if "Customizable data points" in features:
+                self.datapoints.clear()
+                cur_dps = self.app.vna.datapoints
+                dplist = self.app.vna._datapoints[:]
+                for d in sorted(dplist):
+                    self.datapoints.addItem(str(d))
+                self._set_datapoint_index(cur_dps)
         else:
             self.statusLabel.setText("Not connected.")
             self.calibrationStatusLabel.setText("Not connected.")
@@ -108,8 +127,12 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
             pixmap = self.app.vna.getScreenshot()
             self.screenshotWindow.setScreenshot(pixmap)
             self.screenshotWindow.show()
-        else:
-            # TODO: Tell the user no screenshots while sweep is running?
-            # TODO: Consider having a list of widgets that want to be
-            #       disabled when a sweep is running?
-            pass
+        # TODO: Tell the user no screenshots while sweep is running?
+        # TODO: Consider having a list of widgets that want to be
+        #       disabled when a sweep is running?
+
+    def updateNrDatapoints(self, i):
+        if i < 0 or self.app.worker.running:
+            return
+        logger.debug("DP: %s", self.datapoints.itemText(i))
+        self.app.vna.datapoints = int(self.datapoints.itemText(i))

@@ -113,13 +113,13 @@ class SweepWorker(QtCore.QRunnable):
                     break
                 start = sweep_from + i * self.vna.datapoints * stepsize
                 freq, val11, val21 = self.readAveragedSegment(
-                    start, start + (self.vna.datapoints-1) * stepsize, self.averages)
+                    start, start + (self.vna.datapoints - 1) * stepsize, self.averages)
 
                 frequencies += freq
                 values += val11
                 values21 += val21
 
-                self.percentage = (i + 1) * (self.vna.datapoints-1) / self.noSweeps
+                self.percentage = (i + 1) * (self.vna.datapoints - 1) / self.noSweeps
                 logger.debug("Saving acquired data")
                 self.saveData(frequencies, values, values21)
 
@@ -129,16 +129,16 @@ class SweepWorker(QtCore.QRunnable):
                 if self.stopped:
                     logger.debug("Stopping sweeping as signalled")
                     break
-                start = sweep_from + i*self.vna.datapoints*stepsize
+                start = sweep_from + i * self.vna.datapoints * stepsize
                 try:
                     freq, val11, val21 = self.readSegment(
-                        start, start+(self.vna.datapoints-1)*stepsize)
+                        start, start + (self.vna.datapoints - 1) * stepsize)
 
                     frequencies += freq
                     values += val11
                     values21 += val21
 
-                    self.percentage = (i+1)*100/self.noSweeps
+                    self.percentage = (i + 1) * 100 / self.noSweeps
                     logger.debug("Saving acquired data")
                     self.saveData(frequencies, values, values21)
                 except NanoVNAValueException as e:
@@ -216,10 +216,12 @@ class SweepWorker(QtCore.QRunnable):
         raw_data11 = []
         raw_data21 = []
         logger.debug("Calculating data including corrections")
-        for i, val11 in enumerate(values11):
-            re, im = val11
+        for i, freq in enumerate(frequencies):
+            logger.debug("Freqnr %i, len(%i)", i, len(frequencies))
+            logger.debug("Val11 %s", values11[i])
+            logger.debug("Val21 %s", values21[i])
+            re, im = values11[i]
             re21, im21 = values21[i]
-            freq = frequencies[i]
             raw_data11 += [Datapoint(freq, re, im)]
             raw_data21 += [Datapoint(freq, re21, im21)]
         self.data11, self.data21 = self.applyCalibration(raw_data11, raw_data21)
