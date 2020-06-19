@@ -69,7 +69,7 @@ def get_VNA(app, serial_port: serial.Serial) -> 'VNA':
 
     for _ in range(3):
         vnaType = detect_version(serial_port)
-        if vnaType != "unkown":
+        if vnaType != "unknown":
             break
 
     serial_port.timeout = 0.2
