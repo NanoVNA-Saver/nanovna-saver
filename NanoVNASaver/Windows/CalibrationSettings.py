@@ -575,7 +575,7 @@ class CalibrationWindow(QtWidgets.QWidget):
         valid, error = self.app.calibration.calculateCorrections()
         if valid:
             self.calibration_status_label.setText(
-                f"Application calibration ({self.app.calibration.s11short} points)")
+                f"Application calibration ({len(self.app.calibration.s11short)} points)")
             if self.use_ideal_values.isChecked():
                 self.calibration_source_label.setText(self.app.calibration.source)
             else:
@@ -611,16 +611,16 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.app.calibration.loadCalibration(filename)
             if self.app.calibration.isValid1Port():
                 self.cal_short_label.setText(
-                    f"Loaded ({self.app.calibration.s11short})")
+                    f"Loaded ({len(self.app.calibration.s11short)})")
                 self.cal_open_label.setText(
-                    f"Loaded ({self.app.calibration.s11open})")
+                    f"Loaded ({len(self.app.calibration.s11open)})")
                 self.cal_load_label.setText(
-                    f"Loaded ({self.app.calibration.s11load})")
+                    f"Loaded ({len(self.app.calibration.s11load)})")
                 if self.app.calibration.isValid2Port():
                     self.cal_through_label.setText(
-                        f"Loaded ({self.app.calibration.s21through})")
+                        f"Loaded ({len(self.app.calibration.s21through)})")
                     self.cal_isolation_label.setText(
-                        f"Loaded ({self.app.calibration.s21isolation})")
+                        f"Loaded ({len(self.app.calibration.s21isolation)})")
                 self.calculate()
                 self.notes_textedit.clear()
                 for note in self.app.calibration.notes:
