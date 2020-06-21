@@ -62,12 +62,6 @@ class AVNA(VNA):
     def readFrequencies(self) -> List[str]:
         return self.readValues("frequencies")
 
-    def readValues11(self) -> List[str]:
-        return self.readValues("data 0")
-
-    def readValues21(self) -> List[str]:
-        return self.readValues("data 1")
-
     def resetSweep(self, start: int, stop: int):
         self.writeSerial("sweep " + str(start) + " " + str(stop) + " " + str(self.datapoints))
         self.writeSerial("resume")

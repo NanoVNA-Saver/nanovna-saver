@@ -347,9 +347,6 @@ class SweepWorker(QtCore.QRunnable):
             done = True
             returndata = []
             tmpdata = self.vna.readValues(data)
-            if not tmpdata:
-                logger.warning("Read no values")
-                raise NanoVNASerialException("Failed reading data: Returned no values.")
             logger.debug("Read %d values", len(tmpdata))
             for d in tmpdata:
                 a, b = d.split(" ")

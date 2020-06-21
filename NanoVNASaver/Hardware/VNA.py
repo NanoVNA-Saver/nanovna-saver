@@ -54,12 +54,6 @@ class VNA:
     def readFrequencies(self) -> List[int]:
         return []
 
-    def readValues11(self) -> List[str]:
-        return []
-
-    def readValues21(self) -> List[str]:
-        return []
-
     def resetSweep(self, start: int, stop: int):
         pass
 
@@ -203,12 +197,6 @@ class InvalidVNA(VNA):
         return
 
     def readFrequencies(self) -> List[int]:
-        return []
-
-    def readValues11(self) -> List[str]:
-        return []
-
-    def readValues21(self) -> List[str]:
         return []
 
     def readValues(self, value):
