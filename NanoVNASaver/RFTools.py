@@ -144,3 +144,21 @@ def groupDelay(data: List[Datapoint], index: int) -> float:
             delta_angle = -1 * (delta_angle % math.tau)
     val = -delta_angle / math.tau / delta_freq
     return val
+
+
+def corrAttData(data: Datapoint, att: float):                                   
+    """Correct the ratio for a given attenuation on s21 input"""
+
+    if att <= 0:
+        return data
+    else:
+        att = 10**(att/20)
+
+    ndata = []
+    for i in range(len(data)):
+        freq, re, im = data[i]
+        orig = complex(re, im)
+        corrected = orig * att
+        ndata.append(Datapoint(freq, corrected.real, corrected.imag))
+
+    return ndata
