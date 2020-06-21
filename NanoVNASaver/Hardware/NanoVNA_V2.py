@@ -185,6 +185,8 @@ class NanoVNAV2(VNA):
 
 
     def setSweep(self, start, stop):
+        if(len(self.sweepData) != self.datapoints) :
+            self.sweepData = [(0, 0)] * self.datapoints
         step = (stop - start) / (self.datapoints - 1)
         if start == self.sweepStartHz and step == self.sweepStepHz:
             return

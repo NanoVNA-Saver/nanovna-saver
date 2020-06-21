@@ -304,7 +304,7 @@ class Calibration:
                     continue
                 if line.startswith("#") and not parsed_header:
                     # Check that this is a valid header
-                    if line == ("# Hz ShortR ShortI OpenR OpenI LoadR Load"
+                    if line == ("# Hz ShortR ShortI OpenR OpenI LoadR LoadI"
                                 " ThroughR ThroughI IsolationR IsolationI"):
                         parsed_header = True
                     continue
