@@ -15,5 +15,5 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 version = '0.2.3-dg5gbh'
-#debug = False
+# debug = False
 debug = True

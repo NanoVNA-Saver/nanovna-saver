@@ -109,7 +109,6 @@ class NanoVNAV2(VNA):
             return None
         return Version(f"{resp[0]}.{resp[1]}.0")
 
-
     def readFrequencies(self) -> List[str]:
         self.checkValid()
         return [
@@ -186,7 +185,6 @@ class NanoVNAV2(VNA):
             logger.error("Timeout reading version registers")
             return None
         return Version(f"{resp[0]}.0.{resp[1]}")
-
 
     def setSweep(self, start, stop):
         step = (stop - start) / (self.datapoints - 1)

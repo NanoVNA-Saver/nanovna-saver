@@ -22,6 +22,7 @@ from NanoVNASaver.Windows.Screenshot import ScreenshotWindow
 
 logger = logging.getLogger(__name__)
 
+
 class DeviceSettingsWindow(QtWidgets.QWidget):
     def __init__(self, app: QtWidgets.QWidget):
         super().__init__()
@@ -103,7 +104,7 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
             for item in features:
                 self.featureList.addItem(item)
 
-            self.btnCaptureScreenshot.setDisabled(not "Screenshots" in features)
+            self.btnCaptureScreenshot.setDisabled("Screenshots" not in features)
             if "Customizable data points" in features:
                 self.datapoints.clear()
                 cur_dps = self.app.vna.datapoints

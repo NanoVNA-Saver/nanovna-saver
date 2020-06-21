@@ -93,7 +93,7 @@ class PolarChart(SquareChart):
         qp.setPen(pen)
         if len(self.data) > 0:
             fstart = self.data[0].freq
-            fstop = self.data[len(self.data) -1].freq
+            fstop = self.data[len(self.data) - 1].freq
         else:
             fstart = self.reference[0].freq
             fstop = self.reference[len(self.reference) - 1].freq

@@ -23,6 +23,7 @@ from NanoVNASaver.Windows.MarkerSettings import MarkerSettingsWindow
 from NanoVNASaver.Marker import Marker
 logger = logging.getLogger(__name__)
 
+
 class DisplaySettingsWindow(QtWidgets.QWidget):
     def __init__(self, app: QtWidgets.QWidget):
         super().__init__()

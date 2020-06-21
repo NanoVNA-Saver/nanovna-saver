@@ -24,6 +24,7 @@ from NanoVNASaver.Hardware.VNA import VNA, Version
 
 logger = logging.getLogger(__name__)
 
+
 class AVNA(VNA):
     name = "AVNA"
 

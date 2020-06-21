@@ -19,8 +19,7 @@ import sys
 import unittest
 
 # Import targets to be tested
-from NanoVNASaver import RFTools
-rft = RFTools.RFTools()
+from NanoVNASaver.Formatting import format_frequency_sweep
 
 class TestCases(unittest.TestCase):
 
@@ -28,15 +27,15 @@ class TestCases(unittest.TestCase):
         # simple well-formed integers with no trailing zeros. Most importantly
         # there is no loss of accuracy in the result. Returned values are not
         # truncated if result would lose meaningful data.
-        self.assertEqual(rft.formatSweepFrequency(1), '1Hz')
-        self.assertEqual(rft.formatSweepFrequency(12), '12Hz')
-        self.assertEqual(rft.formatSweepFrequency(123), '123Hz')
-        self.assertEqual(rft.formatSweepFrequency(1234), '1.234kHz')
-        self.assertEqual(rft.formatSweepFrequency(12345), '12.345kHz')
-        self.assertEqual(rft.formatSweepFrequency(123456), '123.456kHz')
-        self.assertEqual(rft.formatSweepFrequency(1234567), '1.234567MHz')
-        self.assertEqual(rft.formatSweepFrequency(12345678), '12.345678MHz')
-        self.assertEqual(rft.formatSweepFrequency(123456789), '123.456789MHz')
+        self.assertEqual(format_frequency_sweep(1), '1Hz')
+        self.assertEqual(format_frequency_sweep(12), '12Hz')
+        self.assertEqual(format_frequency_sweep(1234), '1.234kHz')
+        self.assertEqual(format_frequency_sweep(12345), '12.345kHz')
+        self.assertEqual(format_frequency_sweep(123456), '123.456kHz')
+        self.assertEqual(format_frequency_sweep(123), '123Hz')
+        self.assertEqual(format_frequency_sweep(1234567), '1.234567MHz')
+        self.assertEqual(format_frequency_sweep(12345678), '12.345678MHz')
+        self.assertEqual(format_frequency_sweep(123456789), '123.456789MHz')
 
     # def test_defaultMinDigits(self):
     #     # simple integers with trailing zeros.

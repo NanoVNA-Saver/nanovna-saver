@@ -22,6 +22,7 @@ from NanoVNASaver.Charts.Chart import Chart
 
 logger = logging.getLogger(__name__)
 
+
 class SquareChart(Chart):
     def __init__(self, name):
         super().__init__(name)

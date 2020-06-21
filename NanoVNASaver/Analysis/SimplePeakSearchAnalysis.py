@@ -20,7 +20,7 @@ from PyQt5 import QtWidgets
 import numpy as np
 
 from NanoVNASaver.Analysis import Analysis, PeakSearchAnalysis
-from NanoVNASaver.RFTools import RFTools
+from NanoVNASaver.Formatting import format_frequency
 
 
 logger = logging.getLogger(__name__)
@@ -115,10 +115,10 @@ class SimplePeakSearchAnalysis(Analysis):
             return
 
         self.peak_frequency.setText(
-            RFTools.formatFrequency(self.app.data[idx_peak].freq))
+            format_frequency(self.app.data[idx_peak].freq))
         self.peak_value.setText(str(round(data[idx_peak], 3)) + suffix)
 
         if self.checkbox_move_marker.isChecked() and len(self.app.markers) >= 1:
             self.app.markers[0].setFrequency(str(self.app.data[idx_peak].freq))
             self.app.markers[0].frequencyInput.setText(
-                RFTools.formatFrequency(self.app.data[idx_peak].freq))
+                format_frequency(self.app.data[idx_peak].freq))

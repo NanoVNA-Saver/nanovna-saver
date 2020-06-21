@@ -22,7 +22,7 @@ import numpy as np
 from PyQt5 import QtWidgets, QtGui, QtCore
 
 from NanoVNASaver.Formatting import parse_frequency
-from NanoVNASaver.RFTools import Datapoint, RFTools
+from NanoVNASaver.RFTools import Datapoint
 from .Chart import Chart
 
 logger = logging.getLogger(__name__)
@@ -244,9 +244,11 @@ class FrequencyChart(Chart):
         if span > 0:
             if self.logarithmicX:
                 span = math.log(self.fstop) - math.log(self.fstart)
-                return self.leftMargin +\
-                       round(self.chartWidth * (math.log(d.freq) - math.log(self.fstart)) / span)
-            return self.leftMargin + round(self.chartWidth * (d.freq - self.fstart) / span)
+                return self.leftMargin + round(
+                    self.chartWidth * (math.log(d.freq) -
+                                       math.log(self.fstart)) / span)
+            return self.leftMargin + round(
+                self.chartWidth * (d.freq - self.fstart) / span)
         return math.floor(self.width()/2)
 
     def frequencyAtPosition(self, x, limit=True) -> int:

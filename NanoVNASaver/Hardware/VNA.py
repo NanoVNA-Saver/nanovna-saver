@@ -178,9 +178,12 @@ class VNA:
 
 # TODO: should be dropped and the serial part should be a connection class which handles
 #       unconnected devices
+
+
 class InvalidVNA(VNA):
     name = "Invalid"
     _datapoints = (0, )
+
     def __init__(self, app: QtWidgets.QWidget, serial_port: serial.Serial):
         super().__init__(app, serial_port)
 

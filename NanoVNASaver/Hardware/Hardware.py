@@ -64,6 +64,7 @@ def get_interfaces() -> List[Tuple[str, str]]:
                 return_ports.append((port, f"{port}({t.name})"))
     return return_ports
 
+
 def get_VNA(app, serial_port: serial.Serial) -> 'VNA':
     logger.info("Finding correct VNA type...")
 

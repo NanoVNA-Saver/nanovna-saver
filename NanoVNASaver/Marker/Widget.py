@@ -24,7 +24,7 @@ from NanoVNASaver import RFTools
 from NanoVNASaver.Formatting import (
     format_capacitance,
     format_complex_imp,
-    format_frequency,
+    format_frequency_space,
     format_gain,
     format_group_delay,
     format_inductance,
@@ -306,7 +306,7 @@ class Marker(QtCore.QObject, Value):
         else:
             x_p_str = ind_p_str
 
-        self.label['actualfreq'].setText(format_frequency(s11.freq))
+        self.label['actualfreq'].setText(format_frequency_space(s11.freq))
         self.label['admittance'].setText(format_complex_imp(imp_p))
         self.label['impedance'].setText(format_complex_imp(imp))
         self.label['parc'].setText(cap_p_str)

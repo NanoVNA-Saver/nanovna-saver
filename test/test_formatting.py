@@ -23,14 +23,14 @@ from NanoVNASaver import Formatting as fmt
 class TestCases(unittest.TestCase):
 
     def test_format_frequency(self):
-        self.assertEqual(fmt.format_frequency(1), '1.00000 Hz')
-        self.assertEqual(fmt.format_frequency(12), '12.0000 Hz')
-        self.assertEqual(fmt.format_frequency(123), '123.000 Hz')
-        self.assertEqual(fmt.format_frequency(1234), '1.23400 kHz')
-        self.assertEqual(fmt.format_frequency(1234567), '1.23457 MHz')
-        self.assertEqual(fmt.format_frequency(1234567890), '1.23457 GHz')
-        self.assertEqual(fmt.format_frequency(0), '0.00000 Hz')
-        self.assertEqual(fmt.format_frequency(-1), '-1.00000 Hz')
+        self.assertEqual(fmt.format_frequency_space(1), '1.00000 Hz')
+        self.assertEqual(fmt.format_frequency_space(12), '12.0000 Hz')
+        self.assertEqual(fmt.format_frequency_space(123), '123.000 Hz')
+        self.assertEqual(fmt.format_frequency_space(1234), '1.23400 kHz')
+        self.assertEqual(fmt.format_frequency_space(1234567), '1.23457 MHz')
+        self.assertEqual(fmt.format_frequency_space(1234567890), '1.23457 GHz')
+        self.assertEqual(fmt.format_frequency_space(0), '0.00000 Hz')
+        self.assertEqual(fmt.format_frequency_space(-1), '-1.00000 Hz')
 
     def test_format_frequency_inputs(self):
         self.assertEqual(fmt.format_frequency_inputs(1), '1Hz')

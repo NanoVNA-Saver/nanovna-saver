@@ -26,6 +26,7 @@ from .Frequency import FrequencyChart
 
 logger = logging.getLogger(__name__)
 
+
 class InductanceChart(FrequencyChart):
     def __init__(self, name=""):
         super().__init__(name)

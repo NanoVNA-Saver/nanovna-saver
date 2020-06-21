@@ -24,20 +24,27 @@ from typing import List
 import serial
 from PyQt5 import QtWidgets, QtCore, QtGui
 
-from .Windows import AboutWindow, AnalysisWindow, CalibrationWindow, \
-    DeviceSettingsWindow, DisplaySettingsWindow, SweepSettingsWindow, \
+from .Windows import (
+    AboutWindow, AnalysisWindow, CalibrationWindow,
+    DeviceSettingsWindow, DisplaySettingsWindow, SweepSettingsWindow,
     TDRWindow
-from .Formatting import parse_frequency
+)
+from .Formatting import (
+    format_frequency, format_frequency_short, format_frequency_sweep,
+    parse_frequency,
+)
 from .Hardware import get_interfaces, get_VNA, InvalidVNA
-from .RFTools import RFTools, Datapoint
+from .RFTools import Datapoint
 from .Charts.Chart import Chart
-from .Charts import CapacitanceChart, \
-    CombinedLogMagChart, GroupDelayChart, InductanceChart, \
-    LogMagChart, PhaseChart, \
-    MagnitudeChart, MagnitudeZChart, \
-    QualityFactorChart, VSWRChart, PermeabilityChart, PolarChart, \
-    RealImaginaryChart, \
-    SmithChart, SParameterChart, TDRChart
+from .Charts import (
+    CapacitanceChart,
+    CombinedLogMagChart, GroupDelayChart, InductanceChart,
+    LogMagChart, PhaseChart,
+    MagnitudeChart, MagnitudeZChart,
+    QualityFactorChart, VSWRChart, PermeabilityChart, PolarChart,
+    RealImaginaryChart,
+    SmithChart, SParameterChart, TDRChart,
+)
 from .Calibration import Calibration
 from .Inputs import FrequencyInputWidget
 from .Marker import Marker
@@ -621,15 +628,15 @@ class NanoVNASaver(QtWidgets.QWidget):
                         self.sweepStartInput.text() == "" or
                         self.sweepEndInput.text() == ""):
                     self.sweepStartInput.setText(
-                        RFTools.formatSweepFrequency(int(frequencies[0])))
+                        format_frequency_sweep(int(frequencies[0])))
                     self.sweepEndInput.setText(
-                        RFTools.formatSweepFrequency(int(frequencies[100]) + 100000))
+                        format_frequency_sweep(int(frequencies[100]) + 100000))
                 elif (self.sweepStartInput.text() == "" or
                       self.sweepEndInput.text() == ""):
                     self.sweepStartInput.setText(
-                        RFTools.formatSweepFrequency(int(frequencies[0])))
+                        format_frequency_sweep(int(frequencies[0])))
                     self.sweepEndInput.setText(
-                        RFTools.formatSweepFrequency(int(frequencies[100])))
+                        format_frequency_sweep(int(frequencies[100])))
                 self.sweepStartInput.textEdited.emit(
                     self.sweepStartInput.text())
                 self.sweepStartInput.textChanged.emit(
@@ -737,7 +744,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
             if min_vswr_freq > -1:
                 self.s11_min_swr_label.setText(
-                    f"{round(min_vswr, 3)} @ {RFTools.formatFrequency(min_vswr_freq)}")
+                    f"{round(min_vswr, 3)} @ {format_frequency(min_vswr_freq)}")
                 if min_vswr > 1:
                     self.s11_min_rl_label.setText(
                         f"{round(20*math.log10((min_vswr-1)/(min_vswr+1)), 3)} dB")
@@ -762,9 +769,9 @@ class NanoVNASaver(QtWidgets.QWidget):
 
             if max_gain_freq > -1:
                 self.s21_min_gain_label.setText(
-                    f"{round(min_gain, 3)} dB @ {RFTools.formatFrequency(min_gain_freq)}")
+                    f"{round(min_gain, 3)} dB @ {format_frequency(min_gain_freq)}")
                 self.s21_max_gain_label.setText(
-                    f"{round(max_gain, 3)} dB @ {RFTools.formatFrequency(max_gain_freq)}")
+                    f"{round(max_gain, 3)} dB @ {format_frequency(max_gain_freq)}")
             else:
                 self.s21_min_gain_label.setText("")
                 self.s21_max_gain_label.setText("")
@@ -788,8 +795,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         fcenter = int(round((fstart+fstop)/2))
         if fspan < 0 or fstart < 0 or fstop < 0:
             return
-        self.sweepSpanInput.setText(RFTools.formatSweepFrequency(fspan))
-        self.sweepCenterInput.setText(RFTools.formatSweepFrequency(fcenter))
+        self.sweepSpanInput.setText(format_frequency_sweep(fspan))
+        self.sweepCenterInput.setText(format_frequency_sweep(fcenter))
 
     def updateStartEnd(self):
         fcenter = parse_frequency(self.sweepCenterInput.text())
@@ -800,8 +807,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         fstop = int(round(fcenter + fspan/2))
         if fstart < 0 or fstop < 0:
             return
-        self.sweepStartInput.setText(RFTools.formatSweepFrequency(fstart))
-        self.sweepEndInput.setText(RFTools.formatSweepFrequency(fstop))
+        self.sweepStartInput.setText(format_frequency_sweep(fstart))
+        self.sweepEndInput.setText(format_frequency_sweep(fstop))
 
     def updateStepSize(self):
         fspan = parse_frequency(self.sweepSpanInput.text())
@@ -812,7 +819,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             if segments > 0:
                 fstep = fspan / (segments * self.vna.datapoints - 1)
                 self.sweepStepLabel.setText(
-                    f"{RFTools.formatShortFrequency(fstep)}/step")
+                    f"{format_frequency_short(fstep)}/step")
 
     def setReference(self, s11data=None, s21data=None, source=None):
         if not s11data:

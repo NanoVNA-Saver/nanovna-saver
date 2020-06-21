@@ -82,7 +82,7 @@ class NanoVNA_F(NanoVNA):
 
                 image = QtGui.QImage(
                     unwrapped_array,
-                    self.screenwidth, self.screenheight, 
+                    self.screenwidth, self.screenheight,
                     QtGui.QImage.Format_ARGB32)
                 logger.debug("Captured screenshot")
                 return QtGui.QPixmap(image)

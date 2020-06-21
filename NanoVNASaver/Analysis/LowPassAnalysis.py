@@ -20,10 +20,9 @@ import math
 from PyQt5 import QtWidgets
 
 from NanoVNASaver.Analysis import Analysis
-from NanoVNASaver.RFTools import RFTools
+from NanoVNASaver.Formatting import format_frequency
 
 logger = logging.getLogger(__name__)
-
 
 
 class LowPassAnalysis(Analysis):
@@ -128,8 +127,9 @@ class LowPassAnalysis(Analysis):
                 cutoff_gain)
         logger.debug("Found true cutoff frequency at %d", cutoff_frequency)
 
-        self.cutoff_label.setText(RFTools.formatFrequency(cutoff_frequency) +
-                                  " (" + str(round(cutoff_gain, 1)) + " dB)")
+        self.cutoff_label.setText(
+            f"{format_frequency(cutoff_frequency)}"
+            f" ({round(cutoff_gain, 1)} dB)")
         self.app.markers[1].setFrequency(str(cutoff_frequency))
         self.app.markers[1].frequencyInput.setText(str(cutoff_frequency))
 
@@ -145,7 +145,8 @@ class LowPassAnalysis(Analysis):
             self.result_label.setText("6 dB location not found.")
             return
         six_db_cutoff_frequency = self.app.data21[six_db_location].freq
-        self.six_db_label.setText(RFTools.formatFrequency(six_db_cutoff_frequency))
+        self.six_db_label.setText(
+            format_frequency(six_db_cutoff_frequency))
 
         ten_db_location = -1
         for i in range(cutoff_location, len(self.app.data21)):
@@ -174,14 +175,14 @@ class LowPassAnalysis(Analysis):
         if sixty_db_location > 0:
             sixty_db_cutoff_frequency = self.app.data21[sixty_db_location].freq
             self.sixty_db_label.setText(
-                RFTools.formatFrequency(sixty_db_cutoff_frequency))
+                format_frequency(sixty_db_cutoff_frequency))
         elif ten_db_location != -1 and twenty_db_location != -1:
             ten = self.app.data21[ten_db_location].freq
             twenty = self.app.data21[twenty_db_location].freq
             sixty_db_frequency = ten * \
                 10 ** (5 * (math.log10(twenty) - math.log10(ten)))
-            self.sixty_db_label.setText(RFTools.formatFrequency(
-                sixty_db_frequency) + " (derived)")
+            self.sixty_db_label.setText(
+                f"{format_frequency(sixty_db_frequency)} (derived)")
         else:
             self.sixty_db_label.setText("Not calculated")
 

@@ -16,9 +16,8 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
 import cmath
-from numbers import Number
 from typing import List, NamedTuple
-from NanoVNASaver.SITools import Value, Format, clamp_value
+from NanoVNASaver.SITools import Format, clamp_value
 
 FMT_FREQ = Format()
 FMT_SHORT = Format(max_nr_digits=4)
@@ -145,18 +144,3 @@ def groupDelay(data: List[Datapoint], index: int) -> float:
             delta_angle = -1 * (delta_angle % math.tau)
     val = -delta_angle / math.tau / delta_freq
     return val
-
-
-class RFTools:
-    # TODO: Remove this class when unused
-    @staticmethod
-    def formatFrequency(freq: Number) -> str:
-        return str(Value(freq, "Hz", FMT_FREQ))
-
-    @staticmethod
-    def formatShortFrequency(freq: Number) -> str:
-        return str(Value(freq, "Hz", FMT_SHORT))
-
-    @staticmethod
-    def formatSweepFrequency(freq: Number) -> str:
-        return str(Value(freq, "Hz", FMT_SWEEP))

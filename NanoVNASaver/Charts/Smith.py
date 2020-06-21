@@ -39,7 +39,7 @@ class SmithChart(SquareChart):
 
     def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
         qp = QtGui.QPainter(self)
-        #qp.begin(self)  # Apparently not needed?
+        # qp.begin(self)  # Apparently not needed?
         self.drawSmithChart(qp)
         self.drawValues(qp)
         qp.end()

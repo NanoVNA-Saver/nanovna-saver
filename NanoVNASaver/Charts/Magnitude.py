@@ -16,7 +16,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
 import logging
-from typing import List, Set
+from typing import List
 
 from PyQt5 import QtWidgets, QtGui
 
@@ -162,8 +162,6 @@ class MagnitudeChart(FrequencyChart):
         return math.sqrt(p.re**2 + p.im**2)
 
     def copy(self):
-        new_chart: LogMagChart = super().copy()
+        new_chart = super().copy()
         new_chart.span = self.span
         return new_chart
-
-
