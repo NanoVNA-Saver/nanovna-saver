@@ -75,7 +75,7 @@ For most users, this is already installed.
 
 4. Update pip and run the pip installation
 
-        pythun3.7 -m pip install -U pip
+        python3.7 -m pip install -U pip
         python3.7 -m pip install .
     
     (You may need to install the additional packages python3-distutils, python3-setuptools and python3-wheel for this command to work on some distributions.)
