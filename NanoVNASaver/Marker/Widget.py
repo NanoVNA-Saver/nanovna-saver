@@ -33,6 +33,7 @@ from NanoVNASaver.Formatting import (
     format_q_factor,
     format_resistance,
     format_vswr,
+    parse_frequency,
 )
 from NanoVNASaver.Inputs import MarkerFrequencyInputWidget as FrequencyInput
 from NanoVNASaver.Marker.Values import TYPES, Value, default_label_ids
@@ -204,7 +205,7 @@ class Marker(QtCore.QObject, Value):
                 self._add_active_labels(label_id, self.right_form)
 
     def setFrequency(self, frequency):
-        self.freq = RFTools.RFTools.parseFrequency(frequency)
+        self.freq = parse_frequency(frequency)
         self.updated.emit(self)
 
     def setFieldSelection(self, fields):

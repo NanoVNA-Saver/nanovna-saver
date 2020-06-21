@@ -23,8 +23,6 @@ from NanoVNASaver.SITools import Value, Format, clamp_value
 FMT_FREQ = Format()
 FMT_SHORT = Format(max_nr_digits=4)
 FMT_SWEEP = Format(max_nr_digits=9, allow_strip=True)
-FMT_PARSE = Format(parse_sloppy_unit=True, parse_sloppy_kilo=True,
-                   parse_clamp_min=0)
 
 
 def parallel_to_serial(z: complex) -> complex:
@@ -86,13 +84,6 @@ def gamma_to_impedance(gamma: complex, ref_impedance: float = 50) -> complex:
         return ((-gamma - 1) / (gamma - 1)) * ref_impedance
     except ZeroDivisionError:
         return math.inf
-
-
-def parseFrequency(freq: str) -> int:
-    try:
-        return int(Value(freq, "Hz", FMT_PARSE))
-    except (ValueError, IndexError):
-        return -1
 
 
 class Datapoint(NamedTuple):
@@ -169,7 +160,3 @@ class RFTools:
     @staticmethod
     def formatSweepFrequency(freq: Number) -> str:
         return str(Value(freq, "Hz", FMT_SWEEP))
-
-    @staticmethod
-    def parseFrequency(freq: str) -> int:
-        return parseFrequency(freq)

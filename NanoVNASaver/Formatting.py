@@ -27,6 +27,8 @@ FMT_GROUP_DELAY = SITools.Format(max_nr_digits=5, space_str=" ")
 FMT_REACT = SITools.Format(max_nr_digits=5, space_str=" ", allow_strip=True)
 FMT_COMPLEX = SITools.Format(max_nr_digits=3, allow_strip=True,
                              printable_min=0, unprintable_under="- ")
+FMT_PARSE = SITools.Format(parse_sloppy_unit=True, parse_sloppy_kilo=True,
+                           parse_clamp_min=0)
 
 
 def format_frequency(freq: float, fmt=FMT_FREQ) -> str:
@@ -85,3 +87,9 @@ def format_complex_imp(z: complex) -> str:
     re = SITools.Value(z.real, fmt=FMT_COMPLEX)
     im = SITools.Value(abs(z.imag), fmt=FMT_COMPLEX)
     return f"{re}{'-' if z.imag < 0 else '+'}j{im} \N{OHM SIGN}"
+
+def parse_frequency(freq: str) -> int:
+    try:
+        return int(SITools.Value(freq, "Hz", FMT_PARSE))
+    except (ValueError, IndexError):
+        return -1

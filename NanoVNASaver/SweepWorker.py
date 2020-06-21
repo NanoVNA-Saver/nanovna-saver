@@ -24,7 +24,8 @@ from PyQt5.QtCore import pyqtSlot, pyqtSignal
 
 import NanoVNASaver
 from NanoVNASaver.Calibration import Calibration
-from NanoVNASaver.RFTools import RFTools, Datapoint
+from NanoVNASaver.Formatting import parse_frequency
+from NanoVNASaver.RFTools import Datapoint
 
 logger = logging.getLogger(__name__)
 
@@ -82,8 +83,8 @@ class SweepWorker(QtCore.QRunnable):
             sweep_from = 1000000
             sweep_to = 800000000
         else:
-            sweep_from = RFTools.parseFrequency(self.app.sweepStartInput.text())
-            sweep_to = RFTools.parseFrequency(self.app.sweepEndInput.text())
+            sweep_from = parse_frequency(self.app.sweepStartInput.text())
+            sweep_to = parse_frequency(self.app.sweepEndInput.text())
             logger.debug("Parsed sweep range as %d to %d", sweep_from, sweep_to)
             if sweep_from < 0 or sweep_to < 0 or sweep_from == sweep_to:
                 logger.warning("Can't sweep from %s to %s",
@@ -179,11 +180,11 @@ class SweepWorker(QtCore.QRunnable):
         # Reset the device to show the full range if we were multisegment
         if self.noSweeps > 1:
             logger.debug("Resetting NanoVNA sweep to full range: %d to %d",
-                         RFTools.parseFrequency(
+                         parse_frequency(
                              self.app.sweepStartInput.text()),
-                         RFTools.parseFrequency(self.app.sweepEndInput.text()))
-            self.vna.resetSweep(RFTools.parseFrequency(self.app.sweepStartInput.text()),
-                                RFTools.parseFrequency(self.app.sweepEndInput.text()))
+                         parse_frequency(self.app.sweepEndInput.text()))
+            self.vna.resetSweep(parse_frequency(self.app.sweepStartInput.text()),
+                                parse_frequency(self.app.sweepEndInput.text()))
 
         self.percentage = 100
         logger.debug("Sending \"finished\" signal")

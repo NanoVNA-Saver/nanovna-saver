@@ -27,6 +27,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from .Windows import AboutWindow, AnalysisWindow, CalibrationWindow, \
     DeviceSettingsWindow, DisplaySettingsWindow, SweepSettingsWindow, \
     TDRWindow
+from .Formatting import parse_frequency
 from .Hardware import get_interfaces, get_VNA, InvalidVNA
 from .RFTools import RFTools, Datapoint
 from .Charts.Chart import Chart
@@ -781,8 +782,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.toggleSweepSettings(False)
 
     def updateCenterSpan(self):
-        fstart = RFTools.parseFrequency(self.sweepStartInput.text())
-        fstop = RFTools.parseFrequency(self.sweepEndInput.text())
+        fstart = parse_frequency(self.sweepStartInput.text())
+        fstop = parse_frequency(self.sweepEndInput.text())
         fspan = fstop - fstart
         fcenter = int(round((fstart+fstop)/2))
         if fspan < 0 or fstart < 0 or fstop < 0:
@@ -791,8 +792,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.sweepCenterInput.setText(RFTools.formatSweepFrequency(fcenter))
 
     def updateStartEnd(self):
-        fcenter = RFTools.parseFrequency(self.sweepCenterInput.text())
-        fspan = RFTools.parseFrequency(self.sweepSpanInput.text())
+        fcenter = parse_frequency(self.sweepCenterInput.text())
+        fspan = parse_frequency(self.sweepSpanInput.text())
         if fspan < 0 or fcenter < 0:
             return
         fstart = int(round(fcenter - fspan/2))
@@ -803,7 +804,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.sweepEndInput.setText(RFTools.formatSweepFrequency(fstop))
 
     def updateStepSize(self):
-        fspan = RFTools.parseFrequency(self.sweepSpanInput.text())
+        fspan = parse_frequency(self.sweepSpanInput.text())
         if fspan < 0:
             return
         if self.sweepCountInput.text().isdigit():

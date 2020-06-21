@@ -21,6 +21,7 @@ from typing import List
 import numpy as np
 from PyQt5 import QtWidgets, QtGui, QtCore
 
+from NanoVNASaver.Formatting import parse_frequency
 from NanoVNASaver.RFTools import Datapoint, RFTools
 from .Chart import Chart
 
@@ -187,7 +188,7 @@ class FrequencyChart(Chart):
             "Set start frequency", text=str(self.minFrequency))
         if not selected:
             return
-        min_freq = RFTools.parseFrequency(min_freq_str)
+        min_freq = parse_frequency(min_freq_str)
         if min_freq > 0 and not (self.fixedSpan and min_freq >= self.maxFrequency):
             self.minFrequency = min_freq
         if self.fixedSpan:
@@ -199,7 +200,7 @@ class FrequencyChart(Chart):
             "Set stop frequency", text=str(self.maxFrequency))
         if not selected:
             return
-        max_freq = RFTools.parseFrequency(max_freq_str)
+        max_freq = parse_frequency(max_freq_str)
         if max_freq > 0 and not (self.fixedSpan and max_freq <= self.minFrequency):
             self.maxFrequency = max_freq
         if self.fixedSpan:

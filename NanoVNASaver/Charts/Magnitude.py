@@ -20,8 +20,7 @@ from typing import List, Set
 
 from PyQt5 import QtWidgets, QtGui
 
-from NanoVNASaver.RFTools import Datapoint, RFTools
-from NanoVNASaver.SITools import Format, Value
+from NanoVNASaver.RFTools import Datapoint
 from .Frequency import FrequencyChart
 logger = logging.getLogger(__name__)
 

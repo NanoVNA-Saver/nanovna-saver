@@ -127,7 +127,7 @@ class NanoVNA(VNA):
     def readVersion(self):
         logger.debug("Reading version info.")
         if not self.serial.is_open:
-            return
+            return ""
         if self.app.serialLock.acquire():
             try:
                 data = "a"
@@ -147,7 +147,7 @@ class NanoVNA(VNA):
                 logger.exception("Exception while reading firmware version: %s", exc)
             finally:
                 self.app.serialLock.release()
-        return
+        return ""
 
     def setSweep(self, start, stop):
         if self.useScan:
