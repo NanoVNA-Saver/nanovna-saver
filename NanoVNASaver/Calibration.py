@@ -18,7 +18,6 @@ import logging
 import math
 import os
 import re
-from typing import List
 
 import numpy as np
 
@@ -63,11 +62,14 @@ class Calibration:
         self.shortL2 = -1100 * 10E-33
         self.shortL3 = -41200 * 10E-42
         self.shortLength = -34.2  # Picoseconds
-        # These numbers look very large, considering what Keysight suggests their numbers are.
+        # These numbers look very large, considering what Keysight
+        # suggests their numbers are.
 
         self.useIdealOpen = True
         self.openIdeal = np.complex(1, 0)
-        self.openC0 = 2.1 * 10E-14  # Subtract 50fF for the nanoVNA calibration if nanoVNA is calibrated?
+        # Subtract 50fF for the nanoVNA calibration if nanoVNA is
+        # calibrated?
+        self.openC0 = 2.1 * 10E-14
         self.openC1 = 5.67 * 10E-23
         self.openC2 = -2.39 * 10E-31
         self.openC3 = 2.0 * 10E-40
@@ -133,16 +135,19 @@ class Calibration:
             if self.useIdealShort:
                 g1 = self.shortIdeal
             else:
-                Zsp = np.complex(0, 1) * 2 * pi * f * (self.shortL0 +
-                                                       self.shortL1 * f +
-                                                       self.shortL2 * f**2 +
-                                                       self.shortL3 * f**3)
+                Zsp = (
+                    np.complex(0, 1) * 2 * pi *
+                    f * (self.shortL0 +
+                         self.shortL1 * f +
+                         self.shortL2 * f**2 +
+                         self.shortL3 * f**3))
                 gammaShort = ((Zsp/50) - 1) / ((Zsp/50) + 1)
                 # (lower case) gamma = 2*pi*f
                 # e^j*2*gamma*length
                 # Referencing https://arxiv.org/pdf/1606.02446.pdf (18) - (21)
                 g1 = gammaShort * np.exp(
-                    np.complex(0, 1) * 2 * 2 * math.pi * f * self.shortLength * -1)
+                    np.complex(0, 1) * 2 * math.pi *
+                    2 * f * self.shortLength * -1)
 
             if self.useIdealOpen:
                 g2 = self.openIdeal
@@ -156,16 +161,19 @@ class Calibration:
                     Zop = np.complex(0, -1) / divisor
                     gammaOpen = ((Zop/50) - 1) / ((Zop/50) + 1)
                     g2 = gammaOpen * np.exp(
-                        np.complex(0, 1) * 2 * 2 * math.pi * f * self.openLength * -1)
+                        np.complex(0, 1) * 2 * math.pi *
+                        2 * f * self.openLength * -1)
                 else:
                     g2 = self.openIdeal
             if self.useIdealLoad:
                 g3 = self.loadIdeal
             else:
-                Zl = self.loadR + (np.complex(0, 1) * 2 * math.pi * f * self.loadL)
+                Zl = self.loadR + (
+                    np.complex(0, 1) * 2 * math.pi * f * self.loadL)
                 g3 = ((Zl/50)-1) / ((Zl/50)+1)
                 g3 = g3 * np.exp(
-                    np.complex(0, 1) * 2 * 2 * math.pi * f * self.loadLength * -1)
+                    np.complex(0, 1) * 2 * math.pi *
+                    2 * f * self.loadLength * -1)
 
             gm1 = np.complex(cur_short.re, cur_short.im)
             gm2 = np.complex(cur_open.re, cur_open.im)
@@ -231,7 +239,7 @@ class Calibration:
             if abs(cur_short.freq - freq) < distance:
                 index = i
                 distance = abs(cur_short.freq - freq)
-        # TODO: Interpolate with the adjacent data point 
+        # TODO: Interpolate with the adjacent data point
         #       to get better corrections?
 
         s11 = (s11m - self.e00[index]) / (
@@ -274,16 +282,20 @@ class Calibration:
                 "# Hz ShortR ShortI OpenR OpenI LoadR LoadI"
                 " ThroughR ThroughI IsolationR IsolationI\n")
             for i, cur_short in enumerate(self.cals["short"]):
+                cur_open = self.cals["open"][i]
+                cur_load = self.cals["load"][i]
                 data = [
                     cur_short.freq,
                     cur_short.re, cur_short.im,
-                    self.s11open[i].re, self.s11open[i].im,
-                    self.s11load[i].re, self.s11load[i].im,
+                    cur_open.re, cur_open.im,
+                    cur_load.re, cur_load.im,
                 ]
                 if self.isValid2Port():
+                    cur_through = self.cals["through"][i]
+                    cur_isolation = self.cals["isolation"][i]
                     data.extend([
-                        self.s21through[i].re, self.s21through[i].im,
-                        self.s21isolation[i].re, self.s21isolation[i].im
+                        cur_through.re, cur_through.im,
+                        cur_isolation.re, cur_isolation.im
                     ])
                 calfile.write(" ".join([str(val) for val in data]))
                 calfile.write("\n")
@@ -326,7 +338,7 @@ class Calibration:
                     nr_cals = 5
                 else:
                     nr_cals = 3
-                
+
                 for name in Calibration.CAL_NAMES[:nr_cals]:
                     self.cals[name].append(
                         Datapoint(int(cal["freq"]),

@@ -523,7 +523,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.app.calibration.calc_corrections()
             self.calibration_status_label.setText(
                 _format_cal_label(self.app.calibration.cals["short"],
-                "Application calibration"))
+                                  "Application calibration"))
             if self.use_ideal_values.isChecked():
                 self.calibration_source_label.setText(self.app.calibration.source)
             else:
