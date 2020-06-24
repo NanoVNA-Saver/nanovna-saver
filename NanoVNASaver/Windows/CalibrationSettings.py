@@ -16,6 +16,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import logging
+from functools import partial
 
 from PyQt5 import QtWidgets, QtCore
 
@@ -67,7 +68,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.cal_label[label_name] = QtWidgets.QLabel("Uncalibrated")
             cal_btn[label_name] = QtWidgets.QPushButton(
                 label_name.capitalize())
-            cal_btn[label_name].clicked.connect(lambda: self.manual_save(label_name))
+            cal_btn[label_name].clicked.connect(partial(self.manual_save, label_name))
             calibration_control_layout.addRow(
                 cal_btn[label_name], self.cal_label[label_name])
 
@@ -507,8 +508,8 @@ class CalibrationWindow(QtWidgets.QWidget):
             except ValueError:
                 self.app.calibration.useIdealLoad = True
                 logger.warning(
-                    'Invalid data for "load" calibration standard. Using ideal values.')
-
+                    'Invalid data for "load" calibration standard.'
+                    ' Using ideal values.')
             try:
                 self.app.calibration.throughLength = self.getFloatValue(
                     self.through_length.text())/10**12
@@ -516,7 +517,8 @@ class CalibrationWindow(QtWidgets.QWidget):
             except ValueError:
                 self.app.calibration.useIdealThrough = True
                 logger.warning(
-                    'Invalid data for "through" calibration standard. Using ideal values.')
+                    'Invalid data for "through" calibration standard.'
+                    ' Using ideal values.')
 
         logger.debug("Attempting calibration calculation.")
         try:
