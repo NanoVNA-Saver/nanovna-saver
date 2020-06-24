@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 
 # TODO: make a real class of calibration
 class Calibration:
-    _CAL_NAMES = ("short", "open", "load", "through", "isolation",)
+    CAL_NAMES = ("short", "open", "load", "through", "isolation",)
 
     def __init__(self):
 
@@ -88,47 +88,16 @@ class Calibration:
         self.source = "Manual"
 
     def _reset_cals(self):
-        for name in Calibration._CAL_NAMES:
+        for name in Calibration.CAL_NAMES:
             self.cals[name] = []
-
-    @property
-    def s11short(self) -> List[Datapoint]:
-        return self.cals["short"]
-    @s11short.setter
-    def s11short(self, values: List[Datapoint]):
-        self.cals["short"] = values
-    @property
-    def s11open(self) -> List[Datapoint]:
-        return self.cals["open"]
-    @s11open.setter
-    def s11open(self, values: List[Datapoint]):
-        self.cals["open"] = values
-    @property
-    def s11load(self) -> List[Datapoint]:
-        return self.cals["load"]
-    @s11load.setter
-    def s11load(self, values: List[Datapoint]):
-        self.cals["load"] = values
-    @property
-    def s21through(self) -> List[Datapoint]:
-        return self.cals["through"]
-    @s21through.setter
-    def s21through(self, values: List[Datapoint]):
-        self.cals["through"] = values
-    @property
-    def s21isolation(self) -> List[Datapoint]:
-        return self.cals["isolation"]
-    @s21isolation.setter
-    def s21isolation(self, values: List[Datapoint]):
-        self.cals["isolation"] = values
 
     def isValid1Port(self):
         lengths = [len(self.cals[x])
-                   for x in Calibration._CAL_NAMES[:3]]
+                   for x in Calibration.CAL_NAMES[:3]]
         return min(lengths) > 0 and min(lengths) == max(lengths)
 
     def isValid2Port(self):
-        lengths = [len(self.cals[x]) for x in Calibration._CAL_NAMES]
+        lengths = [len(self.cals[x]) for x in Calibration.CAL_NAMES]
         return min(lengths) > 0 and min(lengths) == max(lengths)
 
     def calc_corrections(self):
@@ -358,7 +327,7 @@ class Calibration:
                 else:
                     nr_cals = 3
                 
-                for name in Calibration._CAL_NAMES[:nr_cals]:
+                for name in Calibration.CAL_NAMES[:nr_cals]:
                     self.cals[name].append(
                         Datapoint(int(cal["freq"]),
                                   float(cal[f"{name}r"]),

@@ -63,7 +63,7 @@ class CalibrationWindow(QtWidgets.QWidget):
         calibration_control_layout = QtWidgets.QFormLayout(calibration_control_group)
         cal_btn = {}
         self.cal_label = {}
-        for label_name in Calibration._CAL_NAMES:
+        for label_name in Calibration.CAL_NAMES:
             self.cal_label[label_name] = QtWidgets.QLabel("Uncalibrated")
             cal_btn[label_name] = QtWidgets.QPushButton(
                 label_name.capitalize())
@@ -522,7 +522,8 @@ class CalibrationWindow(QtWidgets.QWidget):
         try:
             self.app.calibration.calc_corrections()
             self.calibration_status_label.setText(
-                f"Application calibration ({len(self.app.calibration.s11short)} points)")
+                _format_cal_label(self.app.calibration.cals["short"],
+                "Application calibration"))
             if self.use_ideal_values.isChecked():
                 self.calibration_source_label.setText(self.app.calibration.source)
             else:
@@ -558,16 +559,10 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.app.calibration.load(filename)
         if not self.app.calibration.isValid1Port():
             return
-        cals = (
-            ("short", self.app.calibration.s11short),
-            ("open", self.app.calibration.s11open),
-            ("load", self.app.calibration.s11load),
-            ("through", self.app.calibration.s21through),
-            ("isolation", self.app.calibration.s21isolation),
-        )
-        for i, cal in enumerate(cals):
-            self.cal_label[cal[0]].setText(
-                _format_cal_label(cal[1], "Loaded"))
+        for i, name in enumerate(
+                ("short", "open", "load", "through", "isolation")):
+            self.cal_label[name].setText(
+                _format_cal_label(self.app.calibration.cals[name], "Loaded"))
             if i == 2 and not self.app.calibration.isValid2Port():
                 break
         self.calculate()
