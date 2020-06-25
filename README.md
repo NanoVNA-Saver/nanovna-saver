@@ -77,8 +77,9 @@ It may be possible to run on those directly from the python code:
         git clone https://github.com/mihtjel/nanovna-saver
         cd nanovna-saver
 
-4. Run the pip installation
+4. Update pip and run the pip installation
 
+        python3.7 -m pip install -U pip
         python3.7 -m pip install .
     
     (You may need to install the additional packages python3-distutils, python3-setuptools and python3-wheel for this command to work on some distributions.)
