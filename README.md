@@ -1,7 +1,7 @@
-[![Latest Release](https://img.shields.io/github/v/release/mihtjel/nanovna-saver.svg)](https://github.com/mihtjel/nanovna-saver/releases/latest)
-[![License](https://img.shields.io/github/license/mihtjel/nanovna-saver.svg)](https://github.com/mihtjel/nanovna-saver/blob/master/LICENSE)
-[![Downloads](https://img.shields.io/github/downloads/mihtjel/nanovna-saver/total.svg)](https://github.com/mihtjel/nanovna-saver/releases/)
-[![GitHub Releases](https://img.shields.io/github/downloads/mihtjel/nanovna-saver/latest/total)](https://github.com/mihtjel/nanovna-saver/releases/latest)
+[![Latest Release](https://img.shields.io/github/v/release/NanoVNA-Saver/nanovna-saver.svg)](https://github.com/NanoVNA-Saver/nanovna-saver/releases/latest)
+[![License](https://img.shields.io/github/license/NanoVNA-Saver/nanovna-saver.svg)](https://github.com/NanoVNA-Saver/nanovna-saver/blob/master/LICENSE)
+[![Downloads](https://img.shields.io/github/downloads/NanoVNA-Saver/nanovna-saver/total.svg)](https://github.com/NanoVNA-Saver/nanovna-saver/releases/)
+[![GitHub Releases](https://img.shields.io/github/downloads/NanoVNA-Saver/nanovna-saver/latest/total)](https://github.com/NanoVNA-Saver/nanovna-saver/releases/latest)
 [![Donate](https://img.shields.io/badge/paypal-donate-yellow.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=T8KTGVDQF5K6E&item_name=NanoVNASaver+Development&currency_code=EUR&source=url)
 
 NanoVNASaver
@@ -12,6 +12,7 @@ the NanoVNA, sweep frequency spans in segments to gain more than 101 data
 points, and generally display and analyze the resulting data.
 
 Copyright 2019, 2020 Rune B. Broberg
+Copyright 2020 NanoVNA-Saver Authors
 
 ## Changes in this fork 
 - This fork adds support for the saa2, a vna loosely
