@@ -1,6 +1,8 @@
 #  NanoVNASaver
+#
 #  A python program to view and export Touchstone data from a NanoVNA
-#  Copyright (C) 2019.  Rune B. Broberg
+#  Copyright (C) 2019, 2020  Rune B. Broberg
+#  Copyright (C) 2020 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -16,12 +18,11 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
 import logging
-from typing import List, Set
+from typing import List
 
 from PyQt5 import QtWidgets, QtGui
 
-from NanoVNASaver.RFTools import Datapoint, RFTools
-from NanoVNASaver.SITools import Format, Value
+from NanoVNASaver.RFTools import Datapoint
 from .Frequency import FrequencyChart
 logger = logging.getLogger(__name__)
 
@@ -163,8 +164,6 @@ class MagnitudeChart(FrequencyChart):
         return math.sqrt(p.re**2 + p.im**2)
 
     def copy(self):
-        new_chart: LogMagChart = super().copy()
+        new_chart = super().copy()
         new_chart.span = self.span
         return new_chart
-
-

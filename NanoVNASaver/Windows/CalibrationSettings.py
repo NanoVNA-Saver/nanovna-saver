@@ -1,6 +1,8 @@
 #  NanoVNASaver
+#
 #  A python program to view and export Touchstone data from a NanoVNA
-#  Copyright (C) 2019.  Rune B. Broberg
+#  Copyright (C) 2019, 2020  Rune B. Broberg
+#  Copyright (C) 2020 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -16,12 +18,17 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import logging
+from functools import partial
 
 from PyQt5 import QtWidgets, QtCore
 
 from NanoVNASaver.Calibration import Calibration
 
 logger = logging.getLogger(__name__)
+
+
+def _format_cal_label(data: list, prefix: str = "Set") -> str:
+    return f"{prefix} ({len(data)} points)"
 
 
 class CalibrationWindow(QtWidgets.QWidget):
@@ -57,27 +64,15 @@ class CalibrationWindow(QtWidgets.QWidget):
 
         calibration_control_group = QtWidgets.QGroupBox("Calibrate")
         calibration_control_layout = QtWidgets.QFormLayout(calibration_control_group)
-        btn_cal_short = QtWidgets.QPushButton("Short")
-        btn_cal_short.clicked.connect(self.manualSaveShort)
-        self.cal_short_label = QtWidgets.QLabel("Uncalibrated")
-
-        btn_cal_open = QtWidgets.QPushButton("Open")
-        btn_cal_open.clicked.connect(self.manualSaveOpen)
-        self.cal_open_label = QtWidgets.QLabel("Uncalibrated")
-
-        btn_cal_load = QtWidgets.QPushButton("Load")
-        btn_cal_load.clicked.connect(self.manualSaveLoad)
-        self.cal_load_label = QtWidgets.QLabel("Uncalibrated")
-
-        btn_cal_through = QtWidgets.QPushButton("Through")
-        btn_cal_through.clicked.connect(self.manualSaveThrough)
-        # btn_cal_through.setDisabled(True)
-        self.cal_through_label = QtWidgets.QLabel("Uncalibrated")
-
-        btn_cal_isolation = QtWidgets.QPushButton("Isolation")
-        btn_cal_isolation.clicked.connect(self.manualSaveIsolation)
-        # btn_cal_isolation.setDisabled(True)
-        self.cal_isolation_label = QtWidgets.QLabel("Uncalibrated")
+        cal_btn = {}
+        self.cal_label = {}
+        for label_name in Calibration.CAL_NAMES:
+            self.cal_label[label_name] = QtWidgets.QLabel("Uncalibrated")
+            cal_btn[label_name] = QtWidgets.QPushButton(
+                label_name.capitalize())
+            cal_btn[label_name].clicked.connect(partial(self.manual_save, label_name))
+            calibration_control_layout.addRow(
+                cal_btn[label_name], self.cal_label[label_name])
 
         self.input_offset_delay = QtWidgets.QDoubleSpinBox()
         self.input_offset_delay.setValue(0)
@@ -85,12 +80,6 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.input_offset_delay.setAlignment(QtCore.Qt.AlignRight)
         self.input_offset_delay.valueChanged.connect(self.setOffsetDelay)
         self.input_offset_delay.setRange(-10e6, 10e6)
-
-        calibration_control_layout.addRow(btn_cal_short, self.cal_short_label)
-        calibration_control_layout.addRow(btn_cal_open, self.cal_open_label)
-        calibration_control_layout.addRow(btn_cal_load, self.cal_load_label)
-        calibration_control_layout.addRow(btn_cal_isolation, self.cal_isolation_label)
-        calibration_control_layout.addRow(btn_cal_through, self.cal_through_label)
 
         calibration_control_layout.addRow(QtWidgets.QLabel(""))
         calibration_control_layout.addRow("Offset delay", self.input_offset_delay)
@@ -239,50 +228,14 @@ class CalibrationWindow(QtWidgets.QWidget):
             return False
         return True
 
-    def manualSaveShort(self):
+    def cal_save(self, name):
+        self.app.calibration.cals[name] = self.app.data
+        self.cal_label[name].setText(
+            _format_cal_label(self.app.data))
+
+    def manual_save(self, name):
         if self.checkExpertUser():
-            self.saveShort()
-
-    def saveShort(self):
-        self.app.calibration.s11short = self.app.data
-        self.cal_short_label.setText(
-            f"Data set ({self.app.calibration.s11short} points)")
-
-    def manualSaveOpen(self):
-        if self.checkExpertUser():
-            self.saveOpen()
-
-    def saveOpen(self):
-        self.app.calibration.s11open = self.app.data
-        self.cal_open_label.setText(
-            f"Data set ({self.app.calibration.s11open} points)")
-
-    def manualSaveLoad(self):
-        if self.checkExpertUser():
-            self.saveLoad()
-
-    def saveLoad(self):
-        self.app.calibration.s11load = self.app.data
-        self.cal_load_label.setText(
-            f"Data set ({self.app.calibration.s11load} points)")
-
-    def manualSaveIsolation(self):
-        if self.checkExpertUser():
-            self.saveIsolation()
-
-    def saveIsolation(self):
-        self.app.calibration.s21isolation = self.app.data21
-        self.cal_isolation_label.setText(
-            f"Data set ({self.app.calibration.s21isolation} points)")
-
-    def manualSaveThrough(self):
-        if self.checkExpertUser():
-            self.saveThrough()
-
-    def saveThrough(self):
-        self.app.calibration.s21through = self.app.data21
-        self.cal_through_label.setText(
-            f"Data set ({self.app.calibration.s21through} points)")
+            self.cal_save(name)
 
     def listCalibrationStandards(self):
         self.cal_standard_save_selector.clear()
@@ -469,11 +422,8 @@ class CalibrationWindow(QtWidgets.QWidget):
 
     def reset(self):
         self.app.calibration = Calibration()
-        self.cal_short_label.setText("Uncalibrated")
-        self.cal_open_label.setText("Uncalibrated")
-        self.cal_load_label.setText("Uncalibrated")
-        self.cal_through_label.setText("Uncalibrated")
-        self.cal_isolation_label.setText("Uncalibrated")
+        for label in self.cal_label.values():
+            label.setText("Uncalibrated")
         self.calibration_status_label.setText("Device calibration")
         self.calibration_source_label.setText("Device")
         self.notes_textedit.clear()
@@ -560,8 +510,8 @@ class CalibrationWindow(QtWidgets.QWidget):
             except ValueError:
                 self.app.calibration.useIdealLoad = True
                 logger.warning(
-                    'Invalid data for "load" calibration standard. Using ideal values.')
-
+                    'Invalid data for "load" calibration standard.'
+                    ' Using ideal values.')
             try:
                 self.app.calibration.throughLength = self.getFloatValue(
                     self.through_length.text())/10**12
@@ -569,13 +519,15 @@ class CalibrationWindow(QtWidgets.QWidget):
             except ValueError:
                 self.app.calibration.useIdealThrough = True
                 logger.warning(
-                    'Invalid data for "through" calibration standard. Using ideal values.')
+                    'Invalid data for "through" calibration standard.'
+                    ' Using ideal values.')
 
         logger.debug("Attempting calibration calculation.")
-        valid, error = self.app.calibration.calculateCorrections()
-        if valid:
+        try:
+            self.app.calibration.calc_corrections()
             self.calibration_status_label.setText(
-                f"Application calibration ({self.app.calibration.s11short} points)")
+                _format_cal_label(self.app.calibration.cals["short"],
+                                  "Application calibration"))
             if self.use_ideal_values.isChecked():
                 self.calibration_source_label.setText(self.app.calibration.source)
             else:
@@ -591,9 +543,9 @@ class CalibrationWindow(QtWidgets.QWidget):
                 self.app.saveData(self.app.worker.data11,
                                   self.app.worker.data21, self.app.sweepSource)
                 self.app.worker.signals.updated.emit()
-        else:
+        except ValueError as e:
             # showError here hides the calibration window, so we need to pop up our own
-            QtWidgets.QMessageBox.warning(self, "Error applying calibration", error)
+            QtWidgets.QMessageBox.warning(self, "Error applying calibration", str(e))
             self.calibration_status_label.setText("Applying calibration failed.")
             self.calibration_source_label.setText(self.app.calibration.source)
 
@@ -608,24 +560,20 @@ class CalibrationWindow(QtWidgets.QWidget):
         filename, _ = QtWidgets.QFileDialog.getOpenFileName(
             filter="Calibration Files (*.cal);;All files (*.*)")
         if filename:
-            self.app.calibration.loadCalibration(filename)
-            if self.app.calibration.isValid1Port():
-                self.cal_short_label.setText(
-                    f"Loaded ({self.app.calibration.s11short})")
-                self.cal_open_label.setText(
-                    f"Loaded ({self.app.calibration.s11open})")
-                self.cal_load_label.setText(
-                    f"Loaded ({self.app.calibration.s11load})")
-                if self.app.calibration.isValid2Port():
-                    self.cal_through_label.setText(
-                        f"Loaded ({self.app.calibration.s21through})")
-                    self.cal_isolation_label.setText(
-                        f"Loaded ({self.app.calibration.s21isolation})")
-                self.calculate()
-                self.notes_textedit.clear()
-                for note in self.app.calibration.notes:
-                    self.notes_textedit.appendPlainText(note)
-                self.app.settings.setValue("CalibrationFile", filename)
+            self.app.calibration.load(filename)
+        if not self.app.calibration.isValid1Port():
+            return
+        for i, name in enumerate(
+                ("short", "open", "load", "through", "isolation")):
+            self.cal_label[name].setText(
+                _format_cal_label(self.app.calibration.cals[name], "Loaded"))
+            if i == 2 and not self.app.calibration.isValid2Port():
+                break
+        self.calculate()
+        self.notes_textedit.clear()
+        for note in self.app.calibration.notes:
+            self.notes_textedit.appendPlainText(note)
+        self.app.settings.setValue("CalibrationFile", filename)
 
     def saveCalibration(self):
         if not self.app.calibration.isCalculated:
@@ -645,9 +593,10 @@ class CalibrationWindow(QtWidgets.QWidget):
             logger.debug("No file name selected.")
             return
         self.app.calibration.notes = self.notes_textedit.toPlainText().splitlines()
-        if filename and self.app.calibration.saveCalibration(filename):
+        try:
+            self.app.calibration.save(filename)
             self.app.settings.setValue("CalibrationFile", filename)
-        else:
+        except IOError:
             logger.error("Calibration save failed!")
             self.app.showError("Calibration save failed.")
 
@@ -724,7 +673,7 @@ class CalibrationWindow(QtWidgets.QWidget):
 
         if self.nextStep == 0:
             # Short
-            self.saveShort()
+            self.save("short")
             self.nextStep = 1
 
             open_step = QtWidgets.QMessageBox(
@@ -748,7 +697,7 @@ class CalibrationWindow(QtWidgets.QWidget):
 
         if self.nextStep == 1:
             # Open
-            self.saveOpen()
+            self.save("open")
             self.nextStep = 2
             load_step = QtWidgets.QMessageBox(
                 QtWidgets.QMessageBox.Information,
@@ -769,7 +718,7 @@ class CalibrationWindow(QtWidgets.QWidget):
 
         if self.nextStep == 2:
             # Load
-            self.saveLoad()
+            self.save("load")
             self.nextStep = 3
             continue_step = QtWidgets.QMessageBox(
                 QtWidgets.QMessageBox.Information,
@@ -813,7 +762,7 @@ class CalibrationWindow(QtWidgets.QWidget):
 
         if self.nextStep == 3:
             # Isolation
-            self.saveIsolation()
+            self.save("isolation")
             self.nextStep = 4
             through_step = QtWidgets.QMessageBox(
                 QtWidgets.QMessageBox.Information,
@@ -835,7 +784,7 @@ class CalibrationWindow(QtWidgets.QWidget):
 
         if self.nextStep == 4:
             # Done
-            self.saveThrough()
+            self.save("through")
             apply_step = QtWidgets.QMessageBox(
                 QtWidgets.QMessageBox.Information,
                 "Calibrate complete",

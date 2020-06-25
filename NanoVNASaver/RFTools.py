@@ -1,6 +1,8 @@
 #  NanoVNASaver
+#
 #  A python program to view and export Touchstone data from a NanoVNA
-#  Copyright (C) 2019.  Rune B. Broberg
+#  Copyright (C) 2019, 2020  Rune B. Broberg
+#  Copyright (C) 2020 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -16,15 +18,12 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
 import cmath
-from numbers import Number
 from typing import List, NamedTuple
-from NanoVNASaver.SITools import Value, Format, clamp_value
+from NanoVNASaver.SITools import Format, clamp_value
 
 FMT_FREQ = Format()
 FMT_SHORT = Format(max_nr_digits=4)
 FMT_SWEEP = Format(max_nr_digits=9, allow_strip=True)
-FMT_PARSE = Format(parse_sloppy_unit=True, parse_sloppy_kilo=True,
-                   parse_clamp_min=0)
 
 
 def parallel_to_serial(z: complex) -> complex:
@@ -88,13 +87,6 @@ def gamma_to_impedance(gamma: complex, ref_impedance: float = 50) -> complex:
         return math.inf
 
 
-def parseFrequency(freq: str) -> int:
-    try:
-        return int(Value(freq, "Hz", FMT_PARSE))
-    except (ValueError, IndexError):
-        return -1
-
-
 class Datapoint(NamedTuple):
     freq: int
     re: float
@@ -156,20 +148,19 @@ def groupDelay(data: List[Datapoint], index: int) -> float:
     return val
 
 
-class RFTools:
-    # TODO: Remove this class when unused
-    @staticmethod
-    def formatFrequency(freq: Number) -> str:
-        return str(Value(freq, "Hz", FMT_FREQ))
+def corrAttData(data: Datapoint, att: float):                                   
+    """Correct the ratio for a given attenuation on s21 input"""
 
-    @staticmethod
-    def formatShortFrequency(freq: Number) -> str:
-        return str(Value(freq, "Hz", FMT_SHORT))
+    if att <= 0:
+        return data
+    else:
+        att = 10**(att/20)
 
-    @staticmethod
-    def formatSweepFrequency(freq: Number) -> str:
-        return str(Value(freq, "Hz", FMT_SWEEP))
+    ndata = []
+    for i in range(len(data)):
+        freq, re, im = data[i]
+        orig = complex(re, im)
+        corrected = orig * att
+        ndata.append(Datapoint(freq, corrected.real, corrected.imag))
 
-    @staticmethod
-    def parseFrequency(freq: str) -> int:
-        return parseFrequency(freq)
+    return ndata

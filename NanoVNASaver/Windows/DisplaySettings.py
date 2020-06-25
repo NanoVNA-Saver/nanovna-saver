@@ -1,5 +1,8 @@
-#  NanoVNASaver - a python program to view and export Touchstone data from a NanoVNA
-#  Copyright (C) 2019.  Rune B. Broberg
+#  NanoVNASaver
+#
+#  A python program to view and export Touchstone data from a NanoVNA
+#  Copyright (C) 2019, 2020  Rune B. Broberg
+#  Copyright (C) 2020 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -22,6 +25,7 @@ from NanoVNASaver.Windows.Bands import BandsWindow
 from NanoVNASaver.Windows.MarkerSettings import MarkerSettingsWindow
 from NanoVNASaver.Marker import Marker
 logger = logging.getLogger(__name__)
+
 
 class DisplaySettingsWindow(QtWidgets.QWidget):
     def __init__(self, app: QtWidgets.QWidget):

@@ -1,6 +1,8 @@
 #  NanoVNASaver
+#
 #  A python program to view and export Touchstone data from a NanoVNA
-#  Copyright (C) 2019.  Rune B. Broberg
+#  Copyright (C) 2019, 2020  Rune B. Broberg
+#  Copyright (C) 2020 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -21,6 +23,7 @@ from PyQt5 import QtWidgets, QtGui
 from NanoVNASaver.Charts.Chart import Chart
 
 logger = logging.getLogger(__name__)
+
 
 class SquareChart(Chart):
     def __init__(self, name):

@@ -1,6 +1,8 @@
 #  NanoVNASaver
+#
 #  A python program to view and export Touchstone data from a NanoVNA
-#  Copyright (C) 2019.  Rune B. Broberg
+#  Copyright (C) 2019, 2020  Rune B. Broberg
+#  Copyright (C) 2020 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -24,26 +26,35 @@ from typing import List
 import serial
 from PyQt5 import QtWidgets, QtCore, QtGui
 
-from .Windows import AboutWindow, AnalysisWindow, CalibrationWindow, \
-    DeviceSettingsWindow, DisplaySettingsWindow, SweepSettingsWindow, \
+from .Windows import (
+    AboutWindow, AnalysisWindow, CalibrationWindow,
+    DeviceSettingsWindow, DisplaySettingsWindow, SweepSettingsWindow,
     TDRWindow
+)
+from .Formatting import (
+    format_frequency, format_frequency_short, format_frequency_sweep,
+    parse_frequency,
+)
 from .Hardware import get_interfaces, get_VNA, InvalidVNA
-from .RFTools import RFTools, Datapoint
+from .RFTools import Datapoint
 from .Charts.Chart import Chart
-from .Charts import CapacitanceChart, \
-    CombinedLogMagChart, GroupDelayChart, InductanceChart, \
-    LogMagChart, PhaseChart, \
-    MagnitudeChart, MagnitudeZChart, \
-    QualityFactorChart, VSWRChart, PermeabilityChart, PolarChart, \
-    RealImaginaryChart, \
-    SmithChart, SParameterChart, TDRChart
+from .Charts import (
+    CapacitanceChart,
+    CombinedLogMagChart, GroupDelayChart, InductanceChart,
+    LogMagChart, PhaseChart,
+    MagnitudeChart, MagnitudeZChart,
+    QualityFactorChart, VSWRChart, PermeabilityChart, PolarChart,
+    RealImaginaryChart,
+    SmithChart, SParameterChart, TDRChart,
+)
 from .Calibration import Calibration
 from .Inputs import FrequencyInputWidget
 from .Marker import Marker
 from .SweepWorker import SweepWorker
 from .Settings import BandsModel
 from .Touchstone import Touchstone
-from .about import version as ver
+from .About import VERSION as ver
+from NanoVNASaver.RFTools import corrAttData
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +68,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def __init__(self):
         super().__init__()
+        self.s21att = 0.0
         if getattr(sys, 'frozen', False):
             logger.debug("Running from pyinstaller bundle")
             self.icon = QtGui.QIcon(f"{sys._MEIPASS}/icon_48x48.png")  # pylint: disable=no-member
@@ -620,15 +632,15 @@ class NanoVNASaver(QtWidgets.QWidget):
                         self.sweepStartInput.text() == "" or
                         self.sweepEndInput.text() == ""):
                     self.sweepStartInput.setText(
-                        RFTools.formatSweepFrequency(int(frequencies[0])))
+                        format_frequency_sweep(int(frequencies[0])))
                     self.sweepEndInput.setText(
-                        RFTools.formatSweepFrequency(int(frequencies[100]) + 100000))
+                        format_frequency_sweep(int(frequencies[100]) + 100000))
                 elif (self.sweepStartInput.text() == "" or
                       self.sweepEndInput.text() == ""):
                     self.sweepStartInput.setText(
-                        RFTools.formatSweepFrequency(int(frequencies[0])))
+                        format_frequency_sweep(int(frequencies[0])))
                     self.sweepEndInput.setText(
-                        RFTools.formatSweepFrequency(int(frequencies[100])))
+                        format_frequency_sweep(int(frequencies[100])))
                 self.sweepStartInput.textEdited.emit(
                     self.sweepStartInput.text())
                 self.sweepStartInput.textChanged.emit(
@@ -684,7 +696,11 @@ class NanoVNASaver(QtWidgets.QWidget):
     def saveData(self, data, data12, source=None):
         if self.dataLock.acquire(blocking=True):
             self.data = data
-            self.data21 = data12
+            if self.s21att > 0:
+                corData12 = corrAttData(data12, self.s21att)
+                self.data21 = corData12
+            else:
+                self.data21 = data12
         else:
             logger.error("Failed acquiring data lock while saving.")
         self.dataLock.release()
@@ -736,7 +752,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
             if min_vswr_freq > -1:
                 self.s11_min_swr_label.setText(
-                    f"{round(min_vswr, 3)} @ {RFTools.formatFrequency(min_vswr_freq)}")
+                    f"{round(min_vswr, 3)} @ {format_frequency(min_vswr_freq)}")
                 if min_vswr > 1:
                     self.s11_min_rl_label.setText(
                         f"{round(20*math.log10((min_vswr-1)/(min_vswr+1)), 3)} dB")
@@ -761,9 +777,9 @@ class NanoVNASaver(QtWidgets.QWidget):
 
             if max_gain_freq > -1:
                 self.s21_min_gain_label.setText(
-                    f"{round(min_gain, 3)} dB @ {RFTools.formatFrequency(min_gain_freq)}")
+                    f"{round(min_gain, 3)} dB @ {format_frequency(min_gain_freq)}")
                 self.s21_max_gain_label.setText(
-                    f"{round(max_gain, 3)} dB @ {RFTools.formatFrequency(max_gain_freq)}")
+                    f"{round(max_gain, 3)} dB @ {format_frequency(max_gain_freq)}")
             else:
                 self.s21_min_gain_label.setText("")
                 self.s21_max_gain_label.setText("")
@@ -781,29 +797,29 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.toggleSweepSettings(False)
 
     def updateCenterSpan(self):
-        fstart = RFTools.parseFrequency(self.sweepStartInput.text())
-        fstop = RFTools.parseFrequency(self.sweepEndInput.text())
+        fstart = parse_frequency(self.sweepStartInput.text())
+        fstop = parse_frequency(self.sweepEndInput.text())
         fspan = fstop - fstart
         fcenter = int(round((fstart+fstop)/2))
         if fspan < 0 or fstart < 0 or fstop < 0:
             return
-        self.sweepSpanInput.setText(RFTools.formatSweepFrequency(fspan))
-        self.sweepCenterInput.setText(RFTools.formatSweepFrequency(fcenter))
+        self.sweepSpanInput.setText(format_frequency_sweep(fspan))
+        self.sweepCenterInput.setText(format_frequency_sweep(fcenter))
 
     def updateStartEnd(self):
-        fcenter = RFTools.parseFrequency(self.sweepCenterInput.text())
-        fspan = RFTools.parseFrequency(self.sweepSpanInput.text())
+        fcenter = parse_frequency(self.sweepCenterInput.text())
+        fspan = parse_frequency(self.sweepSpanInput.text())
         if fspan < 0 or fcenter < 0:
             return
         fstart = int(round(fcenter - fspan/2))
         fstop = int(round(fcenter + fspan/2))
         if fstart < 0 or fstop < 0:
             return
-        self.sweepStartInput.setText(RFTools.formatSweepFrequency(fstart))
-        self.sweepEndInput.setText(RFTools.formatSweepFrequency(fstop))
+        self.sweepStartInput.setText(format_frequency_sweep(fstart))
+        self.sweepEndInput.setText(format_frequency_sweep(fstop))
 
     def updateStepSize(self):
-        fspan = RFTools.parseFrequency(self.sweepSpanInput.text())
+        fspan = parse_frequency(self.sweepSpanInput.text())
         if fspan < 0:
             return
         if self.sweepCountInput.text().isdigit():
@@ -811,7 +827,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             if segments > 0:
                 fstep = fspan / (segments * self.vna.datapoints - 1)
                 self.sweepStepLabel.setText(
-                    f"{RFTools.formatShortFrequency(fstep)}/step")
+                    f"{format_frequency_short(fstep)}/step")
 
     def setReference(self, s11data=None, s21data=None, source=None):
         if not s11data:

@@ -1,6 +1,8 @@
 #  NanoVNASaver
+#
 #  A python program to view and export Touchstone data from a NanoVNA
-#  Copyright (C) 2019.  Rune B. Broberg
+#  Copyright (C) 2019, 2020  Rune B. Broberg
+#  Copyright (C) 2020 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -19,7 +21,7 @@ import math
 
 from PyQt5 import QtWidgets
 
-from NanoVNASaver.RFTools import RFTools
+from NanoVNASaver.Formatting import format_frequency
 
 from NanoVNASaver.Analysis import Analysis
 
@@ -178,8 +180,9 @@ class BandPassAnalysis(Analysis):
                          lower_cutoff_gain)
         logger.debug("Found true lower cutoff frequency at %d", lower_cutoff_frequency)
 
-        self.lower_cutoff_label.setText(RFTools.formatFrequency(lower_cutoff_frequency) +
-                                        " (" + str(round(lower_cutoff_gain, 1)) + " dB)")
+        self.lower_cutoff_label.setText(
+            f"{format_frequency(lower_cutoff_frequency)}"
+            f" ({round(lower_cutoff_gain, 1)} dB)")
 
         self.app.markers[1].setFrequency(str(lower_cutoff_frequency))
         self.app.markers[1].frequencyInput.setText(str(lower_cutoff_frequency))
@@ -202,17 +205,19 @@ class BandPassAnalysis(Analysis):
         logger.debug("Found true upper cutoff frequency at %d", upper_cutoff_frequency)
 
         self.upper_cutoff_label.setText(
-            RFTools.formatFrequency(upper_cutoff_frequency) +
+            f"{format_frequency(upper_cutoff_frequency)}"
             f" ({round(upper_cutoff_gain, 1)} dB)")
         self.app.markers[2].setFrequency(str(upper_cutoff_frequency))
         self.app.markers[2].frequencyInput.setText(str(upper_cutoff_frequency))
 
         span = upper_cutoff_frequency - lower_cutoff_frequency
-        center_frequency = math.sqrt(lower_cutoff_frequency * upper_cutoff_frequency)
+        center_frequency = math.sqrt(
+            lower_cutoff_frequency * upper_cutoff_frequency)
         q = center_frequency / span
 
-        self.span_label.setText(RFTools.formatFrequency(span))
-        self.center_frequency_label.setText(RFTools.formatFrequency(center_frequency))
+        self.span_label.setText(format_frequency(span))
+        self.center_frequency_label.setText(
+            format_frequency(center_frequency))
         self.quality_label.setText(str(round(q, 2)))
 
         self.app.markers[0].setFrequency(str(round(center_frequency)))
@@ -231,7 +236,8 @@ class BandPassAnalysis(Analysis):
             self.result_label.setText("Lower 6 dB location not found.")
             return
         lower_six_db_cutoff_frequency = self.app.data21[lower_six_db_location].freq
-        self.lower_six_db_label.setText(RFTools.formatFrequency(lower_six_db_cutoff_frequency))
+        self.lower_six_db_label.setText(
+            format_frequency(lower_six_db_cutoff_frequency))
 
         ten_db_location = -1
         for i in range(lower_cutoff_location, -1, -1):
@@ -258,14 +264,14 @@ class BandPassAnalysis(Analysis):
             if sixty_db_location > 0:
                 sixty_db_cutoff_frequency = self.app.data21[sixty_db_location].freq
                 self.lower_sixty_db_label.setText(
-                    RFTools.formatFrequency(sixty_db_cutoff_frequency))
+                    format_frequency(sixty_db_cutoff_frequency))
             elif ten_db_location != -1 and twenty_db_location != -1:
                 ten = self.app.data21[ten_db_location].freq
                 twenty = self.app.data21[twenty_db_location].freq
                 sixty_db_frequency = ten * \
                     10 ** (5 * (math.log10(twenty) - math.log10(ten)))
                 self.lower_sixty_db_label.setText(
-                    RFTools.formatFrequency(sixty_db_frequency) + " (derived)")
+                    f"{format_frequency(sixty_db_frequency)} (derived)")
             else:
                 self.lower_sixty_db_label.setText("Not calculated")
 
@@ -293,11 +299,13 @@ class BandPassAnalysis(Analysis):
             self.result_label.setText("Upper 6 dB location not found.")
             return
         upper_six_db_cutoff_frequency = self.app.data21[upper_six_db_location].freq
-        self.upper_six_db_label.setText(RFTools.formatFrequency(upper_six_db_cutoff_frequency))
+        self.upper_six_db_label.setText(
+            format_frequency(upper_six_db_cutoff_frequency))
 
         six_db_span = upper_six_db_cutoff_frequency - lower_six_db_cutoff_frequency
 
-        self.six_db_span_label.setText(RFTools.formatFrequency(six_db_span))
+        self.six_db_span_label.setText(
+            format_frequency(six_db_span))
 
         ten_db_location = -1
         for i in range(upper_cutoff_location, len(self.app.data21), 1):
@@ -323,14 +331,14 @@ class BandPassAnalysis(Analysis):
         if sixty_db_location > 0:
             sixty_db_cutoff_frequency = self.app.data21[sixty_db_location].freq
             self.upper_sixty_db_label.setText(
-                RFTools.formatFrequency(sixty_db_cutoff_frequency))
+                format_frequency(sixty_db_cutoff_frequency))
         elif ten_db_location != -1 and twenty_db_location != -1:
             ten = self.app.data21[ten_db_location].freq
             twenty = self.app.data21[twenty_db_location].freq
             sixty_db_frequency = ten * \
                 10 ** (5 * (math.log10(twenty) - math.log10(ten)))
             self.upper_sixty_db_label.setText(
-                RFTools.formatFrequency(sixty_db_frequency) + " (derived)")
+                f"{format_frequency(sixty_db_frequency)} (derived)")
         else:
             self.upper_sixty_db_label.setText("Not calculated")
 

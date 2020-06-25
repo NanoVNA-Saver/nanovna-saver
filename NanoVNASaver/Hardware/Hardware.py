@@ -1,6 +1,8 @@
 #  NanoVNASaver
+#
 #  A python program to view and export Touchstone data from a NanoVNA
-#  Copyright (C) 2019.  Rune B. Broberg
+#  Copyright (C) 2019, 2020  Rune B. Broberg
+#  Copyright (C) 2020 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -64,6 +66,7 @@ def get_interfaces() -> List[Tuple[str, str]]:
                 return_ports.append((port, f"{port}({t.name})"))
     return return_ports
 
+
 def get_VNA(app, serial_port: serial.Serial) -> 'VNA':
     logger.info("Finding correct VNA type...")
 
@@ -93,7 +96,7 @@ def get_VNA(app, serial_port: serial.Serial) -> 'VNA':
         vna = NanoVNA_H(app, serial_port)
         if firmware.find("sweep_points 201") > 0:
             logger.info("VNA has 201 datapoints capability")
-            vna.datapoints = 201
+            vna._datapoints = (201, 101)
         return vna
     if firmware.find("NanoVNA-F") > 0:
         logger.info("Type: NanoVNA-F")

@@ -1,6 +1,8 @@
 #  NanoVNASaver
+#
 #  A python program to view and export Touchstone data from a NanoVNA
-#  Copyright (C) 2019.  Rune B. Broberg
+#  Copyright (C) 2019, 2020  Rune B. Broberg
+#  Copyright (C) 2020 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -21,6 +23,7 @@ from PyQt5 import QtWidgets, QtCore
 from NanoVNASaver.Windows.Screenshot import ScreenshotWindow
 
 logger = logging.getLogger(__name__)
+
 
 class DeviceSettingsWindow(QtWidgets.QWidget):
     def __init__(self, app: QtWidgets.QWidget):
@@ -103,7 +106,7 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
             for item in features:
                 self.featureList.addItem(item)
 
-            self.btnCaptureScreenshot.setDisabled(not "Screenshots" in features)
+            self.btnCaptureScreenshot.setDisabled("Screenshots" not in features)
             if "Customizable data points" in features:
                 self.datapoints.clear()
                 cur_dps = self.app.vna.datapoints

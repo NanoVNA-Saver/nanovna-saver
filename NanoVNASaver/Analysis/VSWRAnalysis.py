@@ -1,6 +1,8 @@
 #  NanoVNASaver
+#
 #  A python program to view and export Touchstone data from a NanoVNA
-#  Copyright (C) 2019.  Rune B. Broberg
+#  Copyright (C) 2019, 2020  Rune B. Broberg
+#  Copyright (C) 2020 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -20,7 +22,7 @@ from PyQt5 import QtWidgets
 import numpy as np
 
 from NanoVNASaver.Analysis import Analysis, PeakSearchAnalysis
-from NanoVNASaver.RFTools import RFTools
+from NanoVNASaver.Formatting import format_frequency
 
 logger = logging.getLogger(__name__)
 
@@ -117,23 +119,23 @@ class VSWRAnalysis(Analysis):
                     logger.debug(
                         "Section from %d to %d, lowest at %d", start, end, lowest)
                     self.layout.addRow("Start", QtWidgets.QLabel(
-                        RFTools.formatFrequency(self.app.data[start].freq)))
+                        format_frequency(self.app.data[start].freq)))
                     self.layout.addRow(
                         "Minimum",
                         QtWidgets.QLabel(
-                            RFTools.formatFrequency(self.app.data[lowest].freq) +
-                            " (" + str(round(data[lowest], 2)) + ")"))
+                            f"{format_frequency(self.app.data[lowest].freq)}"
+                            f" ({round(data[lowest], 2)})"))
                     self.layout.addRow("End", QtWidgets.QLabel(
-                        RFTools.formatFrequency(self.app.data[end].freq)))
+                        format_frequency(self.app.data[end].freq)))
                     self.layout.addRow(
                         "Span",
                         QtWidgets.QLabel(
-                            RFTools.formatFrequency(self.app.data[end].freq -
-                                                    self.app.data[start].freq)))
+                            format_frequency(self.app.data[end].freq -
+                                             self.app.data[start].freq)))
                     self.layout.addWidget(PeakSearchAnalysis.QHLine())
                 else:
                     self.layout.addRow("Low spot", QtWidgets.QLabel(
-                        RFTools.formatFrequency(self.app.data[lowest].freq)))
+                        format_frequency(self.app.data[lowest].freq)))
                     self.layout.addWidget(PeakSearchAnalysis.QHLine())
             # Remove the final separator line
             self.layout.removeRow(self.layout.rowCount()-1)

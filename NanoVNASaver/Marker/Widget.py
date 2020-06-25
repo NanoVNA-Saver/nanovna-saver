@@ -1,6 +1,8 @@
 #  NanoVNASaver
+#
 #  A python program to view and export Touchstone data from a NanoVNA
-#  Copyright (C) 2019.  Rune B. Broberg
+#  Copyright (C) 2019, 2020  Rune B. Broberg
+#  Copyright (C) 2020 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -24,7 +26,7 @@ from NanoVNASaver import RFTools
 from NanoVNASaver.Formatting import (
     format_capacitance,
     format_complex_imp,
-    format_frequency,
+    format_frequency_space,
     format_gain,
     format_group_delay,
     format_inductance,
@@ -33,6 +35,7 @@ from NanoVNASaver.Formatting import (
     format_q_factor,
     format_resistance,
     format_vswr,
+    parse_frequency,
 )
 from NanoVNASaver.Inputs import MarkerFrequencyInputWidget as FrequencyInput
 from NanoVNASaver.Marker.Values import TYPES, Value, default_label_ids
@@ -204,7 +207,7 @@ class Marker(QtCore.QObject, Value):
                 self._add_active_labels(label_id, self.right_form)
 
     def setFrequency(self, frequency):
-        self.freq = RFTools.RFTools.parseFrequency(frequency)
+        self.freq = parse_frequency(frequency)
         self.updated.emit(self)
 
     def setFieldSelection(self, fields):
@@ -305,7 +308,7 @@ class Marker(QtCore.QObject, Value):
         else:
             x_p_str = ind_p_str
 
-        self.label['actualfreq'].setText(format_frequency(s11.freq))
+        self.label['actualfreq'].setText(format_frequency_space(s11.freq))
         self.label['admittance'].setText(format_complex_imp(imp_p))
         self.label['impedance'].setText(format_complex_imp(imp))
         self.label['parc'].setText(cap_p_str)

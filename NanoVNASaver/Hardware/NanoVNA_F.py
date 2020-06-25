@@ -1,6 +1,8 @@
 #  NanoVNASaver
+#
 #  A python program to view and export Touchstone data from a NanoVNA
-#  Copyright (C) 2019.  Rune B. Broberg
+#  Copyright (C) 2019, 2020  Rune B. Broberg
+#  Copyright (C) 2020 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -82,7 +84,7 @@ class NanoVNA_F(NanoVNA):
 
                 image = QtGui.QImage(
                     unwrapped_array,
-                    self.screenwidth, self.screenheight, 
+                    self.screenwidth, self.screenheight,
                     QtGui.QImage.Format_ARGB32)
                 logger.debug("Captured screenshot")
                 return QtGui.QPixmap(image)

@@ -1,6 +1,8 @@
 #  NanoVNASaver
+#
 #  A python program to view and export Touchstone data from a NanoVNA
-#  Copyright (C) 2019.  Rune B. Broberg
+#  Copyright (C) 2019, 2020  Rune B. Broberg
+#  Copyright (C) 2020 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -53,7 +55,7 @@ _ADDR_FW_MINOR = 0xf4
 
 class NanoVNAV2(VNA):
     name = "NanoVNA-V2"
-    _datapoints = (303, 101, 256, 512, 1023)
+    _datapoints = (303, 101, 203, 505, 1023)
     screenwidth = 320
     screenheight = 240
 
@@ -80,8 +82,9 @@ class NanoVNAV2(VNA):
         self._isDFU = False
         self.sweepStartHz = 200e6
         self.sweepStepHz = 1e6
-        self.sweepData = [(0, 0)] * max(self._datapoints)
+        self._sweepdata = []
         self._updateSweep()
+        # self.setSweep(200e6, 300e6)
 
     def isValid(self):
         if self.isDFU():
@@ -97,7 +100,9 @@ class NanoVNAV2(VNA):
 
     def readFirmware(self) -> str:
         # read register 0xf3 and 0xf4 (firmware major and minor version)
-        cmd = pack("<BBBB", _CMD_READ, _ADDR_FW_MAJOR, _CMD_READ, _ADDR_FW_MINOR)
+        cmd = pack("<BBBB",
+                   _CMD_READ, _ADDR_FW_MAJOR,
+                   _CMD_READ, _ADDR_FW_MINOR)
         self.serial.write(cmd)
 
         resp = self.serial.read(2)
@@ -106,12 +111,11 @@ class NanoVNAV2(VNA):
             return None
         return Version(f"{resp[0]}.{resp[1]}.0")
 
-
     def readFrequencies(self) -> List[str]:
         self.checkValid()
-        freqs = [self.sweepStartHz + i*self.sweepStepHz for i in range(self.datapoints)]
-        return [str(int(f)) for f in freqs]
-
+        return [
+            str(int(self.sweepStartHz + i * self.sweepStepHz))
+            for i in range(self.datapoints)]
 
     def readValues(self, value) -> List[str]:
         self.checkValid()
@@ -124,13 +128,19 @@ class NanoVNAV2(VNA):
             self.serial.write(pack("<Q", 0))
 
             # cmd: write register 0x30 to clear FIFO
-            self.serial.write(pack("<BBB", _CMD_WRITE, _ADDR_VALUES_FIFO, 0))
+            self.serial.write(pack("<BBB",
+                                   _CMD_WRITE, _ADDR_VALUES_FIFO, 0))
+            # clear sweepdata
+            self._sweepdata = []
             pointstodo = self.datapoints
             while pointstodo > 0:
                 logger.info("reading values")
                 pointstoread = min(255, pointstodo)
                 # cmd: read FIFO, addr 0x30
-                self.serial.write(pack("<BBB", _CMD_READFIFO, _ADDR_VALUES_FIFO, pointstoread))
+                self.serial.write(
+                    pack("<BBB",
+                         _CMD_READFIFO, _ADDR_VALUES_FIFO,
+                         pointstoread))
 
                 # each value is 32 bytes
                 nBytes = pointstoread * 32
@@ -138,7 +148,8 @@ class NanoVNAV2(VNA):
                 # serial .read() will wait for exactly nBytes bytes
                 arr = self.serial.read(nBytes)
                 if nBytes != len(arr):
-                    logger.error("expected %d bytes, got %d", nBytes, len(arr))
+                    logger.error("expected %d bytes, got %d",
+                                 nBytes, len(arr))
                     return []
 
                 for i in range(pointstoread):
@@ -148,24 +159,18 @@ class NanoVNAV2(VNA):
                     fwd = complex(fwd_real, fwd_imag)
                     refl = complex(rev0_real, rev0_imag)
                     thru = complex(rev1_real, rev1_imag)
-                    self.sweepData[freq_index] = (refl / fwd, thru / fwd)
+                    self._sweepdata.append((refl / fwd, thru / fwd))
 
                 pointstodo = pointstodo - pointstoread
 
-            ret = [x[0] for x in self.sweepData]
+            ret = [x[0] for x in self._sweepdata]
             ret = [str(x.real) + ' ' + str(x.imag) for x in ret]
             return ret
 
         if value == "data 1":
-            ret = [x[1] for x in self.sweepData]
+            ret = [x[1] for x in self._sweepdata]
             ret = [str(x.real) + ' ' + str(x.imag) for x in ret]
             return ret
-
-    def readValues11(self) -> List[str]:
-        return self.readValues("data 0")
-
-    def readValues21(self) -> List[str]:
-        return self.readValues("data 1")
 
     def resetSweep(self, start: int, stop: int):
         self.setSweep(start, stop)
@@ -183,22 +188,25 @@ class NanoVNAV2(VNA):
             return None
         return Version(f"{resp[0]}.0.{resp[1]}")
 
-
     def setSweep(self, start, stop):
         step = (stop - start) / (self.datapoints - 1)
         if start == self.sweepStartHz and step == self.sweepStepHz:
             return
         self.sweepStartHz = start
         self.sweepStepHz = step
-        logger.info('NanoVNAV2: set sweep start %d step %d', self.sweepStartHz, self.sweepStepHz)
+        logger.info('NanoVNAV2: set sweep start %d step %d',
+                    self.sweepStartHz, self.sweepStepHz)
         self._updateSweep()
         return
 
     def _updateSweep(self):
         self.checkValid()
-
-        cmd = pack("<BBQ", _CMD_WRITE8, _ADDR_SWEEP_START, int(self.sweepStartHz))
-        cmd += pack("<BBQ", _CMD_WRITE8, _ADDR_SWEEP_STEP, int(self.sweepStepHz))
-        cmd += pack("<BBH", _CMD_WRITE2, _ADDR_SWEEP_POINTS, self.datapoints)
-        cmd += pack("<BBH", _CMD_WRITE2, _ADDR_SWEEP_VALS_PER_FREQ, 1)
+        cmd = pack("<BBQ", _CMD_WRITE8,
+                   _ADDR_SWEEP_START, int(self.sweepStartHz))
+        cmd += pack("<BBQ", _CMD_WRITE8,
+                    _ADDR_SWEEP_STEP, int(self.sweepStepHz))
+        cmd += pack("<BBH", _CMD_WRITE2,
+                    _ADDR_SWEEP_POINTS, self.datapoints)
+        cmd += pack("<BBH", _CMD_WRITE2,
+                    _ADDR_SWEEP_VALS_PER_FREQ, 1)
         self.serial.write(cmd)

@@ -1,6 +1,8 @@
 #  NanoVNASaver
+#
 #  A python program to view and export Touchstone data from a NanoVNA
-#  Copyright (C) 2019.  Rune B. Broberg
+#  Copyright (C) 2019, 2020  Rune B. Broberg
+#  Copyright (C) 2020 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -120,12 +122,6 @@ class NanoVNA(VNA):
     def readFrequencies(self) -> List[str]:
         return self.readValues("frequencies")
 
-    def readValues11(self) -> List[str]:
-        return self.readValues("data 0")
-
-    def readValues21(self) -> List[str]:
-        return self.readValues("data 1")
-
     def resetSweep(self, start: int, stop: int):
         self.writeSerial("sweep {start} {stop} {self.datapoints}")
         self.writeSerial("resume")
@@ -133,7 +129,7 @@ class NanoVNA(VNA):
     def readVersion(self):
         logger.debug("Reading version info.")
         if not self.serial.is_open:
-            return
+            return ""
         if self.app.serialLock.acquire():
             try:
                 data = "a"
@@ -153,7 +149,7 @@ class NanoVNA(VNA):
                 logger.exception("Exception while reading firmware version: %s", exc)
             finally:
                 self.app.serialLock.release()
-        return
+        return ""
 
     def setSweep(self, start, stop):
         if self.useScan:

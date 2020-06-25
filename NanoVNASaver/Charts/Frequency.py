@@ -1,6 +1,8 @@
 #  NanoVNASaver
+#
 #  A python program to view and export Touchstone data from a NanoVNA
-#  Copyright (C) 2019.  Rune B. Broberg
+#  Copyright (C) 2019, 2020  Rune B. Broberg
+#  Copyright (C) 2020 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -21,7 +23,8 @@ from typing import List
 import numpy as np
 from PyQt5 import QtWidgets, QtGui, QtCore
 
-from NanoVNASaver.RFTools import Datapoint, RFTools
+from NanoVNASaver.Formatting import parse_frequency
+from NanoVNASaver.RFTools import Datapoint
 from .Chart import Chart
 
 logger = logging.getLogger(__name__)
@@ -187,7 +190,7 @@ class FrequencyChart(Chart):
             "Set start frequency", text=str(self.minFrequency))
         if not selected:
             return
-        min_freq = RFTools.parseFrequency(min_freq_str)
+        min_freq = parse_frequency(min_freq_str)
         if min_freq > 0 and not (self.fixedSpan and min_freq >= self.maxFrequency):
             self.minFrequency = min_freq
         if self.fixedSpan:
@@ -199,7 +202,7 @@ class FrequencyChart(Chart):
             "Set stop frequency", text=str(self.maxFrequency))
         if not selected:
             return
-        max_freq = RFTools.parseFrequency(max_freq_str)
+        max_freq = parse_frequency(max_freq_str)
         if max_freq > 0 and not (self.fixedSpan and max_freq <= self.minFrequency):
             self.maxFrequency = max_freq
         if self.fixedSpan:
@@ -243,9 +246,11 @@ class FrequencyChart(Chart):
         if span > 0:
             if self.logarithmicX:
                 span = math.log(self.fstop) - math.log(self.fstart)
-                return self.leftMargin +\
-                       round(self.chartWidth * (math.log(d.freq) - math.log(self.fstart)) / span)
-            return self.leftMargin + round(self.chartWidth * (d.freq - self.fstart) / span)
+                return self.leftMargin + round(
+                    self.chartWidth * (math.log(d.freq) -
+                                       math.log(self.fstart)) / span)
+            return self.leftMargin + round(
+                self.chartWidth * (d.freq - self.fstart) / span)
         return math.floor(self.width()/2)
 
     def frequencyAtPosition(self, x, limit=True) -> int:

@@ -1,6 +1,8 @@
 #  NanoVNASaver
+#
 #  A python program to view and export Touchstone data from a NanoVNA
-#  Copyright (C) 2019.  Rune B. Broberg
+#  Copyright (C) 2019, 2020  Rune B. Broberg
+#  Copyright (C) 2020 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -18,7 +20,9 @@ import logging
 
 from PyQt5 import QtWidgets, QtCore
 
-from NanoVNASaver.RFTools import RFTools
+from NanoVNASaver.Formatting import (
+    format_frequency_short, format_frequency_sweep,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -73,14 +77,22 @@ class SweepSettingsWindow(QtWidgets.QWidget):
                 "Averaging allows discarding outlying samples to get better averages."))
         settings_layout.addRow(
             QtWidgets.QLabel("Common values are 3/0, 5/2, 9/4 and 25/6."))
+        
+        self.s21att = QtWidgets.QLineEdit("0")
 
+        settings_layout.addRow(QtWidgets.QLabel(""))
+        settings_layout.addRow(QtWidgets.QLabel("Some times when you measure amplifiers you need to use an attenuator"))
+        settings_layout.addRow(QtWidgets.QLabel("in line with  the S21 input (CH1) here you can specify it."))
+
+        settings_layout.addRow("Attenuator in port CH1 (s21) in dB", self.s21att)
+        settings_layout.addRow(QtWidgets.QLabel("Common values with un-un are 16.9 (49:1 2450) 9.54 (9:1 450)"))
         self.continuous_sweep_radiobutton.toggled.connect(
             lambda: self.app.worker.setContinuousSweep(
                 self.continuous_sweep_radiobutton.isChecked()))
         self.averaged_sweep_radiobutton.toggled.connect(self.updateAveraging)
         self.averages.textEdited.connect(self.updateAveraging)
         self.truncates.textEdited.connect(self.updateAveraging)
-
+        self.s21att.textEdited.connect(self.setS21Attenuator)
         layout.addWidget(settings_box)
 
         band_sweep_box = QtWidgets.QGroupBox("Sweep band")
@@ -142,8 +154,24 @@ class SweepSettingsWindow(QtWidgets.QWidget):
             stop += round(span * padding / 100)
 
         self.band_limit_label.setText(
-            f"Sweep span: {RFTools.formatShortFrequency(start)}"
-            f" to {RFTools.formatShortFrequency(stop)}")
+            f"Sweep span: {format_frequency_short(start)}"
+            f" to {format_frequency_short(stop)}")
+
+    def setS21Attenuator(self):
+        
+        try:
+            s21att = float(self.s21att.text())
+        except:
+            s21att = 0
+
+        if (s21att < 0):
+            logger.warning("Values for attenuator are absolute and with no minus sign, resetting.")
+            self.s21att.setText("0")
+        else:
+            logger.info("Setting an attenuator of %.2f dB inline with the CH1/S21 input", s21att)
+            self.app.s21att = s21att
+
+
 
     def setBandSweep(self):
         index_start = self.band_list.model().index(self.band_list.currentIndex(), 1)
@@ -166,8 +194,8 @@ class SweepSettingsWindow(QtWidgets.QWidget):
             start = max(1, start)
             stop += round(span * padding / 100)
 
-        self.app.sweepStartInput.setText(RFTools.formatSweepFrequency(start))
-        self.app.sweepEndInput.setText(RFTools.formatSweepFrequency(stop))
+        self.app.sweepStartInput.setText(format_frequency_sweep(start))
+        self.app.sweepEndInput.setText(format_frequency_sweep(stop))
         self.app.sweepEndInput.textEdited.emit(self.app.sweepEndInput.text())
 
     def updateAveraging(self):
