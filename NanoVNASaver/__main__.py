@@ -1,7 +1,10 @@
 #! /bin/env python
-
-#  NanoVNASaver - a python program to view and export Touchstone data from a NanoVNA
-#  Copyright (C) 2019.  Rune B. Broberg
+#
+#  NanoVNASaver
+#
+#  A python program to view and export Touchstone data from a NanoVNA
+#  Copyright (C) 2019, 2020  Rune B. Broberg
+#  Copyright (C) 2020 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -15,60 +18,64 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""
+NanoVNASaver
+
+A multiplatform tool to save Touchstone files from the
+NanoVNA, sweep frequency spans in segments to gain more
+data points, and generally display and analyze the
+resulting data.
+"""
+import argparse
 import logging
 import sys
 
 from PyQt5 import QtWidgets, QtCore
 
-from .NanoVNASaver import NanoVNASaver
-from .about import debug
+from NanoVNASaver.About import VERSION, INFO
+from NanoVNASaver.NanoVNASaver import NanoVNASaver
 
 
 def main():
-    print("NanoVNASaver " + NanoVNASaver.version)
-    print("Copyright (C) 2019 Rune B. Broberg")
-    print("This program comes with ABSOLUTELY NO WARRANTY")
-    print("This program is licensed under the GNU General Public License version 3")
-    print("")
-    print("See https://github.com/mihtjel/nanovna-saver for further details")
-    # Main code goes here
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("-d", "--debug", action="store_true",
+                        help="Set loglevel to debug")
+    parser.add_argument("-D", "--debug-file",
+                        help="File to write debug logging output to")
+    parser.add_argument("--version", action="version",
+                        version=f"NanoVNASaver {VERSION}")
+    args = parser.parse_args()
+
     console_log_level = logging.WARNING
     file_log_level = logging.DEBUG
-    log_file = ""
 
-    for i in range(len(sys.argv)):
-        if sys.argv[i] == "-d":
-            console_log_level = logging.DEBUG
-        elif sys.argv[i] == "-D" and i < len(sys.argv) - 1:
-            log_file = sys.argv[i+1]
-        elif sys.argv[i] == "-D":
-            print("You must enter a file name when using -D")
-            return
+    print(INFO)
 
-    if debug:
+    if args.debug:
         console_log_level = logging.DEBUG
 
     logger = logging.getLogger("NanoVNASaver")
     logger.setLevel(logging.DEBUG)
+
     ch = logging.StreamHandler()
     ch.setLevel(console_log_level)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     ch.setFormatter(formatter)
     logger.addHandler(ch)
-    if log_file != "":
-        try:
-            fh = logging.FileHandler(log_file)
-        except Exception as e:
-            logger.exception("Error opening log file: %s", e)
-            return
 
+    if args.debug_file:
+        fh = logging.FileHandler(args.debug_file)
         fh.setLevel(file_log_level)
         fh.setFormatter(formatter)
         logger.addHandler(fh)
 
     logger.info("Startup...")
 
-    QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
+    QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling,
+                                        True)
     app = QtWidgets.QApplication(sys.argv)
     window = NanoVNASaver()
     window.show()
