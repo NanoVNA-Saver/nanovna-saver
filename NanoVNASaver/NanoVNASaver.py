@@ -1,6 +1,8 @@
 #  NanoVNASaver
+#
 #  A python program to view and export Touchstone data from a NanoVNA
-#  Copyright (C) 2019.  Rune B. Broberg
+#  Copyright (C) 2019, 2020  Rune B. Broberg
+#  Copyright (C) 2020 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -51,7 +53,7 @@ from .Marker import Marker
 from .SweepWorker import SweepWorker
 from .Settings import BandsModel
 from .Touchstone import Touchstone
-from .about import version as ver
+from .About import VERSION as ver
 from NanoVNASaver.RFTools import corrAttData
 
 logger = logging.getLogger(__name__)

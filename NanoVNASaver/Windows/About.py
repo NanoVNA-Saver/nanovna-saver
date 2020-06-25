@@ -1,6 +1,8 @@
 #  NanoVNASaver
+#
 #  A python program to view and export Touchstone data from a NanoVNA
-#  Copyright (C) 2019.  Rune B. Broberg
+#  Copyright (C) 2019, 2020  Rune B. Broberg
+#  Copyright (C) 2020 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -21,7 +23,8 @@ from urllib import request, error
 
 from PyQt5 import QtWidgets, QtCore
 
-from NanoVNASaver.Hardware import Version
+from NanoVNASaver.About import VERSION_URL, INFO_URL
+from NanoVNASaver.Settings import Version
 
 logger = logging.getLogger(__name__)
 
@@ -51,20 +54,24 @@ class AboutWindow(QtWidgets.QWidget):
             f"NanoVNASaver version {self.app.version}"))
         layout.addWidget(QtWidgets.QLabel(""))
         layout.addWidget(QtWidgets.QLabel(
-            "\N{COPYRIGHT SIGN} Copyright 2019 Rune B. Broberg"))
+            "\N{COPYRIGHT SIGN} Copyright 2019, 2020 Rune B. Broberg"
+            "\N{COPYRIGHT SIGN} Copyright 2020 NanoVNA-Saver Authors"
+            ))
         layout.addWidget(QtWidgets.QLabel(
             "This program comes with ABSOLUTELY NO WARRANTY"))
         layout.addWidget(QtWidgets.QLabel(
-            "This program is licensed under the GNU General Public License version 3"))
+            "This program is licensed under the"
+            " GNU General Public License version 3"))
         layout.addWidget(QtWidgets.QLabel(""))
         link_label = QtWidgets.QLabel(
-            "For further details, see: <a href=\"https://mihtjel.github.io/nanovna-saver/\">"
-            "https://mihtjel.github.io/nanovna-saver/</a>")
+            f'For further details, see: <a href="{INFO_URL}">'
+            f"{INFO_URL}")
         link_label.setOpenExternalLinks(True)
         layout.addWidget(link_label)
         layout.addWidget(QtWidgets.QLabel(""))
 
-        self.versionLabel = QtWidgets.QLabel("NanoVNA Firmware Version: Not connected.")
+        self.versionLabel = QtWidgets.QLabel(
+            "NanoVNA Firmware Version: Not connected.")
         layout.addWidget(self.versionLabel)
 
         layout.addStretch()
@@ -73,11 +80,13 @@ class AboutWindow(QtWidgets.QWidget):
         btn_check_version.clicked.connect(self.findUpdates)
 
         self.updateLabel = QtWidgets.QLabel("Last checked: ")
-        self.updateCheckBox = QtWidgets.QCheckBox("Check for updates on startup")
+        self.updateCheckBox = QtWidgets.QCheckBox(
+            "Check for updates on startup")
 
         self.updateCheckBox.toggled.connect(self.updateSettings)
 
-        check_for_updates = self.app.settings.value("CheckForUpdates", "Ask")
+        check_for_updates = self.app.settings.value(
+            "CheckForUpdates", "Ask")
         if check_for_updates == "Yes":
             self.updateCheckBox.setChecked(True)
             self.findUpdates(automatic=True)
@@ -125,7 +134,8 @@ class AboutWindow(QtWidgets.QWidget):
         selection = QtWidgets.QMessageBox.question(
             self.app,
             "Enable checking for updates?",
-            "Would you like NanoVNA-Saver to check for updates automatically?")
+            "Would you like NanoVNA-Saver to"
+            " check for updates automatically?")
         if selection == QtWidgets.QMessageBox.Yes:
             self.updateCheckBox.setChecked(True)
             self.app.settings.setValue("CheckForUpdates", "Yes")
@@ -136,24 +146,27 @@ class AboutWindow(QtWidgets.QWidget):
             QtWidgets.QMessageBox.information(
                 self.app,
                 "Checking for updates disabled",
-                "You can check for updates using the \"About\" window.")
+                'You can check for updates using the "About" window.')
         else:
             self.app.settings.setValue("CheckForUpdates", "Ask")
 
     def findUpdates(self, automatic=False):
-        update_url = "http://mihtjel.dk/nanovna-saver/latest.json"
-
+        latest_version = Version("")
+        latest_url = ""
         try:
-            req = request.Request(update_url)
+            req = request.Request(VERSION_URL)
             req.add_header('User-Agent', "NanoVNA-Saver/" + self.app.version)
-            updates = json.load(request.urlopen(req, timeout=3))
-            latest_version = Version(updates['version'])
-            latest_url = updates['url']
+            for line in request.urlopen(req, timeout=3):
+                line = line.decode("utf-8")
+                if line.startswith("VERSION ="):
+                    latest_version = Version(line[8:].strip(" \"'"))
+                if line.startswith("RELEASE_URL ="):
+                    latest_url = line[13:].strip(" \"'")
         except error.HTTPError as e:
             logger.exception("Checking for updates produced an HTTP exception: %s", e)
             self.updateLabel.setText("Connection error.")
             return
-        except json.JSONDecodeError as e:
+        except TypeError as e:
             logger.exception("Checking for updates provided an unparseable file: %s", e)
             self.updateLabel.setText("Data error reading versions.")
             return
@@ -186,5 +199,6 @@ class AboutWindow(QtWidgets.QWidget):
             # Maybe consider showing it if not an automatic update.
             #
             self.updateLabel.setText(
-                f"Last checked: {strftime('%Y-%m-%d %H:%M:%S', localtime())}")
+                f"Last checked: "
+                f"{strftime('%Y-%m-%d %H:%M:%S', localtime())}")
         return
