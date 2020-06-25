@@ -16,32 +16,22 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import sys
 
-if sys.version_info < (3, 7):
-    print("You need at least Python 3.7 for this application!")
-    if sys.version_info[0] < 3:
-        print("try running with python3 {}".format(" ".join(sys.argv)))
-    sys.exit(1)
+VERSION = "0.3.0"
+VERSION_URL = (
+    "https://raw.githubusercontent.com/"
+    "NanoVNA-Saver/nanovna-saver/master/NanoVNASaver/About.py")
 
-try:
-    from setuptools import setup, find_packages
-except ImportError:
-    print("Could not find setuptools")
-    print("Try installing them with pip install setuptools")
-    sys.exit(1)
+INFO_URL="https://github.com/NanoVNA-Saver/nanovna-saver"
+INFO = f"""NanoVNASaver {VERSION}
 
-setup(
-    packages=find_packages(exclude=["test", ]),
-    entry_points={
-        'console_scripts': [
-            'NanoVNASaver = NanoVNASaver.__main__:main'
-        ],
-    },
-    install_requires=[
-        'pyserial',
-        'PyQt5',
-        'numpy',
-        'scipy'
-    ],
-)
+Copyright (C) 2019, 2020 Rune B. Broberg
+Copyright (C) 2020 NanoVNA-Saver Authors
+
+This program comes with ABSOLUTELY NO WARRANTY
+This program is licensed under the GNU General Public License version 3
+
+See {INFO_URL} for further details.
+"""
+
+RELEASE_URL="https://github.com/NanoVNA-Saver/nanovna-saver"

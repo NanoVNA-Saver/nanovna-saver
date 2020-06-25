@@ -4,7 +4,10 @@
 [![GitHub Releases](https://img.shields.io/github/downloads/mihtjel/nanovna-saver/latest/total)](https://github.com/mihtjel/nanovna-saver/releases/latest)
 [![Donate](https://img.shields.io/badge/paypal-donate-yellow.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=T8KTGVDQF5K6E&item_name=NanoVNASaver+Development&currency_code=EUR&source=url)
 
-NanoVNASaver ============ A multiplatform tool to save Touchstone files from
+NanoVNASaver
+============
+
+A multiplatform tool to save Touchstone files from
 the NanoVNA, sweep frequency spans in segments to gain more than 101 data
 points, and generally display and analyze the resulting data.
 

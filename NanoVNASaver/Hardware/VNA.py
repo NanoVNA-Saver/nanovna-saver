@@ -1,6 +1,8 @@
 #  NanoVNASaver
+#
 #  A python program to view and export Touchstone data from a NanoVNA
-#  Copyright (C) 2019.  Rune B. Broberg
+#  Copyright (C) 2019, 2020 Rune B. Broberg
+#  Copyright (C) 2020 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -15,12 +17,13 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-import re
 from time import sleep
 from typing import List
 
 import serial
 from PyQt5 import QtWidgets, QtGui
+
+from NanoVNASaver.Settings import Version
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +38,7 @@ class VNA:
         self.version: Version = Version("0.0.0")
         self.features = set()
         self.validateInput = True
-        self.datapoints = self._datapoints[0]
+        self.datapoints = VNA._datapoints[0]
 
     def readFeatures(self) -> List[str]:
         raw_help = self.readFromCommand("help")
@@ -184,9 +187,6 @@ class InvalidVNA(VNA):
     name = "Invalid"
     _datapoints = (0, )
 
-    def __init__(self, app: QtWidgets.QWidget, serial_port: serial.Serial):
-        super().__init__(app, serial_port)
-
     def setSweep(self, start, stop):
         return
 
@@ -207,58 +207,3 @@ class InvalidVNA(VNA):
 
     def flushSerialBuffers(self):
         return
-
-
-# TODO: should go to Settings.py and be generalized
-class Version:
-    major = 0
-    minor = 0
-    revision = 0
-    note = ""
-    version_string = ""
-
-    def __init__(self, version_string):
-        self.version_string = version_string
-        results = re.match(
-            r"(.*\s+)?(\d+)\.(\d+)\.(\d+)(.*)",
-            version_string)
-        if results:
-            self.major = int(results.group(2))
-            self.minor = int(results.group(3))
-            self.revision = int(results.group(4))
-            self.note = results.group(5)
-            logger.debug(
-                "Parsed version as \"%d.%d.%d%s\"",
-                self.major, self.minor, self.revision, self.note)
-
-    def __gt__(self, other: "Version") -> bool:
-        if self.major > other.major:
-            return True
-        if self.major < other.major:
-            return False
-        if self.minor > other.minor:
-            return True
-        if self.minor < other.minor:
-            return False
-        if self.revision > other.revision:
-            return True
-        return False
-
-    def __lt__(self, other: "Version") -> bool:
-        return other > self
-
-    def __ge__(self, other: "Version") -> bool:
-        return self > other or self == other
-
-    def __le__(self, other: "Version") -> bool:
-        return self < other or self == other
-
-    def __eq__(self, other: "Version") -> bool:
-        return (
-            self.major == other.major and
-            self.minor == other.minor and
-            self.revision == other.revision and
-            self.note == other.note)
-
-    def __str__(self) -> str:
-        return f"{self.major}.{self.minor}.{self.revision}{self.note}"
