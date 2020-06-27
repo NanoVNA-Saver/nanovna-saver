@@ -17,12 +17,12 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-VERSION = "0.3.0"
+VERSION = "0.3.1"
 VERSION_URL = (
     "https://raw.githubusercontent.com/"
     "NanoVNA-Saver/nanovna-saver/master/NanoVNASaver/About.py")
 
-INFO_URL="https://github.com/NanoVNA-Saver/nanovna-saver"
+INFO_URL = "https://github.com/NanoVNA-Saver/nanovna-saver"
 INFO = f"""NanoVNASaver {VERSION}
 
 Copyright (C) 2019, 2020 Rune B. Broberg
@@ -34,4 +34,4 @@ This program is licensed under the GNU General Public License version 3
 See {INFO_URL} for further details.
 """
 
-RELEASE_URL="https://github.com/NanoVNA-Saver/nanovna-saver"
+RELEASE_URL = "https://github.com/NanoVNA-Saver/nanovna-saver"
