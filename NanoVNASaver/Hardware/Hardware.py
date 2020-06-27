@@ -90,7 +90,11 @@ def get_VNA(app, serial_port: serial.Serial) -> 'VNA':
         return AVNA(app, serial_port)
     if firmware.find("NanoVNA-H 4") > 0:
         logger.info("Type: NanoVNA-H4")
-        return NanoVNA_H4(app, serial_port)
+        vna = NanoVNA_H4(app, serial_port)
+        if firmware.find("sweep_points 201") > 0:
+            logger.info("VNA has 201 datapoints capability")
+            vna._datapoints = (201, 101)
+        return vna
     if firmware.find("NanoVNA-H") > 0:
         logger.info("Type: NanoVNA-H")
         vna = NanoVNA_H(app, serial_port)
