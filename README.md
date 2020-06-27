@@ -59,28 +59,29 @@ PyQT5, numpy, scipy and pyserial.
 
 #### Binary releases
 You can find the latest binary (.exe) release for Windows at
-https://github.com/mihtjel/nanovna-saver/releases/latest
+https://github.com/NanoVNA-Saver/nanovna-saver/releases/tag/v0.3.0
 
 The downloadable executable runs directly, and requires no installation. For
 Windows 7, it does require Service Pack 1 and [Microsoft VC++
 Redistributable](https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads).
 For most users, this is already installed.
 
-Windows versions older than Windows 7 are not known to work.  It may be
-possible to run on those directly from the python code:
+Windows 10
+Versions older than Windows 7 are not known to work.  
+It may be possible to run on those directly from the python code:
 
 #### Installation and Use with pip
 
 1. Clone repo and cd into the directory
 
-        git clone https://github.com/mihtjel/nanovna-saver
+        git clone https://github.com/NanoVNA-Saver/nanovna-saver
         cd nanovna-saver
 
-3. Run the pip installation
+2. Run the pip installation
 
         pip3 install .
 
-4. Once completed run with the following command
+3. Once completed run with the following command
 
         NanoVNASaver
 
@@ -93,7 +94,7 @@ possible to run on those directly from the python code:
 
 3. Clone repo and cd into the directory 
 		
-        git clone https://github.com/mihtjel/nanovna-saver
+        git clone https://github.com/NanoVNA-Saver/nanovna-saver
         cd nanovna-saver
 
 4. Update pip and run the pip installation
@@ -123,7 +124,7 @@ distributions.)
 
 3. NanoVNASaver Installation
 
-        git clone https://github.com/mihtjel/nanovna-saver
+        git clone git clone https://github.com/NanoVNA-Saver/nanovna-saver
         cd nanovna-saver
         
 4. Install local pip packages
