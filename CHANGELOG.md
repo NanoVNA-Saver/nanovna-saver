@@ -1,3 +1,8 @@
+v0.3.1
+======
+
+- fixed crash with calibration assistant
+
 v0.3.0
 ======
 
