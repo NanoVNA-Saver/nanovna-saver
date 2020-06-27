@@ -673,7 +673,7 @@ class CalibrationWindow(QtWidgets.QWidget):
 
         if self.nextStep == 0:
             # Short
-            self.save("short")
+            self.cal_save("short")
             self.nextStep = 1
 
             open_step = QtWidgets.QMessageBox(
@@ -697,7 +697,7 @@ class CalibrationWindow(QtWidgets.QWidget):
 
         if self.nextStep == 1:
             # Open
-            self.save("open")
+            self.cal_save("open")
             self.nextStep = 2
             load_step = QtWidgets.QMessageBox(
                 QtWidgets.QMessageBox.Information,
@@ -718,7 +718,7 @@ class CalibrationWindow(QtWidgets.QWidget):
 
         if self.nextStep == 2:
             # Load
-            self.save("load")
+            self.cal_save("load")
             self.nextStep = 3
             continue_step = QtWidgets.QMessageBox(
                 QtWidgets.QMessageBox.Information,
@@ -762,7 +762,7 @@ class CalibrationWindow(QtWidgets.QWidget):
 
         if self.nextStep == 3:
             # Isolation
-            self.save("isolation")
+            self.cal_save("isolation")
             self.nextStep = 4
             through_step = QtWidgets.QMessageBox(
                 QtWidgets.QMessageBox.Information,
@@ -784,7 +784,7 @@ class CalibrationWindow(QtWidgets.QWidget):
 
         if self.nextStep == 4:
             # Done
-            self.save("through")
+            self.cal_save("through")
             apply_step = QtWidgets.QMessageBox(
                 QtWidgets.QMessageBox.Information,
                 "Calibrate complete",
