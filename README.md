@@ -17,7 +17,7 @@ Copyright 2020 NanoVNA-Saver Authors
 ## Changes in this fork 
 - This fork adds support for the saa2, a vna loosely
   based on the original nanovna with frequency range up to 3Ghz. 
-- Added ability to add attenutor values in s11 sweep settingshttp://www.gunthard-kraus.de/fertig_NanoVNA/Deutsch
+- Added ability to add attenutor values in s11 sweep settings
   for amplifier measuremnts
 
 
