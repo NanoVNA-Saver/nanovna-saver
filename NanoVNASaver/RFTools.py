@@ -26,67 +26,6 @@ FMT_SHORT = Format(max_nr_digits=4)
 FMT_SWEEP = Format(max_nr_digits=9, allow_strip=True)
 
 
-def parallel_to_serial(z: complex) -> complex:
-    """Convert parallel impedance to serial impedance equivalent"""
-    z_sq_sum = z.real ** 2 + z.imag ** 2
-    # TODO: Fix divide by zero
-    return complex(z.real * z.imag ** 2 / z_sq_sum,
-                   z.real ** 2 * z.imag / z_sq_sum)
-
-
-def serial_to_parallel(z: complex) -> complex:
-    """Convert serial impedance to parallel impedance equivalent"""
-    z_sq_sum = z.real ** 2 + z.imag ** 2
-    if z.real == 0 and z.imag == 0:
-        return complex(math.inf, math.inf)
-    if z_sq_sum == 0:
-        return complex(0, 0)
-    if z.imag == 0:
-        return complex(z_sq_sum / z.real, math.copysign(math.inf, z_sq_sum))
-    if z.real == 0:
-        return complex(math.copysign(math.inf, z_sq_sum), z_sq_sum / z.real)
-    return complex(z_sq_sum / z.real, z_sq_sum / z.imag)
-
-
-def impedance_to_capacitance(z: complex, freq: float) -> float:
-    """Calculate capacitive equivalent for reactance"""
-    if freq == 0:
-        return -math.inf
-    if z.imag == 0:
-        return math.inf
-    return -(1 / (freq * 2 * math.pi * z.imag))
-
-
-def impedance_to_inductance(z: complex, freq: float) -> float:
-    """Calculate inductive equivalent for reactance"""
-    if freq == 0:
-        return 0
-    return z.imag * 1 / (freq * 2 * math.pi)
-
-
-def impedance_to_norm(z: complex, ref_impedance: float = 50) -> complex:
-    """Calculate normalized z from impedance"""
-    return z / ref_impedance
-
-
-def norm_to_impedance(z: complex, ref_impedance: float = 50) -> complex:
-    """Calculate impedance from normalized z"""
-    return z * ref_impedance
-
-
-def reflection_coefficient(z: complex, ref_impedance: float = 50) -> complex:
-    """Calculate reflection coefficient for z"""
-    return (z - ref_impedance) / (z + ref_impedance)
-
-
-def gamma_to_impedance(gamma: complex, ref_impedance: float = 50) -> complex:
-    """Calculate impedance from gamma"""
-    try:
-        return ((-gamma - 1) / (gamma - 1)) * ref_impedance
-    except ZeroDivisionError:
-        return math.inf
-
-
 class Datapoint(NamedTuple):
     freq: int
     re: float
@@ -132,6 +71,14 @@ class Datapoint(NamedTuple):
         return impedance_to_inductance(self.impedance(ref_impedance), self.freq)
 
 
+def gamma_to_impedance(gamma: complex, ref_impedance: float = 50) -> complex:
+    """Calculate impedance from gamma"""
+    try:
+        return ((-gamma - 1) / (gamma - 1)) * ref_impedance
+    except ZeroDivisionError:
+        return math.inf
+
+
 def groupDelay(data: List[Datapoint], index: int) -> float:
     idx0 = clamp_value(index - 1, 0, len(data) - 1)
     idx1 = clamp_value(index + 1, 0, len(data) - 1)
@@ -148,19 +95,70 @@ def groupDelay(data: List[Datapoint], index: int) -> float:
     return val
 
 
-def corrAttData(data: Datapoint, att: float):                                   
-    """Correct the ratio for a given attenuation on s21 input"""
+def impedance_to_capacitance(z: complex, freq: float) -> float:
+    """Calculate capacitive equivalent for reactance"""
+    if freq == 0:
+        return -math.inf
+    if z.imag == 0:
+        return math.inf
+    return -(1 / (freq * 2 * math.pi * z.imag))
 
+
+def impedance_to_inductance(z: complex, freq: float) -> float:
+    """Calculate inductive equivalent for reactance"""
+    if freq == 0:
+        return 0
+    return z.imag * 1 / (freq * 2 * math.pi)
+
+
+def impedance_to_norm(z: complex, ref_impedance: float = 50) -> complex:
+    """Calculate normalized z from impedance"""
+    return z / ref_impedance
+
+
+def norm_to_impedance(z: complex, ref_impedance: float = 50) -> complex:
+    """Calculate impedance from normalized z"""
+    return z * ref_impedance
+
+
+def parallel_to_serial(z: complex) -> complex:
+    """Convert parallel impedance to serial impedance equivalent"""
+    z_sq_sum = z.real ** 2 + z.imag ** 2
+    # TODO: Fix divide by zero
+    return complex(z.real * z.imag ** 2 / z_sq_sum,
+                   z.real ** 2 * z.imag / z_sq_sum)
+
+
+def reflection_coefficient(z: complex, ref_impedance: float = 50) -> complex:
+    """Calculate reflection coefficient for z"""
+    return (z - ref_impedance) / (z + ref_impedance)
+
+
+def serial_to_parallel(z: complex) -> complex:
+    """Convert serial impedance to parallel impedance equivalent"""
+    z_sq_sum = z.real ** 2 + z.imag ** 2
+    if z.real == 0 and z.imag == 0:
+        return complex(math.inf, math.inf)
+    # only possible if real and imag == 0, therefor commented out
+    # if z_sq_sum == 0:
+    #     return complex(0, 0)
+    if z.imag == 0:
+        return complex(z_sq_sum / z.real, math.copysign(math.inf, z_sq_sum))
+    if z.real == 0:
+        return complex(math.copysign(math.inf, z_sq_sum), z_sq_sum / z.imag)
+    return complex(z_sq_sum / z.real, z_sq_sum / z.imag)
+
+
+def corr_att_data(data: List[Datapoint], att: float):
+    """Correct the ratio for a given attenuation on s21 input"""
     if att <= 0:
         return data
     else:
         att = 10**(att/20)
-
     ndata = []
-    for i in range(len(data)):
-        freq, re, im = data[i]
+    for dp in data:
+        freq, re, im = dp
         orig = complex(re, im)
         corrected = orig * att
         ndata.append(Datapoint(freq, corrected.real, corrected.imag))
-
     return ndata
