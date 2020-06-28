@@ -205,6 +205,21 @@ class NanoVNASaver(QtWidgets.QWidget):
         layout.addLayout(right_column, 0, 2)
 
         ###############################################################
+        #  Windows
+        ###############################################################
+
+        self.windows = {
+            "about": AboutWindow(self),
+            # "analysis": AnalysisWindow(self),
+            "calibration": CalibrationWindow(self),
+            "device_settings": DeviceSettingsWindow(self),
+            "file": QtWidgets.QWidget(),
+            "sweep_settings": SweepSettingsWindow(self),
+            "setup": DisplaySettingsWindow(self),
+            "tdr": TDRWindow(self),
+        }
+
+        ###############################################################
         #  Sweep control
         ###############################################################
 
@@ -263,9 +278,9 @@ class NanoVNASaver(QtWidgets.QWidget):
         segment_layout.addWidget(self.sweepStepLabel)
         sweep_control_layout.addRow(QtWidgets.QLabel("Segments"), segment_layout)
 
-        self.sweepSettingsWindow = SweepSettingsWindow(self)
         btn_sweep_settings_window = QtWidgets.QPushButton("Sweep settings ...")
-        btn_sweep_settings_window.clicked.connect(self.displaySweepSettingsWindow)
+        btn_sweep_settings_window.clicked.connect(
+            lambda: self.display_window("sweep_settings"))
 
         sweep_control_layout.addRow(btn_sweep_settings_window)
 
@@ -368,21 +383,21 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.marker_column.addWidget(s21_control_box)
 
         self.marker_column.addStretch(1)
-        self.analysis_window = AnalysisWindow(self)
 
+        self.windows["analysis"] = AnalysisWindow(self)
         btn_show_analysis = QtWidgets.QPushButton("Analysis ...")
-        btn_show_analysis.clicked.connect(self.displayAnalysisWindow)
+        btn_show_analysis.clicked.connect(
+            lambda: self.display_window("analysis"))
         self.marker_column.addWidget(btn_show_analysis)
 
         ###############################################################
         # TDR
         ###############################################################
 
-        self.tdr_window = TDRWindow(self)
-        self.tdr_chart.tdrWindow = self.tdr_window
-        self.tdr_mainwindow_chart.tdrWindow = self.tdr_window
-        self.tdr_window.updated.connect(self.tdr_chart.update)
-        self.tdr_window.updated.connect(self.tdr_mainwindow_chart.update)
+        self.tdr_chart.tdrWindow = self.windows["tdr"]
+        self.tdr_mainwindow_chart.tdrWindow = self.windows["tdr"]
+        self.windows["tdr"].updated.connect(self.tdr_chart.update)
+        self.windows["tdr"].updated.connect(self.tdr_mainwindow_chart.update)
 
         tdr_control_box = QtWidgets.QGroupBox()
         tdr_control_box.setTitle("TDR")
@@ -394,7 +409,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         tdr_control_layout.addRow("Estimated cable length:", self.tdr_result_label)
 
         self.tdr_button = QtWidgets.QPushButton("Time Domain Reflectometry ...")
-        self.tdr_button.clicked.connect(self.displayTDRWindow)
+        self.tdr_button.clicked.connect(lambda: self.display_window("tdr"))
 
         tdr_control_layout.addRow(self.tdr_button)
 
@@ -454,9 +469,9 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.btnSerialToggle.clicked.connect(self.serialButtonClick)
         serial_button_layout.addWidget(self.btnSerialToggle, stretch=1)
 
-        self.deviceSettingsWindow = DeviceSettingsWindow(self)
         self.btnDeviceSettings = QtWidgets.QPushButton("Manage")
-        self.btnDeviceSettings.clicked.connect(self.displayDeviceSettingsWindow)
+        self.btnDeviceSettings.clicked.connect(
+            lambda: self.display_window("device_settings"))
         serial_button_layout.addWidget(self.btnDeviceSettings, stretch=0)
         serial_control_layout.addRow(serial_button_layout)
         left_column.addWidget(serial_control_box)
@@ -465,13 +480,13 @@ class NanoVNASaver(QtWidgets.QWidget):
         #  File control
         ###############################################################
 
-        self.fileWindow = QtWidgets.QWidget()
-        self.fileWindow.setWindowTitle("Files")
-        self.fileWindow.setWindowIcon(self.icon)
-        self.fileWindow.setMinimumWidth(200)
-        QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self.fileWindow, self.fileWindow.hide)
+        self.windows["file"].setWindowTitle("Files")
+        self.windows["file"].setWindowIcon(self.icon)
+        self.windows["file"].setMinimumWidth(200)
+        QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self.windows["file"],
+                            self.windows["file"].hide)
         file_window_layout = QtWidgets.QVBoxLayout()
-        self.fileWindow.setLayout(file_window_layout)
+        self.windows["file"].setLayout(file_window_layout)
 
         load_file_control_box = QtWidgets.QGroupBox("Import file")
         load_file_control_box.setMaximumWidth(300)
@@ -501,7 +516,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         file_window_layout.addWidget(save_file_control_box)
 
         btn_open_file_window = QtWidgets.QPushButton("Files ...")
-        btn_open_file_window.clicked.connect(self.displayFileWindow)
+        btn_open_file_window.clicked.connect(
+            lambda: self.display_window("file"))
 
         ###############################################################
         #  Calibration
@@ -509,7 +525,8 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         btnOpenCalibrationWindow = QtWidgets.QPushButton("Calibration ...")
         self.calibrationWindow = CalibrationWindow(self)
-        btnOpenCalibrationWindow.clicked.connect(self.displayCalibrationWindow)
+        btnOpenCalibrationWindow.clicked.connect(
+            lambda: self.display_window("calibration"))
 
         ###############################################################
         #  Display setup
@@ -517,15 +534,14 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         btn_display_setup = QtWidgets.QPushButton("Display setup ...")
         btn_display_setup.setMaximumWidth(250)
-        self.displaySetupWindow = DisplaySettingsWindow(self)
-        btn_display_setup.clicked.connect(self.displaySettingsWindow)
-
-        self.aboutWindow = AboutWindow(self)
+        btn_display_setup.clicked.connect(
+            lambda: self.display_window("setup"))
 
         btn_about = QtWidgets.QPushButton("About ...")
         btn_about.setMaximumWidth(250)
 
-        btn_about.clicked.connect(self.displayAboutWindow)
+        btn_about.clicked.connect(
+            lambda: self.display_window("about"))
 
         button_grid = QtWidgets.QGridLayout()
         button_grid.addWidget(btn_open_file_window, 0, 0)
@@ -727,7 +743,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                 c.setCombinedData(self.data, self.data21)
 
             self.sweepProgressBar.setValue(self.worker.percentage)
-            self.tdr_window.updateTDR()
+            self.windows["tdr"].updateTDR()
 
             # Find the minimum S11 VSWR:
             min_vswr = 100
@@ -897,37 +913,9 @@ class NanoVNASaver(QtWidgets.QWidget):
     def sizeHint(self) -> QtCore.QSize:
         return QtCore.QSize(1100, 950)
 
-    def displaySettingsWindow(self):
-        self.displaySetupWindow.show()
-        QtWidgets.QApplication.setActiveWindow(self.displaySetupWindow)
-
-    def displaySweepSettingsWindow(self):
-        self.sweepSettingsWindow.show()
-        QtWidgets.QApplication.setActiveWindow(self.sweepSettingsWindow)
-
-    def displayDeviceSettingsWindow(self):
-        self.deviceSettingsWindow.show()
-        QtWidgets.QApplication.setActiveWindow(self.deviceSettingsWindow)
-
-    def displayCalibrationWindow(self):
-        self.calibrationWindow.show()
-        QtWidgets.QApplication.setActiveWindow(self.calibrationWindow)
-
-    def displayFileWindow(self):
-        self.fileWindow.show()
-        QtWidgets.QApplication.setActiveWindow(self.fileWindow)
-
-    def displayTDRWindow(self):
-        self.tdr_window.show()
-        QtWidgets.QApplication.setActiveWindow(self.tdr_window)
-
-    def displayAnalysisWindow(self):
-        self.analysis_window.show()
-        QtWidgets.QApplication.setActiveWindow(self.analysis_window)
-
-    def displayAboutWindow(self):
-        self.aboutWindow.show()
-        QtWidgets.QApplication.setActiveWindow(self.aboutWindow)
+    def display_window(self, name):
+        self.windows[name].show()
+        QtWidgets.QApplication.setActiveWindow(self.windows[name])
 
     def showError(self, text):
         QtWidgets.QMessageBox.warning(self, "Error", text)
