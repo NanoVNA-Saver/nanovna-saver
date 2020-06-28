@@ -36,7 +36,7 @@ from .Formatting import (
     parse_frequency,
 )
 from .Hardware import get_interfaces, get_VNA, InvalidVNA
-from .RFTools import Datapoint, corrAttData
+from .RFTools import Datapoint, corr_att_data
 from .Charts.Chart import Chart
 from .Charts import (
     CapacitanceChart,
@@ -696,8 +696,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         if self.dataLock.acquire(blocking=True):
             self.data = data
             if self.s21att > 0:
-                corData12 = corrAttData(data12, self.s21att)
-                self.data21 = corData12
+                self.data21 = corr_att_data(data12, self.s21att)
             else:
                 self.data21 = data12
         else:
