@@ -17,7 +17,7 @@ Copyright 2020 NanoVNA-Saver Authors
 ## Changes in this fork 
 - This fork adds support for the saa2, a vna loosely
   based on the original nanovna with frequency range up to 3Ghz. 
-- Added ability to add attenutor values in s11 sweep settings
+- Added ability to add attenutor values in s11 sweep settingshttp://www.gunthard-kraus.de/fertig_NanoVNA/Deutsch
   for amplifier measuremnts
 
 
@@ -113,16 +113,21 @@ distributions.)
     
 ### Mac OS:
 #### MacPorts
-1. Install MacPorts following the [install guide](https://www.macports.org/install.php)
+
+Via a MacPorts distribution maintained by @ra1nb0w.
+
+1. Install MacPorts following the 
+   [install guide](https://www.macports.org/install.php)
 2. Install NanoVNASaver :
 
         sudo port install NanoVNASaver
 
-3. Now you can run the software from shell `NanoVNASaver` or run as app `/Applications/MacPorts/NanoVNASaver.app`
+3. Now you can run the software from shell `NanoVNASaver` or run as app
+   `/Applications/MacPorts/NanoVNASaver.app`
 
 #### Homebrew
 1. Install Homebrew
-		From : https://brew.sh/
+                From : https://brew.sh/
 
 	     /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 
@@ -214,10 +219,14 @@ You can use it, commercially as well. You may make changes to the code, but I
 (and the license) ask that you give these changes back to the community.
 
 ## Links
-* Ohan Smit wrote an introduction to using the application: [https://zs1sci.com/blog/nanovnasaver/]
+* Ohan Smit wrote an introduction to using the application:
+  [https://zs1sci.com/blog/nanovnasaver/]
 * HexAndFlex wrote a 3-part (thus far) series on Getting Started with the NanoVNA:
-[https://hexandflex.com/2019/08/31/getting-started-with-the-nanovna-part-1/] - Part 3 is dedicated to NanoVNASaver:
-[https://hexandflex.com/2019/09/15/getting-started-with-the-nanovna-part-3-pc-software/]
+  [https://hexandflex.com/2019/08/31/getting-started-with-the-nanovna-part-1/] - Part 3 is dedicated to NanoVNASaver:
+  [https://hexandflex.com/2019/09/15/getting-started-with-the-nanovna-part-3-pc-software/]
+* Gunthard Kraus also does a documentation in english and german:
+  [http://www.gunthard-kraus.de/fertig_NanoVNA/English/]
+  [http://www.gunthard-kraus.de/fertig_NanoVNA/Deutsch/]
 
 ## Credits
 Original application by Rune B. Broberg (5Q5R)
