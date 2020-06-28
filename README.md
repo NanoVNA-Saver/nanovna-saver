@@ -59,28 +59,29 @@ PyQT5, numpy, scipy and pyserial.
 
 #### Binary releases
 You can find the latest binary (.exe) release for Windows at
-https://github.com/mihtjel/nanovna-saver/releases/latest
+https://github.com/NanoVNA-Saver/nanovna-saver/releases/tag/v0.3.0
 
 The downloadable executable runs directly, and requires no installation. For
 Windows 7, it does require Service Pack 1 and [Microsoft VC++
 Redistributable](https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads).
 For most users, this is already installed.
 
-Windows versions older than Windows 7 are not known to work.  It may be
-possible to run on those directly from the python code:
+Windows 10
+Versions older than Windows 7 are not known to work.  
+It may be possible to run on those directly from the python code:
 
 #### Installation and Use with pip
 
 1. Clone repo and cd into the directory
 
-        git clone https://github.com/mihtjel/nanovna-saver
+        git clone https://github.com/NanoVNA-Saver/nanovna-saver
         cd nanovna-saver
 
-3. Run the pip installation
+2. Run the pip installation
 
         pip3 install .
 
-4. Once completed run with the following command
+3. Once completed run with the following command
 
         NanoVNASaver
 
@@ -93,7 +94,7 @@ possible to run on those directly from the python code:
 
 3. Clone repo and cd into the directory 
 		
-        git clone https://github.com/mihtjel/nanovna-saver
+        git clone https://github.com/NanoVNA-Saver/nanovna-saver
         cd nanovna-saver
 
 4. Update pip and run the pip installation
@@ -111,9 +112,22 @@ distributions.)
     
     
 ### Mac OS:
+#### MacPorts
+
+Via a MacPorts distribution maintained by @ra1nb0w.
+
+1. Install MacPorts following the 
+   [install guide](https://www.macports.org/install.php)
+2. Install NanoVNASaver :
+
+        sudo port install NanoVNASaver
+
+3. Now you can run the software from shell `NanoVNASaver` or run as app
+   `/Applications/MacPorts/NanoVNASaver.app`
+
 #### Homebrew
 1. Install Homebrew
-		From : https://brew.sh/
+                From : https://brew.sh/
 
 	     /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 
@@ -123,7 +137,7 @@ distributions.)
 
 3. NanoVNASaver Installation
 
-        git clone https://github.com/mihtjel/nanovna-saver
+        git clone git clone https://github.com/NanoVNA-Saver/nanovna-saver
         cd nanovna-saver
         
 4. Install local pip packages
@@ -205,10 +219,14 @@ You can use it, commercially as well. You may make changes to the code, but I
 (and the license) ask that you give these changes back to the community.
 
 ## Links
-* Ohan Smit wrote an introduction to using the application: [https://zs1sci.com/blog/nanovnasaver/]
+* Ohan Smit wrote an introduction to using the application:
+  [https://zs1sci.com/blog/nanovnasaver/]
 * HexAndFlex wrote a 3-part (thus far) series on Getting Started with the NanoVNA:
-[https://hexandflex.com/2019/08/31/getting-started-with-the-nanovna-part-1/] - Part 3 is dedicated to NanoVNASaver:
-[https://hexandflex.com/2019/09/15/getting-started-with-the-nanovna-part-3-pc-software/]
+  [https://hexandflex.com/2019/08/31/getting-started-with-the-nanovna-part-1/] - Part 3 is dedicated to NanoVNASaver:
+  [https://hexandflex.com/2019/09/15/getting-started-with-the-nanovna-part-3-pc-software/]
+* Gunthard Kraus also does a documentation in english and german:
+  [http://www.gunthard-kraus.de/fertig_NanoVNA/English/]
+  [http://www.gunthard-kraus.de/fertig_NanoVNA/Deutsch/]
 
 ## Credits
 Original application by Rune B. Broberg (5Q5R)
