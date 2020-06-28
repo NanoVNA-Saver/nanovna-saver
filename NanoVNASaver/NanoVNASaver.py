@@ -36,7 +36,7 @@ from .Formatting import (
     parse_frequency,
 )
 from .Hardware import get_interfaces, get_VNA, InvalidVNA
-from .RFTools import Datapoint
+from .RFTools import Datapoint, corrAttData
 from .Charts.Chart import Chart
 from .Charts import (
     CapacitanceChart,
@@ -54,7 +54,6 @@ from .SweepWorker import SweepWorker
 from .Settings import BandsModel
 from .Touchstone import Touchstone
 from .About import VERSION as ver
-from NanoVNASaver.RFTools import corrAttData
 
 logger = logging.getLogger(__name__)
 
