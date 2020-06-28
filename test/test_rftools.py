@@ -24,7 +24,7 @@ from NanoVNASaver.RFTools import Datapoint, \
     reflection_coefficient, gamma_to_impedance, clamp_value, \
     parallel_to_serial, serial_to_parallel, \
     impedance_to_capacitance, impedance_to_inductance, \
-    groupDelay
+    groupDelay, corr_att_data
 import math
 
 
@@ -120,6 +120,19 @@ class TestRFTools(unittest.TestCase):
         ]
         self.assertAlmostEqual(groupDelay(dpoints, 1), -9.514e-5)
         self.assertEqual(groupDelay(dpoints0, 1), 0.0)
+
+    def test_cor_att_data(self):
+        dp1 = [
+            Datapoint(100000, 0.1091, 0.3118),
+            Datapoint(100001, 0.1091, 0.3124),
+            Datapoint(100002, 0.1091, 0.3130),
+        ]
+        dp2 = corr_att_data(dp1, 10)
+        self.assertEqual(dp2[0].gain - dp1[0].gain, 10)
+        self.assertEqual(len(dp1), len(dp2))
+        # ignore negative attenuation
+        dp3 = corr_att_data(dp1, -10)
+        self.assertEqual(dp1, dp3)
 
 
 class TestRFToolsDatapoint(unittest.TestCase):
