@@ -21,15 +21,29 @@ from time import sleep
 from typing import List
 
 import numpy as np
-from PyQt5 import QtCore
+from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSlot, pyqtSignal
 
-import NanoVNASaver
 from NanoVNASaver.Calibration import Calibration
 from NanoVNASaver.Formatting import parse_frequency
 from NanoVNASaver.RFTools import Datapoint
 
 logger = logging.getLogger(__name__)
+
+
+def truncate(values, count):
+    keep = len(values) - count
+    logger.debug("Truncating from %d values to %d", len(values), keep)
+    if count < 1 or keep < 1:
+        logger.info("Not doing illegal truncate")
+        return values
+    truncated = []
+    for valueset in np.swapaxes(values, 0, 1).tolist():
+        avg = complex(*np.average(valueset, 0))
+        truncated.append(
+            sorted(valueset,
+                   key=lambda v: abs(avg - complex(*v)))[:keep])
+    return np.swapaxes(truncated, 0, 1).tolist()
 
 
 class WorkerSignals(QtCore.QObject):
@@ -40,7 +54,7 @@ class WorkerSignals(QtCore.QObject):
 
 
 class SweepWorker(QtCore.QRunnable):
-    def __init__(self, app: NanoVNASaver):
+    def __init__(self, app: QtWidgets.QWidget):
         super().__init__()
         logger.info("Initializing SweepWorker")
         self.signals = WorkerSignals()
@@ -287,46 +301,14 @@ class SweepWorker(QtCore.QRunnable):
 
         logger.debug("Post-processing averages")
         logger.debug("Truncating %d values by %d", len(val11), self.truncates)
-        val11 = self.truncate(val11, self.truncates)
-        val21 = self.truncate(val21, self.truncates)
+        val11 = truncate(val11, self.truncates)
+        val21 = truncate(val21, self.truncates)
         logger.debug("Averaging %d values", len(val11))
 
         return11 = np.average(val11, 0).tolist()
         return21 = np.average(val21, 0).tolist()
 
         return freq, return11, return21
-
-    @staticmethod
-    def truncate(values: List[List[tuple]], count):
-        logger.debug("Truncating from %d values to %d", len(values), len(values) - count)
-        if count < 1:
-            return values
-        values = np.swapaxes(values, 0, 1)
-        return_values = []
-
-        for valueset in values:
-            # avg becomes a 2-value array of the location of the average
-            avg = np.average(valueset, 0)
-            new_valueset = valueset
-            for _ in range(count):
-                max_deviance = 0
-                max_idx = -1
-                for i, valset in enumerate(new_valueset):
-                    deviance = abs(valset[0] - avg[0])**2 + abs(valset[1] - avg[1])**2
-                    if deviance > max_deviance:
-                        max_deviance = deviance
-                        max_idx = i
-                next_valueset = []
-                # TODO: find out if valset is always a two element array
-                for i, valset in enumerate(new_valueset):
-                    if i != max_idx:
-                        next_valueset.append((valset[0], valueset[1]))
-                new_valueset = next_valueset
-
-            return_values.append(new_valueset)
-
-        return_values = np.swapaxes(return_values, 0, 1)
-        return return_values.tolist()
 
     def readSegment(self, start, stop):
         logger.debug("Setting sweep range to %d to %d", start, stop)
