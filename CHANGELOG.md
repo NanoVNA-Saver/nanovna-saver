@@ -1,3 +1,10 @@
+v0.3.2
+======
+
+- fixed crash with averaging sweeps
+  also averaging now discards reading by geometrical distance
+
+
 v0.3.1
 ======
 
