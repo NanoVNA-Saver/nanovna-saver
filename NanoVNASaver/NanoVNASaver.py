@@ -20,6 +20,7 @@ import logging
 import math
 import sys
 import threading
+from collections import OrderedDict
 from time import sleep, strftime, localtime
 from typing import List
 
@@ -53,13 +54,13 @@ from .Marker import Marker
 from .SweepWorker import SweepWorker
 from .Settings import BandsModel
 from .Touchstone import Touchstone
-from .About import VERSION as ver
+from .About import VERSION
 
 logger = logging.getLogger(__name__)
 
 
 class NanoVNASaver(QtWidgets.QWidget):
-    version = ver
+    version = VERSION
     dataAvailable = QtCore.pyqtSignal()
     scaleFactor = 1
 
@@ -133,59 +134,48 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         # outer.setContentsMargins(2, 2, 2, 2)  # Small screen mode, reduce margins?
 
-        self.s11SmithChart = SmithChart("S11 Smith Chart")
-        self.s21PolarChart = PolarChart("S21 Polar Plot")
-        self.s11SParameterChart = SParameterChart("S11 Real/Imaginary")
-        self.s21SParameterChart = SParameterChart("S21 Real/Imaginary")
-        self.s11LogMag = LogMagChart("S11 Return Loss")
-        self.s21LogMag = LogMagChart("S21 Gain")
-        self.s11Mag = MagnitudeChart("|S11|")
-        self.s21Mag = MagnitudeChart("|S21|")
-        self.s11MagZ = MagnitudeZChart("S11 |Z|")
-        self.s11Phase = PhaseChart("S11 Phase")
-        self.s21Phase = PhaseChart("S21 Phase")
-        self.s11GroupDelay = GroupDelayChart("S11 Group Delay")
-        self.s11CapacitanceChart = CapacitanceChart("S11 Serial C")
-        self.s11InductanceChart = InductanceChart("S11 Serial L")
-        self.s21GroupDelay = GroupDelayChart(
-            "S21 Group Delay", reflective=False)
-        self.permabilityChart = PermeabilityChart(
-            "S11 R/\N{GREEK SMALL LETTER OMEGA} & X/\N{GREEK SMALL LETTER OMEGA}")
-        self.s11VSWR = VSWRChart("S11 VSWR")
-        self.s11QualityFactor = QualityFactorChart("S11 Quality Factor")
-        self.s11RealImaginary = RealImaginaryChart("S11 R+jX")
+        self.charts = {
+            "s11": OrderedDict((
+                ("capacitance", CapacitanceChart("S11 Serial C")),
+                ("group_delay", GroupDelayChart("S11 Group Delay")),
+                ("inductance", InductanceChart("S11 Serial L")),
+                ("log_mag", LogMagChart("S11 Return Loss")),
+                ("magnitude", MagnitudeChart("|S11|")),
+                ("magnitude_z", MagnitudeZChart("S11 |Z|")),
+                ("permeability", PermeabilityChart(
+                    "S11 R/\N{GREEK SMALL LETTER OMEGA} &"
+                    " X/\N{GREEK SMALL LETTER OMEGA}")),
+                ("phase", PhaseChart("S11 Phase")),
+                ("q_factor", QualityFactorChart("S11 Quality Factor")),
+                ("real_imag", RealImaginaryChart("S11 R+jX")),
+                ("smith", SmithChart("S11 Smith Chart")),
+                ("s_parameter", SParameterChart("S11 Real/Imaginary")),
+                ("vswr", VSWRChart("S11 VSWR")),
+            )),
+            "s21": OrderedDict((
+                ("group_delay", GroupDelayChart("S21 Group Delay",
+                                                reflective=False)),
+                ("log_mag", LogMagChart("S21 Gain")),
+                ("magnitude", MagnitudeChart("|S21|")),
+                ("phase", PhaseChart("S21 Phase")),
+                ("polar", PolarChart("S21 Polar Plot")),
+                ("s_parameter", SParameterChart("S21 Real/Imaginary")),
+            )),
+            "combined": OrderedDict((
+                ("log_mag", CombinedLogMagChart("S11 & S21 LogMag")),
+            )),
+        }
         self.tdr_chart = TDRChart("TDR")
         self.tdr_mainwindow_chart = TDRChart("TDR")
-        self.combinedLogMag = CombinedLogMagChart("S11 & S21 LogMag")
 
         # List of all the S11 charts, for selecting
-        self.s11charts: List[Chart] = []
-        self.s11charts.append(self.s11SmithChart)
-        self.s11charts.append(self.s11LogMag)
-        self.s11charts.append(self.s11Mag)
-        self.s11charts.append(self.s11MagZ)
-        self.s11charts.append(self.s11Phase)
-        self.s11charts.append(self.s11GroupDelay)
-        self.s11charts.append(self.s11VSWR)
-        self.s11charts.append(self.s11RealImaginary)
-        self.s11charts.append(self.s11QualityFactor)
-        self.s11charts.append(self.s11SParameterChart)
-        self.s11charts.append(self.s11CapacitanceChart)
-        self.s11charts.append(self.s11InductanceChart)
-        self.s11charts.append(self.permabilityChart)
+        self.s11charts = list(self.charts["s11"].values())
 
         # List of all the S21 charts, for selecting
-        self.s21charts: List[Chart] = []
-        self.s21charts.append(self.s21PolarChart)
-        self.s21charts.append(self.s21LogMag)
-        self.s21charts.append(self.s21Mag)
-        self.s21charts.append(self.s21Phase)
-        self.s21charts.append(self.s21GroupDelay)
-        self.s21charts.append(self.s21SParameterChart)
+        self.s21charts = list(self.charts["s21"].values())
 
         # List of all charts that use both S11 and S21
-        self.combinedCharts: List[Chart] = []
-        self.combinedCharts.append(self.combinedLogMag)
+        self.combinedCharts = list(self.charts["combined"].values())
 
         # List of all charts that can be selected for display
         self.selectable_charts = self.s11charts + self.s21charts + self.combinedCharts
