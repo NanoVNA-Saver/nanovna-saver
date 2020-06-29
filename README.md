@@ -14,8 +14,8 @@ points, and generally display and analyze the resulting data.
 Copyright 2019, 2020 Rune B. Broberg
 Copyright 2020 NanoVNA-Saver Authors
 
-## Changes in this fork 
-- This fork adds support for the saa2, a vna loosely
+## Changes in v0.3.2
+- This adds support for the saa2, a vna loosely
   based on the original nanovna with frequency range up to 3Ghz. 
 - Added ability to add attenutor values in s11 sweep settings
   for amplifier measuremnts
@@ -58,8 +58,8 @@ The software was written in Python on Windows, using Pycharm, and the modules
 PyQT5, numpy, scipy and pyserial.
 
 #### Binary releases
-You can find the latest binary (.exe) release for Windows at
-https://github.com/NanoVNA-Saver/nanovna-saver/releases/tag/v0.3.0
+You can find 64bit binary releases for Windows, Linux and MacOS under
+https://github.com/NanoVNA-Saver/nanovna-saver/releases/
 
 The downloadable executable runs directly, and requires no installation. For
 Windows 7, it does require Service Pack 1 and [Microsoft VC++

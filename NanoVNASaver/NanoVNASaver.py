@@ -20,6 +20,7 @@ import logging
 import math
 import sys
 import threading
+from collections import OrderedDict
 from time import sleep, strftime, localtime
 from typing import List
 
@@ -36,7 +37,7 @@ from .Formatting import (
     parse_frequency,
 )
 from .Hardware import get_interfaces, get_VNA, InvalidVNA
-from .RFTools import Datapoint, corrAttData
+from .RFTools import Datapoint, corr_att_data
 from .Charts.Chart import Chart
 from .Charts import (
     CapacitanceChart,
@@ -53,13 +54,13 @@ from .Marker import Marker
 from .SweepWorker import SweepWorker
 from .Settings import BandsModel
 from .Touchstone import Touchstone
-from .About import VERSION as ver
+from .About import VERSION
 
 logger = logging.getLogger(__name__)
 
 
 class NanoVNASaver(QtWidgets.QWidget):
-    version = ver
+    version = VERSION
     dataAvailable = QtCore.pyqtSignal()
     scaleFactor = 1
 
@@ -133,59 +134,48 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         # outer.setContentsMargins(2, 2, 2, 2)  # Small screen mode, reduce margins?
 
-        self.s11SmithChart = SmithChart("S11 Smith Chart")
-        self.s21PolarChart = PolarChart("S21 Polar Plot")
-        self.s11SParameterChart = SParameterChart("S11 Real/Imaginary")
-        self.s21SParameterChart = SParameterChart("S21 Real/Imaginary")
-        self.s11LogMag = LogMagChart("S11 Return Loss")
-        self.s21LogMag = LogMagChart("S21 Gain")
-        self.s11Mag = MagnitudeChart("|S11|")
-        self.s21Mag = MagnitudeChart("|S21|")
-        self.s11MagZ = MagnitudeZChart("S11 |Z|")
-        self.s11Phase = PhaseChart("S11 Phase")
-        self.s21Phase = PhaseChart("S21 Phase")
-        self.s11GroupDelay = GroupDelayChart("S11 Group Delay")
-        self.s11CapacitanceChart = CapacitanceChart("S11 Serial C")
-        self.s11InductanceChart = InductanceChart("S11 Serial L")
-        self.s21GroupDelay = GroupDelayChart(
-            "S21 Group Delay", reflective=False)
-        self.permabilityChart = PermeabilityChart(
-            "S11 R/\N{GREEK SMALL LETTER OMEGA} & X/\N{GREEK SMALL LETTER OMEGA}")
-        self.s11VSWR = VSWRChart("S11 VSWR")
-        self.s11QualityFactor = QualityFactorChart("S11 Quality Factor")
-        self.s11RealImaginary = RealImaginaryChart("S11 R+jX")
+        self.charts = {
+            "s11": OrderedDict((
+                ("capacitance", CapacitanceChart("S11 Serial C")),
+                ("group_delay", GroupDelayChart("S11 Group Delay")),
+                ("inductance", InductanceChart("S11 Serial L")),
+                ("log_mag", LogMagChart("S11 Return Loss")),
+                ("magnitude", MagnitudeChart("|S11|")),
+                ("magnitude_z", MagnitudeZChart("S11 |Z|")),
+                ("permeability", PermeabilityChart(
+                    "S11 R/\N{GREEK SMALL LETTER OMEGA} &"
+                    " X/\N{GREEK SMALL LETTER OMEGA}")),
+                ("phase", PhaseChart("S11 Phase")),
+                ("q_factor", QualityFactorChart("S11 Quality Factor")),
+                ("real_imag", RealImaginaryChart("S11 R+jX")),
+                ("smith", SmithChart("S11 Smith Chart")),
+                ("s_parameter", SParameterChart("S11 Real/Imaginary")),
+                ("vswr", VSWRChart("S11 VSWR")),
+            )),
+            "s21": OrderedDict((
+                ("group_delay", GroupDelayChart("S21 Group Delay",
+                                                reflective=False)),
+                ("log_mag", LogMagChart("S21 Gain")),
+                ("magnitude", MagnitudeChart("|S21|")),
+                ("phase", PhaseChart("S21 Phase")),
+                ("polar", PolarChart("S21 Polar Plot")),
+                ("s_parameter", SParameterChart("S21 Real/Imaginary")),
+            )),
+            "combined": OrderedDict((
+                ("log_mag", CombinedLogMagChart("S11 & S21 LogMag")),
+            )),
+        }
         self.tdr_chart = TDRChart("TDR")
         self.tdr_mainwindow_chart = TDRChart("TDR")
-        self.combinedLogMag = CombinedLogMagChart("S11 & S21 LogMag")
 
         # List of all the S11 charts, for selecting
-        self.s11charts: List[Chart] = []
-        self.s11charts.append(self.s11SmithChart)
-        self.s11charts.append(self.s11LogMag)
-        self.s11charts.append(self.s11Mag)
-        self.s11charts.append(self.s11MagZ)
-        self.s11charts.append(self.s11Phase)
-        self.s11charts.append(self.s11GroupDelay)
-        self.s11charts.append(self.s11VSWR)
-        self.s11charts.append(self.s11RealImaginary)
-        self.s11charts.append(self.s11QualityFactor)
-        self.s11charts.append(self.s11SParameterChart)
-        self.s11charts.append(self.s11CapacitanceChart)
-        self.s11charts.append(self.s11InductanceChart)
-        self.s11charts.append(self.permabilityChart)
+        self.s11charts = list(self.charts["s11"].values())
 
         # List of all the S21 charts, for selecting
-        self.s21charts: List[Chart] = []
-        self.s21charts.append(self.s21PolarChart)
-        self.s21charts.append(self.s21LogMag)
-        self.s21charts.append(self.s21Mag)
-        self.s21charts.append(self.s21Phase)
-        self.s21charts.append(self.s21GroupDelay)
-        self.s21charts.append(self.s21SParameterChart)
+        self.s21charts = list(self.charts["s21"].values())
 
         # List of all charts that use both S11 and S21
-        self.combinedCharts: List[Chart] = []
-        self.combinedCharts.append(self.combinedLogMag)
+        self.combinedCharts = list(self.charts["combined"].values())
 
         # List of all charts that can be selected for display
         self.selectable_charts = self.s11charts + self.s21charts + self.combinedCharts
@@ -213,6 +203,21 @@ class NanoVNASaver(QtWidgets.QWidget):
         layout.addLayout(left_column, 0, 0)
         layout.addWidget(self.marker_frame, 0, 1)
         layout.addLayout(right_column, 0, 2)
+
+        ###############################################################
+        #  Windows
+        ###############################################################
+
+        self.windows = {
+            "about": AboutWindow(self),
+            # "analysis": AnalysisWindow(self),
+            "calibration": CalibrationWindow(self),
+            "device_settings": DeviceSettingsWindow(self),
+            "file": QtWidgets.QWidget(),
+            "sweep_settings": SweepSettingsWindow(self),
+            "setup": DisplaySettingsWindow(self),
+            "tdr": TDRWindow(self),
+        }
 
         ###############################################################
         #  Sweep control
@@ -273,9 +278,9 @@ class NanoVNASaver(QtWidgets.QWidget):
         segment_layout.addWidget(self.sweepStepLabel)
         sweep_control_layout.addRow(QtWidgets.QLabel("Segments"), segment_layout)
 
-        self.sweepSettingsWindow = SweepSettingsWindow(self)
         btn_sweep_settings_window = QtWidgets.QPushButton("Sweep settings ...")
-        btn_sweep_settings_window.clicked.connect(self.displaySweepSettingsWindow)
+        btn_sweep_settings_window.clicked.connect(
+            lambda: self.display_window("sweep_settings"))
 
         sweep_control_layout.addRow(btn_sweep_settings_window)
 
@@ -378,21 +383,21 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.marker_column.addWidget(s21_control_box)
 
         self.marker_column.addStretch(1)
-        self.analysis_window = AnalysisWindow(self)
 
+        self.windows["analysis"] = AnalysisWindow(self)
         btn_show_analysis = QtWidgets.QPushButton("Analysis ...")
-        btn_show_analysis.clicked.connect(self.displayAnalysisWindow)
+        btn_show_analysis.clicked.connect(
+            lambda: self.display_window("analysis"))
         self.marker_column.addWidget(btn_show_analysis)
 
         ###############################################################
         # TDR
         ###############################################################
 
-        self.tdr_window = TDRWindow(self)
-        self.tdr_chart.tdrWindow = self.tdr_window
-        self.tdr_mainwindow_chart.tdrWindow = self.tdr_window
-        self.tdr_window.updated.connect(self.tdr_chart.update)
-        self.tdr_window.updated.connect(self.tdr_mainwindow_chart.update)
+        self.tdr_chart.tdrWindow = self.windows["tdr"]
+        self.tdr_mainwindow_chart.tdrWindow = self.windows["tdr"]
+        self.windows["tdr"].updated.connect(self.tdr_chart.update)
+        self.windows["tdr"].updated.connect(self.tdr_mainwindow_chart.update)
 
         tdr_control_box = QtWidgets.QGroupBox()
         tdr_control_box.setTitle("TDR")
@@ -404,7 +409,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         tdr_control_layout.addRow("Estimated cable length:", self.tdr_result_label)
 
         self.tdr_button = QtWidgets.QPushButton("Time Domain Reflectometry ...")
-        self.tdr_button.clicked.connect(self.displayTDRWindow)
+        self.tdr_button.clicked.connect(lambda: self.display_window("tdr"))
 
         tdr_control_layout.addRow(self.tdr_button)
 
@@ -464,9 +469,9 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.btnSerialToggle.clicked.connect(self.serialButtonClick)
         serial_button_layout.addWidget(self.btnSerialToggle, stretch=1)
 
-        self.deviceSettingsWindow = DeviceSettingsWindow(self)
         self.btnDeviceSettings = QtWidgets.QPushButton("Manage")
-        self.btnDeviceSettings.clicked.connect(self.displayDeviceSettingsWindow)
+        self.btnDeviceSettings.clicked.connect(
+            lambda: self.display_window("device_settings"))
         serial_button_layout.addWidget(self.btnDeviceSettings, stretch=0)
         serial_control_layout.addRow(serial_button_layout)
         left_column.addWidget(serial_control_box)
@@ -475,13 +480,13 @@ class NanoVNASaver(QtWidgets.QWidget):
         #  File control
         ###############################################################
 
-        self.fileWindow = QtWidgets.QWidget()
-        self.fileWindow.setWindowTitle("Files")
-        self.fileWindow.setWindowIcon(self.icon)
-        self.fileWindow.setMinimumWidth(200)
-        QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self.fileWindow, self.fileWindow.hide)
+        self.windows["file"].setWindowTitle("Files")
+        self.windows["file"].setWindowIcon(self.icon)
+        self.windows["file"].setMinimumWidth(200)
+        QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self.windows["file"],
+                            self.windows["file"].hide)
         file_window_layout = QtWidgets.QVBoxLayout()
-        self.fileWindow.setLayout(file_window_layout)
+        self.windows["file"].setLayout(file_window_layout)
 
         load_file_control_box = QtWidgets.QGroupBox("Import file")
         load_file_control_box.setMaximumWidth(300)
@@ -511,7 +516,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         file_window_layout.addWidget(save_file_control_box)
 
         btn_open_file_window = QtWidgets.QPushButton("Files ...")
-        btn_open_file_window.clicked.connect(self.displayFileWindow)
+        btn_open_file_window.clicked.connect(
+            lambda: self.display_window("file"))
 
         ###############################################################
         #  Calibration
@@ -519,7 +525,8 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         btnOpenCalibrationWindow = QtWidgets.QPushButton("Calibration ...")
         self.calibrationWindow = CalibrationWindow(self)
-        btnOpenCalibrationWindow.clicked.connect(self.displayCalibrationWindow)
+        btnOpenCalibrationWindow.clicked.connect(
+            lambda: self.display_window("calibration"))
 
         ###############################################################
         #  Display setup
@@ -527,15 +534,14 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         btn_display_setup = QtWidgets.QPushButton("Display setup ...")
         btn_display_setup.setMaximumWidth(250)
-        self.displaySetupWindow = DisplaySettingsWindow(self)
-        btn_display_setup.clicked.connect(self.displaySettingsWindow)
-
-        self.aboutWindow = AboutWindow(self)
+        btn_display_setup.clicked.connect(
+            lambda: self.display_window("setup"))
 
         btn_about = QtWidgets.QPushButton("About ...")
         btn_about.setMaximumWidth(250)
 
-        btn_about.clicked.connect(self.displayAboutWindow)
+        btn_about.clicked.connect(
+            lambda: self.display_window("about"))
 
         button_grid = QtWidgets.QGridLayout()
         button_grid.addWidget(btn_open_file_window, 0, 0)
@@ -696,8 +702,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         if self.dataLock.acquire(blocking=True):
             self.data = data
             if self.s21att > 0:
-                corData12 = corrAttData(data12, self.s21att)
-                self.data21 = corData12
+                self.data21 = corr_att_data(data12, self.s21att)
             else:
                 self.data21 = data12
         else:
@@ -738,7 +743,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                 c.setCombinedData(self.data, self.data21)
 
             self.sweepProgressBar.setValue(self.worker.percentage)
-            self.tdr_window.updateTDR()
+            self.windows["tdr"].updateTDR()
 
             # Find the minimum S11 VSWR:
             min_vswr = 100
@@ -908,37 +913,9 @@ class NanoVNASaver(QtWidgets.QWidget):
     def sizeHint(self) -> QtCore.QSize:
         return QtCore.QSize(1100, 950)
 
-    def displaySettingsWindow(self):
-        self.displaySetupWindow.show()
-        QtWidgets.QApplication.setActiveWindow(self.displaySetupWindow)
-
-    def displaySweepSettingsWindow(self):
-        self.sweepSettingsWindow.show()
-        QtWidgets.QApplication.setActiveWindow(self.sweepSettingsWindow)
-
-    def displayDeviceSettingsWindow(self):
-        self.deviceSettingsWindow.show()
-        QtWidgets.QApplication.setActiveWindow(self.deviceSettingsWindow)
-
-    def displayCalibrationWindow(self):
-        self.calibrationWindow.show()
-        QtWidgets.QApplication.setActiveWindow(self.calibrationWindow)
-
-    def displayFileWindow(self):
-        self.fileWindow.show()
-        QtWidgets.QApplication.setActiveWindow(self.fileWindow)
-
-    def displayTDRWindow(self):
-        self.tdr_window.show()
-        QtWidgets.QApplication.setActiveWindow(self.tdr_window)
-
-    def displayAnalysisWindow(self):
-        self.analysis_window.show()
-        QtWidgets.QApplication.setActiveWindow(self.analysis_window)
-
-    def displayAboutWindow(self):
-        self.aboutWindow.show()
-        QtWidgets.QApplication.setActiveWindow(self.aboutWindow)
+    def display_window(self, name):
+        self.windows[name].show()
+        QtWidgets.QApplication.setActiveWindow(self.windows[name])
 
     def showError(self, text):
         QtWidgets.QMessageBox.warning(self, "Error", text)
