@@ -27,8 +27,8 @@ from NanoVNASaver.Calibration import Calibration
 logger = logging.getLogger(__name__)
 
 
-def _format_cal_label(data: list, prefix: str = "Set") -> str:
-    return f"{prefix} ({len(data)} points)"
+def _format_cal_label(size: int, prefix: str = "Set") -> str:
+    return f"{prefix} ({size} points)"
 
 
 class CalibrationWindow(QtWidgets.QWidget):
@@ -228,12 +228,15 @@ class CalibrationWindow(QtWidgets.QWidget):
             return False
         return True
 
-    def cal_save(self, name):
-        self.app.calibration.cals[name] = self.app.data
+    def cal_save(self, name: str):
+        if name in ("through", "isolation"):
+            self.app.calibration.insert(name, self.app.data21)
+        else:
+            self.app.calibration.insert(name, self.app.data)
         self.cal_label[name].setText(
-            _format_cal_label(self.app.data))
+            _format_cal_label(len(self.app.data)))
 
-    def manual_save(self, name):
+    def manual_save(self, name: str):
         if self.checkExpertUser():
             self.cal_save(name)
 
@@ -526,7 +529,7 @@ class CalibrationWindow(QtWidgets.QWidget):
         try:
             self.app.calibration.calc_corrections()
             self.calibration_status_label.setText(
-                _format_cal_label(self.app.calibration.cals["short"],
+                _format_cal_label(self.app.calibration.size(),
                                   "Application calibration"))
             if self.use_ideal_values.isChecked():
                 self.calibration_source_label.setText(self.app.calibration.source)
@@ -566,7 +569,7 @@ class CalibrationWindow(QtWidgets.QWidget):
         for i, name in enumerate(
                 ("short", "open", "load", "through", "isolation")):
             self.cal_label[name].setText(
-                _format_cal_label(self.app.calibration.cals[name], "Loaded"))
+                _format_cal_label(self.app.calibration.data_size(name), "Loaded"))
             if i == 2 and not self.app.calibration.isValid2Port():
                 break
         self.calculate()
@@ -639,7 +642,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.btn_automatic.setDisabled(False)
             return
 
-        if self.app.sweepSettingsWindow.continuous_sweep_radiobutton.isChecked():
+        if self.app.windows["sweep_settings"].continuous_sweep_radiobutton.isChecked():
             QtWidgets.QMessageBox(
                 QtWidgets.QMessageBox.Information,
                 "Continuous sweep enabled",
