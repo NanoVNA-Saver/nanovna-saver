@@ -220,11 +220,12 @@ class Calibration:
                     f" values at frequency {freq}Hz.")
 
             if self.isValid2Port():
+                caldata["e30"] = caldata["isolation"].z
+
                 gt = self.gamma_through(freq)
                 gm4 = caldata["through"].z
                 caldata["e10e32"] = (gm4 / gt - caldata["e30"]
                                      ) * (1 - caldata["e11"] ** 2)
-                caldata["e30"] = caldata["isolation"].z
 
         self.gen_interpolation()
         self.isCalculated = True

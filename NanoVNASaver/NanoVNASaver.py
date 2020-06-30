@@ -698,13 +698,13 @@ class NanoVNASaver(QtWidgets.QWidget):
     def stopSweep(self):
         self.worker.stopped = True
 
-    def saveData(self, data, data12, source=None):
+    def saveData(self, data, data21, source=None):
         if self.dataLock.acquire(blocking=True):
             self.data = data
             if self.s21att > 0:
-                self.data21 = corr_att_data(data12, self.s21att)
+                self.data21 = corr_att_data(data21, self.s21att)
             else:
-                self.data21 = data12
+                self.data21 = data21
         else:
             logger.error("Failed acquiring data lock while saving.")
         self.dataLock.release()
