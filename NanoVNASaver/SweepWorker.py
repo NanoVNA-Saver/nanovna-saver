@@ -24,7 +24,7 @@ import numpy as np
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSlot, pyqtSignal
 
-from NanoVNASaver.Calibration import Calibration
+from NanoVNASaver.Calibration import correct_delay
 from NanoVNASaver.Formatting import parse_frequency
 from NanoVNASaver.RFTools import Datapoint
 
@@ -123,7 +123,7 @@ class SweepWorker(QtCore.QRunnable):
 
         #  Setup complete
 
-        values = []
+        values11 = []
         values21 = []
         frequencies = []
 
@@ -140,14 +140,14 @@ class SweepWorker(QtCore.QRunnable):
                     start + (self.vna.datapoints - 1) * stepsize,
                     self.averages)
 
-                frequencies += freq
-                values += val11
-                values21 += val21
+                frequencies.extend(freq)
+                values11.extend(val11)
+                values21.extend(val21)
 
                 self.percentage = (i + 1) * (self.vna.datapoints - 1) / \
                     self.noSweeps
                 logger.debug("Saving acquired data")
-                self.saveData(frequencies, values, values21)
+                self.saveData(frequencies, values11, values21)
 
         else:
             for i in range(self.noSweeps):
@@ -160,13 +160,13 @@ class SweepWorker(QtCore.QRunnable):
                     freq, val11, val21 = self.readSegment(
                         start, start + (self.vna.datapoints - 1) * stepsize)
 
-                    frequencies += freq
-                    values += val11
-                    values21 += val21
+                    frequencies.extend(freq)
+                    values11.extend(val11)
+                    values21.extend(val21)
 
                     self.percentage = (i + 1) * 100 / self.noSweeps
                     logger.debug("Saving acquired data")
-                    self.saveData(frequencies, values, values21)
+                    self.saveData(frequencies, values11, values21)
                 except NanoVNAValueException as e:
                     self.error_message = str(e)
                     self.stopped = True
@@ -187,10 +187,10 @@ class SweepWorker(QtCore.QRunnable):
                     break
                 start = sweep_from + i * self.vna.datapoints * stepsize
                 try:
-                    _, values, values21 = self.readSegment(
+                    _, values11, values21 = self.readSegment(
                         start, start + (self.vna.datapoints-1) * stepsize)
                     logger.debug("Updating acquired data")
-                    self.updateData(values, values21, i, self.vna.datapoints)
+                    self.updateData(values11, values21, i, self.vna.datapoints)
                 except NanoVNAValueException as e:
                     self.error_message = str(e)
                     self.stopped = True
@@ -242,18 +242,22 @@ class SweepWorker(QtCore.QRunnable):
         self.signals.updated.emit()
 
     def saveData(self, frequencies, values11, values21):
+        logger.debug("Freqs: %d, values11: %d, values21: %d",
+                     len(frequencies), len(values11), len(values21))
+        v11 = values11[:]
+        v21 = values21[:]
         raw_data11 = []
         raw_data21 = []
         logger.debug("Calculating data including corrections")
-        for i, freq in enumerate(frequencies):
-            re, im = values11[i]
-            re21, im21 = values21[i]
-            raw_data11 += [Datapoint(freq, re, im)]
-            raw_data21 += [Datapoint(freq, re21, im21)]
-        self.data11, self.data21 = self.applyCalibration(
-            raw_data11, raw_data21)
+        for freq in frequencies:
+            real11, imag11 = v11.pop(0)
+            real21, imag21 = v21.pop(0)
+            raw_data11.append(Datapoint(freq, real11, imag11))
+            raw_data21.append(Datapoint(freq, real21, imag21))
         self.rawData11 = raw_data11
         self.rawData21 = raw_data21
+        self.data11, self.data21 = self.applyCalibration(
+            raw_data11, raw_data21)
         logger.debug("Saving data to application (%d and %d points)",
                      len(self.data11), len(self.data21))
         self.app.saveData(self.data11, self.data21)
@@ -266,12 +270,12 @@ class SweepWorker(QtCore.QRunnable):
                          ) -> (List[Datapoint], List[Datapoint]):
         if self.offsetDelay != 0:
             tmp = []
-            for d in raw_data11:
-                tmp.append(Calibration.correctDelay11(d, self.offsetDelay))
+            for dp in raw_data11:
+                tmp.append(correct_delay(dp, self.offsetDelay, reflect=True))
             raw_data11 = tmp
             tmp = []
-            for d in raw_data21:
-                tmp.append(Calibration.correctDelay21(d, self.offsetDelay))
+            for dp in raw_data21:
+                tmp.append(correct_delay(dp, self.offsetDelay))
             raw_data21 = tmp
 
         if not self.app.calibration.isCalculated:
@@ -281,16 +285,14 @@ class SweepWorker(QtCore.QRunnable):
         data21: List[Datapoint] = []
 
         if self.app.calibration.isValid1Port():
-            for d in raw_data11:
-                re, im = self.app.calibration.correct11(d.re, d.im, d.freq)
-                data11.append(Datapoint(d.freq, re, im))
+            for dp in raw_data11:
+                data11.append(self.app.calibration.correct11(dp))
         else:
             data11 = raw_data11
 
         if self.app.calibration.isValid2Port():
-            for d in raw_data21:
-                re, im = self.app.calibration.correct21(d.re, d.im, d.freq)
-                data21.append(Datapoint(d.freq, re, im))
+            for dp in raw_data21:
+                data21.append(self.app.calibration.correct21(dp))
         else:
             data21 = raw_data21
         return data11, data21
@@ -333,6 +335,11 @@ class SweepWorker(QtCore.QRunnable):
         # S21
         values21 = self.readData("data 1")
 
+        if (len(frequencies) != len(values11) or
+                len(frequencies) != len(values21)):
+            logger.info("No valid data during this run")
+            # TODO: display gui warning
+            return [], [], []
         return frequencies, values11, values21
 
     def readData(self, data):
