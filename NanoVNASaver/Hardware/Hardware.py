@@ -42,6 +42,7 @@ USBDEVICETYPES = (
     USBDevice(0x0483, 0x5740, "NanoVNA"),
     USBDevice(0x16c0, 0x0483, "AVNA"),
     USBDevice(0x04b4, 0x0008, "S-A-A-2"),
+    USBDevice(0x0403, 0x6001, "MR100"),
 )
 RETRIES = 3
 TIMEOUT = 0.2
@@ -79,6 +80,8 @@ def get_VNA(iface: Interface) -> 'VNA':
     # serial_port.timeout = TIMEOUT
 
     logger.info("Finding correct VNA type...")
+    if iface.baudrate==57600:
+        return Mr100(iface)
     with iface.lock:
         vna_version = detect_version(iface)
 

@@ -33,13 +33,13 @@ def drain_serial(serial_port: serial.Serial):
     logger.warning("unable to drain all data")
 
 class Interface(serial.Serial):
-    def __init__(self, interface_type: str, comment, *args, **kwargs):
+    def __init__(self, interface_type: str, comment, baudrate = 115200, *args, **kwargs):
         super().__init__(*args, **kwargs)
         assert interface_type in ('serial', 'usb', 'bt', 'network')
         self.type = interface_type
         self.comment = comment
         self.port = None
-        self.baudrate = 115200
+        self.baudrate = baudrate
         self.lock = Lock()
 
     def __str__(self):
