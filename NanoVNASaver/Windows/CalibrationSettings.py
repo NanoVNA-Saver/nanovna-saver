@@ -228,12 +228,15 @@ class CalibrationWindow(QtWidgets.QWidget):
             return False
         return True
 
-    def cal_save(self, name):
-        self.app.calibration.cals[name] = self.app.data
+    def cal_save(self, name: str):
+        if name in ("through", "isolation"):
+            self.app.calibration.cals[name] = self.app.data21[:]
+        else:
+            self.app.calibration.cals[name] = self.app.data[:]
         self.cal_label[name].setText(
             _format_cal_label(self.app.data))
 
-    def manual_save(self, name):
+    def manual_save(self, name: str):
         if self.checkExpertUser():
             self.cal_save(name)
 
@@ -639,7 +642,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.btn_automatic.setDisabled(False)
             return
 
-        if self.app.sweepSettingsWindow.continuous_sweep_radiobutton.isChecked():
+        if self.app.windows["sweep_settings"].continuous_sweep_radiobutton.isChecked():
             QtWidgets.QMessageBox(
                 QtWidgets.QMessageBox.Information,
                 "Continuous sweep enabled",
