@@ -527,8 +527,8 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             m.updateLabels(self.app.data, self.app.data21)
         self.marker_window.exampleMarker.returnloss_is_positive = state
         self.marker_window.updateMarker()
-        self.app.s11LogMag.isInverted = state
-        self.app.s11LogMag.update()
+        self.app.charts["s11"]["log_mag"].isInverted = state
+        self.app.charts["s11"]["log_mag"].update()
 
     def changeShowLines(self):
         state = self.show_lines_option.isChecked()
