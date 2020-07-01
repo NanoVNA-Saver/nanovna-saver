@@ -589,7 +589,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         ts = Touchstone(filename)
         ts.sdata[0] = self.data
         if nr_params > 1:
-            ts.sdata[1] = self.data
+            ts.sdata[1] = self.data21
             for dp in self.data:
                 ts.sdata[2].append(Datapoint(dp.freq, 0, 0))
                 ts.sdata[3].append(Datapoint(dp.freq, 0, 0))
