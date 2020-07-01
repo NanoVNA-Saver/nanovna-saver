@@ -14,7 +14,10 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import pkg_resources.py2_warn
+try:
+    import pkg_resources.py2_warn
+except ImportError:
+    pass
 from NanoVNASaver.__main__ import main
 
 if __name__ == '__main__':
