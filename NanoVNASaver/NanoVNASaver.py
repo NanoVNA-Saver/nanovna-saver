@@ -36,7 +36,8 @@ from .Formatting import (
     format_frequency, format_frequency_short, format_frequency_sweep,
     parse_frequency,
 )
-from .Hardware import get_interfaces, get_VNA, InvalidVNA
+from .Hardware.Hardware import get_interfaces, get_VNA
+from .Hardware.VNA import InvalidVNA
 from .RFTools import Datapoint, corr_att_data
 from .Charts.Chart import Chart
 from .Charts import (
@@ -606,7 +607,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         return
 
     def startSerial(self):
-        if self.serialLock.acquire():
+        with self.serialLock:
             self.serialPort = self.serialPortInput.currentData()
             if self.serialPort == "":
                 self.serialPort = self.serialPortInput.currentText()
@@ -616,52 +617,49 @@ class NanoVNASaver(QtWidgets.QWidget):
                 self.serial.timeout = 0.05
             except serial.SerialException as exc:
                 logger.error("Tried to open %s and failed: %s", self.serialPort, exc)
-                self.serialLock.release()
                 return
             self.btnSerialToggle.setText("Disconnect")
 
-            self.serialLock.release()
-            sleep(0.05)
+        sleep(0.05)
 
-            self.vna = get_VNA(self, self.serial)
-            self.vna.validateInput = self.settings.value("SerialInputValidation", True, bool)
-            self.worker.setVNA(self.vna)
+        self.vna = get_VNA(self, self.serial)
+        self.vna.validateInput = self.settings.value("SerialInputValidation", True, bool)
+        self.worker.setVNA(self.vna)
 
-            logger.info(self.vna.readFirmware())
+        logger.info(self.vna.readFirmware())
 
-            frequencies = self.vna.readFrequencies()
-            if frequencies:
-                logger.info("Read starting frequency %s and end frequency %s",
-                            frequencies[0], frequencies[100])
-                if int(frequencies[0]) == int(frequencies[100]) and (
-                        self.sweepStartInput.text() == "" or
-                        self.sweepEndInput.text() == ""):
-                    self.sweepStartInput.setText(
-                        format_frequency_sweep(int(frequencies[0])))
-                    self.sweepEndInput.setText(
-                        format_frequency_sweep(int(frequencies[100]) + 100000))
-                elif (self.sweepStartInput.text() == "" or
-                      self.sweepEndInput.text() == ""):
-                    self.sweepStartInput.setText(
-                        format_frequency_sweep(int(frequencies[0])))
-                    self.sweepEndInput.setText(
-                        format_frequency_sweep(int(frequencies[100])))
-                self.sweepStartInput.textEdited.emit(
-                    self.sweepStartInput.text())
-                self.sweepStartInput.textChanged.emit(
-                    self.sweepStartInput.text())
-            else:
-                logger.warning("No frequencies read")
-                return
-            logger.debug("Starting initial sweep")
-            self.sweep()
+        frequencies = self.vna.readFrequencies()
+        if frequencies:
+            logger.info("Read starting frequency %s and end frequency %s",
+                        frequencies[0], frequencies[100])
+            if int(frequencies[0]) == int(frequencies[100]) and (
+                    self.sweepStartInput.text() == "" or
+                    self.sweepEndInput.text() == ""):
+                self.sweepStartInput.setText(
+                    format_frequency_sweep(int(frequencies[0])))
+                self.sweepEndInput.setText(
+                    format_frequency_sweep(int(frequencies[100]) + 100000))
+            elif (self.sweepStartInput.text() == "" or
+                    self.sweepEndInput.text() == ""):
+                self.sweepStartInput.setText(
+                    format_frequency_sweep(int(frequencies[0])))
+                self.sweepEndInput.setText(
+                    format_frequency_sweep(int(frequencies[100])))
+            self.sweepStartInput.textEdited.emit(
+                self.sweepStartInput.text())
+            self.sweepStartInput.textChanged.emit(
+                self.sweepStartInput.text())
+        else:
+            logger.warning("No frequencies read")
             return
+        logger.debug("Starting initial sweep")
+        self.sweep()
+        return
 
     def stopSerial(self):
-        if self.serialLock.acquire():
+        with self.serialLock:
             logger.info("Closing connection to NanoVNA")
             self.serial.close()
-            self.serialLock.release()
             self.btnSerialToggle.setText("Connect to NanoVNA")
 
     def toggleSweepSettings(self, disabled):

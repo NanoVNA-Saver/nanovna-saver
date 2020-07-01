@@ -24,6 +24,7 @@ import serial
 from PyQt5 import QtWidgets, QtGui
 
 from NanoVNASaver.Settings import Version
+from NanoVNASaver.Hardware.Serial import drain_serial
 
 logger = logging.getLogger(__name__)
 
@@ -76,21 +77,17 @@ class VNA:
         return QtGui.QPixmap()
 
     def flushSerialBuffers(self):
-        if self.app.serialLock.acquire():
-            self.serial.write(b"\r\n\r\n")
+        with self.app.serialLock:
+            self.serial.write("\r\n\r\n".encode("ascii"))
             sleep(0.1)
             self.serial.reset_input_buffer()
             self.serial.reset_output_buffer()
             sleep(0.1)
-            self.app.serialLock.release()
 
     def readFirmware(self) -> str:
-        if self.app.serialLock.acquire():
-            result = ""
-            try:
-                data = "a"
-                while data != "":
-                    data = self.serial.readline().decode('ascii')
+        try:
+            with self.app.serialLock:
+                drain_serial(self.serial)
                 self.serial.write("info\r".encode('ascii'))
                 result = ""
                 data = ""
@@ -98,65 +95,49 @@ class VNA:
                 while data != "ch> ":
                     data = self.serial.readline().decode('ascii')
                     result += data
-            except serial.SerialException as exc:
-                logger.exception(
-                    "Exception while reading firmware data: %s", exc)
-            finally:
-                self.app.serialLock.release()
             return result
-        logger.error("Unable to acquire serial lock to read firmware.")
+        except serial.SerialException as exc:
+            logger.exception(
+                "Exception while reading firmware data: %s", exc)
         return ""
 
     def readFromCommand(self, command) -> str:
-        if self.app.serialLock.acquire():
-            result = ""
-            try:
-                data = "a"
-                while data != "":
-                    data = self.serial.readline().decode('ascii')
-                self.serial.write((command + "\r").encode('ascii'))
+        try:
+            with self.app.serialLock:
+                drain.serial(self.serial)
+                self.serial.write(f"{command}\r".encode('ascii'))
                 result = ""
                 data = ""
                 sleep(0.01)
                 while data != "ch> ":
                     data = self.serial.readline().decode('ascii')
                     result += data
-            except serial.SerialException as exc:
-                logger.exception(
-                    "Exception while reading %s: %s", command, exc)
-            finally:
-                self.app.serialLock.release()
             return result
-        logger.error("Unable to acquire serial lock to read %s", command)
+        except serial.SerialException as exc:
+            logger.exception(
+                "Exception while reading %s: %s", command, exc)
         return ""
 
     def readValues(self, value) -> List[str]:
         logger.debug("VNA reading %s", value)
-        if self.app.serialLock.acquire():
-            try:
-                data = "a"
-                while data != "":
-                    data = self.serial.readline().decode('ascii')
-                #  Then send the command to read data
-                self.serial.write(str(value + "\r").encode('ascii'))
+        try:
+            with self.app.serialLock:
+                drain_serial(self.serial)
+                self.serial.write(f"{value}\r".encode('ascii'))
                 result = ""
                 data = ""
                 sleep(0.05)
                 while data != "ch> ":
                     data = self.serial.readline().decode('ascii')
                     result += data
-                values = result.split("\r\n")
-            except serial.SerialException as exc:
-                logger.exception(
-                    "Exception while reading %s: %s", value, exc)
-                return []
-            finally:
-                self.app.serialLock.release()
+            values = result.split("\r\n")
             logger.debug(
                 "VNA done reading %s (%d values)",
                 value, len(values)-2)
             return values[1:-1]
-        logger.error("Unable to acquire serial lock to read %s", value)
+        except serial.SerialException as exc:
+            logger.exception(
+                "Exception while reading %s: %s", value, exc)
         return []
 
     def writeSerial(self, command):
@@ -164,25 +145,21 @@ class VNA:
             logger.warning("Writing without serial port being opened (%s)",
                            command)
             return
-        if self.app.serialLock.acquire():
+        with self.app.serialLock:
             try:
-                self.serial.write(str(command + "\r").encode('ascii'))
+                self.serial.write(f"{command}\r".encode('ascii'))
                 self.serial.readline()
             except serial.SerialException as exc:
                 logger.exception(
                     "Exception while writing to serial port (%s): %s",
                     command, exc)
-            finally:
-                self.app.serialLock.release()
-        return
 
     def setSweep(self, start, stop):
-        self.writeSerial("sweep " + str(start) + " " + str(stop) + " " + str(self.datapoints))
-
-# TODO: should be dropped and the serial part should be a connection class which handles
-#       unconnected devices
+            self.writeSerial(f"sweep {start} {stop} {self.datapoints}")
 
 
+# TODO: should be dropped and the serial part should be a connection class
+#       which handles unconnected devices
 class InvalidVNA(VNA):
     name = "Invalid"
     _datapoints = (0, )

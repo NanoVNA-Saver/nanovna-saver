@@ -42,7 +42,7 @@ class AVNA(VNA):
         logger.debug("Reading calibration info.")
         if not self.serial.is_open:
             return "Not connected."
-        if self.app.serialLock.acquire():
+        with self.app.serialLock:
             try:
                 data = "a"
                 while data != "":
@@ -58,8 +58,6 @@ class AVNA(VNA):
                 return values[1]
             except serial.SerialException as exc:
                 logger.exception("Exception while reading calibration info: %s", exc)
-            finally:
-                self.app.serialLock.release()
         return "Unknown"
 
     def readFrequencies(self) -> List[str]:
@@ -73,7 +71,7 @@ class AVNA(VNA):
         logger.debug("Reading version info.")
         if not self.serial.is_open:
             return
-        if self.app.serialLock.acquire():
+        with self.app.serialLock:
             try:
                 data = "a"
                 while data != "":
@@ -90,9 +88,7 @@ class AVNA(VNA):
                 return values[1]
             except serial.SerialException as exc:
                 logger.exception("Exception while reading firmware version: %s", exc)
-            finally:
-                self.app.serialLock.release()
-        return
+        return ""
 
     def setSweep(self, start, stop):
         self.writeSerial("sweep " + str(start) + " " + str(stop) + " " + str(self.datapoints))

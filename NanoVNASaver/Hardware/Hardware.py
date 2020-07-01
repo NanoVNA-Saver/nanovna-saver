@@ -30,6 +30,7 @@ from NanoVNASaver.Hardware.NanoVNA_F import NanoVNA_F
 from NanoVNASaver.Hardware.NanoVNA_H import NanoVNA_H, NanoVNA_H4
 from NanoVNASaver.Hardware.NanoVNA import NanoVNA
 from NanoVNASaver.Hardware.NanoVNA_V2 import NanoVNAV2
+from NanoVNASaver.Hardware.Serial import drain_serial
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +41,8 @@ DEVICETYPES = (
     Device(0x16c0, 0x0483, "AVNA"),
     Device(0x04b4, 0x0008, "NanaVNA-V2"),
 )
+RETRIES = 3
+TIMEOUT = 0.2
 
 
 # The USB Driver for NanoVNA V2 seems to deliver an
@@ -68,16 +71,13 @@ def get_interfaces() -> List[Tuple[str, str]]:
 
 
 def get_VNA(app, serial_port: serial.Serial) -> 'VNA':
+    serial_port.timeout = TIMEOUT
+
     logger.info("Finding correct VNA type...")
+    with app.serialLock:
+        vna_version = detect_version(serial_port)
 
-    for _ in range(3):
-        vnaType = detect_version(serial_port)
-        if vnaType != "unknown":
-            break
-
-    serial_port.timeout = 0.2
-
-    if vnaType == 'nanovnav2':
+    if vna_version == 'v2':
         logger.info("Type: NanoVNA-V2")
         return NanoVNAV2(app, serial_port)
 
@@ -112,27 +112,16 @@ def get_VNA(app, serial_port: serial.Serial) -> 'VNA':
     return NanoVNA(app, serial_port)
 
 
-def detect_version(serialPort: serial.Serial) -> str:
-    serialPort.timeout = 0.1
+def detect_version(serial_port: serial.Serial) -> str:
+    for i in range(RETRIES):
+        drain_serial(serial_port)
+        serial_port.write("\r".encode("ascii"))
+        data = serial_port.readline().decode("ascii")
+        if data == "ch> ":
+            return "v1"
+        if data == "2":
+            return "v2"
+        logger.debug("Retry detection: %s", i + 1)
+    logger.error('No VNA detected. Hardware responded to CR with: %s', data)
 
-    # drain any outstanding data in the serial incoming buffer
-    data = "a"
-    while len(data) != 0:
-        data = serialPort.read(128)
-
-    # send a \r and see what we get
-    serialPort.write(b"\r")
-
-    # will wait up to 0.1 seconds
-    data = serialPort.readline().decode('ascii')
-
-    if data == 'ch> ':
-        # this is an original nanovna
-        return 'nanovna'
-
-    if data == '2':
-        # this is a nanovna v2
-        return 'nanovnav2'
-
-    logger.error('Unknown VNA type: hardware responded to CR with: %s', data)
-    return 'unknown'
+    return ""
