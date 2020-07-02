@@ -131,7 +131,7 @@ class NanoVNAV2(VNA):
             self.serial.write(pack("<BBB",
                                    _CMD_WRITE, _ADDR_VALUES_FIFO, 0))
             # clear sweepdata
-            self._sweepdata = []
+            self._sweepdata = [(complex(), complex())] * self.datapoints
             pointstodo = self.datapoints
             while pointstodo > 0:
                 logger.info("reading values")
@@ -159,7 +159,8 @@ class NanoVNAV2(VNA):
                     fwd = complex(fwd_real, fwd_imag)
                     refl = complex(rev0_real, rev0_imag)
                     thru = complex(rev1_real, rev1_imag)
-                    self._sweepdata.append((refl / fwd, thru / fwd))
+                    logger.debug("Freq index: %i", freq_index)
+                    self._sweepdata[freq_index] = (refl / fwd, thru / fwd)
 
                 pointstodo = pointstodo - pointstoread
 

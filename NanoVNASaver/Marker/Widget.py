@@ -284,11 +284,13 @@ class Marker(QtCore.QObject, Value):
     def updateLabels(self,
                      s11data: List[RFTools.Datapoint],
                      s21data: List[RFTools.Datapoint]):
-        if self.location == -1:
+        try:
+            s11 = s11data[self.location]
+        except IndexError:
+            self.location = 0
             return
-        self.store(self.location, s11data, s21data)
 
-        s11 = s11data[self.location]
+        self.store(self.location, s11data, s21data)
 
         imp = s11.impedance()
         cap_str = format_capacitance(RFTools.impedance_to_capacitance(imp, s11.freq))
