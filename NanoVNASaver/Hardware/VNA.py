@@ -104,7 +104,7 @@ class VNA:
     def readFromCommand(self, command) -> str:
         try:
             with self.app.serialLock:
-                drain.serial(self.serial)
+                drain_serial(self.serial)
                 self.serial.write(f"{command}\r".encode('ascii'))
                 result = ""
                 data = ""
