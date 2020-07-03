@@ -16,11 +16,15 @@ points, and generally display and analyze the resulting data.
 
 # Latest Changes 
 
-## Changes in v0.3.4RC0
- - Refactored Analysis
- - Add Antenna Analysis
- - Fix bug in Through Calibration
- 
+## Changes in v0.3.4
+- Refactored Analysis
+- Add Antenna Analysis
+- Fixed bug in Through Calibration
+- Fixed bug in s2p saving
+- Fixed crash when clicking connect with no device connected
+- Fixed module error with source installation if
+  pkg\_resources missing
+  
 ## Changes in v0.3.3
 - Fixed data acquisition with S-A-A-2 / NanoVNA V2
 - Refactored calibration code

@@ -1,3 +1,14 @@
+v0.3.4
+======
+
+- Refactored Analysis
+- Add Antenna Analysis
+- Fixed bug in Through Calibration
+- Fixed bug in s2p saving
+- Fixed crash when clicking connect with no device connected
+- Fixed module error with source installation if
+  pkg\_resources missing
+
 v0.3.3
 ======
 
