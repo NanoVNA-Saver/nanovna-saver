@@ -7,22 +7,37 @@
 NanoVNASaver
 ============
 
-A multiplatform tool to save Touchstone files from
-the NanoVNA, sweep frequency spans in segments to gain more than 101 data
+A multiplatform tool to save Touchstone files from the NanoVNA, 
+sweep frequency spans in segments to gain more than 101 data
 points, and generally display and analyze the resulting data.
 
-Copyright 2019, 2020 Rune B. Broberg
-Copyright 2020 NanoVNA-Saver Authors
+ - Copyright 2019, 2020 Rune B. Broberg 
+ - Copyright 2020 NanoVNA-Saver Authors
+
+# Latest Changes 
+
+## Changes in v0.3.4RC0
+ - Refactored Analysis
+ - Add Antenna Analysis
+ - Fix bug in Through Calibration
+ 
+## Changes in v0.3.3
+- Fixed data acquisition with S-A-A-2 / NanoVNA V2
+- Refactored calibration code
+- Calibration data between known datapoints is now 
+  interpolated using spline interpolation
+- Fixed Through Calibration (CH0 -> CH1)
 
 ## Changes in v0.3.2
-- This adds support for the saa2, a vna loosely
-  based on the original nanovna with frequency range up to 3Ghz. 
-- Added ability to add attenutor values in s11 sweep settings
-  for amplifier measuremnts
+- This adds support for the SAA2, a VNA  loosely based on the
+  original NanoVNA  with frequency range up to 3GHz. 
+- Added ability to add use an attenuator and add the Antenuation 
+  in s11 sweep settings for amplifier measurements.
 
 
-## Introduction This software connects to a NanoVNA and extracts the data for
-display on a computer, and for saving to Touchstone files.
+# Introduction 
+This software connects to a NanoVNA and extracts the data for
+display on a computer and allows saving the sweep data to Touchstone files.
 
 Current features:
 - Reading data from a NanoVNA -- Compatible devices: NanoVNA, NanoVNA-H,
@@ -52,8 +67,6 @@ Current features:
 
 ## Running the application
 
-### Windows
-
 The software was written in Python on Windows, using Pycharm, and the modules
 PyQT5, numpy, scipy and pyserial.
 
@@ -61,16 +74,18 @@ PyQT5, numpy, scipy and pyserial.
 You can find 64bit binary releases for Windows, Linux and MacOS under
 https://github.com/NanoVNA-Saver/nanovna-saver/releases/
 
-The downloadable executable runs directly, and requires no installation. For
-Windows 7, it does require Service Pack 1 and [Microsoft VC++
-Redistributable](https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads).
-For most users, this is already installed.
-
-Windows 10
+### Windows
 Versions older than Windows 7 are not known to work.  
-It may be possible to run on those directly from the python code:
 
-#### Installation and Use with pip
+#### Windows 7
+It requires Service Pack 1 and [Microsoft VC++ Redistributable] 
+(https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads).
+For most users, this would already be installed.
+
+#### Windows 10
+The downloadable executable runs directly, and requires no installation. 
+
+##### Installation and Use with pip
 
 1. Clone repo and cd into the directory
 
@@ -127,7 +142,7 @@ Via a MacPorts distribution maintained by @ra1nb0w.
 
 #### Homebrew
 1. Install Homebrew
-                From : https://brew.sh/
+             From : https://brew.sh/
 
 	     /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 
@@ -176,11 +191,11 @@ frequency span, saved to save slot 0, is sufficient.  If the NanoVNA is
 completely uncalibrated, its readings may be outside the range accepted by the
 application.
 
-In-application calibration is available, either assuming ideal standards, or
+In-application calibration is available, either assuming ideal standards or
 with relevant standard correction. To manually calibrate, sweep each standard
-in turn, and press the relevant button in the calibration window. For assisted
-calibration, press the "Calibration assistant" button.  If desired, enter a
-note in the provided field describing the conditions under which the
+in turn and press the relevant button in the calibration window.
+For assisted calibration, press the "Calibration Assistant" button.  If desired, 
+enter a note in the provided field describing the conditions under which the
 calibration was performed.
 
 Calibration results may be saved and loaded using the provided buttons at the
@@ -199,7 +214,7 @@ _Currently, load capacitance is unsupported_
 
 ### TDR
 To get accurate TDR measurements, calibrate the device, and attach the cable to
-be measured at the calibration plane - ie. at the same position where the
+be measured at the calibration plane - i.e. at the same position where the
 calibration load would be attached.  Open the "Time Domain Reflectometry"
 window, and select the correct cable type, or manually enter a propagation
 factor.
@@ -224,7 +239,7 @@ You can use it, commercially as well. You may make changes to the code, but I
 * HexAndFlex wrote a 3-part (thus far) series on Getting Started with the NanoVNA:
   [https://hexandflex.com/2019/08/31/getting-started-with-the-nanovna-part-1/] - Part 3 is dedicated to NanoVNASaver:
   [https://hexandflex.com/2019/09/15/getting-started-with-the-nanovna-part-3-pc-software/]
-* Gunthard Kraus also does a documentation in english and german:
+* Gunthard Kraus did documentation in English and German:
   [http://www.gunthard-kraus.de/fertig_NanoVNA/English/]
   [http://www.gunthard-kraus.de/fertig_NanoVNA/Deutsch/]
 
