@@ -618,6 +618,9 @@ class NanoVNASaver(QtWidgets.QWidget):
             except serial.SerialException as exc:
                 logger.error("Tried to open %s and failed: %s", self.serialPort, exc)
                 return
+            if not self.serial.isOpen() :
+                logger.error("Unable to open port %s", self.serialPort)
+                return
             self.btnSerialToggle.setText("Disconnect")
 
         sleep(0.05)

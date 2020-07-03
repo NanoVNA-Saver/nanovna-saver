@@ -10,7 +10,7 @@ import math
 
 from NanoVNASaver.Analysis import Analysis
 
-from NanoVNASaver.Hardware import InvalidVNA
+from NanoVNASaver.Hardware import VNA
 
 import numpy as np
 from NanoVNASaver.Marker import Marker
