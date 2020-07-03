@@ -155,7 +155,7 @@ class VNA:
                     command, exc)
 
     def setSweep(self, start, stop):
-            self.writeSerial(f"sweep {start} {stop} {self.datapoints}")
+        self.writeSerial(f"sweep {start} {stop} {self.datapoints}")
 
 
 # TODO: should be dropped and the serial part should be a connection class

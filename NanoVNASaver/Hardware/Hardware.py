@@ -66,7 +66,7 @@ def get_interfaces() -> List[Tuple[str, str]]:
                 port = d.device
                 logger.info("Found %s (%04x %04x) on port %s",
                             t.name, d.vid, d.pid, d.device)
-                return_ports.append((port, f"{port}({t.name})"))
+                return_ports.append((port, f"{port} ({t.name})"))
     return return_ports
 
 
@@ -91,14 +91,14 @@ def get_VNA(app, serial_port: serial.Serial) -> 'VNA':
     if firmware.find("NanoVNA-H 4") > 0:
         logger.info("Type: NanoVNA-H4")
         vna = NanoVNA_H4(app, serial_port)
-        if firmware.find("sweep_points 201") > 0:
+        if vna.readFirmware().find("sweep_points 201") > 0:
             logger.info("VNA has 201 datapoints capability")
             vna._datapoints = (201, 101)
         return vna
     if firmware.find("NanoVNA-H") > 0:
         logger.info("Type: NanoVNA-H")
         vna = NanoVNA_H(app, serial_port)
-        if firmware.find("sweep_points 201") > 0:
+        if vna.readFirmware().find("sweep_points 201") > 0:
             logger.info("VNA has 201 datapoints capability")
             vna._datapoints = (201, 101)
         return vna
@@ -113,15 +113,18 @@ def get_VNA(app, serial_port: serial.Serial) -> 'VNA':
 
 
 def detect_version(serial_port: serial.Serial) -> str:
+    data = ""
     for i in range(RETRIES):
         drain_serial(serial_port)
         serial_port.write("\r".encode("ascii"))
-        data = serial_port.readline().decode("ascii")
-        if data == "ch> ":
+        data = serial_port.read(128).decode("ascii")
+        if data.startswith("ch> "):
             return "v1"
-        if data == "2":
+        # -H versions
+        if data.startswith("\r\nch> "):
+            return "vh"
+        if data.startswith("2"):
             return "v2"
         logger.debug("Retry detection: %s", i + 1)
     logger.error('No VNA detected. Hardware responded to CR with: %s', data)
-
     return ""
