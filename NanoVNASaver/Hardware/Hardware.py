@@ -93,14 +93,14 @@ def get_VNA(app, serial_port: serial.Serial) -> 'VNA':
         vna = NanoVNA_H4(app, serial_port)
         if vna.readFirmware().find("sweep_points 201") > 0:
             logger.info("VNA has 201 datapoints capability")
-            vna._datapoints = (201, 101)
+            vna.datapoints = (201, 101)
         return vna
     if firmware.find("NanoVNA-H") > 0:
         logger.info("Type: NanoVNA-H")
         vna = NanoVNA_H(app, serial_port)
         if vna.readFirmware().find("sweep_points 201") > 0:
             logger.info("VNA has 201 datapoints capability")
-            vna._datapoints = (201, 101)
+            vna.datapoints = (201, 101)
         return vna
     if firmware.find("NanoVNA-F") > 0:
         logger.info("Type: NanoVNA-F")
