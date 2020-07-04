@@ -77,7 +77,7 @@ class NanoVNAV2(VNA):
         self.features.add("Multi data points")
 
         # firmware major version of 0xff indicates dfu mode
-        if self.firmware.major == 0xff:
+        if self.firmware.data["major"] == 0xff:
             raise IOError('Device is in DFU mode')
 
         self.sweepStartHz = 200e6

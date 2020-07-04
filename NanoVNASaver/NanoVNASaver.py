@@ -25,7 +25,6 @@ from time import sleep, strftime, localtime
 from typing import List
 
 from PyQt5 import QtWidgets, QtCore, QtGui
-from serial import SerialException
 
 from .Windows import (
     AboutWindow, AnalysisWindow, CalibrationWindow,
@@ -617,14 +616,12 @@ class NanoVNASaver(QtWidgets.QWidget):
             if not self.interface.isOpen():
                 logger.error("Unable to open port %s", self.interface)
                 return
- 
-        sleep(0.05)
-
+        sleep(0.1)
         try:
             self.vna = get_VNA(self.interface)
         except IOError as exc:
             logger.error("Unable to connect to VNA: %s", exc)
-            
+
         self.vna.validateInput = self.settings.value("SerialInputValidation", True, bool)
         self.worker.setVNA(self.vna)
 
