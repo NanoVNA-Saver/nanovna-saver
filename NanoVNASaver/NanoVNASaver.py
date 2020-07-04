@@ -463,11 +463,11 @@ class NanoVNASaver(QtWidgets.QWidget):
         serial_button_layout = QtWidgets.QHBoxLayout()
 
         self.btnSerialToggle = QtWidgets.QPushButton("Connect to device")
-        self.btnDeviceSettings.setFixedWidth(65)
         self.btnSerialToggle.clicked.connect(self.serialButtonClick)
         serial_button_layout.addWidget(self.btnSerialToggle, stretch=1)
 
         self.btnDeviceSettings = QtWidgets.QPushButton("Manage")
+        self.btnDeviceSettings.setFixedWidth(65)
         self.btnDeviceSettings.clicked.connect(
             lambda: self.display_window("device_settings"))
         serial_button_layout.addWidget(self.btnDeviceSettings, stretch=0)
