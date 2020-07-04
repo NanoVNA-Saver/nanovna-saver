@@ -115,10 +115,12 @@ class AboutWindow(QtWidgets.QWidget):
         self.updateLabels()
 
     def updateLabels(self):
-        if self.app.interface.is_open:
+        try:
             self.versionLabel.setText(
                 f"NanoVNA Firmware Version: {self.app.vna.name} "
                 f"v{self.app.vna.version}")
+        except (IOError, AttributeError):
+            pass
 
     def updateSettings(self):
         if self.updateCheckBox.isChecked():
