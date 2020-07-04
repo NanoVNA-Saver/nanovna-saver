@@ -330,7 +330,7 @@ class SweepWorker(QtCore.QRunnable):
         self.vna.setSweep(start, stop)
 
         # Let's check the frequencies first:
-        frequencies = self.readFreq()
+        frequencies = self.vna.readFrequencies()
         # S11
         values11 = self.readData("data 0")
         # S21
@@ -392,40 +392,6 @@ class SweepWorker(QtCore.QRunnable):
                         f"You can disable data validation on the"
                         f"device settings screen.")
         return returndata
-
-    def readFreq(self):
-        # TODO: Figure out why frequencies sometimes arrive as non-integers
-        logger.debug("Reading frequencies")
-        returnfreq = []
-        done = False
-        count = 0
-        while not done:
-            done = True
-            returnfreq = []
-            tmpfreq = self.vna.readFrequencies()
-            if not tmpfreq:
-                logger.warning("Read no frequencies")
-                raise NanoVNASerialException(
-                    "Failed reading frequencies: Returned no values.")
-            for f in tmpfreq:
-                if not f.isdigit():
-                    logger.warning("Got a non-digit frequency: %s", f)
-                    logger.debug("Re-reading frequencies")
-                    done = False
-                    count += 1
-                    if count == 10:
-                        logger.error(
-                            "Tried and failed %d times to read frequencies.",
-                            count)
-                    if count >= 20:
-                        logger.critical(
-                            "Tried and failed to read frequencies from the"
-                            " NanoVNA %d times.", count)
-                        raise NanoVNAValueException(
-                            f"Failed reading frequencies {count} times.")
-                else:
-                    returnfreq.append(int(f))
-        return returnfreq
 
     def setContinuousSweep(self, continuous_sweep: bool):
         self.continuousSweep = continuous_sweep

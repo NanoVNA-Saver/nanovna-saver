@@ -37,14 +37,10 @@ class AVNA(VNA):
     def isValid(self):
         return True
 
-
-    def readFrequencies(self) -> List[str]:
-        return self.readValues("frequencies")
-
     def resetSweep(self, start: int, stop: int):
-        self.writeSerial("sweep " + str(start) + " " + str(stop) + " " + str(self.datapoints))
+        self.writeSerial(f"sweep {start} {stop} {self.datapoints}")
         self.writeSerial("resume")
 
     def setSweep(self, start, stop):
-        self.writeSerial("sweep " + str(start) + " " + str(stop) + " " + str(self.datapoints))
+        self.writeSerial(f"sweep {start} {stop} {self.datapoints}")
         sleep(1)

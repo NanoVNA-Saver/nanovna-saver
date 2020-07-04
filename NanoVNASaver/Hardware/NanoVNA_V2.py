@@ -102,9 +102,9 @@ class NanoVNAV2(VNA):
             return None
         return Version(f"{resp[0]}.{resp[1]}.0")
 
-    def readFrequencies(self) -> List[str]:
+    def readFrequencies(self) -> List[int]:
         return [
-            str(int(self.sweepStartHz + i * self.sweepStepHz))
+            int(self.sweepStartHz + i * self.sweepStepHz)
             for i in range(self.datapoints)]
 
     def readValues(self, value) -> List[str]:

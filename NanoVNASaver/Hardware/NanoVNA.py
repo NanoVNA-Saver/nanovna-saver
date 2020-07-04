@@ -96,11 +96,8 @@ class NanoVNA(VNA):
                 "Exception while capturing screenshot: %s", exc)
         return QtGui.QPixmap()
 
-    def readFrequencies(self) -> List[str]:
-        return self.readValues("frequencies")
-
     def resetSweep(self, start: int, stop: int):
-        self.writeSerial("sweep {start} {stop} {self.datapoints}")
+        self.writeSerial(f"sweep {start} {stop} {self.datapoints}")
         self.writeSerial("resume")
 
     def setSweep(self, start, stop):

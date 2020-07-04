@@ -53,9 +53,8 @@ class VNA:
 
         return self.features
 
-    # TODO: check return types
     def readFrequencies(self) -> List[int]:
-        return []
+        return [int(f) for f in self.readValues("frequencies")]
 
     def resetSweep(self, start: int, stop: int):
         pass

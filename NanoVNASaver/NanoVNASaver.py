@@ -632,24 +632,22 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.btnSerialToggle.setText("Disconnect")
 
         frequencies = self.vna.readFrequencies()
-        if frequencies:
-            logger.info("Read starting frequency %s and end frequency %s",
-                        frequencies[0], frequencies[-1])
-            if (self.sweepStartInput.text() == "" or
-                    self.sweepEndInput.text() == ""):
-                self.sweepStartInput.setText(
-                    format_frequency_sweep(int(frequencies[0])))
-                if int(frequencies[0]) < int(frequencies[-1]):
-                    self.sweepEndInput.setText(
-                        format_frequency_sweep(int(frequencies[-1])))
-                else:
-                    self.sweepEndInput.setText(
-                        format_frequency_sweep(int(frequencies[-1]) + 100000))
-            self.sweepStartInput.textEdited.emit(self.sweepStartInput.text())
-            self.sweepStartInput.textChanged.emit(self.sweepStartInput.text())
-        else:
+        if not frequencies:
             logger.warning("No frequencies read")
             return
+        logger.info("Read starting frequency %s and end frequency %s",
+                    frequencies[0], frequencies[-1])
+        self.sweepStartInput.setText(
+            format_frequency_sweep(frequencies[0]))
+        if frequencies[0] < frequencies[-1]:
+            self.sweepEndInput.setText(
+                format_frequency_sweep(frequencies[-1]))
+        else:
+            self.sweepEndInput.setText(
+                format_frequency_sweep(frequencies[-1] + 100000))
+        self.sweepStartInput.textEdited.emit(self.sweepStartInput.text())
+        self.sweepStartInput.textChanged.emit(self.sweepStartInput.text())
+
         logger.debug("Starting initial sweep")
         self.sweep()
 
