@@ -53,7 +53,7 @@ class AboutWindow(QtWidgets.QWidget):
             f"NanoVNASaver version {self.app.version}"))
         layout.addWidget(QtWidgets.QLabel(""))
         layout.addWidget(QtWidgets.QLabel(
-            "\N{COPYRIGHT SIGN} Copyright 2019, 2020 Rune B. Broberg"
+            "\N{COPYRIGHT SIGN} Copyright 2019, 2020 Rune B. Broberg\n"
             "\N{COPYRIGHT SIGN} Copyright 2020 NanoVNA-Saver Authors"
             ))
         layout.addWidget(QtWidgets.QLabel(
@@ -119,8 +119,8 @@ class AboutWindow(QtWidgets.QWidget):
             logger.debug("Valid VNA")
             v: Version = self.app.vna.version
             self.versionLabel.setText(
-                f"NanoVNA Firmware Version: {self.app.vna.name}"
-                f"{v.version_string}")
+                f"NanoVNA Firmware Version: {self.app.vna.name}  "
+                f"v{v.version_string}")
 
     def updateSettings(self):
         if self.updateCheckBox.isChecked():
