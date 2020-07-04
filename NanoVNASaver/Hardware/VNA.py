@@ -63,9 +63,6 @@ class VNA:
     def isValid(self):
         return False
 
-    def isDFU(self):
-        return False
-
     def getFeatures(self) -> List[str]:
         return self.features
 
@@ -176,8 +173,6 @@ class VNA:
         except serial.SerialException as exc:
             logger.exception("Exception while reading firmware version: %s", exc)
         return ""
-
-
 
     def writeSerial(self, command):
         if not self.serial.is_open:

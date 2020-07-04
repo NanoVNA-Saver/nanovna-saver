@@ -78,27 +78,13 @@ class NanoVNAV2(VNA):
 
         # firmware major version of 0xff indicates dfu mode
         if self.firmware.major == 0xff:
-            self._isDFU = True
-            return
+            raise IOError('Device is in DFU mode')
 
-        self._isDFU = False
         self.sweepStartHz = 200e6
         self.sweepStepHz = 1e6
         self._sweepdata = []
         self._updateSweep()
         # self.setSweep(200e6, 300e6)
-
-    def isValid(self):
-        if self.isDFU():
-            return False
-        return True
-
-    def isDFU(self):
-        return self._isDFU
-
-    def checkValid(self):
-        if self.isDFU():
-            raise IOError('Device is in DFU mode')
 
     def getCalibration(self) -> str:
         return "Unknown"
@@ -117,14 +103,11 @@ class NanoVNAV2(VNA):
         return Version(f"{resp[0]}.{resp[1]}.0")
 
     def readFrequencies(self) -> List[str]:
-        self.checkValid()
         return [
             str(int(self.sweepStartHz + i * self.sweepStepHz))
             for i in range(self.datapoints)]
 
     def readValues(self, value) -> List[str]:
-        self.checkValid()
-
         # Actually grab the data only when requesting channel 0.
         # The hardware will return all channels which we will store.
         if value == "data 0":
@@ -181,7 +164,6 @@ class NanoVNAV2(VNA):
 
     def resetSweep(self, start: int, stop: int):
         self.setSweep(start, stop)
-        return
 
     # returns device variant
     def readVersion(self):
@@ -207,7 +189,6 @@ class NanoVNAV2(VNA):
         return
 
     def _updateSweep(self):
-        self.checkValid()
         cmd = pack("<BBQ", _CMD_WRITE8,
                    _ADDR_SWEEP_START, int(self.sweepStartHz))
         cmd += pack("<BBQ", _CMD_WRITE8,
