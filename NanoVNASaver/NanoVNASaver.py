@@ -452,7 +452,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.rescanSerialPort()
         self.serialPortInput.setEditable(True)
         btn_rescan_serial_port = QtWidgets.QPushButton("Rescan")
-        btn_rescan_serial_port.setFixedWidth(60)
+        btn_rescan_serial_port.setFixedWidth(65)
         btn_rescan_serial_port.clicked.connect(self.rescanSerialPort)
         serial_port_input_layout = QtWidgets.QHBoxLayout()
         serial_port_input_layout.addWidget(self.serialPortInput)
@@ -463,6 +463,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         serial_button_layout = QtWidgets.QHBoxLayout()
 
         self.btnSerialToggle = QtWidgets.QPushButton("Connect to device")
+        self.btnDeviceSettings.setFixedWidth(65)
         self.btnSerialToggle.clicked.connect(self.serialButtonClick)
         serial_button_layout.addWidget(self.btnSerialToggle, stretch=1)
 
