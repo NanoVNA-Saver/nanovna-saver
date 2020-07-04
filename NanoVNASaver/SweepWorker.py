@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 def truncate(values: List[List[Tuple]], count: int) -> List[List[Tuple]]:
+    """truncate drops extrema from data list if averaging is active"""
     keep = len(values) - count
     logger.debug("Truncating from %d values to %d", len(values), keep)
     if count < 1 or keep < 1:
