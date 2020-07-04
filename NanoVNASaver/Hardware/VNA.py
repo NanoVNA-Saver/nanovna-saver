@@ -70,6 +70,23 @@ class VNA:
         return self.features
 
     def getCalibration(self) -> str:
+        logger.debug("Reading calibration info.")
+        if not self.serial.is_open:
+            return "Not connected."
+        with self.serial.lock:
+            try:
+                drain_serial(self.serial)
+                self.serial.write("cal\r".encode('ascii'))
+                result = ""
+                data = ""
+                sleep(0.1)
+                while "ch>" not in data:
+                    data = self.serial.readline().decode('ascii')
+                    result += data
+                values = result.splitlines()
+                return values[1]
+            except serial.SerialException as exc:
+                logger.exception("Exception while reading calibration info: %s", exc)
         return "Unknown"
 
     def getScreenshot(self) -> QtGui.QPixmap:
@@ -138,6 +155,29 @@ class VNA:
             logger.exception(
                 "Exception while reading %s: %s", value, exc)
         return []
+
+    def readVersion(self) -> str:
+        logger.debug("Reading version info.")
+        if not self.serial.is_open:
+            return ""
+        try:
+            with self.serial.lock:
+                drain_serial(self.serial)
+                self.serial.write("version\r".encode('ascii'))
+                result = ""
+                data = ""
+                sleep(0.1)
+                while "ch>" not in data:
+                    data = self.serial.readline().decode('ascii')
+                    result += data
+            values = result.splitlines()
+            logger.debug("Found version info: %s", values[1])
+            return values[1]
+        except serial.SerialException as exc:
+            logger.exception("Exception while reading firmware version: %s", exc)
+        return ""
+
+
 
     def writeSerial(self, command):
         if not self.serial.is_open:

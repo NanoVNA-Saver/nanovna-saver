@@ -100,6 +100,9 @@ class NanoVNAV2(VNA):
         if self.isDFU():
             raise IOError('Device is in DFU mode')
 
+    def getCalibration(self) -> str:
+        return "Unknown"
+
     def readFirmware(self) -> str:
         # read register 0xf3 and 0xf4 (firmware major and minor version)
         cmd = pack("<BBBB",

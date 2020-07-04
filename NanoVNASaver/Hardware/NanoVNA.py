@@ -58,48 +58,31 @@ class NanoVNA(VNA):
     def isValid(self):
         return True
 
-    def getCalibration(self) -> str:
-        logger.debug("Reading calibration info.")
-        if not self.serial.is_open:
-            return "Not connected."
+    def _capture_data(self) -> bytes:
         with self.serial.lock:
-            try:
-                drain_serial(self.serial)
-                self.serial.write("cal\r".encode('ascii'))
-                result = ""
-                data = ""
-                sleep(0.1)
-                while "ch>" not in data:
-                    data = self.serial.readline().decode('ascii')
-                    result += data
-                values = result.splitlines()
-                return values[1]
-            except serial.SerialException as exc:
-                logger.exception("Exception while reading calibration info: %s", exc)
-        return "Unknown"
+            drain_serial(self.serial)
+            timeout = self.serial.timeout
+            self.serial.write("capture\r".encode('ascii'))
+            self.serial.timeout = 4
+            self.serial.readline()
+            image_data = self.serial.read(
+                self.screenwidth * self.screenheight * 2)
+            self.serial.timeout = timeout
+        rgb_data = struct.unpack(
+            f">{self.screenwidth * self.screenheight}H",
+            image_data)
+        rgb_array = np.array(rgb_data, dtype=np.uint32)
+        return (0xFF000000 +
+                ((rgb_array & 0xF800) << 8) +
+                ((rgb_array & 0x07E0) << 5) +
+                ((rgb_array & 0x001F) << 3))
 
     def getScreenshot(self) -> QtGui.QPixmap:
         logger.debug("Capturing screenshot...")
         if not self.serial.is_open:
             return QtGui.QPixmap()
         try:
-            with self.serial.lock:
-                drain_serial(self.serial)
-                timeout = self.serial.timeout
-                self.serial.write("capture\r".encode('ascii'))
-                self.serial.timeout = 4
-                self.serial.readline()
-                image_data = self.serial.read(
-                    self.screenwidth * self.screenheight * 2)
-                self.serial.timeout = timeout
-            rgb_data = struct.unpack(
-                f">{self.screenwidth * self.screenheight}H",
-                image_data)
-            rgb_array = np.array(rgb_data, dtype=np.uint32)
-            rgba_array = (0xFF000000 +
-                          ((rgb_array & 0xF800) << 8) +
-                          ((rgb_array & 0x07E0) << 5) +
-                          ((rgb_array & 0x001F) << 3))
+            rgba_array = self._capture_data()
             image = QtGui.QImage(
                 rgba_array,
                 self.screenwidth,
@@ -118,27 +101,6 @@ class NanoVNA(VNA):
     def resetSweep(self, start: int, stop: int):
         self.writeSerial("sweep {start} {stop} {self.datapoints}")
         self.writeSerial("resume")
-
-    def readVersion(self):
-        logger.debug("Reading version info.")
-        if not self.serial.is_open:
-            return ""
-        try:
-            with self.serial.lock:
-                drain_serial(self.serial)
-                self.serial.write("version\r".encode('ascii'))
-                result = ""
-                data = ""
-                sleep(0.1)
-                while "ch>" not in data:
-                    data = self.serial.readline().decode('ascii')
-                    result += data
-            values = result.splitlines()
-            logger.debug("Found version info: %s", values[1])
-            return values[1]
-        except serial.SerialException as exc:
-            logger.exception("Exception while reading firmware version: %s", exc)
-        return ""
 
     def setSweep(self, start, stop):
         if self.useScan:

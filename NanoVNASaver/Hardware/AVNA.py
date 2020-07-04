@@ -20,8 +20,6 @@ import logging
 from time import sleep
 from typing import List
 
-import serial
-
 from NanoVNASaver.Hardware.Serial import Interface
 from NanoVNASaver.Hardware.VNA import VNA, Version
 
@@ -39,27 +37,6 @@ class AVNA(VNA):
     def isValid(self):
         return True
 
-    def getCalibration(self) -> str:
-        logger.debug("Reading calibration info.")
-        if not self.serial.is_open:
-            return "Not connected."
-        with self.serial.lock:
-            try:
-                data = "a"
-                while data != "":
-                    data = self.serial.readline().decode('ascii')
-                self.serial.write("cal\r".encode('ascii'))
-                result = ""
-                data = ""
-                sleep(0.1)
-                while "ch>" not in data:
-                    data = self.serial.readline().decode('ascii')
-                    result += data
-                values = result.splitlines()
-                return values[1]
-            except serial.SerialException as exc:
-                logger.exception("Exception while reading calibration info: %s", exc)
-        return "Unknown"
 
     def readFrequencies(self) -> List[str]:
         return self.readValues("frequencies")
@@ -67,29 +44,6 @@ class AVNA(VNA):
     def resetSweep(self, start: int, stop: int):
         self.writeSerial("sweep " + str(start) + " " + str(stop) + " " + str(self.datapoints))
         self.writeSerial("resume")
-
-    def readVersion(self):
-        logger.debug("Reading version info.")
-        if not self.serial.is_open:
-            return
-        with self.serial.lock:
-            try:
-                data = "a"
-                while data != "":
-                    data = self.serial.readline().decode('ascii')
-                self.serial.write("version\r".encode('ascii'))
-                result = ""
-                data = ""
-                sleep(0.1)
-                while "ch>" not in data:
-                    data = self.serial.readline().decode('ascii')
-                    result += data
-                values = result.splitlines()
-                logger.debug("Found version info: %s", values[1])
-                return values[1]
-            except serial.SerialException as exc:
-                logger.exception("Exception while reading firmware version: %s", exc)
-        return ""
 
     def setSweep(self, start, stop):
         self.writeSerial("sweep " + str(start) + " " + str(stop) + " " + str(self.datapoints))
