@@ -39,7 +39,7 @@ Device = namedtuple("Device", "vid pid name")
 DEVICETYPES = (
     Device(0x0483, 0x5740, "NanoVNA"),
     Device(0x16c0, 0x0483, "AVNA"),
-    Device(0x04b4, 0x0008, "NanaVNA-V2"),
+    Device(0x04b4, 0x0008, "NanoVNA-V2"),
 )
 RETRIES = 3
 TIMEOUT = 0.2
