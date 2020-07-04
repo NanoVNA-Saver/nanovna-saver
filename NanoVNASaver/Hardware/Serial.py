@@ -1,5 +1,8 @@
-#  NanoVNASaver - a python program to view and export Touchstone data from a NanoVNA
-#  Copyright (C) 2019.  Rune B. Broberg
+#  NanoVNASaver
+#
+#  A python program to view and export Touchstone data from a NanoVNA
+#  Copyright (C) 2019, 2020  Rune B. Broberg
+#  Copyright (C) 2020 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -13,12 +16,10 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+import serial
 
-try:
-    import pkg_resources.py2_warn
-except ImportError:
-    pass
-from NanoVNASaver.__main__ import main
-
-if __name__ == '__main__':
-    main()
+def drain_serial(serial_port: serial.Serial):
+    """drain up to 10k outstanding data in the serial incoming buffer"""
+    for _ in range(80):
+        if len(serial_port.read(128)) == 0:
+            break

@@ -28,6 +28,9 @@ logger = logging.getLogger(__name__)
 
 
 class VSWRAnalysis(Analysis):
+    max_dips_shown = 3
+    vswr_limit_value = 1.5
+    
     class QHLine(QtWidgets.QFrame):
         def __init__(self):
             super().__init__()
@@ -41,7 +44,7 @@ class VSWRAnalysis(Analysis):
         self._widget.setLayout(self.layout)
 
         self.input_vswr_limit = QtWidgets.QDoubleSpinBox()
-        self.input_vswr_limit.setValue(1.5)
+        self.input_vswr_limit.setValue(self.vswr_limit_value)
         self.input_vswr_limit.setSingleStep(0.1)
         self.input_vswr_limit.setMinimum(1)
         self.input_vswr_limit.setMaximum(25)
@@ -56,7 +59,7 @@ class VSWRAnalysis(Analysis):
         self.layout.addRow(self.results_label)
 
     def runAnalysis(self):
-        max_dips_shown = 3
+        max_dips_shown = self.max_dips_shown
         data = []
         for d in self.app.data:
             data.append(d.vswr)
@@ -111,7 +114,7 @@ class VSWRAnalysis(Analysis):
                 dips.remove(dips[min_idx])
                 minimums.remove(minimums[min_idx])
             minimums = best_dips
-
+        self.minimums = minimums
         if len(minimums) > 0:
             for m in minimums:
                 start, lowest, end = m

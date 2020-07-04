@@ -66,7 +66,8 @@ class NanoVNAV2(VNA):
             tty.setraw(self.serial.fd)
 
         # reset protocol to known state
-        self.serial.write(pack("<Q", 0))
+        with self.app.serialLock:
+            self.serial.write(pack("<Q", 0))
 
         self.version = self.readVersion()
         self.firmware = self.readFirmware()
@@ -103,9 +104,9 @@ class NanoVNAV2(VNA):
         cmd = pack("<BBBB",
                    _CMD_READ, _ADDR_FW_MAJOR,
                    _CMD_READ, _ADDR_FW_MINOR)
-        self.serial.write(cmd)
-
-        resp = self.serial.read(2)
+        with self.app.serialLock:
+            self.serial.write(cmd)
+            resp = self.serial.read(2)
         if len(resp) != 2:
             logger.error("Timeout reading version registers")
             return None
@@ -119,50 +120,51 @@ class NanoVNAV2(VNA):
 
     def readValues(self, value) -> List[str]:
         self.checkValid()
-        self.serial.timeout = 8  # should be enough
 
         # Actually grab the data only when requesting channel 0.
         # The hardware will return all channels which we will store.
         if value == "data 0":
             # reset protocol to known state
-            self.serial.write(pack("<Q", 0))
+            with self.app.serialLock:
+                self.serial.timeout = 8  # should be enough
+                self.serial.write(pack("<Q", 0))
 
-            # cmd: write register 0x30 to clear FIFO
-            self.serial.write(pack("<BBB",
-                                   _CMD_WRITE, _ADDR_VALUES_FIFO, 0))
-            # clear sweepdata
-            self._sweepdata = [(complex(), complex())] * self.datapoints
-            pointstodo = self.datapoints
-            while pointstodo > 0:
-                logger.info("reading values")
-                pointstoread = min(255, pointstodo)
-                # cmd: read FIFO, addr 0x30
-                self.serial.write(
-                    pack("<BBB",
-                         _CMD_READFIFO, _ADDR_VALUES_FIFO,
-                         pointstoread))
+                # cmd: write register 0x30 to clear FIFO
+                self.serial.write(pack("<BBB",
+                                    _CMD_WRITE, _ADDR_VALUES_FIFO, 0))
+                # clear sweepdata
+                self._sweepdata = [(complex(), complex())] * self.datapoints
+                pointstodo = self.datapoints
+                while pointstodo > 0:
+                    logger.info("reading values")
+                    pointstoread = min(255, pointstodo)
+                    # cmd: read FIFO, addr 0x30
+                    self.serial.write(
+                        pack("<BBB",
+                            _CMD_READFIFO, _ADDR_VALUES_FIFO,
+                            pointstoread))
 
-                # each value is 32 bytes
-                nBytes = pointstoread * 32
+                    # each value is 32 bytes
+                    nBytes = pointstoread * 32
 
-                # serial .read() will wait for exactly nBytes bytes
-                arr = self.serial.read(nBytes)
-                if nBytes != len(arr):
-                    logger.error("expected %d bytes, got %d",
-                                 nBytes, len(arr))
-                    return []
+                    # serial .read() will wait for exactly nBytes bytes
+                    arr = self.serial.read(nBytes)
+                    if nBytes != len(arr):
+                        logger.error("expected %d bytes, got %d",
+                                    nBytes, len(arr))
+                        return []
 
-                for i in range(pointstoread):
-                    (fwd_real, fwd_imag, rev0_real, rev0_imag, rev1_real,
-                     rev1_imag, freq_index) = unpack_from(
-                         "<iiiiiihxxxxxx", arr, i * 32)
-                    fwd = complex(fwd_real, fwd_imag)
-                    refl = complex(rev0_real, rev0_imag)
-                    thru = complex(rev1_real, rev1_imag)
-                    logger.debug("Freq index: %i", freq_index)
-                    self._sweepdata[freq_index] = (refl / fwd, thru / fwd)
+                    for i in range(pointstoread):
+                        (fwd_real, fwd_imag, rev0_real, rev0_imag, rev1_real,
+                        rev1_imag, freq_index) = unpack_from(
+                            "<iiiiiihxxxxxx", arr, i * 32)
+                        fwd = complex(fwd_real, fwd_imag)
+                        refl = complex(rev0_real, rev0_imag)
+                        thru = complex(rev1_real, rev1_imag)
+                        logger.debug("Freq index: %i", freq_index)
+                        self._sweepdata[freq_index] = (refl / fwd, thru / fwd)
 
-                pointstodo = pointstodo - pointstoread
+                    pointstodo = pointstodo - pointstoread
 
             ret = [x[0] for x in self._sweepdata]
             ret = [str(x.real) + ' ' + str(x.imag) for x in ret]
@@ -181,9 +183,9 @@ class NanoVNAV2(VNA):
     def readVersion(self):
         # read register 0xf0 (device type), 0xf2 (board revision)
         cmd = b"\x10\xf0\x10\xf2"
-        self.serial.write(cmd)
-
-        resp = self.serial.read(2)
+        with self.app.serialLock:
+            self.serial.write(cmd)
+            resp = self.serial.read(2)
         if len(resp) != 2:
             logger.error("Timeout reading version registers")
             return None
@@ -210,4 +212,5 @@ class NanoVNAV2(VNA):
                     _ADDR_SWEEP_POINTS, self.datapoints)
         cmd += pack("<BBH", _CMD_WRITE2,
                     _ADDR_SWEEP_VALS_PER_FREQ, 1)
-        self.serial.write(cmd)
+        with self.app.serialLock:
+            self.serial.write(cmd)

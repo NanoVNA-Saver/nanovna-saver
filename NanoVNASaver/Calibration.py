@@ -220,11 +220,11 @@ class Calibration:
                     f" values at frequency {freq}Hz.")
 
             if self.isValid2Port():
-                gt = self.gamma_through(freq)
-                gm4 = caldata["through"].z
-                caldata["e10e32"] = (gm4 / gt - caldata["e30"]
-                                     ) * (1 - caldata["e11"] ** 2)
                 caldata["e30"] = caldata["isolation"].z
+
+                gt = self.gamma_through(freq)
+                caldata["e10e32"] = (caldata["through"].z / gt - caldata["e30"]
+                                     ) * (1 - caldata["e11"]**2)
 
         self.gen_interpolation()
         self.isCalculated = True
@@ -238,7 +238,7 @@ class Calibration:
                 self.shortL0 + self.shortL1 * freq +
                 self.shortL2 * freq**2 + self.shortL3 * freq**3)
             # Referencing https://arxiv.org/pdf/1606.02446.pdf (18) - (21)
-            g = ((Zsp / 50 - 1) / (Zsp / 50 + 1)) * cmath.exp(
+            g = (Zsp / 50 - 1) / (Zsp / 50 + 1) * cmath.exp(
                 complex(0, 1) * 2 * math.pi * 2 * freq *
                 self.shortLength * -1)
         return g
@@ -252,7 +252,7 @@ class Calibration:
                 self.openC2 * freq**2 + self.openC3 * freq**3))
             if divisor != 0:
                 Zop = complex(0, -1) / divisor
-                g = ((Zop / 50 - 1) / (Zop / 50+ 1)) * cmath.exp(
+                g = ((Zop / 50 - 1) / (Zop / 50 + 1)) * cmath.exp(
                     complex(0, 1) * 2 * math.pi *
                     2 * freq * self.openLength * -1)
         return g
@@ -263,7 +263,7 @@ class Calibration:
             logger.debug("Using load calibration set values.")
             Zl = self.loadR + (complex(0, 1) * 2 *
                                math.pi * freq * self.loadL)
-            g = (((Zl / 50) - 1) / ((Zl / 50) + 1)) * cmath.exp(
+            g = (Zl / 50 - 1) / (Zl / 50 + 1) * cmath.exp(
                 complex(0, 1) * 2 * math.pi *
                 2 * freq * self.loadLength * -1)
         return g
