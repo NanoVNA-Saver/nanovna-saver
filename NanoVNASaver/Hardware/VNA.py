@@ -35,7 +35,7 @@ class VNA:
 
     def __init__(self, iface: Interface):
         self.serial = iface
-        self.version: Version = Version("0.0.0")
+        self.version = Version("0.0.0")
         self.features = set()
         self.validateInput = True
         self.datapoints = VNA._datapoints[0]
@@ -195,31 +195,3 @@ class VNA:
 
     def setSweep(self, start, stop):
         self.writeSerial(f"sweep {start} {stop} {self.datapoints}")
-
-
-# TODO: should be dropped and the serial part should be a connection class
-#       which handles unconnected devices
-class InvalidVNA(VNA):
-    name = "Invalid"
-    _datapoints = (0, )
-
-    def setSweep(self, start, stop):
-        return
-
-    def resetSweep(self, start, stop):
-        return
-
-    def writeSerial(self, command):
-        return
-
-    def readFirmware(self):
-        return
-
-    def readFrequencies(self) -> List[int]:
-        return []
-
-    def readValues(self, value):
-        return
-
-    def flushSerialBuffers(self):
-        return

@@ -38,10 +38,11 @@ class NanoVNA(VNA):
 
     def __init__(self, iface: Interface):
         super().__init__(iface)
-        self.version = Version(self.readVersion())
+        version_string = self.readVersion()
+        self.version = Version(version_string)
 
         logger.debug("Testing against 0.2.0")
-        if self.version.version_string.find("extended with scan") > 0:
+        if version_string.find("extended with scan") > 0:
             logger.debug("Incompatible scan command detected.")
             self.features.add("Incompatible scan command")
             self.useScan = False

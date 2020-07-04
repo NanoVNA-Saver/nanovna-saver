@@ -37,7 +37,7 @@ from .Formatting import (
     parse_frequency,
 )
 from .Hardware.Hardware import Interface, get_interfaces, get_VNA
-from .Hardware.VNA import InvalidVNA
+from .Hardware.VNA import VNA
 from .RFTools import Datapoint, corr_att_data
 from .Charts.Chart import Chart
 from .Charts import (
@@ -93,7 +93,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.noSweeps = 1  # Number of sweeps to run
 
         self.interface = Interface("serial", "None")
-        self.vna = InvalidVNA(self.interface)
+        self.vna = VNA(self.interface)
 
         self.dataLock = threading.Lock()
         # TODO: use Touchstone class as data container
@@ -639,7 +639,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                 self.sweepEndInput.setText(
                     format_frequency_sweep(int(frequencies[100]) + 100000))
             elif (self.sweepStartInput.text() == "" or
-                    self.sweepEndInput.text() == ""):
+                  self.sweepEndInput.text() == ""):
                 self.sweepStartInput.setText(
                     format_frequency_sweep(int(frequencies[0])))
                 self.sweepEndInput.setText(
