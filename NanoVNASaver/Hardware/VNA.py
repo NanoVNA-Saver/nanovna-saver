@@ -21,10 +21,10 @@ from time import sleep
 from typing import List
 
 import serial
-from PyQt5 import QtWidgets, QtGui
+from PyQt5 import QtGui
 
 from NanoVNASaver.Settings import Version
-from NanoVNASaver.Hardware.Serial import drain_serial
+from NanoVNASaver.Hardware.Serial import Interface, drain_serial
 
 logger = logging.getLogger(__name__)
 
@@ -33,9 +33,8 @@ class VNA:
     name = "VNA"
     _datapoints = (101, )
 
-    def __init__(self, app: QtWidgets.QWidget, serial_port: serial.Serial):
-        self.app = app
-        self.serial = serial_port
+    def __init__(self, iface: Interface):
+        self.serial = iface
         self.version: Version = Version("0.0.0")
         self.features = set()
         self.validateInput = True
@@ -77,7 +76,7 @@ class VNA:
         return QtGui.QPixmap()
 
     def flushSerialBuffers(self):
-        with self.app.serialLock:
+        with self.serial.lock:
             self.serial.write("\r\n\r\n".encode("ascii"))
             sleep(0.1)
             self.serial.reset_input_buffer()
@@ -86,7 +85,7 @@ class VNA:
 
     def readFirmware(self) -> str:
         try:
-            with self.app.serialLock:
+            with self.serial.lock:
                 drain_serial(self.serial)
                 self.serial.write("info\r".encode('ascii'))
                 result = ""
@@ -103,7 +102,7 @@ class VNA:
 
     def readFromCommand(self, command) -> str:
         try:
-            with self.app.serialLock:
+            with self.serial.lock:
                 drain_serial(self.serial)
                 self.serial.write(f"{command}\r".encode('ascii'))
                 result = ""
@@ -121,7 +120,7 @@ class VNA:
     def readValues(self, value) -> List[str]:
         logger.debug("VNA reading %s", value)
         try:
-            with self.app.serialLock:
+            with self.serial.lock:
                 drain_serial(self.serial)
                 self.serial.write(f"{value}\r".encode('ascii'))
                 result = ""
@@ -145,7 +144,7 @@ class VNA:
             logger.warning("Writing without serial port being opened (%s)",
                            command)
             return
-        with self.app.serialLock:
+        with self.serial.lock:
             try:
                 self.serial.write(f"{command}\r".encode('ascii'))
                 self.serial.readline()

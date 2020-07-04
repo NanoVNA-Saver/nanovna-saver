@@ -82,7 +82,7 @@ class SweepWorker(QtCore.QRunnable):
         logger.info("Initializing SweepWorker")
         self.running = True
         self.percentage = 0
-        if not self.app.serial.is_open:
+        if not self.app.interface.is_open:
             logger.debug(
                 "Attempted to run without being connected to the NanoVNA")
             self.running = False
@@ -267,7 +267,7 @@ class SweepWorker(QtCore.QRunnable):
     def applyCalibration(self,
                          raw_data11: List[Datapoint],
                          raw_data21: List[Datapoint]
-                         ) -> (List[Datapoint], List[Datapoint]):
+                         ) -> Tuple[List[Datapoint], List[Datapoint]]:
         if self.offsetDelay != 0:
             tmp = []
             for dp in raw_data11:

@@ -21,6 +21,7 @@ import platform
 from struct import pack, unpack_from
 from typing import List
 
+from NanoVNASaver.Hardware.Serial import Interface
 from NanoVNASaver.Hardware.VNA import VNA, Version
 
 if platform.system() != 'Windows':
@@ -59,14 +60,14 @@ class NanoVNAV2(VNA):
     screenwidth = 320
     screenheight = 240
 
-    def __init__(self, app, serialPort):
-        super().__init__(app, serialPort)
+    def __init__(self, iface: Interface):
+        super().__init__(iface)
 
         if platform.system() != 'Windows':
             tty.setraw(self.serial.fd)
 
         # reset protocol to known state
-        with self.app.serialLock:
+        with self.serial.lock:
             self.serial.write(pack("<Q", 0))
 
         self.version = self.readVersion()
@@ -104,7 +105,7 @@ class NanoVNAV2(VNA):
         cmd = pack("<BBBB",
                    _CMD_READ, _ADDR_FW_MAJOR,
                    _CMD_READ, _ADDR_FW_MINOR)
-        with self.app.serialLock:
+        with self.serial.lock:
             self.serial.write(cmd)
             resp = self.serial.read(2)
         if len(resp) != 2:
@@ -125,13 +126,13 @@ class NanoVNAV2(VNA):
         # The hardware will return all channels which we will store.
         if value == "data 0":
             # reset protocol to known state
-            with self.app.serialLock:
+            with self.serial.lock:
                 self.serial.timeout = 8  # should be enough
                 self.serial.write(pack("<Q", 0))
 
                 # cmd: write register 0x30 to clear FIFO
                 self.serial.write(pack("<BBB",
-                                    _CMD_WRITE, _ADDR_VALUES_FIFO, 0))
+                                       _CMD_WRITE, _ADDR_VALUES_FIFO, 0))
                 # clear sweepdata
                 self._sweepdata = [(complex(), complex())] * self.datapoints
                 pointstodo = self.datapoints
@@ -141,8 +142,8 @@ class NanoVNAV2(VNA):
                     # cmd: read FIFO, addr 0x30
                     self.serial.write(
                         pack("<BBB",
-                            _CMD_READFIFO, _ADDR_VALUES_FIFO,
-                            pointstoread))
+                             _CMD_READFIFO, _ADDR_VALUES_FIFO,
+                             pointstoread))
 
                     # each value is 32 bytes
                     nBytes = pointstoread * 32
@@ -151,13 +152,13 @@ class NanoVNAV2(VNA):
                     arr = self.serial.read(nBytes)
                     if nBytes != len(arr):
                         logger.error("expected %d bytes, got %d",
-                                    nBytes, len(arr))
+                                     nBytes, len(arr))
                         return []
 
                     for i in range(pointstoread):
                         (fwd_real, fwd_imag, rev0_real, rev0_imag, rev1_real,
-                        rev1_imag, freq_index) = unpack_from(
-                            "<iiiiiihxxxxxx", arr, i * 32)
+                         rev1_imag, freq_index) = unpack_from(
+                             "<iiiiiihxxxxxx", arr, i * 32)
                         fwd = complex(fwd_real, fwd_imag)
                         refl = complex(rev0_real, rev0_imag)
                         thru = complex(rev1_real, rev1_imag)
@@ -183,7 +184,7 @@ class NanoVNAV2(VNA):
     def readVersion(self):
         # read register 0xf0 (device type), 0xf2 (board revision)
         cmd = b"\x10\xf0\x10\xf2"
-        with self.app.serialLock:
+        with self.serial.lock:
             self.serial.write(cmd)
             resp = self.serial.read(2)
         if len(resp) != 2:
@@ -212,5 +213,5 @@ class NanoVNAV2(VNA):
                     _ADDR_SWEEP_POINTS, self.datapoints)
         cmd += pack("<BBH", _CMD_WRITE2,
                     _ADDR_SWEEP_VALS_PER_FREQ, 1)
-        with self.app.serialLock:
+        with self.serial.lock:
             self.serial.write(cmd)

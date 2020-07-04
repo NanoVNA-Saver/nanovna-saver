@@ -18,8 +18,8 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 import platform
-from typing import List, Tuple
 from collections import namedtuple
+from typing import List
 
 import serial
 from serial.tools import list_ports
@@ -30,16 +30,16 @@ from NanoVNASaver.Hardware.NanoVNA_F import NanoVNA_F
 from NanoVNASaver.Hardware.NanoVNA_H import NanoVNA_H, NanoVNA_H4
 from NanoVNASaver.Hardware.NanoVNA import NanoVNA
 from NanoVNASaver.Hardware.NanoVNA_V2 import NanoVNAV2
-from NanoVNASaver.Hardware.Serial import drain_serial
+from NanoVNASaver.Hardware.Serial import drain_serial, Interface
 
 logger = logging.getLogger(__name__)
 
-Device = namedtuple("Device", "vid pid name")
+USBDevice = namedtuple("Device", "vid pid name")
 
-DEVICETYPES = (
-    Device(0x0483, 0x5740, "NanoVNA"),
-    Device(0x16c0, 0x0483, "AVNA"),
-    Device(0x04b4, 0x0008, "NanaVNA-V2"),
+USBDEVICETYPES = (
+    USBDevice(0x0483, 0x5740, "NanoVNA"),
+    USBDevice(0x16c0, 0x0483, "AVNA"),
+    USBDevice(0x04b4, 0x0008, "S-A-A-2"),
 )
 RETRIES = 3
 TIMEOUT = 0.2
@@ -56,60 +56,63 @@ def _fix_v2_hwinfo(dev):
 
 
 # Get list of interfaces with VNAs connected
-def get_interfaces() -> List[Tuple[str, str]]:
-    return_ports = []
+def get_interfaces() -> List[Interface]:
+    interfaces = []
+    # serial like usb interfaces
     for d in list_ports.comports():
         if platform.system() == 'Windows' and d.vid is None:
             d = _fix_v2_hwinfo(d)
-        for t in DEVICETYPES:
-            if d.vid == t.vid and d.pid == t.pid:
-                port = d.device
-                logger.info("Found %s (%04x %04x) on port %s",
-                            t.name, d.vid, d.pid, d.device)
-                return_ports.append((port, f"{port} ({t.name})"))
-    return return_ports
+        for t in USBDEVICETYPES:
+            if d.vid != t.vid or d.pid != t.pid:
+                continue
+            logger.debug("Found %s USB:(%04x:%04x) on port %s",
+                         t.name, d.vid, d.pid, d.device)
+            iface = Interface('serial', t.name)
+            iface.port = d.device
+            interfaces.append(iface)
+    return interfaces
 
 
-def get_VNA(app, serial_port: serial.Serial) -> 'VNA':
-    serial_port.timeout = TIMEOUT
+def get_VNA(iface: Interface) -> 'VNA':
+    # serial_port.timeout = TIMEOUT
 
     logger.info("Finding correct VNA type...")
-    with app.serialLock:
-        vna_version = detect_version(serial_port)
+    with iface.lock:
+        vna_version = detect_version(iface)
 
     if vna_version == 'v2':
         logger.info("Type: NanoVNA-V2")
-        return NanoVNAV2(app, serial_port)
+        return NanoVNAV2(iface)
 
     logger.info("Finding firmware variant...")
-    tmp_vna = VNA(app, serial_port)
+    tmp_vna = VNA(iface)
     tmp_vna.flushSerialBuffers()
     firmware = tmp_vna.readFirmware()
     if firmware.find("AVNA + Teensy") > 0:
         logger.info("Type: AVNA")
-        return AVNA(app, serial_port)
+        return AVNA(iface)
     if firmware.find("NanoVNA-H 4") > 0:
         logger.info("Type: NanoVNA-H4")
-        vna = NanoVNA_H4(app, serial_port)
+        vna = NanoVNA_H4(iface)
         if vna.readFirmware().find("sweep_points 201") > 0:
             logger.info("VNA has 201 datapoints capability")
             vna.datapoints = (201, 101)
         return vna
     if firmware.find("NanoVNA-H") > 0:
         logger.info("Type: NanoVNA-H")
-        vna = NanoVNA_H(app, serial_port)
+        vna = NanoVNA_H(iface)
         if vna.readFirmware().find("sweep_points 201") > 0:
             logger.info("VNA has 201 datapoints capability")
             vna.datapoints = (201, 101)
         return vna
     if firmware.find("NanoVNA-F") > 0:
         logger.info("Type: NanoVNA-F")
-        return NanoVNA_F(app, serial_port)
+        return NanoVNA_F(iface)
     if firmware.find("NanoVNA") > 0:
         logger.info("Type: Generic NanoVNA")
-        return NanoVNA(app, serial_port)
+        return NanoVNA(iface)
     logger.warning("Did not recognize NanoVNA type from firmware.")
-    return NanoVNA(app, serial_port)
+    return NanoVNA(iface)
 
 
 def detect_version(serial_port: serial.Serial) -> str:

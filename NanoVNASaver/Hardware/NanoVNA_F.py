@@ -39,7 +39,7 @@ class NanoVNA_F(NanoVNA):
         if not self.serial.is_open:
             return QtGui.QPixmap()
         try:
-            with self.app.serialLock:
+            with self.serial.lock:
                 drain_serial(self.serial)
                 self.serial.write("capture\r".encode('ascii'))
                 timeout = self.serial.timeout
@@ -52,9 +52,9 @@ class NanoVNA_F(NanoVNA):
                 f"<{self.screenwidth * self.screenheight}H", image_data)
             rgb_array = np.array(rgb_data, dtype=np.uint32)
             rgba_array = (0xFF000000 +
-                            ((rgb_array & 0xF800) << 8) +  # G?!
-                            ((rgb_array & 0x07E0) >> 3) +  # B
-                            ((rgb_array & 0x001F) << 11))  # G
+                          ((rgb_array & 0xF800) << 8) +  # G?!
+                          ((rgb_array & 0x07E0) >> 3) +  # B
+                          ((rgb_array & 0x001F) << 11))  # G
 
             unwrapped_array = np.empty(
                 self.screenwidth*self.screenheight,

@@ -25,7 +25,7 @@ import serial
 import numpy as np
 from PyQt5 import QtGui
 
-from NanoVNASaver.Hardware.Serial import drain_serial
+from NanoVNASaver.Hardware.Serial import drain_serial, Interface
 from NanoVNASaver.Hardware.VNA import VNA, Version
 
 logger = logging.getLogger(__name__)
@@ -36,8 +36,8 @@ class NanoVNA(VNA):
     screenwidth = 320
     screenheight = 240
 
-    def __init__(self, app, serial_port):
-        super().__init__(app, serial_port)
+    def __init__(self, iface: Interface):
+        super().__init__(iface)
         self.version = Version(self.readVersion())
 
         logger.debug("Testing against 0.2.0")
@@ -62,7 +62,7 @@ class NanoVNA(VNA):
         logger.debug("Reading calibration info.")
         if not self.serial.is_open:
             return "Not connected."
-        with self.app.serialLock:
+        with self.serial.lock:
             try:
                 drain_serial(self.serial)
                 self.serial.write("cal\r".encode('ascii'))
@@ -83,7 +83,7 @@ class NanoVNA(VNA):
         if not self.serial.is_open:
             return QtGui.QPixmap()
         try:
-            with self.app.serialLock:
+            with self.serial.lock:
                 drain_serial(self.serial)
                 timeout = self.serial.timeout
                 self.serial.write("capture\r".encode('ascii'))
@@ -97,9 +97,9 @@ class NanoVNA(VNA):
                 image_data)
             rgb_array = np.array(rgb_data, dtype=np.uint32)
             rgba_array = (0xFF000000 +
-                            ((rgb_array & 0xF800) << 8) +
-                            ((rgb_array & 0x07E0) << 5) +
-                            ((rgb_array & 0x001F) << 3))
+                          ((rgb_array & 0xF800) << 8) +
+                          ((rgb_array & 0x07E0) << 5) +
+                          ((rgb_array & 0x001F) << 3))
             image = QtGui.QImage(
                 rgba_array,
                 self.screenwidth,
@@ -124,7 +124,7 @@ class NanoVNA(VNA):
         if not self.serial.is_open:
             return ""
         try:
-            with self.app.serialLock:
+            with self.serial.lock:
                 drain_serial(self.serial)
                 self.serial.write("version\r".encode('ascii'))
                 result = ""

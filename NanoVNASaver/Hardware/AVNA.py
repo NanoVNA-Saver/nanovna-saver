@@ -22,6 +22,7 @@ from typing import List
 
 import serial
 
+from NanoVNASaver.Hardware.Serial import Interface
 from NanoVNASaver.Hardware.VNA import VNA, Version
 
 logger = logging.getLogger(__name__)
@@ -30,8 +31,8 @@ logger = logging.getLogger(__name__)
 class AVNA(VNA):
     name = "AVNA"
 
-    def __init__(self, app, serial_port):
-        super().__init__(app, serial_port)
+    def __init__(self, iface: Interface):
+        super().__init__(iface)
         self.version = Version(self.readVersion())
         self.features.add("Customizable data points")
 
@@ -42,7 +43,7 @@ class AVNA(VNA):
         logger.debug("Reading calibration info.")
         if not self.serial.is_open:
             return "Not connected."
-        with self.app.serialLock:
+        with self.serial.lock:
             try:
                 data = "a"
                 while data != "":
@@ -71,7 +72,7 @@ class AVNA(VNA):
         logger.debug("Reading version info.")
         if not self.serial.is_open:
             return
-        with self.app.serialLock:
+        with self.serial.lock:
             try:
                 data = "a"
                 while data != "":
