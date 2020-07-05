@@ -128,82 +128,53 @@ class SweepWorker(QtCore.QRunnable):
         values21 = []
         frequencies = []
 
-        if self.averaging:
-            for i in range(self.noSweeps):
-                logger.debug("Sweep segment no %d averaged over %d readings",
-                             i, self.averages)
-                if self.stopped:
-                    logger.debug("Stopping sweeping as signalled")
-                    break
-                start = sweep_from + i * self.vna.datapoints * stepsize
-                freq, val11, val21 = self.readAveragedSegment(
-                    start,
-                    start + (self.vna.datapoints - 1) * stepsize,
-                    self.averages)
-
-                frequencies.extend(freq)
-                values11.extend(val11)
-                values21.extend(val21)
-
-                self.percentage = (i + 1) * (self.vna.datapoints - 1) / \
-                    self.noSweeps
-                logger.debug("Saving acquired data")
-                self.saveData(frequencies, values11, values21)
-
-        else:
+        first_sweep = True
+        finished = False
+        while not finished:
             for i in range(self.noSweeps):
                 logger.debug("Sweep segment no %d", i)
                 if self.stopped:
                     logger.debug("Stopping sweeping as signalled")
+                    finished = True
                     break
                 start = sweep_from + i * self.vna.datapoints * stepsize
+
                 try:
-                    freq, val11, val21 = self.readSegment(
-                        start, start + (self.vna.datapoints - 1) * stepsize)
+                    if self.continuousSweep and not first_sweep:
+                        _, values11, values21 = self.readSegment(
+                            start, start + (self.vna.datapoints-1) * stepsize)
+                        self.updateData(values11, values21, i,
+                                        self.vna.datapoints)
+                        continue
+
+                    if self.averaging:
+                        freq, val11, val21 = self.readAveragedSegment(
+                            start,
+                            start + (self.vna.datapoints - 1) * stepsize,
+                            self.averages)
+                    else:
+                        freq, val11, val21 = self.readSegment(
+                            start, start + (self.vna.datapoints - 1) * stepsize)
 
                     frequencies.extend(freq)
                     values11.extend(val11)
                     values21.extend(val21)
 
-                    self.percentage = (i + 1) * 100 / self.noSweeps
+                    self.percentage = (i + 1) * (
+                        self.vna.datapoints - 1) / self.noSweeps
                     logger.debug("Saving acquired data")
                     self.saveData(frequencies, values11, values21)
-                except NanoVNAValueException as e:
+
+                except ValueError as e:
                     self.error_message = str(e)
                     self.stopped = True
                     self.running = False
                     self.signals.sweepError.emit()
-                except NanoVNASerialException as e:
-                    self.error_message = str(e)
-                    self.stopped = True
-                    self.running = False
-                    self.signals.sweepFatalError.emit()
 
-        while self.continuousSweep and not self.stopped:
-            logger.debug("Continuous sweeping")
-            for i in range(self.noSweeps):
-                logger.debug("Sweep segment no %d", i)
-                if self.stopped:
-                    logger.debug("Stopping sweeping as signalled")
-                    break
-                start = sweep_from + i * self.vna.datapoints * stepsize
-                try:
-                    _, values11, values21 = self.readSegment(
-                        start, start + (self.vna.datapoints-1) * stepsize)
-                    logger.debug("Updating acquired data")
-                    self.updateData(values11, values21, i, self.vna.datapoints)
-                except NanoVNAValueException as e:
-                    self.error_message = str(e)
-                    self.stopped = True
-                    self.running = False
-                    self.signals.sweepError.emit()
-                except NanoVNASerialException as e:
-                    self.error_message = str(e)
-                    self.stopped = True
-                    self.running = False
-                    self.signals.sweepFatalError.emit()
+            if not self.continuousSweep:
+                finished = True
+            first_sweep = False
 
-        # Reset the device to show the full range if we were multisegment
         if self.noSweeps > 1:
             logger.debug("Resetting NanoVNA sweep to full range: %d to %d",
                          parse_frequency(
@@ -357,25 +328,19 @@ class SweepWorker(QtCore.QRunnable):
                 a, b = d.split(" ")
                 try:
                     if self.vna.validateInput and (
-                            float(a) < -9.5 or float(a) > 9.5):
+                            abs(float(a)) > 9.5 or
+                            abs(float(b)) > 9.5):
                         logger.warning(
-                            "Got a non-float data value: %s (%s)", d, a)
-                        logger.debug("Re-reading %s", data)
+                            "Got a non plausible data value: (%s)", d)
                         done = False
-                    elif self.vna.validateInput and (
-                            float(b) < -9.5 or float(b) > 9.5):
-                        logger.warning(
-                            "Got a non-float data value: %s (%s)", d, b)
-                        logger.debug("Re-reading %s", data)
-                        done = False
-                    else:
-                        returndata.append((float(a), float(b)))
-                except Exception as e:
+                        break
+                    returndata.append((float(a), float(b)))
+                except ValueError as exc:
                     logger.exception("An exception occurred reading %s: %s",
-                                     data, e)
-                    logger.debug("Re-reading %s", data)
+                                     data, exc)
                     done = False
             if not done:
+                logger.debug("Re-reading %s", data)
                 sleep(0.2)
                 count += 1
                 if count == 10:
@@ -385,7 +350,7 @@ class SweepWorker(QtCore.QRunnable):
                     logger.critical(
                         "Tried and failed to read %s %d times. Giving up.",
                         data, count)
-                    raise NanoVNAValueException(
+                    raise IOError(
                         f"Failed reading {data} {count} times.\n"
                         f"Data outside expected valid ranges,"
                         f" or in an unexpected format.\n\n"
@@ -406,11 +371,3 @@ class SweepWorker(QtCore.QRunnable):
 
     def setVNA(self, vna):
         self.vna = vna
-
-
-class NanoVNAValueException(Exception):
-    pass
-
-
-class NanoVNASerialException(Exception):
-    pass
