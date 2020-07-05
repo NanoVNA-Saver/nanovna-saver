@@ -597,7 +597,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             return
 
     def serialButtonClick(self):
-        if not self.interface.is_open:
+        if not self.vna.connected():
             self.connect_device()
         else:
             self.disconnect_device()
@@ -664,7 +664,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def sweep(self):
         # Run the device data update
-        if not self.interface.is_open:
+        if not self.vna.connected():
             return
         self.worker.stopped = False
 

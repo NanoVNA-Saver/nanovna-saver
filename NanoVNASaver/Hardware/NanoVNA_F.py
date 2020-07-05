@@ -17,7 +17,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-import struct
 
 import serial
 import numpy as np
@@ -35,7 +34,7 @@ class NanoVNA_F(NanoVNA):
 
     def getScreenshot(self) -> QtGui.QPixmap:
         logger.debug("Capturing screenshot...")
-        if not self.serial.is_open:
+        if not self.connected():
             return QtGui.QPixmap()
         try:
             rgba_array = self._capture_data()

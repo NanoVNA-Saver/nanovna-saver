@@ -83,7 +83,7 @@ class SweepWorker(QtCore.QRunnable):
         logger.info("Initializing SweepWorker")
         self.running = True
         self.percentage = 0
-        if not self.app.interface.is_open:
+        if not self.app.vna.connected():
             logger.debug(
                 "Attempted to run without being connected to the NanoVNA")
             self.running = False

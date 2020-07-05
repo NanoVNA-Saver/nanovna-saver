@@ -62,12 +62,15 @@ class VNA:
     def isValid(self):
         return False
 
+    def connected(self) -> bool:
+        return self.serial.is_open
+
     def getFeatures(self) -> List[str]:
         return self.features
 
     def getCalibration(self) -> str:
         logger.debug("Reading calibration info.")
-        if not self.serial.is_open:
+        if not self.connected():
             return "Not connected."
         with self.serial.lock:
             try:
@@ -154,7 +157,7 @@ class VNA:
 
     def readVersion(self) -> str:
         logger.debug("Reading version info.")
-        if not self.serial.is_open:
+        if not self.connected():
             return ""
         try:
             with self.serial.lock:
@@ -174,7 +177,7 @@ class VNA:
         return ""
 
     def writeSerial(self, command):
-        if not self.serial.is_open:
+        if not self.connected():
             logger.warning("Writing without serial port being opened (%s)",
                            command)
             return
