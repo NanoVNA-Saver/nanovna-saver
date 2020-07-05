@@ -17,6 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
+from logging import log
 import struct
 from time import sleep
 from typing import List
@@ -129,13 +130,20 @@ class NanoVNA(VNA):
                          f' {self.datapoints} 0b110\r'
                          ).encode("ascii"))
                     self.serial.readline()
-                    sleep(0.6)
                     logger.info("reading values")
-                    for line in self.serial.readlines():
+                    retries = 0
+                    while True:
+                        line = self.serial.readline()
                         line = line.decode("ascii").strip()
+                        if not line:
+                            retries += 1
+                            logger.info("Retry nr: %s", retries)
+                            if retries > 10:
+                                raise IOError("too many retries")
+                            sleep(0.2)
+                            continue
                         if line.startswith("ch>"):
                             break
-                        logger.debug("Line: %s", line)
                         data = line.split()
                         self._sweepdata.append((
                             f"{data[0]} {data[1]}",
