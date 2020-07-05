@@ -35,6 +35,12 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
 
         QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
+        self.label = {
+            "status": QtWidgets.QLabel("Not connected."),
+            "firmware": QtWidgets.QLabel("Not connected."),
+            "calibration": QtWidgets.QLabel("Not connected."),
+        }
+
         top_layout = QtWidgets.QHBoxLayout()
         left_layout = QtWidgets.QVBoxLayout()
         right_layout = QtWidgets.QVBoxLayout()
@@ -44,13 +50,13 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
 
         status_box = QtWidgets.QGroupBox("Status")
         status_layout = QtWidgets.QFormLayout(status_box)
-        self.statusLabel = QtWidgets.QLabel("Not connected.")
-        status_layout.addRow("Status:", self.statusLabel)
 
-        self.calibrationStatusLabel = QtWidgets.QLabel("Not connected.")
-        status_layout.addRow("Calibration:", self.calibrationStatusLabel)
+        status_layout.addRow("Status:", self.label["status"])
+        status_layout.addRow("Firmware:", self.label["firmware"])
+        status_layout.addRow("Calibration:", self.label["calibration"])
 
         status_layout.addRow(QtWidgets.QLabel("Features:"))
+
         self.featureList = QtWidgets.QListWidget()
         status_layout.addRow(self.featureList)
 
@@ -93,33 +99,36 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         self.updateFields()
 
     def updateFields(self):
-        if self.app.vna.isValid():
-            self.statusLabel.setText("Connected to " + self.app.vna.name + ".")
-            if self.app.worker.running:
-                self.calibrationStatusLabel.setText("(Sweep running)")
-            else:
-                self.calibrationStatusLabel.setText(self.app.vna.getCalibration())
-
+        if not self.app.vna.connected():
+            self.label["status"].setText("Not connected.")
+            self.label["firmware"].setText("Not connected.")
+            self.label["calibration"].setText("Not connected.")
             self.featureList.clear()
-            self.featureList.addItem(self.app.vna.name + " v" + str(self.app.vna.version))
-            features = self.app.vna.getFeatures()
-            for item in features:
-                self.featureList.addItem(item)
-
-            self.btnCaptureScreenshot.setDisabled("Screenshots" not in features)
-            if "Customizable data points" in features:
-                self.datapoints.clear()
-                cur_dps = self.app.vna.datapoints
-                dplist = self.app.vna._datapoints[:]
-                for d in sorted(dplist):
-                    self.datapoints.addItem(str(d))
-                self._set_datapoint_index(cur_dps)
-        else:
-            self.statusLabel.setText("Not connected.")
-            self.calibrationStatusLabel.setText("Not connected.")
-            self.featureList.clear()
-            self.featureList.addItem("Not connected.")
             self.btnCaptureScreenshot.setDisabled(True)
+            return
+
+        self.label["status"].setText(
+            f"Connected to {self.app.vna.name}.")
+        self.label["firmware"].setText(
+            f"{self.app.vna.name} v{self.app.vna.version}")
+        if self.app.worker.running:
+            self.label["calibration"].setText("(Sweep running)")
+        else:
+            self.label["calibration"].setText(self.app.vna.getCalibration())
+        self.featureList.clear()
+        features = self.app.vna.getFeatures()
+        for item in features:
+            self.featureList.addItem(item)
+
+        self.btnCaptureScreenshot.setDisabled("Screenshots" not in features)
+
+        if "Customizable data points" in features:
+            self.datapoints.clear()
+            cur_dps = self.app.vna.datapoints
+            dplist = self.app.vna._datapoints[:]
+            for d in sorted(dplist):
+                self.datapoints.addItem(str(d))
+            self._set_datapoint_index(cur_dps)
 
     def updateValidation(self, validate_data: bool):
         self.app.vna.validateInput = validate_data

@@ -155,36 +155,35 @@ class BandsModel(QtCore.QAbstractTableModel):
 
 
 class Version:
-    RXP = re.compile(r"(.*\s+)?(\d+)\.(\d+)\.(\d+)(.*)")
+    RXP = re.compile(r"""^
+        \D*
+        (?P<major>\d+)\.
+        (?P<minor>\d+)\.
+        (?P<revision>\d+)
+        (?P<note>.*)
+        $""", re.VERBOSE)
 
-    def __init__(self, version_string: str):
-        self.major = 0
-        self.minor = 0
-        self.revision = 0
-        self.note = ""
-        self.version_string = version_string
-
-        results = Version.RXP.match(version_string)
-        if results:
-            self.major = int(results.group(2))
-            self.minor = int(results.group(3))
-            self.revision = int(results.group(4))
-            self.note = results.group(5)
-            logger.debug(
-                "Parsed version as \"%d.%d.%d%s\"",
-                self.major, self.minor, self.revision, self.note)
+    def __init__(self, vstring: str = "0.0.0"):
+        self.data = {
+            "major": 0,
+            "minor": 0,
+            "revision": 0,
+            "note": "",
+        }
+        try:
+            self.data = Version.RXP.search(vstring).groupdict()
+            for name in ("major", "minor", "revision"):
+                self.data[name] = int(self.data[name])
+        except AttributeError:
+            logger.error("Unable to parse version: %s", vstring)
 
     def __gt__(self, other: "Version") -> bool:
-        if self.major > other.major:
-            return True
-        if self.major < other.major:
-            return False
-        if self.minor > other.minor:
-            return True
-        if self.minor < other.minor:
-            return False
-        if self.revision > other.revision:
-            return True
+        l, r = self.data, other.data
+        for name in ("major", "minor", "revision"):
+            if l[name] > r[name]:
+                return True
+            if l[name] < r[name]:
+                return False
         return False
 
     def __lt__(self, other: "Version") -> bool:
@@ -197,11 +196,8 @@ class Version:
         return self < other or self == other
 
     def __eq__(self, other: "Version") -> bool:
-        return (
-            self.major == other.major and
-            self.minor == other.minor and
-            self.revision == other.revision and
-            self.note == other.note)
+        return self.data == other.data
 
     def __str__(self) -> str:
-        return f"{self.major}.{self.minor}.{self.revision}{self.note}"
+        return (f'{self.data["major"]}.{self.data["minor"]}'
+                f'.{self.data["revision"]}{self.data["note"]}')

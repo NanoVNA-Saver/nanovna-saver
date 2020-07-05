@@ -633,7 +633,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.btn_automatic.setDisabled(False)
             return
         logger.info("Starting automatic calibration assistant.")
-        if not self.app.serial.is_open:
+        if not self.app.vna.connected():
             QtWidgets.QMessageBox(
                 QtWidgets.QMessageBox.Information,
                 "NanoVNA not connected",

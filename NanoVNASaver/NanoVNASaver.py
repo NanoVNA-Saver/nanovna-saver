@@ -24,7 +24,6 @@ from collections import OrderedDict
 from time import sleep, strftime, localtime
 from typing import List
 
-import serial
 from PyQt5 import QtWidgets, QtCore, QtGui
 
 from .Windows import (
@@ -36,8 +35,8 @@ from .Formatting import (
     format_frequency, format_frequency_short, format_frequency_sweep,
     parse_frequency,
 )
-from .Hardware.Hardware import get_interfaces, get_VNA
-from .Hardware.VNA import InvalidVNA
+from .Hardware.Hardware import Interface, get_interfaces, get_VNA
+from .Hardware.VNA import VNA
 from .RFTools import Datapoint, corr_att_data
 from .Charts.Chart import Chart
 from .Charts import (
@@ -92,9 +91,8 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.noSweeps = 1  # Number of sweeps to run
 
-        self.serialLock = threading.Lock()
-        self.serial = serial.Serial()
-        self.vna = InvalidVNA(self, serial)
+        self.interface = Interface("serial", "None")
+        self.vna = VNA(self.interface)
 
         self.dataLock = threading.Lock()
         # TODO: use Touchstone class as data container
@@ -109,8 +107,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.calibration = Calibration()
 
         self.markers = []
-
-        self.serialPort = ""
 
         logger.debug("Building user interface")
 
@@ -456,7 +452,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.rescanSerialPort()
         self.serialPortInput.setEditable(True)
         btn_rescan_serial_port = QtWidgets.QPushButton("Rescan")
-        btn_rescan_serial_port.setFixedWidth(60)
+        btn_rescan_serial_port.setFixedWidth(65)
         btn_rescan_serial_port.clicked.connect(self.rescanSerialPort)
         serial_port_input_layout = QtWidgets.QHBoxLayout()
         serial_port_input_layout.addWidget(self.serialPortInput)
@@ -471,6 +467,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         serial_button_layout.addWidget(self.btnSerialToggle, stretch=1)
 
         self.btnDeviceSettings = QtWidgets.QPushButton("Manage")
+        self.btnDeviceSettings.setFixedWidth(65)
         self.btnDeviceSettings.clicked.connect(
             lambda: self.display_window("device_settings"))
         serial_button_layout.addWidget(self.btnDeviceSettings, stretch=0)
@@ -555,8 +552,8 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def rescanSerialPort(self):
         self.serialPortInput.clear()
-        for port in get_interfaces():
-            self.serialPortInput.insertItem(1, port[1], port[0])
+        for iface in get_interfaces():
+            self.serialPortInput.insertItem(1, f"{iface}", iface)
 
     def exportFile(self, nr_params: int = 1):
         if len(self.data) == 0:
@@ -600,70 +597,63 @@ class NanoVNASaver(QtWidgets.QWidget):
             return
 
     def serialButtonClick(self):
-        if self.serial.is_open:
-            self.stopSerial()
+        if not self.vna.connected():
+            self.connect_device()
         else:
-            self.startSerial()
+            self.disconnect_device()
         return
 
-    def startSerial(self):
-        with self.serialLock:
-            self.serialPort = self.serialPortInput.currentData()
-            if self.serialPort == "":
-                self.serialPort = self.serialPortInput.currentText()
-            logger.info("Opening serial port %s", self.serialPort)
+    def connect_device(self):
+        with self.interface.lock:
+            self.interface = self.serialPortInput.currentData()
+            logger.info("Connection %s", self.interface)
             try:
-                self.serial = serial.Serial(port=self.serialPort, baudrate=115200)
-                self.serial.timeout = 0.05
-            except serial.SerialException as exc:
-                logger.error("Tried to open %s and failed: %s", self.serialPort, exc)
+                self.interface.open()
+                self.interface.timeout = 0.05
+            except (IOError, AttributeError) as exc:
+                logger.error("Tried to open %s and failed: %s",
+                             self.interface, exc)
                 return
-            if not self.serial.isOpen() :
-                logger.error("Unable to open port %s", self.serialPort)
+            if not self.interface.isOpen():
+                logger.error("Unable to open port %s", self.interface)
                 return
-            self.btnSerialToggle.setText("Disconnect")
+        sleep(0.1)
+        try:
+            self.vna = get_VNA(self.interface)
+        except IOError as exc:
+            logger.error("Unable to connect to VNA: %s", exc)
 
-        sleep(0.05)
-
-        self.vna = get_VNA(self, self.serial)
         self.vna.validateInput = self.settings.value("SerialInputValidation", True, bool)
         self.worker.setVNA(self.vna)
 
-        logger.info(self.vna.readFirmware())
+        # connected
+        self.btnSerialToggle.setText("Disconnect")
 
         frequencies = self.vna.readFrequencies()
-        if frequencies:
-            logger.info("Read starting frequency %s and end frequency %s",
-                        frequencies[0], frequencies[100])
-            if int(frequencies[0]) == int(frequencies[100]) and (
-                    self.sweepStartInput.text() == "" or
-                    self.sweepEndInput.text() == ""):
-                self.sweepStartInput.setText(
-                    format_frequency_sweep(int(frequencies[0])))
-                self.sweepEndInput.setText(
-                    format_frequency_sweep(int(frequencies[100]) + 100000))
-            elif (self.sweepStartInput.text() == "" or
-                    self.sweepEndInput.text() == ""):
-                self.sweepStartInput.setText(
-                    format_frequency_sweep(int(frequencies[0])))
-                self.sweepEndInput.setText(
-                    format_frequency_sweep(int(frequencies[100])))
-            self.sweepStartInput.textEdited.emit(
-                self.sweepStartInput.text())
-            self.sweepStartInput.textChanged.emit(
-                self.sweepStartInput.text())
-        else:
+        if not frequencies:
             logger.warning("No frequencies read")
             return
+        logger.info("Read starting frequency %s and end frequency %s",
+                    frequencies[0], frequencies[-1])
+        self.sweepStartInput.setText(
+            format_frequency_sweep(frequencies[0]))
+        if frequencies[0] < frequencies[-1]:
+            self.sweepEndInput.setText(
+                format_frequency_sweep(frequencies[-1]))
+        else:
+            self.sweepEndInput.setText(
+                format_frequency_sweep(frequencies[-1] + 100000))
+        self.sweepStartInput.textEdited.emit(self.sweepStartInput.text())
+        self.sweepStartInput.textChanged.emit(self.sweepStartInput.text())
+
         logger.debug("Starting initial sweep")
         self.sweep()
-        return
 
-    def stopSerial(self):
-        with self.serialLock:
-            logger.info("Closing connection to NanoVNA")
-            self.serial.close()
-            self.btnSerialToggle.setText("Connect to NanoVNA")
+    def disconnect_device(self):
+        with self.interface.lock:
+            logger.info("Closing connection to %s", self.interface)
+            self.interface.close()
+            self.btnSerialToggle.setText("Connect to device")
 
     def toggleSweepSettings(self, disabled):
         self.sweepStartInput.setDisabled(disabled)
@@ -673,8 +663,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.sweepCountInput.setDisabled(disabled)
 
     def sweep(self):
-        # Run the serial port update
-        if not self.serial.is_open:
+        # Run the device data update
+        if not self.vna.connected():
             return
         self.worker.stopped = False
 

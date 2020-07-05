@@ -16,10 +16,28 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+import logging
+from threading import Lock
+
 import serial
+
+logger = logging.getLogger(__name__)
 
 def drain_serial(serial_port: serial.Serial):
     """drain up to 10k outstanding data in the serial incoming buffer"""
     for _ in range(80):
         if len(serial_port.read(128)) == 0:
             break
+
+class Interface(serial.Serial):
+    def __init__(self, interface_type: str, comment, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        assert interface_type in ('serial', 'usb', 'bt', 'network')
+        self.type = interface_type
+        self.comment = comment
+        self.port = None
+        self.baudrate = 115200
+        self.lock = Lock()
+
+    def __str__(self):
+        return f"{self.port} ({self.comment})"
