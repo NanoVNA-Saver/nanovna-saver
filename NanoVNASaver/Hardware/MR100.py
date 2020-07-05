@@ -25,6 +25,7 @@ from NanoVNASaver.Hardware.VNA import VNA, Version
 import time
 import socket
 import sys
+from NanoVNASaver.Hardware.Serial import drain_serial
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +43,7 @@ class Mr100(VNA):
     prompt = ">>"
     _datapoints = (101,)
 
-    def __init__(self,  app, serial_port, addr="00:15:83:35:63:A1", port=1, raw=False):
+    def __init__(self,  iface, addr="00:15:83:35:63:A1", port=1, raw=False):
         
 #         serial_port.baudrate=57600
 #         serial_port.close()
@@ -52,7 +53,7 @@ class Mr100(VNA):
 #         serial_port.write(str("stop\r").encode('ascii'))
 #         serial_port.flushInput()
 #         serial_port.flushOutput()
-        super().__init__(app, serial_port)
+        super().__init__(iface)
         self.port = port
         self.addr = addr
         self.s = None
@@ -278,11 +279,11 @@ class Mr100(VNA):
         self.stop = stop
         self.step = round((stop - start) / (self.datapoints-1))
 
-    def readFrequencies(self) -> List[str]:
-        frequencies = ["%s" % f for f in range(self.start, self.stop, self.step)]
+    def readFrequencies(self) -> List[int]:
+        frequencies = [f for f in range(self.start, self.stop, self.step)]
 
 
-        frequencies.append(str(self.stop))
+        frequencies.append(self.stop)
         logger.debug("range ha %s valori, primo %s ultimo %s",
                      len(frequencies),
                               frequencies[0],
@@ -331,30 +332,6 @@ class Mr100(VNA):
 
     def readFirmware(self):
         return "not implemented"
-
-    def readFromCommand(self, command) -> str:
-        if self.app.serialLock.acquire():
-            result = ""
-            try:
-                data = "a"
-                while data != "":
-                    data = self.serial.readline().decode('ascii')
-                self.serial.write((command + "\r").encode('ascii'))
-                result = ""
-                data = ""
-                sleep(0.01)
-                while data != self.prompt:
-                    data = self.serial.readline().decode('ascii')
-                    result += data
-            except serial.SerialException as exc:
-                logger.exception(
-                    "Exception while reading %s: %s", command, exc)
-            finally:
-                self.app.serialLock.release()
-            return result
-        logger.error("Unable to acquire serial lock to read %s", command)
-        return ""
-
     
     def readValues(self, value) -> List[str]:
         
@@ -363,23 +340,14 @@ class Mr100(VNA):
         elif value == "data 1":
             return self.readValues21()
         
-    
     def _readValues(self, value, pre="Start", post="End") -> List[str]:
         logger.debug("VNA reading %s", value)
-        if "data" in value:
-            raise Exception("non deve arrivare %s" % value)
-        if self.app.serialLock.acquire():
-            try:
-                values = []
+        values = []
+        try:
+            with self.serial.lock:
+                drain_serial(self.serial)
+                self.serial.write(f"{value}\r".encode('ascii'))
                 data = "a"
-                while data != "":
-                    data = self.serial.readline().decode('ascii')
-                    logger.debug("letto: '%s'", data)
-                #  Then send the command to read data
-                logger.debug("writing %s", value)
-                self.serial.write(str(value + "\r").encode('ascii'))
-                result = ""
-                data = ""
                 sleep(0.05)
                 while data != self.prompt:
                     logger.debug("leggo")
@@ -394,21 +362,17 @@ class Mr100(VNA):
                         continue
                     if post and data == post:
                         logger.debug("read %s, end of data")
-                        continue
+                        break
                     if data not in ["", self.prompt]:
                         values.append(data.split(","))
                 # values = result.split("\r\n")
-            except serial.SerialException as exc:
-                logger.exception(
-                    "Exception while reading %s: %s", value, exc)
-                return []
-            finally:
-                self.app.serialLock.release()
-            logger.debug(
-                "VNA done reading %s (%d values)",
-                value, len(values))
-            logger.debug(values)
-            return values[:self.datapoints]
-        logger.error("Unable to acquire serial lock to read %s", value)
-        return []
-        
+        except serial.SerialException as exc:
+            logger.exception(
+                "Exception while reading %s: %s", value, exc)
+            return []
+        logger.debug(
+            "VNA done reading %s (%d values)",
+            value, len(values))
+        logger.debug(values)
+        return values[:self.datapoints]
+ 
