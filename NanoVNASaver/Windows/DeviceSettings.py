@@ -99,7 +99,7 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         self.updateFields()
 
     def updateFields(self):
-        if not self.app.vna.isValid():
+        if not self.app.vna.connected():
             self.label["status"].setText("Not connected.")
             self.label["firmware"].setText("Not connected.")
             self.label["calibration"].setText("Not connected.")

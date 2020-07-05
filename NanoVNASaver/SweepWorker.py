@@ -143,6 +143,7 @@ class SweepWorker(QtCore.QRunnable):
                     if self.continuousSweep and not first_sweep:
                         _, values11, values21 = self.readSegment(
                             start, start + (self.vna.datapoints-1) * stepsize)
+                        self.percentage = (i + 1) * 100 / self.noSweeps
                         self.updateData(values11, values21, i,
                                         self.vna.datapoints)
                         continue
@@ -160,9 +161,7 @@ class SweepWorker(QtCore.QRunnable):
                     values11.extend(val11)
                     values21.extend(val21)
 
-                    self.percentage = (i + 1) * (
-                        self.vna.datapoints - 1) / self.noSweeps
-                    logger.debug("Saving acquired data")
+                    self.percentage = (i + 1) * 100 / self.noSweeps
                     self.saveData(frequencies, values11, values21)
 
                 except ValueError as e:
