@@ -17,8 +17,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-from time import sleep
-from typing import List
 
 from NanoVNASaver.Hardware.Serial import Interface
 from NanoVNASaver.Hardware.VNA import VNA, Version
@@ -38,9 +36,8 @@ class AVNA(VNA):
         return True
 
     def resetSweep(self, start: int, stop: int):
-        self.writeSerial(f"sweep {start} {stop} {self.datapoints}")
-        self.writeSerial("resume")
+        list(self.exec_command(f"sweep {start} {stop} {self.datapoints}"))
+        list(self.exec_command("resume"))
 
     def setSweep(self, start, stop):
-        self.writeSerial(f"sweep {start} {stop} {self.datapoints}")
-        sleep(1)
+        list(self.exec_command(f"sweep {start} {stop} {self.datapoints}"))

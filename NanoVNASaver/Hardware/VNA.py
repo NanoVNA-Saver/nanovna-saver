@@ -18,7 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 from time import sleep
-from typing import List
+from typing import List, Iterator
 
 import serial
 from PyQt5 import QtGui
@@ -39,15 +39,36 @@ class VNA:
         self.features = set()
         self.validateInput = True
         self.datapoints = self.valid_datapoints[0]
-        self.read_features()
+        if self.connected():
+            self.read_features()
+
+    def exec_command(self, command: str, wait: float = 0.05) -> Iterator[str]:
+        logger.debug("_exec_command: %s", command)
+        with self.serial.lock:
+            drain_serial(self.serial)
+            self.serial.write(f"{command}\r".encode('ascii'))
+            sleep(wait)
+            retries = 0
+            while True:
+                line = self.serial.readline()
+                line = line.decode("ascii").strip()
+                if not line:
+                    retries += 1
+                    logger.debug("Retry nr: %s", retries)
+                    if retries > 10:
+                        raise IOError("too many retries")
+                    sleep(0.1)
+                    continue
+                if line == command:  # suppress echo
+                    continue
+                if line.startswith("ch>"):
+                    break
+                yield line
 
     def read_features(self):
-        raw_help = self.readFromCommand("help")
-        logger.debug("Help command output:")
-        logger.debug(raw_help)
-
-        #  Detect features from the help command
-        if "capture" in raw_help:
+        result = "\n".join(list(self.exec_command("help")))
+        logger.debug("result:\n%s", result)
+        if "capture" in result:
             self.features.add("Screenshots")
         if len(self.valid_datapoints) > 1:
             self.features.add("Customizable data points")
@@ -58,9 +79,6 @@ class VNA:
     def resetSweep(self, start: int, stop: int):
         pass
 
-    def isValid(self):
-        return False
-
     def connected(self) -> bool:
         return self.serial.is_open
 
@@ -68,24 +86,7 @@ class VNA:
         return self.features
 
     def getCalibration(self) -> str:
-        logger.debug("Reading calibration info.")
-        if not self.connected():
-            return "Not connected."
-        with self.serial.lock:
-            try:
-                drain_serial(self.serial)
-                self.serial.write("cal\r".encode('ascii'))
-                result = ""
-                data = ""
-                sleep(0.1)
-                while "ch>" not in data:
-                    data = self.serial.readline().decode('ascii')
-                    result += data
-                values = result.splitlines()
-                return values[1]
-            except serial.SerialException as exc:
-                logger.exception("Exception while reading calibration info: %s", exc)
-        return "Unknown"
+        return list(self.exec_command("cal"))[0]
 
     def getScreenshot(self) -> QtGui.QPixmap:
         return QtGui.QPixmap()
@@ -99,95 +100,19 @@ class VNA:
             sleep(0.1)
 
     def readFirmware(self) -> str:
-        try:
-            with self.serial.lock:
-                drain_serial(self.serial)
-                self.serial.write("info\r".encode('ascii'))
-                result = ""
-                data = ""
-                sleep(0.01)
-                while data != "ch> ":
-                    data = self.serial.readline().decode('ascii')
-                    result += data
-            return result
-        except serial.SerialException as exc:
-            logger.exception(
-                "Exception while reading firmware data: %s", exc)
-        return ""
-
-    def readFromCommand(self, command) -> str:
-        try:
-            with self.serial.lock:
-                drain_serial(self.serial)
-                self.serial.write(f"{command}\r".encode('ascii'))
-                result = ""
-                data = ""
-                sleep(0.01)
-                while data != "ch> ":
-                    data = self.serial.readline().decode('ascii')
-                    result += data
-            return result
-        except serial.SerialException as exc:
-            logger.exception(
-                "Exception while reading %s: %s", command, exc)
-        return ""
+        result = "\n".join(list(self.exec_command("info")))
+        logger.debug("result:\n%s", result)
+        return result
 
     def readValues(self, value) -> List[str]:
         logger.debug("VNA reading %s", value)
-        try:
-            with self.serial.lock:
-                drain_serial(self.serial)
-                self.serial.write(f"{value}\r".encode('ascii'))
-                result = ""
-                data = ""
-                sleep(0.05)
-                while data != "ch> ":
-                    data = self.serial.readline().decode('ascii')
-                    result += data
-            values = result.split("\r\n")
-            logger.debug(
-                "VNA done reading %s (%d values)",
-                value, len(values)-2)
-            return values[1:-1]
-        except serial.SerialException as exc:
-            logger.exception(
-                "Exception while reading %s: %s", value, exc)
-        return []
+        result = list(self.exec_command(value))
+        logger.debug("VNA done reading %s (%d values)",
+                     value, len(result))
+        return result
 
     def readVersion(self) -> str:
-        logger.debug("Reading version info.")
-        if not self.connected():
-            return ""
-        try:
-            with self.serial.lock:
-                drain_serial(self.serial)
-                self.serial.write("version\r".encode('ascii'))
-                result = ""
-                data = ""
-                sleep(0.1)
-                while "ch>" not in data:
-                    data = self.serial.readline().decode('ascii')
-                    result += data
-            values = result.splitlines()
-            logger.debug("Found version info: %s", values[1])
-            return values[1]
-        except serial.SerialException as exc:
-            logger.exception("Exception while reading firmware version: %s", exc)
-        return ""
-
-    def writeSerial(self, command):
-        if not self.connected():
-            logger.warning("Writing without serial port being opened (%s)",
-                           command)
-            return
-        with self.serial.lock:
-            try:
-                self.serial.write(f"{command}\r".encode('ascii'))
-                self.serial.readline()
-            except serial.SerialException as exc:
-                logger.exception(
-                    "Exception while writing to serial port (%s): %s",
-                    command, exc)
+        return list(self.exec_command("version"))[0]
 
     def setSweep(self, start, stop):
-        self.writeSerial(f"sweep {start} {stop} {self.datapoints}")
+        list(self.exec_command(f"sweep {start} {stop} {self.datapoints}"))
