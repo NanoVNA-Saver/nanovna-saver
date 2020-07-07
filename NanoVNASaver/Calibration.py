@@ -292,42 +292,33 @@ class Calibration:
             e30.append(caldata["e30"])
             e10e32.append(caldata["e10e32"])
 
-        self.interp["e00"] = interp1d(freq, e00, kind="slinear")
-        self.interp["e11"] = interp1d(freq, e11, kind="slinear")
-        self.interp["delta_e"] = interp1d(freq, delta_e, kind="slinear")
-        self.interp["e30"] = interp1d(freq, e30, kind="slinear")
-        self.interp["e10e32"] = interp1d(freq, e10e32, kind="slinear")
+        self.interp = {
+            "e00": interp1d(freq, e00,
+                            kind="slinear", bounds_error=False,
+                            fill_value=(e00[0], e00[-1])),
+            "e11": interp1d(freq, e11,
+                            kind="slinear", bounds_error=False,
+                            fill_value=(e11[0], e11[-1])),
+            "delta_e": interp1d(freq, delta_e,
+                                kind="slinear", bounds_error=False,
+                                fill_value=(delta_e[0], delta_e[-1])),
+            "e30": interp1d(freq, e30,
+                            kind="slinear", bounds_error=False,
+                            fill_value=(e30[0], e30[-1])),
+            "e10e32": interp1d(freq, e10e32,
+                               kind="slinear", bounds_error=False,
+                               fill_value=(e10e32[0], e10e32[-1])),
+        }
 
     def correct11(self, dp: Datapoint):
         i = self.interp
-        try:
-            s11 = (dp.z - i["e00"](dp.freq)) / (
-                (dp.z * i["e11"](dp.freq)) - i["delta_e"](dp.freq))
-            return Datapoint(dp.freq, s11.real, s11.imag)
-        except ValueError:
-            # TODO: implement warn message in gui
-            logger.info("Data outside calibration")
-
-        nearest = sorted(self.dataset.frequencies(),
-                         key=lambda k: abs(dp.freq - k))[0]
-        ds = self.dataset.get(nearest)
-        s11 = (dp.z - ds["e00"]) / (
-            (dp.z * ds["e11"]) - ds["delta_e"])
+        s11 = (dp.z - i["e00"](dp.freq)) / (
+            (dp.z * i["e11"](dp.freq)) - i["delta_e"](dp.freq))
         return Datapoint(dp.freq, s11.real, s11.imag)
 
     def correct21(self, dp: Datapoint):
         i = self.interp
-        try:
-            s21 = (dp.z - i["e30"](dp.freq)) / i["e10e32"](dp.freq)
-            return Datapoint(dp.freq, s21.real, s21.imag)
-        except ValueError:
-            # TODO: implement warn message in gui
-            logger.info("Data outside calibration")
-
-        nearest = sorted(self.dataset.frequencies(),
-                         key=lambda k: abs(dp.freq - k))[0]
-        ds = self.dataset.get(nearest)
-        s21 = (dp.z - ds["e30"]) / ds["e10e32"]
+        s21 = (dp.z - i["e30"](dp.freq)) / i["e10e32"](dp.freq)
         return Datapoint(dp.freq, s21.real, s21.imag)
 
     # TODO: implement tests
