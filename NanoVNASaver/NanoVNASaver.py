@@ -601,7 +601,6 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.connect_device()
         else:
             self.disconnect_device()
-        return
 
     def connect_device(self):
         if not self.interface:
@@ -692,15 +691,11 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.worker.stopped = True
 
     def saveData(self, data, data21, source=None):
-        if self.dataLock.acquire(blocking=True):
+        with self.dataLock:
             self.data = data
+            self.data21 = data21
             if self.s21att > 0:
-                self.data21 = corr_att_data(data21, self.s21att)
-            else:
-                self.data21 = data21
-        else:
-            logger.error("Failed acquiring data lock while saving.")
-        self.dataLock.release()
+                self.data21 = corr_att_data(self.data21, self.s21att)
         if source is not None:
             self.sweepSource = source
         else:
@@ -710,7 +705,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             ).lstrip()
 
     def markerUpdated(self, marker: Marker):
-        if self.dataLock.acquire(blocking=True):
+        with self.dataLock:
             marker.findLocation(self.data)
             for m in self.markers:
                 m.resetLabels()
@@ -718,10 +713,9 @@ class NanoVNASaver(QtWidgets.QWidget):
 
             for c in self.subscribing_charts:
                 c.update()
-        self.dataLock.release()
 
     def dataUpdated(self):
-        if self.dataLock.acquire(blocking=True):
+        with self.dataLock:
             for m in self.markers:
                 m.resetLabels()
                 m.updateLabels(self.data, self.data21)
@@ -781,10 +775,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                 self.s21_min_gain_label.setText("")
                 self.s21_max_gain_label.setText("")
 
-        else:
-            logger.error("Failed acquiring data lock while updating.")
         self.updateTitle()
-        self.dataLock.release()
         self.dataAvailable.emit()
 
     def sweepFinished(self):

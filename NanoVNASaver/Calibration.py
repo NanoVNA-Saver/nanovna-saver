@@ -40,6 +40,7 @@ RXP_CAL_LINE = re.compile(r"""^\s*
 
 logger = logging.getLogger(__name__)
 
+
 def correct_delay(d: Datapoint, delay: float, reflect: bool = False):
     mult = 2 if reflect else 1
     corr_data = d.z * cmath.exp(
@@ -78,12 +79,13 @@ class CalData(UserDict):
                   f' {d["isolation"].re} {d["isolation"].im}')
         return s
 
+
 class CalDataSet:
     def __init__(self):
         self.data = defaultdict(CalData)
 
     def insert(self, name: str, dp: Datapoint):
-        if not name in self.data[dp.freq]:
+        if name not in self.data[dp.freq]:
             raise KeyError(name)
         self.data[dp.freq]["freq"] = dp.freq
         self.data[dp.freq][name] = dp
