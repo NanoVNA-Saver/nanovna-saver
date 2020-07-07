@@ -604,6 +604,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         return
 
     def connect_device(self):
+        if not self.interface:
+            return
         with self.interface.lock:
             self.interface = self.serialPortInput.currentData()
             logger.info("Connection %s", self.interface)
