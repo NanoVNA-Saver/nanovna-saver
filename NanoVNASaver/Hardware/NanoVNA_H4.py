@@ -1,7 +1,6 @@
 #  NanoVNASaver
 #
 #  A python program to view and export Touchstone data from a NanoVNA
-#  Copyright (C) 2019, 2020  Rune B. Broberg
 #  Copyright (C) 2020 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -17,29 +16,13 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-from threading import Lock
 
-import serial
+from NanoVNASaver.Hardware.NanoVNA_H import NanoVNA_H
 
 logger = logging.getLogger(__name__)
 
-def drain_serial(serial_port: serial.Serial):
-    """drain up to 64k outstanding data in the serial incoming buffer"""
-    for _ in range(512):
-        cnt = len(serial_port.read(128))
-        if not cnt:
-            return
-    logger.warning("unable to drain all data")
 
-class Interface(serial.Serial):
-    def __init__(self, interface_type: str, comment, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        assert interface_type in ('serial', 'usb', 'bt', 'network')
-        self.type = interface_type
-        self.comment = comment
-        self.port = None
-        self.baudrate = 115200
-        self.lock = Lock()
-
-    def __str__(self):
-        return f"{self.port} ({self.comment})"
+class NanoVNA_H4(NanoVNA_H):
+    name = "NanoVNA-H4"
+    screenwidth = 480
+    screenheight = 320

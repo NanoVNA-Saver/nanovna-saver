@@ -31,16 +31,17 @@ logger = logging.getLogger(__name__)
 
 class VNA:
     name = "VNA"
-    _datapoints = (101, )
+    valid_datapoints = (101, )
 
     def __init__(self, iface: Interface):
         self.serial = iface
         self.version = Version("0.0.0")
         self.features = set()
         self.validateInput = True
-        self.datapoints = VNA._datapoints[0]
+        self.datapoints = self.valid_datapoints[0]
+        self.read_features()
 
-    def readFeatures(self) -> List[str]:
+    def read_features(self):
         raw_help = self.readFromCommand("help")
         logger.debug("Help command output:")
         logger.debug(raw_help)
@@ -48,10 +49,8 @@ class VNA:
         #  Detect features from the help command
         if "capture" in raw_help:
             self.features.add("Screenshots")
-        if len(self._datapoints) > 1:
+        if len(self.valid_datapoints) > 1:
             self.features.add("Customizable data points")
-
-        return self.features
 
     def readFrequencies(self) -> List[int]:
         return [int(f) for f in self.readValues("frequencies")]

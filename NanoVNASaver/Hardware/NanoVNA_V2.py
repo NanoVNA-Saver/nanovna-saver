@@ -19,6 +19,7 @@
 import logging
 import platform
 from struct import pack, unpack_from
+from time import sleep
 from typing import List
 
 from NanoVNASaver.Hardware.Serial import Interface
@@ -54,9 +55,9 @@ _ADDR_FW_MAJOR = 0xf3
 _ADDR_FW_MINOR = 0xf4
 
 
-class NanoVNAV2(VNA):
+class NanoVNA_V2(VNA):
     name = "NanoVNA-V2"
-    _datapoints = (303, 101, 203, 505, 1023)
+    valid_datapoints = (202, 101, 303, 505, 1023)
     screenwidth = 320
     screenheight = 240
 
@@ -72,9 +73,6 @@ class NanoVNAV2(VNA):
 
         self.version = self.readVersion()
         self.firmware = self.readFirmware()
-        self.features.add("Customizable data points")
-        # TODO: more than one dp per freq
-        self.features.add("Multi data points")
 
         # firmware major version of 0xff indicates dfu mode
         if self.firmware.data["major"] == 0xff:
@@ -84,10 +82,14 @@ class NanoVNAV2(VNA):
         self.sweepStepHz = 1e6
         self._sweepdata = []
         self._updateSweep()
-        # self.setSweep(200e6, 300e6)
 
     def getCalibration(self) -> str:
         return "Unknown"
+
+    def read_features(self):
+        self.features.add("Customizable data points")
+        # TODO: more than one dp per freq
+        self.features.add("Multi data points")
 
     def readFirmware(self) -> str:
         # read register 0xf3 and 0xf4 (firmware major and minor version)
@@ -96,6 +98,7 @@ class NanoVNAV2(VNA):
                    _CMD_READ, _ADDR_FW_MINOR)
         with self.serial.lock:
             self.serial.write(cmd)
+            sleep(0.05)
             resp = self.serial.read(2)
         if len(resp) != 2:
             logger.error("Timeout reading version registers")
@@ -130,7 +133,7 @@ class NanoVNAV2(VNA):
                         pack("<BBB",
                              _CMD_READFIFO, _ADDR_VALUES_FIFO,
                              pointstoread))
-
+                    sleep(0.05)
                     # each value is 32 bytes
                     nBytes = pointstoread * 32
 
@@ -141,6 +144,7 @@ class NanoVNAV2(VNA):
                                      nBytes, len(arr))
                         return []
 
+                    freq_index = -1
                     for i in range(pointstoread):
                         (fwd_real, fwd_imag, rev0_real, rev0_imag, rev1_real,
                          rev1_imag, freq_index) = unpack_from(
@@ -148,8 +152,10 @@ class NanoVNAV2(VNA):
                         fwd = complex(fwd_real, fwd_imag)
                         refl = complex(rev0_real, rev0_imag)
                         thru = complex(rev1_real, rev1_imag)
-                        logger.debug("Freq index: %i", freq_index)
+                        if i == 0:
+                            logger.debug("Freq index from: %i", freq_index)
                         self._sweepdata[freq_index] = (refl / fwd, thru / fwd)
+                    logger.debug("Freq index to: %i", freq_index)
 
                     pointstodo = pointstodo - pointstoread
 

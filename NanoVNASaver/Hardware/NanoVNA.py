@@ -45,15 +45,6 @@ class NanoVNA(VNA):
         self.stop = 30000000
         self._sweepdata = []
 
-        if self.version >= Version("0.7.1"):
-            self.features.add("Scan mask command")
-            self.sweep_method = "scan_mask"
-        elif self.version >= Version("0.2.0"):
-            logger.debug("Newer than 0.2.0, using new scan command.")
-            self.features.add("Scan command")
-            self.sweep_method = "scan"
-        self.readFeatures()
-
     def isValid(self):
         return True
 
@@ -106,6 +97,17 @@ class NanoVNA(VNA):
             self.writeSerial(f"sweep {start} {stop} {self.datapoints}")
         elif self.sweep_method == "scan":
             self.writeSerial(f"scan {start} {stop} {self.datapoints}")
+
+    def read_features(self):
+        if self.version >= Version("0.7.1"):
+            self.features.add("Scan mask command")
+            self.sweep_method = "scan_mask"
+        elif self.version >= Version("0.2.0"):
+            logger.debug("Newer than 0.2.0, using new scan command.")
+            self.features.add("Scan command")
+            self.sweep_method = "scan"
+        super().read_features()
+
 
     def readFrequencies(self) -> List[int]:
         if self.sweep_method != "scan_mask":

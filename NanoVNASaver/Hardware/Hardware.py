@@ -26,10 +26,11 @@ from serial.tools import list_ports
 
 from NanoVNASaver.Hardware.VNA import VNA
 from NanoVNASaver.Hardware.AVNA import AVNA
-from NanoVNASaver.Hardware.NanoVNA_F import NanoVNA_F
-from NanoVNASaver.Hardware.NanoVNA_H import NanoVNA_H, NanoVNA_H4
 from NanoVNASaver.Hardware.NanoVNA import NanoVNA
-from NanoVNASaver.Hardware.NanoVNA_V2 import NanoVNAV2
+from NanoVNASaver.Hardware.NanoVNA_F import NanoVNA_F
+from NanoVNASaver.Hardware.NanoVNA_H import NanoVNA_H
+from NanoVNASaver.Hardware.NanoVNA_H4 import NanoVNA_H4
+from NanoVNASaver.Hardware.NanoVNA_V2 import NanoVNA_V2
 from NanoVNASaver.Hardware.Serial import drain_serial, Interface
 
 logger = logging.getLogger(__name__)
@@ -82,7 +83,7 @@ def get_VNA(iface: Interface) -> 'VNA':
 
     if vna_version == 'v2':
         logger.info("Type: NanoVNA-V2")
-        return NanoVNAV2(iface)
+        return NanoVNA_V2(iface)
 
     logger.info("Finding firmware variant...")
     tmp_vna = VNA(iface)
@@ -94,16 +95,10 @@ def get_VNA(iface: Interface) -> 'VNA':
     if firmware.find("NanoVNA-H 4") > 0:
         logger.info("Type: NanoVNA-H4")
         vna = NanoVNA_H4(iface)
-        if vna.readFirmware().find("sweep_points 201") > 0:
-            logger.info("VNA has 201 datapoints capability")
-            vna.datapoints = (201, 101)
         return vna
     if firmware.find("NanoVNA-H") > 0:
         logger.info("Type: NanoVNA-H")
         vna = NanoVNA_H(iface)
-        if vna.readFirmware().find("sweep_points 201") > 0:
-            logger.info("VNA has 201 datapoints capability")
-            vna.datapoints = (201, 101)
         return vna
     if firmware.find("NanoVNA-F") > 0:
         logger.info("Type: NanoVNA-F")
