@@ -86,7 +86,7 @@ class NanoVNA(VNA):
 
     def resetSweep(self, start: int, stop: int):
         list(self.exec_command(f"sweep {start} {stop} {self.datapoints}"))
-        list(self.exec_commend("resume"))
+        list(self.exec_command("resume"))
 
     def setSweep(self, start, stop):
         self.start = start
