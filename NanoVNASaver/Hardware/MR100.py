@@ -15,13 +15,8 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-
 from typing import List
-
-import pandas as pd
 import numpy as np
-import serial
-
 from NanoVNASaver.Hardware.VNA import VNA, Version
 import time
 import socket
@@ -105,20 +100,6 @@ class Mr100(VNA):
 
         s.close()
         return res
-
-    def new_df(self, start, stop, step, colonne=["freq", "rl", "vswr", "z", "r", "x", "phi"]):
-        '''
-        Per centralizzare df
-
-        :param start:
-        :param stop:
-        :param step:
-        :param colonne:
-        '''
-
-        df = pd.DataFrame(1., index=np.arange(
-            start, stop, step), columns=colonne)
-        return df, colonne
 
     def aggiorna_df(self, start, stop, step, df=None, colonne=None, z0=50):
         '''
