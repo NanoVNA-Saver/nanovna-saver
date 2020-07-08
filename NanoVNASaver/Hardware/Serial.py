@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 def drain_serial(serial_port: serial.Serial):
     """drain up to 64k outstanding data in the serial incoming buffer"""
-    logger.debug("Draining: %s", serial_port)
+    # logger.debug("Draining: %s", serial_port)
     for _ in range(512):
         cnt = len(serial_port.read(128))
         if not cnt:
