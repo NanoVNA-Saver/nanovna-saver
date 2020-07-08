@@ -187,7 +187,7 @@ class Version:
         return False
 
     def __lt__(self, other: "Version") -> bool:
-        return other > self
+        return other < self
 
     def __ge__(self, other: "Version") -> bool:
         return self > other or self == other

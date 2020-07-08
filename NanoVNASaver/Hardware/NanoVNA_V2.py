@@ -57,7 +57,7 @@ _ADDR_FW_MINOR = 0xf4
 
 class NanoVNA_V2(VNA):
     name = "NanoVNA-V2"
-    valid_datapoints = (202, 101, 303, 505, 1023)
+    valid_datapoints = (202, 51, 101, 303, 505, 1023)
     screenwidth = 320
     screenheight = 240
 
@@ -115,16 +115,17 @@ class NanoVNA_V2(VNA):
         # The hardware will return all channels which we will store.
         if value == "data 0":
             # reset protocol to known state
+            timeout = self.serial.timeout
             with self.serial.lock:
-                self.serial.timeout = 8  # should be enough
                 self.serial.write(pack("<Q", 0))
-
                 # cmd: write register 0x30 to clear FIFO
                 self.serial.write(pack("<BBB",
                                        _CMD_WRITE, _ADDR_VALUES_FIFO, 0))
                 # clear sweepdata
                 self._sweepdata = [(complex(), complex())] * self.datapoints
                 pointstodo = self.datapoints
+                # 8 seconds should be enough for 8k points
+                self.serial.timeout = min(8.0, (pointstodo / 32) + 0.1)
                 while pointstodo > 0:
                     logger.info("reading values")
                     pointstoread = min(255, pointstodo)
@@ -158,6 +159,7 @@ class NanoVNA_V2(VNA):
                     logger.debug("Freq index to: %i", freq_index)
 
                     pointstodo = pointstodo - pointstoread
+            self.serial.timeout = timeout
 
             ret = [x[0] for x in self._sweepdata]
             ret = [str(x.real) + ' ' + str(x.imag) for x in ret]
@@ -172,7 +174,7 @@ class NanoVNA_V2(VNA):
         self.setSweep(start, stop)
 
     # returns device variant
-    def readVersion(self):
+    def readVersion(self) -> 'Version':
         # read register 0xf0 (device type), 0xf2 (board revision)
         cmd = b"\x10\xf0\x10\xf2"
         with self.serial.lock:

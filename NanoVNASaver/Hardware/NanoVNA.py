@@ -38,8 +38,6 @@ class NanoVNA(VNA):
 
     def __init__(self, iface: Interface):
         super().__init__(iface)
-        version_string = self.readVersion()
-        self.version = Version(version_string)
         self.sweep_method = "sweep"
         self.start = 27000000
         self.stop = 30000000
@@ -97,6 +95,7 @@ class NanoVNA(VNA):
             list(self.exec_command(f"scan {start} {stop} {self.datapoints}"))
 
     def read_features(self):
+        super().read_features()
         if self.version >= Version("0.7.1"):
             self.features.add("Scan mask command")
             self.sweep_method = "scan_mask"
@@ -104,7 +103,6 @@ class NanoVNA(VNA):
             logger.debug("Newer than 0.2.0, using new scan command.")
             self.features.add("Scan command")
             self.sweep_method = "scan"
-        super().read_features()
 
     def readFrequencies(self) -> List[int]:
         if self.sweep_method != "scan_mask":

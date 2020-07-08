@@ -20,7 +20,6 @@ import logging
 from time import sleep
 from typing import List, Iterator
 
-import serial
 from PyQt5 import QtGui
 
 from NanoVNASaver.Settings import Version
@@ -40,10 +39,11 @@ class VNA:
         self.validateInput = True
         self.datapoints = self.valid_datapoints[0]
         if self.connected():
+            self.version = self.readVersion()
             self.read_features()
 
     def exec_command(self, command: str, wait: float = 0.05) -> Iterator[str]:
-        logger.debug("_exec_command: %s", command)
+        logger.debug("exec_command(%s)", command)
         with self.serial.lock:
             drain_serial(self.serial)
             self.serial.write(f"{command}\r".encode('ascii'))
@@ -111,8 +111,10 @@ class VNA:
                      value, len(result))
         return result
 
-    def readVersion(self) -> str:
-        return list(self.exec_command("version"))[0]
+    def readVersion(self) -> 'Version':
+        result = list(self.exec_command("version"))
+        logger.debug("result:\n%s", result)
+        return Version(result[0])
 
     def setSweep(self, start, stop):
         list(self.exec_command(f"sweep {start} {stop} {self.datapoints}"))

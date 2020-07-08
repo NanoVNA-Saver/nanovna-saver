@@ -19,7 +19,7 @@
 import logging
 
 from NanoVNASaver.Hardware.Serial import Interface
-from NanoVNASaver.Hardware.VNA import VNA, Version
+from NanoVNASaver.Hardware.VNA import VNA
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,6 @@ class AVNA(VNA):
 
     def __init__(self, iface: Interface):
         super().__init__(iface)
-        self.version = Version(self.readVersion())
         self.features.add("Customizable data points")
 
     def isValid(self):
