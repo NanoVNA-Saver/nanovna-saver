@@ -15,8 +15,9 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-from time import sleep
+
 from typing import List
+
 import pandas as pd
 import numpy as np
 import serial
@@ -26,9 +27,9 @@ import time
 import socket
 import sys
 from NanoVNASaver.Hardware.Serial import drain_serial
+from time import sleep
 
 logger = logging.getLogger(__name__)
-
 
 
 class Mr100(VNA):
@@ -41,27 +42,15 @@ class Mr100(VNA):
     '''
     name = "MR100"
     prompt = ">>"
-    _datapoints = (101,)
+    valid_datapoints = (101,)
 
     def __init__(self,  iface, addr="00:15:83:35:63:A1", port=1, raw=False):
-        
-#         serial_port.baudrate=57600
-#         serial_port.close()
-#         serial_port.open()
-#         serial_port.flushInput()
-#         serial_port.flushOutput()
-#         serial_port.write(str("stop\r").encode('ascii'))
-#         serial_port.flushInput()
-#         serial_port.flushOutput()
         super().__init__(iface)
         self.port = port
         self.addr = addr
         self.s = None
         self.raw = raw
-        self.datapoints = self._datapoints[0]
         self.setSweep(3000000, 30000000)
-
-        
 
     @classmethod
     def misura_test(cls, len_buffer=50):
@@ -269,7 +258,7 @@ class Mr100(VNA):
 
     # MIXIN:
 
-    def setSweep(self, start, stop, step=101):
+    def setSweep(self, start, stop):
 
         FMIN = 1000000
         FMAX = 50000000
@@ -277,17 +266,11 @@ class Mr100(VNA):
             raise ValueError("MR100 only 1-50 MHz")
         self.start = start
         self.stop = stop
-        self.step = round((stop - start) / (self.datapoints-1))
+        self.step = round((stop - start) / (self.datapoints - 1))
 
     def readFrequencies(self) -> List[int]:
         frequencies = [f for f in range(self.start, self.stop, self.step)]
-
-
         frequencies.append(self.stop)
-        logger.debug("range ha %s valori, primo %s ultimo %s",
-                     len(frequencies),
-                              frequencies[0],
-                              frequencies[-1])
         return frequencies
 
     def readValues11(self) -> List[str]:
@@ -298,7 +281,8 @@ class Mr100(VNA):
             cmd = "scanr"
         else:
             cmd = "scan"
-        full_cmd = "%s %s %s %s \r" % (cmd, self.start, self.stop+self.step, self.step)
+        full_cmd = "%s %s %s %s \r" % (
+            cmd, self.start, self.stop + self.step, self.step)
         logger.debug("using command: %s", full_cmd)
 
         for swr, r, x, z in self._readValues(full_cmd):
@@ -306,12 +290,10 @@ class Mr100(VNA):
             S11 = (Z - Z0) / (Z + Z0)
             values.append("%s %s" % (S11.real, S11.imag))
         return values
-       
 
     def readValues21(self) -> List[str]:
         logger.error("Only S11 from MR100")
         return ["1 0"] * 101
-
 
     def readBtValues(self, data):
 
@@ -332,47 +314,50 @@ class Mr100(VNA):
 
     def readFirmware(self):
         return "not implemented"
-    
+
     def readValues(self, value) -> List[str]:
-        
+
         if value == "data 0":
             return self.readValues11()
         elif value == "data 1":
             return self.readValues21()
-        
+
     def _readValues(self, value, pre="Start", post="End") -> List[str]:
         logger.debug("VNA reading %s", value)
         values = []
-        try:
-            with self.serial.lock:
-                drain_serial(self.serial)
-                self.serial.write(f"{value}\r".encode('ascii'))
-                data = "a"
-                sleep(0.05)
-                while data != self.prompt:
-                    logger.debug("leggo")
-                    data = self.serial.readline().decode('ascii').strip("\r\n")
-                    logger.debug("letto '%s'", data)
-                    if pre:
-                        if data == pre:
-                            logger.debug("read %s, next line is data")
-                            pre = None
-                        else:
-                            logger.warning("waiting %s skipping %s", pre, data)
-                        continue
-                    if post and data == post:
-                        logger.debug("read %s, end of data")
-                        break
-                    if data not in ["", self.prompt]:
-                        values.append(data.split(","))
-                # values = result.split("\r\n")
-        except serial.SerialException as exc:
-            logger.exception(
-                "Exception while reading %s: %s", value, exc)
-            return []
+
+        with self.serial.lock:
+            drain_serial(self.serial)
+            self.serial.write(f"{value}\r".encode('ascii'))
+            data = "a"
+            sleep(0.05)
+            while data != self.prompt:
+                logger.debug("leggo")
+                data = self.serial.readline().decode('ascii').strip("\r\n")
+                logger.debug("letto '%s'", data)
+                if pre:
+                    if data == pre:
+                        logger.debug("read %s, next line is data")
+                        pre = None
+                    else:
+                        logger.warning("waiting %s skipping %s", pre, data)
+                    continue
+                if post and data == post:
+                    logger.debug("read %s, end of data")
+                    break
+                if data not in ["", self.prompt]:
+                    values.append(data.split(","))
+            # values = result.split("\r\n")
+
         logger.debug(
             "VNA done reading %s (%d values)",
             value, len(values))
         logger.debug(values)
         return values[:self.datapoints]
- 
+
+    def readVersion(self) -> 'Version':
+        logger.debug("dummy version")
+        return Version("v13")
+
+    def read_features(self):
+        pass

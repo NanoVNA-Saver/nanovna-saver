@@ -608,10 +608,10 @@ class NanoVNASaver(QtWidgets.QWidget):
         with self.interface.lock:
             self.interface = self.serialPortInput.currentData()
             logger.info("Connection %s", self.interface)
+            if "MR100" in self.serialPortInput.currentText():
+                self.interface.baudrate = 57600
+                logger.debug("MR100 detected, set bauruate to 57600")
             try:
-                if "MR100" in self.serialPortInput.currentText():
-                    self.interface.baudrate=57600
-
                 self.interface.open()
                 self.interface.timeout = 0.05
             except (IOError, AttributeError) as exc:

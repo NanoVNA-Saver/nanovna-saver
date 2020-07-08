@@ -81,7 +81,8 @@ def get_VNA(iface: Interface) -> 'VNA':
     # serial_port.timeout = TIMEOUT
 
     logger.info("Finding correct VNA type...")
-    if iface.baudrate==57600:
+    if iface.baudrate == 57600:
+        logger.info("Only MR100 has baudrate 57600")
         return Mr100(iface)
     with iface.lock:
         vna_version = detect_version(iface)
