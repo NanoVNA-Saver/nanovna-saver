@@ -24,5 +24,9 @@ logger = logging.getLogger(__name__)
 
 class NanoVNA_H4(NanoVNA_H):
     name = "NanoVNA-H4"
+    valid_datapoints = (201, 101)
     screenwidth = 480
     screenheight = 320
+
+    def read_features(self):
+        self.features.add("Customizable data points")
