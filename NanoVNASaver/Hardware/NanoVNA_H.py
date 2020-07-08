@@ -26,8 +26,10 @@ logger = logging.getLogger(__name__)
 class NanoVNA_H(NanoVNA):
     name = "NanoVNA-H"
 
-
-class NanoVNA_H4(NanoVNA):
-    name = "NanoVNA-H4"
-    screenwidth = 480
-    screenheight = 320
+    def read_features(self):
+        logger.debug("read_features")
+        if self.readFirmware().find("sweep_points 201") > 0:
+            logger.info("VNA has 201 datapoints capability")
+            self.valid_datapoints = (201, 101)
+            self.datapoints = 201
+        super().read_features()
