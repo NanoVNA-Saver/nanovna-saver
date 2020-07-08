@@ -1,7 +1,6 @@
 #  NanoVNASaver
 #
 #  A python program to view and export Touchstone data from a NanoVNA
-#  Copyright (C) 2019, 2020  Rune B. Broberg
 #  Copyright (C) 2020 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -18,25 +17,12 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from NanoVNASaver.Hardware.Serial import Interface
-from NanoVNASaver.Hardware.VNA import VNA
+from NanoVNASaver.Hardware.NanoVNA_H import NanoVNA_H
 
 logger = logging.getLogger(__name__)
 
 
-class AVNA(VNA):
-    name = "AVNA"
-
-    def __init__(self, iface: Interface):
-        super().__init__(iface)
-        self.features.add("Customizable data points")
-
-    def isValid(self):
-        return True
-
-    def resetSweep(self, start: int, stop: int):
-        list(self.exec_command(f"sweep {start} {stop} {self.datapoints}"))
-        list(self.exec_command("resume"))
-
-    def setSweep(self, start, stop):
-        list(self.exec_command(f"sweep {start} {stop} {self.datapoints}"))
+class NanoVNA_H4(NanoVNA_H):
+    name = "NanoVNA-H4"
+    screenwidth = 480
+    screenheight = 320

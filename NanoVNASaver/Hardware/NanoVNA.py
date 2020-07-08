@@ -18,7 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 import struct
-from time import sleep
+from time import sleep, time
 from typing import List
 
 import serial
@@ -38,36 +38,23 @@ class NanoVNA(VNA):
 
     def __init__(self, iface: Interface):
         super().__init__(iface)
-        version_string = self.readVersion()
-        self.version = Version(version_string)
         self.sweep_method = "sweep"
         self.start = 27000000
         self.stop = 30000000
         self._sweepdata = []
 
-        if self.version >= Version("0.7.1"):
-            self.features.add("Scan mask command")
-            self.sweep_method = "scan_mask"
-        elif self.version >= Version("0.2.0"):
-            logger.debug("Newer than 0.2.0, using new scan command.")
-            self.features.add("Scan command")
-            self.sweep_method = "scan"
-        self.readFeatures()
-
-    def isValid(self):
-        return True
-
-
     def _capture_data(self) -> bytes:
+        timeout = self.serial.timeout
         with self.serial.lock:
             drain_serial(self.serial)
             timeout = self.serial.timeout
             self.serial.write("capture\r".encode('ascii'))
-            self.serial.timeout = 4
             self.serial.readline()
+            self.serial.timeout = 4
             image_data = self.serial.read(
                 self.screenwidth * self.screenheight * 2)
             self.serial.timeout = timeout
+        self.serial.timeout = timeout
         rgb_data = struct.unpack(
             f">{self.screenwidth * self.screenheight}H",
             image_data)
@@ -96,16 +83,26 @@ class NanoVNA(VNA):
         return QtGui.QPixmap()
 
     def resetSweep(self, start: int, stop: int):
-        self.writeSerial(f"sweep {start} {stop} {self.datapoints}")
-        self.writeSerial("resume")
+        list(self.exec_command(f"sweep {start} {stop} {self.datapoints}"))
+        list(self.exec_command("resume"))
 
     def setSweep(self, start, stop):
         self.start = start
         self.stop = stop
         if self.sweep_method == "sweep":
-            self.writeSerial(f"sweep {start} {stop} {self.datapoints}")
+            list(self.exec_command(f"sweep {start} {stop} {self.datapoints}"))
         elif self.sweep_method == "scan":
-            self.writeSerial(f"scan {start} {stop} {self.datapoints}")
+            list(self.exec_command(f"scan {start} {stop} {self.datapoints}"))
+
+    def read_features(self):
+        super().read_features()
+        if self.version >= Version("0.7.1"):
+            self.features.add("Scan mask command")
+            self.sweep_method = "scan_mask"
+        elif self.version >= Version("0.2.0"):
+            logger.debug("Newer than 0.2.0, using new scan command.")
+            self.features.add("Scan command")
+            self.sweep_method = "scan"
 
     def readFrequencies(self) -> List[int]:
         if self.sweep_method != "scan_mask":
@@ -121,34 +118,12 @@ class NanoVNA(VNA):
         # The hardware will return all channels which we will store.
         if value == "data 0":
             self._sweepdata = []
-            try:
-                with self.serial.lock:
-                    drain_serial(self.serial)
-                    self.serial.write(
-                        (f"scan {self.start} {self.stop}"
-                         f' {self.datapoints} 0b110\r'
-                         ).encode("ascii"))
-                    self.serial.readline()
-                    logger.info("reading values")
-                    retries = 0
-                    while True:
-                        line = self.serial.readline()
-                        line = line.decode("ascii").strip()
-                        if not line:
-                            retries += 1
-                            logger.info("Retry nr: %s", retries)
-                            if retries > 10:
-                                raise IOError("too many retries")
-                            sleep(0.2)
-                            continue
-                        if line.startswith("ch>"):
-                            break
-                        data = line.split()
-                        self._sweepdata.append((
-                            f"{data[0]} {data[1]}",
-                            f"{data[2]} {data[3]}"))
-            except IOError as exc:
-                logger.error("Error readValues: %s", exc)
+            for line in self.exec_command(
+                    f"scan {self.start} {self.stop} {self.datapoints} 0b110"):
+                data = line.split()
+                self._sweepdata.append((
+                    f"{data[0]} {data[1]}",
+                    f"{data[2]} {data[3]}"))
         if value == "data 0":
             return [x[0] for x in self._sweepdata]
         if value == "data 1":

@@ -125,8 +125,7 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         if "Customizable data points" in features:
             self.datapoints.clear()
             cur_dps = self.app.vna.datapoints
-            dplist = self.app.vna._datapoints[:]
-            for d in sorted(dplist):
+            for d in sorted(self.app.vna.valid_datapoints):
                 self.datapoints.addItem(str(d))
             self._set_datapoint_index(cur_dps)
 

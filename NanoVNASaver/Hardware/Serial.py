@@ -24,10 +24,13 @@ import serial
 logger = logging.getLogger(__name__)
 
 def drain_serial(serial_port: serial.Serial):
-    """drain up to 10k outstanding data in the serial incoming buffer"""
-    for _ in range(80):
-        if len(serial_port.read(128)) == 0:
-            break
+    """drain up to 64k outstanding data in the serial incoming buffer"""
+    logger.debug("Draining: %s", serial_port)
+    for _ in range(512):
+        cnt = len(serial_port.read(128))
+        if not cnt:
+            return
+    logger.warning("unable to drain all data")
 
 class Interface(serial.Serial):
     def __init__(self, interface_type: str, comment, *args, **kwargs):
