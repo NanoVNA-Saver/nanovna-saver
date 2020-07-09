@@ -96,7 +96,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.dataLock = threading.Lock()
         # TODO: use Touchstone class as data container
-        self.data: List[Datapoint] = []
+        self.data11: List[Datapoint] = []
         self.data21: List[Datapoint] = []
         self.referenceS11data: List[Datapoint] = []
         self.referenceS21data: List[Datapoint] = []
@@ -556,7 +556,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.serialPortInput.insertItem(1, f"{iface}", iface)
 
     def exportFile(self, nr_params: int = 1):
-        if len(self.data) == 0:
+        if len(self.data11) == 0:
             QtWidgets.QMessageBox.warning(
                 self, "No data to save", "There is no data to save.")
             return
@@ -584,10 +584,10 @@ class NanoVNASaver(QtWidgets.QWidget):
             return
 
         ts = Touchstone(filename)
-        ts.sdata[0] = self.data
+        ts.sdata[0] = self.data11
         if nr_params > 1:
             ts.sdata[1] = self.data21
-            for dp in self.data:
+            for dp in self.data11:
                 ts.sdata[2].append(Datapoint(dp.freq, 0, 0))
                 ts.sdata[3].append(Datapoint(dp.freq, 0, 0))
         try:
@@ -692,7 +692,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def saveData(self, data, data21, source=None):
         with self.dataLock:
-            self.data = data
+            self.data11 = data
             self.data21 = data21
             if self.s21att > 0:
                 self.data21 = corr_att_data(self.data21, self.s21att)
@@ -706,10 +706,10 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def markerUpdated(self, marker: Marker):
         with self.dataLock:
-            marker.findLocation(self.data)
+            marker.findLocation(self.data11)
             for m in self.markers:
                 m.resetLabels()
-                m.updateLabels(self.data, self.data21)
+                m.updateLabels(self.data11, self.data21)
 
             for c in self.subscribing_charts:
                 c.update()
@@ -718,16 +718,16 @@ class NanoVNASaver(QtWidgets.QWidget):
         with self.dataLock:
             for m in self.markers:
                 m.resetLabels()
-                m.updateLabels(self.data, self.data21)
+                m.updateLabels(self.data11, self.data21)
 
             for c in self.s11charts:
-                c.setData(self.data)
+                c.setData(self.data11)
 
             for c in self.s21charts:
                 c.setData(self.data21)
 
             for c in self.combinedCharts:
-                c.setCombinedData(self.data, self.data21)
+                c.setCombinedData(self.data11, self.data21)
 
             self.sweepProgressBar.setValue(self.worker.percentage)
             self.windows["tdr"].updateTDR()
@@ -735,7 +735,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             # Find the minimum S11 VSWR:
             min_vswr = 100
             min_vswr_freq = -1
-            for d in self.data:
+            for d in self.data11:
                 vswr = d.vswr
                 if min_vswr > vswr > 0:
                     min_vswr = vswr
@@ -819,7 +819,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def setReference(self, s11data=None, s21data=None, source=None):
         if not s11data:
-            s11data = self.data
+            s11data = self.data11
         if not s21data:
             s21data = self.data21
         self.referenceS11data = s11data
@@ -846,7 +846,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         title = self.baseTitle
         insert = ""
         if self.sweepSource != "":
-            insert += f"Sweep: {self.sweepSource} @ {len(self.data)} points"
+            insert += f"Sweep: {self.sweepSource} @ {len(self.data11)} points"
         if self.referenceSource != "":
             if insert != "":
                 insert += ", "
@@ -887,7 +887,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         filename, _ = QtWidgets.QFileDialog.getOpenFileName(
             filter="Touchstone Files (*.s1p *.s2p);;All files (*.*)")
         if filename != "":
-            self.data = []
+            self.data11 = []
             self.data21 = []
             t = Touchstone(filename)
             t.load()
