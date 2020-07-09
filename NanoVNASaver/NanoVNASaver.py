@@ -910,7 +910,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def showSweepError(self):
         self.showError(self.worker.error_message)
-        self.serial.flushInput()  # Remove any left-over data
+        self.vna.flushSerialBuffers()  # Remove any left-over data
         self.sweepFinished()
 
     def popoutChart(self, chart: Chart):
