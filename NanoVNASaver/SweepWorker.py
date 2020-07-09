@@ -134,12 +134,9 @@ class SweepWorker(QtCore.QRunnable):
                 int(self.app.sweepCountInput.text())
             )
         except ValueError:
-            self.error_message = (
+            self.gui_error(
                 "Unable to parse frequency inputs"
                 " - check start and stop fields.")
-            self.stopped = True
-            self.running = False
-            self.signals.sweepError.emit()
             return
 
         if self.averaging:
@@ -380,3 +377,10 @@ class SweepWorker(QtCore.QRunnable):
 
     def setVNA(self, vna):
         self.vna = vna
+
+ 
+    def gui_error(self, message: str):
+        self.error_message = message
+        self.stopped = True
+        self.running = False
+        self.signals.sweepError.emit()
