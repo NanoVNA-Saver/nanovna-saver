@@ -19,6 +19,7 @@
 import logging
 import platform
 from collections import namedtuple
+from time import sleep
 from typing import List
 
 import serial
@@ -89,21 +90,21 @@ def get_VNA(iface: Interface) -> 'VNA':
     tmp_vna = VNA(iface)
     tmp_vna.flushSerialBuffers()
     firmware = tmp_vna.readFirmware()
-    if firmware.find("AVNA + Teensy") > 0:
+    if firmware.find("AVNA + Teensy") >= 0:
         logger.info("Type: AVNA")
         return AVNA(iface)
-    if firmware.find("NanoVNA-H 4") > 0:
+    if firmware.find("NanoVNA-H 4") >= 0:
         logger.info("Type: NanoVNA-H4")
         vna = NanoVNA_H4(iface)
         return vna
-    if firmware.find("NanoVNA-H") > 0:
+    if firmware.find("NanoVNA-H") >= 0:
         logger.info("Type: NanoVNA-H")
         vna = NanoVNA_H(iface)
         return vna
-    if firmware.find("NanoVNA-F") > 0:
+    if firmware.find("NanoVNA-F") >= 0:
         logger.info("Type: NanoVNA-F")
         return NanoVNA_F(iface)
-    if firmware.find("NanoVNA") > 0:
+    if firmware.find("NanoVNA") >= 0:
         logger.info("Type: Generic NanoVNA")
         return NanoVNA(iface)
     logger.warning("Did not recognize NanoVNA type from firmware.")
@@ -115,6 +116,7 @@ def detect_version(serial_port: serial.Serial) -> str:
     for i in range(RETRIES):
         drain_serial(serial_port)
         serial_port.write("\r".encode("ascii"))
+        sleep(0.05)
         data = serial_port.read(128).decode("ascii")
         if data.startswith("ch> "):
             return "v1"
