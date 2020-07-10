@@ -232,9 +232,9 @@ class CalibrationWindow(QtWidgets.QWidget):
         if name in ("through", "isolation"):
             self.app.calibration.insert(name, self.app.data21)
         else:
-            self.app.calibration.insert(name, self.app.data)
+            self.app.calibration.insert(name, self.app.data11)
         self.cal_label[name].setText(
-            _format_cal_label(len(self.app.data)))
+            _format_cal_label(len(self.app.data11)))
 
     def manual_save(self, name: str):
         if self.checkExpertUser():
@@ -633,7 +633,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.btn_automatic.setDisabled(False)
             return
         logger.info("Starting automatic calibration assistant.")
-        if not self.app.serial.is_open:
+        if not self.app.vna.connected():
             QtWidgets.QMessageBox(
                 QtWidgets.QMessageBox.Information,
                 "NanoVNA not connected",

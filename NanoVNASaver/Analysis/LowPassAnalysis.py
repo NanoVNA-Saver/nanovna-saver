@@ -106,7 +106,7 @@ class LowPassAnalysis(Analysis):
                 peak_db = db
                 peak_location = i
 
-        logger.debug("Found peak of %f at %d", peak_db, self.app.data[peak_location].freq)
+        logger.debug("Found peak of %f at %d", peak_db, self.app.data11[peak_location].freq)
 
         self.app.markers[0].setFrequency(str(self.app.data21[peak_location].freq))
         self.app.markers[0].frequencyInput.setText(str(self.app.data21[peak_location].freq))
@@ -202,4 +202,4 @@ class LowPassAnalysis(Analysis):
             self.db_per_decade_label.setText("Not calculated")
 
         self.result_label.setText(
-            "Analysis complete (" + str(len(self.app.data)) + " points)")
+            "Analysis complete (" + str(len(self.app.data11)) + " points)")

@@ -77,7 +77,7 @@ class SweepSettingsWindow(QtWidgets.QWidget):
                 "Averaging allows discarding outlying samples to get better averages."))
         settings_layout.addRow(
             QtWidgets.QLabel("Common values are 3/0, 5/2, 9/4 and 25/6."))
-        
+    
         self.s21att = QtWidgets.QLineEdit("0")
 
         settings_layout.addRow(QtWidgets.QLabel(""))
@@ -158,20 +158,16 @@ class SweepSettingsWindow(QtWidgets.QWidget):
             f" to {format_frequency_short(stop)}")
 
     def setS21Attenuator(self):
-        
         try:
             s21att = float(self.s21att.text())
-        except:
+        except ValueError:
             s21att = 0
-
-        if (s21att < 0):
+        if s21att < 0:
             logger.warning("Values for attenuator are absolute and with no minus sign, resetting.")
             self.s21att.setText("0")
-        else:
-            logger.info("Setting an attenuator of %.2f dB inline with the CH1/S21 input", s21att)
-            self.app.s21att = s21att
-
-
+            self.app.s21att = 0
+        logger.info("Setting an attenuator of %.2f dB inline with the CH1/S21 input", s21att)
+        self.app.s21att = s21att
 
     def setBandSweep(self):
         index_start = self.band_list.model().index(self.band_list.currentIndex(), 1)

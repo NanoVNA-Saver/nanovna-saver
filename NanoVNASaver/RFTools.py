@@ -149,7 +149,7 @@ def serial_to_parallel(z: complex) -> complex:
     return complex(z_sq_sum / z.real, z_sq_sum / z.imag)
 
 
-def corr_att_data(data: List[Datapoint], att: float):
+def corr_att_data(data: List[Datapoint], att: float) -> List[Datapoint]:
     """Correct the ratio for a given attenuation on s21 input"""
     if att <= 0:
         return data
@@ -157,8 +157,6 @@ def corr_att_data(data: List[Datapoint], att: float):
         att = 10**(att/20)
     ndata = []
     for dp in data:
-        freq, re, im = dp
-        orig = complex(re, im)
-        corrected = orig * att
-        ndata.append(Datapoint(freq, corrected.real, corrected.imag))
+        corrected = dp.z * att
+        ndata.append(Datapoint(dp.freq, corrected.real, corrected.imag))
     return ndata

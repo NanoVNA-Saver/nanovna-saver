@@ -114,7 +114,7 @@ class BandStopAnalysis(Analysis):
                 peak_db = db
                 peak_location = i
 
-        logger.debug("Found peak of %f at %d", peak_db, self.app.data[peak_location].freq)
+        logger.debug("Found peak of %f at %d", peak_db, self.app.data11[peak_location].freq)
 
         lower_cutoff_location = -1
         pass_band_db = peak_db
@@ -309,8 +309,8 @@ class BandStopAnalysis(Analysis):
 
         if upper_cutoff_gain < -4 or lower_cutoff_gain < -4:
             self.result_label.setText(
-                f"Analysis complete ({len(self.app.data)} points)\n"
+                f"Analysis complete ({len(self.app.data11)} points)\n"
                 f"Insufficient data for analysis. Increase segment count.")
         else:
             self.result_label.setText(
-                f"Analysis complete ({len(self.app.data)} points)")
+                f"Analysis complete ({len(self.app.data11)} points)")
