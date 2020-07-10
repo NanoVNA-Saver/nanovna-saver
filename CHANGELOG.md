@@ -1,3 +1,18 @@
+v0.3.5
+======
+
+- Sweep worker now initializes full dataset on setting changes.
+  Therefore no resize of charts when doing multi segment sweep
+- Changing datapoints in DeviceSettings are reflected in SweepSettings widget step size
+- Simplified calibration code by just using scipy.interp1d with fill\_value
+- Established Interface class to ease locking and allow non usb connections in future
+- Cleaned up VNA code. Added some pause statements to get more robust readings
+- Added MagLoopAnalysis
+- Touchstone class can now generate interpolated Datapoints for a given frequency
+  Will be usefull in future analysis code
+- Fixed a bug in Version comparison
+
+
 v0.3.4
 ======
 
