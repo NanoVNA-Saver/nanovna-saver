@@ -85,6 +85,8 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         self.datapoints = QtWidgets.QComboBox()
         self.datapoints.addItem(str(self.app.vna.datapoints))
         self.datapoints.currentIndexChanged.connect(self.updateNrDatapoints)
+        self.datapoints.currentIndexChanged.connect(self.app.updateStepSize)
+
         form_layout = QtWidgets.QFormLayout()
         form_layout.addRow(QtWidgets.QLabel("Datapoints"), self.datapoints)
         right_layout.addWidget(settings_box)

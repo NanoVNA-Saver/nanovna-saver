@@ -625,7 +625,6 @@ class NanoVNASaver(QtWidgets.QWidget):
             logger.error("Unable to connect to VNA: %s", exc)
 
         self.vna.validateInput = self.settings.value("SerialInputValidation", True, bool)
-        self.worker.setVNA(self.vna)
 
         # connected
         self.btnSerialToggle.setText("Disconnect")
