@@ -61,17 +61,17 @@ class VSWRAnalysis(Analysis):
     def runAnalysis(self):
         max_dips_shown = self.max_dips_shown
         data = []
-        for d in self.app.data:
+        for d in self.app.data11:
             data.append(d.vswr)
         # min_idx = np.argmin(data)
         #
         # logger.debug("Minimum at %d", min_idx)
         # logger.debug("Value at minimum: %f", data[min_idx])
-        # logger.debug("Frequency: %d", self.app.data[min_idx].freq)
+        # logger.debug("Frequency: %d", self.app.data11[min_idx].freq)
         #
         # if self.checkbox_move_marker.isChecked():
-        #     self.app.markers[0].setFrequency(str(self.app.data[min_idx].freq))
-        #     self.app.markers[0].frequencyInput.setText(str(self.app.data[min_idx].freq))
+        #     self.app.markers[0].setFrequency(str(self.app.data11[min_idx].freq))
+        #     self.app.markers[0].frequencyInput.setText(str(self.app.data11[min_idx].freq))
 
         minimums = []
         min_start = -1
@@ -122,23 +122,23 @@ class VSWRAnalysis(Analysis):
                     logger.debug(
                         "Section from %d to %d, lowest at %d", start, end, lowest)
                     self.layout.addRow("Start", QtWidgets.QLabel(
-                        format_frequency(self.app.data[start].freq)))
+                        format_frequency(self.app.data11[start].freq)))
                     self.layout.addRow(
                         "Minimum",
                         QtWidgets.QLabel(
-                            f"{format_frequency(self.app.data[lowest].freq)}"
+                            f"{format_frequency(self.app.data11[lowest].freq)}"
                             f" ({round(data[lowest], 2)})"))
                     self.layout.addRow("End", QtWidgets.QLabel(
-                        format_frequency(self.app.data[end].freq)))
+                        format_frequency(self.app.data11[end].freq)))
                     self.layout.addRow(
                         "Span",
                         QtWidgets.QLabel(
-                            format_frequency(self.app.data[end].freq -
-                                             self.app.data[start].freq)))
+                            format_frequency(self.app.data11[end].freq -
+                                             self.app.data11[start].freq)))
                     self.layout.addWidget(PeakSearchAnalysis.QHLine())
                 else:
                     self.layout.addRow("Low spot", QtWidgets.QLabel(
-                        format_frequency(self.app.data[lowest].freq)))
+                        format_frequency(self.app.data11[lowest].freq)))
                     self.layout.addWidget(PeakSearchAnalysis.QHLine())
             # Remove the final separator line
             self.layout.removeRow(self.layout.rowCount()-1)

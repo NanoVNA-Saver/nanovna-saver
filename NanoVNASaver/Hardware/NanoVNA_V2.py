@@ -54,10 +54,11 @@ _ADDR_HARDWARE_REVISION = 0xf2
 _ADDR_FW_MAJOR = 0xf3
 _ADDR_FW_MINOR = 0xf4
 
+WRITE_SLEEP = 0.05
 
 class NanoVNA_V2(VNA):
     name = "NanoVNA-V2"
-    valid_datapoints = (202, 51, 101, 303, 505, 1023)
+    valid_datapoints = (101, 51, 202, 303, 505, 1023)
     screenwidth = 320
     screenheight = 240
 
@@ -70,6 +71,7 @@ class NanoVNA_V2(VNA):
         # reset protocol to known state
         with self.serial.lock:
             self.serial.write(pack("<Q", 0))
+            sleep(WRITE_SLEEP)
 
         self.version = self.readVersion()
         self.firmware = self.readFirmware()
@@ -98,7 +100,7 @@ class NanoVNA_V2(VNA):
                    _CMD_READ, _ADDR_FW_MINOR)
         with self.serial.lock:
             self.serial.write(cmd)
-            sleep(0.05)
+            sleep(WRITE_SLEEP)
             resp = self.serial.read(2)
         if len(resp) != 2:
             logger.error("Timeout reading version registers")
@@ -118,9 +120,11 @@ class NanoVNA_V2(VNA):
             timeout = self.serial.timeout
             with self.serial.lock:
                 self.serial.write(pack("<Q", 0))
+                sleep(WRITE_SLEEP)
                 # cmd: write register 0x30 to clear FIFO
                 self.serial.write(pack("<BBB",
                                        _CMD_WRITE, _ADDR_VALUES_FIFO, 0))
+                sleep(WRITE_SLEEP)
                 # clear sweepdata
                 self._sweepdata = [(complex(), complex())] * self.datapoints
                 pointstodo = self.datapoints
@@ -134,7 +138,7 @@ class NanoVNA_V2(VNA):
                         pack("<BBB",
                              _CMD_READFIFO, _ADDR_VALUES_FIFO,
                              pointstoread))
-                    sleep(0.05)
+                    sleep(WRITE_SLEEP)
                     # each value is 32 bytes
                     nBytes = pointstoread * 32
 
@@ -179,6 +183,7 @@ class NanoVNA_V2(VNA):
         cmd = b"\x10\xf0\x10\xf2"
         with self.serial.lock:
             self.serial.write(cmd)
+            sleep(WRITE_SLEEP)
             resp = self.serial.read(2)
         if len(resp) != 2:
             logger.error("Timeout reading version registers")
@@ -207,3 +212,4 @@ class NanoVNA_V2(VNA):
                     _ADDR_SWEEP_VALS_PER_FREQ, 1)
         with self.serial.lock:
             self.serial.write(cmd)
+            sleep(WRITE_SLEEP)

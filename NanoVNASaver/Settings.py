@@ -201,3 +201,19 @@ class Version:
     def __str__(self) -> str:
         return (f'{self.data["major"]}.{self.data["minor"]}'
                 f'.{self.data["revision"]}{self.data["note"]}')
+
+    @property
+    def major(self) -> int:
+        return self.data["major"]
+
+    @property
+    def minor(self) -> int:
+        return self.data["minor"]
+
+    @property
+    def revision(self) -> int:
+        return self.data["revision"]
+
+    @property
+    def note(self) -> str:
+        return self.data["note"]

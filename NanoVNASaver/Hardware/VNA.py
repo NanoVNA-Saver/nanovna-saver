@@ -92,6 +92,8 @@ class VNA:
         return QtGui.QPixmap()
 
     def flushSerialBuffers(self):
+        if not self.connected():
+            return
         with self.serial.lock:
             self.serial.write("\r\n\r\n".encode("ascii"))
             sleep(0.1)

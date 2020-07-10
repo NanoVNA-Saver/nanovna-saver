@@ -107,7 +107,7 @@ class TDRWindow(QtWidgets.QWidget):
         # TODO: Let the user select whether to use high or low resolution TDR?
         FFT_POINTS = 2**14
 
-        if len(self.app.data) < 2:
+        if len(self.app.data11) < 2:
             return
 
         if self.tdr_velocity_dropdown.currentData() == -1:
@@ -121,17 +121,17 @@ class TDRWindow(QtWidgets.QWidget):
         except ValueError:
             return
 
-        step_size = self.app.data[1].freq - self.app.data[0].freq
+        step_size = self.app.data11[1].freq - self.app.data11[0].freq
         if step_size == 0:
             self.tdr_result_label.setText("")
             logger.info("Cannot compute cable length at 0 span")
             return
 
         s11 = []
-        for d in self.app.data:
+        for d in self.app.data11:
             s11.append(np.complex(d.re, d.im))
 
-        window = np.blackman(len(self.app.data))
+        window = np.blackman(len(self.app.data11))
 
         windowed_s11 = window * s11
         self.td = np.abs(np.fft.ifft(windowed_s11, FFT_POINTS))

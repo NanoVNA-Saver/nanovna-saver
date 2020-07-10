@@ -26,3 +26,12 @@ class NanoVNA_H4(NanoVNA_H):
     name = "NanoVNA-H4"
     screenwidth = 480
     screenheight = 320
+
+    def read_features(self):
+        logger.debug("read_features")
+        self.features.add("Screenshots")
+        if self.readFirmware().find("DiSlord") > 0:
+            self.features.add("Customizable data points")
+            logger.info("VNA has 201 datapoints capability")
+            self.valid_datapoints = (201, 101)
+            self.datapoints = 201
