@@ -123,6 +123,13 @@ class SweepWorker(QtCore.QRunnable):
 
     @pyqtSlot()
     def run(self):
+        try:
+            self._run()
+        except BaseException as exc:
+            logger.exception("%s", exc)
+            raise exc
+
+    def _run(self):
         logger.info("Initializing SweepWorker")
         self.running = True
         self.percentage = 0
