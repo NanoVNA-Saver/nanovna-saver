@@ -54,14 +54,14 @@ class VNA:
                 line = line.decode("ascii").strip()
                 if not line:
                     retries += 1
-                    logger.debug("Retry nr: %s", retries)
-                    if retries > 10:
+                    if retries > 40:
                         raise IOError("too many retries")
-                    sleep(0.1)
+                    sleep(wait)
                     continue
                 if line == command:  # suppress echo
                     continue
                 if line.startswith("ch>"):
+                    logger.debug("Needed retries: %s", retries)
                     break
                 yield line
 
