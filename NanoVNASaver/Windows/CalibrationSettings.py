@@ -452,7 +452,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.app.worker.signals.updated.emit()
 
     def calculate(self):
-        if self.app.btnStopSweep.isEnabled():
+        if self.app.sweep_control.btn_stop.isEnabled():
             # Currently sweeping
             self.app.showError("Unable to apply calibration while a sweep is running. " +
                                "Please stop the sweep and try again.")
