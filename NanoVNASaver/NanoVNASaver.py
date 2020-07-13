@@ -694,6 +694,9 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.sweep_control.btn_stop.setDisabled(True)
         self.sweep_control.toggle_settings(False)
 
+        for marker in self.markers:
+            marker.frequencyInput.textEdited.emit(
+                marker.frequencyInput.text())
 
     def setReference(self, s11data=None, s21data=None, source=None):
         if not s11data:
