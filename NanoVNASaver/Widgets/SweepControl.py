@@ -89,7 +89,7 @@ class SweepControl(QtWidgets.QGroupBox):
 
         btn_settings_window = QtWidgets.QPushButton("Sweep settings ...")
         btn_settings_window.clicked.connect(
-            lambda: self.app.display_window("settings"))
+            lambda: self.app.display_window("sweep_settings"))
 
         control_layout.addRow(btn_settings_window)
 
