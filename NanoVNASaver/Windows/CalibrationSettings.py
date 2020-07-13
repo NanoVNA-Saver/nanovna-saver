@@ -666,7 +666,7 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.app.calibration.source = "Calibration assistant"
         self.nextStep = 0
         self.app.worker.signals.finished.connect(self.automaticCalibrationStep)
-        self.app.sweep()
+        self.app.sweep_start()
         return
 
     def automaticCalibrationStep(self):
@@ -695,7 +695,7 @@ class CalibrationWindow(QtWidgets.QWidget):
                 self.app.worker.signals.finished.disconnect(
                     self.automaticCalibrationStep)
                 return
-            self.app.sweep()
+            self.app.sweep_start()
             return
 
         if self.nextStep == 1:
@@ -716,7 +716,7 @@ class CalibrationWindow(QtWidgets.QWidget):
                 self.app.worker.signals.finished.disconnect(
                     self.automaticCalibrationStep)
                 return
-            self.app.sweep()
+            self.app.sweep_start()
             return
 
         if self.nextStep == 2:
@@ -760,7 +760,7 @@ class CalibrationWindow(QtWidgets.QWidget):
                 self.app.worker.signals.finished.disconnect(
                     self.automaticCalibrationStep)
                 return
-            self.app.sweep()
+            self.app.sweep_start()
             return
 
         if self.nextStep == 3:
@@ -782,7 +782,7 @@ class CalibrationWindow(QtWidgets.QWidget):
                 self.app.worker.signals.finished.disconnect(
                     self.automaticCalibrationStep)
                 return
-            self.app.sweep()
+            self.app.sweep_start()
             return
 
         if self.nextStep == 4:
