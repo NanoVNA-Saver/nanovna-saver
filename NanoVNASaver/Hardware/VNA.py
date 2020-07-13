@@ -54,7 +54,7 @@ class VNA:
                 line = line.decode("ascii").strip()
                 if not line:
                     retries += 1
-                    if retries > 40:
+                    if retries > 100:
                         raise IOError("too many retries")
                     sleep(wait)
                     continue
