@@ -31,7 +31,7 @@ from .Windows import (
     DeviceSettingsWindow, DisplaySettingsWindow, SweepSettingsWindow,
     TDRWindow
 )
-from .Widgets.SweepControl import SweepControl
+from .Widgets import SweepControl
 from .Formatting import format_frequency
 from .Hardware.Hardware import Interface, get_interfaces, get_VNA
 from .Hardware.VNA import VNA

@@ -55,18 +55,10 @@ class MagLoopAnalysis(VSWRAnalysis):
                     (self.app.data11[end].freq - self.app.data11[start].freq)
                 self.layout.addRow(
                     "Q", QtWidgets.QLabel("{}".format(int(Q))))
-                self.app.sweep_control.input_start.setText(self.app.data11[start].freq)
-                self.app.sweep_control.input_start.textEdited.emit(
-                    self.app.sweep_control.input_start.text())
-                self.app.sweep_control.input_end.setText(self.app.data11[end].freq)
-                self.app.sweep_control.input_end.textEdited.emit(
-                    self.app.sweep_control.input_end.text())
+                self.app.sweep_control.set_start(self.app.data11[start].freq)
+                self.app.sweep_control.set_end(self.app.data11[end].freq)
             else:
-                self.app.sweep_control.input_start.setText(
+                self.app.sweep_control.set_start(
                     self.app.data11[start].freq - self.bandwith)
-                self.app.sweep_control.input_start.textEdited.emit(
-                    self.app.sweep_control.input_start.text())
-                self.app.sweep_control.input_end.setText(
+                self.app.sweep_control.set_end(
                     self.app.data11[end].freq + self.bandwith)
-                self.app.sweep_control.input_end.textEdited.emit(
-                    self.app.sweep_control.input_end.text())

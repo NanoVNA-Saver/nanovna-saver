@@ -19,6 +19,8 @@
 import logging
 
 from PyQt5 import QtWidgets, QtCore
+from PyQt5.QtCore import pyqtSignal
+
 
 from NanoVNASaver.Formatting import (
     format_frequency_sweep, format_frequency_short,
@@ -29,6 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 class SweepControl(QtWidgets.QGroupBox):
+    updated = pyqtSignal(object)
 
     def __init__(self, app: QtWidgets.QWidget):
         super().__init__()
@@ -121,18 +124,24 @@ class SweepControl(QtWidgets.QGroupBox):
 
     def set_start(self, start: int):
         self.input_start.setText(format_frequency_sweep(start))
+        self.input_start.textEdited.emit(self.input_start.text())
+        self.updated.emit(self)
 
     def get_end(self) -> int:
         return parse_frequency(self.input_end.text())
 
     def set_end(self, end: int):
         self.input_end.setText(format_frequency_sweep(end))
+        self.input_end.textEdited.emit(self.input_end.text())
+        self.updated.emit(self)
 
     def get_center(self) -> int:
         return parse_frequency(self.input_center.text())
 
     def set_center(self, center: int):
         self.input_center.setText(format_frequency_sweep(center))
+        self.input_center.textEdited.emit(self.input_center.text())
+        self.updated.emit(self)
 
     def get_count(self) -> int:
         try:
@@ -142,13 +151,17 @@ class SweepControl(QtWidgets.QGroupBox):
         return result
 
     def set_count(self, count: int):
-        self.input_end.setText(count)
+        self.input_count.setText(count)
+        self.input_count.textEdited.emit(self.input_count.text())
+        self.updated.emit(self)
 
     def get_span(self) -> int:
         return parse_frequency(self.input_span.text())
 
     def set_span(self, span: int):
         self.input_span.setText(format_frequency_sweep(span))
+        self.input_span.textEdited.emit(self.input_span.text())
+        self.updated.emit(self)
 
     def toggle_settings(self, disabled):
         self.input_start.setDisabled(disabled)
@@ -161,23 +174,23 @@ class SweepControl(QtWidgets.QGroupBox):
         fstart = self.get_start()
         fstop = self.get_end()
         fspan = fstop - fstart
-        fcenter = round((fstart+fstop)/2)
+        fcenter = round((fstart + fstop) / 2)
         if fspan < 0 or fstart < 0 or fstop < 0:
             return
-        self.set_span(fspan)
-        self.set_center(fcenter)
+        self.input_span.setText(fspan)
+        self.input_center.setText(fcenter)
 
     def update_start_end(self):
         fcenter = self.get_center()
         fspan = self.get_span()
         if fspan < 0 or fcenter < 0:
             return
-        fstart = round(fcenter - fspan/2)
-        fstop = round(fcenter + fspan/2)
+        fstart = round(fcenter - fspan / 2)
+        fstop = round(fcenter + fspan / 2)
         if fstart < 0 or fstop < 0:
             return
-        self.set_start(fstart)
-        self.set_end(fstop)
+        self.input_start.setText(fstart)
+        self.input_end.setText(fstop)
 
     def update_step_size(self):
         fspan = self.get_span()
