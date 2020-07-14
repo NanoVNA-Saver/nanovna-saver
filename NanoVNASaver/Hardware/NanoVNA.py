@@ -110,6 +110,8 @@ class NanoVNA(VNA):
         logger.debug("readFrequencies: %s", self.sweep_method)
         if self.sweep_method != "scan_mask":
             return super().readFrequencies()
+        if not self._sweepdata:  # on connect
+            return [int(line) for line in self.exec_command("frequencies")]
         step = (self.stop - self.start) / (self.datapoints - 1.0)
         return [round(self.start + i * step) for i in range(self.datapoints)]
 
