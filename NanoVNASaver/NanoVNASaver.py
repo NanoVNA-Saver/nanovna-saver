@@ -700,9 +700,9 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def setReference(self, s11data=None, s21data=None, source=None):
         if not s11data:
-            s11data = self.data11
-        if not s21data:
-            s21data = self.data21
+            s11data = self.data11[:]
+            s21data = self.data21[:]
+
         self.referenceS11data = s11data
         for c in self.s11charts:
             c.setReference(s11data)
