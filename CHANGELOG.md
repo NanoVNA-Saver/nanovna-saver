@@ -1,3 +1,8 @@
+v0.3.6
+======
+
+- Implemented bandwidth setting in device management
+
 v0.3.5
 ======
 
