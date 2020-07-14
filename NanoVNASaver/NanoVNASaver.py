@@ -560,6 +560,8 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.sweep_control.set_end(
                 frequencies[0] +
                 self.vna.datapoints * self.sweep_control.get_count())
+
+        self.sweep_control.set_count(1)  # speed up things
         self.sweep_control.update_center_span()
         self.sweep_control.update_step_size()
 

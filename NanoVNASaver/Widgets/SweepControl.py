@@ -151,7 +151,7 @@ class SweepControl(QtWidgets.QGroupBox):
         return result
 
     def set_count(self, count: int):
-        self.input_count.setText(count)
+        self.input_count.setText(str(count))
         self.input_count.textEdited.emit(self.input_count.text())
         self.updated.emit(self)
 
