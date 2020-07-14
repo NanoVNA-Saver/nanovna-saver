@@ -88,14 +88,23 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         self.datapoints.currentIndexChanged.connect(
             self.app.sweep_control.update_step_size)
 
+        self.bandwidth = QtWidgets.QComboBox()
+        self.bandwidth.addItem(str(self.app.vna.bandwidth))
+        self.bandwidth.currentIndexChanged.connect(self.updateBandwidth)
+
         form_layout = QtWidgets.QFormLayout()
         form_layout.addRow(QtWidgets.QLabel("Datapoints"), self.datapoints)
+        form_layout.addRow(QtWidgets.QLabel("Bandwidth"), self.bandwidth)
         right_layout.addWidget(settings_box)
         settings_layout.addRow(form_layout)
 
     def _set_datapoint_index(self, dpoints: int):
         self.datapoints.setCurrentIndex(
             self.datapoints.findText(str(dpoints)))
+
+    def _set_bandwidth_index(self, bw: int):
+        self.bandwidth.setCurrentIndex(
+            self.bandwidth.findText(str(bw)))
 
     def show(self):
         super().show()
@@ -131,6 +140,19 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
             for d in sorted(self.app.vna.valid_datapoints):
                 self.datapoints.addItem(str(d))
             self._set_datapoint_index(cur_dps)
+            self.datapoints.setDisabled(False)
+        else:
+            self.datapoints.setDisabled(True)
+
+        if "Bandwidth" in features:
+            self.bandwidth.clear()
+            cur_bw = self.app.vna.bandwidth
+            for d in sorted(self.app.vna.get_bandwidths()):
+                self.bandwidth.addItem(str(d))
+            self._set_bandwidth_index(cur_bw)
+            self.bandwidth.setDisabled(False)
+        else:
+            self.bandwidth.setDisabled(True)
 
     def updateValidation(self, validate_data: bool):
         self.app.vna.validateInput = validate_data
@@ -150,3 +172,9 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
             return
         logger.debug("DP: %s", self.datapoints.itemText(i))
         self.app.vna.datapoints = int(self.datapoints.itemText(i))
+
+    def updateBandwidth(self, i):
+        if i < 0 or self.app.worker.running:
+            return
+        logger.debug("Bandwidth: %s", self.bandwidth.itemText(i))
+        self.app.vna.set_bandwidth(int(self.bandwidth.itemText(i)))

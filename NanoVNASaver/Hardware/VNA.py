@@ -28,6 +28,10 @@ from NanoVNASaver.Hardware.Serial import Interface, drain_serial
 logger = logging.getLogger(__name__)
 
 
+def _max_retries(bandwidth: int, datapoints: int) -> int:
+    return 20 * (datapoints / 101) + round(
+        (1000 / bandwidth) ** 1.2 *  (datapoints  / 101))
+
 class VNA:
     name = "VNA"
     valid_datapoints = (101, )
@@ -38,9 +42,14 @@ class VNA:
         self.features = set()
         self.validateInput = True
         self.datapoints = self.valid_datapoints[0]
+        self.bandwidth = 1000
         if self.connected():
             self.version = self.readVersion()
             self.read_features()
+            #  cannot read current bandwidth, so set to highest
+            #  to get initial sweep fast
+            if "Bandwidth" in self.features:
+                self.set_bandwidth(self.get_bandwidths()[-1])
 
     def exec_command(self, command: str, wait: float = 0.05) -> Iterator[str]:
         logger.debug("exec_command(%s)", command)
@@ -49,12 +58,14 @@ class VNA:
             self.serial.write(f"{command}\r".encode('ascii'))
             sleep(wait)
             retries = 0
+            max_retries = _max_retries(self.bandwidth, self.datapoints)
+            logger.debug("Max retries: %s", max_retries)
             while True:
                 line = self.serial.readline()
                 line = line.decode("ascii").strip()
                 if not line:
                     retries += 1
-                    if retries > 100:
+                    if retries > max_retries:
                         raise IOError("too many retries")
                     sleep(wait)
                     continue
@@ -66,12 +77,29 @@ class VNA:
                 yield line
 
     def read_features(self):
-        result = "\n".join(list(self.exec_command("help")))
+        result = " ".join(self.exec_command("help")).split()
         logger.debug("result:\n%s", result)
         if "capture" in result:
             self.features.add("Screenshots")
+        if "bandwidth" in result:
+            self.features.add("Bandwidth")
         if len(self.valid_datapoints) > 1:
             self.features.add("Customizable data points")
+
+    def get_bandwidths(self) -> List[int]:
+        logger.debug("get bandwidths")
+        try:
+            result = " ".join(list(self.exec_command("bandwidth")))
+            result = result.split(" {")[1].strip("}")
+            return sorted([int(i) for i in result.split("|")])
+        except IndexError:
+            return  []
+
+    def set_bandwidth(self, bw: int):
+        result = " ".join(self.exec_command(f"bandwidth {bw}"))
+        if result:
+            raise IOError(f"set_bandwith({bw}: {result}")
+        self.bandwidth = bw
 
     def readFrequencies(self) -> List[int]:
         return [int(f) for f in self.readValues("frequencies")]
