@@ -23,10 +23,8 @@ from typing import Iterator, List, Tuple
 import numpy as np
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import pyqtSlot, pyqtSignal
-from numpy.lib.function_base import average
 
 from NanoVNASaver.Calibration import correct_delay
-from NanoVNASaver.Formatting import parse_frequency
 from NanoVNASaver.RFTools import Datapoint
 
 logger = logging.getLogger(__name__)
@@ -140,10 +138,10 @@ class SweepWorker(QtCore.QRunnable):
             return
         try:
             sweep = Sweep(
-                parse_frequency(self.app.sweepStartInput.text()),
-                parse_frequency(self.app.sweepEndInput.text()),
+                self.app.sweep_control.get_start(),
+                self.app.sweep_control.get_end(),
                 self.app.vna.datapoints,
-                int(self.app.sweepCountInput.text())
+                self.app.sweep_control.get_count(),
             )
         except ValueError:
             self.gui_error(
@@ -185,8 +183,8 @@ class SweepWorker(QtCore.QRunnable):
                 finished = True
 
         if self.sweep.sweeps > 1:
-            start = parse_frequency(self.app.sweepStartInput.text())
-            end = parse_frequency(self.app.sweepEndInput.text())
+            start = self.app.sweep_control.get_start()
+            end = self.app.sweep_control.get_end()
             logger.debug("Resetting NanoVNA sweep to full range: %d to %d",
                          start, end)
             self.app.vna.resetSweep(start, end)

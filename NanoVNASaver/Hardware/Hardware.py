@@ -87,29 +87,26 @@ def get_VNA(iface: Interface) -> 'VNA':
         return NanoVNA_V2(iface)
 
     logger.info("Finding firmware variant...")
-    tmp_vna = VNA(iface)
-    tmp_vna.flushSerialBuffers()
-    firmware = tmp_vna.readFirmware()
-    if firmware.find("AVNA + Teensy") >= 0:
+    info = get_info(iface)
+    if info.find("AVNA + Teensy") >= 0:
         logger.info("Type: AVNA")
         return AVNA(iface)
-    if firmware.find("NanoVNA-H 4") >= 0:
+    if info.find("NanoVNA-H 4") >= 0:
         logger.info("Type: NanoVNA-H4")
         vna = NanoVNA_H4(iface)
         return vna
-    if firmware.find("NanoVNA-H") >= 0:
+    if info.find("NanoVNA-H") >= 0:
         logger.info("Type: NanoVNA-H")
         vna = NanoVNA_H(iface)
         return vna
-    if firmware.find("NanoVNA-F") >= 0:
+    if info.find("NanoVNA-F") >= 0:
         logger.info("Type: NanoVNA-F")
         return NanoVNA_F(iface)
-    if firmware.find("NanoVNA") >= 0:
+    if info.find("NanoVNA") >= 0:
         logger.info("Type: Generic NanoVNA")
         return NanoVNA(iface)
     logger.warning("Did not recognize NanoVNA type from firmware.")
     return NanoVNA(iface)
-
 
 def detect_version(serial_port: serial.Serial) -> str:
     data = ""
@@ -128,3 +125,26 @@ def detect_version(serial_port: serial.Serial) -> str:
         logger.debug("Retry detection: %s", i + 1)
     logger.error('No VNA detected. Hardware responded to CR with: %s', data)
     return ""
+
+def get_info(serial_port: serial.Serial) -> str:
+    for i in range(RETRIES):
+        drain_serial(serial_port)
+        serial_port.write("info\r".encode("ascii"))
+        lines = []
+        retries = 0
+        while True:
+            line = serial_port.readline()
+            line = line.decode("ascii").strip()
+            if not line:
+                retries += 1
+                if retries > RETRIES:
+                    return ""
+                sleep(wait)
+                continue
+            if line == "info":  # suppress echo
+                continue
+            if line.startswith("ch>"):
+                logger.debug("Needed retries: %s", retries)
+                break
+            lines.append(line)
+        return "\n".join(lines)

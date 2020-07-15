@@ -32,4 +32,4 @@ class NanoVNA_H(NanoVNA):
             logger.info("VNA has 201 datapoints capability")
             self.valid_datapoints = (201, 101)
             self.datapoints = 201
-        super().read_features()
+        self.features.add("Screenshot")
