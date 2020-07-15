@@ -17,6 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
+from collections import OrderedDict
 from time import sleep
 from typing import List, Iterator
 
@@ -26,6 +27,15 @@ from NanoVNASaver.Settings import Version
 from NanoVNASaver.Hardware.Serial import Interface, drain_serial
 
 logger = logging.getLogger(__name__)
+
+DISLORD_BW = OrderedDict((
+    (10, 181),
+    (33, 58),
+    (100, 19),
+    (333, 5),
+    (1000, 1),
+    (2000, 0),
+))
 
 
 def _max_retries(bandwidth: int, datapoints: int) -> int:
@@ -43,9 +53,11 @@ class VNA:
         self.validateInput = True
         self.datapoints = self.valid_datapoints[0]
         self.bandwidth = 1000
+        self.bw_method = "ttrftech"
         if self.connected():
             self.version = self.readVersion()
             self.read_features()
+            logger.debug("Features: %s", self.features)
             #  cannot read current bandwidth, so set to highest
             #  to get initial sweep fast
             if "Bandwidth" in self.features:
@@ -83,23 +95,31 @@ class VNA:
             self.features.add("Screenshots")
         if "bandwidth" in result:
             self.features.add("Bandwidth")
+            result = " ".join(list(self.exec_command("bandwidth")))
+            if "Hz)" in result:
+                self.bw_method = "dislord"
         if len(self.valid_datapoints) > 1:
             self.features.add("Customizable data points")
 
     def get_bandwidths(self) -> List[int]:
         logger.debug("get bandwidths")
+        if self.bw_method == "dislord":
+            return list(DISLORD_BW.keys())
+        result = " ".join(list(self.exec_command("bandwidth")))
         try:
-            result = " ".join(list(self.exec_command("bandwidth")))
             result = result.split(" {")[1].strip("}")
             return sorted([int(i) for i in result.split("|")])
         except IndexError:
-            return  []
+            return [1000, ]
 
-    def set_bandwidth(self, bw: int):
-        result = " ".join(self.exec_command(f"bandwidth {bw}"))
-        if result:
-            raise IOError(f"set_bandwith({bw}: {result}")
-        self.bandwidth = bw
+    def set_bandwidth(self, bandwidth: int):
+        bw_val = bandwidth
+        if self.bw_method == "dislord":
+            bw_val = DISLORD_BW[bandwidth]
+        result = " ".join(self.exec_command(f"bandwidth {bw_val}"))
+        if self.bw_method == "ttrftech" and result:
+            raise IOError(f"set_bandwith({bandwidth}: {result}")
+        self.bandwidth = bandwidth
 
     def readFrequencies(self) -> List[int]:
         return [int(f) for f in self.readValues("frequencies")]
@@ -114,7 +134,7 @@ class VNA:
         return self.features
 
     def getCalibration(self) -> str:
-        return list(self.exec_command("cal"))[0]
+        return " ".join(list(self.exec_command("cal")))
 
     def getScreenshot(self) -> QtGui.QPixmap:
         return QtGui.QPixmap()
