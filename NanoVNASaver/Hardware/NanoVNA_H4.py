@@ -36,10 +36,9 @@ class NanoVNA_H4(NanoVNA_H):
 
     def read_features(self):
         logger.debug("read_features")
-        self.features.add("Screenshots")
+        super().read_features()
         if self.readFirmware().find("DiSlord") > 0:
             self.features.add("Customizable data points")
             logger.info("VNA has 201 datapoints capability")
             self.valid_datapoints = (201, 101)
             self.datapoints = 201
-            self.features.add("Scan mask command")
