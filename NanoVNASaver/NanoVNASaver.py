@@ -88,8 +88,6 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.bands = BandsModel()
 
-        self.noSweeps = 1  # Number of sweeps to run
-
         self.interface = Interface("serial", "None")
         self.vna = VNA(self.interface)
 
@@ -559,9 +557,9 @@ class NanoVNASaver(QtWidgets.QWidget):
         else:
             self.sweep_control.set_end(
                 frequencies[0] +
-                self.vna.datapoints * self.sweep_control.get_count())
+                self.vna.datapoints * self.sweep_control.get_segments())
 
-        self.sweep_control.set_count(1)  # speed up things
+        self.sweep_control.set_segments(1)  # speed up things
         self.sweep_control.update_center_span()
         self.sweep_control.update_step_size()
 
@@ -593,8 +591,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s21_max_gain_label.setText("")
         self.tdr_result_label.setText("")
 
-        if self.sweep_control.input_count.text().isdigit():
-            self.settings.setValue("Segments", self.sweep_control.input_count.text())
+        self.settings.setValue("Segments", self.sweep_control.get_segments())
 
         logger.debug("Starting worker thread")
         self.threadpool.start(self.worker)

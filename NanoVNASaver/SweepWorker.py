@@ -56,27 +56,27 @@ class WorkerSignals(QtCore.QObject):
 
 class Sweep():
     def __init__(self, start: int = 3600000, end: int = 30000000,
-                 points: int = 101, sweeps: int = 1):
+                 points: int = 101, segements: int = 1):
         self.start = start
         self.end = end
         self.points = points
-        self.sweeps = sweeps
+        self.segments = segements
         self.span = self.end - self.start
         self.step = self.stepsize()
         self.check()
 
     def __repr__(self) -> str:
         return (
-            f"Sweep({self.start}, {self.end}, {self.points} {self.sweeps})")
+            f"Sweep({self.start}, {self.end}, {self.points} {self.segments})")
 
     def __eq__(self, other) -> bool:
         return(self.start == other.start and
                self.end == other.end and
                self.points == other.points and
-               self.sweeps == other.sweeps)
+               self.segments == other.sweeps)
 
     def check(self):
-        if not(self.sweeps > 0 and
+        if not(self.segments > 0 and
                self.points > 0 and
                self.start > 0 and
                self.end > 0 and
@@ -84,7 +84,7 @@ class Sweep():
             raise ValueError(f"Illegal sweep settings: {self}")
 
     def stepsize(self) -> int:
-        return int(self.span / (self.points * self.sweeps - 1))
+        return int(self.span / (self.points * self.segments - 1))
 
     def get_index_range(self, index: int) -> Tuple[int, int]:
         start = self.start + index * self.points * self.step
@@ -141,7 +141,7 @@ class SweepWorker(QtCore.QRunnable):
                 self.app.sweep_control.get_start(),
                 self.app.sweep_control.get_end(),
                 self.app.vna.datapoints,
-                self.app.sweep_control.get_count(),
+                self.app.sweep_control.get_segments(),
             )
         except ValueError:
             self.gui_error(
@@ -160,7 +160,7 @@ class SweepWorker(QtCore.QRunnable):
 
         finished = False
         while not finished:
-            for i in range(self.sweep.sweeps):
+            for i in range(self.sweep.segments):
                 logger.debug("Sweep segment no %d", i)
                 if self.stopped:
                     logger.debug("Stopping sweeping as signalled")
@@ -171,7 +171,7 @@ class SweepWorker(QtCore.QRunnable):
                 try:
                     freq, values11, values21 = self.readAveragedSegment(
                         start, stop, averages)
-                    self.percentage = (i + 1) * 100 / self.sweep.sweeps
+                    self.percentage = (i + 1) * 100 / self.sweep.segments
                     self.updateData(freq, values11, values21, i)
                 except ValueError as e:
                     self.error_message = str(e)
@@ -182,7 +182,7 @@ class SweepWorker(QtCore.QRunnable):
             if not self.continuousSweep:
                 finished = True
 
-        if self.sweep.sweeps > 1:
+        if self.sweep.segments > 1:
             start = self.app.sweep_control.get_start()
             end = self.app.sweep_control.get_end()
             logger.debug("Resetting NanoVNA sweep to full range: %d to %d",
@@ -284,7 +284,7 @@ class SweepWorker(QtCore.QRunnable):
             freq, tmp11, tmp21 = self.readSegment(start, stop)
             values11.append(tmp11)
             values21.append(tmp21)
-            self.percentage += 100 / (self.sweep.sweeps * averages)
+            self.percentage += 100 / (self.sweep.segments * averages)
             self.signals.updated.emit()
 
         if self.truncates and averages > 1:
