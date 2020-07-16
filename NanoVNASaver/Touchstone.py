@@ -1,6 +1,8 @@
 #  NanoVNASaver
+#
 #  A python program to view and export Touchstone data from a NanoVNA
-#  Copyright (C) 2019.  Rune B. Broberg
+#  Copyright (C) 2019, 2020  Rune B. Broberg
+#  Copyright (C) 2020 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -19,6 +21,11 @@ import math
 import cmath
 import io
 from operator import attrgetter
+
+from typing import List
+
+from scipy.interpolate import interp1d
+
 from NanoVNASaver.RFTools import Datapoint
 
 logger = logging.getLogger(__name__)
@@ -96,29 +103,77 @@ class Touchstone:
         self.sdata = [[], [], [], []]  # at max 4 data pairs
         self.comments = []
         self.opts = Options()
+        self._interp = {}
 
     @property
-    def s11data(self) -> list:
+    def s11data(self) -> List[Datapoint]:
         return self.s("11")
 
+    @s11data.setter
+    def s11data(self, value: List[Datapoint]):
+        self.sdata[0] = value
+
     @property
-    def s12data(self) -> list:
+    def s12data(self) -> List[Datapoint]:
         return self.s("12")
 
-    @property
-    def s21data(self) -> list:
-        return self.s("21")
+    @s12data.setter
+    def s12data(self, value: List[Datapoint]):
+        self.sdata[2] = value
 
     @property
-    def s22data(self) -> list:
+    def s21data(self) -> List[Datapoint]:
+        return self.s("21")
+
+    @s21data.setter
+    def s21data(self, value: List[Datapoint]):
+        self.sdata[1] = value
+
+    @property
+    def s22data(self) -> List[Datapoint]:
         return self.s("22")
+
+    @s22data.setter
+    def s22data(self, value: List[Datapoint]):
+        self.sdata[3] = value
 
     @property
     def r(self) -> int:
         return self.opts.resistance
 
-    def s(self, name: str) -> list:
+    def s(self, name: str) -> List[Datapoint]:
         return self.sdata[Touchstone.FIELD_ORDER.index(name)]
+
+    def s_freq(self, name: str, freq: int) -> Datapoint:
+        return Datapoint(freq,
+                         float(self._interp[name]["real"](freq)),
+                         float(self._interp[name]["imag"](freq)))
+
+    def min_freq(self) -> int:
+        return self.s("11")[0].freq
+
+    def max_freq(self) -> int:
+        return self.s("11")[-1].freq
+
+    def gen_interpolation(self):
+        for i in Touchstone.FIELD_ORDER:
+            freq = []
+            real = []
+            imag = []
+
+            for dp in self.s(i):
+                freq.append(dp.freq)
+                real.append(dp.re)
+                imag.append(dp.im)
+
+            self._interp[i] = {
+                "real": interp1d(freq, real,
+                                 kind="slinear", bounds_error=False,
+                                 fill_value=(real[0], real[-1])),
+                "imag": interp1d(freq, imag,
+                                 kind="slinear", bounds_error=False,
+                                 fill_value=(imag[0], imag[-1])),
+            }
 
     def _parse_comments(self, fp) -> str:
         for line in fp:
@@ -202,3 +257,34 @@ class Touchstone:
                 logger.warning("Reordering data")
                 for datalist in self.sdata:
                     datalist.sort(key=attrgetter("freq"))
+
+    def save(self, nr_params: int = 1):
+        """Save touchstone data to file.
+
+        Args:
+            nr_params: Number of s-parameters. 2 for s1p, 4 for s2p
+        """
+
+        logger.info("Attempting to open file %s for writing",
+                    self.filename)
+        with open(self.filename, "w") as outfile:
+            outfile.write(self.saves(nr_params))
+
+    def saves(self, nr_params: int = 1) -> str:
+        """Returns touchstone data as string.
+
+        Args:
+            nr_params: Number of s-parameters. 1 for s1p, 4 for s2p
+        """
+        assert nr_params in (1, 4)
+
+        ts_str = "# HZ S RI R 50\n"
+        for i, dp_s11 in enumerate(self.s11data):
+            ts_str += f"{dp_s11.freq} {dp_s11.re} {dp_s11.im}"
+            for j in range(1, nr_params):
+                dp = self.sdata[j][i]
+                if dp.freq != dp_s11.freq:
+                    raise LookupError("Frequencies of sdata not correlated")
+                ts_str += f" {dp.re} {dp.im}"
+            ts_str += "\n"
+        return ts_str

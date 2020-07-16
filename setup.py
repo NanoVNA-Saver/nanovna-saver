@@ -1,5 +1,8 @@
-#  NanoVNASaver - a python program to view and export Touchstone data from a NanoVNA
-#  Copyright (C) 2019.  Rune B. Broberg
+#  NanoVNASaver
+#
+#  A python program to view and export Touchstone data from a NanoVNA
+#  Copyright (C) 2019, 2020  Rune B. Broberg
+#  Copyright (C) 2020 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -13,9 +16,7 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 import sys
-from NanoVNASaver.about import version
 
 if sys.version_info < (3, 7):
     print("You need at least Python 3.7 for this application!")
@@ -30,19 +31,8 @@ except ImportError:
     print("Try installing them with pip install setuptools")
     sys.exit(1)
 
-with open("README.md", "r") as fh:
-    long_description = fh.read()
-
 setup(
-    name='NanoVNASaver',
-    url='https://github.com/mihtjel/nanovna-saver',
-    version=version,
-    author='Rune B. Broberg',
-    author_email='',
-    packages=find_packages(),
-    long_description=long_description,
-    long_description_content_type="text/markdown",
-    license='LICENSE.txt',
+    packages=find_packages(exclude=["test", ]),
     entry_points={
         'console_scripts': [
             'NanoVNASaver = NanoVNASaver.__main__:main'
@@ -52,6 +42,7 @@ setup(
         'pyserial',
         'PyQt5',
         'numpy',
-        'scipy'
+        'scipy<1.5',
+        'cython',
     ],
 )

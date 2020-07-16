@@ -1,6 +1,8 @@
 #  NanoVNASaver
+#
 #  A python program to view and export Touchstone data from a NanoVNA
-#  Copyright (C) 2019.  Rune B. Broberg
+#  Copyright (C) 2019, 2020  Rune B. Broberg
+#  Copyright (C) 2020 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -87,7 +89,8 @@ class Value:
         if self._value == 0:
             offset = 0
         else:
-            offset = clamp_value(int(math.log10(abs(self._value)) // 3), fmt.min_offset, fmt.max_offset)
+            offset = clamp_value(
+                int(math.log10(abs(self._value)) // 3), fmt.min_offset, fmt.max_offset)
 
         real = float(self._value) / (10 ** (offset * 3))
 
@@ -151,10 +154,12 @@ class Value:
             self._value = -math.inf
         else:
             try:
-                self._value = (decimal.Decimal(value, context=Value.CTX) * decimal.Decimal(factor, context=Value.CTX))
+                self._value = (decimal.Decimal(value, context=Value.CTX)
+                               * decimal.Decimal(factor, context=Value.CTX))
             except decimal.InvalidOperation:
                 raise ValueError
-            self._value = clamp_value(self._value, self.fmt.parse_clamp_min, self.fmt.parse_clamp_max)
+            self._value = clamp_value(
+                self._value, self.fmt.parse_clamp_min, self.fmt.parse_clamp_max)
         return self
 
     @property

@@ -1,6 +1,8 @@
 #  NanoVNASaver
+#
 #  A python program to view and export Touchstone data from a NanoVNA
-#  Copyright (C) 2019.  Rune B. Broberg
+#  Copyright (C) 2019, 2020  Rune B. Broberg
+#  Copyright (C) 2020 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -22,7 +24,7 @@ from NanoVNASaver.RFTools import Datapoint, \
     reflection_coefficient, gamma_to_impedance, clamp_value, \
     parallel_to_serial, serial_to_parallel, \
     impedance_to_capacitance, impedance_to_inductance, \
-    groupDelay
+    groupDelay, corr_att_data
 import math
 
 
@@ -64,6 +66,7 @@ class TestRFTools(unittest.TestCase):
     def test_gamma_to_impedance(self):
         self.assertEqual(gamma_to_impedance(0), 50)
         self.assertAlmostEqual(gamma_to_impedance(0.2), 75)
+        self.assertEqual(gamma_to_impedance(1), math.inf)
         # TODO: insert more test values here
 
     def test_clamp_value(self):
@@ -78,7 +81,15 @@ class TestRFTools(unittest.TestCase):
             complex(50, 10))
 
     def test_serial_to_parallel(self):
-        self.assertEqual(serial_to_parallel(0),complex(math.inf, math.inf))
+        self.assertEqual(
+            serial_to_parallel(complex(0, 0)),
+            complex(math.inf, math.inf))
+        self.assertEqual(
+            serial_to_parallel(complex(50, 0)),
+            complex(50, math.inf))
+        self.assertEqual(
+            serial_to_parallel(complex(0, 50)),
+            complex(math.inf, 50))
         self.assertAlmostEqual(
             serial_to_parallel(complex(50, 10)),
             complex(52, 260))
@@ -103,12 +114,25 @@ class TestRFTools(unittest.TestCase):
             Datapoint(100002, 0.1091, 0.3130),
         ]
         dpoints0 = [
-            Datapoint(100000, 0.1091, 0.3118),
             Datapoint(100000, 0.1091, 0.3124),
-            Datapoint(100000, 0.1091, 0.3130),
+            Datapoint(100000, 0.1091, 0.3124),
+            Datapoint(100000, 0.1091, 0.3124),
         ]
         self.assertAlmostEqual(groupDelay(dpoints, 1), -9.514e-5)
         self.assertEqual(groupDelay(dpoints0, 1), 0.0)
+
+    def test_cor_att_data(self):
+        dp1 = [
+            Datapoint(100000, 0.1091, 0.3118),
+            Datapoint(100001, 0.1091, 0.3124),
+            Datapoint(100002, 0.1091, 0.3130),
+        ]
+        dp2 = corr_att_data(dp1, 10)
+        self.assertEqual(dp2[0].gain - dp1[0].gain, 10)
+        self.assertEqual(len(dp1), len(dp2))
+        # ignore negative attenuation
+        dp3 = corr_att_data(dp1, -10)
+        self.assertEqual(dp1, dp3)
 
 
 class TestRFToolsDatapoint(unittest.TestCase):
@@ -118,11 +142,12 @@ class TestRFToolsDatapoint(unittest.TestCase):
         self.dp0 = Datapoint(100000, 0, 0)
         self.dp50 = Datapoint(100000, 1, 0)
         self.dp75 = Datapoint(100000, 0.2, 0)
+        self.dp_im50 = Datapoint(100000, 0, 1)
 
     def test_properties(self):
         self.assertEqual(self.dp.z, complex(0.1091, 0.3118))
         self.assertAlmostEqual(self.dp.phase, 1.23420722)
-        self.assertEqual(self.dp0.gain, 0.0)
+        self.assertEqual(self.dp0.gain, -math.inf)
         self.assertAlmostEqual(self.dp.gain, -9.6208748)
         self.assertEqual(self.dp50.vswr, 1.0)
         self.assertAlmostEqual(self.dp.vswr, 1.9865736)
@@ -132,6 +157,7 @@ class TestRFToolsDatapoint(unittest.TestCase):
                                complex(74.99628755, 52.49617517))
         self.assertEqual(self.dp0.qFactor(), 0.0)
         self.assertEqual(self.dp75.qFactor(), 0.0)
+        self.assertEqual(self.dp_im50.qFactor(), -1.0)
         self.assertAlmostEqual(self.dp.qFactor(), 0.6999837)
         self.assertAlmostEqual(self.dp.capacitiveEquivalent(), -4.54761539e-08)
         self.assertAlmostEqual(self.dp.inductiveEquivalent(), 5.57001e-05)
