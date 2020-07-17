@@ -31,7 +31,7 @@ from .Windows import (
     DeviceSettingsWindow, DisplaySettingsWindow, SweepSettingsWindow,
     TDRWindow
 )
-from .Widgets import SweepControl
+from .Controls import MarkerControl, SweepControl
 from .Formatting import format_frequency
 from .Hardware.Hardware import Interface, get_interfaces, get_VNA
 from .Hardware.VNA import VNA
@@ -84,7 +84,15 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.worker.signals.sweepError.connect(self.showSweepError)
         self.worker.signals.fatalSweepError.connect(self.showFatalSweepError)
 
+        self.markers = []
+
+        self.marker_column = QtWidgets.QVBoxLayout()
+        self.marker_frame = QtWidgets.QFrame()
+        self.marker_column.setContentsMargins(0, 0, 0, 0)
+        self.marker_frame.setLayout(self.marker_column)
+
         self.sweep_control = SweepControl(self)
+        self.marker_control = MarkerControl(self)
 
         self.bands = BandsModel()
 
@@ -103,7 +111,6 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.calibration = Calibration()
 
-        self.markers = []
 
         logger.debug("Building user interface")
 
@@ -186,10 +193,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.charts_layout = QtWidgets.QGridLayout()
 
         left_column = QtWidgets.QVBoxLayout()
-        self.marker_column = QtWidgets.QVBoxLayout()
-        self.marker_frame = QtWidgets.QFrame()
-        self.marker_column.setContentsMargins(0, 0, 0, 0)
-        self.marker_frame.setLayout(self.marker_column)
         right_column = QtWidgets.QVBoxLayout()
         right_column.addLayout(self.charts_layout)
         self.marker_frame.setHidden(not self.settings.value("MarkersVisible", True, bool))
@@ -223,47 +226,17 @@ class NanoVNASaver(QtWidgets.QWidget):
         #  Marker control
         ###############################################################
 
-        marker_control_box = QtWidgets.QGroupBox()
-        marker_control_box.setTitle("Markers")
-        marker_control_box.setMaximumWidth(250)
-        self.marker_control_layout = QtWidgets.QFormLayout(marker_control_box)
-
-        marker_count = max(self.settings.value("MarkerCount", 3, int), 1)
-        for i in range(marker_count):
-            marker = Marker("", self.settings)
-            marker.updated.connect(self.markerUpdated)
-            label, layout = marker.getRow()
-            self.marker_control_layout.addRow(label, layout)
-            self.markers.append(marker)
-            if i == 0:
-                marker.isMouseControlledRadioButton.setChecked(True)
-
-        self.showMarkerButton = QtWidgets.QPushButton()
-        if self.marker_frame.isHidden():
-            self.showMarkerButton.setText("Show data")
-        else:
-            self.showMarkerButton.setText("Hide data")
-        self.showMarkerButton.clicked.connect(self.toggleMarkerFrame)
-        lock_radiobutton = QtWidgets.QRadioButton("Locked")
-        lock_radiobutton.setLayoutDirection(QtCore.Qt.RightToLeft)
-        lock_radiobutton.setSizePolicy(
-            QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Preferred)
-        hbox = QtWidgets.QHBoxLayout()
-        hbox.addWidget(self.showMarkerButton)
-        hbox.addWidget(lock_radiobutton)
-        self.marker_control_layout.addRow(hbox)
+        left_column.addWidget(self.marker_control)
 
         for c in self.subscribing_charts:
             c.setMarkers(self.markers)
             c.setBands(self.bands)
-        left_column.addWidget(marker_control_box)
 
         self.marker_data_layout = QtWidgets.QVBoxLayout()
         self.marker_data_layout.setContentsMargins(0, 0, 0, 0)
 
         for m in self.markers:
             self.marker_data_layout.addWidget(m.getGroupBox())
-
         self.marker_column.addLayout(self.marker_data_layout)
 
         ###############################################################
@@ -734,16 +707,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         if insert != "":
             title = title + " (" + insert + ")"
         self.setWindowTitle(title)
-
-    def toggleMarkerFrame(self):
-        if self.marker_frame.isHidden():
-            self.marker_frame.setHidden(False)
-            self.settings.setValue("MarkersVisible", True)
-            self.showMarkerButton.setText("Hide data")
-        else:
-            self.marker_frame.setHidden(True)
-            self.settings.setValue("MarkersVisible", False)
-            self.showMarkerButton.setText("Show data")
 
     def resetReference(self):
         self.referenceS11data = []
