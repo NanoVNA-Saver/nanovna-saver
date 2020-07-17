@@ -31,10 +31,8 @@ from .Windows import (
     DeviceSettingsWindow, DisplaySettingsWindow, SweepSettingsWindow,
     TDRWindow
 )
-from .Formatting import (
-    format_frequency, format_frequency_short, format_frequency_sweep,
-    parse_frequency,
-)
+from .Widgets import SweepControl
+from .Formatting import format_frequency
 from .Hardware.Hardware import Interface, get_interfaces, get_VNA
 from .Hardware.VNA import VNA
 from .RFTools import Datapoint, corr_att_data
@@ -49,7 +47,6 @@ from .Charts import (
     SmithChart, SParameterChart, TDRChart,
 )
 from .Calibration import Calibration
-from .Inputs import FrequencyInputWidget
 from .Marker import Marker
 from .SweepWorker import SweepWorker
 from .Settings import BandsModel
@@ -86,6 +83,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.worker.signals.finished.connect(self.sweepFinished)
         self.worker.signals.sweepError.connect(self.showSweepError)
         self.worker.signals.fatalSweepError.connect(self.showFatalSweepError)
+
+        self.sweep_control = SweepControl(self)
 
         self.bands = BandsModel()
 
@@ -220,90 +219,9 @@ class NanoVNASaver(QtWidgets.QWidget):
         #  Sweep control
         ###############################################################
 
-        sweep_control_box = QtWidgets.QGroupBox()
-        sweep_control_box.setMaximumWidth(250)
-        sweep_control_box.setTitle("Sweep control")
-        sweep_control_layout = QtWidgets.QFormLayout(sweep_control_box)
+        left_column.addWidget(self.sweep_control)
 
-        line = QtWidgets.QFrame()
-        line.setFrameShape(QtWidgets.QFrame.VLine)
-
-        sweep_input_layout = QtWidgets.QHBoxLayout()
-        sweep_input_left_layout = QtWidgets.QFormLayout()
-        sweep_input_right_layout = QtWidgets.QFormLayout()
-        sweep_input_layout.addLayout(sweep_input_left_layout)
-        sweep_input_layout.addWidget(line)
-        sweep_input_layout.addLayout(sweep_input_right_layout)
-        sweep_control_layout.addRow(sweep_input_layout)
-
-        self.sweepStartInput = FrequencyInputWidget()
-        self.sweepStartInput.setMinimumWidth(60)
-        self.sweepStartInput.setAlignment(QtCore.Qt.AlignRight)
-        self.sweepStartInput.textEdited.connect(self.updateCenterSpan)
-        self.sweepStartInput.textChanged.connect(self.updateStepSize)
-        sweep_input_left_layout.addRow(QtWidgets.QLabel("Start"), self.sweepStartInput)
-
-        self.sweepEndInput = FrequencyInputWidget()
-        self.sweepEndInput.setAlignment(QtCore.Qt.AlignRight)
-        self.sweepEndInput.textEdited.connect(self.updateCenterSpan)
-        self.sweepEndInput.textChanged.connect(self.updateStepSize)
-        sweep_input_left_layout.addRow(QtWidgets.QLabel("Stop"), self.sweepEndInput)
-
-        self.sweepCenterInput = FrequencyInputWidget()
-        self.sweepCenterInput.setMinimumWidth(60)
-        self.sweepCenterInput.setAlignment(QtCore.Qt.AlignRight)
-        self.sweepCenterInput.textEdited.connect(self.updateStartEnd)
-
-        sweep_input_right_layout.addRow(QtWidgets.QLabel("Center"), self.sweepCenterInput)
-
-        self.sweepSpanInput = FrequencyInputWidget()
-        self.sweepSpanInput.setAlignment(QtCore.Qt.AlignRight)
-        self.sweepSpanInput.textEdited.connect(self.updateStartEnd)
-
-        sweep_input_right_layout.addRow(QtWidgets.QLabel("Span"), self.sweepSpanInput)
-
-        self.sweepCountInput = QtWidgets.QLineEdit(self.settings.value("Segments", "1"))
-        self.sweepCountInput.setAlignment(QtCore.Qt.AlignRight)
-        self.sweepCountInput.setFixedWidth(60)
-        self.sweepCountInput.textEdited.connect(self.updateStepSize)
-
-        self.sweepStepLabel = QtWidgets.QLabel("Hz/step")
-        self.sweepStepLabel.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-
-        segment_layout = QtWidgets.QHBoxLayout()
-        segment_layout.addWidget(self.sweepCountInput)
-        segment_layout.addWidget(self.sweepStepLabel)
-        sweep_control_layout.addRow(QtWidgets.QLabel("Segments"), segment_layout)
-
-        btn_sweep_settings_window = QtWidgets.QPushButton("Sweep settings ...")
-        btn_sweep_settings_window.clicked.connect(
-            lambda: self.display_window("sweep_settings"))
-
-        sweep_control_layout.addRow(btn_sweep_settings_window)
-
-        self.sweepProgressBar = QtWidgets.QProgressBar()
-        self.sweepProgressBar.setMaximum(100)
-        self.sweepProgressBar.setValue(0)
-        sweep_control_layout.addRow(self.sweepProgressBar)
-
-        self.btnSweep = QtWidgets.QPushButton("Sweep")
-        self.btnSweep.clicked.connect(self.sweep)
-        self.btnSweep.setShortcut(QtCore.Qt.Key_W | QtCore.Qt.CTRL)
-        self.btnStopSweep = QtWidgets.QPushButton("Stop")
-        self.btnStopSweep.clicked.connect(self.stopSweep)
-        self.btnStopSweep.setShortcut(QtCore.Qt.Key_Escape)
-        self.btnStopSweep.setDisabled(True)
-        btn_layout = QtWidgets.QHBoxLayout()
-        btn_layout.addWidget(self.btnSweep)
-        btn_layout.addWidget(self.btnStopSweep)
-        btn_layout.setContentsMargins(0, 0, 0, 0)
-        btn_layout_widget = QtWidgets.QWidget()
-        btn_layout_widget.setLayout(btn_layout)
-        sweep_control_layout.addRow(btn_layout_widget)
-
-        left_column.addWidget(sweep_control_box)
-
-        ###############################################################
+        # ###############################################################
         #  Marker control
         ###############################################################
 
@@ -635,19 +553,20 @@ class NanoVNASaver(QtWidgets.QWidget):
             return
         logger.info("Read starting frequency %s and end frequency %s",
                     frequencies[0], frequencies[-1])
-        self.sweepStartInput.setText(
-            format_frequency_sweep(frequencies[0]))
+        self.sweep_control.set_start(frequencies[0])
         if frequencies[0] < frequencies[-1]:
-            self.sweepEndInput.setText(
-                format_frequency_sweep(frequencies[-1]))
+            self.sweep_control.set_end(frequencies[-1])
         else:
-            self.sweepEndInput.setText(
-                format_frequency_sweep(frequencies[-1] + 100000))
-        self.sweepStartInput.textEdited.emit(self.sweepStartInput.text())
-        self.sweepStartInput.textChanged.emit(self.sweepStartInput.text())
+            self.sweep_control.set_end(
+                frequencies[0] +
+                self.vna.datapoints * self.sweep_control.get_count())
+
+        self.sweep_control.set_count(1)  # speed up things
+        self.sweep_control.update_center_span()
+        self.sweep_control.update_step_size()
 
         logger.debug("Starting initial sweep")
-        self.sweep()
+        self.sweep_start()
 
     def disconnect_device(self):
         with self.interface.lock:
@@ -655,23 +574,17 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.interface.close()
             self.btnSerialToggle.setText("Connect to device")
 
-    def toggleSweepSettings(self, disabled):
-        self.sweepStartInput.setDisabled(disabled)
-        self.sweepEndInput.setDisabled(disabled)
-        self.sweepSpanInput.setDisabled(disabled)
-        self.sweepCenterInput.setDisabled(disabled)
-        self.sweepCountInput.setDisabled(disabled)
-
-    def sweep(self):
+    def sweep_start(self):
         # Run the device data update
         if not self.vna.connected():
             return
         self.worker.stopped = False
 
-        self.sweepProgressBar.setValue(0)
-        self.btnSweep.setDisabled(True)
-        self.btnStopSweep.setDisabled(False)
-        self.toggleSweepSettings(True)
+        self.sweep_control.progress_bar.setValue(0)
+        self.sweep_control.btn_start.setDisabled(True)
+        self.sweep_control.btn_stop.setDisabled(False)
+        self.sweep_control.toggle_settings(True)
+
         for m in self.markers:
             m.resetLabels()
         self.s11_min_rl_label.setText("")
@@ -680,13 +593,13 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s21_max_gain_label.setText("")
         self.tdr_result_label.setText("")
 
-        if self.sweepCountInput.text().isdigit():
-            self.settings.setValue("Segments", self.sweepCountInput.text())
+        if self.sweep_control.input_count.text().isdigit():
+            self.settings.setValue("Segments", self.sweep_control.input_count.text())
 
         logger.debug("Starting worker thread")
         self.threadpool.start(self.worker)
 
-    def stopSweep(self):
+    def sweep_stop(self):
         self.worker.stopped = True
 
     def saveData(self, data, data21, source=None):
@@ -728,7 +641,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             for c in self.combinedCharts:
                 c.setCombinedData(self.data11, self.data21)
 
-            self.sweepProgressBar.setValue(self.worker.percentage)
+            self.sweep_control.progress_bar.setValue(self.worker.percentage)
             self.windows["tdr"].updateTDR()
 
             # Find the minimum S11 VSWR:
@@ -778,49 +691,20 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.dataAvailable.emit()
 
     def sweepFinished(self):
-        self.sweepProgressBar.setValue(100)
-        self.btnSweep.setDisabled(False)
-        self.btnStopSweep.setDisabled(True)
-        self.toggleSweepSettings(False)
+        self.sweep_control.progress_bar.setValue(100)
+        self.sweep_control.btn_start.setDisabled(False)
+        self.sweep_control.btn_stop.setDisabled(True)
+        self.sweep_control.toggle_settings(False)
 
-    def updateCenterSpan(self):
-        fstart = parse_frequency(self.sweepStartInput.text())
-        fstop = parse_frequency(self.sweepEndInput.text())
-        fspan = fstop - fstart
-        fcenter = int(round((fstart+fstop)/2))
-        if fspan < 0 or fstart < 0 or fstop < 0:
-            return
-        self.sweepSpanInput.setText(format_frequency_sweep(fspan))
-        self.sweepCenterInput.setText(format_frequency_sweep(fcenter))
-
-    def updateStartEnd(self):
-        fcenter = parse_frequency(self.sweepCenterInput.text())
-        fspan = parse_frequency(self.sweepSpanInput.text())
-        if fspan < 0 or fcenter < 0:
-            return
-        fstart = int(round(fcenter - fspan/2))
-        fstop = int(round(fcenter + fspan/2))
-        if fstart < 0 or fstop < 0:
-            return
-        self.sweepStartInput.setText(format_frequency_sweep(fstart))
-        self.sweepEndInput.setText(format_frequency_sweep(fstop))
-
-    def updateStepSize(self):
-        fspan = parse_frequency(self.sweepSpanInput.text())
-        if fspan < 0:
-            return
-        if self.sweepCountInput.text().isdigit():
-            segments = int(self.sweepCountInput.text())
-            if segments > 0:
-                fstep = fspan / (segments * self.vna.datapoints - 1)
-                self.sweepStepLabel.setText(
-                    f"{format_frequency_short(fstep)}/step")
+        for marker in self.markers:
+            marker.frequencyInput.textEdited.emit(
+                marker.frequencyInput.text())
 
     def setReference(self, s11data=None, s21data=None, source=None):
         if not s11data:
-            s11data = self.data11
-        if not s21data:
-            s21data = self.data21
+            s11data = self.data11[:]
+            s21data = self.data21[:]
+
         self.referenceS11data = s11data
         for c in self.s11charts:
             c.setReference(s11data)

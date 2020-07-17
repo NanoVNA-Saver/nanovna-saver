@@ -79,8 +79,10 @@ def main():
     app = QtWidgets.QApplication(sys.argv)
     window = NanoVNASaver()
     window.show()
-    app.exec_()
-
+    try:
+        app.exec_()
+    except BaseException as exc:
+        logger.exception("%s", exc)
 
 if __name__ == '__main__':
     main()

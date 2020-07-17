@@ -190,9 +190,12 @@ class SweepSettingsWindow(QtWidgets.QWidget):
             start = max(1, start)
             stop += round(span * padding / 100)
 
-        self.app.sweepStartInput.setText(format_frequency_sweep(start))
-        self.app.sweepEndInput.setText(format_frequency_sweep(stop))
-        self.app.sweepEndInput.textEdited.emit(self.app.sweepEndInput.text())
+        self.app.sweep_control.input_start.setText(
+            format_frequency_sweep(start))
+        self.app.sweep_control.input_end.setText(
+            format_frequency_sweep(stop))
+        self.app.sweep_control.input_end.textEdited.emit(
+            self.app.sweep_control.input_end.text())
 
     def updateAveraging(self):
         self.app.worker.setAveraging(self.averaged_sweep_radiobutton.isChecked(),

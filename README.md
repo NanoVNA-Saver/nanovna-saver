@@ -16,6 +16,10 @@ points, and generally display and analyze the resulting data.
 
 # Latest Changes 
 
+## Changes in v0.3.6
+
+- Added bandwidth setting in device manage dialog
+
 ## Changes in v0.3.5
 
 - Sweep worker now initializes full dataset on setting changes.

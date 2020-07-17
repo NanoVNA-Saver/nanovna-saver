@@ -17,6 +17,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
+from NanoVNASaver.Hardware.Serial import Interface
 from NanoVNASaver.Hardware.NanoVNA_H import NanoVNA_H
 
 logger = logging.getLogger(__name__)
@@ -27,9 +28,15 @@ class NanoVNA_H4(NanoVNA_H):
     screenwidth = 480
     screenheight = 320
 
+    def __init__(self, iface: Interface):
+        super().__init__(iface)
+        self.sweep_method = "scan"
+        if "Scan mask command" in self.features:
+            self.sweep_method = "scan_mask"
+
     def read_features(self):
         logger.debug("read_features")
-        self.features.add("Screenshots")
+        super().read_features()
         if self.readFirmware().find("DiSlord") > 0:
             self.features.add("Customizable data points")
             logger.info("VNA has 201 datapoints capability")
