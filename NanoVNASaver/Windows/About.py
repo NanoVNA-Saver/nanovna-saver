@@ -53,7 +53,7 @@ class AboutWindow(QtWidgets.QWidget):
             f"NanoVNASaver version {self.app.version}"))
         layout.addWidget(QtWidgets.QLabel(""))
         layout.addWidget(QtWidgets.QLabel(
-            "\N{COPYRIGHT SIGN} Copyright 2019, 2020 Rune B. Broberg"
+            "\N{COPYRIGHT SIGN} Copyright 2019, 2020 Rune B. Broberg\n"
             "\N{COPYRIGHT SIGN} Copyright 2020 NanoVNA-Saver Authors"
             ))
         layout.addWidget(QtWidgets.QLabel(
@@ -115,12 +115,12 @@ class AboutWindow(QtWidgets.QWidget):
         self.updateLabels()
 
     def updateLabels(self):
-        if self.app.vna.isValid():
-            logger.debug("Valid VNA")
-            v: Version = self.app.vna.version
+        try:
             self.versionLabel.setText(
-                f"NanoVNA Firmware Version: {self.app.vna.name}"
-                f"{v.version_string}")
+                f"NanoVNA Firmware Version: {self.app.vna.name} "
+                f"v{self.app.vna.version}")
+        except (IOError, AttributeError):
+            pass
 
     def updateSettings(self):
         if self.updateCheckBox.isChecked():
@@ -150,7 +150,7 @@ class AboutWindow(QtWidgets.QWidget):
             self.app.settings.setValue("CheckForUpdates", "Ask")
 
     def findUpdates(self, automatic=False):
-        latest_version = Version("")
+        latest_version = Version()
         latest_url = ""
         try:
             req = request.Request(VERSION_URL)
@@ -174,7 +174,7 @@ class AboutWindow(QtWidgets.QWidget):
             self.updateLabel.setText("Connection error.")
             return
 
-        logger.info("Latest version is %s", latest_version.version_string)
+        logger.info("Latest version is %s", latest_version)
         this_version = Version(self.app.version)
         logger.info("This is %s", this_version)
         if latest_version > this_version:
@@ -183,9 +183,9 @@ class AboutWindow(QtWidgets.QWidget):
                 QtWidgets.QMessageBox.information(
                     self,
                     "Updates available",
-                    "There is a new update for NanoVNA-Saver available!\n" +
-                    "Version " + latest_version.version_string + "\n\n" +
-                    "Press \"About\" to find the update.")
+                    f"There is a new update for NanoVNA-Saver available!\n"
+                    f"Version {latest_version}\n\n"
+                    f'Press "About" to find the update.')
             else:
                 QtWidgets.QMessageBox.information(
                     self, "Updates available",

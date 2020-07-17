@@ -21,6 +21,11 @@ import math
 import cmath
 import io
 from operator import attrgetter
+
+from typing import List
+
+from scipy.interpolate import interp1d
+
 from NanoVNASaver.RFTools import Datapoint
 
 logger = logging.getLogger(__name__)
@@ -98,29 +103,77 @@ class Touchstone:
         self.sdata = [[], [], [], []]  # at max 4 data pairs
         self.comments = []
         self.opts = Options()
+        self._interp = {}
 
     @property
-    def s11data(self) -> list:
+    def s11data(self) -> List[Datapoint]:
         return self.s("11")
 
+    @s11data.setter
+    def s11data(self, value: List[Datapoint]):
+        self.sdata[0] = value
+
     @property
-    def s12data(self) -> list:
+    def s12data(self) -> List[Datapoint]:
         return self.s("12")
 
-    @property
-    def s21data(self) -> list:
-        return self.s("21")
+    @s12data.setter
+    def s12data(self, value: List[Datapoint]):
+        self.sdata[2] = value
 
     @property
-    def s22data(self) -> list:
+    def s21data(self) -> List[Datapoint]:
+        return self.s("21")
+
+    @s21data.setter
+    def s21data(self, value: List[Datapoint]):
+        self.sdata[1] = value
+
+    @property
+    def s22data(self) -> List[Datapoint]:
         return self.s("22")
+
+    @s22data.setter
+    def s22data(self, value: List[Datapoint]):
+        self.sdata[3] = value
 
     @property
     def r(self) -> int:
         return self.opts.resistance
 
-    def s(self, name: str) -> list:
+    def s(self, name: str) -> List[Datapoint]:
         return self.sdata[Touchstone.FIELD_ORDER.index(name)]
+
+    def s_freq(self, name: str, freq: int) -> Datapoint:
+        return Datapoint(freq,
+                         float(self._interp[name]["real"](freq)),
+                         float(self._interp[name]["imag"](freq)))
+
+    def min_freq(self) -> int:
+        return self.s("11")[0].freq
+
+    def max_freq(self) -> int:
+        return self.s("11")[-1].freq
+
+    def gen_interpolation(self):
+        for i in Touchstone.FIELD_ORDER:
+            freq = []
+            real = []
+            imag = []
+
+            for dp in self.s(i):
+                freq.append(dp.freq)
+                real.append(dp.re)
+                imag.append(dp.im)
+
+            self._interp[i] = {
+                "real": interp1d(freq, real,
+                                 kind="slinear", bounds_error=False,
+                                 fill_value=(real[0], real[-1])),
+                "imag": interp1d(freq, imag,
+                                 kind="slinear", bounds_error=False,
+                                 fill_value=(imag[0], imag[-1])),
+            }
 
     def _parse_comments(self, fp) -> str:
         for line in fp:

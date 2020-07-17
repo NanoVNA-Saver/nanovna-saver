@@ -81,17 +81,17 @@ class SimplePeakSearchAnalysis(Analysis):
         if self.rbtn_data_vswr.isChecked():
             suffix = ""
             data = []
-            for d in self.app.data:
+            for d in self.app.data11:
                 data.append(d.vswr)
         elif self.rbtn_data_resistance.isChecked():
             suffix = " \N{OHM SIGN}"
             data = []
-            for d in self.app.data:
+            for d in self.app.data11:
                 data.append(d.impedance().real)
         elif self.rbtn_data_reactance.isChecked():
             suffix = " \N{OHM SIGN}"
             data = []
-            for d in self.app.data:
+            for d in self.app.data11:
                 data.append(d.impedance().imag)
         elif self.rbtn_data_s21_gain.isChecked():
             suffix = " dB"
@@ -117,10 +117,10 @@ class SimplePeakSearchAnalysis(Analysis):
             return
 
         self.peak_frequency.setText(
-            format_frequency(self.app.data[idx_peak].freq))
+            format_frequency(self.app.data11[idx_peak].freq))
         self.peak_value.setText(str(round(data[idx_peak], 3)) + suffix)
 
         if self.checkbox_move_marker.isChecked() and len(self.app.markers) >= 1:
-            self.app.markers[0].setFrequency(str(self.app.data[idx_peak].freq))
+            self.app.markers[0].setFrequency(str(self.app.data11[idx_peak].freq))
             self.app.markers[0].frequencyInput.setText(
-                format_frequency(self.app.data[idx_peak].freq))
+                format_frequency(self.app.data11[idx_peak].freq))

@@ -17,14 +17,12 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-import struct
 
 import serial
 import numpy as np
 from PyQt5 import QtGui
 
 from NanoVNASaver.Hardware.NanoVNA import NanoVNA
-from NanoVNASaver.Hardware.Serial import drain_serial
 
 logger = logging.getLogger(__name__)
 
@@ -36,26 +34,10 @@ class NanoVNA_F(NanoVNA):
 
     def getScreenshot(self) -> QtGui.QPixmap:
         logger.debug("Capturing screenshot...")
-        if not self.serial.is_open:
+        if not self.connected():
             return QtGui.QPixmap()
         try:
-            with self.app.serialLock:
-                drain_serial(self.serial)
-                self.serial.write("capture\r".encode('ascii'))
-                timeout = self.serial.timeout
-                self.serial.timeout = 4
-                self.serial.readline()
-                image_data = self.serial.read(
-                    self.screenwidth * self.screenheight * 2)
-                self.serial.timeout = timeout
-            rgb_data = struct.unpack(
-                f"<{self.screenwidth * self.screenheight}H", image_data)
-            rgb_array = np.array(rgb_data, dtype=np.uint32)
-            rgba_array = (0xFF000000 +
-                            ((rgb_array & 0xF800) << 8) +  # G?!
-                            ((rgb_array & 0x07E0) >> 3) +  # B
-                            ((rgb_array & 0x001F) << 11))  # G
-
+            rgba_array = self._capture_data()
             unwrapped_array = np.empty(
                 self.screenwidth*self.screenheight,
                 dtype=np.uint32)

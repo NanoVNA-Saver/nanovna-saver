@@ -232,9 +232,9 @@ class CalibrationWindow(QtWidgets.QWidget):
         if name in ("through", "isolation"):
             self.app.calibration.insert(name, self.app.data21)
         else:
-            self.app.calibration.insert(name, self.app.data)
+            self.app.calibration.insert(name, self.app.data11)
         self.cal_label[name].setText(
-            _format_cal_label(len(self.app.data)))
+            _format_cal_label(len(self.app.data11)))
 
     def manual_save(self, name: str):
         if self.checkExpertUser():
@@ -452,7 +452,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.app.worker.signals.updated.emit()
 
     def calculate(self):
-        if self.app.btnStopSweep.isEnabled():
+        if self.app.sweep_control.btn_stop.isEnabled():
             # Currently sweeping
             self.app.showError("Unable to apply calibration while a sweep is running. " +
                                "Please stop the sweep and try again.")
@@ -633,7 +633,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.btn_automatic.setDisabled(False)
             return
         logger.info("Starting automatic calibration assistant.")
-        if not self.app.serial.is_open:
+        if not self.app.vna.connected():
             QtWidgets.QMessageBox(
                 QtWidgets.QMessageBox.Information,
                 "NanoVNA not connected",
@@ -666,7 +666,7 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.app.calibration.source = "Calibration assistant"
         self.nextStep = 0
         self.app.worker.signals.finished.connect(self.automaticCalibrationStep)
-        self.app.sweep()
+        self.app.sweep_start()
         return
 
     def automaticCalibrationStep(self):
@@ -695,7 +695,7 @@ class CalibrationWindow(QtWidgets.QWidget):
                 self.app.worker.signals.finished.disconnect(
                     self.automaticCalibrationStep)
                 return
-            self.app.sweep()
+            self.app.sweep_start()
             return
 
         if self.nextStep == 1:
@@ -716,7 +716,7 @@ class CalibrationWindow(QtWidgets.QWidget):
                 self.app.worker.signals.finished.disconnect(
                     self.automaticCalibrationStep)
                 return
-            self.app.sweep()
+            self.app.sweep_start()
             return
 
         if self.nextStep == 2:
@@ -760,7 +760,7 @@ class CalibrationWindow(QtWidgets.QWidget):
                 self.app.worker.signals.finished.disconnect(
                     self.automaticCalibrationStep)
                 return
-            self.app.sweep()
+            self.app.sweep_start()
             return
 
         if self.nextStep == 3:
@@ -782,7 +782,7 @@ class CalibrationWindow(QtWidgets.QWidget):
                 self.app.worker.signals.finished.disconnect(
                     self.automaticCalibrationStep)
                 return
-            self.app.sweep()
+            self.app.sweep_start()
             return
 
         if self.nextStep == 4:

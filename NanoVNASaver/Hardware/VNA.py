@@ -17,67 +17,132 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
+from collections import OrderedDict
 from time import sleep
-from typing import List
+from typing import List, Iterator
 
-import serial
-from PyQt5 import QtWidgets, QtGui
+from PyQt5 import QtGui
 
 from NanoVNASaver.Settings import Version
-from NanoVNASaver.Hardware.Serial import drain_serial
+from NanoVNASaver.Hardware.Serial import Interface, drain_serial
 
 logger = logging.getLogger(__name__)
 
+DISLORD_BW = OrderedDict((
+    (10, 181),
+    (33, 58),
+    (100, 19),
+    (333, 5),
+    (1000, 1),
+    (2000, 0),
+))
+
+
+def _max_retries(bandwidth: int, datapoints: int) -> int:
+    return 20 * (datapoints / 101) + round(
+        (1000 / bandwidth) ** 1.2 *  (datapoints  / 101))
 
 class VNA:
     name = "VNA"
-    _datapoints = (101, )
+    valid_datapoints = (101, )
 
-    def __init__(self, app: QtWidgets.QWidget, serial_port: serial.Serial):
-        self.app = app
-        self.serial = serial_port
-        self.version: Version = Version("0.0.0")
+    def __init__(self, iface: Interface):
+        self.serial = iface
+        self.version = Version("0.0.0")
         self.features = set()
         self.validateInput = True
-        self.datapoints = VNA._datapoints[0]
+        self.datapoints = self.valid_datapoints[0]
+        self.bandwidth = 1000
+        self.bw_method = "ttrftech"
+        if self.connected():
+            self.version = self.readVersion()
+            self.read_features()
+            logger.debug("Features: %s", self.features)
+            #  cannot read current bandwidth, so set to highest
+            #  to get initial sweep fast
+            if "Bandwidth" in self.features:
+                self.set_bandwidth(self.get_bandwidths()[-1])
 
-    def readFeatures(self) -> List[str]:
-        raw_help = self.readFromCommand("help")
-        logger.debug("Help command output:")
-        logger.debug(raw_help)
+    def exec_command(self, command: str, wait: float = 0.05) -> Iterator[str]:
+        logger.debug("exec_command(%s)", command)
+        with self.serial.lock:
+            drain_serial(self.serial)
+            self.serial.write(f"{command}\r".encode('ascii'))
+            sleep(wait)
+            retries = 0
+            max_retries = _max_retries(self.bandwidth, self.datapoints)
+            logger.debug("Max retries: %s", max_retries)
+            while True:
+                line = self.serial.readline()
+                line = line.decode("ascii").strip()
+                if not line:
+                    retries += 1
+                    if retries > max_retries:
+                        raise IOError("too many retries")
+                    sleep(wait)
+                    continue
+                if line == command:  # suppress echo
+                    continue
+                if line.startswith("ch>"):
+                    logger.debug("Needed retries: %s", retries)
+                    break
+                yield line
 
-        #  Detect features from the help command
-        if "capture" in raw_help:
+    def read_features(self):
+        result = " ".join(self.exec_command("help")).split()
+        logger.debug("result:\n%s", result)
+        if "capture" in result:
             self.features.add("Screenshots")
-        if len(self._datapoints) > 1:
+        if "bandwidth" in result:
+            self.features.add("Bandwidth")
+            result = " ".join(list(self.exec_command("bandwidth")))
+            if "Hz)" in result:
+                self.bw_method = "dislord"
+        if len(self.valid_datapoints) > 1:
             self.features.add("Customizable data points")
 
-        return self.features
+    def get_bandwidths(self) -> List[int]:
+        logger.debug("get bandwidths")
+        if self.bw_method == "dislord":
+            return list(DISLORD_BW.keys())
+        result = " ".join(list(self.exec_command("bandwidth")))
+        try:
+            result = result.split(" {")[1].strip("}")
+            return sorted([int(i) for i in result.split("|")])
+        except IndexError:
+            return [1000, ]
 
-    # TODO: check return types
+    def set_bandwidth(self, bandwidth: int):
+        bw_val = bandwidth
+        if self.bw_method == "dislord":
+            bw_val = DISLORD_BW[bandwidth]
+        result = " ".join(self.exec_command(f"bandwidth {bw_val}"))
+        if self.bw_method == "ttrftech" and result:
+            raise IOError(f"set_bandwith({bandwidth}: {result}")
+        self.bandwidth = bandwidth
+
     def readFrequencies(self) -> List[int]:
-        return []
+        return [int(f) for f in self.readValues("frequencies")]
 
     def resetSweep(self, start: int, stop: int):
         pass
 
-    def isValid(self):
-        return False
-
-    def isDFU(self):
-        return False
+    def connected(self) -> bool:
+        return self.serial.is_open
 
     def getFeatures(self) -> List[str]:
         return self.features
 
     def getCalibration(self) -> str:
-        return "Unknown"
+        return " ".join(list(self.exec_command("cal")))
 
     def getScreenshot(self) -> QtGui.QPixmap:
         return QtGui.QPixmap()
 
     def flushSerialBuffers(self):
-        with self.app.serialLock:
+        if not self.connected():
+            return
+        with self.serial.lock:
             self.serial.write("\r\n\r\n".encode("ascii"))
             sleep(0.1)
             self.serial.reset_input_buffer()
@@ -85,102 +150,21 @@ class VNA:
             sleep(0.1)
 
     def readFirmware(self) -> str:
-        try:
-            with self.app.serialLock:
-                drain_serial(self.serial)
-                self.serial.write("info\r".encode('ascii'))
-                result = ""
-                data = ""
-                sleep(0.01)
-                while data != "ch> ":
-                    data = self.serial.readline().decode('ascii')
-                    result += data
-            return result
-        except serial.SerialException as exc:
-            logger.exception(
-                "Exception while reading firmware data: %s", exc)
-        return ""
-
-    def readFromCommand(self, command) -> str:
-        try:
-            with self.app.serialLock:
-                drain_serial(self.serial)
-                self.serial.write(f"{command}\r".encode('ascii'))
-                result = ""
-                data = ""
-                sleep(0.01)
-                while data != "ch> ":
-                    data = self.serial.readline().decode('ascii')
-                    result += data
-            return result
-        except serial.SerialException as exc:
-            logger.exception(
-                "Exception while reading %s: %s", command, exc)
-        return ""
+        result = "\n".join(list(self.exec_command("info")))
+        logger.debug("result:\n%s", result)
+        return result
 
     def readValues(self, value) -> List[str]:
         logger.debug("VNA reading %s", value)
-        try:
-            with self.app.serialLock:
-                drain_serial(self.serial)
-                self.serial.write(f"{value}\r".encode('ascii'))
-                result = ""
-                data = ""
-                sleep(0.05)
-                while data != "ch> ":
-                    data = self.serial.readline().decode('ascii')
-                    result += data
-            values = result.split("\r\n")
-            logger.debug(
-                "VNA done reading %s (%d values)",
-                value, len(values)-2)
-            return values[1:-1]
-        except serial.SerialException as exc:
-            logger.exception(
-                "Exception while reading %s: %s", value, exc)
-        return []
+        result = list(self.exec_command(value))
+        logger.debug("VNA done reading %s (%d values)",
+                     value, len(result))
+        return result
 
-    def writeSerial(self, command):
-        if not self.serial.is_open:
-            logger.warning("Writing without serial port being opened (%s)",
-                           command)
-            return
-        with self.app.serialLock:
-            try:
-                self.serial.write(f"{command}\r".encode('ascii'))
-                self.serial.readline()
-            except serial.SerialException as exc:
-                logger.exception(
-                    "Exception while writing to serial port (%s): %s",
-                    command, exc)
+    def readVersion(self) -> 'Version':
+        result = list(self.exec_command("version"))
+        logger.debug("result:\n%s", result)
+        return Version(result[0])
 
     def setSweep(self, start, stop):
-        self.writeSerial(f"sweep {start} {stop} {self.datapoints}")
-
-
-# TODO: should be dropped and the serial part should be a connection class
-#       which handles unconnected devices
-class InvalidVNA(VNA):
-    name = "Invalid"
-    _datapoints = (0, )
-
-    def setSweep(self, start, stop):
-        return
-
-    def resetSweep(self, start, stop):
-        return
-
-    def writeSerial(self, command):
-        return
-
-    def readFirmware(self):
-        return
-
-    def readFrequencies(self) -> List[int]:
-        return []
-
-    def readValues(self, value):
-        return
-
-    def flushSerialBuffers(self):
-        return
+        list(self.exec_command(f"sweep {start} {stop} {self.datapoints}"))

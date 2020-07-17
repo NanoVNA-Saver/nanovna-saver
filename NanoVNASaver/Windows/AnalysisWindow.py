@@ -22,8 +22,7 @@ from PyQt5 import QtWidgets, QtCore
 
 from NanoVNASaver.Analysis import Analysis, LowPassAnalysis, HighPassAnalysis, \
     BandPassAnalysis, BandStopAnalysis, VSWRAnalysis, \
-    SimplePeakSearchAnalysis
-from NanoVNASaver.Analysis.AntennaAnalysis import MagLoopAnalysis
+    SimplePeakSearchAnalysis, MagLoopAnalysis
 
 logger = logging.getLogger(__name__)
 

@@ -90,8 +90,8 @@ class PeakSearchAnalysis(Analysis):
         count = self.input_number_of_peaks.value()
         if self.rbtn_data_vswr.isChecked():
             data = []
-            for d in self.app.data:
-                data.append(d.vswr)
+            for d in self.app.data11:
+                data11.append(d.vswr)
         elif self.rbtn_data_s21_gain.isChecked():
             data = []
             for d in self.app.data21:
@@ -130,7 +130,7 @@ class PeakSearchAnalysis(Analysis):
             logger.debug("Index %d", i)
             logger.debug("Prominence %f", prominences[i])
             logger.debug("Index in sweep %d", peaks[i])
-            logger.debug("Frequency %d", self.app.data[peaks[i]].freq)
+            logger.debug("Frequency %d", self.app.data11[peaks[i]].freq)
             logger.debug("Value %f", data[peaks[i]])
 
         if self.checkbox_move_markers:
@@ -138,9 +138,9 @@ class PeakSearchAnalysis(Analysis):
                 logger.warning("More peaks found than there are markers")
             for i in range(min(count, len(self.app.markers))):
                 self.app.markers[i].setFrequency(
-                    str(self.app.data[peaks[indices[i]]].freq))
+                    str(self.app.data11[peaks[indices[i]]].freq))
                 self.app.markers[i].frequencyInput.setText(
-                    str(self.app.data[peaks[indices[i]]].freq))
+                    str(self.app.data11[peaks[indices[i]]].freq))
 
         max_val = -10**10
         max_idx = -1

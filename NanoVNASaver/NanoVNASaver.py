@@ -24,7 +24,6 @@ from collections import OrderedDict
 from time import sleep, strftime, localtime
 from typing import List
 
-import serial
 from PyQt5 import QtWidgets, QtCore, QtGui
 
 from .Windows import (
@@ -32,12 +31,10 @@ from .Windows import (
     DeviceSettingsWindow, DisplaySettingsWindow, SweepSettingsWindow,
     TDRWindow
 )
-from .Formatting import (
-    format_frequency, format_frequency_short, format_frequency_sweep,
-    parse_frequency,
-)
-from .Hardware.Hardware import get_interfaces, get_VNA
-from .Hardware.VNA import InvalidVNA
+from .Widgets import SweepControl
+from .Formatting import format_frequency
+from .Hardware.Hardware import Interface, get_interfaces, get_VNA
+from .Hardware.VNA import VNA
 from .RFTools import Datapoint, corr_att_data
 from .Charts.Chart import Chart
 from .Charts import (
@@ -50,7 +47,6 @@ from .Charts import (
     SmithChart, SParameterChart, TDRChart,
 )
 from .Calibration import Calibration
-from .Inputs import FrequencyInputWidget
 from .Marker import Marker
 from .SweepWorker import SweepWorker
 from .Settings import BandsModel
@@ -88,17 +84,18 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.worker.signals.sweepError.connect(self.showSweepError)
         self.worker.signals.fatalSweepError.connect(self.showFatalSweepError)
 
+        self.sweep_control = SweepControl(self)
+
         self.bands = BandsModel()
 
         self.noSweeps = 1  # Number of sweeps to run
 
-        self.serialLock = threading.Lock()
-        self.serial = serial.Serial()
-        self.vna = InvalidVNA(self, serial)
+        self.interface = Interface("serial", "None")
+        self.vna = VNA(self.interface)
 
         self.dataLock = threading.Lock()
         # TODO: use Touchstone class as data container
-        self.data: List[Datapoint] = []
+        self.data11: List[Datapoint] = []
         self.data21: List[Datapoint] = []
         self.referenceS11data: List[Datapoint] = []
         self.referenceS21data: List[Datapoint] = []
@@ -109,8 +106,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.calibration = Calibration()
 
         self.markers = []
-
-        self.serialPort = ""
 
         logger.debug("Building user interface")
 
@@ -224,90 +219,9 @@ class NanoVNASaver(QtWidgets.QWidget):
         #  Sweep control
         ###############################################################
 
-        sweep_control_box = QtWidgets.QGroupBox()
-        sweep_control_box.setMaximumWidth(250)
-        sweep_control_box.setTitle("Sweep control")
-        sweep_control_layout = QtWidgets.QFormLayout(sweep_control_box)
+        left_column.addWidget(self.sweep_control)
 
-        line = QtWidgets.QFrame()
-        line.setFrameShape(QtWidgets.QFrame.VLine)
-
-        sweep_input_layout = QtWidgets.QHBoxLayout()
-        sweep_input_left_layout = QtWidgets.QFormLayout()
-        sweep_input_right_layout = QtWidgets.QFormLayout()
-        sweep_input_layout.addLayout(sweep_input_left_layout)
-        sweep_input_layout.addWidget(line)
-        sweep_input_layout.addLayout(sweep_input_right_layout)
-        sweep_control_layout.addRow(sweep_input_layout)
-
-        self.sweepStartInput = FrequencyInputWidget()
-        self.sweepStartInput.setMinimumWidth(60)
-        self.sweepStartInput.setAlignment(QtCore.Qt.AlignRight)
-        self.sweepStartInput.textEdited.connect(self.updateCenterSpan)
-        self.sweepStartInput.textChanged.connect(self.updateStepSize)
-        sweep_input_left_layout.addRow(QtWidgets.QLabel("Start"), self.sweepStartInput)
-
-        self.sweepEndInput = FrequencyInputWidget()
-        self.sweepEndInput.setAlignment(QtCore.Qt.AlignRight)
-        self.sweepEndInput.textEdited.connect(self.updateCenterSpan)
-        self.sweepEndInput.textChanged.connect(self.updateStepSize)
-        sweep_input_left_layout.addRow(QtWidgets.QLabel("Stop"), self.sweepEndInput)
-
-        self.sweepCenterInput = FrequencyInputWidget()
-        self.sweepCenterInput.setMinimumWidth(60)
-        self.sweepCenterInput.setAlignment(QtCore.Qt.AlignRight)
-        self.sweepCenterInput.textEdited.connect(self.updateStartEnd)
-
-        sweep_input_right_layout.addRow(QtWidgets.QLabel("Center"), self.sweepCenterInput)
-
-        self.sweepSpanInput = FrequencyInputWidget()
-        self.sweepSpanInput.setAlignment(QtCore.Qt.AlignRight)
-        self.sweepSpanInput.textEdited.connect(self.updateStartEnd)
-
-        sweep_input_right_layout.addRow(QtWidgets.QLabel("Span"), self.sweepSpanInput)
-
-        self.sweepCountInput = QtWidgets.QLineEdit(self.settings.value("Segments", "1"))
-        self.sweepCountInput.setAlignment(QtCore.Qt.AlignRight)
-        self.sweepCountInput.setFixedWidth(60)
-        self.sweepCountInput.textEdited.connect(self.updateStepSize)
-
-        self.sweepStepLabel = QtWidgets.QLabel("Hz/step")
-        self.sweepStepLabel.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-
-        segment_layout = QtWidgets.QHBoxLayout()
-        segment_layout.addWidget(self.sweepCountInput)
-        segment_layout.addWidget(self.sweepStepLabel)
-        sweep_control_layout.addRow(QtWidgets.QLabel("Segments"), segment_layout)
-
-        btn_sweep_settings_window = QtWidgets.QPushButton("Sweep settings ...")
-        btn_sweep_settings_window.clicked.connect(
-            lambda: self.display_window("sweep_settings"))
-
-        sweep_control_layout.addRow(btn_sweep_settings_window)
-
-        self.sweepProgressBar = QtWidgets.QProgressBar()
-        self.sweepProgressBar.setMaximum(100)
-        self.sweepProgressBar.setValue(0)
-        sweep_control_layout.addRow(self.sweepProgressBar)
-
-        self.btnSweep = QtWidgets.QPushButton("Sweep")
-        self.btnSweep.clicked.connect(self.sweep)
-        self.btnSweep.setShortcut(QtCore.Qt.Key_W | QtCore.Qt.CTRL)
-        self.btnStopSweep = QtWidgets.QPushButton("Stop")
-        self.btnStopSweep.clicked.connect(self.stopSweep)
-        self.btnStopSweep.setShortcut(QtCore.Qt.Key_Escape)
-        self.btnStopSweep.setDisabled(True)
-        btn_layout = QtWidgets.QHBoxLayout()
-        btn_layout.addWidget(self.btnSweep)
-        btn_layout.addWidget(self.btnStopSweep)
-        btn_layout.setContentsMargins(0, 0, 0, 0)
-        btn_layout_widget = QtWidgets.QWidget()
-        btn_layout_widget.setLayout(btn_layout)
-        sweep_control_layout.addRow(btn_layout_widget)
-
-        left_column.addWidget(sweep_control_box)
-
-        ###############################################################
+        # ###############################################################
         #  Marker control
         ###############################################################
 
@@ -456,7 +370,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.rescanSerialPort()
         self.serialPortInput.setEditable(True)
         btn_rescan_serial_port = QtWidgets.QPushButton("Rescan")
-        btn_rescan_serial_port.setFixedWidth(60)
+        btn_rescan_serial_port.setFixedWidth(65)
         btn_rescan_serial_port.clicked.connect(self.rescanSerialPort)
         serial_port_input_layout = QtWidgets.QHBoxLayout()
         serial_port_input_layout.addWidget(self.serialPortInput)
@@ -471,6 +385,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         serial_button_layout.addWidget(self.btnSerialToggle, stretch=1)
 
         self.btnDeviceSettings = QtWidgets.QPushButton("Manage")
+        self.btnDeviceSettings.setFixedWidth(65)
         self.btnDeviceSettings.clicked.connect(
             lambda: self.display_window("device_settings"))
         serial_button_layout.addWidget(self.btnDeviceSettings, stretch=0)
@@ -555,11 +470,11 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def rescanSerialPort(self):
         self.serialPortInput.clear()
-        for port in get_interfaces():
-            self.serialPortInput.insertItem(1, port[1], port[0])
+        for iface in get_interfaces():
+            self.serialPortInput.insertItem(1, f"{iface}", iface)
 
     def exportFile(self, nr_params: int = 1):
-        if len(self.data) == 0:
+        if len(self.data11) == 0:
             QtWidgets.QMessageBox.warning(
                 self, "No data to save", "There is no data to save.")
             return
@@ -587,10 +502,10 @@ class NanoVNASaver(QtWidgets.QWidget):
             return
 
         ts = Touchstone(filename)
-        ts.sdata[0] = self.data
+        ts.sdata[0] = self.data11
         if nr_params > 1:
             ts.sdata[1] = self.data21
-            for dp in self.data:
+            for dp in self.data11:
                 ts.sdata[2].append(Datapoint(dp.freq, 0, 0))
                 ts.sdata[3].append(Datapoint(dp.freq, 0, 0))
         try:
@@ -600,88 +515,76 @@ class NanoVNASaver(QtWidgets.QWidget):
             return
 
     def serialButtonClick(self):
-        if self.serial.is_open:
-            self.stopSerial()
+        if not self.vna.connected():
+            self.connect_device()
         else:
-            self.startSerial()
-        return
+            self.disconnect_device()
 
-    def startSerial(self):
-        with self.serialLock:
-            self.serialPort = self.serialPortInput.currentData()
-            if self.serialPort == "":
-                self.serialPort = self.serialPortInput.currentText()
-            logger.info("Opening serial port %s", self.serialPort)
+    def connect_device(self):
+        if not self.interface:
+            return
+        with self.interface.lock:
+            self.interface = self.serialPortInput.currentData()
+            logger.info("Connection %s", self.interface)
             try:
-                self.serial = serial.Serial(port=self.serialPort, baudrate=115200)
-                self.serial.timeout = 0.05
-            except serial.SerialException as exc:
-                logger.error("Tried to open %s and failed: %s", self.serialPort, exc)
+                self.interface.open()
+                self.interface.timeout = 0.05
+            except (IOError, AttributeError) as exc:
+                logger.error("Tried to open %s and failed: %s",
+                             self.interface, exc)
                 return
-            if not self.serial.isOpen() :
-                logger.error("Unable to open port %s", self.serialPort)
+            if not self.interface.isOpen():
+                logger.error("Unable to open port %s", self.interface)
                 return
-            self.btnSerialToggle.setText("Disconnect")
+        sleep(0.1)
+        try:
+            self.vna = get_VNA(self.interface)
+        except IOError as exc:
+            logger.error("Unable to connect to VNA: %s", exc)
 
-        sleep(0.05)
-
-        self.vna = get_VNA(self, self.serial)
         self.vna.validateInput = self.settings.value("SerialInputValidation", True, bool)
-        self.worker.setVNA(self.vna)
 
-        logger.info(self.vna.readFirmware())
+        # connected
+        self.btnSerialToggle.setText("Disconnect")
 
         frequencies = self.vna.readFrequencies()
-        if frequencies:
-            logger.info("Read starting frequency %s and end frequency %s",
-                        frequencies[0], frequencies[100])
-            if int(frequencies[0]) == int(frequencies[100]) and (
-                    self.sweepStartInput.text() == "" or
-                    self.sweepEndInput.text() == ""):
-                self.sweepStartInput.setText(
-                    format_frequency_sweep(int(frequencies[0])))
-                self.sweepEndInput.setText(
-                    format_frequency_sweep(int(frequencies[100]) + 100000))
-            elif (self.sweepStartInput.text() == "" or
-                    self.sweepEndInput.text() == ""):
-                self.sweepStartInput.setText(
-                    format_frequency_sweep(int(frequencies[0])))
-                self.sweepEndInput.setText(
-                    format_frequency_sweep(int(frequencies[100])))
-            self.sweepStartInput.textEdited.emit(
-                self.sweepStartInput.text())
-            self.sweepStartInput.textChanged.emit(
-                self.sweepStartInput.text())
-        else:
+        if not frequencies:
             logger.warning("No frequencies read")
             return
+        logger.info("Read starting frequency %s and end frequency %s",
+                    frequencies[0], frequencies[-1])
+        self.sweep_control.set_start(frequencies[0])
+        if frequencies[0] < frequencies[-1]:
+            self.sweep_control.set_end(frequencies[-1])
+        else:
+            self.sweep_control.set_end(
+                frequencies[0] +
+                self.vna.datapoints * self.sweep_control.get_count())
+
+        self.sweep_control.set_count(1)  # speed up things
+        self.sweep_control.update_center_span()
+        self.sweep_control.update_step_size()
+
         logger.debug("Starting initial sweep")
-        self.sweep()
-        return
+        self.sweep_start()
 
-    def stopSerial(self):
-        with self.serialLock:
-            logger.info("Closing connection to NanoVNA")
-            self.serial.close()
-            self.btnSerialToggle.setText("Connect to NanoVNA")
+    def disconnect_device(self):
+        with self.interface.lock:
+            logger.info("Closing connection to %s", self.interface)
+            self.interface.close()
+            self.btnSerialToggle.setText("Connect to device")
 
-    def toggleSweepSettings(self, disabled):
-        self.sweepStartInput.setDisabled(disabled)
-        self.sweepEndInput.setDisabled(disabled)
-        self.sweepSpanInput.setDisabled(disabled)
-        self.sweepCenterInput.setDisabled(disabled)
-        self.sweepCountInput.setDisabled(disabled)
-
-    def sweep(self):
-        # Run the serial port update
-        if not self.serial.is_open:
+    def sweep_start(self):
+        # Run the device data update
+        if not self.vna.connected():
             return
         self.worker.stopped = False
 
-        self.sweepProgressBar.setValue(0)
-        self.btnSweep.setDisabled(True)
-        self.btnStopSweep.setDisabled(False)
-        self.toggleSweepSettings(True)
+        self.sweep_control.progress_bar.setValue(0)
+        self.sweep_control.btn_start.setDisabled(True)
+        self.sweep_control.btn_stop.setDisabled(False)
+        self.sweep_control.toggle_settings(True)
+
         for m in self.markers:
             m.resetLabels()
         self.s11_min_rl_label.setText("")
@@ -690,25 +593,21 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s21_max_gain_label.setText("")
         self.tdr_result_label.setText("")
 
-        if self.sweepCountInput.text().isdigit():
-            self.settings.setValue("Segments", self.sweepCountInput.text())
+        if self.sweep_control.input_count.text().isdigit():
+            self.settings.setValue("Segments", self.sweep_control.input_count.text())
 
         logger.debug("Starting worker thread")
         self.threadpool.start(self.worker)
 
-    def stopSweep(self):
+    def sweep_stop(self):
         self.worker.stopped = True
 
     def saveData(self, data, data21, source=None):
-        if self.dataLock.acquire(blocking=True):
-            self.data = data
+        with self.dataLock:
+            self.data11 = data
+            self.data21 = data21
             if self.s21att > 0:
-                self.data21 = corr_att_data(data21, self.s21att)
-            else:
-                self.data21 = data21
-        else:
-            logger.error("Failed acquiring data lock while saving.")
-        self.dataLock.release()
+                self.data21 = corr_att_data(self.data21, self.s21att)
         if source is not None:
             self.sweepSource = source
         else:
@@ -718,38 +617,37 @@ class NanoVNASaver(QtWidgets.QWidget):
             ).lstrip()
 
     def markerUpdated(self, marker: Marker):
-        if self.dataLock.acquire(blocking=True):
-            marker.findLocation(self.data)
+        with self.dataLock:
+            marker.findLocation(self.data11)
             for m in self.markers:
                 m.resetLabels()
-                m.updateLabels(self.data, self.data21)
+                m.updateLabels(self.data11, self.data21)
 
             for c in self.subscribing_charts:
                 c.update()
-        self.dataLock.release()
 
     def dataUpdated(self):
-        if self.dataLock.acquire(blocking=True):
+        with self.dataLock:
             for m in self.markers:
                 m.resetLabels()
-                m.updateLabels(self.data, self.data21)
+                m.updateLabels(self.data11, self.data21)
 
             for c in self.s11charts:
-                c.setData(self.data)
+                c.setData(self.data11)
 
             for c in self.s21charts:
                 c.setData(self.data21)
 
             for c in self.combinedCharts:
-                c.setCombinedData(self.data, self.data21)
+                c.setCombinedData(self.data11, self.data21)
 
-            self.sweepProgressBar.setValue(self.worker.percentage)
+            self.sweep_control.progress_bar.setValue(self.worker.percentage)
             self.windows["tdr"].updateTDR()
 
             # Find the minimum S11 VSWR:
             min_vswr = 100
             min_vswr_freq = -1
-            for d in self.data:
+            for d in self.data11:
                 vswr = d.vswr
                 if min_vswr > vswr > 0:
                     min_vswr = vswr
@@ -789,56 +687,24 @@ class NanoVNASaver(QtWidgets.QWidget):
                 self.s21_min_gain_label.setText("")
                 self.s21_max_gain_label.setText("")
 
-        else:
-            logger.error("Failed acquiring data lock while updating.")
         self.updateTitle()
-        self.dataLock.release()
         self.dataAvailable.emit()
 
     def sweepFinished(self):
-        self.sweepProgressBar.setValue(100)
-        self.btnSweep.setDisabled(False)
-        self.btnStopSweep.setDisabled(True)
-        self.toggleSweepSettings(False)
+        self.sweep_control.progress_bar.setValue(100)
+        self.sweep_control.btn_start.setDisabled(False)
+        self.sweep_control.btn_stop.setDisabled(True)
+        self.sweep_control.toggle_settings(False)
 
-    def updateCenterSpan(self):
-        fstart = parse_frequency(self.sweepStartInput.text())
-        fstop = parse_frequency(self.sweepEndInput.text())
-        fspan = fstop - fstart
-        fcenter = int(round((fstart+fstop)/2))
-        if fspan < 0 or fstart < 0 or fstop < 0:
-            return
-        self.sweepSpanInput.setText(format_frequency_sweep(fspan))
-        self.sweepCenterInput.setText(format_frequency_sweep(fcenter))
-
-    def updateStartEnd(self):
-        fcenter = parse_frequency(self.sweepCenterInput.text())
-        fspan = parse_frequency(self.sweepSpanInput.text())
-        if fspan < 0 or fcenter < 0:
-            return
-        fstart = int(round(fcenter - fspan/2))
-        fstop = int(round(fcenter + fspan/2))
-        if fstart < 0 or fstop < 0:
-            return
-        self.sweepStartInput.setText(format_frequency_sweep(fstart))
-        self.sweepEndInput.setText(format_frequency_sweep(fstop))
-
-    def updateStepSize(self):
-        fspan = parse_frequency(self.sweepSpanInput.text())
-        if fspan < 0:
-            return
-        if self.sweepCountInput.text().isdigit():
-            segments = int(self.sweepCountInput.text())
-            if segments > 0:
-                fstep = fspan / (segments * self.vna.datapoints - 1)
-                self.sweepStepLabel.setText(
-                    f"{format_frequency_short(fstep)}/step")
+        for marker in self.markers:
+            marker.frequencyInput.textEdited.emit(
+                marker.frequencyInput.text())
 
     def setReference(self, s11data=None, s21data=None, source=None):
         if not s11data:
-            s11data = self.data
-        if not s21data:
-            s21data = self.data21
+            s11data = self.data11[:]
+            s21data = self.data21[:]
+
         self.referenceS11data = s11data
         for c in self.s11charts:
             c.setReference(s11data)
@@ -863,7 +729,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         title = self.baseTitle
         insert = ""
         if self.sweepSource != "":
-            insert += f"Sweep: {self.sweepSource} @ {len(self.data)} points"
+            insert += f"Sweep: {self.sweepSource} @ {len(self.data11)} points"
         if self.referenceSource != "":
             if insert != "":
                 insert += ", "
@@ -904,7 +770,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         filename, _ = QtWidgets.QFileDialog.getOpenFileName(
             filter="Touchstone Files (*.s1p *.s2p);;All files (*.*)")
         if filename != "":
-            self.data = []
+            self.data11 = []
             self.data21 = []
             t = Touchstone(filename)
             t.load()
@@ -927,7 +793,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def showSweepError(self):
         self.showError(self.worker.error_message)
-        self.serial.flushInput()  # Remove any left-over data
+        self.vna.flushSerialBuffers()  # Remove any left-over data
         self.sweepFinished()
 
     def popoutChart(self, chart: Chart):

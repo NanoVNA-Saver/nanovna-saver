@@ -35,6 +35,12 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
 
         QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
+        self.label = {
+            "status": QtWidgets.QLabel("Not connected."),
+            "firmware": QtWidgets.QLabel("Not connected."),
+            "calibration": QtWidgets.QLabel("Not connected."),
+        }
+
         top_layout = QtWidgets.QHBoxLayout()
         left_layout = QtWidgets.QVBoxLayout()
         right_layout = QtWidgets.QVBoxLayout()
@@ -44,13 +50,13 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
 
         status_box = QtWidgets.QGroupBox("Status")
         status_layout = QtWidgets.QFormLayout(status_box)
-        self.statusLabel = QtWidgets.QLabel("Not connected.")
-        status_layout.addRow("Status:", self.statusLabel)
 
-        self.calibrationStatusLabel = QtWidgets.QLabel("Not connected.")
-        status_layout.addRow("Calibration:", self.calibrationStatusLabel)
+        status_layout.addRow("Status:", self.label["status"])
+        status_layout.addRow("Firmware:", self.label["firmware"])
+        status_layout.addRow("Calibration:", self.label["calibration"])
 
         status_layout.addRow(QtWidgets.QLabel("Features:"))
+
         self.featureList = QtWidgets.QListWidget()
         status_layout.addRow(self.featureList)
 
@@ -58,7 +64,7 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         settings_layout = QtWidgets.QFormLayout(settings_box)
 
         self.chkValidateInputData = QtWidgets.QCheckBox("Validate received data")
-        validate_input = self.app.settings.value("SerialInputValidation", True, bool)
+        validate_input = self.app.settings.value("SerialInputValidation", False, bool)
         self.chkValidateInputData.setChecked(validate_input)
         self.chkValidateInputData.stateChanged.connect(self.updateValidation)
         settings_layout.addRow("Validation", self.chkValidateInputData)
@@ -79,8 +85,16 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         self.datapoints = QtWidgets.QComboBox()
         self.datapoints.addItem(str(self.app.vna.datapoints))
         self.datapoints.currentIndexChanged.connect(self.updateNrDatapoints)
+        self.datapoints.currentIndexChanged.connect(
+            self.app.sweep_control.update_step_size)
+
+        self.bandwidth = QtWidgets.QComboBox()
+        self.bandwidth.addItem(str(self.app.vna.bandwidth))
+        self.bandwidth.currentIndexChanged.connect(self.updateBandwidth)
+
         form_layout = QtWidgets.QFormLayout()
         form_layout.addRow(QtWidgets.QLabel("Datapoints"), self.datapoints)
+        form_layout.addRow(QtWidgets.QLabel("Bandwidth"), self.bandwidth)
         right_layout.addWidget(settings_box)
         settings_layout.addRow(form_layout)
 
@@ -88,38 +102,57 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         self.datapoints.setCurrentIndex(
             self.datapoints.findText(str(dpoints)))
 
+    def _set_bandwidth_index(self, bw: int):
+        self.bandwidth.setCurrentIndex(
+            self.bandwidth.findText(str(bw)))
+
     def show(self):
         super().show()
         self.updateFields()
 
     def updateFields(self):
-        if self.app.vna.isValid():
-            self.statusLabel.setText("Connected to " + self.app.vna.name + ".")
-            if self.app.worker.running:
-                self.calibrationStatusLabel.setText("(Sweep running)")
-            else:
-                self.calibrationStatusLabel.setText(self.app.vna.getCalibration())
-
+        if not self.app.vna.connected():
+            self.label["status"].setText("Not connected.")
+            self.label["firmware"].setText("Not connected.")
+            self.label["calibration"].setText("Not connected.")
             self.featureList.clear()
-            self.featureList.addItem(self.app.vna.name + " v" + str(self.app.vna.version))
-            features = self.app.vna.getFeatures()
-            for item in features:
-                self.featureList.addItem(item)
-
-            self.btnCaptureScreenshot.setDisabled("Screenshots" not in features)
-            if "Customizable data points" in features:
-                self.datapoints.clear()
-                cur_dps = self.app.vna.datapoints
-                dplist = self.app.vna._datapoints[:]
-                for d in sorted(dplist):
-                    self.datapoints.addItem(str(d))
-                self._set_datapoint_index(cur_dps)
-        else:
-            self.statusLabel.setText("Not connected.")
-            self.calibrationStatusLabel.setText("Not connected.")
-            self.featureList.clear()
-            self.featureList.addItem("Not connected.")
             self.btnCaptureScreenshot.setDisabled(True)
+            return
+
+        self.label["status"].setText(
+            f"Connected to {self.app.vna.name}.")
+        self.label["firmware"].setText(
+            f"{self.app.vna.name} v{self.app.vna.version}")
+        if self.app.worker.running:
+            self.label["calibration"].setText("(Sweep running)")
+        else:
+            self.label["calibration"].setText(self.app.vna.getCalibration())
+        self.featureList.clear()
+        features = self.app.vna.getFeatures()
+        for item in features:
+            self.featureList.addItem(item)
+
+        self.btnCaptureScreenshot.setDisabled("Screenshots" not in features)
+
+        if "Customizable data points" in features:
+            self.datapoints.clear()
+            cur_dps = self.app.vna.datapoints
+            for d in sorted(self.app.vna.valid_datapoints):
+                self.datapoints.addItem(str(d))
+            self._set_datapoint_index(cur_dps)
+            self.datapoints.setDisabled(False)
+        else:
+            self.datapoints.setDisabled(True)
+
+        if "Bandwidth" in features:
+            self.bandwidth.clear()
+            cur_bw = self.app.vna.bandwidth
+            for d in sorted(self.app.vna.get_bandwidths()):
+                self.bandwidth.addItem(str(d))
+            self._set_bandwidth_index(cur_bw)
+            self.bandwidth.setDisabled(False)
+        else:
+            self.bandwidth.setDisabled(True)
 
     def updateValidation(self, validate_data: bool):
         self.app.vna.validateInput = validate_data
@@ -139,3 +172,9 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
             return
         logger.debug("DP: %s", self.datapoints.itemText(i))
         self.app.vna.datapoints = int(self.datapoints.itemText(i))
+
+    def updateBandwidth(self, i):
+        if i < 0 or self.app.worker.running:
+            return
+        logger.debug("Bandwidth: %s", self.bandwidth.itemText(i))
+        self.app.vna.set_bandwidth(int(self.bandwidth.itemText(i)))
