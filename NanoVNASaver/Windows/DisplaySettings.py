@@ -719,12 +719,15 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         new_marker = Marker("", self.app.settings)
         new_marker.setScale(self.app.scaleFactor)
         self.app.markers.append(new_marker)
-        self.app.marker_data_layout.addWidget(new_marker.getGroupBox())
+        self.app.marker_data_layout.addWidget(new_marker.get_data_layout())
 
         new_marker.updated.connect(self.app.markerUpdated)
         label, layout = new_marker.getRow()
-        self.app.marker_control_layout.insertRow(Marker.count() - 1, label, layout)
+        self.app.marker_control.layout.insertRow(Marker.count() - 1, label, layout)
         self.btn_remove_marker.setDisabled(False)
+
+        if Marker.count() >= 2:
+            self.app.marker_control.check_delta.setDisabled(False)
 
     def removeMarker(self):
         # keep at least one marker
@@ -732,13 +735,15 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             return
         if Marker.count() == 2:
             self.btn_remove_marker.setDisabled(True)
+            self.app.delta_marker_layout.setVisible(False)
+            self.app.marker_control.check_delta.setDisabled(True)
         last_marker = self.app.markers.pop()
 
         last_marker.updated.disconnect(self.app.markerUpdated)
-        self.app.marker_data_layout.removeWidget(last_marker.getGroupBox())
-        self.app.marker_control_layout.removeRow(Marker.count()-1)
-        last_marker.getGroupBox().hide()
-        last_marker.getGroupBox().destroy()
+        self.app.marker_data_layout.removeWidget(last_marker.get_data_layout())
+        self.app.marker_control.layout.removeRow(Marker.count()-1)
+        last_marker.get_data_layout().hide()
+        last_marker.get_data_layout().destroy()
         label, _ = last_marker.getRow()
         label.hide()
 

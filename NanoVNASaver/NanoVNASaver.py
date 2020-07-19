@@ -47,7 +47,7 @@ from .Charts import (
     SmithChart, SParameterChart, TDRChart,
 )
 from .Calibration import Calibration
-from .Marker import Marker
+from .Marker import Marker, DeltaMarker
 from .SweepWorker import SweepWorker
 from .Settings import BandsModel
 from .Touchstone import Touchstone
@@ -236,8 +236,14 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.marker_data_layout.setContentsMargins(0, 0, 0, 0)
 
         for m in self.markers:
-            self.marker_data_layout.addWidget(m.getGroupBox())
+            self.marker_data_layout.addWidget(m.get_data_layout())
         self.marker_column.addLayout(self.marker_data_layout)
+
+        # init delta marker (but assume only one marker exists)
+        self.delta_marker = DeltaMarker()
+        self.delta_marker_layout = self.delta_marker.get_data_layout()
+        self.delta_marker_layout.hide()
+        self.marker_column.addWidget(self.delta_marker_layout)
 
         ###############################################################
         #  Statistics/analysis
@@ -592,9 +598,15 @@ class NanoVNASaver(QtWidgets.QWidget):
             for m in self.markers:
                 m.resetLabels()
                 m.updateLabels(self.data11, self.data21)
-
             for c in self.subscribing_charts:
                 c.update()
+        if Marker.count() >= 2 and not self.delta_marker_layout.isHidden():
+            self.delta_marker.set_markers(self.markers[0], self.markers[1])
+            self.delta_marker.resetLabels()
+            try:
+                self.delta_marker.updateLabels()
+            except IndexError:
+                pass
 
     def dataUpdated(self):
         with self.dataLock:
@@ -803,7 +815,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                      new_width, old_width, self.scaleFactor)
         # TODO: Update all the fixed widths to account for the scaling
         for m in self.markers:
-            m.getGroupBox().setFont(font)
+            m.get_data_layout().setFont(font)
             m.setScale(self.scaleFactor)
 
     def setSweepTitle(self, title):

@@ -20,6 +20,7 @@ import logging
 
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtWidgets import QCheckBox
 
 from NanoVNASaver.Marker import Marker
 
@@ -33,17 +34,21 @@ class MarkerControl(QtWidgets.QGroupBox):
         self.app = app
         self.setMaximumWidth(250)
         self.setTitle(title)
-        control_layout = QtWidgets.QFormLayout(self)
+        self.layout = QtWidgets.QFormLayout(self)
 
         marker_count = max(self.app.settings.value("MarkerCount", 3, int), 1)
         for i in range(marker_count):
             marker = Marker("", self.app.settings)
             marker.updated.connect(self.app.markerUpdated)
             label, layout = marker.getRow()
-            control_layout.addRow(label, layout)
+            self.layout.addRow(label, layout)
             self.app.markers.append(marker)
             if i == 0:
                 marker.isMouseControlledRadioButton.setChecked(True)
+
+        self.check_delta = QCheckBox("Enable Delta Marker")
+        self.check_delta.toggled.connect(self.toggle_delta)
+        self.layout.addRow(self.check_delta)
 
         self.showMarkerButton = QtWidgets.QPushButton()
         if self.app.marker_frame.isHidden():
@@ -60,7 +65,7 @@ class MarkerControl(QtWidgets.QGroupBox):
         hbox = QtWidgets.QHBoxLayout()
         hbox.addWidget(self.showMarkerButton)
         hbox.addWidget(lock_radiobutton)
-        control_layout.addRow(hbox)
+        self.layout.addRow(hbox)
 
     def toggle_frame(self):
         if self.app.marker_frame.isHidden():
@@ -71,3 +76,6 @@ class MarkerControl(QtWidgets.QGroupBox):
             self.app.marker_frame.setHidden(True)
             self.app.settings.setValue("MarkersVisible", False)
             self.showMarkerButton.setText("Show data")
+
+    def toggle_delta(self):
+        self.app.delta_marker_layout.setVisible(self.check_delta.isChecked())

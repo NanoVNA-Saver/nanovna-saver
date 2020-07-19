@@ -59,7 +59,6 @@ class MarkerLabel(QtWidgets.QLabel):
 
 class Marker(QtCore.QObject, Value):
     _instances = 0
-    color: QtGui.QColor = QtGui.QColor()
     coloredText = True
     location = -1
     returnloss_is_positive = False
@@ -72,7 +71,6 @@ class Marker(QtCore.QObject, Value):
 
     def __init__(self, name: str = "", qsettings: QtCore.QSettings = None):
         super().__init__()
-        self.name = name
         self.qsettings = qsettings
         self.name = name
         self.color = QtGui.QColor()
@@ -274,7 +272,7 @@ class Marker(QtCore.QObject, Value):
         self.location = datasize - 1
         self.frequencyInput.previousFrequency = data[-2].freq
 
-    def getGroupBox(self) -> QtWidgets.QGroupBox:
+    def get_data_layout(self) -> QtWidgets.QGroupBox:
         return self.group_box
 
     def resetLabels(self):

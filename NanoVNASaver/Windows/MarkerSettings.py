@@ -75,7 +75,7 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
 
         layout.addWidget(settings_group_box)
         layout.addWidget(fields_group_box)
-        layout.addWidget(self.exampleMarker.getGroupBox())
+        layout.addWidget(self.exampleMarker.get_data_layout())
 
         btn_layout = QtWidgets.QHBoxLayout()
         layout.addLayout(btn_layout)
