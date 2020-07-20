@@ -73,7 +73,7 @@ class Sweep():
         return(self.start == other.start and
                self.end == other.end and
                self.points == other.points and
-               self.segments == other.sweeps)
+               self.segments == other.segments)
 
     def check(self):
         if not(self.segments > 0 and
