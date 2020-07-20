@@ -40,7 +40,7 @@ DISLORD_BW = OrderedDict((
 
 def _max_retries(bandwidth: int, datapoints: int) -> int:
     return 20 * (datapoints / 101) + round(
-        (1000 / bandwidth) ** 1.2 *  (datapoints  / 101))
+        (1000 / bandwidth) ** 1.30 *  (datapoints  / 101))
 
 class VNA:
     name = "VNA"
