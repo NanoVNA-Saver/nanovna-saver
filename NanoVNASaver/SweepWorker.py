@@ -56,11 +56,11 @@ class WorkerSignals(QtCore.QObject):
 
 class Sweep():
     def __init__(self, start: int = 3600000, end: int = 30000000,
-                 points: int = 101, segements: int = 1):
+                 points: int = 101, segments: int = 1):
         self.start = start
         self.end = end
         self.points = points
-        self.segments = segements
+        self.segments = segments
         self.span = self.end - self.start
         self.step = self.stepsize()
         self.check()
@@ -73,7 +73,7 @@ class Sweep():
         return(self.start == other.start and
                self.end == other.end and
                self.points == other.points and
-               self.segments == other.sweeps)
+               self.segments == other.segments)
 
     def check(self):
         if not(self.segments > 0 and
