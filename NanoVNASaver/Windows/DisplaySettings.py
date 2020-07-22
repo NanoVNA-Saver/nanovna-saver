@@ -720,6 +720,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         new_marker.setScale(self.app.scaleFactor)
         self.app.markers.append(new_marker)
         self.app.marker_data_layout.addWidget(new_marker.get_data_layout())
+        self.app.marker_frame.adjustSize()
 
         new_marker.updated.connect(self.app.markerUpdated)
         label, layout = new_marker.getRow()
@@ -742,6 +743,8 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         last_marker.updated.disconnect(self.app.markerUpdated)
         self.app.marker_data_layout.removeWidget(last_marker.get_data_layout())
         self.app.marker_control.layout.removeRow(Marker.count()-1)
+        self.app.marker_frame.adjustSize()
+
         last_marker.get_data_layout().hide()
         last_marker.get_data_layout().destroy()
         label, _ = last_marker.getRow()

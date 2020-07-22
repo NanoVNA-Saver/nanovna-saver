@@ -36,8 +36,8 @@ from NanoVNASaver.Formatting import (
 from .Widget import Marker
 
 class DeltaMarker(Marker):
-    def __init__(self, qsettings: QtCore.QSettings = None):
-        super().__init__()
+    def __init__(self, name: str = "", qsettings: QtCore.QSettings = None):
+        super().__init__(name, qsettings)
         self.marker_a = None
         self.marker_b = None
 

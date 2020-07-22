@@ -116,7 +116,9 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.baseTitle = f"NanoVNA Saver {NanoVNASaver.version}"
         self.updateTitle()
-        layout = QtWidgets.QGridLayout()
+        # layout = QtWidgets.QGridLayout()
+        layout = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.LeftToRight)
+
         scrollarea = QtWidgets.QScrollArea()
         outer = QtWidgets.QVBoxLayout()
         outer.addWidget(scrollarea)
@@ -197,9 +199,14 @@ class NanoVNASaver(QtWidgets.QWidget):
         right_column.addLayout(self.charts_layout)
         self.marker_frame.setHidden(not self.settings.value("MarkersVisible", True, bool))
 
-        layout.addLayout(left_column, 0, 0)
-        layout.addWidget(self.marker_frame, 0, 1)
-        layout.addLayout(right_column, 0, 2)
+        # layout.addLayout(left_column, 0, 0)
+        # layout.addWidget(self.marker_frame, 0, 1)
+        # layout.addLayout(right_column, 0, 2)
+
+        layout.addLayout(left_column)
+        layout.addWidget(self.marker_frame)
+        layout.addLayout(right_column,2)
+
 
         ###############################################################
         #  Windows
@@ -237,10 +244,23 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         for m in self.markers:
             self.marker_data_layout.addWidget(m.get_data_layout())
-        self.marker_column.addLayout(self.marker_data_layout)
+        # self.marker_column.addLayout(self.marker_data_layout)
+
+        scroll2 = QtWidgets.QScrollArea()
+        scroll2.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        # scroll2.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        scroll2.setWidgetResizable(True)
+        scroll2.setVisible(True)
+        # scroll2.setMinimumHeight(600)
+
+        widget2 = QtWidgets.QWidget()
+        widget2.setLayout(self.marker_data_layout)
+        scroll2.setWidget(widget2)
+        # self.marker_column.addLayout(self.marker_data_layout)
+        self.marker_column.addWidget(scroll2)
 
         # init delta marker (but assume only one marker exists)
-        self.delta_marker = DeltaMarker()
+        self.delta_marker = DeltaMarker("Delta Marker 2 - Marker 1")
         self.delta_marker_layout = self.delta_marker.get_data_layout()
         self.delta_marker_layout.hide()
         self.marker_column.addWidget(self.delta_marker_layout)
@@ -274,7 +294,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.marker_column.addWidget(s21_control_box)
 
-        self.marker_column.addStretch(1)
+        # self.marker_column.addStretch(1)
 
         self.windows["analysis"] = AnalysisWindow(self)
         btn_show_analysis = QtWidgets.QPushButton("Analysis ...")

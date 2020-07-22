@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 class MarkerControl(QtWidgets.QGroupBox):
     updated = pyqtSignal(object)
 
-    def __init__(self, app: QtWidgets.QWidget, title: str = "Makkers"):
+    def __init__(self, app: QtWidgets.QWidget, title: str = "Markers"):
         super().__init__()
         self.app = app
         self.setMaximumWidth(250)
