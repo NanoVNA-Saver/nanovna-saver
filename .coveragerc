@@ -5,19 +5,16 @@ omit =
     NanoVNASaver/Analysis/*.py
     NanoVNASaver/Calibration.py
     NanoVNASaver/Charts/*.py
+    NanoVNASaver/Controls/*.py
     NanoVNASaver/Hardware/*.py
     NanoVNASaver/Inputs.py
-    NanoVNASaver/Marker/Settings.py
-    NanoVNASaver/Marker/Values.py
-    NanoVNASaver/Marker/Widget.py
-    NanoVNASaver/Marker/__init__.py
+    NanoVNASaver/Marker/*.py
     NanoVNASaver/NanoVNASaver.py
     NanoVNASaver/Settings.py
     NanoVNASaver/SweepWorker.py
     NanoVNASaver/Windows/*.py
-    NanoVNASaver/__init__.py
+    **/__init__.py
     NanoVNASaver/__main__.py
-    NanoVNASaver/about.py
 [report]
 fail_under = 90.0
 show_missing = True
