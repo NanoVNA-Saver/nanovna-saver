@@ -116,7 +116,6 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.baseTitle = f"NanoVNA Saver {NanoVNASaver.version}"
         self.updateTitle()
-        # layout = QtWidgets.QGridLayout()
         layout = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.LeftToRight)
 
         scrollarea = QtWidgets.QScrollArea()
@@ -134,8 +133,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         widget = QtWidgets.QWidget()
         widget.setLayout(layout)
         scrollarea.setWidget(widget)
-
-        # outer.setContentsMargins(2, 2, 2, 2)  # Small screen mode, reduce margins?
 
         self.charts = {
             "s11": OrderedDict((
@@ -194,19 +191,22 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.charts_layout = QtWidgets.QGridLayout()
 
+        ###############################################################
+        #  Create main layout
+        ###############################################################
+
         left_column = QtWidgets.QVBoxLayout()
         right_column = QtWidgets.QVBoxLayout()
         right_column.addLayout(self.charts_layout)
         self.marker_frame.setHidden(not self.settings.value("MarkersVisible", True, bool))
-
-        # layout.addLayout(left_column, 0, 0)
-        # layout.addWidget(self.marker_frame, 0, 1)
-        # layout.addLayout(right_column, 0, 2)
+        chart_widget = QtWidgets.QWidget()
+        chart_widget.setLayout(right_column)
+        splitter = QtWidgets.QSplitter()
+        splitter.addWidget(self.marker_frame)
+        splitter.addWidget(chart_widget)
 
         layout.addLayout(left_column)
-        layout.addWidget(self.marker_frame)
-        layout.addLayout(right_column,2)
-
+        layout.addWidget(splitter, 2)
 
         ###############################################################
         #  Windows
