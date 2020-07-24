@@ -60,6 +60,9 @@ class TestCases(unittest.TestCase):
         self.assertEqual(parse_frequency('123.kHz'), 123000)
         self.assertEqual(parse_frequency('123.MHz'), 123000000)
         self.assertEqual(parse_frequency('123.GHz'), 123000000000)
+        self.assertEqual(parse_frequency('123.KHz'), 123000)
+        self.assertEqual(parse_frequency('123.mHz'), 123000000)
+        self.assertEqual(parse_frequency('123.gHz'), 123000000000)
 
     def test_unusualSIUnits(self):
         #######################################################################
@@ -76,7 +79,6 @@ class TestCases(unittest.TestCase):
         self.assertEqual(parse_frequency('123ZHz'), 123000000000000000000000)
         self.assertEqual(parse_frequency('123aHz'), 0)
         self.assertEqual(parse_frequency('123fHz'), 0)
-        self.assertEqual(parse_frequency('123mHz'), 0)
         self.assertEqual(parse_frequency('123nHz'), 0)
         self.assertEqual(parse_frequency('123pHz'), 0)
         self.assertEqual(parse_frequency('123yHz'), 0)

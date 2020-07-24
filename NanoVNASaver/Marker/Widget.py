@@ -59,7 +59,6 @@ class MarkerLabel(QtWidgets.QLabel):
 
 class Marker(QtCore.QObject, Value):
     _instances = 0
-    color: QtGui.QColor = QtGui.QColor()
     coloredText = True
     location = -1
     returnloss_is_positive = False
@@ -72,7 +71,6 @@ class Marker(QtCore.QObject, Value):
 
     def __init__(self, name: str = "", qsettings: QtCore.QSettings = None):
         super().__init__()
-        self.name = name
         self.qsettings = qsettings
         self.name = name
         self.color = QtGui.QColor()
@@ -86,8 +84,6 @@ class Marker(QtCore.QObject, Value):
 
         if not self.name:
             self.name = f"Marker {Marker._instances}"
-
-#        self.freq = RFTools.RFTools.parseFrequency(frequency)
 
         self.frequencyInput = FrequencyInput()
         self.frequencyInput.setAlignment(QtCore.Qt.AlignRight)
@@ -274,7 +270,7 @@ class Marker(QtCore.QObject, Value):
         self.location = datasize - 1
         self.frequencyInput.previousFrequency = data[-2].freq
 
-    def getGroupBox(self) -> QtWidgets.QGroupBox:
+    def get_data_layout(self) -> QtWidgets.QGroupBox:
         return self.group_box
 
     def resetLabels(self):
@@ -284,6 +280,16 @@ class Marker(QtCore.QObject, Value):
     def updateLabels(self,
                      s11data: List[RFTools.Datapoint],
                      s21data: List[RFTools.Datapoint]):
+        if not s11data:
+            return
+        if self.location == -1:  # initial position
+            if self.index == 3:
+                self.location = len(s11data) - 1
+            elif self.index == 2:
+                self.location = round(len(s11data) / 2)
+            else:
+                self.location = 0
+            self.frequencyInput.setText(s11data[self.location].freq)
         try:
             s11 = s11data[self.location]
         except IndexError:

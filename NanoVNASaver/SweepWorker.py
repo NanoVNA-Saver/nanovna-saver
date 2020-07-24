@@ -17,6 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
+from math import log
 from time import sleep
 from typing import Iterator, List, Tuple
 
@@ -56,18 +57,21 @@ class WorkerSignals(QtCore.QObject):
 
 class Sweep():
     def __init__(self, start: int = 3600000, end: int = 30000000,
-                 points: int = 101, segments: int = 1):
+                 points: int = 101, segments: int = 1,
+                 logarithmic: bool = False):
         self.start = start
         self.end = end
         self.points = points
         self.segments = segments
+        self.logarithmic = logarithmic
         self.span = self.end - self.start
         self.step = self.stepsize()
         self.check()
 
     def __repr__(self) -> str:
         return (
-            f"Sweep({self.start}, {self.end}, {self.points} {self.segments})")
+            f"Sweep({self.start}, {self.end}, {self.points}, {self.segments},"
+            f" {self.logarithmic})")
 
     def __eq__(self, other) -> bool:
         return(self.start == other.start and
@@ -80,20 +84,38 @@ class Sweep():
                self.points > 0 and
                self.start > 0 and
                self.end > 0 and
-               self.step >= 1):
+               self.stepsize() >= 1):
             raise ValueError(f"Illegal sweep settings: {self}")
 
     def stepsize(self) -> int:
-        return int(self.span / (self.points * self.segments - 1))
+        return round(self.span / ((self.points -1) * self.segments))
+
+    def _exp_factor(self, index: int) -> int:
+        return 1 - log(self.segments + 1 - index) / log(self.segments + 1)
 
     def get_index_range(self, index: int) -> Tuple[int, int]:
-        start = self.start + index * self.points * self.step
-        end = start + (self.points -1) * self.step
+        if not self.logarithmic:
+            start = self.start + index * self.points * self.step
+            end = start + (self.points - 1) * self.step
+        else:
+            start = self.start + self.span * self._exp_factor(index)
+            end = self.start + self.span * self._exp_factor(index + 1)
+        logger.debug("get_index_range(%s) -> (%s, %s)", index, start, end)
         return (start, end)
 
+
     def get_frequencies(self) -> Iterator[int]:
-        for freq in range(self.start, self.end + 1, self.step):
-            yield freq
+        if not self.logarithmic:
+            for freq in range(self.start, self.end + 1, self.step):
+                yield freq
+            return
+        for i in range(self.segments):
+            start, stop = self.get_index_range(i)
+            step = (stop - start) / self.points
+            freq = start
+            for _ in range(self.points):
+                yield round(freq)
+                freq += step
 
 
 class SweepWorker(QtCore.QRunnable):
@@ -123,9 +145,11 @@ class SweepWorker(QtCore.QRunnable):
     def run(self):
         try:
             self._run()
-        except BaseException as exc:
+        except BaseException as exc:  # pylint: disable=broad-except
             logger.exception("%s", exc)
-            raise exc
+            self.gui_error(f"ERROR during sweep\n\nStopped\n\n{exc}")
+            return
+            # raise exc
 
     def _run(self):
         logger.info("Initializing SweepWorker")
@@ -309,7 +333,6 @@ class SweepWorker(QtCore.QRunnable):
         if (len(frequencies) != len(values11) or
                 len(frequencies) != len(values21)):
             logger.info("No valid data during this run")
-            # TODO: display gui warning
             return [], [], []
         return frequencies, values11, values21
 
@@ -345,6 +368,8 @@ class SweepWorker(QtCore.QRunnable):
                 if count == 5:
                     logger.error("Tried and failed to read %s %d times.",
                                  data, count)
+                    logger.debug("trying to reconnect")
+                    self.app.vna.reconnect()
                 if count >= 10:
                     logger.critical(
                         "Tried and failed to read %s %d times. Giving up.",

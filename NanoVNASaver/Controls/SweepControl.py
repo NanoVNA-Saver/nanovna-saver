@@ -33,11 +33,11 @@ logger = logging.getLogger(__name__)
 class SweepControl(QtWidgets.QGroupBox):
     updated = pyqtSignal(object)
 
-    def __init__(self, app: QtWidgets.QWidget):
+    def __init__(self, app: QtWidgets.QWidget, title: str = "Sweep control"):
         super().__init__()
         self.app = app
         self.setMaximumWidth(250)
-        self.setTitle("Sweep control")
+        self.setTitle(title)
         control_layout = QtWidgets.QFormLayout(self)
 
         line = QtWidgets.QFrame()
