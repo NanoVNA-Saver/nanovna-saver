@@ -58,7 +58,7 @@ WRITE_SLEEP = 0.05
 
 class NanoVNA_V2(VNA):
     name = "NanoVNA-V2"
-    valid_datapoints = (101, 51, 202, 303, 505, 1023)
+    valid_datapoints = (101, 10, 50, 202, 303, 505, 1023)
     screenwidth = 320
     screenheight = 240
 
