@@ -244,19 +244,15 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         for m in self.markers:
             self.marker_data_layout.addWidget(m.get_data_layout())
-        # self.marker_column.addLayout(self.marker_data_layout)
 
         scroll2 = QtWidgets.QScrollArea()
         scroll2.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
-        # scroll2.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         scroll2.setWidgetResizable(True)
         scroll2.setVisible(True)
-        # scroll2.setMinimumHeight(600)
 
         widget2 = QtWidgets.QWidget()
         widget2.setLayout(self.marker_data_layout)
         scroll2.setWidget(widget2)
-        # self.marker_column.addLayout(self.marker_data_layout)
         self.marker_column.addWidget(scroll2)
 
         # init delta marker (but assume only one marker exists)
@@ -615,9 +611,8 @@ class NanoVNASaver(QtWidgets.QWidget):
     def markerUpdated(self, marker: Marker):
         with self.dataLock:
             marker.findLocation(self.data11)
-            for m in self.markers:
-                m.resetLabels()
-                m.updateLabels(self.data11, self.data21)
+            marker.resetLabels()
+            marker.updateLabels(self.data11, self.data21)
             for c in self.subscribing_charts:
                 c.update()
         if Marker.count() >= 2 and not self.delta_marker_layout.isHidden():

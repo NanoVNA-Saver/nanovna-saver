@@ -85,8 +85,6 @@ class Marker(QtCore.QObject, Value):
         if not self.name:
             self.name = f"Marker {Marker._instances}"
 
-#        self.freq = RFTools.RFTools.parseFrequency(frequency)
-
         self.frequencyInput = FrequencyInput()
         self.frequencyInput.setAlignment(QtCore.Qt.AlignRight)
         self.frequencyInput.textEdited.connect(self.setFrequency)
@@ -282,6 +280,16 @@ class Marker(QtCore.QObject, Value):
     def updateLabels(self,
                      s11data: List[RFTools.Datapoint],
                      s21data: List[RFTools.Datapoint]):
+        if not s11data:
+            return
+        if self.location == -1:  # initial position
+            if self.index == 3:
+                self.location = len(s11data) - 1
+            elif self.index == 2:
+                self.location = round(len(s11data) / 2)
+            else:
+                self.location = 0
+            self.frequencyInput.setText(s11data[self.location].freq)
         try:
             s11 = s11data[self.location]
         except IndexError:
