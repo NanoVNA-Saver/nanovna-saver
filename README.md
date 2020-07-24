@@ -16,6 +16,12 @@ points, and generally display and analyze the resulting data.
 
 # Latest Changes 
 
+## Changes in v0.3.7-pre
+
+- Added a delta marker
+- Scrollable marker column
+- Better error handling whith communication errors during a sweep
+
 ## Changes in v0.3.6
 
 - Added bandwidth setting in device manage dialog
