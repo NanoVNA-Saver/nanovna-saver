@@ -17,9 +17,8 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-from math import log
 from time import sleep
-from typing import Iterator, List, Tuple
+from typing import List, Tuple
 
 import numpy as np
 from PyQt5 import QtCore, QtWidgets
@@ -27,6 +26,7 @@ from PyQt5.QtCore import pyqtSlot, pyqtSignal
 
 from NanoVNASaver.Calibration import correct_delay
 from NanoVNASaver.RFTools import Datapoint
+from NanoVNASaver.Settings import Sweep
 
 logger = logging.getLogger(__name__)
 
@@ -53,69 +53,6 @@ class WorkerSignals(QtCore.QObject):
     finished = pyqtSignal()
     sweepError = pyqtSignal()
     fatalSweepError = pyqtSignal()
-
-
-class Sweep():
-    def __init__(self, start: int = 3600000, end: int = 30000000,
-                 points: int = 101, segments: int = 1,
-                 logarithmic: bool = False):
-        self.start = start
-        self.end = end
-        self.points = points
-        self.segments = segments
-        self.logarithmic = logarithmic
-        self.span = self.end - self.start
-        self.step = self.stepsize()
-        self.check()
-
-    def __repr__(self) -> str:
-        return (
-            f"Sweep({self.start}, {self.end}, {self.points}, {self.segments},"
-            f" {self.logarithmic})")
-
-    def __eq__(self, other) -> bool:
-        return(self.start == other.start and
-               self.end == other.end and
-               self.points == other.points and
-               self.segments == other.segments)
-
-    def check(self):
-        if not(self.segments > 0 and
-               self.points > 0 and
-               self.start > 0 and
-               self.end > 0 and
-               self.stepsize() >= 1):
-            raise ValueError(f"Illegal sweep settings: {self}")
-
-    def stepsize(self) -> int:
-        return round(self.span / ((self.points -1) * self.segments))
-
-    def _exp_factor(self, index: int) -> int:
-        return 1 - log(self.segments + 1 - index) / log(self.segments + 1)
-
-    def get_index_range(self, index: int) -> Tuple[int, int]:
-        if not self.logarithmic:
-            start = self.start + index * self.points * self.step
-            end = start + (self.points - 1) * self.step
-        else:
-            start = self.start + self.span * self._exp_factor(index)
-            end = self.start + self.span * self._exp_factor(index + 1)
-        logger.debug("get_index_range(%s) -> (%s, %s)", index, start, end)
-        return (start, end)
-
-
-    def get_frequencies(self) -> Iterator[int]:
-        if not self.logarithmic:
-            for freq in range(self.start, self.end + 1, self.step):
-                yield freq
-            return
-        for i in range(self.segments):
-            start, stop = self.get_index_range(i)
-            step = (stop - start) / self.points
-            freq = start
-            for _ in range(self.points):
-                yield round(freq)
-                freq += step
 
 
 class SweepWorker(QtCore.QRunnable):

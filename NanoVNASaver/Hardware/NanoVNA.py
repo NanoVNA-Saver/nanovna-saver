@@ -18,7 +18,6 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 import struct
-from time import sleep, time
 from typing import List
 
 import serial
@@ -26,7 +25,8 @@ import numpy as np
 from PyQt5 import QtGui
 
 from NanoVNASaver.Hardware.Serial import drain_serial, Interface
-from NanoVNASaver.Hardware.VNA import VNA, Version
+from NanoVNASaver.Hardware.VNA import VNA
+from NanoVNASaver.Version import Version
 
 logger = logging.getLogger(__name__)
 
