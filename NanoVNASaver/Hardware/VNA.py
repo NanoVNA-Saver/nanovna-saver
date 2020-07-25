@@ -36,15 +36,18 @@ DISLORD_BW = OrderedDict((
     (1000, 1),
     (2000, 0),
 ))
+WAIT = 0.05
 
 
 def _max_retries(bandwidth: int, datapoints: int) -> int:
-    return 20 * (datapoints / 101) + round(
-        (1000 / bandwidth) ** 1.2 *  (datapoints  / 101))
+    return round(5 + 20 * (datapoints / 101) +
+                 (1000 / bandwidth) ** 1.30 * (datapoints / 101))
+
 
 class VNA:
     name = "VNA"
-    valid_datapoints = (101, )
+    valid_datapoints = (101, 50, 10)
+    wait = 0.05
 
     def __init__(self, iface: Interface):
         self.serial = iface
@@ -63,7 +66,23 @@ class VNA:
             if "Bandwidth" in self.features:
                 self.set_bandwidth(self.get_bandwidths()[-1])
 
-    def exec_command(self, command: str, wait: float = 0.05) -> Iterator[str]:
+    def connect(self):
+        logger.info("connect %s", self.serial)
+        with self.serial.lock:
+            self.serial.open()
+
+    def disconnect(self):
+        logger.info("disconnect %s", self.serial)
+        with self.serial.lock:
+            self.serial.close()
+
+    def reconnect(self):
+        self.disconnect()
+        sleep(WAIT)
+        self.connect()
+        sleep(WAIT)
+
+    def exec_command(self, command: str, wait: float = WAIT) -> Iterator[str]:
         logger.debug("exec_command(%s)", command)
         with self.serial.lock:
             drain_serial(self.serial)

@@ -16,6 +16,12 @@ points, and generally display and analyze the resulting data.
 
 # Latest Changes 
 
+## Changes in v0.3.7-pre
+
+- Added a delta marker
+- Scrollable marker column
+- Better error handling whith communication errors during a sweep
+
 ## Changes in v0.3.6
 
 - Added bandwidth setting in device manage dialog
@@ -173,7 +179,7 @@ Via a MacPorts distribution maintained by @ra1nb0w.
 
 3. NanoVNASaver Installation
 
-        git clone git clone https://github.com/NanoVNA-Saver/nanovna-saver
+        git clone https://github.com/NanoVNA-Saver/nanovna-saver
         cd nanovna-saver
         
 4. Install local pip packages

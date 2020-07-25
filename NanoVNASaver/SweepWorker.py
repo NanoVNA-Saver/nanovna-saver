@@ -17,6 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
+from math import log
 from time import sleep
 from typing import Iterator, List, Tuple
 
@@ -56,44 +57,65 @@ class WorkerSignals(QtCore.QObject):
 
 class Sweep():
     def __init__(self, start: int = 3600000, end: int = 30000000,
-                 points: int = 101, sweeps: int = 1):
+                 points: int = 101, segments: int = 1,
+                 logarithmic: bool = False):
         self.start = start
         self.end = end
         self.points = points
-        self.sweeps = sweeps
+        self.segments = segments
+        self.logarithmic = logarithmic
         self.span = self.end - self.start
         self.step = self.stepsize()
         self.check()
 
     def __repr__(self) -> str:
         return (
-            f"Sweep({self.start}, {self.end}, {self.points} {self.sweeps})")
+            f"Sweep({self.start}, {self.end}, {self.points}, {self.segments},"
+            f" {self.logarithmic})")
 
     def __eq__(self, other) -> bool:
         return(self.start == other.start and
                self.end == other.end and
                self.points == other.points and
-               self.sweeps == other.sweeps)
+               self.segments == other.segments)
 
     def check(self):
-        if not(self.sweeps > 0 and
+        if not(self.segments > 0 and
                self.points > 0 and
                self.start > 0 and
                self.end > 0 and
-               self.step >= 1):
+               self.stepsize() >= 1):
             raise ValueError(f"Illegal sweep settings: {self}")
 
     def stepsize(self) -> int:
-        return int(self.span / (self.points * self.sweeps - 1))
+        return round(self.span / ((self.points -1) * self.segments))
+
+    def _exp_factor(self, index: int) -> int:
+        return 1 - log(self.segments + 1 - index) / log(self.segments + 1)
 
     def get_index_range(self, index: int) -> Tuple[int, int]:
-        start = self.start + index * self.points * self.step
-        end = start + (self.points -1) * self.step
+        if not self.logarithmic:
+            start = self.start + index * self.points * self.step
+            end = start + (self.points - 1) * self.step
+        else:
+            start = self.start + self.span * self._exp_factor(index)
+            end = self.start + self.span * self._exp_factor(index + 1)
+        logger.debug("get_index_range(%s) -> (%s, %s)", index, start, end)
         return (start, end)
 
+
     def get_frequencies(self) -> Iterator[int]:
-        for freq in range(self.start, self.end + 1, self.step):
-            yield freq
+        if not self.logarithmic:
+            for freq in range(self.start, self.end + 1, self.step):
+                yield freq
+            return
+        for i in range(self.segments):
+            start, stop = self.get_index_range(i)
+            step = (stop - start) / self.points
+            freq = start
+            for _ in range(self.points):
+                yield round(freq)
+                freq += step
 
 
 class SweepWorker(QtCore.QRunnable):
@@ -123,9 +145,11 @@ class SweepWorker(QtCore.QRunnable):
     def run(self):
         try:
             self._run()
-        except BaseException as exc:
+        except BaseException as exc:  # pylint: disable=broad-except
             logger.exception("%s", exc)
-            raise exc
+            self.gui_error(f"ERROR during sweep\n\nStopped\n\n{exc}")
+            return
+            # raise exc
 
     def _run(self):
         logger.info("Initializing SweepWorker")
@@ -141,7 +165,7 @@ class SweepWorker(QtCore.QRunnable):
                 self.app.sweep_control.get_start(),
                 self.app.sweep_control.get_end(),
                 self.app.vna.datapoints,
-                self.app.sweep_control.get_count(),
+                self.app.sweep_control.get_segments(),
             )
         except ValueError:
             self.gui_error(
@@ -160,7 +184,7 @@ class SweepWorker(QtCore.QRunnable):
 
         finished = False
         while not finished:
-            for i in range(self.sweep.sweeps):
+            for i in range(self.sweep.segments):
                 logger.debug("Sweep segment no %d", i)
                 if self.stopped:
                     logger.debug("Stopping sweeping as signalled")
@@ -171,7 +195,7 @@ class SweepWorker(QtCore.QRunnable):
                 try:
                     freq, values11, values21 = self.readAveragedSegment(
                         start, stop, averages)
-                    self.percentage = (i + 1) * 100 / self.sweep.sweeps
+                    self.percentage = (i + 1) * 100 / self.sweep.segments
                     self.updateData(freq, values11, values21, i)
                 except ValueError as e:
                     self.error_message = str(e)
@@ -182,7 +206,7 @@ class SweepWorker(QtCore.QRunnable):
             if not self.continuousSweep:
                 finished = True
 
-        if self.sweep.sweeps > 1:
+        if self.sweep.segments > 1:
             start = self.app.sweep_control.get_start()
             end = self.app.sweep_control.get_end()
             logger.debug("Resetting NanoVNA sweep to full range: %d to %d",
@@ -284,7 +308,7 @@ class SweepWorker(QtCore.QRunnable):
             freq, tmp11, tmp21 = self.readSegment(start, stop)
             values11.append(tmp11)
             values21.append(tmp21)
-            self.percentage += 100 / (self.sweep.sweeps * averages)
+            self.percentage += 100 / (self.sweep.segments * averages)
             self.signals.updated.emit()
 
         if self.truncates and averages > 1:
@@ -309,7 +333,6 @@ class SweepWorker(QtCore.QRunnable):
         if (len(frequencies) != len(values11) or
                 len(frequencies) != len(values21)):
             logger.info("No valid data during this run")
-            # TODO: display gui warning
             return [], [], []
         return frequencies, values11, values21
 
@@ -345,6 +368,8 @@ class SweepWorker(QtCore.QRunnable):
                 if count == 5:
                     logger.error("Tried and failed to read %s %d times.",
                                  data, count)
+                    logger.debug("trying to reconnect")
+                    self.app.vna.reconnect()
                 if count >= 10:
                     logger.critical(
                         "Tried and failed to read %s %d times. Giving up.",

@@ -142,8 +142,10 @@ class Value:
             value = value[:-len(self._unit)]
 
         factor = 1
-        if self.fmt.parse_sloppy_kilo and value[-1] == "K":  # fix for e.g. KHz
-            value = value[:-1] + "k"
+        # fix for e.g. KHz, mHz gHz as milli-Hertz mostly makes no
+        # sense in NanoVNAs context
+        if self.fmt.parse_sloppy_kilo and value[-1] in ("K", "m", "g"):
+            value = value[:-1] + value[-1].swapcase()
         if value[-1] in PREFIXES:
             factor = 10 ** ((PREFIXES.index(value[-1]) - 8) * 3)
             value = value[:-1]
