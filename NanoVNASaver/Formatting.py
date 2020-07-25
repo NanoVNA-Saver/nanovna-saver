@@ -104,7 +104,7 @@ def format_group_delay(val: float) -> str:
 
 
 def format_phase(val: float) -> str:
-    return f"{math.degrees(val):.2f}\N{DEGREE SIGN}"
+    return f"{math.degrees(val):.2f}""\N{DEGREE SIGN}"
 
 
 def format_complex_imp(z: complex, allow_negative: bool = False) -> str:
@@ -113,7 +113,7 @@ def format_complex_imp(z: complex, allow_negative: bool = False) -> str:
         fmt_re = FMT_COMPLEX_NEG
     re = SITools.Value(z.real, fmt=fmt_re)
     im = SITools.Value(abs(z.imag), fmt=FMT_COMPLEX)
-    return f"{re}{'-' if z.imag < 0 else '+'}j{im} \N{OHM SIGN}"
+    return f"{re}{'-' if z.imag < 0 else '+'}j{im} ""\N{OHM SIGN}"
 
 def format_wavelength(length: Number) -> str:
     return str(SITools.Value(length, "m", FMT_WAVELENGTH))

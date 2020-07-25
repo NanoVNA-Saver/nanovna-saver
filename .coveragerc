@@ -10,7 +10,7 @@ omit =
     NanoVNASaver/Inputs.py
     NanoVNASaver/Marker/*.py
     NanoVNASaver/NanoVNASaver.py
-    NanoVNASaver/Settings.py
+    NanoVNASaver/Settings/Bands.py
     NanoVNASaver/SweepWorker.py
     NanoVNASaver/Windows/*.py
     **/__init__.py

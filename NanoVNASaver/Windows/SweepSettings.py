@@ -77,7 +77,7 @@ class SweepSettingsWindow(QtWidgets.QWidget):
             "averages. Common values are 3/0, 5/2, 9/4 and 25/6.\n")
         label.setWordWrap(True)
         settings_layout.addRow(label)
- 
+
         self.s21att = QtWidgets.QLineEdit("0")
         label = QtWidgets.QLabel(
             "Some times when you measure amplifiers you need to use an"
@@ -88,7 +88,8 @@ class SweepSettingsWindow(QtWidgets.QWidget):
 
         settings_layout.addRow("Attenuator in port CH1 (s21) in dB", self.s21att)
 
-        # settings_layout.addRow(QtWidgets.QLabel("Common values with un-un are 16.9 (49:1 2450) 9.54 (9:1 450)"))
+        # settings_layout.addRow(QtWidgets.QLabel(
+        #   "Common values with un-un are 16.9 (49:1 2450) 9.54 (9:1 450)"))
 
         self.continuous_sweep_radiobutton.toggled.connect(
             lambda: self.app.worker.setContinuousSweep(

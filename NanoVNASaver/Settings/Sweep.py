@@ -58,7 +58,7 @@ class Sweep():
     def stepsize(self) -> int:
         return round(self.span / ((self.points -1) * self.segments))
 
-    def _exp_factor(self, index: int) -> int:
+    def _exp_factor(self, index: int) -> float:
         return 1 - log(self.segments + 1 - index) / log(self.segments + 1)
 
     def get_index_range(self, index: int) -> Tuple[int, int]:
@@ -66,8 +66,8 @@ class Sweep():
             start = self.start + index * self.points * self.step
             end = start + (self.points - 1) * self.step
         else:
-            start = self.start + self.span * self._exp_factor(index)
-            end = self.start + self.span * self._exp_factor(index + 1)
+            start = round(self.start + self.span * self._exp_factor(index))
+            end = round(self.start + self.span * self._exp_factor(index + 1))
         logger.debug("get_index_range(%s) -> (%s, %s)", index, start, end)
         return (start, end)
 
