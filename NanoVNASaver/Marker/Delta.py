@@ -31,6 +31,7 @@ from NanoVNASaver.Formatting import (
     format_q_factor,
     format_resistance,
     format_vswr,
+    format_wavelength,
 )
 
 from .Widget import Marker
@@ -87,6 +88,8 @@ class DeltaMarker(Marker):
 
         self.label['actualfreq'].setText(
             format_frequency_space(s11_b.freq - s11_a.freq))
+        self.label['lambda'].setText(
+            format_wavelength(s11_b.wavelength - s11_a.wavelength))
         self.label['admittance'].setText(format_complex_imp(imp_p, True))
         self.label['impedance'].setText(format_complex_imp(imp, True))
 

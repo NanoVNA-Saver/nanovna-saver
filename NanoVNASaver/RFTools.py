@@ -55,6 +55,10 @@ class Datapoint(NamedTuple):
             return 1
         return (1 + mag) / (1 - mag)
 
+    @property
+    def wavelength(self) -> float:
+        return 299792458 / self.freq
+
     def impedance(self, ref_impedance: float = 50) -> complex:
         return gamma_to_impedance(self.z, ref_impedance)
 
