@@ -90,11 +90,6 @@ def groupDelay(data: List[Datapoint], index: int) -> float:
     delta_freq = data[idx1].freq - data[idx0].freq
     if delta_freq == 0:
         return 0
-    if abs(delta_angle) > math.tau:
-        if delta_angle > 0:
-            delta_angle = delta_angle % math.tau
-        else:
-            delta_angle = -1 * (delta_angle % math.tau)
     val = -delta_angle / math.tau / delta_freq
     return val
 
