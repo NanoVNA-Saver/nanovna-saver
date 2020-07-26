@@ -35,6 +35,7 @@ from NanoVNASaver.Formatting import (
     format_q_factor,
     format_resistance,
     format_vswr,
+    format_wavelength,
     parse_frequency,
 )
 from NanoVNASaver.Inputs import MarkerFrequencyInputWidget as FrequencyInput
@@ -317,6 +318,7 @@ class Marker(QtCore.QObject, Value):
             x_p_str = ind_p_str
 
         self.label['actualfreq'].setText(format_frequency_space(s11.freq))
+        self.label['lambda'].setText(format_wavelength(s11.wavelength))
         self.label['admittance'].setText(format_complex_imp(imp_p))
         self.label['impedance'].setText(format_complex_imp(imp))
         self.label['parc'].setText(cap_p_str)

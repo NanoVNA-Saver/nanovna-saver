@@ -23,7 +23,7 @@ from typing import List, Iterator
 
 from PyQt5 import QtGui
 
-from NanoVNASaver.Settings import Version
+from NanoVNASaver.Version import Version
 from NanoVNASaver.Hardware.Serial import Interface, drain_serial
 
 logger = logging.getLogger(__name__)

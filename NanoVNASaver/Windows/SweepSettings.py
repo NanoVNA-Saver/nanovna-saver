@@ -72,20 +72,25 @@ class SweepSettingsWindow(QtWidgets.QWidget):
 
         settings_layout.addRow("Number of measurements to average", self.averages)
         settings_layout.addRow("Number to discard", self.truncates)
-        settings_layout.addRow(
-            QtWidgets.QLabel(
-                "Averaging allows discarding outlying samples to get better averages."))
-        settings_layout.addRow(
-            QtWidgets.QLabel("Common values are 3/0, 5/2, 9/4 and 25/6."))
-    
-        self.s21att = QtWidgets.QLineEdit("0")
+        label = QtWidgets.QLabel(
+            "Averaging allows discarding outlying samples to get better"
+            "averages. Common values are 3/0, 5/2, 9/4 and 25/6.\n")
+        label.setWordWrap(True)
+        settings_layout.addRow(label)
 
-        settings_layout.addRow(QtWidgets.QLabel(""))
-        settings_layout.addRow(QtWidgets.QLabel("Some times when you measure amplifiers you need to use an attenuator"))
-        settings_layout.addRow(QtWidgets.QLabel("in line with  the S21 input (CH1) here you can specify it."))
+        self.s21att = QtWidgets.QLineEdit("0")
+        label = QtWidgets.QLabel(
+            "Some times when you measure amplifiers you need to use an"
+            " attenuator in line with  the S21 input (CH1) here you can"
+            " specify it.")
+        label.setWordWrap(True)
+        settings_layout.addRow(label)
 
         settings_layout.addRow("Attenuator in port CH1 (s21) in dB", self.s21att)
-        settings_layout.addRow(QtWidgets.QLabel("Common values with un-un are 16.9 (49:1 2450) 9.54 (9:1 450)"))
+
+        # settings_layout.addRow(QtWidgets.QLabel(
+        #   "Common values with un-un are 16.9 (49:1 2450) 9.54 (9:1 450)"))
+
         self.continuous_sweep_radiobutton.toggled.connect(
             lambda: self.app.worker.setContinuousSweep(
                 self.continuous_sweep_radiobutton.isChecked()))

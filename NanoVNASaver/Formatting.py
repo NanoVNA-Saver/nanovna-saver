@@ -36,6 +36,7 @@ FMT_REACT = SITools.Format(max_nr_digits=5, space_str=" ", allow_strip=True)
 FMT_COMPLEX = SITools.Format(max_nr_digits=3, allow_strip=True,
                              printable_min=0, unprintable_under="- ")
 FMT_COMPLEX_NEG = SITools.Format(max_nr_digits=3, allow_strip=True)
+FMT_WAVELENGTH = SITools.Format(max_nr_digits=4, space_str=" ")
 FMT_PARSE = SITools.Format(parse_sloppy_unit=True, parse_sloppy_kilo=True,
                            parse_clamp_min=0)
 
@@ -103,7 +104,7 @@ def format_group_delay(val: float) -> str:
 
 
 def format_phase(val: float) -> str:
-    return f"{math.degrees(val):.2f}\N{DEGREE SIGN}"
+    return f"{math.degrees(val):.2f}""\N{DEGREE SIGN}"
 
 
 def format_complex_imp(z: complex, allow_negative: bool = False) -> str:
@@ -112,7 +113,10 @@ def format_complex_imp(z: complex, allow_negative: bool = False) -> str:
         fmt_re = FMT_COMPLEX_NEG
     re = SITools.Value(z.real, fmt=fmt_re)
     im = SITools.Value(abs(z.imag), fmt=FMT_COMPLEX)
-    return f"{re}{'-' if z.imag < 0 else '+'}j{im} \N{OHM SIGN}"
+    return f"{re}{'-' if z.imag < 0 else '+'}j{im} ""\N{OHM SIGN}"
+
+def format_wavelength(length: Number) -> str:
+    return str(SITools.Value(length, "m", FMT_WAVELENGTH))
 
 
 def parse_frequency(freq: str) -> int:

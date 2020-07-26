@@ -23,7 +23,8 @@ from time import sleep
 from typing import List
 
 from NanoVNASaver.Hardware.Serial import Interface
-from NanoVNASaver.Hardware.VNA import VNA, Version
+from NanoVNASaver.Hardware.VNA import VNA
+from NanoVNASaver.Version import Version
 
 if platform.system() != 'Windows':
     import tty
