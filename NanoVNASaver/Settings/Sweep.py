@@ -17,29 +17,53 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
+from enum import Enum
 from math import log
+from threading import Lock
 from typing import Iterator, Tuple
 
 logger = logging.getLogger(__name__)
 
 
+class SweepMode(Enum):
+    SINGLE = 0
+    CONTINOUS = 1
+    AVERAGE = 2
+
+
+class Properties():
+    def __init__(self, name: str = "",
+                 mode: 'SweepMode' = SweepMode.SINGLE,
+                 averages: Tuple[int, int] = (3, 0),
+                 logarithmic: bool = False):
+        self.name = name
+        self.mode = mode
+        self.averages = averages
+        self.logarithmic = logarithmic
+
+    def __repr__(self):
+        return (
+            f"Properties('{self.name}', {self.mode}, {self.averages},"
+            f" {self.logarithmic})")
+
+
 class Sweep():
     def __init__(self, start: int = 3600000, end: int = 30000000,
                  points: int = 101, segments: int = 1,
-                 logarithmic: bool = False):
+                 properties: 'Properties' = Properties()):
         self.start = start
         self.end = end
         self.points = points
         self.segments = segments
-        self.logarithmic = logarithmic
-        self.span = self.end - self.start
-        self.step = self.stepsize()
+        self.properties = properties
+        self.lock = Lock()
         self.check()
+        logger.debug("%s", self)
 
     def __repr__(self) -> str:
         return (
             f"Sweep({self.start}, {self.end}, {self.points}, {self.segments},"
-            f" {self.logarithmic})")
+            f" {self.properties})")
 
     def __eq__(self, other) -> bool:
         return(self.start == other.start and
@@ -47,36 +71,36 @@ class Sweep():
                self.points == other.points and
                self.segments == other.segments)
 
+    @property
+    def span(self) -> int:
+        return self.end - self.start
+
+    @property
+    def stepsize(self) -> int:
+        return round(self.span / ((self.points -1) * self.segments))
+
     def check(self):
         if not(self.segments > 0 and
                self.points > 0 and
                self.start > 0 and
                self.end > 0 and
-               self.stepsize() >= 1):
+               self.stepsize >= 1):
             raise ValueError(f"Illegal sweep settings: {self}")
-
-    def stepsize(self) -> int:
-        return round(self.span / ((self.points -1) * self.segments))
-
+    
     def _exp_factor(self, index: int) -> float:
         return 1 - log(self.segments + 1 - index) / log(self.segments + 1)
 
     def get_index_range(self, index: int) -> Tuple[int, int]:
-        if not self.logarithmic:
-            start = self.start + index * self.points * self.step
-            end = start + (self.points - 1) * self.step
+        if not self.properties.logarithmic:
+            start = self.start + index * self.points * self.stepsize
+            end = start + (self.points - 1) * self.stepsize
         else:
             start = round(self.start + self.span * self._exp_factor(index))
             end = round(self.start + self.span * self._exp_factor(index + 1))
         logger.debug("get_index_range(%s) -> (%s, %s)", index, start, end)
         return (start, end)
 
-
     def get_frequencies(self) -> Iterator[int]:
-        if not self.logarithmic:
-            for freq in range(self.start, self.end + 1, self.step):
-                yield freq
-            return
         for i in range(self.segments):
             start, stop = self.get_index_range(i)
             step = (stop - start) / self.points
