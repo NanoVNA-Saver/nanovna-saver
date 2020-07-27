@@ -66,6 +66,8 @@ class SweepSettingsWindow(QtWidgets.QWidget):
 
         settings_layout.addWidget(self.single_sweep_radiobutton)
         self.single_sweep_radiobutton.setChecked(True)
+        self.single_sweep_radiobutton.clicked.connect(
+            lambda: self.update_mode(SweepMode.SINGLE))
         settings_layout.addWidget(self.continuous_sweep_radiobutton)
         settings_layout.addWidget(self.averaged_sweep_radiobutton)
 
@@ -93,12 +95,12 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         # settings_layout.addRow(QtWidgets.QLabel(
         #   "Common values with un-un are 16.9 (49:1 2450) 9.54 (9:1 450)"))
 
-        self.continuous_sweep_radiobutton.toggled.connect(
-            lambda: self.app.worker.setContinuousSweep(
-                self.continuous_sweep_radiobutton.isChecked()))
-        self.averaged_sweep_radiobutton.toggled.connect(self.updateAveraging)
-        self.averages.editingFinished.connect(self.updateAveraging)
-        self.truncates.editingFinished.connect(self.updateAveraging)
+        self.continuous_sweep_radiobutton.clicked.connect(
+            lambda: self.update_mode(SweepMode.CONTINOUS))
+        self.averaged_sweep_radiobutton.clicked.connect(
+            lambda: self.update_mode(SweepMode.AVERAGE))
+        self.averages.editingFinished.connect(self.update_averaging)
+        self.truncates.editingFinished.connect(self.update_averaging)
         self.s21att.editingFinished.connect(self.setS21Attenuator)
         layout.addWidget(settings_box)
 
@@ -204,7 +206,7 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         self.app.sweep_control.input_end.textEdited.emit(
             self.app.sweep_control.input_end.text())
 
-    def updateAveraging(self):
+    def update_averaging(self):
         try:
             amount = int(self.averages.text())
             truncates = int(self.truncates.text())
@@ -217,9 +219,11 @@ class SweepSettingsWindow(QtWidgets.QWidget):
             self.averages.setText("3")
             self.truncates.setText("0")
         with self.app.sweep.lock:
-            if self.averaged_sweep_radiobutton.isChecked():
-                self.app.sweep.properties.mode = SweepMode.AVERAGE
             self.app.sweep.properties.averages = (amount, truncates)
+
+    def update_mode(self, mode: 'SweepMode'):
+        with self.app.sweep.lock:
+            self.app.sweep.properties.mode = mode
 
     def update_title(self, title: str = ""):
         self.app.sweep.properties.name = title

@@ -26,7 +26,7 @@ from PyQt5.QtCore import pyqtSlot, pyqtSignal
 
 from NanoVNASaver.Calibration import correct_delay
 from NanoVNASaver.RFTools import Datapoint
-from NanoVNASaver.Settings import Sweep
+from NanoVNASaver.Settings.Sweep import Sweep, SweepMode
 
 logger = logging.getLogger(__name__)
 
@@ -71,8 +71,6 @@ class SweepWorker(QtCore.QRunnable):
         self.init_data()
         self.stopped = False
         self.running = False
-        self.continuousSweep = False
-        self.averaging = False
         self.error_message = ""
         self.offsetDelay = 0
 
@@ -111,9 +109,9 @@ class SweepWorker(QtCore.QRunnable):
             return
 
         averages = 1
-        if self.averaging:
-            logger.info("%d averages", self.averages)
+        if sweep.properties.mode == SweepMode.AVERAGE:
             averages = sweep.properties.averages[0]
+            logger.info("%d averages", averages)
 
         if sweep != self.sweep:  # parameters changed
             self.sweep = sweep
@@ -140,7 +138,7 @@ class SweepWorker(QtCore.QRunnable):
                     self.running = False
                     self.signals.sweepError.emit()
 
-            if not self.continuousSweep:
+            if not sweep.properties.mode == SweepMode.CONTINOUS:
                 finished = True
 
         if self.sweep.segments > 1:
@@ -319,8 +317,6 @@ class SweepWorker(QtCore.QRunnable):
                         f"device settings screen.")
         return returndata
 
-    def setContinuousSweep(self, continuous_sweep: bool):
-        self.continuousSweep = continuous_sweep
 
     def gui_error(self, message: str):
         self.error_message = message
