@@ -131,6 +131,7 @@ class NanoVNA_V2(VNA):
                 pointstodo = self.datapoints
                 # 8 seconds should be enough for 8k points
                 self.serial.timeout = min(8.0, (pointstodo / 32) + 0.1)
+                retries = 0
                 while pointstodo > 0:
                     logger.info("reading values")
                     pointstoread = min(255, pointstodo)
@@ -148,6 +149,9 @@ class NanoVNA_V2(VNA):
                     if nBytes != len(arr):
                         logger.error("expected %d bytes, got %d",
                                      nBytes, len(arr))
+                        retries += 1
+                        if retries < 5:
+                            continue
                         return []
 
                     freq_index = -1
