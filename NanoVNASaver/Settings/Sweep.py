@@ -69,7 +69,8 @@ class Sweep():
         return(self.start == other.start and
                self.end == other.end and
                self.points == other.points and
-               self.segments == other.segments)
+               self.segments == other.segments and
+               self.properties == other.properties)
 
     @property
     def span(self) -> int:
@@ -86,7 +87,7 @@ class Sweep():
                self.end > 0 and
                self.stepsize >= 1):
             raise ValueError(f"Illegal sweep settings: {self}")
-    
+
     def _exp_factor(self, index: int) -> float:
         return 1 - log(self.segments + 1 - index) / log(self.segments + 1)
 

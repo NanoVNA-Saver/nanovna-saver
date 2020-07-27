@@ -17,6 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
+from copy import copy
 from time import sleep
 from typing import List, Tuple
 
@@ -88,26 +89,15 @@ class SweepWorker(QtCore.QRunnable):
         logger.info("Initializing SweepWorker")
         self.running = True
         self.percentage = 0
+
         if not self.app.vna.connected():
             logger.debug(
                 "Attempted to run without being connected to the NanoVNA")
             self.running = False
             return
-        try:
-            sweep = Sweep(
-                self.app.sweep_control.get_start(),
-                self.app.sweep_control.get_end(),
-                self.app.vna.datapoints,
-                self.app.sweep_control.get_segments(),
-            )
-            with self.app.sweep.lock:
-                sweep.properties = self.app.sweep.properties
-        except ValueError:
-            self.gui_error(
-                "Unable to parse frequency inputs"
-                " - check start and stop fields.")
-            return
 
+        with self.app.sweep.lock:
+            sweep = copy(self.app.sweep)
         averages = 1
         if sweep.properties.mode == SweepMode.AVERAGE:
             averages = sweep.properties.averages[0]
