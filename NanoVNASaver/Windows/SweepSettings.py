@@ -23,6 +23,7 @@ from PyQt5 import QtWidgets, QtCore
 from NanoVNASaver.Formatting import (
     format_frequency_short, format_frequency_sweep,
 )
+from NanoVNASaver.Settings.Sweep import SweepMode
 
 logger = logging.getLogger(__name__)
 
@@ -47,9 +48,10 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         title_button_layout = QtWidgets.QHBoxLayout()
         btn_set_sweep_title = QtWidgets.QPushButton("Set")
         btn_set_sweep_title.clicked.connect(
-            lambda: self.app.setSweepTitle(self.sweep_title_input.text()))
+            lambda: self.update_title(self.sweep_title_input.text()))
         btn_reset_sweep_title = QtWidgets.QPushButton("Reset")
-        btn_reset_sweep_title.clicked.connect(lambda: self.app.setSweepTitle(""))
+        btn_reset_sweep_title.clicked.connect(lambda: self.update_title(""))
+
         title_button_layout.addWidget(btn_set_sweep_title)
         title_button_layout.addWidget(btn_reset_sweep_title)
         title_layout.addRow(title_button_layout)
@@ -95,9 +97,9 @@ class SweepSettingsWindow(QtWidgets.QWidget):
             lambda: self.app.worker.setContinuousSweep(
                 self.continuous_sweep_radiobutton.isChecked()))
         self.averaged_sweep_radiobutton.toggled.connect(self.updateAveraging)
-        self.averages.textEdited.connect(self.updateAveraging)
-        self.truncates.textEdited.connect(self.updateAveraging)
-        self.s21att.textEdited.connect(self.setS21Attenuator)
+        self.averages.editingFinished.connect(self.updateAveraging)
+        self.truncates.editingFinished.connect(self.updateAveraging)
+        self.s21att.editingFinished.connect(self.setS21Attenuator)
         layout.addWidget(settings_box)
 
         band_sweep_box = QtWidgets.QGroupBox("Sweep band")
@@ -203,6 +205,22 @@ class SweepSettingsWindow(QtWidgets.QWidget):
             self.app.sweep_control.input_end.text())
 
     def updateAveraging(self):
-        self.app.worker.setAveraging(self.averaged_sweep_radiobutton.isChecked(),
-                                     self.averages.text(),
-                                     self.truncates.text())
+        try:
+            amount = int(self.averages.text())
+            truncates = int(self.truncates.text())
+            assert amount > 0
+            assert truncates >= 0
+            assert amount > truncates
+        except (AssertionError, ValueError):
+            amount = 3
+            truncates = 0
+            self.averages.setText("3")
+            self.truncates.setText("0")
+        with self.app.sweep.lock:
+            if self.averaged_sweep_radiobutton.isChecked():
+                self.app.sweep.properties.mode = SweepMode.AVERAGE
+            self.app.sweep.properties.averages = (amount, truncates)
+
+    def update_title(self, title: str = ""):
+        self.app.sweep.properties.name = title
+        self.app.update_sweep_title()

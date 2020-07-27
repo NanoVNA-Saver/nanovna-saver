@@ -49,7 +49,7 @@ from .Charts import (
 from .Calibration import Calibration
 from .Marker import Marker, DeltaMarker
 from .SweepWorker import SweepWorker
-from .Settings import BandsModel
+from .Settings import BandsModel, Sweep
 from .Touchstone import Touchstone
 from .About import VERSION
 
@@ -60,8 +60,6 @@ class NanoVNASaver(QtWidgets.QWidget):
     version = VERSION
     dataAvailable = QtCore.pyqtSignal()
     scaleFactor = 1
-
-    sweepTitle = ""
 
     def __init__(self):
         super().__init__()
@@ -77,6 +75,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                                          "NanoVNASaver", "NanoVNASaver")
         print(f"Settings: {self.settings.fileName()}")
         self.threadpool = QtCore.QThreadPool()
+        self.sweep = Sweep()
         self.worker = SweepWorker(self)
 
         self.worker.signals.updated.connect(self.dataUpdated)
@@ -604,7 +603,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.sweepSource = source
         else:
             self.sweepSource = (
-                f"{self.sweepTitle}"
+                f"{self.sweep.properties.name}"
                 f" {strftime('%Y-%m-%d %H:%M:%S', localtime())}"
             ).lstrip()
 
@@ -837,7 +836,6 @@ class NanoVNASaver(QtWidgets.QWidget):
             m.get_data_layout().setFont(font)
             m.setScale(self.scaleFactor)
 
-    def setSweepTitle(self, title):
-        self.sweepTitle = title
+    def update_sweep_title(self):
         for c in self.subscribing_charts:
-            c.setSweepTitle(title)
+            c.setSweepTitle(self.sweep.properties.name)

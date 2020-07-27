@@ -73,8 +73,6 @@ class SweepWorker(QtCore.QRunnable):
         self.running = False
         self.continuousSweep = False
         self.averaging = False
-        self.averages = 3
-        self.truncates = 0
         self.error_message = ""
         self.offsetDelay = 0
 
@@ -104,6 +102,8 @@ class SweepWorker(QtCore.QRunnable):
                 self.app.vna.datapoints,
                 self.app.sweep_control.get_segments(),
             )
+            with self.app.sweep.lock:
+                sweep.properties = self.app.sweep.properties
         except ValueError:
             self.gui_error(
                 "Unable to parse frequency inputs"
@@ -113,7 +113,7 @@ class SweepWorker(QtCore.QRunnable):
         averages = 1
         if self.averaging:
             logger.info("%d averages", self.averages)
-            averages = self.averages
+            averages = sweep.properties.averages[0]
 
         if sweep != self.sweep:  # parameters changed
             self.sweep = sweep
@@ -248,7 +248,7 @@ class SweepWorker(QtCore.QRunnable):
             self.percentage += 100 / (self.sweep.segments * averages)
             self.signals.updated.emit()
 
-        if self.truncates and averages > 1:
+        if self.sweep.properties.averages[1] and averages > 1:
             logger.debug("Truncating %d values by %d",
                          len(values11), self.truncates)
             values11 = truncate(values11, self.truncates)
@@ -321,14 +321,6 @@ class SweepWorker(QtCore.QRunnable):
 
     def setContinuousSweep(self, continuous_sweep: bool):
         self.continuousSweep = continuous_sweep
-
-    def setAveraging(self, averaging: bool, averages: str, truncates: str):
-        self.averaging = averaging
-        try:
-            self.averages = int(averages)
-            self.truncates = int(truncates)
-        except ValueError:
-            return
 
     def gui_error(self, message: str):
         self.error_message = message

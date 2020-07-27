@@ -88,7 +88,9 @@ class Marker(QtCore.QObject, Value):
 
         self.frequencyInput = FrequencyInput()
         self.frequencyInput.setAlignment(QtCore.Qt.AlignRight)
-        self.frequencyInput.textEdited.connect(self.setFrequency)
+        self.frequencyInput.editingFinished.connect(
+            lambda: self.setFrequency(
+                parse_frequency(self.frequencyInput.text())))
 
         ###############################################################
         # Data display labels
