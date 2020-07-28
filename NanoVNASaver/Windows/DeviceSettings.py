@@ -85,8 +85,6 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         self.datapoints = QtWidgets.QComboBox()
         self.datapoints.addItem(str(self.app.vna.datapoints))
         self.datapoints.currentIndexChanged.connect(self.updateNrDatapoints)
-        self.datapoints.currentIndexChanged.connect(
-            self.app.sweep_control.update_step_size)
 
         self.bandwidth = QtWidgets.QComboBox()
         self.bandwidth.addItem(str(self.app.vna.bandwidth))
@@ -172,6 +170,9 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
             return
         logger.debug("DP: %s", self.datapoints.itemText(i))
         self.app.vna.datapoints = int(self.datapoints.itemText(i))
+        with self.app.sweep.lock:
+            self.app.sweep.points = self.app.vna.datapoints
+        self.app.sweep_control.update_step_size()
 
     def updateBandwidth(self, i):
         if i < 0 or self.app.worker.running:

@@ -41,3 +41,6 @@ class TestCases(unittest.TestCase):
         data = list(sweep.get_frequencies())
         self.assertEqual(data[0], 3600000)
         self.assertEqual(data[-1], 29869307)
+
+        sweep2 = sweep.copy()
+        self.assertEqual(sweep, sweep2)
