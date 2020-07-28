@@ -286,11 +286,10 @@ class Marker(QtCore.QObject, Value):
         if not s11data:
             return
         if self.location == -1:  # initial position
-            if self.index == 3:
-                self.location = len(s11data) - 1
-            elif self.index == 2:
-                self.location = round(len(s11data) / 2)
-            else:
+            try:
+                location = (self.index -1) / (self._instances - 1) * (len(s11data) - 1)
+                self.location = int(location)
+            except ZeroDivisionError:
                 self.location = 0
         try:
             s11 = s11data[self.location]
