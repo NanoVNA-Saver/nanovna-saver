@@ -26,10 +26,10 @@ jobs:
         pip install PyInstaller==3.6
     - name: Build binary
       run: |
-        pyinstaller --onefile nanovna-saver.py
+        pyinstaller --onefile -n nanovna-saver.exe nanovna-saver.py
 
     - name: Archive production artifacts
       uses: actions/upload-artifact@v1
       with:
         name: NanoVNASaver.${{ matrix.os }}
-        path: dist/nanovna-save*
+        path: dist/nanovna-saver.exe
