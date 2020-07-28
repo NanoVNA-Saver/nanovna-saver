@@ -84,6 +84,13 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         layout.addWidget(radio_button)
 
         # Log sweep
+        label = QtWidgets.QLabel(
+            "Logarithmic sweeping changes the step width in each segment"
+            " in logarithmical manner. Useful in conjunction with small"
+            " amount of datapoints and many segments. Step display in"
+            " SweepControl cannot reflect this currently.")
+        label.setWordWrap(True)
+        layout.addRow(label)
         checkbox = QtWidgets.QCheckBox("Logarithmic sweep")
         checkbox.setCheckState(self.app.sweep.properties.logarithmic)
         checkbox.toggled.connect(
