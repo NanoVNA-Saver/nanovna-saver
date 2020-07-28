@@ -32,7 +32,7 @@ from .Windows import (
     TDRWindow
 )
 from .Controls import MarkerControl, SweepControl
-from .Formatting import format_frequency
+from .Formatting import format_frequency, format_vswr, format_gain
 from .Hardware.Hardware import Interface, get_interfaces, get_VNA
 from .Hardware.VNA import VNA
 from .RFTools import Datapoint, corr_att_data
@@ -641,44 +641,28 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.windows["tdr"].updateTDR()
 
             # Find the minimum S11 VSWR:
-            min_vswr = 100
-            min_vswr_freq = -1
-            for d in self.data11:
-                vswr = d.vswr
-                if min_vswr > vswr > 0:
-                    min_vswr = vswr
-                    min_vswr_freq = d.freq
-
-            if min_vswr_freq > -1:
+            min_vswr = min(self.data11, key = lambda data: data.vswr)
+            if min_vswr.freq > -1:
                 self.s11_min_swr_label.setText(
-                    f"{round(min_vswr, 3)} @ {format_frequency(min_vswr_freq)}")
-                if min_vswr > 1:
-                    self.s11_min_rl_label.setText(
-                        f"{round(20*math.log10((min_vswr-1)/(min_vswr+1)), 3)} dB")
+                    f"{format_vswr(min_vswr.vswr)} @ {format_frequency(min_vswr.freq)}")
+                if min_vswr.vswr > 1:
+                    self.s11_min_rl_label.setText(format_gain(min_vswr.gain))
                 else:
                     # Infinite return loss?
                     self.s11_min_rl_label.setText("\N{INFINITY} dB")
             else:
                 self.s11_min_swr_label.setText("")
                 self.s11_min_rl_label.setText("")
-            min_gain = 100
-            min_gain_freq = -1
-            max_gain = -100
-            max_gain_freq = -1
-            for d in self.data21:
-                gain = d.gain
-                if gain > max_gain:
-                    max_gain = gain
-                    max_gain_freq = d.freq
-                if gain < min_gain:
-                    min_gain = gain
-                    min_gain_freq = d.freq
 
-            if max_gain_freq > -1:
+            if self.data21:
+                min_gain = min(self.data21, key = lambda data: data.gain)
+                max_gain = min(self.data21, key = lambda data: data.gain)
                 self.s21_min_gain_label.setText(
-                    f"{round(min_gain, 3)} dB @ {format_frequency(min_gain_freq)}")
+                    f"{format_gain(min_gain.gain)}"
+                    f" @ {format_frequency(min_gain.freq)}")
                 self.s21_max_gain_label.setText(
-                    f"{round(max_gain, 3)} dB @ {format_frequency(max_gain_freq)}")
+                    f"{format_gain(max_gain.gain)}"
+                    f" @ {format_frequency(max_gain.freq)}")
             else:
                 self.s21_min_gain_label.setText("")
                 self.s21_max_gain_label.setText("")
