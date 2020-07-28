@@ -53,7 +53,7 @@ class VNA:
         self.serial = iface
         self.version = Version("0.0.0")
         self.features = set()
-        self.validateInput = True
+        self.validateInput = False
         self.datapoints = self.valid_datapoints[0]
         self.bandwidth = 1000
         self.bw_method = "ttrftech"
