@@ -179,6 +179,7 @@ class SweepControl(QtWidgets.QGroupBox):
             return
         self.input_span.setText(fspan)
         self.input_center.setText(fcenter)
+        self.update_sweep()
 
     def update_start_end(self):
         fcenter = self.get_center()
@@ -191,9 +192,7 @@ class SweepControl(QtWidgets.QGroupBox):
             return
         self.input_start.setText(fstart)
         self.input_end.setText(fstop)
-        with self.app.sweep.lock:
-            self.app.sweep.start = parse_frequency(fstart)
-            self.app.sweep.end = parse_frequency(fstop)
+        self.update_sweep()
 
     def update_step_size(self):
         fspan = self.get_span()
@@ -204,6 +203,12 @@ class SweepControl(QtWidgets.QGroupBox):
             fstep = fspan / (segments * self.app.vna.datapoints - 1)
             self.label_step.setText(
                 f"{format_frequency_short(fstep)}/step")
-        with self.app.sweep.lock:
-            self.app.sweep.points = self.app.vna.datapoints
-            self.app.sweep.segments = segments
+        self.update_sweep()
+
+    def update_sweep(self):
+        sweep = self.app.sweep
+        with sweep.lock:
+            sweep.start = self.get_start()
+            sweep.end = self.get_end()
+            sweep.points = self.app.vna.datapoints
+            sweep.segments = self.get_segments()

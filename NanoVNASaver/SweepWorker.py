@@ -17,7 +17,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-from copy import copy
 from time import sleep
 from typing import List, Tuple
 
@@ -97,7 +96,8 @@ class SweepWorker(QtCore.QRunnable):
             return
 
         with self.app.sweep.lock:
-            sweep = copy(self.app.sweep)
+            sweep = self.app.sweep.copy()
+
         averages = 1
         if sweep.properties.mode == SweepMode.AVERAGE:
             averages = sweep.properties.averages[0]
@@ -109,18 +109,18 @@ class SweepWorker(QtCore.QRunnable):
 
         finished = False
         while not finished:
-            for i in range(self.sweep.segments):
+            for i in range(sweep.segments):
                 logger.debug("Sweep segment no %d", i)
                 if self.stopped:
                     logger.debug("Stopping sweeping as signalled")
                     finished = True
                     break
-                start, stop = self.sweep.get_index_range(i)
+                start, stop = sweep.get_index_range(i)
 
                 try:
                     freq, values11, values21 = self.readAveragedSegment(
                         start, stop, averages)
-                    self.percentage = (i + 1) * 100 / self.sweep.segments
+                    self.percentage = (i + 1) * 100 / sweep.segments
                     self.updateData(freq, values11, values21, i)
                 except ValueError as e:
                     self.error_message = str(e)
@@ -131,9 +131,9 @@ class SweepWorker(QtCore.QRunnable):
             if not sweep.properties.mode == SweepMode.CONTINOUS:
                 finished = True
 
-        if self.sweep.segments > 1:
-            start = self.app.sweep_control.get_start()
-            end = self.app.sweep_control.get_end()
+        if sweep.segments > 1:
+            start = sweep.start
+            end = sweep.end
             logger.debug("Resetting NanoVNA sweep to full range: %d to %d",
                          start, end)
             self.app.vna.resetSweep(start, end)

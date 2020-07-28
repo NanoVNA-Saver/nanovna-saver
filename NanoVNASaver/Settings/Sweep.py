@@ -72,6 +72,10 @@ class Sweep():
                self.segments == other.segments and
                self.properties == other.properties)
 
+    def copy(self) -> 'Sweep':
+        return Sweep(self.start, self.end, self.points, self.segments,
+                     self.properties)
+
     @property
     def span(self) -> int:
         return self.end - self.start

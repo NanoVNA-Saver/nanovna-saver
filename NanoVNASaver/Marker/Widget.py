@@ -292,13 +292,13 @@ class Marker(QtCore.QObject, Value):
                 self.location = round(len(s11data) / 2)
             else:
                 self.location = 0
-            self.frequencyInput.setText(s11data[self.location].freq)
         try:
             s11 = s11data[self.location]
         except IndexError:
             self.location = 0
             return
 
+        self.frequencyInput.setText(s11.freq)
         self.store(self.location, s11data, s21data)
 
         imp = s11.impedance()
