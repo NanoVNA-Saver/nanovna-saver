@@ -235,12 +235,13 @@ class SweepWorker(QtCore.QRunnable):
             values21.append(tmp21)
             self.percentage += 100 / (self.sweep.segments * averages)
             self.signals.updated.emit()
-
-        if self.sweep.properties.averages[1] and averages > 1:
+      
+        truncates = self.sweep.properties.averages[1]
+        if truncates > 0 and averages > 1:
             logger.debug("Truncating %d values by %d",
-                         len(values11), self.truncates)
-            values11 = truncate(values11, self.truncates)
-            values21 = truncate(values21, self.truncates)
+                         len(values11), truncates)
+            values11 = truncate(values11, truncates)
+            values21 = truncate(values21, truncates)
 
         logger.debug("Averaging %d values", len(values11))
         values11 = np.average(values11, 0).tolist()
