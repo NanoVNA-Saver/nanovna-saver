@@ -642,8 +642,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.sweep_control.progress_bar.setValue(self.worker.percentage)
         self.windows["tdr"].updateTDR()
 
-        min_vswr = min(s11data, key=lambda data: data.vswr)
         if s11data:
+            min_vswr = min(s11data, key=lambda data: data.vswr)
             self.s11_min_swr_label.setText(
                 f"{format_vswr(min_vswr.vswr)} @ {format_frequency(min_vswr.freq)}")
             self.s11_min_rl_label.setText(format_gain(min_vswr.gain))
