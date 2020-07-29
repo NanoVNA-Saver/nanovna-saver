@@ -211,3 +211,4 @@ class SweepControl(QtWidgets.QGroupBox):
             sweep.start = self.get_start()
             sweep.end = self.get_end()
             sweep.segments = self.get_segments()
+            sweep.points = self.app.vna.datapoints

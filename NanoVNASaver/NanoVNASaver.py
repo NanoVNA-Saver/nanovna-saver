@@ -17,7 +17,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-import math
 import sys
 import threading
 from collections import OrderedDict
@@ -624,48 +623,46 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def dataUpdated(self):
         with self.dataLock:
-            for m in self.markers:
-                m.resetLabels()
-                m.updateLabels(self.data11, self.data21)
+            s11data = self.data11[:]
+            s21data = self.data21[:]
 
-            for c in self.s11charts:
-                c.setData(self.data11)
+        for m in self.markers:
+            m.resetLabels()
+            m.updateLabels(s11data, s21data)
 
-            for c in self.s21charts:
-                c.setData(self.data21)
+        for c in self.s11charts:
+            c.setData(s11data)
 
-            for c in self.combinedCharts:
-                c.setCombinedData(self.data11, self.data21)
+        for c in self.s21charts:
+            c.setData(s21data)
 
-            self.sweep_control.progress_bar.setValue(self.worker.percentage)
-            self.windows["tdr"].updateTDR()
+        for c in self.combinedCharts:
+            c.setCombinedData(s11data, s21data)
 
-            # Find the minimum S11 VSWR:
-            min_vswr = min(self.data11, key = lambda data: data.vswr)
-            if min_vswr.freq > -1:
-                self.s11_min_swr_label.setText(
-                    f"{format_vswr(min_vswr.vswr)} @ {format_frequency(min_vswr.freq)}")
-                if min_vswr.vswr > 1:
-                    self.s11_min_rl_label.setText(format_gain(min_vswr.gain))
-                else:
-                    # Infinite return loss?
-                    self.s11_min_rl_label.setText("\N{INFINITY} dB")
-            else:
-                self.s11_min_swr_label.setText("")
-                self.s11_min_rl_label.setText("")
+        self.sweep_control.progress_bar.setValue(self.worker.percentage)
+        self.windows["tdr"].updateTDR()
 
-            if self.data21:
-                min_gain = min(self.data21, key = lambda data: data.gain)
-                max_gain = min(self.data21, key = lambda data: data.gain)
-                self.s21_min_gain_label.setText(
-                    f"{format_gain(min_gain.gain)}"
-                    f" @ {format_frequency(min_gain.freq)}")
-                self.s21_max_gain_label.setText(
-                    f"{format_gain(max_gain.gain)}"
-                    f" @ {format_frequency(max_gain.freq)}")
-            else:
-                self.s21_min_gain_label.setText("")
-                self.s21_max_gain_label.setText("")
+        min_vswr = min(s11data, key=lambda data: data.vswr)
+        if s11data:
+            self.s11_min_swr_label.setText(
+                f"{format_vswr(min_vswr.vswr)} @ {format_frequency(min_vswr.freq)}")
+            self.s11_min_rl_label.setText(format_gain(min_vswr.gain))
+        else:
+            self.s11_min_swr_label.setText("")
+            self.s11_min_rl_label.setText("")
+
+        if s21data:
+            min_gain = min(s21data, key=lambda data: data.gain)
+            max_gain = min(s21data, key=lambda data: data.gain)
+            self.s21_min_gain_label.setText(
+                f"{format_gain(min_gain.gain)}"
+                f" @ {format_frequency(min_gain.freq)}")
+            self.s21_max_gain_label.setText(
+                f"{format_gain(max_gain.gain)}"
+                f" @ {format_frequency(max_gain.freq)}")
+        else:
+            self.s21_min_gain_label.setText("")
+            self.s21_max_gain_label.setText("")
 
         self.updateTitle()
         self.dataAvailable.emit()
@@ -682,8 +679,9 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def setReference(self, s11data=None, s21data=None, source=None):
         if not s11data:
-            s11data = self.data11[:]
-            s21data = self.data21[:]
+            with self.dataLock:
+                s11data = self.data11[:]
+                s21data = self.data21[:]
 
         self.referenceS11data = s11data
         for c in self.s11charts:
@@ -706,16 +704,17 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.updateTitle()
 
     def updateTitle(self):
-        title = self.baseTitle
-        insert = ""
+        insert = "("
         if self.sweepSource != "":
-            insert += f"Sweep: {self.sweepSource} @ {len(self.data11)} points"
+            insert += (
+                f"Sweep: {self.sweepSource} @ {len(self.data11)} points"
+                f"{', ' if self.referenceSource else ''}")
         if self.referenceSource != "":
-            if insert != "":
-                insert += ", "
-            insert += f"Reference: {self.referenceSource} @ {len(self.referenceS11data)} points"
-        if insert != "":
-            title = title + " (" + insert + ")"
+            insert += (
+                f"Reference: {self.referenceSource} @"
+                f" {len(self.referenceS11data)} points")
+        insert += ")"
+        title = f"{self.baseTitle} {insert if insert else ''}"
         self.setWindowTitle(title)
 
     def resetReference(self):
