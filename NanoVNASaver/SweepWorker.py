@@ -227,8 +227,11 @@ class SweepWorker(QtCore.QRunnable):
                     start, stop, averages)
         for i in range(averages):
             if self.stopped:
-                logger.debug("Stopping averaging as signalled")
-                break
+                logger.debug("Stopping averaging as signalled.")
+                if averages == 1:
+                    break
+                logger.warn("Stop during average. Discarding sweep result.")
+                return [], [], []
             logger.debug("Reading average no %d / %d", i+1, averages)
             freq, tmp11, tmp21 = self.readSegment(start, stop)
             values11.append(tmp11)
