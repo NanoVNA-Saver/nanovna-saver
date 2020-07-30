@@ -230,7 +230,7 @@ class SweepWorker(QtCore.QRunnable):
                 logger.debug("Stopping averaging as signalled.")
                 if averages == 1:
                     break
-                logger.warn("Stop during average. Discarding sweep result.")
+                logger.warning("Stop during average. Discarding sweep result.")
                 return [], [], []
             logger.debug("Reading average no %d / %d", i+1, averages)
             freq, tmp11, tmp21 = self.readSegment(start, stop)
@@ -238,6 +238,9 @@ class SweepWorker(QtCore.QRunnable):
             values21.append(tmp21)
             self.percentage += 100 / (self.sweep.segments * averages)
             self.signals.updated.emit()
+
+        if not values11:
+            raise IOError("Invalid data during swwep")
 
         truncates = self.sweep.properties.averages[1]
         if truncates > 0 and averages > 1:
@@ -257,6 +260,7 @@ class SweepWorker(QtCore.QRunnable):
         self.app.vna.setSweep(start, stop)
 
         frequencies = self.app.vna.readFrequencies()
+        logger.debug("Read %s frequencies", len(frequencies))
         values11 = self.readData("data 0")
         values21 = self.readData("data 1")
         if (len(frequencies) != len(values11) or
