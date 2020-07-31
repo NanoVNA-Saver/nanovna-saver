@@ -263,8 +263,7 @@ class SweepWorker(QtCore.QRunnable):
         logger.debug("Read %s frequencies", len(frequencies))
         values11 = self.readData("data 0")
         values21 = self.readData("data 1")
-        if (len(frequencies) != len(values11) or
-                len(frequencies) != len(values21)):
+        if not (len(frequencies) == len(values11) == len(values21)):
             logger.info("No valid data during this run")
             return [], [], []
         return frequencies, values11, values21
