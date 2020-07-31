@@ -82,7 +82,7 @@ class Sweep():
 
     @property
     def stepsize(self) -> int:
-        return round(self.span / ((self.points -1) * self.segments))
+        return round(self.span / (self.points  * self.segments - 1))
 
     def check(self):
         if not(self.segments > 0 and
