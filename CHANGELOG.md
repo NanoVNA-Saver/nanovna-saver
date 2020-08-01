@@ -1,3 +1,18 @@
+v0.3.7
+======
+
+- Added a delta marker
+- Segments can now have exponential different step widths
+  (see logarithmic sweeping)
+- More different data points selectable
+  (shorter are useful on logarithmic sweeping)
+- Scrollable marker column
+- Markers initialize on start, middle, end
+- Added a wavelength field to Markers 
+- 32 bit windows binaries build in actions
+- Stability improvements due to better exception handling
+
+
 v0.3.6
 ======
 
