@@ -80,49 +80,6 @@ class Datapoint(NamedTuple):
         return impedance_to_inductance(self.impedance(ref_impedance), self.freq)
 
 
-class DataSet():
-    def __init__(self, fields=("11", "21")):
-        self.fields = fields
-        self.data = {}
-        self.interp = []
-        self.inter_valid = False
-        self.lock = Lock()
-
-    def insert(self, datapoints: List['Datapoint']):
-        assert len(datapoints) == len(self.fields)
-        assert len(set([dp.freq for dp in datapoints])) == 1
-        frequency = datapoints[0].freq
-        self.data[frequency] = [dp.z for dp in datapoints]
-        self.inter_valid = False
-
-    def insert_complex(self, frequency: int, data: Tuple[complex]):
-        assert len(data) == len(self.fields)
-        self.data[frequency] = data
-        self.inter_valid = False
-
-    def items(self) -> Iterator[List['Datapoint']]:
-        for freq in sorted(self.data.keys()):
-            yield [Datapoint(freq, z.real, z.imag) for z in self.data[freq]]
-
-    def items_complex(self) -> Iterator[Tuple[int, List[complex]]]:
-        for freq in sorted(self.data.keys()):
-            yield (freq, self.data[freq])
-
-    def min_freq(self) -> int:
-        return min(self.data.keys())
-
-    def max_freq(self) -> int:
-        return max(self.data.keys())
-    
-    def gen_interpolation(self):
-        self.interp = []
-        for i in range(self.fields):
-            d
-
-
-
-
-
 def gamma_to_impedance(gamma: complex, ref_impedance: float = 50) -> complex:
     """Calculate impedance from gamma"""
     try:
