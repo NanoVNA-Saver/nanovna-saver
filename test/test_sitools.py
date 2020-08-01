@@ -82,6 +82,10 @@ class TestTSIToolsValue(unittest.TestCase):
         self.assertEqual(str(Value(1e27)), "\N{INFINITY}")
         self.assertEqual(str(Value(-1e27)), "-\N{INFINITY}")
         self.assertEqual(float(Value(1e27)), 1e27)
+        self.assertEqual(
+            str(Value(11, fmt=Format(printable_max=10))), '')
+        self.assertEqual(
+            str(Value(11, fmt=Format(allways_signed=True))), '+11.0000')
 
         self.assertEqual(str(Value(.1)), "100.000m")
         self.assertEqual(str(Value(.01)), "10.0000m")
@@ -138,6 +142,21 @@ class TestTSIToolsValue(unittest.TestCase):
         self.assertEqual(str(v.parse("1e-1")), "100.0m")
         self.assertEqual(str(v.parse("1e-2")), "10.00m")
         self.assertEqual(str(v.parse("1e-3")), "1.000m")
+        self.assertEqual(v.parse("\N{INFINITY}").value, inf)
+        self.assertEqual(v.parse("-\N{INFINITY}").value, -inf)
+
+
+    def test_format_attributes(self):
+        v = Value("10.0", "Hz", fmt=F_DIGITS_4)
+        self.assertEqual(v.value, 10.0)
+        v.value = 11
+        self.assertEqual(v.value, 11)
+        v.parse(12)
+        self.assertEqual(v.value, 12)
+        v.parse("12 GHz")
+        self.assertEqual(v.unit, "Hz")
+
+
 
 # TODO: test F_DIGITS_31
 #            F_WITH_SPACE

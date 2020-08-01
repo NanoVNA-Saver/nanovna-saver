@@ -23,7 +23,8 @@ from time import sleep
 from typing import List
 
 from NanoVNASaver.Hardware.Serial import Interface
-from NanoVNASaver.Hardware.VNA import VNA, Version
+from NanoVNASaver.Hardware.VNA import VNA
+from NanoVNASaver.Version import Version
 
 if platform.system() != 'Windows':
     import tty
@@ -58,7 +59,7 @@ WRITE_SLEEP = 0.05
 
 class NanoVNA_V2(VNA):
     name = "NanoVNA-V2"
-    valid_datapoints = (101, 51, 202, 303, 505, 1023)
+    valid_datapoints = (101, 11, 51, 201, 301, 501, 1023)
     screenwidth = 320
     screenheight = 240
 
@@ -130,6 +131,7 @@ class NanoVNA_V2(VNA):
                 pointstodo = self.datapoints
                 # 8 seconds should be enough for 8k points
                 self.serial.timeout = min(8.0, (pointstodo / 32) + 0.1)
+                retries = 0
                 while pointstodo > 0:
                     logger.info("reading values")
                     pointstoread = min(255, pointstodo)
@@ -147,6 +149,9 @@ class NanoVNA_V2(VNA):
                     if nBytes != len(arr):
                         logger.error("expected %d bytes, got %d",
                                      nBytes, len(arr))
+                        retries += 1
+                        if retries < 5:
+                            continue
                         return []
 
                     freq_index = -1

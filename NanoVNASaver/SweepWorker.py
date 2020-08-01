@@ -18,7 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 from time import sleep
-from typing import Iterator, List, Tuple
+from typing import List, Tuple
 
 import numpy as np
 from PyQt5 import QtCore, QtWidgets
@@ -26,6 +26,7 @@ from PyQt5.QtCore import pyqtSlot, pyqtSignal
 
 from NanoVNASaver.Calibration import correct_delay
 from NanoVNASaver.RFTools import Datapoint
+from NanoVNASaver.Settings.Sweep import Sweep, SweepMode
 
 logger = logging.getLogger(__name__)
 
@@ -54,48 +55,6 @@ class WorkerSignals(QtCore.QObject):
     fatalSweepError = pyqtSignal()
 
 
-class Sweep():
-    def __init__(self, start: int = 3600000, end: int = 30000000,
-                 points: int = 101, sweeps: int = 1):
-        self.start = start
-        self.end = end
-        self.points = points
-        self.sweeps = sweeps
-        self.span = self.end - self.start
-        self.step = self.stepsize()
-        self.check()
-
-    def __repr__(self) -> str:
-        return (
-            f"Sweep({self.start}, {self.end}, {self.points} {self.sweeps})")
-
-    def __eq__(self, other) -> bool:
-        return(self.start == other.start and
-               self.end == other.end and
-               self.points == other.points and
-               self.sweeps == other.sweeps)
-
-    def check(self):
-        if not(self.sweeps > 0 and
-               self.points > 0 and
-               self.start > 0 and
-               self.end > 0 and
-               self.step >= 1):
-            raise ValueError(f"Illegal sweep settings: {self}")
-
-    def stepsize(self) -> int:
-        return int(self.span / (self.points * self.sweeps - 1))
-
-    def get_index_range(self, index: int) -> Tuple[int, int]:
-        start = self.start + index * self.points * self.step
-        end = start + (self.points -1) * self.step
-        return (start, end)
-
-    def get_frequencies(self) -> Iterator[int]:
-        for freq in range(self.start, self.end + 1, self.step):
-            yield freq
-
-
 class SweepWorker(QtCore.QRunnable):
     def __init__(self, app: QtWidgets.QWidget):
         super().__init__()
@@ -112,10 +71,6 @@ class SweepWorker(QtCore.QRunnable):
         self.init_data()
         self.stopped = False
         self.running = False
-        self.continuousSweep = False
-        self.averaging = False
-        self.averages = 3
-        self.truncates = 0
         self.error_message = ""
         self.offsetDelay = 0
 
@@ -123,36 +78,30 @@ class SweepWorker(QtCore.QRunnable):
     def run(self):
         try:
             self._run()
-        except BaseException as exc:
+        except BaseException as exc:  # pylint: disable=broad-except
             logger.exception("%s", exc)
-            raise exc
+            self.gui_error(f"ERROR during sweep\n\nStopped\n\n{exc}")
+            return
+            # raise exc
 
     def _run(self):
         logger.info("Initializing SweepWorker")
         self.running = True
         self.percentage = 0
+
         if not self.app.vna.connected():
             logger.debug(
                 "Attempted to run without being connected to the NanoVNA")
             self.running = False
             return
-        try:
-            sweep = Sweep(
-                self.app.sweep_control.get_start(),
-                self.app.sweep_control.get_end(),
-                self.app.vna.datapoints,
-                self.app.sweep_control.get_count(),
-            )
-        except ValueError:
-            self.gui_error(
-                "Unable to parse frequency inputs"
-                " - check start and stop fields.")
-            return
+
+        with self.app.sweep.lock:
+            sweep = self.app.sweep.copy()
 
         averages = 1
-        if self.averaging:
-            logger.info("%d averages", self.averages)
-            averages = self.averages
+        if sweep.properties.mode == SweepMode.AVERAGE:
+            averages = sweep.properties.averages[0]
+            logger.info("%d averages", averages)
 
         if sweep != self.sweep:  # parameters changed
             self.sweep = sweep
@@ -160,18 +109,18 @@ class SweepWorker(QtCore.QRunnable):
 
         finished = False
         while not finished:
-            for i in range(self.sweep.sweeps):
+            for i in range(sweep.segments):
                 logger.debug("Sweep segment no %d", i)
                 if self.stopped:
                     logger.debug("Stopping sweeping as signalled")
                     finished = True
                     break
-                start, stop = self.sweep.get_index_range(i)
+                start, stop = sweep.get_index_range(i)
 
                 try:
                     freq, values11, values21 = self.readAveragedSegment(
                         start, stop, averages)
-                    self.percentage = (i + 1) * 100 / self.sweep.sweeps
+                    self.percentage = (i + 1) * 100 / sweep.segments
                     self.updateData(freq, values11, values21, i)
                 except ValueError as e:
                     self.error_message = str(e)
@@ -179,12 +128,12 @@ class SweepWorker(QtCore.QRunnable):
                     self.running = False
                     self.signals.sweepError.emit()
 
-            if not self.continuousSweep:
+            if not sweep.properties.mode == SweepMode.CONTINOUS:
                 finished = True
 
-        if self.sweep.sweeps > 1:
-            start = self.app.sweep_control.get_start()
-            end = self.app.sweep_control.get_end()
+        if sweep.segments > 1:
+            start = sweep.start
+            end = sweep.end
             logger.debug("Resetting NanoVNA sweep to full range: %d to %d",
                          start, end)
             self.app.vna.resetSweep(start, end)
@@ -278,20 +227,27 @@ class SweepWorker(QtCore.QRunnable):
                     start, stop, averages)
         for i in range(averages):
             if self.stopped:
-                logger.debug("Stopping averaging as signalled")
-                break
+                logger.debug("Stopping averaging as signalled.")
+                if averages == 1:
+                    break
+                logger.warning("Stop during average. Discarding sweep result.")
+                return [], [], []
             logger.debug("Reading average no %d / %d", i+1, averages)
             freq, tmp11, tmp21 = self.readSegment(start, stop)
             values11.append(tmp11)
             values21.append(tmp21)
-            self.percentage += 100 / (self.sweep.sweeps * averages)
+            self.percentage += 100 / (self.sweep.segments * averages)
             self.signals.updated.emit()
 
-        if self.truncates and averages > 1:
+        if not values11:
+            raise IOError("Invalid data during swwep")
+
+        truncates = self.sweep.properties.averages[1]
+        if truncates > 0 and averages > 1:
             logger.debug("Truncating %d values by %d",
-                         len(values11), self.truncates)
-            values11 = truncate(values11, self.truncates)
-            values21 = truncate(values21, self.truncates)
+                         len(values11), truncates)
+            values11 = truncate(values11, truncates)
+            values21 = truncate(values21, truncates)
 
         logger.debug("Averaging %d values", len(values11))
         values11 = np.average(values11, 0).tolist()
@@ -304,12 +260,11 @@ class SweepWorker(QtCore.QRunnable):
         self.app.vna.setSweep(start, stop)
 
         frequencies = self.app.vna.readFrequencies()
+        logger.debug("Read %s frequencies", len(frequencies))
         values11 = self.readData("data 0")
         values21 = self.readData("data 1")
-        if (len(frequencies) != len(values11) or
-                len(frequencies) != len(values21)):
+        if not (len(frequencies) == len(values11) == len(values21)):
             logger.info("No valid data during this run")
-            # TODO: display gui warning
             return [], [], []
         return frequencies, values11, values21
 
@@ -345,6 +300,8 @@ class SweepWorker(QtCore.QRunnable):
                 if count == 5:
                     logger.error("Tried and failed to read %s %d times.",
                                  data, count)
+                    logger.debug("trying to reconnect")
+                    self.app.vna.reconnect()
                 if count >= 10:
                     logger.critical(
                         "Tried and failed to read %s %d times. Giving up.",
@@ -357,16 +314,6 @@ class SweepWorker(QtCore.QRunnable):
                         f"device settings screen.")
         return returndata
 
-    def setContinuousSweep(self, continuous_sweep: bool):
-        self.continuousSweep = continuous_sweep
-
-    def setAveraging(self, averaging: bool, averages: str, truncates: str):
-        self.averaging = averaging
-        try:
-            self.averages = int(averages)
-            self.truncates = int(truncates)
-        except ValueError:
-            return
 
     def gui_error(self, message: str):
         self.error_message = message

@@ -17,7 +17,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-import math
 import sys
 import threading
 from collections import OrderedDict
@@ -31,8 +30,8 @@ from .Windows import (
     DeviceSettingsWindow, DisplaySettingsWindow, SweepSettingsWindow,
     TDRWindow
 )
-from .Widgets import SweepControl
-from .Formatting import format_frequency
+from .Controls import MarkerControl, SweepControl
+from .Formatting import format_frequency, format_vswr, format_gain
 from .Hardware.Hardware import Interface, get_interfaces, get_VNA
 from .Hardware.VNA import VNA
 from .RFTools import Datapoint, corr_att_data
@@ -47,9 +46,9 @@ from .Charts import (
     SmithChart, SParameterChart, TDRChart,
 )
 from .Calibration import Calibration
-from .Marker import Marker
+from .Marker import Marker, DeltaMarker
 from .SweepWorker import SweepWorker
-from .Settings import BandsModel
+from .Settings import BandsModel, Sweep
 from .Touchstone import Touchstone
 from .About import VERSION
 
@@ -60,8 +59,6 @@ class NanoVNASaver(QtWidgets.QWidget):
     version = VERSION
     dataAvailable = QtCore.pyqtSignal()
     scaleFactor = 1
-
-    sweepTitle = ""
 
     def __init__(self):
         super().__init__()
@@ -77,6 +74,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                                          "NanoVNASaver", "NanoVNASaver")
         print(f"Settings: {self.settings.fileName()}")
         self.threadpool = QtCore.QThreadPool()
+        self.sweep = Sweep()
         self.worker = SweepWorker(self)
 
         self.worker.signals.updated.connect(self.dataUpdated)
@@ -84,11 +82,17 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.worker.signals.sweepError.connect(self.showSweepError)
         self.worker.signals.fatalSweepError.connect(self.showFatalSweepError)
 
+        self.markers = []
+
+        self.marker_column = QtWidgets.QVBoxLayout()
+        self.marker_frame = QtWidgets.QFrame()
+        self.marker_column.setContentsMargins(0, 0, 0, 0)
+        self.marker_frame.setLayout(self.marker_column)
+
         self.sweep_control = SweepControl(self)
+        self.marker_control = MarkerControl(self)
 
         self.bands = BandsModel()
-
-        self.noSweeps = 1  # Number of sweeps to run
 
         self.interface = Interface("serial", "None")
         self.vna = VNA(self.interface)
@@ -105,13 +109,13 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.calibration = Calibration()
 
-        self.markers = []
 
         logger.debug("Building user interface")
 
         self.baseTitle = f"NanoVNA Saver {NanoVNASaver.version}"
         self.updateTitle()
-        layout = QtWidgets.QGridLayout()
+        layout = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.LeftToRight)
+
         scrollarea = QtWidgets.QScrollArea()
         outer = QtWidgets.QVBoxLayout()
         outer.addWidget(scrollarea)
@@ -127,8 +131,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         widget = QtWidgets.QWidget()
         widget.setLayout(layout)
         scrollarea.setWidget(widget)
-
-        # outer.setContentsMargins(2, 2, 2, 2)  # Small screen mode, reduce margins?
 
         self.charts = {
             "s11": OrderedDict((
@@ -187,18 +189,22 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.charts_layout = QtWidgets.QGridLayout()
 
+        ###############################################################
+        #  Create main layout
+        ###############################################################
+
         left_column = QtWidgets.QVBoxLayout()
-        self.marker_column = QtWidgets.QVBoxLayout()
-        self.marker_frame = QtWidgets.QFrame()
-        self.marker_column.setContentsMargins(0, 0, 0, 0)
-        self.marker_frame.setLayout(self.marker_column)
         right_column = QtWidgets.QVBoxLayout()
         right_column.addLayout(self.charts_layout)
         self.marker_frame.setHidden(not self.settings.value("MarkersVisible", True, bool))
+        chart_widget = QtWidgets.QWidget()
+        chart_widget.setLayout(right_column)
+        splitter = QtWidgets.QSplitter()
+        splitter.addWidget(self.marker_frame)
+        splitter.addWidget(chart_widget)
 
-        layout.addLayout(left_column, 0, 0)
-        layout.addWidget(self.marker_frame, 0, 1)
-        layout.addLayout(right_column, 0, 2)
+        layout.addLayout(left_column)
+        layout.addWidget(splitter, 2)
 
         ###############################################################
         #  Windows
@@ -225,48 +231,33 @@ class NanoVNASaver(QtWidgets.QWidget):
         #  Marker control
         ###############################################################
 
-        marker_control_box = QtWidgets.QGroupBox()
-        marker_control_box.setTitle("Markers")
-        marker_control_box.setMaximumWidth(250)
-        self.marker_control_layout = QtWidgets.QFormLayout(marker_control_box)
-
-        marker_count = max(self.settings.value("MarkerCount", 3, int), 1)
-        for i in range(marker_count):
-            marker = Marker("", self.settings)
-            marker.updated.connect(self.markerUpdated)
-            label, layout = marker.getRow()
-            self.marker_control_layout.addRow(label, layout)
-            self.markers.append(marker)
-            if i == 0:
-                marker.isMouseControlledRadioButton.setChecked(True)
-
-        self.showMarkerButton = QtWidgets.QPushButton()
-        if self.marker_frame.isHidden():
-            self.showMarkerButton.setText("Show data")
-        else:
-            self.showMarkerButton.setText("Hide data")
-        self.showMarkerButton.clicked.connect(self.toggleMarkerFrame)
-        lock_radiobutton = QtWidgets.QRadioButton("Locked")
-        lock_radiobutton.setLayoutDirection(QtCore.Qt.RightToLeft)
-        lock_radiobutton.setSizePolicy(
-            QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Preferred)
-        hbox = QtWidgets.QHBoxLayout()
-        hbox.addWidget(self.showMarkerButton)
-        hbox.addWidget(lock_radiobutton)
-        self.marker_control_layout.addRow(hbox)
+        left_column.addWidget(self.marker_control)
 
         for c in self.subscribing_charts:
             c.setMarkers(self.markers)
             c.setBands(self.bands)
-        left_column.addWidget(marker_control_box)
 
         self.marker_data_layout = QtWidgets.QVBoxLayout()
         self.marker_data_layout.setContentsMargins(0, 0, 0, 0)
 
         for m in self.markers:
-            self.marker_data_layout.addWidget(m.getGroupBox())
+            self.marker_data_layout.addWidget(m.get_data_layout())
 
-        self.marker_column.addLayout(self.marker_data_layout)
+        scroll2 = QtWidgets.QScrollArea()
+        scroll2.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        scroll2.setWidgetResizable(True)
+        scroll2.setVisible(True)
+
+        widget2 = QtWidgets.QWidget()
+        widget2.setLayout(self.marker_data_layout)
+        scroll2.setWidget(widget2)
+        self.marker_column.addWidget(scroll2)
+
+        # init delta marker (but assume only one marker exists)
+        self.delta_marker = DeltaMarker("Delta Marker 2 - Marker 1")
+        self.delta_marker_layout = self.delta_marker.get_data_layout()
+        self.delta_marker_layout.hide()
+        self.marker_column.addWidget(self.delta_marker_layout)
 
         ###############################################################
         #  Statistics/analysis
@@ -297,7 +288,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.marker_column.addWidget(s21_control_box)
 
-        self.marker_column.addStretch(1)
+        # self.marker_column.addStretch(1)
 
         self.windows["analysis"] = AnalysisWindow(self)
         btn_show_analysis = QtWidgets.QPushButton("Analysis ...")
@@ -559,9 +550,9 @@ class NanoVNASaver(QtWidgets.QWidget):
         else:
             self.sweep_control.set_end(
                 frequencies[0] +
-                self.vna.datapoints * self.sweep_control.get_count())
+                self.vna.datapoints * self.sweep_control.get_segments())
 
-        self.sweep_control.set_count(1)  # speed up things
+        self.sweep_control.set_segments(1)  # speed up things
         self.sweep_control.update_center_span()
         self.sweep_control.update_step_size()
 
@@ -593,8 +584,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s21_max_gain_label.setText("")
         self.tdr_result_label.setText("")
 
-        if self.sweep_control.input_count.text().isdigit():
-            self.settings.setValue("Segments", self.sweep_control.input_count.text())
+        self.settings.setValue("Segments", self.sweep_control.get_segments())
 
         logger.debug("Starting worker thread")
         self.threadpool.start(self.worker)
@@ -612,80 +602,67 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.sweepSource = source
         else:
             self.sweepSource = (
-                f"{self.sweepTitle}"
+                f"{self.sweep.properties.name}"
                 f" {strftime('%Y-%m-%d %H:%M:%S', localtime())}"
             ).lstrip()
 
     def markerUpdated(self, marker: Marker):
         with self.dataLock:
             marker.findLocation(self.data11)
-            for m in self.markers:
-                m.resetLabels()
-                m.updateLabels(self.data11, self.data21)
-
+            marker.resetLabels()
+            marker.updateLabels(self.data11, self.data21)
             for c in self.subscribing_charts:
                 c.update()
+        if Marker.count() >= 2 and not self.delta_marker_layout.isHidden():
+            self.delta_marker.set_markers(self.markers[0], self.markers[1])
+            self.delta_marker.resetLabels()
+            try:
+                self.delta_marker.updateLabels()
+            except IndexError:
+                pass
 
     def dataUpdated(self):
         with self.dataLock:
-            for m in self.markers:
-                m.resetLabels()
-                m.updateLabels(self.data11, self.data21)
+            s11data = self.data11[:]
+            s21data = self.data21[:]
 
-            for c in self.s11charts:
-                c.setData(self.data11)
+        for m in self.markers:
+            m.resetLabels()
+            m.updateLabels(s11data, s21data)
 
-            for c in self.s21charts:
-                c.setData(self.data21)
+        for c in self.s11charts:
+            c.setData(s11data)
 
-            for c in self.combinedCharts:
-                c.setCombinedData(self.data11, self.data21)
+        for c in self.s21charts:
+            c.setData(s21data)
 
-            self.sweep_control.progress_bar.setValue(self.worker.percentage)
-            self.windows["tdr"].updateTDR()
+        for c in self.combinedCharts:
+            c.setCombinedData(s11data, s21data)
 
-            # Find the minimum S11 VSWR:
-            min_vswr = 100
-            min_vswr_freq = -1
-            for d in self.data11:
-                vswr = d.vswr
-                if min_vswr > vswr > 0:
-                    min_vswr = vswr
-                    min_vswr_freq = d.freq
+        self.sweep_control.progress_bar.setValue(self.worker.percentage)
+        self.windows["tdr"].updateTDR()
 
-            if min_vswr_freq > -1:
-                self.s11_min_swr_label.setText(
-                    f"{round(min_vswr, 3)} @ {format_frequency(min_vswr_freq)}")
-                if min_vswr > 1:
-                    self.s11_min_rl_label.setText(
-                        f"{round(20*math.log10((min_vswr-1)/(min_vswr+1)), 3)} dB")
-                else:
-                    # Infinite return loss?
-                    self.s11_min_rl_label.setText("\N{INFINITY} dB")
-            else:
-                self.s11_min_swr_label.setText("")
-                self.s11_min_rl_label.setText("")
-            min_gain = 100
-            min_gain_freq = -1
-            max_gain = -100
-            max_gain_freq = -1
-            for d in self.data21:
-                gain = d.gain
-                if gain > max_gain:
-                    max_gain = gain
-                    max_gain_freq = d.freq
-                if gain < min_gain:
-                    min_gain = gain
-                    min_gain_freq = d.freq
+        if s11data:
+            min_vswr = min(s11data, key=lambda data: data.vswr)
+            self.s11_min_swr_label.setText(
+                f"{format_vswr(min_vswr.vswr)} @ {format_frequency(min_vswr.freq)}")
+            self.s11_min_rl_label.setText(format_gain(min_vswr.gain))
+        else:
+            self.s11_min_swr_label.setText("")
+            self.s11_min_rl_label.setText("")
 
-            if max_gain_freq > -1:
-                self.s21_min_gain_label.setText(
-                    f"{round(min_gain, 3)} dB @ {format_frequency(min_gain_freq)}")
-                self.s21_max_gain_label.setText(
-                    f"{round(max_gain, 3)} dB @ {format_frequency(max_gain_freq)}")
-            else:
-                self.s21_min_gain_label.setText("")
-                self.s21_max_gain_label.setText("")
+        if s21data:
+            min_gain = min(s21data, key=lambda data: data.gain)
+            max_gain = min(s21data, key=lambda data: data.gain)
+            self.s21_min_gain_label.setText(
+                f"{format_gain(min_gain.gain)}"
+                f" @ {format_frequency(min_gain.freq)}")
+            self.s21_max_gain_label.setText(
+                f"{format_gain(max_gain.gain)}"
+                f" @ {format_frequency(max_gain.freq)}")
+        else:
+            self.s21_min_gain_label.setText("")
+            self.s21_max_gain_label.setText("")
 
         self.updateTitle()
         self.dataAvailable.emit()
@@ -702,8 +679,9 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def setReference(self, s11data=None, s21data=None, source=None):
         if not s11data:
-            s11data = self.data11[:]
-            s21data = self.data21[:]
+            with self.dataLock:
+                s11data = self.data11[:]
+                s21data = self.data21[:]
 
         self.referenceS11data = s11data
         for c in self.s11charts:
@@ -726,27 +704,18 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.updateTitle()
 
     def updateTitle(self):
-        title = self.baseTitle
-        insert = ""
+        insert = "("
         if self.sweepSource != "":
-            insert += f"Sweep: {self.sweepSource} @ {len(self.data11)} points"
+            insert += (
+                f"Sweep: {self.sweepSource} @ {len(self.data11)} points"
+                f"{', ' if self.referenceSource else ''}")
         if self.referenceSource != "":
-            if insert != "":
-                insert += ", "
-            insert += f"Reference: {self.referenceSource} @ {len(self.referenceS11data)} points"
-        if insert != "":
-            title = title + " (" + insert + ")"
+            insert += (
+                f"Reference: {self.referenceSource} @"
+                f" {len(self.referenceS11data)} points")
+        insert += ")"
+        title = f"{self.baseTitle} {insert if insert else ''}"
         self.setWindowTitle(title)
-
-    def toggleMarkerFrame(self):
-        if self.marker_frame.isHidden():
-            self.marker_frame.setHidden(False)
-            self.settings.setValue("MarkersVisible", True)
-            self.showMarkerButton.setText("Hide data")
-        else:
-            self.marker_frame.setHidden(True)
-            self.settings.setValue("MarkersVisible", False)
-            self.showMarkerButton.setText("Show data")
 
     def resetReference(self):
         self.referenceS11data = []
@@ -793,7 +762,11 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def showSweepError(self):
         self.showError(self.worker.error_message)
-        self.vna.flushSerialBuffers()  # Remove any left-over data
+        try:
+            self.vna.flushSerialBuffers()  # Remove any left-over data
+            self.vna.reconnect()  # try reconnection
+        except IOError:
+            pass
         self.sweepFinished()
 
     def popoutChart(self, chart: Chart):
@@ -843,10 +816,9 @@ class NanoVNASaver(QtWidgets.QWidget):
                      new_width, old_width, self.scaleFactor)
         # TODO: Update all the fixed widths to account for the scaling
         for m in self.markers:
-            m.getGroupBox().setFont(font)
+            m.get_data_layout().setFont(font)
             m.setScale(self.scaleFactor)
 
-    def setSweepTitle(self, title):
-        self.sweepTitle = title
+    def update_sweep_title(self):
         for c in self.subscribing_charts:
-            c.setSweepTitle(title)
+            c.setSweepTitle(self.sweep.properties.name)

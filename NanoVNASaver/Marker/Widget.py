@@ -35,6 +35,7 @@ from NanoVNASaver.Formatting import (
     format_q_factor,
     format_resistance,
     format_vswr,
+    format_wavelength,
     parse_frequency,
 )
 from NanoVNASaver.Inputs import MarkerFrequencyInputWidget as FrequencyInput
@@ -59,7 +60,6 @@ class MarkerLabel(QtWidgets.QLabel):
 
 class Marker(QtCore.QObject, Value):
     _instances = 0
-    color: QtGui.QColor = QtGui.QColor()
     coloredText = True
     location = -1
     returnloss_is_positive = False
@@ -72,7 +72,6 @@ class Marker(QtCore.QObject, Value):
 
     def __init__(self, name: str = "", qsettings: QtCore.QSettings = None):
         super().__init__()
-        self.name = name
         self.qsettings = qsettings
         self.name = name
         self.color = QtGui.QColor()
@@ -87,11 +86,11 @@ class Marker(QtCore.QObject, Value):
         if not self.name:
             self.name = f"Marker {Marker._instances}"
 
-#        self.freq = RFTools.RFTools.parseFrequency(frequency)
-
         self.frequencyInput = FrequencyInput()
         self.frequencyInput.setAlignment(QtCore.Qt.AlignRight)
-        self.frequencyInput.textEdited.connect(self.setFrequency)
+        self.frequencyInput.editingFinished.connect(
+            lambda: self.setFrequency(
+                parse_frequency(self.frequencyInput.text())))
 
         ###############################################################
         # Data display labels
@@ -274,7 +273,7 @@ class Marker(QtCore.QObject, Value):
         self.location = datasize - 1
         self.frequencyInput.previousFrequency = data[-2].freq
 
-    def getGroupBox(self) -> QtWidgets.QGroupBox:
+    def get_data_layout(self) -> QtWidgets.QGroupBox:
         return self.group_box
 
     def resetLabels(self):
@@ -284,12 +283,21 @@ class Marker(QtCore.QObject, Value):
     def updateLabels(self,
                      s11data: List[RFTools.Datapoint],
                      s21data: List[RFTools.Datapoint]):
+        if not s11data:
+            return
+        if self.location == -1:  # initial position
+            try:
+                location = (self.index -1) / (self._instances - 1) * (len(s11data) - 1)
+                self.location = int(location)
+            except ZeroDivisionError:
+                self.location = 0
         try:
             s11 = s11data[self.location]
         except IndexError:
             self.location = 0
             return
 
+        self.frequencyInput.setText(s11.freq)
         self.store(self.location, s11data, s21data)
 
         imp = s11.impedance()
@@ -311,6 +319,7 @@ class Marker(QtCore.QObject, Value):
             x_p_str = ind_p_str
 
         self.label['actualfreq'].setText(format_frequency_space(s11.freq))
+        self.label['lambda'].setText(format_wavelength(s11.wavelength))
         self.label['admittance'].setText(format_complex_imp(imp_p))
         self.label['impedance'].setText(format_complex_imp(imp))
         self.label['parc'].setText(cap_p_str)
