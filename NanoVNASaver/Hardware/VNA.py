@@ -40,7 +40,7 @@ WAIT = 0.05
 
 
 def _max_retries(bandwidth: int, datapoints: int) -> int:
-    return round(5 + 20 * (datapoints / 101) +
+    return round(20 + 20 * (datapoints / 101) +
                  (1000 / bandwidth) ** 1.30 * (datapoints / 101))
 
 
