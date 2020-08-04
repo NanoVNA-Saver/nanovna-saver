@@ -16,22 +16,23 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+import unittest
 
-VERSION = "0.3.7-rc06"
-VERSION_URL = (
-    "https://raw.githubusercontent.com/"
-    "NanoVNA-Saver/nanovna-saver/master/NanoVNASaver/About.py")
+# Import targets to be tested
+from NanoVNASaver.Version import Version
 
-INFO_URL = "https://github.com/NanoVNA-Saver/nanovna-saver"
-INFO = f"""NanoVNASaver {VERSION}
+class TestCases(unittest.TestCase):
 
-Copyright (C) 2019, 2020 Rune B. Broberg
-Copyright (C) 2020 NanoVNA-Saver Authors
-
-This program comes with ABSOLUTELY NO WARRANTY
-This program is licensed under the GNU General Public License version 3
-
-See {INFO_URL} for further details.
-"""
-
-RELEASE_URL = "https://github.com/NanoVNA-Saver/nanovna-saver"
+    def test_version(self):
+        ver = Version("v1.2.3-test")
+        self.assertEqual(str(ver), '1.2.3-test')
+        self.assertLessEqual(ver, Version("1.2.4"))
+        self.assertFalse(ver > Version("1.2.4"))
+        self.assertFalse(ver > Version("1.2.3-u"))
+        self.assertTrue(Version("1.2.4") >= ver)
+        self.assertFalse(Version("0.0.0") == Version("0.0.0-rc"))
+        self.assertEqual(ver.major, 1)
+        self.assertEqual(ver.minor, 2)
+        self.assertEqual(ver.revision, 3)
+        self.assertEqual(ver.note, '-test')
+        Version("asdasd")

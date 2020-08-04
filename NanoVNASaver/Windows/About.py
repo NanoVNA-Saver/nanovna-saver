@@ -23,7 +23,7 @@ from urllib import request, error
 from PyQt5 import QtWidgets, QtCore
 
 from NanoVNASaver.About import VERSION_URL, INFO_URL
-from NanoVNASaver.Settings import Version
+from NanoVNASaver.Version import Version
 
 logger = logging.getLogger(__name__)
 

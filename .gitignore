@@ -1,7 +1,7 @@
 /venv/
 /env/
-.idea
-.vscode
+.idea/
+.vscode/
 /build/
 /dist/
 /nanovna-saver.spec

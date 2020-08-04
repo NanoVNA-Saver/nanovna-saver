@@ -16,6 +16,7 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+import math
 import unittest
 
 # Import targets to be tested
@@ -25,7 +26,6 @@ from NanoVNASaver.RFTools import Datapoint, \
     parallel_to_serial, serial_to_parallel, \
     impedance_to_capacitance, impedance_to_inductance, \
     groupDelay, corr_att_data
-import math
 
 
 class TestRFTools(unittest.TestCase):
@@ -146,6 +146,7 @@ class TestRFToolsDatapoint(unittest.TestCase):
 
     def test_properties(self):
         self.assertEqual(self.dp.z, complex(0.1091, 0.3118))
+        self.assertEqual(self.dp.wavelength, 2997.92458)
         self.assertAlmostEqual(self.dp.phase, 1.23420722)
         self.assertEqual(self.dp0.gain, -math.inf)
         self.assertAlmostEqual(self.dp.gain, -9.6208748)

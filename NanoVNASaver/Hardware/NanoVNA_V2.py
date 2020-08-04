@@ -23,7 +23,8 @@ from time import sleep
 from typing import List
 
 from NanoVNASaver.Hardware.Serial import Interface
-from NanoVNASaver.Hardware.VNA import VNA, Version
+from NanoVNASaver.Hardware.VNA import VNA
+from NanoVNASaver.Version import Version
 
 if platform.system() != 'Windows':
     import tty
@@ -58,7 +59,7 @@ WRITE_SLEEP = 0.05
 
 class NanoVNA_V2(VNA):
     name = "NanoVNA-V2"
-    valid_datapoints = (101, 51, 202, 303, 505, 1023)
+    valid_datapoints = (101, 11, 51, 201, 301, 501, 1023)
     screenwidth = 320
     screenheight = 240
 
@@ -73,15 +74,16 @@ class NanoVNA_V2(VNA):
             self.serial.write(pack("<Q", 0))
             sleep(WRITE_SLEEP)
 
-        self.version = self.readVersion()
-        self.firmware = self.readFirmware()
-
         # firmware major version of 0xff indicates dfu mode
-        if self.firmware.data["major"] == 0xff:
+        if self.version.data["major"] == 0xff:
             raise IOError('Device is in DFU mode')
+
+        if "S21 hack" in self.features:
+            self.valid_datapoints = (101, 11, 51, 201, 301, 501, 1021)
 
         self.sweepStartHz = 200e6
         self.sweepStepHz = 1e6
+
         self._sweepdata = []
         self._updateSweep()
 
@@ -92,20 +94,14 @@ class NanoVNA_V2(VNA):
         self.features.add("Customizable data points")
         # TODO: more than one dp per freq
         self.features.add("Multi data points")
+        if self.version <= Version("1.0.1"):
+            logger.debug("Hack for s21 oddity in first sweeppoint")
+            self.features.add("S21 hack")
 
     def readFirmware(self) -> str:
-        # read register 0xf3 and 0xf4 (firmware major and minor version)
-        cmd = pack("<BBBB",
-                   _CMD_READ, _ADDR_FW_MAJOR,
-                   _CMD_READ, _ADDR_FW_MINOR)
-        with self.serial.lock:
-            self.serial.write(cmd)
-            sleep(WRITE_SLEEP)
-            resp = self.serial.read(2)
-        if len(resp) != 2:
-            logger.error("Timeout reading version registers")
-            return None
-        return Version(f"{resp[0]}.{resp[1]}.0")
+        result = f"HW: {self.read_board_revision()}\nFW: {self.version}"
+        logger.debug("readFirmware: %s", result)
+        return result
 
     def readFrequencies(self) -> List[int]:
         return [
@@ -116,6 +112,7 @@ class NanoVNA_V2(VNA):
         # Actually grab the data only when requesting channel 0.
         # The hardware will return all channels which we will store.
         if value == "data 0":
+            s21hack = "S21 hack" in self.features
             # reset protocol to known state
             timeout = self.serial.timeout
             with self.serial.lock:
@@ -126,10 +123,12 @@ class NanoVNA_V2(VNA):
                                        _CMD_WRITE, _ADDR_VALUES_FIFO, 0))
                 sleep(WRITE_SLEEP)
                 # clear sweepdata
-                self._sweepdata = [(complex(), complex())] * self.datapoints
-                pointstodo = self.datapoints
+                self._sweepdata = [(complex(), complex())] * (
+                    self.datapoints + s21hack)
+                pointstodo = self.datapoints + s21hack
                 # 8 seconds should be enough for 8k points
                 self.serial.timeout = min(8.0, (pointstodo / 32) + 0.1)
+                retries = 0
                 while pointstodo > 0:
                     logger.info("reading values")
                     pointstoread = min(255, pointstodo)
@@ -147,6 +146,9 @@ class NanoVNA_V2(VNA):
                     if nBytes != len(arr):
                         logger.error("expected %d bytes, got %d",
                                      nBytes, len(arr))
+                        retries += 1
+                        if retries < 5:
+                            continue
                         return []
 
                     freq_index = -1
@@ -165,6 +167,9 @@ class NanoVNA_V2(VNA):
                     pointstodo = pointstodo - pointstoread
             self.serial.timeout = timeout
 
+            if s21hack:
+                self._sweepdata = self._sweepdata[1:]
+
             ret = [x[0] for x in self._sweepdata]
             ret = [str(x.real) + ' ' + str(x.imag) for x in ret]
             return ret
@@ -177,10 +182,25 @@ class NanoVNA_V2(VNA):
     def resetSweep(self, start: int, stop: int):
         self.setSweep(start, stop)
 
-    # returns device variant
     def readVersion(self) -> 'Version':
-        # read register 0xf0 (device type), 0xf2 (board revision)
-        cmd = b"\x10\xf0\x10\xf2"
+        cmd = pack("<BBBB",
+                   _CMD_READ, _ADDR_FW_MAJOR,
+                   _CMD_READ, _ADDR_FW_MINOR)
+        with self.serial.lock:
+            self.serial.write(cmd)
+            sleep(WRITE_SLEEP)
+            resp = self.serial.read(2)
+        if len(resp) != 2:
+            logger.error("Timeout reading version registers")
+            return None
+        result = Version(f"{resp[0]}.0.{resp[1]}")
+        logger.debug("readVersion: %s", result)
+        return result
+
+    def read_board_revision(self) -> 'Version':
+        cmd = pack("<BBBB",
+                   _CMD_READ, _ADDR_DEVICE_VARIANT,
+                   _CMD_READ, _ADDR_HARDWARE_REVISION)
         with self.serial.lock:
             self.serial.write(cmd)
             sleep(WRITE_SLEEP)
@@ -189,6 +209,7 @@ class NanoVNA_V2(VNA):
             logger.error("Timeout reading version registers")
             return None
         return Version(f"{resp[0]}.0.{resp[1]}")
+
 
     def setSweep(self, start, stop):
         step = (stop - start) / (self.datapoints - 1)
@@ -202,12 +223,13 @@ class NanoVNA_V2(VNA):
         return
 
     def _updateSweep(self):
-        cmd = pack("<BBQ", _CMD_WRITE8,
-                   _ADDR_SWEEP_START, int(self.sweepStartHz))
+        s21hack = "S21 hack" in self.features
+        cmd = pack("<BBQ", _CMD_WRITE8, _ADDR_SWEEP_START,
+                   int(self.sweepStartHz - (self.sweepStepHz * s21hack)))
         cmd += pack("<BBQ", _CMD_WRITE8,
                     _ADDR_SWEEP_STEP, int(self.sweepStepHz))
         cmd += pack("<BBH", _CMD_WRITE2,
-                    _ADDR_SWEEP_POINTS, self.datapoints)
+                    _ADDR_SWEEP_POINTS, self.datapoints + s21hack)
         cmd += pack("<BBH", _CMD_WRITE2,
                     _ADDR_SWEEP_VALS_PER_FREQ, 1)
         with self.serial.lock:

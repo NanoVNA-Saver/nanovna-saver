@@ -1,3 +1,20 @@
+v0.3.7
+======
+
+- Added a delta marker
+- Segments can now have exponential different step widths
+  (see logarithmic sweeping)
+- More different data points selectable
+  (shorter are useful on logarithmic sweeping)
+- Scrollable marker column
+- Markers initialize on start, middle, end
+- Frequency input is now more "lazy"
+  10m, 50K and 1g are now valid for 10MHz, 50kHz and 1GHz
+- Added a wavelength field to Markers 
+- 32 bit windows binaries build in actions
+- Stability improvements due to better exception handling
+- Workaround for wrong first S21mag value on V2 devices
+
 v0.3.6
 ======
 

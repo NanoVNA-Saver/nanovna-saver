@@ -16,6 +16,19 @@ points, and generally display and analyze the resulting data.
 
 # Latest Changes 
 
+## Changes in v0.3.7-rc
+
+- Added a delta marker
+- Segments can now have exponential different step widths
+  (see logarithmic sweeping)
+- More different data points selectable
+  (shorter are useful on logarithmic sweeping)
+- Scrollable marker column
+- Markers initialize on start, middle, end
+- Added a wavelength field to Markers 
+- 32 bit windows binaries build in actions
+- Stability improvements due to better exception handling
+
 ## Changes in v0.3.6
 
 - Added bandwidth setting in device manage dialog
@@ -173,7 +186,7 @@ Via a MacPorts distribution maintained by @ra1nb0w.
 
 3. NanoVNASaver Installation
 
-        git clone git clone https://github.com/NanoVNA-Saver/nanovna-saver
+        git clone https://github.com/NanoVNA-Saver/nanovna-saver
         cd nanovna-saver
         
 4. Install local pip packages
