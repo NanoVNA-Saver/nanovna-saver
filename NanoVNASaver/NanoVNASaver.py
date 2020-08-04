@@ -539,7 +539,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         # connected
         self.btnSerialToggle.setText("Disconnect")
         self.btnSerialToggle.repaint()
-		
+
         frequencies = self.vna.readFrequencies()
         if not frequencies:
             logger.warning("No frequencies read")
@@ -567,7 +567,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.interface.close()
             self.btnSerialToggle.setText("Connect to device")
             self.btnSerialToggle.repaint()
-		
+
     def sweep_start(self):
         # Run the device data update
         if not self.vna.connected():
