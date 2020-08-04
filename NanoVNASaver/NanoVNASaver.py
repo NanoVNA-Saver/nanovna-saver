@@ -463,6 +463,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.serialPortInput.clear()
         for iface in get_interfaces():
             self.serialPortInput.insertItem(1, f"{iface}", iface)
+        self.serialPortInput.repaint()
 
     def exportFile(self, nr_params: int = 1):
         if len(self.data11) == 0:
@@ -537,6 +538,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         # connected
         self.btnSerialToggle.setText("Disconnect")
+        self.btnSerialToggle.repaint()
 
         frequencies = self.vna.readFrequencies()
         if not frequencies:
@@ -564,6 +566,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             logger.info("Closing connection to %s", self.interface)
             self.interface.close()
             self.btnSerialToggle.setText("Connect to device")
+            self.btnSerialToggle.repaint()
 
     def sweep_start(self):
         # Run the device data update
