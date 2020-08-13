@@ -147,23 +147,34 @@ Via a MacPorts distribution maintained by @ra1nb0w.
 
 #### Homebrew
 
-1. Install Homebrew from <https://brew.sh/>
+1. Install Homebrew from <https://brew.sh/> (This will ask for your password)
 
-    /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+  
 
 2. Python :
 
         brew install python
 
-3. NanoVNASaver Installation
+3. Pip :<br/> 
+    Download the get-pip.py file and run it to install pip
+
+        curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+        python3 get-pip.py
+
+4. NanoVNASaver Installation : <br/> 
+    clone the source code to the nanovna-saver folder
 
         git clone https://github.com/NanoVNA-Saver/nanovna-saver
         cd nanovna-saver
 
-4. Install local pip packages
+5. Install local pip packages
 
         python3 -m pip install .
-        NanoVNASaver
+
+6. Run nanovna-saver in the nanovna-saver folder by:
+
+        python3 nanovna-saver.py
 
 Using the software
 ------------------
