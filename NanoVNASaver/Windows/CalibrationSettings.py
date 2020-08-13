@@ -23,6 +23,7 @@ from functools import partial
 from PyQt5 import QtWidgets, QtCore
 
 from NanoVNASaver.Calibration import Calibration
+from NanoVNASaver.Settings.Sweep import SweepMode
 
 logger = logging.getLogger(__name__)
 
@@ -642,7 +643,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.btn_automatic.setDisabled(False)
             return
 
-        if self.app.windows["sweep_settings"].continuous_sweep_radiobutton.isChecked():
+        if self.app.sweep.properties.mode == SweepMode.CONTINOUS:
             QtWidgets.QMessageBox(
                 QtWidgets.QMessageBox.Information,
                 "Continuous sweep enabled",

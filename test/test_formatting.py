@@ -25,6 +25,15 @@ from NanoVNASaver import Formatting as fmt
 class TestCases(unittest.TestCase):
 
     def test_format_frequency(self):
+        self.assertEqual(fmt.format_frequency(1), '1.00000Hz')
+        self.assertEqual(fmt.format_frequency(12), '12.0000Hz')
+        self.assertEqual(fmt.format_frequency(123), '123.000Hz')
+        self.assertEqual(fmt.format_frequency(1234), '1.23400kHz')
+        self.assertEqual(fmt.format_frequency(1234567), '1.23457MHz')
+        self.assertEqual(fmt.format_frequency(1234567890), '1.23457GHz')
+        self.assertEqual(fmt.format_frequency(0), '0.00000Hz')
+        self.assertEqual(fmt.format_frequency(-1), '-1.00000Hz')
+
         self.assertEqual(fmt.format_frequency_space(1), '1.00000 Hz')
         self.assertEqual(fmt.format_frequency_space(12), '12.0000 Hz')
         self.assertEqual(fmt.format_frequency_space(123), '123.000 Hz')
@@ -33,6 +42,15 @@ class TestCases(unittest.TestCase):
         self.assertEqual(fmt.format_frequency_space(1234567890), '1.23457 GHz')
         self.assertEqual(fmt.format_frequency_space(0), '0.00000 Hz')
         self.assertEqual(fmt.format_frequency_space(-1), '-1.00000 Hz')
+
+        self.assertEqual(fmt.format_frequency_short(1), '1.000Hz')
+        self.assertEqual(fmt.format_frequency_short(12), '12.00Hz')
+        self.assertEqual(fmt.format_frequency_short(123), '123.0Hz')
+        self.assertEqual(fmt.format_frequency_short(1234), '1.234kHz')
+        self.assertEqual(fmt.format_frequency_short(1234567), '1.235MHz')
+        self.assertEqual(fmt.format_frequency_short(1234567890), '1.235GHz')
+        self.assertEqual(fmt.format_frequency_short(0), '0.000Hz')
+        self.assertEqual(fmt.format_frequency_short(-1), '-1.000Hz')
 
     def test_format_frequency_inputs(self):
         self.assertEqual(fmt.format_frequency_inputs(1), '1Hz')
@@ -64,6 +82,11 @@ class TestCases(unittest.TestCase):
         self.assertEqual(fmt.format_vswr(1), '1.000')
         self.assertEqual(fmt.format_vswr(1.234), '1.234')
         self.assertEqual(fmt.format_vswr(12345.12345), '12345.123')
+
+    def test_format_magnitude(self):
+        self.assertEqual(fmt.format_magnitude(1), '1.000')
+        self.assertEqual(fmt.format_magnitude(1.234), '1.234')
+        self.assertEqual(fmt.format_magnitude(12345.12345), '12345.123')
 
     def test_format_resistance(self):
         self.assertEqual(fmt.format_resistance(1), '1 \N{OHM SIGN}')
@@ -112,3 +135,7 @@ class TestCases(unittest.TestCase):
         self.assertEqual(fmt.format_complex_imp(complex(1234, -1234)), '1.23k-j1.23k \N{OHM SIGN}')
         self.assertEqual(fmt.format_complex_imp(complex(1.234, 1234)), '1.23+j1.23k \N{OHM SIGN}')
         self.assertEqual(fmt.format_complex_imp(complex(-1, 1.23e-3)), '- +j1.23m \N{OHM SIGN}')
+        self.assertEqual(fmt.format_complex_imp(complex(-1, 1.23e-3), True), '-1+j1.23m \N{OHM SIGN}')
+
+    def test_format_wavelength(self):
+        self.assertEqual(fmt.format_wavelength(12.3456), '12.35 m')

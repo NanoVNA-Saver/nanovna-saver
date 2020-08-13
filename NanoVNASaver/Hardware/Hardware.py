@@ -25,7 +25,6 @@ from typing import List
 import serial
 from serial.tools import list_ports
 
-from NanoVNASaver.Hardware.VNA import VNA
 from NanoVNASaver.Hardware.AVNA import AVNA
 from NanoVNASaver.Hardware.NanoVNA import NanoVNA
 from NanoVNASaver.Hardware.NanoVNA_F import NanoVNA_F
@@ -45,7 +44,7 @@ USBDEVICETYPES = (
 )
 RETRIES = 3
 TIMEOUT = 0.2
-
+WAIT = 0.05
 
 # The USB Driver for NanoVNA V2 seems to deliver an
 # incompatible hardware info like:
@@ -127,7 +126,7 @@ def detect_version(serial_port: serial.Serial) -> str:
     return ""
 
 def get_info(serial_port: serial.Serial) -> str:
-    for i in range(RETRIES):
+    for _ in range(RETRIES):
         drain_serial(serial_port)
         serial_port.write("info\r".encode("ascii"))
         lines = []
@@ -139,7 +138,7 @@ def get_info(serial_port: serial.Serial) -> str:
                 retries += 1
                 if retries > RETRIES:
                     return ""
-                sleep(wait)
+                sleep(WAIT)
                 continue
             if line == "info":  # suppress echo
                 continue

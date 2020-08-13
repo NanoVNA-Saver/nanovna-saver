@@ -30,6 +30,7 @@ class Label(NamedTuple):
 
 TYPES = (
     Label("actualfreq", "Frequency", "Actual frequency", True),
+    Label("lambda", "Wavelength", "Wavelength", False),
     Label("impedance", "Impedance", "Impedance", True),
     Label("admittance", "Admittance", "Admittance", False),
     Label("serr", "Series R", "Series R", False),
