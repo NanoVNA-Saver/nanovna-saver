@@ -128,7 +128,7 @@ class NanoVNA_V2(VNA):
                 pointstodo = self.datapoints + s21hack
                 # we read at most 255 values at a time and the time required empirically is
                 # just over 3 seconds for 101 points or 7 seconds for 255 points
-                self.serial.timeout = min(pointstodo, 255) * 0.035
+                self.serial.timeout = min(pointstodo, 255) * 0.035 + 0.1
                 while pointstodo > 0:
                     logger.info("reading values")
                     pointstoread = min(255, pointstodo)
