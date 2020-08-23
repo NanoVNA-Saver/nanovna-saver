@@ -144,7 +144,7 @@ class NanoVNA_V2(VNA):
                     # serial .read() will try to read nBytes bytes in timeout secs
                     arr = self.serial.read(nBytes)
                     if nBytes != len(arr) :
-                        logger.error("expected %d bytes, got %d",
+                        logger.warning("expected %d bytes, got %d",
                                      nBytes, len(arr))
                         # the way to retry on timeout is keep the data already read
                         # then try to read the rest of the data into the array
