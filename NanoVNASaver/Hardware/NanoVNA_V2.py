@@ -126,9 +126,9 @@ class NanoVNA_V2(VNA):
                 self._sweepdata = [(complex(), complex())] * (
                     self.datapoints + s21hack)
                 pointstodo = self.datapoints + s21hack
-                # 8 seconds should be enough for 8k points
-                self.serial.timeout = min(8.0, (pointstodo / 32) + 0.1)
-                retries = 0
+                # we read at most 255 values at a time and the time required empirically is
+                # just over 3 seconds for 101 points or 7 seconds for 255 points
+                self.serial.timeout = min(pointstodo, 255) * 0.035
                 while pointstodo > 0:
                     logger.info("reading values")
                     pointstoread = min(255, pointstodo)
@@ -141,14 +141,16 @@ class NanoVNA_V2(VNA):
                     # each value is 32 bytes
                     nBytes = pointstoread * 32
 
-                    # serial .read() will wait for exactly nBytes bytes
+                    # serial .read() will try to read nBytes bytes in timeout secs
                     arr = self.serial.read(nBytes)
-                    if nBytes != len(arr):
+                    if nBytes != len(arr) :
                         logger.error("expected %d bytes, got %d",
                                      nBytes, len(arr))
-                        retries += 1
-                        if retries < 5:
-                            continue
+                        # the way to retry on timeout is keep the data already read
+                        # then try to read the rest of the data into the array
+                        if nBytes > len(arr) :
+                            arr = arr + self.serial.read(nBytes - len(arr))
+                    if nBytes != len(arr) :
                         return []
 
                     freq_index = -1
