@@ -199,12 +199,17 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.marker_frame.setHidden(not self.settings.value("MarkersVisible", True, bool))
         chart_widget = QtWidgets.QWidget()
         chart_widget.setLayout(right_column)
-        splitter = QtWidgets.QSplitter()
-        splitter.addWidget(self.marker_frame)
-        splitter.addWidget(chart_widget)
+        self.splitter = QtWidgets.QSplitter()
+        self.splitter.addWidget(self.marker_frame)
+        self.splitter.addWidget(chart_widget)
+
+        try:
+            self.splitter.restoreState(self.settings.value("SplitterSizes"))
+        except TypeError:
+            pass
 
         layout.addLayout(left_column)
-        layout.addWidget(splitter, 2)
+        layout.addWidget(self.splitter, 2)
 
         ###############################################################
         #  Windows
@@ -799,6 +804,8 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.settings.setValue("WindowHeight", self.height())
         self.settings.setValue("WindowWidth", self.width())
+        self.settings.setValue("SplitterSizes", self.splitter.saveState())
+
         self.settings.sync()
         self.bands.saveSettings()
         self.threadpool.waitForDone(2500)
