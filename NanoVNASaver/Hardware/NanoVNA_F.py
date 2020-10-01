@@ -31,19 +31,3 @@ class NanoVNA_F(NanoVNA):
     name = "NanoVNA-F"
     screenwidth = 800
     screenheight = 480
-
-    def getScreenshot(self) -> QtGui.QPixmap:
-        logger.debug("Capturing screenshot...")
-        if not self.connected():
-            return QtGui.QPixmap()
-        try:
-            rgba_array = self._capture_data()
-            image = QtGui.QImage(
-                rgba_array,
-                self.screenwidth, self.screenheight,
-                QtGui.QImage.Format_ARGB32)
-            logger.debug("Captured screenshot")
-            return QtGui.QPixmap(image)
-        except serial.SerialException as exc:
-            logger.exception("Exception while capturing screenshot: %s", exc)
-        return QtGui.QPixmap()
