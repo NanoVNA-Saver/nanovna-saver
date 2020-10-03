@@ -143,14 +143,14 @@ class NanoVNA_V2(VNA):
 
                     # serial .read() will try to read nBytes bytes in timeout secs
                     arr = self.serial.read(nBytes)
-                    if nBytes != len(arr) :
+                    if nBytes != len(arr):
                         logger.warning("expected %d bytes, got %d",
-                                     nBytes, len(arr))
+                                       nBytes, len(arr))
                         # the way to retry on timeout is keep the data already read
                         # then try to read the rest of the data into the array
-                        if nBytes > len(arr) :
+                        if nBytes > len(arr):
                             arr = arr + self.serial.read(nBytes - len(arr))
-                    if nBytes != len(arr) :
+                    if nBytes != len(arr):
                         return []
 
                     freq_index = -1
@@ -227,7 +227,8 @@ class NanoVNA_V2(VNA):
     def _updateSweep(self):
         s21hack = "S21 hack" in self.features
         cmd = pack("<BBQ", _CMD_WRITE8, _ADDR_SWEEP_START,
-                   int(self.sweepStartHz - (self.sweepStepHz * s21hack)))
+                   max(50000,
+                       int(self.sweepStartHz - (self.sweepStepHz * s21hack))))
         cmd += pack("<BBQ", _CMD_WRITE8,
                     _ADDR_SWEEP_STEP, int(self.sweepStepHz))
         cmd += pack("<BBH", _CMD_WRITE2,
