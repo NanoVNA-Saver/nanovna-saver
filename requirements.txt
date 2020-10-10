@@ -1,4 +1,4 @@
-scipy==1.4.1
+scipy
 cython
 pyqt5
 pyserial

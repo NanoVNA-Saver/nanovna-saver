@@ -1,6 +1,13 @@
 Changelog
 =========
 
+v0.3.8
+------
+
+- Restore column layout on start
+- Support for Nanovna-F V2
+- Fixes a crash with S21 hack
+
 v0.3.7
 ------
 
