@@ -23,7 +23,7 @@ from typing import List, Iterator
 
 from PyQt5 import QtGui
 
-from NanoVNASaver.Settings import Version
+from NanoVNASaver.Version import Version
 from NanoVNASaver.Hardware.Serial import Interface, drain_serial
 
 logger = logging.getLogger(__name__)
@@ -40,20 +40,20 @@ WAIT = 0.05
 
 
 def _max_retries(bandwidth: int, datapoints: int) -> int:
-    return round(5 + 20 * (datapoints / 101) +
+    return round(20 + 20 * (datapoints / 101) +
                  (1000 / bandwidth) ** 1.30 * (datapoints / 101))
 
 
 class VNA:
     name = "VNA"
-    valid_datapoints = (101, 50, 10)
+    valid_datapoints = (101, 51, 11)
     wait = 0.05
 
     def __init__(self, iface: Interface):
         self.serial = iface
         self.version = Version("0.0.0")
         self.features = set()
-        self.validateInput = True
+        self.validateInput = False
         self.datapoints = self.valid_datapoints[0]
         self.bandwidth = 1000
         self.bw_method = "ttrftech"

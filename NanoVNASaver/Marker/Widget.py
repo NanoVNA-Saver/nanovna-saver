@@ -35,6 +35,7 @@ from NanoVNASaver.Formatting import (
     format_q_factor,
     format_resistance,
     format_vswr,
+    format_wavelength,
     parse_frequency,
 )
 from NanoVNASaver.Inputs import MarkerFrequencyInputWidget as FrequencyInput
@@ -87,7 +88,9 @@ class Marker(QtCore.QObject, Value):
 
         self.frequencyInput = FrequencyInput()
         self.frequencyInput.setAlignment(QtCore.Qt.AlignRight)
-        self.frequencyInput.textEdited.connect(self.setFrequency)
+        self.frequencyInput.editingFinished.connect(
+            lambda: self.setFrequency(
+                parse_frequency(self.frequencyInput.text())))
 
         ###############################################################
         # Data display labels
@@ -283,19 +286,18 @@ class Marker(QtCore.QObject, Value):
         if not s11data:
             return
         if self.location == -1:  # initial position
-            if self.index == 3:
-                self.location = len(s11data) - 1
-            elif self.index == 2:
-                self.location = round(len(s11data) / 2)
-            else:
+            try:
+                location = (self.index -1) / (self._instances - 1) * (len(s11data) - 1)
+                self.location = int(location)
+            except ZeroDivisionError:
                 self.location = 0
-            self.frequencyInput.setText(s11data[self.location].freq)
         try:
             s11 = s11data[self.location]
         except IndexError:
             self.location = 0
             return
 
+        self.frequencyInput.setText(s11.freq)
         self.store(self.location, s11data, s21data)
 
         imp = s11.impedance()
@@ -317,6 +319,7 @@ class Marker(QtCore.QObject, Value):
             x_p_str = ind_p_str
 
         self.label['actualfreq'].setText(format_frequency_space(s11.freq))
+        self.label['lambda'].setText(format_wavelength(s11.wavelength))
         self.label['admittance'].setText(format_complex_imp(imp_p))
         self.label['impedance'].setText(format_complex_imp(imp))
         self.label['parc'].setText(cap_p_str)

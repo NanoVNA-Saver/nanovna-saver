@@ -18,7 +18,6 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 import struct
-from time import sleep, time
 from typing import List
 
 import serial
@@ -26,7 +25,8 @@ import numpy as np
 from PyQt5 import QtGui
 
 from NanoVNASaver.Hardware.Serial import drain_serial, Interface
-from NanoVNASaver.Hardware.VNA import VNA, Version
+from NanoVNASaver.Hardware.VNA import VNA
+from NanoVNASaver.Version import Version
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +56,9 @@ class NanoVNA(VNA):
                 self.screenwidth * self.screenheight * 2)
             self.serial.timeout = timeout
         self.serial.timeout = timeout
+        return image_data
+
+    def _convert_data(self, image_data: bytes) -> bytes:
         rgb_data = struct.unpack(
             f">{self.screenwidth * self.screenheight}H",
             image_data)
@@ -70,7 +73,7 @@ class NanoVNA(VNA):
         if not self.connected():
             return QtGui.QPixmap()
         try:
-            rgba_array = self._capture_data()
+            rgba_array = self._convert_data(self._capture_data())
             image = QtGui.QImage(
                 rgba_array,
                 self.screenwidth,
@@ -110,10 +113,8 @@ class NanoVNA(VNA):
         logger.debug("readFrequencies: %s", self.sweep_method)
         if self.sweep_method != "scan_mask":
             return super().readFrequencies()
-        if not self._sweepdata:  # on connect
-            return [int(line) for line in self.exec_command("frequencies")]
-        step = (self.stop - self.start) / (self.datapoints - 1.0)
-        return [round(self.start + i * step) for i in range(self.datapoints)]
+        return [int(line) for line in self.exec_command(
+            f"scan {self.start} {self.stop} {self.datapoints} 0b001")]
 
     def readValues(self, value) -> List[str]:
         if self.sweep_method != "scan_mask":

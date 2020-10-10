@@ -72,10 +72,12 @@ class MarkerControl(QtWidgets.QGroupBox):
             self.app.marker_frame.setHidden(False)
             self.app.settings.setValue("MarkersVisible", True)
             self.showMarkerButton.setText("Hide data")
+            self.showMarkerButton.repaint()
         else:
             self.app.marker_frame.setHidden(True)
             self.app.settings.setValue("MarkersVisible", False)
             self.showMarkerButton.setText("Show data")
+            self.showMarkerButton.repaint()
 
     def toggle_delta(self):
         self.app.delta_marker_layout.setVisible(self.check_delta.isChecked())

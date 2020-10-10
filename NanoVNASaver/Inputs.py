@@ -38,11 +38,11 @@ class MarkerFrequencyInputWidget(FrequencyInputWidget):
             if a0.key() == QtCore.Qt.Key_Up and self.nextFrequency != -1:
                 a0.accept()
                 self.setText(str(self.nextFrequency))
-                self.textEdited.emit(self.text())
+                self.editingFinished.emit()  # self.text())
                 return
             if a0.key() == QtCore.Qt.Key_Down and self.previousFrequency != -1:
                 a0.accept()
                 self.setText(str(self.previousFrequency))
-                self.textEdited.emit(self.text())
+                self.editingFinished.emit()  # self.text())
                 return
         super().keyPressEvent(a0)

@@ -123,8 +123,9 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
     def applyButtonClick(self):
         self.savedFieldSelection = self.currentFieldSelection[:]
         self.app.settings.setValue("MarkerFields", self.savedFieldSelection)
-        self.app.settings.setValue("ColoredMarkerNames", self.checkboxColouredMarker.isChecked())
-        for m in self.app.markers:
+        self.app.settings.setValue(
+            "ColoredMarkerNames", self.checkboxColouredMarker.isChecked())
+        for m in self.app.markers + [self.app.delta_marker, ]:
             m.setFieldSelection(self.savedFieldSelection)
             m.setColoredText(self.checkboxColouredMarker.isChecked())
 

@@ -25,14 +25,15 @@ from typing import List
 import serial
 from serial.tools import list_ports
 
-from NanoVNASaver.Hardware.VNA import VNA
 from NanoVNASaver.Hardware.AVNA import AVNA
 from NanoVNASaver.Hardware.NanoVNA import NanoVNA
 from NanoVNASaver.Hardware.NanoVNA_F import NanoVNA_F
+from NanoVNASaver.Hardware.NanoVNA_F_V2 import NanoVNA_F_V2
 from NanoVNASaver.Hardware.NanoVNA_H import NanoVNA_H
 from NanoVNASaver.Hardware.NanoVNA_H4 import NanoVNA_H4
 from NanoVNASaver.Hardware.NanoVNA_V2 import NanoVNA_V2
 from NanoVNASaver.Hardware.Serial import drain_serial, Interface
+
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +46,7 @@ USBDEVICETYPES = (
 )
 RETRIES = 3
 TIMEOUT = 0.2
-
+WAIT = 0.05
 
 # The USB Driver for NanoVNA V2 seems to deliver an
 # incompatible hardware info like:
@@ -99,6 +100,9 @@ def get_VNA(iface: Interface) -> 'VNA':
         logger.info("Type: NanoVNA-H")
         vna = NanoVNA_H(iface)
         return vna
+    if info.find("NanoVNA-F_V2") >= 0:
+        logger.info("Type: NanoVNA-F_V2")
+        return NanoVNA_F_V2(iface)
     if info.find("NanoVNA-F") >= 0:
         logger.info("Type: NanoVNA-F")
         return NanoVNA_F(iface)
@@ -127,7 +131,7 @@ def detect_version(serial_port: serial.Serial) -> str:
     return ""
 
 def get_info(serial_port: serial.Serial) -> str:
-    for i in range(RETRIES):
+    for _ in range(RETRIES):
         drain_serial(serial_port)
         serial_port.write("info\r".encode("ascii"))
         lines = []
@@ -139,7 +143,7 @@ def get_info(serial_port: serial.Serial) -> str:
                 retries += 1
                 if retries > RETRIES:
                     return ""
-                sleep(wait)
+                sleep(WAIT)
                 continue
             if line == "info":  # suppress echo
                 continue
