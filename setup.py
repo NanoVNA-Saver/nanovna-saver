@@ -42,7 +42,7 @@ setup(
         'pyserial',
         'PyQt5',
         'numpy',
-        'scipy<1.5',
+        'scipy',
         'cython',
     ],
 )
