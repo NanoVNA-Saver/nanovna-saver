@@ -279,7 +279,7 @@ class FrequencyChart(Chart):
             return round(self.fstart + absx * step)
         return -1
 
-    def valueAtPosition(self, y) -> List[float]:
+    def valueAtPosition(self, _) -> List[float]:
         """
         Returns the chart-specific value(s) at the specified Y-position
         :param y: The Y position to calculate for.
@@ -410,7 +410,7 @@ class FrequencyChart(Chart):
         self.chartHeight = a0.size().height() - self.bottomMargin - self.topMargin
         self.update()
 
-    def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
+    def paintEvent(self, _: QtGui.QPaintEvent) -> None:
         qp = QtGui.QPainter(self)
         self.drawChart(qp)
         self.drawValues(qp)
@@ -471,32 +471,23 @@ class FrequencyChart(Chart):
     def drawBands(self, qp, fstart, fstop):
         qp.setBrush(self.bands.color)
         qp.setPen(QtGui.QColor(128, 128, 128, 0))  # Don't outline the bands
-        for (_, start, end) in self.bands.bands:
-            if fstart < start < fstop and fstart < end < fstop:
-                # The band is entirely within the chart
-                x_start = self.getXPosition(Datapoint(start, 0, 0))
-                x_end = self.getXPosition(Datapoint(end, 0, 0))
-                qp.drawRect(x_start,
-                            self.topMargin,
-                            x_end - x_start,
-                            self.chartHeight)
-            elif fstart < start < fstop:
-                # Only the start of the band is within the chart
-                x_start = self.getXPosition(Datapoint(start, 0, 0))
-                qp.drawRect(x_start,
-                            self.topMargin,
-                            self.leftMargin + self.chartWidth - x_start,
-                            self.chartHeight)
-            elif fstart < end < fstop:
-                # Only the end of the band is within the chart
-                x_end = self.getXPosition(Datapoint(end, 0, 0))
-                qp.drawRect(self.leftMargin + 1,
-                            self.topMargin,
-                            x_end - (self.leftMargin + 1),
-                            self.chartHeight)
-            elif start < fstart < fstop < end:
-                # All the chart is in a band, we won't show it(?)
-                pass
+        for _, start, end in self.bands.bands:
+            try:
+                start = int(start)
+                end = int(end)
+            except ValueError:
+                continue
+            # don't draw if either band not in chart or completely in band
+            if start < fstart < fstop < end or end < fstart or start > fstop:
+                continue
+            x_start = max(self.leftMargin + 1,
+                          self.getXPosition(Datapoint(start, 0, 0)))
+            x_stop = min(self.leftMargin + self.chartWidth,
+                         self.getXPosition(Datapoint(end, 0, 0)))
+            qp.drawRect(x_start,
+                        self.topMargin,
+                        x_stop - x_start,
+                        self.chartHeight)
 
     def drawData(self, qp: QtGui.QPainter, data: List[Datapoint],
                  color: QtGui.QColor, y_function=None):
