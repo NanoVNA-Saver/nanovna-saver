@@ -4,6 +4,7 @@ Changelog
 v0.3.8
 ------
 
+- Allow editing of bands above 2.4GHz
 - Restore column layout on start
 - Support for Nanovna-F V2
 - Fixes a crash with S21 hack
