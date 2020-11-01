@@ -56,6 +56,9 @@ class NanoVNA(VNA):
                 self.screenwidth * self.screenheight * 2)
             self.serial.timeout = timeout
         self.serial.timeout = timeout
+        return image_data
+
+    def _convert_data(self, image_data: bytes) -> bytes:
         rgb_data = struct.unpack(
             f">{self.screenwidth * self.screenheight}H",
             image_data)
@@ -70,7 +73,7 @@ class NanoVNA(VNA):
         if not self.connected():
             return QtGui.QPixmap()
         try:
-            rgba_array = self._capture_data()
+            rgba_array = self._convert_data(self._capture_data())
             image = QtGui.QImage(
                 rgba_array,
                 self.screenwidth,

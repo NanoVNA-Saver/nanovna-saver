@@ -18,72 +18,70 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 import typing
-from typing import List, Tuple
 
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import QModelIndex
+
+_DEFAULT_BANDS = (
+    "2200 m;135700;137800",
+    "630 m;472000;479000",
+    "160 m;1800000;2000000",
+    "80 m;3500000;3800000",
+    "60 m;5250000;5450000",
+    "40 m;7000000;7200000",
+    "30 m;10100000;10150000",
+    "20 m;14000000;14350000",
+    "17 m;18068000;18168000",
+    "15 m;21000000;21450000",
+    "12 m;24890000;24990000",
+    "10 m;28000000;29700000",
+    "6 m;50000000;52000000",
+    "4 m;69887500;70512500",
+    "2 m;144000000;146000000",
+    "70 cm;432000000;438000000",
+    "23 cm;1240000000;1300000000",
+    "13 cm;2320000000;2450000000",
+)
+
+_HEADER_DATA = ("Band", "Start (Hz)", "End (Hz)")
 
 logger = logging.getLogger(__name__)
 
 
 class BandsModel(QtCore.QAbstractTableModel):
-    bands: List[Tuple[str, int, int]] = []
-    enabled = False
     color = QtGui.QColor(128, 128, 128, 48)
 
     # These bands correspond broadly to the Danish Amateur Radio allocation
-    default_bands = ["2200 m;135700;137800",
-                     "630 m;472000;479000",
-                     "160 m;1800000;2000000",
-                     "80 m;3500000;3800000",
-                     "60 m;5250000;5450000",
-                     "40 m;7000000;7200000",
-                     "30 m;10100000;10150000",
-                     "20 m;14000000;14350000",
-                     "17 m;18068000;18168000",
-                     "15 m;21000000;21450000",
-                     "12 m;24890000;24990000",
-                     "10 m;28000000;29700000",
-                     "6 m;50000000;52000000",
-                     "4 m;69887500;70512500",
-                     "2 m;144000000;146000000",
-                     "70 cm;432000000;438000000",
-                     "23 cm;1240000000;1300000000",
-                     "13 cm;2320000000;2450000000"]
-
     def __init__(self):
         super().__init__()
         self.settings = QtCore.QSettings(QtCore.QSettings.IniFormat,
                                          QtCore.QSettings.UserScope,
                                          "NanoVNASaver", "Bands")
         self.settings.setIniCodec("UTF-8")
-        self.enabled = self.settings.value("ShowBands", False, bool)
 
-        stored_bands: List[str] = self.settings.value("bands", self.default_bands)
-        if stored_bands:
-            for b in stored_bands:
-                (name, start, end) = b.split(";")
-                self.bands.append((name, int(start), int(end)))
+        self.enabled = self.settings.value("ShowBands", False, bool)
+        self.bands = []
+
+        for band in self.settings.value("bands", _DEFAULT_BANDS):
+            self.bands.append(band.split(";"))
 
     def saveSettings(self):
-        stored_bands = []
-        for b in self.bands:
-            stored_bands.append(b[0] + ";" + str(b[1]) + ";" + str(b[2]))
-        self.settings.setValue("bands", stored_bands)
+        self.settings.setValue(
+            "bands",
+            [f"{name};{start};{end}" for name, start, end in self.bands])
         self.settings.sync()
 
     def resetBands(self):
         self.bands = []
-        for b in self.default_bands:
-            (name, start, end) = b.split(";")
-            self.bands.append((name, int(start), int(end)))
+        for band in _DEFAULT_BANDS:
+            self.bands.append(band.split(";"))
         self.layoutChanged.emit()
         self.saveSettings()
 
-    def columnCount(self, parent: QModelIndex = ...) -> int:
+    def columnCount(self, _) -> int:
         return 3
 
-    def rowCount(self, parent: QModelIndex = ...) -> int:
+    def rowCount(self, _) -> int:
         return len(self.bands)
 
     def data(self, index: QModelIndex, role: int = ...) -> QtCore.QVariant:
@@ -114,15 +112,16 @@ class BandsModel(QtCore.QAbstractTableModel):
             return True
         return False
 
-    def index(self, row: int, column: int, parent: QModelIndex = ...) -> QModelIndex:
+    def index(self, row: int, column: int, _: QModelIndex = ...) -> QModelIndex:
         return self.createIndex(row, column)
 
     def addRow(self):
         self.bands.append(("New", 0, 0))
-        self.dataChanged.emit(self.index(len(self.bands), 0), self.index(len(self.bands), 2))
+        self.dataChanged.emit(self.index(len(self.bands), 0),
+                              self.index(len(self.bands), 2))
         self.layoutChanged.emit()
 
-    def removeRow(self, row: int, parent: QModelIndex = ...) -> bool:
+    def removeRow(self, row: int, _: QModelIndex = ...) -> bool:
         self.bands.remove(self.bands[row])
         self.layoutChanged.emit()
         self.saveSettings()
@@ -132,14 +131,11 @@ class BandsModel(QtCore.QAbstractTableModel):
                    orientation: QtCore.Qt.Orientation, role: int = ...):
         if (role == QtCore.Qt.DisplayRole and
                 orientation == QtCore.Qt.Horizontal):
-            if section == 0:
-                return "Band"
-            if section == 1:
-                return "Start (Hz)"
-            if section == 2:
-                return "End (Hz)"
-            return "Invalid"
-        super().headerData(section, orientation, role)
+            try:
+                return _HEADER_DATA[section]
+            except IndexError:
+                pass
+        return None
 
     def flags(self, index: QModelIndex) -> QtCore.Qt.ItemFlags:
         if index.isValid():

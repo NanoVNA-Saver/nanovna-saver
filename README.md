@@ -17,6 +17,13 @@ points, and generally display and analyze the resulting data.
 Latest Changes
 --------------
 
+### Changes in v0.3.8
+
+- Allow editing of bands above 2.4GHz
+- Restore column layout on start
+- Support for Nanovna-F V2
+- Fixes a crash with S21 hack
+
 ### Changes in v0.3.7
 
 - Added a delta marker
@@ -32,10 +39,6 @@ Latest Changes
 - 32 bit windows binaries build in actions
 - Stability improvements due to better exception handling
 - Workaround for wrong first S21mag value on V2 devices
-
-### Changes in v0.3.6
-
-- Added bandwidth setting in device manage dialog
 
 Introduction
 ------------

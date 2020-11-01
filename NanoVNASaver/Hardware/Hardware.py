@@ -28,10 +28,12 @@ from serial.tools import list_ports
 from NanoVNASaver.Hardware.AVNA import AVNA
 from NanoVNASaver.Hardware.NanoVNA import NanoVNA
 from NanoVNASaver.Hardware.NanoVNA_F import NanoVNA_F
+from NanoVNASaver.Hardware.NanoVNA_F_V2 import NanoVNA_F_V2
 from NanoVNASaver.Hardware.NanoVNA_H import NanoVNA_H
 from NanoVNASaver.Hardware.NanoVNA_H4 import NanoVNA_H4
 from NanoVNASaver.Hardware.NanoVNA_V2 import NanoVNA_V2
 from NanoVNASaver.Hardware.Serial import drain_serial, Interface
+
 
 logger = logging.getLogger(__name__)
 
@@ -98,6 +100,9 @@ def get_VNA(iface: Interface) -> 'VNA':
         logger.info("Type: NanoVNA-H")
         vna = NanoVNA_H(iface)
         return vna
+    if info.find("NanoVNA-F_V2") >= 0:
+        logger.info("Type: NanoVNA-F_V2")
+        return NanoVNA_F_V2(iface)
     if info.find("NanoVNA-F") >= 0:
         logger.info("Type: NanoVNA-F")
         return NanoVNA_F(iface)
