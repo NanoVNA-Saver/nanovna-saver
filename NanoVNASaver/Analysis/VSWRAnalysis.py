@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 class VSWRAnalysis(Analysis):
     max_dips_shown = 3
     vswr_limit_value = 1.5
-    
+
     class QHLine(QtWidgets.QFrame):
         def __init__(self):
             super().__init__()
@@ -73,31 +73,17 @@ class VSWRAnalysis(Analysis):
         #     self.app.markers[0].setFrequency(str(self.app.data11[min_idx].freq))
         #     self.app.markers[0].frequencyInput.setText(str(self.app.data11[min_idx].freq))
 
-        minimums = []
-        min_start = -1
-        min_idx = -1
         threshold = self.input_vswr_limit.value()
-        min_val = threshold
-        for i, d in enumerate(data):
-            if d < threshold and i < len(data)-1:
-                if d < min_val:
-                    min_val = d
-                    min_idx = i
-                if min_start == -1:
-                    min_start = i
-            elif min_start != -1:
-                # We are above the threshold, and were in a section that was below
-                minimums.append((min_start, min_idx, i-1))
-                min_start = -1
-                min_idx = -1
-                min_val = threshold
+        minimums = self.find_minimums(data, threshold)
 
-        logger.debug("Found %d sections under %f threshold", len(minimums), threshold)
+        logger.debug("Found %d sections under %f threshold",
+                     len(minimums), threshold)
 
         results_header = self.layout.indexOf(self.results_label)
-        logger.debug("Results start at %d, out of %d", results_header, self.layout.rowCount())
+        logger.debug("Results start at %d, out of %d",
+                     results_header, self.layout.rowCount())
         for i in range(results_header, self.layout.rowCount()):
-            self.layout.removeRow(self.layout.rowCount()-1)
+            self.layout.removeRow(self.layout.rowCount() - 1)
 
         if len(minimums) > max_dips_shown:
             self.layout.addRow(QtWidgets.QLabel("<b>More than " + str(max_dips_shown) +
@@ -141,7 +127,7 @@ class VSWRAnalysis(Analysis):
                         format_frequency(self.app.data11[lowest].freq)))
                     self.layout.addWidget(PeakSearchAnalysis.QHLine())
             # Remove the final separator line
-            self.layout.removeRow(self.layout.rowCount()-1)
+            self.layout.removeRow(self.layout.rowCount() - 1)
         else:
             self.layout.addRow(QtWidgets.QLabel(
                 "No areas found with VSWR below " + str(round(threshold, 2)) + "."))

@@ -27,6 +27,41 @@ logger = logging.getLogger(__name__)
 class Analysis:
     _widget = None
 
+    @classmethod
+    def find_minimums(cls, data, threshold):
+        '''
+
+        Find values above threshold
+        return list of tuples (start, lowest, end)
+        indicating the index of data list
+
+
+        :param cls:
+        :param data: list of values
+        :param threshold:
+        '''
+
+        minimums = []
+        min_start = -1
+        min_idx = -1
+
+        min_val = threshold
+        for i, d in enumerate(data):
+            if d < threshold and i < len(data) - 1:
+                if d < min_val:
+                    min_val = d
+                    min_idx = i
+                if min_start == -1:
+                    min_start = i
+            elif min_start != -1:
+                # We are above the threshold, and were in a section that was
+                # below
+                minimums.append((min_start, min_idx, i - 1))
+                min_start = -1
+                min_idx = -1
+                min_val = threshold
+        return minimums
+
     def __init__(self, app: QtWidgets.QWidget):
         self.app = app
 
@@ -50,8 +85,10 @@ class Analysis:
         if frequency_factor < 1:
             frequency_factor = 1 / frequency_factor
         attenuation = abs(gain1 - gain2)
-        logger.debug("Measured points: %d Hz and %d Hz", frequency1, frequency2)
+        logger.debug("Measured points: %d Hz and %d Hz",
+                     frequency1, frequency2)
         logger.debug("%f dB over %f factor", attenuation, frequency_factor)
-        octave_attenuation = attenuation / (math.log10(frequency_factor) / math.log10(2))
+        octave_attenuation = attenuation / \
+            (math.log10(frequency_factor) / math.log10(2))
         decade_attenuation = attenuation / math.log10(frequency_factor)
         return octave_attenuation, decade_attenuation
