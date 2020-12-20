@@ -87,23 +87,34 @@ class PeakSearchAnalysis(Analysis):
         outer_layout.addRow(QtWidgets.QLabel("<b>Results</b>"))
 
     def runAnalysis(self):
+        self.reset()
+        data = []
         count = self.input_number_of_peaks.value()
         if self.rbtn_data_vswr.isChecked():
-            data = []
+
             for d in self.app.data11:
-                data11.append(d.vswr)
+                data.append(d.vswr)
         elif self.rbtn_data_s21_gain.isChecked():
-            data = []
             for d in self.app.data21:
                 data.append(d.gain)
+        elif self.rbtn_data_resistance.isChecked():
+            for d in self.app.data11:
+                data.append(d.impedance().real)
+        elif self.rbtn_data_reactance.isChecked():
+            for d in self.app.data11:
+                data.append(d.impedance().imag)
+
         else:
             logger.warning("Searching for peaks on unknown data")
             return
 
         if self.rbtn_peak_positive.isChecked():
-            peaks, _ = signal.find_peaks(data, width=3, distance=3, prominence=1)
+            peaks, _ = signal.find_peaks(
+                data, width=3, distance=3, prominence=1)
         elif self.rbtn_peak_negative.isChecked():
-            peaks, _ = signal.find_peaks(np.array(data)*-1, width=3, distance=3, prominence=1)
+            data = [x * -1 for x in data]
+            peaks, _ = signal.find_peaks(
+                data, width=3, distance=3, prominence=1)
         # elif self.rbtn_peak_both.isChecked():
         #     peaks_max, _ = signal.find_peaks(data, width=3, distance=3, prominence=1)
         #     peaks_min, _ = signal.find_peaks(np.array(data)*-1, width=3, distance=3, prominence=1)
@@ -117,8 +128,8 @@ class PeakSearchAnalysis(Analysis):
 
         # Having found the peaks, get the prominence data
 
-        for p in peaks:
-            logger.debug("Peak at %d", p)
+        for i, p in np.ndenumerate(peaks):
+            logger.debug("Peak %i at %d", i, p)
         prominences = signal.peak_prominences(data, peaks)[0]
         logger.debug("%d prominences", len(prominences))
 
