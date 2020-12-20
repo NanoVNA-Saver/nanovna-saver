@@ -39,6 +39,7 @@ class Datapoint(NamedTuple):
     @property
     def z(self) -> complex:
         """ return the datapoint impedance as complex number """
+        # FIXME: not impedance, but s11 ?
         return complex(self.re, self.im)
 
     @property
@@ -158,7 +159,7 @@ def corr_att_data(data: List[Datapoint], att: float) -> List[Datapoint]:
     if att <= 0:
         return data
     else:
-        att = 10**(att/20)
+        att = 10**(att / 20)
     ndata = []
     for dp in data:
         corrected = dp.z * att

@@ -18,7 +18,8 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 import math
-
+import numpy as np
+from scipy.signal import argrelextrema
 from PyQt5 import QtWidgets
 
 logger = logging.getLogger(__name__)
@@ -26,6 +27,42 @@ logger = logging.getLogger(__name__)
 
 class Analysis:
     _widget = None
+
+    @classmethod
+    def find_crossing_zero(cls, data, threshold=0):
+        '''
+
+        Find values  crossing zero
+        return list of tuples (before, crossing, after)
+        indicating the index of data list
+        crossing is where data == 0
+        or data nearest 0
+
+        at maximum 1 value == 0
+        data must not start or end with 0
+
+
+        :param cls:
+        :param data: list of values
+        :param threshold: unused, for future manage flipping around 0
+        '''
+        my_data = np.array(data)
+        zeroes = np.where(my_data == 0)[0]
+
+        if 0 in zeroes:
+            raise ValueError("Data  must non start with 0")
+
+        if len(data) - 1 in zeroes:
+            raise ValueError("Data  must non end with 0")
+        crossing = [(n - 1, n, n + 1) for n in zeroes]
+
+        for n in np.where((my_data[:-1] * my_data[1:]) < 0)[0]:
+            if abs(data[n]) <= abs(data[n + 1]):
+                crossing.append((n, n, n + 1))
+            else:
+                crossing.append((n, n + 1, n + 1))
+
+        return crossing
 
     @classmethod
     def find_minimums(cls, data, threshold):
@@ -61,6 +98,22 @@ class Analysis:
                 min_idx = -1
                 min_val = threshold
         return minimums
+
+    @classmethod
+    def find_maximums(cls, data, threshold=0):
+        '''
+
+        Find peacs
+
+
+        :param cls:
+        :param data: list of values
+        :param threshold:
+        '''
+        my_data = np.array(data)
+        maximums = argrelextrema(my_data, np.greater)[0]
+
+        return maximums
 
     def __init__(self, app: QtWidgets.QWidget):
         self.app = app
