@@ -197,7 +197,8 @@ class ResonanceAnalysis(Analysis):
         return crossing
 
     def runAnalysis(self):
-        self.results_label = QtWidgets.QLabel("<b>Results</b>")
+        self.reset()
+        # self.results_label = QtWidgets.QLabel("<b>Results</b>")
         # max_dips_shown = self.max_dips_shown
         description = self.input_description.text()
         if description:
@@ -269,7 +270,8 @@ class EFHWAnalysis(ResonanceAnalysis):
         pass
 
     def runAnalysis(self):
-        self.results_label = QtWidgets.QLabel("<b>Results</b>")
+        self.reset()
+        # self.results_label = QtWidgets.QLabel("<b>Results</b>")
         # max_dips_shown = self.max_dips_shown
         description = self.input_description.text()
         if description:
@@ -281,7 +283,7 @@ class EFHWAnalysis(ResonanceAnalysis):
 
         data = []
         for d in self.app.data11:
-            data.append(d.impedance())
+            data.append(d.impedance().real)
 
         maximums = sorted(self.find_maximums(data))
 
@@ -293,24 +295,54 @@ class EFHWAnalysis(ResonanceAnalysis):
 
         extended_data = {}
 
-        for m in crossing:
-            start, lowest, end = m
-            my_data = self._get_data(lowest)
+        #both = np.intersect1d([i[1] for i in crossing], maximums)
+        both = []
 
-            if lowest in extended_data:
-                extended_data[lowest].update(my_data)
-            else:
-                extended_data[lowest] = my_data
+        tolerance = 2
+        for i in maximums:
+            for l, _, h in crossing:
+                if l - tolerance <= i <= h + tolerance:
+                    both.append(i)
+                    continue
+                if l > i:
+                    continue
 
-        logger.debug("maximumx %s of type %s", maximums, type(maximums))
-        for m in maximums:
-            logger.debug("m %s of type %s", m, type(m))
+        if both:
+            logger.info("%i crossing HW", len(both))
+            logger.info(crossing)
+            logger.info(maximums)
+            logger.info(both)
+            for m in both:
+                my_data = self._get_data(m)
+                if m in extended_data:
+                    extended_data[m].update(my_data)
+                else:
+                    extended_data[m] = my_data
+            for i in range(min(len(both), len(self.app.markers))):
+                self.app.markers[i].setFrequency(
+                    str(self.app.data11[both[i]].freq))
+                self.app.markers[i].frequencyInput.setText(
+                    str(self.app.data11[both[i]].freq))
+        else:
+            logger.info("TO DO: find near data")
+            for m in crossing:
+                start, lowest, end = m
+                my_data = self._get_data(lowest)
 
-            my_data = self._get_data(m)
-            if m in extended_data:
-                extended_data[m].update(my_data)
-            else:
-                extended_data[m] = my_data
+                if lowest in extended_data:
+                    extended_data[lowest].update(my_data)
+                else:
+                    extended_data[lowest] = my_data
+
+            logger.debug("maximumx %s of type %s", maximums, type(maximums))
+            for m in maximums:
+                logger.debug("m %s of type %s", m, type(m))
+
+                my_data = self._get_data(m)
+                if m in extended_data:
+                    extended_data[m].update(my_data)
+                else:
+                    extended_data[m] = my_data
 
         for index in sorted(extended_data.keys()):
 
@@ -321,7 +353,7 @@ class EFHWAnalysis(ResonanceAnalysis):
                     f" ({format_complex_imp(self.app.data11[index].impedance())})"))
 
         # Remove the final separator line
-        self.layout.removeRow(self.layout.rowCount() - 1)
+        # self.layout.removeRow(self.layout.rowCount() - 1)
         if filename and extended_data:
 
             with open(filename, 'w', newline='') as csvfile:

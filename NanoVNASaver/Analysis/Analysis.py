@@ -21,6 +21,7 @@ import math
 import numpy as np
 from scipy.signal import argrelextrema
 from PyQt5 import QtWidgets
+from scipy import signal
 
 logger = logging.getLogger(__name__)
 
@@ -110,10 +111,13 @@ class Analysis:
         :param data: list of values
         :param threshold:
         '''
-        my_data = np.array(data)
-        maximums = argrelextrema(my_data, np.greater)[0]
+        peaks, _ = signal.find_peaks(
+            data, width=2, distance=3, prominence=1)
 
-        return maximums
+#         my_data = np.array(data)
+#         maximums = argrelextrema(my_data, np.greater)[0]
+
+        return peaks
 
     def __init__(self, app: QtWidgets.QWidget):
         self.app = app
