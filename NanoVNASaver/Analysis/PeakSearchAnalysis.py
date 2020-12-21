@@ -144,7 +144,7 @@ class PeakSearchAnalysis(Analysis):
             logger.debug("Frequency %d", self.app.data11[peaks[i]].freq)
             logger.debug("Value %f", data[peaks[i]])
 
-        if self.checkbox_move_markers:
+        if self.checkbox_move_markers.isChecked():
             if count > len(self.app.markers):
                 logger.warning("More peaks found than there are markers")
             for i in range(min(count, len(self.app.markers))):
