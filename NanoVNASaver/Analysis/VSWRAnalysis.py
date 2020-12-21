@@ -27,6 +27,10 @@ from NanoVNASaver.Formatting import format_complex_imp
 from NanoVNASaver.RFTools import reflection_coefficient
 import os
 import csv
+from NanoVNASaver.Marker.Values import Label
+from NanoVNASaver.Marker.Widget import MarkerLabel
+from NanoVNASaver.Marker.Widget import Marker
+from collections import OrderedDict
 
 logger = logging.getLogger(__name__)
 
@@ -264,10 +268,10 @@ class EFHWAnalysis(ResonanceAnalysis):
     '''
     find only resonance when HI impedance
     '''
+    old_data = []
 
     def reset(self):
         logger.debug("reset")
-        pass
 
     def runAnalysis(self):
         self.reset()
@@ -293,7 +297,7 @@ class EFHWAnalysis(ResonanceAnalysis):
         for i in range(results_header, self.layout.rowCount()):
             self.layout.removeRow(self.layout.rowCount() - 1)
 
-        extended_data = {}
+        extended_data = OrderedDict()
 
         #both = np.intersect1d([i[1] for i in crossing], maximums)
         both = []
@@ -319,6 +323,14 @@ class EFHWAnalysis(ResonanceAnalysis):
                 else:
                     extended_data[m] = my_data
             for i in range(min(len(both), len(self.app.markers))):
+
+                #                 self.app.markers[i].label = {}
+                #                 for l in TYPES:
+                #                     self.app.markers[i][l.label_id] = MarkerLabel(l.name)
+                #                     self.app.markers[i].label['actualfreq'].setMinimumWidth(
+                #                         100)
+                #                     self.app.markers[i].label['returnloss'].setMinimumWidth(80)
+
                 self.app.markers[i].setFrequency(
                     str(self.app.data11[both[i]].freq))
                 self.app.markers[i].frequencyInput.setText(
@@ -365,3 +377,32 @@ class EFHWAnalysis(ResonanceAnalysis):
                 for index in sorted(extended_data.keys()):
                     row = extended_data[index]
                     writer.writerow(row)
+
+        # saving and comparing
+        if self.old_data:
+            self.compare(self.old_data[-1], extended_data)
+        self.old_data.append(extended_data)
+
+    def compare(self, old, new):
+        '''
+        Compare data to help changes
+
+        NB
+        must be same sweep 
+        ( same index must be same frequence )
+        :param old:
+        :param new:
+        '''
+        old_idx = list(old.keys())
+        new_idx = list(new.keys())  # 'odict_keys' object is not subscriptable
+        if len(old_idx) == len(new_idx):
+            logger.debug("may be the same antenna ... analyzing")
+            for i, k in enumerate(old.keys()):
+                logger.info("Risonance %s", i)
+                for d in ["freq", "r", "lambda"]:
+                    logger.info("Delta %s =  %s", d,
+                                new[new_idx[i]][d] - old[k][d])
+
+        else:
+            logger.warning("resonances changed from %s to %s",
+                           len(old.keys()), len(new.keys()))
