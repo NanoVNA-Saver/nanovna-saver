@@ -57,7 +57,8 @@ class AnalysisWindow(QtWidgets.QWidget):
             "High-pass filter", HighPassAnalysis(self.app))
         self.analysis_list.addItem(
             "Band-stop filter", BandStopAnalysis(self.app))
-        # self.analysis_list.addItem("Peak search", PeakSearchAnalysis(self.app))
+        self.analysis_list.addItem(
+            "Simple Peak search", SimplePeakSearchAnalysis(self.app))
         self.analysis_list.addItem(
             "Peak search", PeakSearchAnalysis(self.app))
         self.analysis_list.addItem("VSWR analysis", VSWRAnalysis(self.app))
