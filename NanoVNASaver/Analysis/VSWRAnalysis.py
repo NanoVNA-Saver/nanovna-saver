@@ -397,12 +397,21 @@ class EFHWAnalysis(ResonanceAnalysis):
         new_idx = list(new.keys())  # 'odict_keys' object is not subscriptable
         if len(old_idx) == len(new_idx):
             logger.debug("may be the same antenna ... analyzing")
-            for i, k in enumerate(old.keys()):
-                logger.info("Risonance %s", i)
-                for d in ["freq", "r", "lambda"]:
-                    logger.info("Delta %s =  %s", d,
-                                new[new_idx[i]][d] - old[k][d])
-
+            i_max = len(old_idx)
         else:
             logger.warning("resonances changed from %s to %s",
                            len(old.keys()), len(new.keys()))
+
+            i_max = min(len(old_idx), len(new_idx))
+            logger.debug("Trying to compare only first %s resonances", i_max)
+
+        for i, k in enumerate(old.keys()):
+            if i < i_max:
+                logger.info("Risonance %s at %s", i,
+                            format_frequency(old[k]["freq"]))
+                for d in ["freq", "r", "lambda"]:
+                    logger.info("Delta %s =  %s", d,
+                                round(new[new_idx[i]][d] - old[k][d], 2))
+            else:
+                logger.debug(
+                    "Skipping Risonance %s because is missing in new", i)
