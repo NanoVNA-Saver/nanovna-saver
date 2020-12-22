@@ -31,8 +31,14 @@ from NanoVNASaver.Marker.Values import Label
 from NanoVNASaver.Marker.Widget import MarkerLabel
 from NanoVNASaver.Marker.Widget import Marker
 from collections import OrderedDict
+from NanoVNASaver.Formatting import format_frequency_short
+from NanoVNASaver.Formatting import format_resistance
 
 logger = logging.getLogger(__name__)
+
+
+def round_2(x):
+    return round(x, 2)
 
 
 class VSWRAnalysis(Analysis):
@@ -356,13 +362,27 @@ class EFHWAnalysis(ResonanceAnalysis):
                 else:
                     extended_data[m] = my_data
 
-        for index in sorted(extended_data.keys()):
+        # saving and comparing
+
+        fields = [("freq", format_frequency_short),
+                  ("r", format_resistance),
+                  ("lambda", round_2),
+                  ]
+        if self.old_data:
+            diff = self.compare(
+                self.old_data[-1], extended_data, fields=fields)
+        else:
+            diff = self.compare({}, extended_data, fields=fields)
+        self.old_data.append(extended_data)
+
+        for i, index in enumerate(extended_data.keys()):
 
             self.layout.addRow(
-                "Resonance",
-                QtWidgets.QLabel(
-                    f"{format_frequency(self.app.data11[index].freq)}"
-                    f" ({format_complex_imp(self.app.data11[index].impedance())})"))
+                f"{format_frequency_short(self.app.data11[index].freq)}",
+                QtWidgets.QLabel(f" ({diff[i]['freq']})"
+                                 f" {format_complex_imp(self.app.data11[index].impedance())}"
+                                 f" ({diff[i]['r']})"
+                                 f" {diff[i]['lambda']} m"))
 
         # Remove the final separator line
         # self.layout.removeRow(self.layout.rowCount() - 1)
@@ -378,12 +398,7 @@ class EFHWAnalysis(ResonanceAnalysis):
                     row = extended_data[index]
                     writer.writerow(row)
 
-        # saving and comparing
-        if self.old_data:
-            self.compare(self.old_data[-1], extended_data)
-        self.old_data.append(extended_data)
-
-    def compare(self, old, new):
+    def compare(self, old, new, fields=[("freq", str), ]):
         '''
         Compare data to help changes
 
@@ -393,25 +408,46 @@ class EFHWAnalysis(ResonanceAnalysis):
         :param old:
         :param new:
         '''
+
         old_idx = list(old.keys())
         new_idx = list(new.keys())  # 'odict_keys' object is not subscriptable
-        if len(old_idx) == len(new_idx):
+        diff = {}
+        i_max = min(len(old_idx), len(new_idx))
+        i_tot = max(len(old_idx), len(new_idx))
+
+        if i_max == i_tot:
             logger.debug("may be the same antenna ... analyzing")
-            i_max = len(old_idx)
+
         else:
             logger.warning("resonances changed from %s to %s",
-                           len(old.keys()), len(new.keys()))
+                           len(old_idx), len(new_idx))
 
-            i_max = min(len(old_idx), len(new_idx))
             logger.debug("Trying to compare only first %s resonances", i_max)
 
         for i, k in enumerate(old.keys()):
+            my_diff = {}
             if i < i_max:
                 logger.info("Risonance %s at %s", i,
                             format_frequency(old[k]["freq"]))
-                for d in ["freq", "r", "lambda"]:
+
+                for d, fn in fields:
+                    my_diff[d] = fn(new[new_idx[i]][d] - old[k][d])
                     logger.info("Delta %s =  %s", d,
-                                round(new[new_idx[i]][d] - old[k][d], 2))
+                                my_diff[d])
+
             else:
                 logger.debug(
                     "Skipping Risonance %s because is missing in new", i)
+                for d in fields:
+                    my_diff[d] = "-"
+
+            diff[i] = my_diff
+
+        for i in range(i_max, i_tot):
+            # add missing in old ... if any
+            my_diff = {}
+            for d, _ in fields:
+                my_diff[d] = "-"
+            diff[i] = my_diff
+
+        return diff
