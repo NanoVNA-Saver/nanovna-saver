@@ -52,6 +52,8 @@ WAIT = 0.05
 # incompatible hardware info like:
 # 'PORTS\\VID_04B4&PID_0008\\DEMO'
 # This function will fix it.
+
+
 def _fix_v2_hwinfo(dev):
     if dev.hwid == r'PORTS\VID_04B4&PID_0008\DEMO':
         dev.vid, dev.pid = 0x04b4, 0x0008
@@ -112,12 +114,17 @@ def get_VNA(iface: Interface) -> 'VNA':
     logger.warning("Did not recognize NanoVNA type from firmware.")
     return NanoVNA(iface)
 
+
 def detect_version(serial_port: serial.Serial) -> str:
     data = ""
     for i in range(RETRIES):
         drain_serial(serial_port)
         serial_port.write("\r".encode("ascii"))
+        # workaround for some UnicodeDecodeError ... repeat ;-)
+        drain_serial(serial_port)
+        serial_port.write("\r".encode("ascii"))
         sleep(0.05)
+
         data = serial_port.read(128).decode("ascii")
         if data.startswith("ch> "):
             return "v1"
@@ -129,6 +136,7 @@ def detect_version(serial_port: serial.Serial) -> str:
         logger.debug("Retry detection: %s", i + 1)
     logger.error('No VNA detected. Hardware responded to CR with: %s', data)
     return ""
+
 
 def get_info(serial_port: serial.Serial) -> str:
     for _ in range(RETRIES):
