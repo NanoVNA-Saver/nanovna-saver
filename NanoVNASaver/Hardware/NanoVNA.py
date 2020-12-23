@@ -40,9 +40,24 @@ class NanoVNA(VNA):
         super().__init__(iface)
         self.sweep_method = "sweep"
         self.read_features()
-        self.start = 27000000
-        self.stop = 30000000
+        logger.debug("Setting initial start,stop")
+        self.start, self.stop = self._get_running_frequencies()
         self._sweepdata = []
+
+    def _get_running_frequencies(self):
+
+        if self.name == "NanoVNA":
+            logger.debug("Reading values: frequencies")
+            try:
+                frequencies = super().readValues("frequencies")
+                return frequencies[0], frequencies[-1]
+            except Exception as e:
+                logger.warning("%s reading frequencies", e)
+                logger.info("falling back to generic")
+        else:
+            logger.debug("Name %s, fallback to generic", self.name)
+
+        return VNA._get_running_frequencies(self)
 
     def _capture_data(self) -> bytes:
         timeout = self.serial.timeout
