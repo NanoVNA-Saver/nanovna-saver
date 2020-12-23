@@ -41,6 +41,10 @@ def round_2(x):
     return round(x, 2)
 
 
+def format_resistence_neg(x):
+    return format_resistance(x, allow_negative=True)
+
+
 class VSWRAnalysis(Analysis):
     max_dips_shown = 3
     vswr_limit_value = 1.5
@@ -295,7 +299,7 @@ class EFHWAnalysis(ResonanceAnalysis):
         for d in self.app.data11:
             data.append(d.impedance().real)
 
-        maximums = sorted(self.find_maximums(data))
+        maximums = sorted(self.find_maximums(data, threshold=500))
 
         results_header = self.layout.indexOf(self.results_label)
         logger.debug("Results start at %d, out of %d",
@@ -365,7 +369,7 @@ class EFHWAnalysis(ResonanceAnalysis):
         # saving and comparing
 
         fields = [("freq", format_frequency_short),
-                  ("r", format_resistance),
+                  ("r", format_resistence_neg),
                   ("lambda", round_2),
                   ]
         if self.old_data:
@@ -409,6 +413,10 @@ class EFHWAnalysis(ResonanceAnalysis):
         :param new:
         '''
 
+        def no_compare():
+
+            return {k: "-" for k, _ in fields}
+
         old_idx = list(old.keys())
         new_idx = list(new.keys())  # 'odict_keys' object is not subscriptable
         diff = {}
@@ -424,30 +432,54 @@ class EFHWAnalysis(ResonanceAnalysis):
 
             logger.debug("Trying to compare only first %s resonances", i_max)
 
-        for i, k in enumerate(old.keys()):
+        split = 0
+        max_delta_f = 1000000  # 1M
+        for i, k in enumerate(new_idx):
             my_diff = {}
-            if i < i_max:
-                logger.info("Risonance %s at %s", i,
-                            format_frequency(old[k]["freq"]))
 
-                for d, fn in fields:
-                    my_diff[d] = fn(new[new_idx[i]][d] - old[k][d])
-                    logger.info("Delta %s =  %s", d,
-                                my_diff[d])
+            logger.info("Risonance %s at %s", i,
+                        format_frequency(new[k]["freq"]))
+
+            if len(old_idx) <= i + split:
+                diff[i] = no_compare()
+                continue
+
+            delta_f = new[k]["freq"] - old[old_idx[i + split]]["freq"]
+            if abs(delta_f) < max_delta_f:
+                logger.debug("can compare")
 
             else:
-                logger.debug(
-                    "Skipping Risonance %s because is missing in new", i)
-                for d in fields:
-                    my_diff[d] = "-"
+                logger.debug("can't compare, %s is too much ",
+                             format_frequency(delta_f))
+                if delta_f > 0:
+
+                    logger.debug("possible missing band, ")
+                    if (len(old_idx) > (i + split + 1)):
+                        if abs(new[k]["freq"] - old[old_idx[i + split + 1]]["freq"]) < max_delta_f:
+                            logger.debug("new is missing band, compare next ")
+                            split += 1
+                        # FIXME: manage 2 or more band missing ?!?
+                        else:
+                            logger.debug("new band, non compare ")
+                            diff[i] = no_compare()
+                            continue
+                else:
+                    logger.debug("new band, non compare ")
+                    diff[i] = no_compare()
+
+                    split -= 1
+                    continue
+
+            for d, fn in fields:
+                my_diff[d] = fn(new[k][d] - old[old_idx[i + split]][d])
+                logger.info("Delta %s =  %s", d,
+                            my_diff[d])
 
             diff[i] = my_diff
 
         for i in range(i_max, i_tot):
             # add missing in old ... if any
-            my_diff = {}
-            for d, _ in fields:
-                my_diff[d] = "-"
-            diff[i] = my_diff
+
+            diff[i] = no_compare()
 
         return diff

@@ -101,7 +101,7 @@ class Analysis:
         return minimums
 
     @classmethod
-    def find_maximums(cls, data, threshold=0):
+    def find_maximums(cls, data, threshold=None):
         '''
 
         Find peacs
@@ -116,8 +116,10 @@ class Analysis:
 
 #         my_data = np.array(data)
 #         maximums = argrelextrema(my_data, np.greater)[0]
-
-        return peaks
+        if threshold is None:
+            return peaks
+        else:
+            return [k for k in peaks if data[k] > threshold]
 
     def __init__(self, app: QtWidgets.QWidget):
         self.app = app
