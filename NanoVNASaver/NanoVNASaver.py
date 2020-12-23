@@ -109,7 +109,6 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.calibration = Calibration()
 
-
         logger.debug("Building user interface")
 
         self.baseTitle = f"NanoVNA Saver {NanoVNASaver.version}"
@@ -196,7 +195,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         left_column = QtWidgets.QVBoxLayout()
         right_column = QtWidgets.QVBoxLayout()
         right_column.addLayout(self.charts_layout)
-        self.marker_frame.setHidden(not self.settings.value("MarkersVisible", True, bool))
+        self.marker_frame.setHidden(
+            not self.settings.value("MarkersVisible", True, bool))
         chart_widget = QtWidgets.QWidget()
         chart_widget.setLayout(right_column)
         self.splitter = QtWidgets.QSplitter()
@@ -317,9 +317,11 @@ class NanoVNASaver(QtWidgets.QWidget):
         tdr_control_box.setMaximumWidth(250)
 
         self.tdr_result_label = QtWidgets.QLabel()
-        tdr_control_layout.addRow("Estimated cable length:", self.tdr_result_label)
+        tdr_control_layout.addRow(
+            "Estimated cable length:", self.tdr_result_label)
 
-        self.tdr_button = QtWidgets.QPushButton("Time Domain Reflectometry ...")
+        self.tdr_button = QtWidgets.QPushButton(
+            "Time Domain Reflectometry ...")
         self.tdr_button.clicked.connect(lambda: self.display_window("tdr"))
 
         tdr_control_layout.addRow(self.tdr_button)
@@ -525,7 +527,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             logger.info("Connection %s", self.interface)
             try:
                 self.interface.open()
-                self.interface.timeout = 0.05
+
             except (IOError, AttributeError) as exc:
                 logger.error("Tried to open %s and failed: %s",
                              self.interface, exc)
@@ -533,13 +535,15 @@ class NanoVNASaver(QtWidgets.QWidget):
             if not self.interface.isOpen():
                 logger.error("Unable to open port %s", self.interface)
                 return
+            self.interface.timeout = 0.05
         sleep(0.1)
         try:
             self.vna = get_VNA(self.interface)
         except IOError as exc:
             logger.error("Unable to connect to VNA: %s", exc)
 
-        self.vna.validateInput = self.settings.value("SerialInputValidation", True, bool)
+        self.vna.validateInput = self.settings.value(
+            "SerialInputValidation", True, bool)
 
         # connected
         self.btnSerialToggle.setText("Disconnect")
@@ -661,7 +665,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         if s21data:
             min_gain = min(s21data, key=lambda data: data.gain)
-            max_gain = min(s21data, key=lambda data: data.gain)
+            max_gain = max(s21data, key=lambda data: data.gain)
             self.s21_min_gain_label.setText(
                 f"{format_gain(min_gain.gain)}"
                 f" @ {format_frequency(min_gain.freq)}")
