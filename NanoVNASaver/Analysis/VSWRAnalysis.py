@@ -379,7 +379,7 @@ class EFHWAnalysis(ResonanceAnalysis):
             diff = self.compare({}, extended_data, fields=fields)
         self.old_data.append(extended_data)
 
-        for i, index in enumerate(extended_data.keys()):
+        for i, index in enumerate(sorted(extended_data.keys())):
 
             self.layout.addRow(
                 f"{format_frequency_short(self.app.data11[index].freq)}",
@@ -417,8 +417,9 @@ class EFHWAnalysis(ResonanceAnalysis):
 
             return {k: "-" for k, _ in fields}
 
-        old_idx = list(old.keys())
-        new_idx = list(new.keys())  # 'odict_keys' object is not subscriptable
+        old_idx = sorted(old.keys())
+        # 'odict_keys' object is not subscriptable
+        new_idx = sorted(new.keys())
         diff = {}
         i_max = min(len(old_idx), len(new_idx))
         i_tot = max(len(old_idx), len(new_idx))
