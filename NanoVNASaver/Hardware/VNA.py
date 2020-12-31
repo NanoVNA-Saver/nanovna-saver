@@ -146,6 +146,14 @@ class VNA:
     def resetSweep(self, start: int, stop: int):
         pass
 
+    def _get_running_frequencies(self):
+        '''
+        If possible, read frequencies already runnung
+        if not return default values
+        Overwrite in specific HW
+        '''
+        return 27000000, 30000000
+
     def connected(self) -> bool:
         return self.serial.is_open
 
