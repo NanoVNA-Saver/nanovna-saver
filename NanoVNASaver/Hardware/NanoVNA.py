@@ -46,16 +46,13 @@ class NanoVNA(VNA):
 
     def _get_running_frequencies(self):
 
-        if self.name == "NanoVNA":
-            logger.debug("Reading values: frequencies")
-            try:
-                frequencies = super().readValues("frequencies")
-                return frequencies[0], frequencies[-1]
-            except Exception as e:
-                logger.warning("%s reading frequencies", e)
-                logger.info("falling back to generic")
-        else:
-            logger.debug("Name %s, fallback to generic", self.name)
+        logger.debug("Reading values: frequencies")
+        try:
+            frequencies = super().readValues("frequencies")
+            return frequencies[0], frequencies[-1]
+        except Exception as e:
+            logger.warning("%s reading frequencies", e)
+            logger.info("falling back to generic")
 
         return VNA._get_running_frequencies(self)
 
