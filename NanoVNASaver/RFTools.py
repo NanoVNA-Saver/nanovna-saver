@@ -67,6 +67,18 @@ class Datapoint(NamedTuple):
     def impedance(self, ref_impedance: float = 50) -> complex:
         return gamma_to_impedance(self.z, ref_impedance)
 
+    def shuntImpedance(self, ref_impedance: float = 50) -> complex:
+        try:
+            return 0.5 * ref_impedance * self.z / (1 - self.z)
+        except ZeroDivisionError:
+            return math.inf
+
+    def seriesImpedance(self, ref_impedance: float = 50) -> complex:
+        try:
+            return 2 * ref_impedance * (1 - self.z) / self.z
+        except ZeroDivisionError:
+            return math.inf
+
     def qFactor(self, ref_impedance: float = 50) -> float:
         imp = self.impedance(ref_impedance)
         if imp.real == 0.0:

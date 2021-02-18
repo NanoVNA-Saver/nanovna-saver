@@ -40,9 +40,9 @@ from .Charts import (
     CapacitanceChart,
     CombinedLogMagChart, GroupDelayChart, InductanceChart,
     LogMagChart, PhaseChart,
-    MagnitudeChart, MagnitudeZChart,
+    MagnitudeChart, MagnitudeZChart, MagnitudeZShuntChart, MagnitudeZSeriesChart,
     QualityFactorChart, VSWRChart, PermeabilityChart, PolarChart,
-    RealImaginaryChart,
+    RealImaginaryChart, RealImaginaryShuntChart, RealImaginarySeriesChart,
     SmithChart, SParameterChart, TDRChart,
 )
 from .Calibration import Calibration
@@ -155,6 +155,10 @@ class NanoVNASaver(QtWidgets.QWidget):
                                                 reflective=False)),
                 ("log_mag", LogMagChart("S21 Gain")),
                 ("magnitude", MagnitudeChart("|S21|")),
+                ("magnitude_z_shunt", MagnitudeZShuntChart("S21 |Z| shunt")),
+                ("magnitude_z_series", MagnitudeZSeriesChart("S21 |Z| series")),
+                ("real_imag_shunt", RealImaginaryShuntChart("S21 R+jX shunt")),
+                ("real_imag_series", RealImaginarySeriesChart("S21 R+jX series")),
                 ("phase", PhaseChart("S21 Phase")),
                 ("polar", PolarChart("S21 Polar Plot")),
                 ("s_parameter", SParameterChart("S21 Real/Imaginary")),

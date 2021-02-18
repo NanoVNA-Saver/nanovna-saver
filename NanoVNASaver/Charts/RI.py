@@ -178,8 +178,10 @@ class RealImaginaryChart(FrequencyChart):
             max_real = 0
             max_imag = -1000
             for d in self.data:
-                imp = d.impedance()
+                imp = self.impedance(d)
                 re, im = imp.real, imp.imag
+                if math.isinf(re): # Avoid infinite scales
+                    continue
                 if re > max_real:
                     max_real = re
                 if re < min_real:
@@ -191,8 +193,10 @@ class RealImaginaryChart(FrequencyChart):
             for d in self.reference:  # Also check min/max for the reference sweep
                 if d.freq < fstart or d.freq > fstop:
                     continue
-                imp = d.impedance()
+                imp = self.impedance(d)
                 re, im = imp.real, imp.imag
+                if math.isinf(re): # Avoid infinite scales
+                    continue
                 if re > max_real:
                     max_real = re
                 if re < min_real:
@@ -397,12 +401,15 @@ class RealImaginaryChart(FrequencyChart):
                 self.drawMarker(x, y_im, qp, m.color, self.markers.index(m)+1)
 
     def getImYPosition(self, d: Datapoint) -> int:
-        im = d.impedance().imag
+        im = self.impedance(d).imag
         return self.topMargin + round((self.max_imag - im) / self.span_imag * self.chartHeight)
 
     def getReYPosition(self, d: Datapoint) -> int:
-        re = d.impedance().real
-        return self.topMargin + round((self.max_real - re) / self.span_real * self.chartHeight)
+        re = self.impedance(d).real
+        if math.isfinite(re):
+            return self.topMargin + round((self.max_real - re) / self.span_real * self.chartHeight)
+        else:
+            return self.topMargin
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
@@ -520,3 +527,6 @@ class RealImaginaryChart(FrequencyChart):
         self.action_set_fixed_maximum_imag.setText(
             f"Maximum jX ({self.maxDisplayImag})")
         self.menu.exec_(event.globalPos())
+
+    def impedance(self, p: Datapoint) -> complex:
+        return p.impedance()

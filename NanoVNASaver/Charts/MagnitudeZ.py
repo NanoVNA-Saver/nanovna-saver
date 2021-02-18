@@ -89,6 +89,8 @@ class MagnitudeZChart(FrequencyChart):
             maxValue = 0
             for d in self.data:
                 mag = self.magnitude(d)
+                if math.isinf(mag): # Avoid infinite scales
+                    continue
                 if mag > maxValue:
                     maxValue = mag
                 if mag < minValue:
@@ -97,6 +99,8 @@ class MagnitudeZChart(FrequencyChart):
                 if d.freq < self.fstart or d.freq > self.fstop:
                     continue
                 mag = self.magnitude(d)
+                if math.isinf(mag): # Avoid infinite scales
+                    continue
                 if mag > maxValue:
                     maxValue = mag
                 if mag < minValue:
@@ -142,7 +146,10 @@ class MagnitudeZChart(FrequencyChart):
 
     def getYPosition(self, d: Datapoint) -> int:
         mag = self.magnitude(d)
-        return self.topMargin + round((self.maxValue - mag) / self.span * self.chartHeight)
+        if math.isfinite(mag):
+            return self.topMargin + round((self.maxValue - mag) / self.span * self.chartHeight)
+        else:
+            return self.topMargin
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
