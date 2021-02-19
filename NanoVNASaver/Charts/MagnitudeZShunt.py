@@ -1,6 +1,8 @@
+
 #  NanoVNASaver
 #
 #  A python program to view and export Touchstone data from a NanoVNA
+#  Copyright (C) 2019, 2020  Rune B. Broberg
 #  Copyright (C) 2020 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
@@ -15,30 +17,24 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+import math
 import logging
+from typing import List
 
-from NanoVNASaver.Hardware.Serial import Interface
-from NanoVNASaver.Hardware.NanoVNA_H import NanoVNA_H
+from PyQt5 import QtWidgets, QtGui
+
+from NanoVNASaver.RFTools import Datapoint
+from .MagnitudeZ import MagnitudeZChart
+
 
 logger = logging.getLogger(__name__)
 
 
-class NanoVNA_H4(NanoVNA_H):
-    name = "NanoVNA-H4"
-    screenwidth = 480
-    screenheight = 320
-    valid_datapoints = (101, 11, 51, 201, 401)
+class MagnitudeZShuntChart(MagnitudeZChart):
+    def __init__(self, name=""):
+        super().__init__(name)
 
-    def __init__(self, iface: Interface):
-        super().__init__(iface)
-        self.sweep_method = "scan"
-        if "Scan mask command" in self.features:
-            self.sweep_method = "scan_mask"
+    @staticmethod
+    def magnitude(p: Datapoint) -> float:
+        return abs(p.shuntImpedance())
 
-    # def read_features(self):
-    #     logger.debug("read_features")
-    #     super().read_features()
-    #     if self.readFirmware().find("DiSlord") > 0:
-    #         self.features.add("Customizable data points")
-    #         logger.info("VNA has 201 datapoints capability")
-    #         self.valid_datapoints = (201, 11, 51,101)
