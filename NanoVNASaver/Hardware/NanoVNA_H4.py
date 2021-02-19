@@ -27,7 +27,7 @@ class NanoVNA_H4(NanoVNA_H):
     name = "NanoVNA-H4"
     screenwidth = 480
     screenheight = 320
-    valid_datapoints = (101, 11, 51, 201)
+    valid_datapoints = (101, 11, 51, 201, 401)
 
     def __init__(self, iface: Interface):
         super().__init__(iface)
