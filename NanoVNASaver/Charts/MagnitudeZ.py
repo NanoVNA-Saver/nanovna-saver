@@ -82,7 +82,10 @@ class MagnitudeZChart(FrequencyChart):
             maxValue = self.maxDisplayValue
             minValue = self.minDisplayValue
             self.maxValue = maxValue
-            self.minValue = minValue
+            if self.logarithmicY and minValue <= 0:
+                self.minValue = 0.01
+            else:
+                self.minValue = minValue
         else:
             # Find scaling
             minValue = 100
@@ -107,7 +110,10 @@ class MagnitudeZChart(FrequencyChart):
                     minValue = mag
 
             minValue = 10*math.floor(minValue/10)
+            if self.logarithmicY and minValue <= 0:
+                minValue = 0.01
             self.minValue = minValue
+
             maxValue = 10*math.ceil(maxValue/10)
             self.maxValue = maxValue
 
@@ -118,17 +124,21 @@ class MagnitudeZChart(FrequencyChart):
 
         target_ticks = math.floor(self.chartHeight / 60)
 
-        for i in range(target_ticks):
-            val = minValue + (i / target_ticks) * span
-            y = self.topMargin + round((self.maxValue - val) / self.span * self.chartHeight)
+        for i in range(1, target_ticks):
+            val = minValue + (i / target_ticks) * self.span
+            if self.logarithmicY:
+                y = self.topMargin + (self.maxValue - val) / self.span * self.chartHeight
+                val = self.valueAtPosition(y)[0]
+            else:
+                y = self.topMargin + round((self.maxValue - val) / self.span * self.chartHeight)
+
             qp.setPen(self.textColor)
-            if val != minValue:
-                digits = max(0, min(2, math.floor(3 - math.log10(abs(val)))))
-                if digits == 0:
-                    vswrstr = str(round(val))
-                else:
-                    vswrstr = str(round(val, digits))
-                qp.drawText(3, y + 3, vswrstr)
+            digits = max(0, min(2, math.floor(5 - math.log10(abs(val)))))
+            if digits == 0:
+                vswrstr = str(round(val))
+            else:
+                vswrstr = str(round(val, digits))
+            qp.drawText(3, y + 3, vswrstr)
             qp.setPen(QtGui.QPen(self.foregroundColor))
             qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.chartWidth, y)
 
@@ -146,19 +156,31 @@ class MagnitudeZChart(FrequencyChart):
 
     def getYPosition(self, d: Datapoint) -> int:
         mag = self.magnitude(d)
+        if self.logarithmicY and mag == 0:
+            return self.topMargin - self.chartHeight
         if math.isfinite(mag):
+            if self.logarithmicY:
+                span = math.log(self.maxValue) - math.log(self.minValue)
+                return self.topMargin + round((math.log(self.maxValue) - math.log(mag)) / span * self.chartHeight)
             return self.topMargin + round((self.maxValue - mag) / self.span * self.chartHeight)
         else:
             return self.topMargin
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
-        val = -1 * ((absy / self.chartHeight * self.span) - self.maxValue)
+        if self.logarithmicY:
+            span = math.log(self.maxValue) - math.log(self.minValue)
+            val = math.exp(math.log(self.maxValue) - absy * span / self.chartHeight)
+        else:
+            val = self.maxValue - (absy / self.chartHeight * self.span)
         return [val]
 
     @staticmethod
     def magnitude(p: Datapoint) -> float:
         return abs(p.impedance())
+
+    def logarithmicYAllowed(self) -> bool:
+        return True;
 
     def copy(self):
         new_chart: LogMagChart = super().copy()

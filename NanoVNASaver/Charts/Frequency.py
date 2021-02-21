@@ -44,6 +44,7 @@ class FrequencyChart(Chart):
     fixedValues = False
 
     logarithmicX = False
+    logarithmicY = False
 
     leftMargin = 30
     rightMargin = 20
@@ -132,6 +133,23 @@ class FrequencyChart(Chart):
         self.y_menu.addAction(self.action_set_fixed_maximum)
         self.y_menu.addAction(self.action_set_fixed_minimum)
 
+        if self.logarithmicYAllowed(): # This only works for some plot types
+            self.y_menu.addSeparator()
+            vertical_mode_group = QtWidgets.QActionGroup(self.y_menu)
+            self.action_set_linear_y = QtWidgets.QAction("Linear")
+            self.action_set_linear_y.setCheckable(True)
+            self.action_set_logarithmic_y = QtWidgets.QAction("Logarithmic")
+            self.action_set_logarithmic_y.setCheckable(True)
+            vertical_mode_group.addAction(self.action_set_linear_y)
+            vertical_mode_group.addAction(self.action_set_logarithmic_y)
+            self.action_set_linear_y.triggered.connect(
+                lambda: self.setLogarithmicY(False))
+            self.action_set_logarithmic_y.triggered.connect(
+                lambda: self.setLogarithmicY(True))
+            self.action_set_linear_y.setChecked(True)
+            self.y_menu.addAction(self.action_set_linear_y)
+            self.y_menu.addAction(self.action_set_logarithmic_y)
+
         self.menu.addMenu(self.x_menu)
         self.menu.addMenu(self.y_menu)
         self.menu.addSeparator()
@@ -178,11 +196,20 @@ class FrequencyChart(Chart):
             self.fixedValues = False
             self.y_action_automatic.setChecked(True)
             self.y_action_fixed_span.setChecked(False)
+        if fixed_values and self.minDisplayValue <= 0:
+            self.minDisplayValue = 0.01
         self.update()
 
     def setLogarithmicX(self, logarithmic: bool):
         self.logarithmicX = logarithmic
         self.update()
+
+    def setLogarithmicY(self, logarithmic: bool):
+        self.logarithmicY = logarithmic and self.logarithmicYAllowed()
+        self.update()
+
+    def logarithmicYAllowed(self) -> bool:
+        return False
 
     def setMinimumFrequency(self):
         min_freq_str, selected = QtWidgets.QInputDialog.getText(
@@ -217,6 +244,8 @@ class FrequencyChart(Chart):
             return
         if not (self.fixedValues and min_val >= self.maxDisplayValue):
             self.minDisplayValue = min_val
+        if self.logarithmicY and min_val <= 0:
+            self.minDisplayValue = 0.01
         if self.fixedValues:
             self.update()
 
@@ -239,6 +268,9 @@ class FrequencyChart(Chart):
         self.action_automatic.setChecked(True)
         self.logarithmicX = False
         self.action_set_linear_x.setChecked(True)
+        self.logarithmicY = False
+        if self.logarithmicYAllowed():
+            self.action_set_linear_y.setChecked(True)
         self.update()
 
     def getXPosition(self, d: Datapoint) -> int:
@@ -585,6 +617,11 @@ class FrequencyChart(Chart):
         new_chart.setLogarithmicX(self.logarithmicX)
         new_chart.action_set_logarithmic_x.setChecked(self.logarithmicX)
         new_chart.action_set_linear_x.setChecked(not self.logarithmicX)
+
+        new_chart.setLogarithmicY(self.logarithmicY)
+        if self.logarithmicYAllowed():
+            new_chart.action_set_logarithmic_y.setChecked(self.logarithmicY)
+            new_chart.action_set_linear_y.setChecked(not self.logarithmicY)
         return new_chart
 
     def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
