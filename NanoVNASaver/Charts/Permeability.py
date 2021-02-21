@@ -40,7 +40,6 @@ class PermeabilityChart(FrequencyChart):
         self.fstop = 0
         self.span = 0.01
         self.max = 0
-        self.logarithmicY = True
 
         self.maxDisplayValue = 100
         self.minDisplayValue = -100
@@ -59,27 +58,11 @@ class PermeabilityChart(FrequencyChart):
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
-        self.y_menu.addSeparator()
-        self.y_log_lin_group = QtWidgets.QActionGroup(self.y_menu)
-        self.y_action_linear = QtWidgets.QAction("Linear")
-        self.y_action_linear.setCheckable(True)
-        self.y_action_logarithmic = QtWidgets.QAction("Logarithmic")
-        self.y_action_logarithmic.setCheckable(True)
-        self.y_action_logarithmic.setChecked(True)
-        self.y_action_linear.triggered.connect(lambda: self.setLogarithmicY(False))
-        self.y_action_logarithmic.triggered.connect(lambda: self.setLogarithmicY(True))
-        self.y_log_lin_group.addAction(self.y_action_linear)
-        self.y_log_lin_group.addAction(self.y_action_logarithmic)
-        self.y_menu.addAction(self.y_action_linear)
-        self.y_menu.addAction(self.y_action_logarithmic)
-
-    def setLogarithmicY(self, logarithmic: bool):
-        self.logarithmicY = logarithmic
-        self.update()
+    def logarithmicYAllowed(self) -> bool:
+        return True;
 
     def copy(self):
         new_chart: PermeabilityChart = super().copy()
-        new_chart.logarithmicY = self.logarithmicY
         return new_chart
 
     def drawChart(self, qp: QtGui.QPainter):
