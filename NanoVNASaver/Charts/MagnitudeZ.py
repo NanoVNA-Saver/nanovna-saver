@@ -23,6 +23,7 @@ from typing import List
 from PyQt5 import QtWidgets, QtGui
 
 from NanoVNASaver.RFTools import Datapoint
+from NanoVNASaver.SITools import Format, Value
 from .Frequency import FrequencyChart
 from .LogMag import LogMagChart
 
@@ -122,32 +123,22 @@ class MagnitudeZChart(FrequencyChart):
             span = 0.01
         self.span = span
 
-        target_ticks = math.floor(self.chartHeight / 60)
-
-        for i in range(1, target_ticks):
-            val = minValue + (i / target_ticks) * self.span
-            if self.logarithmicY:
-                y = self.topMargin + (self.maxValue - val) / self.span * self.chartHeight
-                val = self.valueAtPosition(y)[0]
-            else:
-                y = self.topMargin + round((self.maxValue - val) / self.span * self.chartHeight)
-
-            qp.setPen(self.textColor)
-            digits = max(0, min(2, math.floor(5 - math.log10(abs(val)))))
-            if digits == 0:
-                vswrstr = str(round(val))
-            else:
-                vswrstr = str(round(val, digits))
-            qp.drawText(3, y + 3, vswrstr)
+        # We want one horizontal tick per 50 pixels, at most
+        horizontal_ticks = math.floor(self.chartHeight/50)
+        fmt = Format(max_nr_digits=4)
+        for i in range(horizontal_ticks):
+            y = self.topMargin + round(i * self.chartHeight / horizontal_ticks)
             qp.setPen(QtGui.QPen(self.foregroundColor))
-            qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.chartWidth, y)
+            qp.drawLine(self.leftMargin - 5, y,
+                        self.leftMargin + self.chartWidth + 5, y)
+            qp.setPen(QtGui.QPen(self.textColor))
+            val = Value(self.valueAtPosition(y)[0], fmt=fmt)
+            qp.drawText(3, y + 4, str(val))
 
-        qp.setPen(QtGui.QPen(self.foregroundColor))
-        qp.drawLine(self.leftMargin - 5, self.topMargin,
-                    self.leftMargin + self.chartWidth, self.topMargin)
-        qp.setPen(self.textColor)
-        qp.drawText(3, self.topMargin + 4, str(maxValue))
-        qp.drawText(3, self.chartHeight+self.topMargin, str(minValue))
+        qp.drawText(3,
+                    self.chartHeight + self.topMargin,
+                    str(Value(self.minValue, fmt=fmt)))
+
         self.drawFrequencyTicks(qp)
 
         self.drawData(qp, self.data, self.sweepColor)

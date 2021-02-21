@@ -24,6 +24,7 @@ from PyQt5 import QtWidgets, QtGui
 
 from NanoVNASaver.Marker import Marker
 from NanoVNASaver.RFTools import Datapoint
+from NanoVNASaver.SITools import Format, Value
 
 from .Chart import Chart
 from .Frequency import FrequencyChart
@@ -254,6 +255,7 @@ class RealImaginaryChart(FrequencyChart):
         # We want one horizontal tick per 50 pixels, at most
         horizontal_ticks = math.floor(self.chartHeight/50)
 
+        fmt = Format(max_nr_digits=4)
         for i in range(horizontal_ticks):
             y = self.topMargin + round(i * self.chartHeight / horizontal_ticks)
             qp.setPen(QtGui.QPen(self.foregroundColor))
@@ -261,13 +263,13 @@ class RealImaginaryChart(FrequencyChart):
             qp.setPen(QtGui.QPen(self.textColor))
             re = max_real - i * span_real / horizontal_ticks
             im = max_imag - i * span_imag / horizontal_ticks
-            qp.drawText(3, y + 4, str(round(re, 1)))
-            qp.drawText(self.leftMargin + self.chartWidth + 8, y + 4, str(round(im, 1)))
+            qp.drawText(3, y + 4, str(Value(re, fmt=fmt)))
+            qp.drawText(self.leftMargin + self.chartWidth + 8, y + 4, str(Value(im, fmt=fmt)))
 
-        qp.drawText(3, self.chartHeight + self.topMargin, str(round(min_real, 1)))
+        qp.drawText(3, self.chartHeight + self.topMargin, str(Value(im, fmt=fmt)))
         qp.drawText(self.leftMargin + self.chartWidth + 8,
                     self.chartHeight + self.topMargin,
-                    str(round(min_imag, 1)))
+                    str(Value(min_imag, fmt=fmt)))
 
         self.drawFrequencyTicks(qp)
 
