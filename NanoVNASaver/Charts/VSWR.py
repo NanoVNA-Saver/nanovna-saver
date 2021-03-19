@@ -29,7 +29,6 @@ logger = logging.getLogger(__name__)
 
 
 class VSWRChart(FrequencyChart):
-    logarithmicY = False
     maxVSWR = 3
     span = 2
 
@@ -51,27 +50,12 @@ class VSWRChart(FrequencyChart):
         pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
-        self.y_menu.addSeparator()
-        self.y_log_lin_group = QtWidgets.QActionGroup(self.y_menu)
-        self.y_action_linear = QtWidgets.QAction("Linear")
-        self.y_action_linear.setCheckable(True)
-        self.y_action_linear.setChecked(True)
-        self.y_action_logarithmic = QtWidgets.QAction("Logarithmic")
-        self.y_action_logarithmic.setCheckable(True)
-        self.y_action_linear.triggered.connect(lambda: self.setLogarithmicY(False))
-        self.y_action_logarithmic.triggered.connect(lambda: self.setLogarithmicY(True))
-        self.y_log_lin_group.addAction(self.y_action_linear)
-        self.y_log_lin_group.addAction(self.y_action_logarithmic)
-        self.y_menu.addAction(self.y_action_linear)
-        self.y_menu.addAction(self.y_action_logarithmic)
 
-    def setLogarithmicY(self, logarithmic: bool):
-        self.logarithmicY = logarithmic
-        self.update()
+    def logarithmicYAllowed(self) -> bool:
+        return True
 
     def copy(self):
         new_chart: VSWRChart = super().copy()
-        new_chart.logarithmicY = self.logarithmicY
         return new_chart
 
     def drawValues(self, qp: QtGui.QPainter):
@@ -211,5 +195,4 @@ class VSWRChart(FrequencyChart):
 
     def resetDisplayLimits(self):
         self.maxDisplayValue = 25
-        self.logarithmicY = False
         super().resetDisplayLimits()

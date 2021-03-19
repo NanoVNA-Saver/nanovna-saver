@@ -23,6 +23,7 @@ from typing import List
 from PyQt5 import QtWidgets, QtGui
 
 from NanoVNASaver.RFTools import Datapoint
+from NanoVNASaver.SITools import Format, Value
 from .Frequency import FrequencyChart
 from .LogMag import LogMagChart
 
@@ -82,7 +83,10 @@ class MagnitudeZChart(FrequencyChart):
             maxValue = self.maxDisplayValue
             minValue = self.minDisplayValue
             self.maxValue = maxValue
-            self.minValue = minValue
+            if self.logarithmicY and minValue <= 0:
+                self.minValue = 0.01
+            else:
+                self.minValue = minValue
         else:
             # Find scaling
             minValue = 100
@@ -107,7 +111,10 @@ class MagnitudeZChart(FrequencyChart):
                     minValue = mag
 
             minValue = 10*math.floor(minValue/10)
+            if self.logarithmicY and minValue <= 0:
+                minValue = 0.01
             self.minValue = minValue
+
             maxValue = 10*math.ceil(maxValue/10)
             self.maxValue = maxValue
 
@@ -116,28 +123,22 @@ class MagnitudeZChart(FrequencyChart):
             span = 0.01
         self.span = span
 
-        target_ticks = math.floor(self.chartHeight / 60)
-
-        for i in range(target_ticks):
-            val = minValue + (i / target_ticks) * span
-            y = self.topMargin + round((self.maxValue - val) / self.span * self.chartHeight)
-            qp.setPen(self.textColor)
-            if val != minValue:
-                digits = max(0, min(2, math.floor(3 - math.log10(abs(val)))))
-                if digits == 0:
-                    vswrstr = str(round(val))
-                else:
-                    vswrstr = str(round(val, digits))
-                qp.drawText(3, y + 3, vswrstr)
+        # We want one horizontal tick per 50 pixels, at most
+        horizontal_ticks = math.floor(self.chartHeight/50)
+        fmt = Format(max_nr_digits=4)
+        for i in range(horizontal_ticks):
+            y = self.topMargin + round(i * self.chartHeight / horizontal_ticks)
             qp.setPen(QtGui.QPen(self.foregroundColor))
-            qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.chartWidth, y)
+            qp.drawLine(self.leftMargin - 5, y,
+                        self.leftMargin + self.chartWidth + 5, y)
+            qp.setPen(QtGui.QPen(self.textColor))
+            val = Value(self.valueAtPosition(y)[0], fmt=fmt)
+            qp.drawText(3, y + 4, str(val))
 
-        qp.setPen(QtGui.QPen(self.foregroundColor))
-        qp.drawLine(self.leftMargin - 5, self.topMargin,
-                    self.leftMargin + self.chartWidth, self.topMargin)
-        qp.setPen(self.textColor)
-        qp.drawText(3, self.topMargin + 4, str(maxValue))
-        qp.drawText(3, self.chartHeight+self.topMargin, str(minValue))
+        qp.drawText(3,
+                    self.chartHeight + self.topMargin,
+                    str(Value(self.minValue, fmt=fmt)))
+
         self.drawFrequencyTicks(qp)
 
         self.drawData(qp, self.data, self.sweepColor)
@@ -146,19 +147,31 @@ class MagnitudeZChart(FrequencyChart):
 
     def getYPosition(self, d: Datapoint) -> int:
         mag = self.magnitude(d)
+        if self.logarithmicY and mag == 0:
+            return self.topMargin - self.chartHeight
         if math.isfinite(mag):
+            if self.logarithmicY:
+                span = math.log(self.maxValue) - math.log(self.minValue)
+                return self.topMargin + round((math.log(self.maxValue) - math.log(mag)) / span * self.chartHeight)
             return self.topMargin + round((self.maxValue - mag) / self.span * self.chartHeight)
         else:
             return self.topMargin
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
-        val = -1 * ((absy / self.chartHeight * self.span) - self.maxValue)
+        if self.logarithmicY:
+            span = math.log(self.maxValue) - math.log(self.minValue)
+            val = math.exp(math.log(self.maxValue) - absy * span / self.chartHeight)
+        else:
+            val = self.maxValue - (absy / self.chartHeight * self.span)
         return [val]
 
     @staticmethod
     def magnitude(p: Datapoint) -> float:
         return abs(p.impedance())
+
+    def logarithmicYAllowed(self) -> bool:
+        return True;
 
     def copy(self):
         new_chart: LogMagChart = super().copy()
