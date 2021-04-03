@@ -37,28 +37,69 @@ class MagLoopAnalysis(VSWRAnalysis):
 
     '''
     max_dips_shown = 1
-    vswr_limit_value = 2.56
-    bandwith = 250000
+
+    vswr_bandwith_value = 2.56  # -3 dB ?!?
+    bandwith = 25000  # 25 kHz
+
+    def __init__(self, app):
+        # app.sweep_control.get_start() return -1 ?!?
+        # will populate first runAnalysis()
+        self.min_freq = None  # app.sweep_control.get_start()
+        self.max_freq = None  # app.sweep_control.get_end()
+        self.vswr_limit_value = self.vswr_bandwith_value
+
+        super().__init__(app)
 
     def runAnalysis(self):
         super().runAnalysis()
+        new_start = self.app.sweep_control.get_start()
+        new_end = self.app.sweep_control.get_end()
+        if self.min_freq is None:
+            self.min_freq = new_start
+            self.max_freq = new_end
+            print (f"limiti {self.min_freq}- {self.max_freq} ")
 
         if len(self.minimums) > 1:
             self.layout.addRow("", QtWidgets.QLabel(
                 "Not magloop or try to lower VSWR limit"))
-
-        for m in self.minimums[:1]:
-            # only one time
+            return
+        elif len(self.minimums) == 1:
+            m = self.minimums[0]
             start, lowest, end = m
             if start != end:
-                Q = self.app.data11[lowest].freq / \
-                    (self.app.data11[end].freq - self.app.data11[start].freq)
-                self.layout.addRow(
-                    "Q", QtWidgets.QLabel("{}".format(int(Q))))
-                self.app.sweep_control.set_start(self.app.data11[start].freq)
-                self.app.sweep_control.set_end(self.app.data11[end].freq)
+                if self.vswr_limit_value == self.vswr_bandwith_value:
+                    Q = self.app.data11[lowest].freq / \
+                        (self.app.data11[end].freq -
+                         self.app.data11[start].freq)
+                    self.layout.addRow(
+                        "Q", QtWidgets.QLabel("{}".format(int(Q))))
+                    new_start = self.app.data11[start].freq - self.bandwith
+                    new_end = self.app.data11[end].freq + self.bandwith
+
             else:
-                self.app.sweep_control.set_start(
-                    self.app.data11[start].freq - self.bandwith)
-                self.app.sweep_control.set_end(
-                    self.app.data11[end].freq + self.bandwith)
+                new_start = self.app.data11[start].freq - 2 * self.bandwith
+                new_end = self.app.data11[end].freq + 2 * self.bandwith
+            if self.vswr_limit_value > self.vswr_bandwith_value:
+                self.vswr_limit_value = max(
+                    self.vswr_bandwith_value, self.vswr_limit_value - 2)
+        else:
+            new_start = new_start - 5 * self.bandwith
+            new_end = new_end + 5 * self.bandwith
+            if all((new_start <= self.min_freq,
+                    new_end >= self.max_freq)):
+                if self.vswr_limit_value < 10:
+                    print(f"aumento limite a {self.vswr_limit_value}")
+                    self.vswr_limit_value += 2
+                    self.input_vswr_limit.setValue(self.vswr_limit_value)
+                    print(f"aumento limite a {self.vswr_limit_value}")
+
+        print("start è ", self.app.sweep_control.get_start())
+
+        new_start = max(self.min_freq, new_start)
+        new_end = min(self.max_freq, new_end)
+        print(f"nuova analisi limitata {new_start}  {new_end}")
+
+        self.app.sweep_control.set_start(new_start)
+
+        self.app.sweep_control.set_end(new_end)
+        # self.app.sweep_control.update_sweep()
