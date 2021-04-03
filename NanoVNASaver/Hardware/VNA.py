@@ -57,6 +57,7 @@ class VNA:
         self.datapoints = self.valid_datapoints[0]
         self.bandwidth = 1000
         self.bw_method = "ttrftech"
+        self.sweep_max_freq_Hz = None
         if self.connected():
             self.version = self.readVersion()
             self.read_features()

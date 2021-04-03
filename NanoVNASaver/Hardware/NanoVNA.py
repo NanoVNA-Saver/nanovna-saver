@@ -42,6 +42,7 @@ class NanoVNA(VNA):
         self.read_features()
         logger.debug("Setting initial start,stop")
         self.start, self.stop = self._get_running_frequencies()
+        self.sweep_max_freq_Hz = 300e6
         self._sweepdata = []
 
     def _get_running_frequencies(self):

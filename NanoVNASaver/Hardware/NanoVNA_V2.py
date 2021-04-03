@@ -94,6 +94,11 @@ class NanoVNA_V2(VNA):
         self.features.add("Customizable data points")
         # TODO: more than one dp per freq
         self.features.add("Multi data points")
+        self.board_revision = self.read_board_revision()
+        if self.board_revision >= Version("2.0.4"):
+            self.sweep_max_freq_Hz = 4400e6
+        else:
+            self.sweep_max_freq_Hz = 3000e6
         if self.version <= Version("1.0.1"):
             logger.debug("Hack for s21 oddity in first sweeppoint")
             self.features.add("S21 hack")
@@ -210,7 +215,9 @@ class NanoVNA_V2(VNA):
         if len(resp) != 2:
             logger.error("Timeout reading version registers")
             return None
-        return Version(f"{resp[0]}.0.{resp[1]}")
+        result = Version(f"{resp[0]}.0.{resp[1]}")
+        logger.debug("read_board_revision: %s", result)
+        return result
 
 
     def setSweep(self, start, stop):
