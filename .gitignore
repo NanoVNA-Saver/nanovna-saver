@@ -11,3 +11,4 @@
 settings.json
 .gitignore
 .coverage
+/nanovna-saver.exe.spec
