@@ -59,7 +59,11 @@ class Datapoint(NamedTuple):
         mag = abs(self.z)
         if mag == 1:
             return 1
-        return (1 + mag) / (1 - mag)
+        else:
+            vswr = (1 + mag) / (1 - mag)
+        if vswr < 1:
+            return 1000
+        return vswr
 
     @property
     def wavelength(self) -> float:
