@@ -232,8 +232,17 @@ class SweepWorker(QtCore.QRunnable):
                     break
                 logger.warning("Stop during average. Discarding sweep result.")
                 return [], [], []
-            logger.debug("Reading average no %d / %d", i+1, averages)
-            freq, tmp11, tmp21 = self.readSegment(start, stop)
+            logger.debug("Reading average no %d / %d", i + 1, averages)
+            retry = 0
+            tmp11 = []
+            while not tmp11 and retry < 5:
+                sleep(0.5 * retry)
+                retry += 1
+                freq, tmp11, tmp21 = self.readSegment(start, stop)
+                if retry > 1:
+                    logger.error("retry %s readSegment(%s,%s)",
+                                 retry, start, stop)
+                    sleep(0.5)
             values11.append(tmp11)
             values21.append(tmp21)
             self.percentage += 100 / (self.sweep.segments * averages)
@@ -313,7 +322,6 @@ class SweepWorker(QtCore.QRunnable):
                         f"You can disable data validation on the"
                         f"device settings screen.")
         return returndata
-
 
     def gui_error(self, message: str):
         self.error_message = message
