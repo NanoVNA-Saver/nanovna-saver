@@ -266,7 +266,7 @@ class RealImaginaryChart(FrequencyChart):
             qp.drawText(3, y + 4, str(Value(re, fmt=fmt)))
             qp.drawText(self.leftMargin + self.chartWidth + 8, y + 4, str(Value(im, fmt=fmt)))
 
-        qp.drawText(3, self.chartHeight + self.topMargin, str(Value(im, fmt=fmt)))
+        qp.drawText(3, self.chartHeight + self.topMargin, str(Value(min_real, fmt=fmt)))
         qp.drawText(self.leftMargin + self.chartWidth + 8,
                     self.chartHeight + self.topMargin,
                     str(Value(min_imag, fmt=fmt)))
