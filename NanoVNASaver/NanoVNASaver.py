@@ -571,6 +571,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.sweep_control.update_center_span()
         self.sweep_control.update_step_size()
 
+        self.windows["sweep_settings"].vna_connected()
+
         logger.debug("Starting initial sweep")
         self.sweep_start()
 
@@ -840,3 +842,6 @@ class NanoVNASaver(QtWidgets.QWidget):
     def update_sweep_title(self):
         for c in self.subscribing_charts:
             c.setSweepTitle(self.sweep.properties.name)
+
+    def set_tx_power(self, freq_range, power_desc):
+        self.vna.setTXPower(freq_range, power_desc)

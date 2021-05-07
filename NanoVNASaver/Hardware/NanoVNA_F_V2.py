@@ -6,6 +6,7 @@ import numpy as np
 from PyQt5 import QtGui
 
 from NanoVNASaver.Hardware.NanoVNA import NanoVNA
+from NanoVNASaver.Hardware.Serial import Interface
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +15,10 @@ class NanoVNA_F_V2(NanoVNA):
     name = "NanoVNA-F_V2"
     screenwidth = 800
     screenheight = 480
+
+    def __init__(self, iface: Interface):
+        super().__init__(iface)
+        self.sweep_max_freq_Hz = 3e9
 
     def getScreenshot(self) -> QtGui.QPixmap:
         logger.debug("Capturing screenshot...")
