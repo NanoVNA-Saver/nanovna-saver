@@ -1,0 +1,7 @@
+# Default for all text files
+*     text=auto whitespace=trailing-space,tab-in-indent,tabwidth=2
+*.py  text=auto whitespace=trailing-space,tab-in-indent,tabwidth=4
+  
+# Denote all files that are truly binary and should not be modified.
+*.png binary
+*.jpg binary
