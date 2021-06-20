@@ -351,3 +351,7 @@ class Marker(QtCore.QObject, Value):
             self.label['s21phase'].setText(format_phase(s21.phase))
             self.label['s21polar'].setText(
                 str(round(abs(s21.z), 2)) + "∠" + format_phase(s21.phase))
+            self.label['s21magshunt'].setText(format_magnitude(abs(s21.shuntImpedance())))
+            self.label['s21magseries'].setText(format_magnitude(abs(s21.seriesImpedance())))
+            self.label['s21realimagshunt'].setText(format_complex_imp(s21.shuntImpedance(), allow_negative=True))
+            self.label['s21realimagseries'].setText(format_complex_imp(s21.seriesImpedance(), allow_negative=True))

@@ -16,23 +16,20 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+import math
 import logging
+from typing import List
 
-import serial
-import numpy as np
-from PyQt5 import QtGui
+from NanoVNASaver.RFTools import Datapoint
 
-from NanoVNASaver.Hardware.NanoVNA import NanoVNA
-from NanoVNASaver.Hardware.Serial import Interface
+from .RI import RealImaginaryChart
 
 logger = logging.getLogger(__name__)
 
 
-class NanoVNA_F(NanoVNA):
-    name = "NanoVNA-F"
-    screenwidth = 800
-    screenheight = 480
+class RealImaginarySeriesChart(RealImaginaryChart):
+    def __init__(self, name=""):
+        super().__init__(name)
 
-    def __init__(self, iface: Interface):
-        super().__init__(iface)
-        self.sweep_max_freq_Hz = 1500e6
+    def impedance(self, p: Datapoint) -> complex:
+        return p.seriesImpedance()

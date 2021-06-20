@@ -57,6 +57,15 @@ _ADDR_FW_MINOR = 0xf4
 
 WRITE_SLEEP = 0.05
 
+_ADF4350_TXPOWER_DESC_MAP = {
+    0: '9dB attenuation',
+    1: '6dB attenuation',
+    2: '3dB attenuation',
+    3: 'Maximum',
+}
+_ADF4350_TXPOWER_DESC_REV_MAP = {
+    value: key for key, value in _ADF4350_TXPOWER_DESC_MAP.items()}
+
 class NanoVNA_V2(VNA):
     name = "NanoVNA-V2"
     valid_datapoints = (101, 11, 51, 201, 301, 501, 1023)
@@ -94,9 +103,21 @@ class NanoVNA_V2(VNA):
         self.features.add("Customizable data points")
         # TODO: more than one dp per freq
         self.features.add("Multi data points")
+        self.board_revision = self.read_board_revision()
+        if self.board_revision >= Version("2.0.4"):
+            self.sweep_max_freq_Hz = 4400e6
+        else:
+            self.sweep_max_freq_Hz = 3000e6
         if self.version <= Version("1.0.1"):
             logger.debug("Hack for s21 oddity in first sweeppoint")
             self.features.add("S21 hack")
+        if self.version >= Version("1.0.2"):
+            self.features.update({"Set TX power partial", "Set Average"})
+            # Can only set ADF4350 power, i.e. for >= 140MHz
+            self.txPowerRanges = [
+                ((140e6, self.sweep_max_freq_Hz),
+                 [_ADF4350_TXPOWER_DESC_MAP[value] for value in (3, 2, 1, 0)]),
+            ]
 
     def readFirmware(self) -> str:
         result = f"HW: {self.read_board_revision()}\nFW: {self.version}"
@@ -210,7 +231,9 @@ class NanoVNA_V2(VNA):
         if len(resp) != 2:
             logger.error("Timeout reading version registers")
             return None
-        return Version(f"{resp[0]}.0.{resp[1]}")
+        result = Version(f"{resp[0]}.0.{resp[1]}")
+        logger.debug("read_board_revision: %s", result)
+        return result
 
 
     def setSweep(self, start, stop):
@@ -238,3 +261,21 @@ class NanoVNA_V2(VNA):
         with self.serial.lock:
             self.serial.write(cmd)
             sleep(WRITE_SLEEP)
+
+    def setTXPower(self, freq_range, power_desc):
+        if freq_range[0] != 140e6:
+            raise ValueError('Invalid TX power frequency range')
+        # 140MHz..max => ADF4350
+        self._set_register(0x42, _ADF4350_TXPOWER_DESC_REV_MAP[power_desc], 1)
+
+    def _set_register(self, addr, value, size):
+        if size == 1:
+            packet = pack("<BBB", _CMD_WRITE, addr, value)
+        elif size == 2:
+            packet = pack("<BBH", _CMD_WRITE2, addr, value)
+        elif size == 4:
+            packet = pack("<BBI", _CMD_WRITE4, addr, value)
+        elif size == 8:
+            packet = pack("<BBQ", _CMD_WRITE8, addr, value)
+        self.serial.write(packet)
+        logger.debug("set register %02x (size %d) to %x", addr, size, value)

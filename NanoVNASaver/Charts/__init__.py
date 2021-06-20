@@ -9,10 +9,14 @@ from .LogMag import LogMagChart
 from .CLogMag import CombinedLogMagChart
 from .Magnitude import MagnitudeChart
 from .MagnitudeZ import MagnitudeZChart
+from .MagnitudeZShunt import MagnitudeZShuntChart
+from .MagnitudeZSeries import MagnitudeZSeriesChart
 from .Permeability import PermeabilityChart
 from .Phase import PhaseChart
 from .QFactor import QualityFactorChart
 from .RI import RealImaginaryChart
+from .RIShunt import RealImaginaryShuntChart
+from .RISeries import RealImaginarySeriesChart
 from .Smith import SmithChart
 from .SParam import SParameterChart
 from .TDR import TDRChart

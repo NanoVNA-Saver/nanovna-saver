@@ -57,6 +57,10 @@ class VNA:
         self.datapoints = self.valid_datapoints[0]
         self.bandwidth = 1000
         self.bw_method = "ttrftech"
+        self.sweep_max_freq_Hz = None
+        # [((min_freq, max_freq), [description]]. Order by increasing
+        # frequency. Put default output power first.
+        self.txPowerRanges = []
         if self.connected():
             self.version = self.readVersion()
             self.read_features()
@@ -146,6 +150,14 @@ class VNA:
     def resetSweep(self, start: int, stop: int):
         pass
 
+    def _get_running_frequencies(self):
+        '''
+        If possible, read frequencies already runnung
+        if not return default values
+        Overwrite in specific HW
+        '''
+        return 27000000, 30000000
+
     def connected(self) -> bool:
         return self.serial.is_open
 
@@ -187,3 +199,6 @@ class VNA:
 
     def setSweep(self, start, stop):
         list(self.exec_command(f"sweep {start} {stop} {self.datapoints}"))
+
+    def setTXPower(self, freq_range, power_desc):
+        raise NotImplementedError()

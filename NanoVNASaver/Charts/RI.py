@@ -24,6 +24,7 @@ from PyQt5 import QtWidgets, QtGui
 
 from NanoVNASaver.Marker import Marker
 from NanoVNASaver.RFTools import Datapoint
+from NanoVNASaver.SITools import Format, Value
 
 from .Chart import Chart
 from .Frequency import FrequencyChart
@@ -178,8 +179,10 @@ class RealImaginaryChart(FrequencyChart):
             max_real = 0
             max_imag = -1000
             for d in self.data:
-                imp = d.impedance()
+                imp = self.impedance(d)
                 re, im = imp.real, imp.imag
+                if math.isinf(re): # Avoid infinite scales
+                    continue
                 if re > max_real:
                     max_real = re
                 if re < min_real:
@@ -191,8 +194,10 @@ class RealImaginaryChart(FrequencyChart):
             for d in self.reference:  # Also check min/max for the reference sweep
                 if d.freq < fstart or d.freq > fstop:
                     continue
-                imp = d.impedance()
+                imp = self.impedance(d)
                 re, im = imp.real, imp.imag
+                if math.isinf(re): # Avoid infinite scales
+                    continue
                 if re > max_real:
                     max_real = re
                 if re < min_real:
@@ -250,6 +255,7 @@ class RealImaginaryChart(FrequencyChart):
         # We want one horizontal tick per 50 pixels, at most
         horizontal_ticks = math.floor(self.chartHeight/50)
 
+        fmt = Format(max_nr_digits=4)
         for i in range(horizontal_ticks):
             y = self.topMargin + round(i * self.chartHeight / horizontal_ticks)
             qp.setPen(QtGui.QPen(self.foregroundColor))
@@ -257,13 +263,13 @@ class RealImaginaryChart(FrequencyChart):
             qp.setPen(QtGui.QPen(self.textColor))
             re = max_real - i * span_real / horizontal_ticks
             im = max_imag - i * span_imag / horizontal_ticks
-            qp.drawText(3, y + 4, str(round(re, 1)))
-            qp.drawText(self.leftMargin + self.chartWidth + 8, y + 4, str(round(im, 1)))
+            qp.drawText(3, y + 4, str(Value(re, fmt=fmt)))
+            qp.drawText(self.leftMargin + self.chartWidth + 8, y + 4, str(Value(im, fmt=fmt)))
 
-        qp.drawText(3, self.chartHeight + self.topMargin, str(round(min_real, 1)))
+        qp.drawText(3, self.chartHeight + self.topMargin, str(Value(min_real, fmt=fmt)))
         qp.drawText(self.leftMargin + self.chartWidth + 8,
                     self.chartHeight + self.topMargin,
-                    str(round(min_imag, 1)))
+                    str(Value(min_imag, fmt=fmt)))
 
         self.drawFrequencyTicks(qp)
 
@@ -397,12 +403,15 @@ class RealImaginaryChart(FrequencyChart):
                 self.drawMarker(x, y_im, qp, m.color, self.markers.index(m)+1)
 
     def getImYPosition(self, d: Datapoint) -> int:
-        im = d.impedance().imag
+        im = self.impedance(d).imag
         return self.topMargin + round((self.max_imag - im) / self.span_imag * self.chartHeight)
 
     def getReYPosition(self, d: Datapoint) -> int:
-        re = d.impedance().real
-        return self.topMargin + round((self.max_real - re) / self.span_real * self.chartHeight)
+        re = self.impedance(d).real
+        if math.isfinite(re):
+            return self.topMargin + round((self.max_real - re) / self.span_real * self.chartHeight)
+        else:
+            return self.topMargin
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
@@ -520,3 +529,6 @@ class RealImaginaryChart(FrequencyChart):
         self.action_set_fixed_maximum_imag.setText(
             f"Maximum jX ({self.maxDisplayImag})")
         self.menu.exec_(event.globalPos())
+
+    def impedance(self, p: Datapoint) -> complex:
+        return p.impedance()

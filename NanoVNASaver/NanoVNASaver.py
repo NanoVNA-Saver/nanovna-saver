@@ -40,9 +40,9 @@ from .Charts import (
     CapacitanceChart,
     CombinedLogMagChart, GroupDelayChart, InductanceChart,
     LogMagChart, PhaseChart,
-    MagnitudeChart, MagnitudeZChart,
+    MagnitudeChart, MagnitudeZChart, MagnitudeZShuntChart, MagnitudeZSeriesChart,
     QualityFactorChart, VSWRChart, PermeabilityChart, PolarChart,
-    RealImaginaryChart,
+    RealImaginaryChart, RealImaginaryShuntChart, RealImaginarySeriesChart,
     SmithChart, SParameterChart, TDRChart,
 )
 from .Calibration import Calibration
@@ -109,7 +109,6 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.calibration = Calibration()
 
-
         logger.debug("Building user interface")
 
         self.baseTitle = f"NanoVNA Saver {NanoVNASaver.version}"
@@ -155,6 +154,10 @@ class NanoVNASaver(QtWidgets.QWidget):
                                                 reflective=False)),
                 ("log_mag", LogMagChart("S21 Gain")),
                 ("magnitude", MagnitudeChart("|S21|")),
+                ("magnitude_z_shunt", MagnitudeZShuntChart("S21 |Z| shunt")),
+                ("magnitude_z_series", MagnitudeZSeriesChart("S21 |Z| series")),
+                ("real_imag_shunt", RealImaginaryShuntChart("S21 R+jX shunt")),
+                ("real_imag_series", RealImaginarySeriesChart("S21 R+jX series")),
                 ("phase", PhaseChart("S21 Phase")),
                 ("polar", PolarChart("S21 Polar Plot")),
                 ("s_parameter", SParameterChart("S21 Real/Imaginary")),
@@ -196,7 +199,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         left_column = QtWidgets.QVBoxLayout()
         right_column = QtWidgets.QVBoxLayout()
         right_column.addLayout(self.charts_layout)
-        self.marker_frame.setHidden(not self.settings.value("MarkersVisible", True, bool))
+        self.marker_frame.setHidden(
+            not self.settings.value("MarkersVisible", True, bool))
         chart_widget = QtWidgets.QWidget()
         chart_widget.setLayout(right_column)
         self.splitter = QtWidgets.QSplitter()
@@ -317,9 +321,11 @@ class NanoVNASaver(QtWidgets.QWidget):
         tdr_control_box.setMaximumWidth(250)
 
         self.tdr_result_label = QtWidgets.QLabel()
-        tdr_control_layout.addRow("Estimated cable length:", self.tdr_result_label)
+        tdr_control_layout.addRow(
+            "Estimated cable length:", self.tdr_result_label)
 
-        self.tdr_button = QtWidgets.QPushButton("Time Domain Reflectometry ...")
+        self.tdr_button = QtWidgets.QPushButton(
+            "Time Domain Reflectometry ...")
         self.tdr_button.clicked.connect(lambda: self.display_window("tdr"))
 
         tdr_control_layout.addRow(self.tdr_button)
@@ -525,7 +531,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             logger.info("Connection %s", self.interface)
             try:
                 self.interface.open()
-                self.interface.timeout = 0.05
+
             except (IOError, AttributeError) as exc:
                 logger.error("Tried to open %s and failed: %s",
                              self.interface, exc)
@@ -533,13 +539,15 @@ class NanoVNASaver(QtWidgets.QWidget):
             if not self.interface.isOpen():
                 logger.error("Unable to open port %s", self.interface)
                 return
+            self.interface.timeout = 0.05
         sleep(0.1)
         try:
             self.vna = get_VNA(self.interface)
         except IOError as exc:
             logger.error("Unable to connect to VNA: %s", exc)
 
-        self.vna.validateInput = self.settings.value("SerialInputValidation", True, bool)
+        self.vna.validateInput = self.settings.value(
+            "SerialInputValidation", True, bool)
 
         # connected
         self.btnSerialToggle.setText("Disconnect")
@@ -562,6 +570,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.sweep_control.set_segments(1)  # speed up things
         self.sweep_control.update_center_span()
         self.sweep_control.update_step_size()
+
+        self.windows["sweep_settings"].vna_connected()
 
         logger.debug("Starting initial sweep")
         self.sweep_start()
@@ -661,7 +671,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         if s21data:
             min_gain = min(s21data, key=lambda data: data.gain)
-            max_gain = min(s21data, key=lambda data: data.gain)
+            max_gain = max(s21data, key=lambda data: data.gain)
             self.s21_min_gain_label.setText(
                 f"{format_gain(min_gain.gain)}"
                 f" @ {format_frequency(min_gain.freq)}")
@@ -832,3 +842,6 @@ class NanoVNASaver(QtWidgets.QWidget):
     def update_sweep_title(self):
         for c in self.subscribing_charts:
             c.setSweepTitle(self.sweep.properties.name)
+
+    def set_tx_power(self, freq_range, power_desc):
+        self.vna.setTXPower(freq_range, power_desc)

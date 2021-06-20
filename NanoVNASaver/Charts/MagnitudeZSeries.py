@@ -1,3 +1,4 @@
+
 #  NanoVNASaver
 #
 #  A python program to view and export Touchstone data from a NanoVNA
@@ -16,23 +17,24 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+import math
 import logging
+from typing import List
 
-import serial
-import numpy as np
-from PyQt5 import QtGui
+from PyQt5 import QtWidgets, QtGui
 
-from NanoVNASaver.Hardware.NanoVNA import NanoVNA
-from NanoVNASaver.Hardware.Serial import Interface
+from NanoVNASaver.RFTools import Datapoint
+from .MagnitudeZ import MagnitudeZChart
+
 
 logger = logging.getLogger(__name__)
 
 
-class NanoVNA_F(NanoVNA):
-    name = "NanoVNA-F"
-    screenwidth = 800
-    screenheight = 480
+class MagnitudeZSeriesChart(MagnitudeZChart):
+    def __init__(self, name=""):
+        super().__init__(name)
 
-    def __init__(self, iface: Interface):
-        super().__init__(iface)
-        self.sweep_max_freq_Hz = 1500e6
+    @staticmethod
+    def magnitude(p: Datapoint) -> float:
+        return abs(p.seriesImpedance())
+

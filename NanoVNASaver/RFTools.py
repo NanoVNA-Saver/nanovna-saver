@@ -39,6 +39,7 @@ class Datapoint(NamedTuple):
     @property
     def z(self) -> complex:
         """ return the datapoint impedance as complex number """
+        # FIXME: not impedance, but s11 ?
         return complex(self.re, self.im)
 
     @property
@@ -66,6 +67,18 @@ class Datapoint(NamedTuple):
 
     def impedance(self, ref_impedance: float = 50) -> complex:
         return gamma_to_impedance(self.z, ref_impedance)
+
+    def shuntImpedance(self, ref_impedance: float = 50) -> complex:
+        try:
+            return 0.5 * ref_impedance * self.z / (1 - self.z)
+        except ZeroDivisionError:
+            return math.inf
+
+    def seriesImpedance(self, ref_impedance: float = 50) -> complex:
+        try:
+            return 2 * ref_impedance * (1 - self.z) / self.z
+        except ZeroDivisionError:
+            return math.inf
 
     def qFactor(self, ref_impedance: float = 50) -> float:
         imp = self.impedance(ref_impedance)
@@ -158,7 +171,7 @@ def corr_att_data(data: List[Datapoint], att: float) -> List[Datapoint]:
     if att <= 0:
         return data
     else:
-        att = 10**(att/20)
+        att = 10**(att / 20)
     ndata = []
     for dp in data:
         corrected = dp.z * att

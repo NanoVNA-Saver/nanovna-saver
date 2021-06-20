@@ -17,28 +17,14 @@ points, and generally display and analyze the resulting data.
 Latest Changes
 --------------
 
+### Changes in v0.3.9
+
 ### Changes in v0.3.8
 
 - Allow editing of bands above 2.4GHz
 - Restore column layout on start
 - Support for Nanovna-F V2
 - Fixes a crash with S21 hack
-
-### Changes in v0.3.7
-
-- Added a delta marker
-- Segments can now have exponential different step widths
-  (see logarithmic sweeping)
-- More different data points selectable
-  (shorter are useful on logarithmic sweeping)
-- Scrollable marker column
-- Markers initialize on start, middle, end
-- Frequency input is now more "lazy"
-  10m, 50K and 1g are now valid for 10MHz, 50kHz and 1GHz
-- Added a wavelength field to Markers
-- 32 bit windows binaries build in actions
-- Stability improvements due to better exception handling
-- Workaround for wrong first S21mag value on V2 devices
 
 Introduction
 ------------

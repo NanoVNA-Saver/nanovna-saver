@@ -54,6 +54,10 @@ TYPES = (
     Label("s21phase", "S21 Phase", "S21 Phase", True),
     Label("s21polar", "S21 Polar", "S21 Polar", False),
     Label("s21groupdelay", "S21 Group Delay", "S21 Group Delay", False),
+    Label("s21magshunt", "S21 |Z| shunt", "S21 Z Magnitude shunt", False),
+    Label("s21magseries", "S21 |Z| series", "S21 Z Magnitude series", False),
+    Label("s21realimagshunt", "S21 R+jX shunt", "S21 Z Real+Imag shunt", False),
+    Label("s21realimagseries", "S21 R+jX series", "S21 Z Real+Imag series", False),
 )
 
 

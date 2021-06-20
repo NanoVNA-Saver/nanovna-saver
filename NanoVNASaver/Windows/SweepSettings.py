@@ -44,6 +44,10 @@ class SweepSettingsWindow(QtWidgets.QWidget):
 
         layout.addWidget(self.title_box())
         layout.addWidget(self.settings_box())
+        # We can only populate this box after the VNA has been connected.
+        self._power_box = QtWidgets.QGroupBox("Power")
+        self._power_layout = QtWidgets.QFormLayout(self._power_box)
+        layout.addWidget(self._power_box)
         layout.addWidget(self.sweep_box())
         self.update_band()
 
@@ -155,6 +159,17 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         layout.addRow(btn_set_band_sweep)
         return box
 
+    def vna_connected(self):
+        while self._power_layout.rowCount():
+            self._power_layout.removeRow(0)
+        for freq_range, power_descs in self.app.vna.txPowerRanges:
+            power_sel = QtWidgets.QComboBox()
+            power_sel.addItems(power_descs)
+            power_sel.currentTextChanged.connect(
+                partial(self.update_tx_power, freq_range))
+            self._power_layout.addRow("TX power {}..{}".format(
+                *map(format_frequency_short, freq_range)), power_sel)
+
     def update_band(self, apply: bool = False):
         logger.debug("update_band(%s)", apply)
         index_start = self.band_list.model().index(self.band_list.currentIndex(), 1)
@@ -233,3 +248,8 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         with self.app.sweep.lock:
             self.app.sweep.properties.name = title
         self.app.update_sweep_title()
+
+    def update_tx_power(self, freq_range, power_desc):
+        logger.debug("update_tx_power(%r)", power_desc)
+        with self.app.sweep.lock:
+            self.app.set_tx_power(freq_range, power_desc)
