@@ -19,6 +19,11 @@ Latest Changes
 
 ### Changes in v0.3.9
 
+- TX Power on V2
+- New analysis
+- Magnitude Z Chart
+- VSWR Chart improvements
+
 ### Changes in v0.3.8
 
 - Allow editing of bands above 2.4GHz
