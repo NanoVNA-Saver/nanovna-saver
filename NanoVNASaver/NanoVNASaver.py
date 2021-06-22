@@ -49,7 +49,6 @@ from .Calibration import Calibration
 from .Marker import Marker, DeltaMarker
 from .SweepWorker import SweepWorker
 from .Settings import BandsModel, Sweep
-from .Touchstone import Touchstone
 from .About import VERSION
 
 logger = logging.getLogger(__name__)
@@ -440,47 +439,6 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.serialPortInput.insertItem(1, f"{iface}", iface)
         self.serialPortInput.repaint()
 
-    def exportFile(self, nr_params: int = 1):
-        if len(self.data11) == 0:
-            QtWidgets.QMessageBox.warning(
-                self, "No data to save", "There is no data to save.")
-            return
-        if nr_params > 2 and len(self.data21) == 0:
-            QtWidgets.QMessageBox.warning(
-                self, "No S21 data to save", "There is no S21 data to save.")
-            return
-
-        filedialog = QtWidgets.QFileDialog(self)
-        if nr_params == 1:
-            filedialog.setDefaultSuffix("s1p")
-            filedialog.setNameFilter(
-                "Touchstone 1-Port Files (*.s1p);;All files (*.*)")
-        else:
-            filedialog.setDefaultSuffix("s2p")
-            filedialog.setNameFilter(
-                "Touchstone 2-Port Files (*.s2p);;All files (*.*)")
-        filedialog.setAcceptMode(QtWidgets.QFileDialog.AcceptSave)
-        selected = filedialog.exec()
-        if not selected:
-            return
-        filename = filedialog.selectedFiles()[0]
-        if filename == "":
-            logger.debug("No file name selected.")
-            return
-
-        ts = Touchstone(filename)
-        ts.sdata[0] = self.data11
-        if nr_params > 1:
-            ts.sdata[1] = self.data21
-            for dp in self.data11:
-                ts.sdata[2].append(Datapoint(dp.freq, 0, 0))
-                ts.sdata[3].append(Datapoint(dp.freq, 0, 0))
-        try:
-            ts.save(nr_params)
-        except IOError as e:
-            logger.exception("Error during file export: %s", e)
-            return
-
     def serialButtonClick(self):
         if not self.vna.connected():
             self.connect_device()
@@ -707,26 +665,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         for c in self.subscribing_charts:
             c.resetReference()
         self.btnResetReference.setDisabled(True)
-
-    def loadReferenceFile(self):
-        filename, _ = QtWidgets.QFileDialog.getOpenFileName(
-            filter="Touchstone Files (*.s1p *.s2p);;All files (*.*)")
-        if filename != "":
-            self.resetReference()
-            t = Touchstone(filename)
-            t.load()
-            self.setReference(t.s11data, t.s21data, filename)
-
-    def loadSweepFile(self):
-        filename, _ = QtWidgets.QFileDialog.getOpenFileName(
-            filter="Touchstone Files (*.s1p *.s2p);;All files (*.*)")
-        if filename != "":
-            self.data11 = []
-            self.data21 = []
-            t = Touchstone(filename)
-            t.load()
-            self.saveData(t.s11data, t.s21data, filename)
-            self.dataUpdated()
 
     def sizeHint(self) -> QtCore.QSize:
         return QtCore.QSize(1100, 950)
