@@ -31,9 +31,7 @@ logger = logging.getLogger(__name__)
 class LogMagChart(FrequencyChart):
     def __init__(self, name=""):
         super().__init__(name)
-        self.leftMargin = 30
-        self.chartWidth = 250
-        self.chartHeight = 250
+
         self.minDisplayValue = -80
         self.maxDisplayValue = 10
 
@@ -65,12 +63,7 @@ class LogMagChart(FrequencyChart):
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
-        pen = QtGui.QPen(self.sweepColor)
-        pen.setWidth(self.pointSize)
-        line_pen = QtGui.QPen(self.sweepColor)
-        line_pen.setWidth(self.lineThickness)
-        highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
-        highlighter.setWidth(1)
+
         if not self.fixedSpan:
             if len(self.data) > 0:
                 fstart = self.data[0].freq

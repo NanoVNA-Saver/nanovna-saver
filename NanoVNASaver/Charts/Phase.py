@@ -33,11 +33,7 @@ logger = logging.getLogger(__name__)
 class PhaseChart(FrequencyChart):
     def __init__(self, name=""):
         super().__init__(name)
-        self.leftMargin = 40
-        self.chartWidth = 250
-        self.chartHeight = 250
-        self.fstart = 0
-        self.fstop = 0
+
         self.minAngle = 0
         self.maxAngle = 0
         self.span = 0
@@ -65,7 +61,7 @@ class PhaseChart(FrequencyChart):
         self.y_menu.addAction(self.action_unwrap)
 
     def copy(self):
-        new_chart: PhaseChart = super().copy()
+        new_chart = super().copy()
         new_chart.setUnwrap(self.unwrap)
         new_chart.action_unwrap.setChecked(self.unwrap)
         return new_chart
@@ -77,10 +73,6 @@ class PhaseChart(FrequencyChart):
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
-        pen = QtGui.QPen(self.sweepColor)
-        pen.setWidth(self.pointSize)
-        line_pen = QtGui.QPen(self.sweepColor)
-        line_pen.setWidth(self.lineThickness)
 
         if self.unwrap:
             rawData = []
@@ -158,7 +150,6 @@ class PhaseChart(FrequencyChart):
             self.drawBands(qp, fstart, fstop)
 
         self.drawFrequencyTicks(qp)
-
         self.drawData(qp, self.data, self.sweepColor)
         self.drawData(qp, self.reference, self.referenceColor)
         self.drawMarkers(qp)

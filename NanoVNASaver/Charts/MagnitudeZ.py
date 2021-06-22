@@ -34,9 +34,7 @@ logger = logging.getLogger(__name__)
 class MagnitudeZChart(FrequencyChart):
     def __init__(self, name=""):
         super().__init__(name)
-        self.leftMargin = 30
-        self.chartWidth = 250
-        self.chartHeight = 250
+
         self.minDisplayValue = 0
         self.maxDisplayValue = 100
 
@@ -56,12 +54,7 @@ class MagnitudeZChart(FrequencyChart):
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
-        pen = QtGui.QPen(self.sweepColor)
-        pen.setWidth(self.pointSize)
-        line_pen = QtGui.QPen(self.sweepColor)
-        line_pen.setWidth(self.lineThickness)
-        highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
-        highlighter.setWidth(1)
+
         if not self.fixedSpan:
             if len(self.data) > 0:
                 fstart = self.data[0].freq
@@ -152,7 +145,8 @@ class MagnitudeZChart(FrequencyChart):
         if math.isfinite(mag):
             if self.logarithmicY:
                 span = math.log(self.maxValue) - math.log(self.minValue)
-                return self.topMargin + round((math.log(self.maxValue) - math.log(mag)) / span * self.chartHeight)
+                return self.topMargin + round(
+                    (math.log(self.maxValue) - math.log(mag)) / span * self.chartHeight)
             return self.topMargin + round((self.maxValue - mag) / self.span * self.chartHeight)
         else:
             return self.topMargin
@@ -171,7 +165,7 @@ class MagnitudeZChart(FrequencyChart):
         return abs(p.impedance())
 
     def logarithmicYAllowed(self) -> bool:
-        return True;
+        return True
 
     def copy(self):
         new_chart: LogMagChart = super().copy()

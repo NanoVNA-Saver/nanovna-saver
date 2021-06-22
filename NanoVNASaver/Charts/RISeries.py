@@ -16,20 +16,15 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import math
 import logging
-from typing import List
 
 from NanoVNASaver.RFTools import Datapoint
-
 from .RI import RealImaginaryChart
 
 logger = logging.getLogger(__name__)
 
 
 class RealImaginarySeriesChart(RealImaginaryChart):
-    def __init__(self, name=""):
-        super().__init__(name)
 
     def impedance(self, p: Datapoint) -> complex:
         return p.seriesImpedance()

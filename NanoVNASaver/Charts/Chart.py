@@ -170,10 +170,10 @@ class Chart(QtWidgets.QWidget):
                 nearest = m
         return nearest
 
-    def getYPosition(self, d: Datapoint) -> int:
+    def getYPosition(self, _: Datapoint) -> int:
         return 0
 
-    def getXPosition(self, d: Datapoint) -> int:
+    def getXPosition(self, _: Datapoint) -> int:
         return 0
 
     def getPosition(self, d: Datapoint) -> Tuple[int, int]:

@@ -29,18 +29,15 @@ logger = logging.getLogger(__name__)
 
 
 class VSWRChart(FrequencyChart):
-    maxVSWR = 3
-    span = 2
 
     def __init__(self, name=""):
         super().__init__(name)
-        self.leftMargin = 30
-        self.chartWidth = 250
-        self.chartHeight = 250
-        self.fstart = 0
-        self.fstop = 0
+
         self.maxDisplayValue = 25
         self.minDisplayValue = 1
+
+        self.maxVSWR = 3
+        self.span = 2
 
         self.setMinimumSize(self.chartWidth + self.rightMargin + self.leftMargin,
                             self.chartHeight + self.topMargin + self.bottomMargin)
@@ -54,19 +51,9 @@ class VSWRChart(FrequencyChart):
     def logarithmicYAllowed(self) -> bool:
         return True
 
-    def copy(self):
-        new_chart: VSWRChart = super().copy()
-        return new_chart
-
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
-        pen = QtGui.QPen(self.sweepColor)
-        pen.setWidth(self.pointSize)
-        line_pen = QtGui.QPen(self.sweepColor)
-        line_pen.setWidth(self.lineThickness)
-        highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
-        highlighter.setWidth(1)
         if self.fixedSpan:
             fstart = self.minFrequency
             fstop = self.maxFrequency
@@ -152,14 +139,13 @@ class VSWRChart(FrequencyChart):
                 vswrstr = str(round(maxVSWR, digits))
             qp.drawText(3, 35, vswrstr)
 
-        self.drawFrequencyTicks(qp)
-
         qp.setPen(self.swrColor)
         for vswr in self.swrMarkers:
             y = self.getYPositionFromValue(vswr)
             qp.drawLine(self.leftMargin, y, self.leftMargin + self.chartWidth, y)
             qp.drawText(self.leftMargin + 3, y - 1, str(vswr))
 
+        self.drawFrequencyTicks(qp)
         self.drawData(qp, self.data, self.sweepColor)
         self.drawData(qp, self.reference, self.referenceColor)
         self.drawMarkers(qp)

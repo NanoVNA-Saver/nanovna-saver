@@ -53,6 +53,11 @@ class FrequencyChart(Chart):
 
     def __init__(self, name):
         super().__init__(name)
+        self.leftMargin = 30
+        self.chartWidth = 250
+        self.chartHeight = 250
+        self.fstart = 0
+        self.fstop = 0
 
         self.setContextMenuPolicy(QtCore.Qt.DefaultContextMenu)
         mode_group = QtWidgets.QActionGroup(self)
@@ -596,7 +601,7 @@ class FrequencyChart(Chart):
         return x, y
 
     def copy(self):
-        new_chart: FrequencyChart = super().copy()
+        new_chart = super().copy()
         new_chart.fstart = self.fstart
         new_chart.fstop = self.fstop
         new_chart.maxFrequency = self.maxFrequency

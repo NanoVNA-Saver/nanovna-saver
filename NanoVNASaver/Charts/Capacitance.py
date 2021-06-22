@@ -32,9 +32,7 @@ logger = logging.getLogger(__name__)
 class CapacitanceChart(FrequencyChart):
     def __init__(self, name=""):
         super().__init__(name)
-        self.leftMargin = 30
-        self.chartWidth = 250
-        self.chartHeight = 250
+
         self.minDisplayValue = 0
         self.maxDisplayValue = 100
 
@@ -154,7 +152,7 @@ class CapacitanceChart(FrequencyChart):
         return [val * 10e11]
 
     def copy(self):
-        new_chart: CapacitanceChart = super().copy()
+        new_chart = super().copy()
         new_chart.span = self.span
         return new_chart
 
@@ -162,9 +160,7 @@ class CapacitanceChart(FrequencyChart):
 class InductanceChart(FrequencyChart):
     def __init__(self, name=""):
         super().__init__(name)
-        self.leftMargin = 30
-        self.chartWidth = 250
-        self.chartHeight = 250
+
         self.minDisplayValue = 0
         self.maxDisplayValue = 100
 
@@ -283,6 +279,6 @@ class InductanceChart(FrequencyChart):
         return [val * 10e11]
 
     def copy(self):
-        new_chart: InductanceChart = super().copy()
+        new_chart = super().copy()
         new_chart.span = self.span
         return new_chart

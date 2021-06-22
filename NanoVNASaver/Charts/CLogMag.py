@@ -32,9 +32,7 @@ logger = logging.getLogger(__name__)
 class CombinedLogMagChart(FrequencyChart):
     def __init__(self, name=""):
         super().__init__(name)
-        self.leftMargin = 30
-        self.chartWidth = 250
-        self.chartHeight = 250
+
         self.minDisplayValue = -80
         self.maxDisplayValue = 10
 
