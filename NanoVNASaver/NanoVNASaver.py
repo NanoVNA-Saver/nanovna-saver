@@ -28,7 +28,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from .Windows import (
     AboutWindow, AnalysisWindow, CalibrationWindow,
     DeviceSettingsWindow, DisplaySettingsWindow, SweepSettingsWindow,
-    TDRWindow
+    TDRWindow, FilesWindow
 )
 from .Controls import MarkerControl, SweepControl
 from .Formatting import format_frequency, format_vswr, format_gain
@@ -224,7 +224,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             # "analysis": AnalysisWindow(self),
             "calibration": CalibrationWindow(self),
             "device_settings": DeviceSettingsWindow(self),
-            "file": QtWidgets.QWidget(),
+            "file": FilesWindow(self),
             "sweep_settings": SweepSettingsWindow(self),
             "setup": DisplaySettingsWindow(self),
             "tdr": TDRWindow(self),
@@ -395,49 +395,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         left_column.addWidget(serial_control_box)
 
         ###############################################################
-        #  File control
-        ###############################################################
-
-        self.windows["file"].setWindowTitle("Files")
-        self.windows["file"].setWindowIcon(self.icon)
-        self.windows["file"].setMinimumWidth(200)
-        QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self.windows["file"],
-                            self.windows["file"].hide)
-        file_window_layout = QtWidgets.QVBoxLayout()
-        self.windows["file"].setLayout(file_window_layout)
-
-        load_file_control_box = QtWidgets.QGroupBox("Import file")
-        load_file_control_box.setMaximumWidth(300)
-        load_file_control_layout = QtWidgets.QFormLayout(load_file_control_box)
-
-        btn_load_sweep = QtWidgets.QPushButton("Load as sweep")
-        btn_load_sweep.clicked.connect(self.loadSweepFile)
-        btn_load_reference = QtWidgets.QPushButton("Load reference")
-        btn_load_reference.clicked.connect(self.loadReferenceFile)
-        load_file_control_layout.addRow(btn_load_sweep)
-        load_file_control_layout.addRow(btn_load_reference)
-
-        file_window_layout.addWidget(load_file_control_box)
-
-        save_file_control_box = QtWidgets.QGroupBox("Export file")
-        save_file_control_box.setMaximumWidth(300)
-        save_file_control_layout = QtWidgets.QFormLayout(save_file_control_box)
-
-        btn_export_file = QtWidgets.QPushButton("Save 1-Port file (S1P)")
-        btn_export_file.clicked.connect(lambda: self.exportFile(1))
-        save_file_control_layout.addRow(btn_export_file)
-
-        btn_export_file = QtWidgets.QPushButton("Save 2-Port file (S2P)")
-        btn_export_file.clicked.connect(lambda: self.exportFile(4))
-        save_file_control_layout.addRow(btn_export_file)
-
-        file_window_layout.addWidget(save_file_control_box)
-
-        btn_open_file_window = QtWidgets.QPushButton("Files ...")
-        btn_open_file_window.clicked.connect(
-            lambda: self.display_window("file"))
-
-        ###############################################################
         #  Calibration
         ###############################################################
 
@@ -460,6 +417,13 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         btn_about.clicked.connect(
             lambda: self.display_window("about"))
+
+
+        btn_open_file_window = QtWidgets.QPushButton("Files")
+        btn_open_file_window.setMaximumWidth(250)
+
+        btn_open_file_window.clicked.connect(
+            lambda: self.display_window("file"))
 
         button_grid = QtWidgets.QGridLayout()
         button_grid.addWidget(btn_open_file_window, 0, 0)

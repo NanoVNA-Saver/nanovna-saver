@@ -4,6 +4,7 @@ from .Bands import BandsWindow
 from .CalibrationSettings import CalibrationWindow
 from .DeviceSettings import DeviceSettingsWindow
 from .DisplaySettings import DisplaySettingsWindow
+from .Files import FilesWindow
 from .MarkerSettings import MarkerSettingsWindow
 from .Screenshot import ScreenshotWindow
 from .SweepSettings import SweepSettingsWindow
