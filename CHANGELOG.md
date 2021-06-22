@@ -1,6 +1,11 @@
 Changelog
 =========
 
+v0.3.10
+------
+
+- Default Band ranges for 5 and 9cm
+
 v0.3.9
 ------
 
