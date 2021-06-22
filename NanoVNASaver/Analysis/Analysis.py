@@ -136,10 +136,10 @@ class Analysis:
     def calculateRolloff(self, location1, location2):
         if location1 == location2:
             return 0, 0
-        frequency1 = self.app.data21[location1].freq
-        frequency2 = self.app.data21[location2].freq
-        gain1 = self.app.data21[location1].gain
-        gain2 = self.app.data21[location2].gain
+        frequency1 = self.app.data.s21[location1].freq
+        frequency2 = self.app.data.s21[location2].freq
+        gain1 = self.app.data.s21[location1].gain
+        gain2 = self.app.data.s21[location2].gain
         frequency_factor = frequency2 / frequency1
         if frequency_factor < 1:
             frequency_factor = 1 / frequency_factor

@@ -18,11 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
 import cmath
-from threading import Lock
-from typing import Iterator, List, NamedTuple, Tuple
-
-import numpy as np
-from scipy.interpolate import interp1d
+from typing import List, NamedTuple
 
 from NanoVNASaver.SITools import Format, clamp_value
 
@@ -38,8 +34,7 @@ class Datapoint(NamedTuple):
 
     @property
     def z(self) -> complex:
-        """ return the datapoint impedance as complex number """
-        # FIXME: not impedance, but s11 ?
+        """ return the s value complex number """
         return complex(self.re, self.im)
 
     @property
@@ -61,8 +56,6 @@ class Datapoint(NamedTuple):
             return 1
         else:
             vswr = (1 + mag) / (1 - mag)
-        if vswr < 1:
-            return 1000
         return vswr
 
     @property

@@ -21,7 +21,6 @@ import sys
 import threading
 from collections import OrderedDict
 from time import sleep, strftime, localtime
-from typing import List
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 
@@ -34,7 +33,7 @@ from .Controls import MarkerControl, SweepControl
 from .Formatting import format_frequency, format_vswr, format_gain
 from .Hardware.Hardware import Interface, get_interfaces, get_VNA
 from .Hardware.VNA import VNA
-from .RFTools import Datapoint, corr_att_data
+from .RFTools import corr_att_data
 from .Charts.Chart import Chart
 from .Charts import (
     CapacitanceChart,
@@ -49,6 +48,7 @@ from .Calibration import Calibration
 from .Marker import Marker, DeltaMarker
 from .SweepWorker import SweepWorker
 from .Settings import BandsModel, Sweep
+from .Touchstone import Touchstone
 from .About import VERSION
 
 logger = logging.getLogger(__name__)
@@ -97,11 +97,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.vna = VNA(self.interface)
 
         self.dataLock = threading.Lock()
-        # TODO: use Touchstone class as data container
-        self.data11: List[Datapoint] = []
-        self.data21: List[Datapoint] = []
-        self.referenceS11data: List[Datapoint] = []
-        self.referenceS21data: List[Datapoint] = []
+        self.data = Touchstone()
+        self.ref_data = Touchstone()
 
         self.sweepSource = ""
         self.referenceSource = ""
@@ -534,10 +531,10 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def saveData(self, data, data21, source=None):
         with self.dataLock:
-            self.data11 = data
-            self.data21 = data21
+            self.data.s11 = data
+            self.data.s21 = data21
             if self.s21att > 0:
-                self.data21 = corr_att_data(self.data21, self.s21att)
+                self.data.s21 = corr_att_data(self.data.s21, self.s21att)
         if source is not None:
             self.sweepSource = source
         else:
@@ -548,9 +545,9 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def markerUpdated(self, marker: Marker):
         with self.dataLock:
-            marker.findLocation(self.data11)
+            marker.findLocation(self.data.s11)
             marker.resetLabels()
-            marker.updateLabels(self.data11, self.data21)
+            marker.updateLabels(self.data.s11, self.data.s21)
             for c in self.subscribing_charts:
                 c.update()
         if Marker.count() >= 2 and not self.delta_marker_layout.isHidden():
@@ -563,27 +560,27 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def dataUpdated(self):
         with self.dataLock:
-            s11data = self.data11[:]
-            s21data = self.data21[:]
+            s11 = self.data.s11[:]
+            s21 = self.data.s21[:]
 
         for m in self.markers:
             m.resetLabels()
-            m.updateLabels(s11data, s21data)
+            m.updateLabels(s11, s21)
 
         for c in self.s11charts:
-            c.setData(s11data)
+            c.setData(s11)
 
         for c in self.s21charts:
-            c.setData(s21data)
+            c.setData(s21)
 
         for c in self.combinedCharts:
-            c.setCombinedData(s11data, s21data)
+            c.setCombinedData(s11, s21)
 
         self.sweep_control.progress_bar.setValue(self.worker.percentage)
         self.windows["tdr"].updateTDR()
 
-        if s11data:
-            min_vswr = min(s11data, key=lambda data: data.vswr)
+        if s11:
+            min_vswr = min(s11, key=lambda data: data.vswr)
             self.s11_min_swr_label.setText(
                 f"{format_vswr(min_vswr.vswr)} @ {format_frequency(min_vswr.freq)}")
             self.s11_min_rl_label.setText(format_gain(min_vswr.gain))
@@ -591,9 +588,9 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.s11_min_swr_label.setText("")
             self.s11_min_rl_label.setText("")
 
-        if s21data:
-            min_gain = min(s21data, key=lambda data: data.gain)
-            max_gain = max(s21data, key=lambda data: data.gain)
+        if s21:
+            min_gain = min(s21, key=lambda data: data.gain)
+            max_gain = max(s21, key=lambda data: data.gain)
             self.s21_min_gain_label.setText(
                 f"{format_gain(min_gain.gain)}"
                 f" @ {format_frequency(min_gain.freq)}")
@@ -617,22 +614,22 @@ class NanoVNASaver(QtWidgets.QWidget):
             marker.frequencyInput.textEdited.emit(
                 marker.frequencyInput.text())
 
-    def setReference(self, s11data=None, s21data=None, source=None):
-        if not s11data:
+    def setReference(self, s11=None, s21=None, source=None):
+        if not s11:
             with self.dataLock:
-                s11data = self.data11[:]
-                s21data = self.data21[:]
+                s11 = self.data.s11[:]
+                s21 = self.data.s21[:]
 
-        self.referenceS11data = s11data
+        self.ref_data.s11 = s11
         for c in self.s11charts:
-            c.setReference(s11data)
+            c.setReference(s11)
 
-        self.referenceS21data = s21data
+        self.ref_data.s21 = s21
         for c in self.s21charts:
-            c.setReference(s21data)
+            c.setReference(s21)
 
         for c in self.combinedCharts:
-            c.setCombinedReference(s11data, s21data)
+            c.setCombinedReference(s11, s21)
 
         self.btnResetReference.setDisabled(False)
 
@@ -647,19 +644,18 @@ class NanoVNASaver(QtWidgets.QWidget):
         insert = "("
         if self.sweepSource != "":
             insert += (
-                f"Sweep: {self.sweepSource} @ {len(self.data11)} points"
+                f"Sweep: {self.sweepSource} @ {len(self.data.s11)} points"
                 f"{', ' if self.referenceSource else ''}")
         if self.referenceSource != "":
             insert += (
                 f"Reference: {self.referenceSource} @"
-                f" {len(self.referenceS11data)} points")
+                f" {len(self.ref_data.s11)} points")
         insert += ")"
         title = f"{self.baseTitle} {insert if insert else ''}"
         self.setWindowTitle(title)
 
     def resetReference(self):
-        self.referenceS11data = []
-        self.referenceS21data = []
+        self.ref_data = Touchstone()
         self.referenceSource = ""
         self.updateTitle()
         for c in self.subscribing_charts:

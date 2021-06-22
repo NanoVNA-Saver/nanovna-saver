@@ -524,7 +524,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         for m in self.app.markers:
             m.returnloss_is_positive = state
-            m.updateLabels(self.app.data11, self.app.data21)
+            m.updateLabels(self.app.data.s11, self.app.data.s21)
         self.marker_window.exampleMarker.returnloss_is_positive = state
         self.marker_window.updateMarker()
         self.app.charts["s11"]["log_mag"].isInverted = state

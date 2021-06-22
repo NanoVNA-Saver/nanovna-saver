@@ -17,7 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
-from typing import List, Set
+from typing import List, Set, Tuple
 import logging
 
 from PyQt5 import QtWidgets, QtGui, QtCore
@@ -176,7 +176,7 @@ class Chart(QtWidgets.QWidget):
     def getXPosition(self, d: Datapoint) -> int:
         return 0
 
-    def getPosition(self, d: Datapoint) -> (int, int):
+    def getPosition(self, d: Datapoint) -> Tuple[int, int]:
         return self.getXPosition(d), self.getYPosition(d)
 
     def setDrawLines(self, draw_lines):

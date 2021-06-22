@@ -68,11 +68,11 @@ class FilesWindow(QtWidgets.QWidget):
             lambda: self.app.display_window("file"))
 
     def exportFile(self, nr_params: int = 1):
-        if len(self.app.data11) == 0:
+        if len(self.app.data.s11) == 0:
             QtWidgets.QMessageBox.warning(
                 self, "No data to save", "There is no data to save.")
             return
-        if nr_params > 2 and len(self.app.data21) == 0:
+        if nr_params > 2 and len(self.app.data.s21) == 0:
             QtWidgets.QMessageBox.warning(
                 self, "No S21 data to save", "There is no S21 data to save.")
             return
@@ -96,10 +96,10 @@ class FilesWindow(QtWidgets.QWidget):
             return
 
         ts = Touchstone(filename)
-        ts.sdata[0] = self.app.data11
+        ts.sdata[0] = self.app.data.s11
         if nr_params > 1:
-            ts.sdata[1] = self.app.data21
-            for dp in self.app.data11:
+            ts.sdata[1] = self.app.data.s21
+            for dp in self.app.data.s11:
                 ts.sdata[2].append(Datapoint(dp.freq, 0, 0))
                 ts.sdata[3].append(Datapoint(dp.freq, 0, 0))
         try:
@@ -115,15 +115,15 @@ class FilesWindow(QtWidgets.QWidget):
             self.app.resetReference()
             t = Touchstone(filename)
             t.load()
-            self.app.setReference(t.s11data, t.s21data, filename)
+            self.app.setReference(t.s11, t.s21, filename)
 
     def loadSweepFile(self):
         filename, _ = QtWidgets.QFileDialog.getOpenFileName(
             filter="Touchstone Files (*.s1p *.s2p);;All files (*.*)")
         if filename != "":
-            self.app.data11 = []
-            self.app.data21 = []
+            self.app.data.s11 = []
+            self.app.data.s21 = []
             t = Touchstone(filename)
             t.load()
-            self.app.saveData(t.s11data, t.s21data, filename)
+            self.app.saveData(t.s11, t.s21, filename)
             self.app.dataUpdated()

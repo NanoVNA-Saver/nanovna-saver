@@ -72,19 +72,19 @@ class MagLoopAnalysis(VSWRAnalysis):
             start, lowest, end = m
             if start != end:
                 if self.vswr_limit_value == self.vswr_bandwith_value:
-                    Q = self.app.data11[lowest].freq / \
-                        (self.app.data11[end].freq -
-                         self.app.data11[start].freq)
+                    Q = self.app.data.s11[lowest].freq / \
+                        (self.app.data.s11[end].freq -
+                         self.app.data.s11[start].freq)
                     self.layout.addRow(
                         "Q", QtWidgets.QLabel("{}".format(int(Q))))
-                    new_start = self.app.data11[start].freq - self.bandwith
-                    new_end = self.app.data11[end].freq + self.bandwith
+                    new_start = self.app.data.s11[start].freq - self.bandwith
+                    new_end = self.app.data.s11[end].freq + self.bandwith
                     logger.debug("Single Spot, new scan on %s-%s",
                                  new_start, new_end)
 
             else:
-                new_start = self.app.data11[start].freq - 2 * self.bandwith
-                new_end = self.app.data11[end].freq + 2 * self.bandwith
+                new_start = self.app.data.s11[start].freq - 2 * self.bandwith
+                new_end = self.app.data.s11[end].freq + 2 * self.bandwith
                 logger.debug(" Zoom to %s-%s", new_start, new_end)
 
             if self.vswr_limit_value > self.vswr_bandwith_value:
