@@ -197,12 +197,6 @@ class FrequencyChart(Chart):
 
     def setFixedValues(self, fixed_values: bool):
         self.fixedValues = fixed_values
-        if fixed_values and self.minDisplayValue >= self.maxDisplayValue:
-            self.fixedValues = False
-            self.y_action_automatic.setChecked(True)
-            self.y_action_fixed_span.setChecked(False)
-        if fixed_values and self.minDisplayValue <= 0:
-            self.minDisplayValue = 0.01
         self.update()
 
     def setLogarithmicX(self, logarithmic: bool):
@@ -222,11 +216,15 @@ class FrequencyChart(Chart):
             "Set start frequency", text=str(self.minFrequency))
         if not selected:
             return
+        span = abs(self.maxFrequency - self.minFrequency)
         min_freq = parse_frequency(min_freq_str)
-        if min_freq > 0 and not (self.fixedSpan and min_freq >= self.maxFrequency):
-            self.minFrequency = min_freq
-        if self.fixedSpan:
-            self.update()
+        if min_freq < 0:
+            return
+        self.minFrequency = min_freq
+        if self.minFrequency >= self.maxFrequency:
+            self.maxFrequency = self.minFrequency + span
+        self.fixedSpan = True
+        self.update()
 
     def setMaximumFrequency(self):
         max_freq_str, selected = QtWidgets.QInputDialog.getText(
@@ -234,11 +232,15 @@ class FrequencyChart(Chart):
             "Set stop frequency", text=str(self.maxFrequency))
         if not selected:
             return
+        span = abs(self.maxFrequency - self.minFrequency)
         max_freq = parse_frequency(max_freq_str)
-        if max_freq > 0 and not (self.fixedSpan and max_freq <= self.minFrequency):
-            self.maxFrequency = max_freq
-        if self.fixedSpan:
-            self.update()
+        if max_freq < 0:
+            return
+        self.maxFrequency = max_freq
+        if self.maxFrequency <= self.minFrequency:
+            self.minFrequency = max(self.maxFrequency - span, 0)
+        self.fixedSpan = True
+        self.update()
 
     def setMinimumValue(self):
         min_val, selected = QtWidgets.QInputDialog.getDouble(
@@ -247,12 +249,15 @@ class FrequencyChart(Chart):
             decimals=3)
         if not selected:
             return
-        if not (self.fixedValues and min_val >= self.maxDisplayValue):
-            self.minDisplayValue = min_val
+        yspan = abs(self.maxDisplayValue - self.minDisplayValue)
+        self.minDisplayValue = min_val
+        if self.minDisplayValue >= self.maxDisplayValue:
+            self.maxDisplayValue = self.minDisplayValue + yspan
+        # TODO: negativ logarythmical scale
         if self.logarithmicY and min_val <= 0:
             self.minDisplayValue = 0.01
-        if self.fixedValues:
-            self.update()
+        self.fixedValues = True
+        self.update()
 
     def setMaximumValue(self):
         max_val, selected = QtWidgets.QInputDialog.getDouble(
@@ -261,10 +266,12 @@ class FrequencyChart(Chart):
             decimals=3)
         if not selected:
             return
-        if not (self.fixedValues and max_val <= self.minDisplayValue):
-            self.maxDisplayValue = max_val
-        if self.fixedValues:
-            self.update()
+        yspan = abs(self.maxDisplayValue - self.minDisplayValue)
+        self.maxDisplayValue = max_val
+        if self.maxDisplayValue <= self.minDisplayValue:
+            self.minDisplayValue = self.maxDisplayValue - yspan
+        self.fixedValues = True
+        self.update()
 
     def resetDisplayLimits(self):
         self.fixedValues = False
