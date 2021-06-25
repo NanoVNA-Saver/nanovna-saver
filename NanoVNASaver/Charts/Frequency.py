@@ -127,13 +127,13 @@ class FrequencyChart(Chart):
         self.y_menu.addAction(self.y_action_fixed_span)
         self.y_menu.addSeparator()
 
-        self.action_set_fixed_maximum = QtWidgets.QAction(
-            f"Maximum ({self.maxDisplayValue})")
-        self.action_set_fixed_maximum.triggered.connect(self.setMaximumValue)
-
         self.action_set_fixed_minimum = QtWidgets.QAction(
             f"Minimum ({self.minDisplayValue})")
         self.action_set_fixed_minimum.triggered.connect(self.setMinimumValue)
+
+        self.action_set_fixed_maximum = QtWidgets.QAction(
+            f"Maximum ({self.maxDisplayValue})")
+        self.action_set_fixed_maximum.triggered.connect(self.setMaximumValue)
 
         self.y_menu.addAction(self.action_set_fixed_maximum)
         self.y_menu.addAction(self.action_set_fixed_minimum)
