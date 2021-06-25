@@ -87,6 +87,7 @@ class Marker(QtCore.QObject, Value):
             self.name = f"Marker {Marker._instances}"
 
         self.frequencyInput = FrequencyInput()
+        self.frequencyInput.setFixedHeight(20)
         self.frequencyInput.setAlignment(QtCore.Qt.AlignRight)
         self.frequencyInput.editingFinished.connect(
             lambda: self.setFrequency(
@@ -107,6 +108,7 @@ class Marker(QtCore.QObject, Value):
         ###############################################################
 
         self.btnColorPicker = QtWidgets.QPushButton("█")
+        self.btnColorPicker.setFixedHeight(20)
         self.btnColorPicker.setFixedWidth(20)
         self.btnColorPicker.clicked.connect(
             lambda: self.setColor(QtWidgets.QColorDialog.getColor(

@@ -32,13 +32,14 @@ class MarkerControl(QtWidgets.QGroupBox):
     def __init__(self, app: QtWidgets.QWidget, title: str = "Markers"):
         super().__init__()
         self.app = app
-        self.setMaximumWidth(250)
+        self.setMaximumWidth(240)
         self.setTitle(title)
         self.layout = QtWidgets.QFormLayout(self)
 
         marker_count = max(self.app.settings.value("MarkerCount", 3, int), 1)
         for i in range(marker_count):
             marker = Marker("", self.app.settings)
+            #marker.setFixedHeight(20)
             marker.updated.connect(self.app.markerUpdated)
             label, layout = marker.getRow()
             self.layout.addRow(label, layout)
@@ -51,6 +52,7 @@ class MarkerControl(QtWidgets.QGroupBox):
         self.layout.addRow(self.check_delta)
 
         self.showMarkerButton = QtWidgets.QPushButton()
+        self.showMarkerButton.setFixedHeight(20)
         if self.app.marker_frame.isHidden():
             self.showMarkerButton.setText("Show data")
         else:
