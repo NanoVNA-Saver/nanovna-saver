@@ -1,4 +1,4 @@
-from .Chart import Chart 
+from .Chart import Chart
 from .Frequency import FrequencyChart
 from .Polar import PolarChart
 from .Square import SquareChart

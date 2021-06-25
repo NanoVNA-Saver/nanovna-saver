@@ -17,11 +17,7 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import math
 import logging
-from typing import List
-
-from PyQt5 import QtWidgets, QtGui
 
 from NanoVNASaver.RFTools import Datapoint
 from .MagnitudeZ import MagnitudeZChart
@@ -31,10 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 class MagnitudeZSeriesChart(MagnitudeZChart):
-    def __init__(self, name=""):
-        super().__init__(name)
 
     @staticmethod
     def magnitude(p: Datapoint) -> float:
         return abs(p.seriesImpedance())
-

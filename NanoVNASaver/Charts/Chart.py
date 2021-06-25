@@ -17,7 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
-from typing import List, Set
+from typing import List, Set, Tuple
 import logging
 
 from PyQt5 import QtWidgets, QtGui, QtCore
@@ -170,13 +170,13 @@ class Chart(QtWidgets.QWidget):
                 nearest = m
         return nearest
 
-    def getYPosition(self, d: Datapoint) -> int:
+    def getYPosition(self, _: Datapoint) -> int:
         return 0
 
-    def getXPosition(self, d: Datapoint) -> int:
+    def getXPosition(self, _: Datapoint) -> int:
         return 0
 
-    def getPosition(self, d: Datapoint) -> (int, int):
+    def getPosition(self, d: Datapoint) -> Tuple[int, int]:
         return self.getXPosition(d), self.getYPosition(d)
 
     def setDrawLines(self, draw_lines):

@@ -78,8 +78,6 @@ class PolarChart(SquareChart):
         pen.setWidth(self.pointSize)
         line_pen = QtGui.QPen(self.sweepColor)
         line_pen.setWidth(self.lineThickness)
-        highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
-        highlighter.setWidth(1)
         qp.setPen(pen)
         for i in range(len(self.data)):
             x = self.getXPosition(self.data[i])

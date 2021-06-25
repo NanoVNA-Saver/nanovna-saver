@@ -231,11 +231,11 @@ class CalibrationWindow(QtWidgets.QWidget):
 
     def cal_save(self, name: str):
         if name in ("through", "isolation"):
-            self.app.calibration.insert(name, self.app.data21)
+            self.app.calibration.insert(name, self.app.data.s21)
         else:
-            self.app.calibration.insert(name, self.app.data11)
+            self.app.calibration.insert(name, self.app.data.s11)
         self.cal_label[name].setText(
-            _format_cal_label(len(self.app.data11)))
+            _format_cal_label(len(self.app.data.s11)))
 
     def manual_save(self, name: str):
         if self.checkExpertUser():

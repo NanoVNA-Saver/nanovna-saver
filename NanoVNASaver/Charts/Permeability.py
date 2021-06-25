@@ -84,8 +84,6 @@ class PermeabilityChart(FrequencyChart):
         pen.setWidth(self.pointSize)
         line_pen = QtGui.QPen(self.sweepColor)
         line_pen.setWidth(self.lineThickness)
-        highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
-        highlighter.setWidth(1)
         if self.fixedSpan:
             fstart = self.minFrequency
             fstop = self.maxFrequency

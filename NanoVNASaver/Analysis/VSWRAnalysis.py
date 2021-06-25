@@ -80,17 +80,17 @@ class VSWRAnalysis(Analysis):
         max_dips_shown = self.max_dips_shown
         data = []
 
-        for d in self.app.data11:
+        for d in self.app.data.s11:
             data.append(d.vswr)
         # min_idx = np.argmin(data)
         #
         # logger.debug("Minimum at %d", min_idx)
         # logger.debug("Value at minimum: %f", data[min_idx])
-        # logger.debug("Frequency: %d", self.app.data11[min_idx].freq)
+        # logger.debug("Frequency: %d", self.app.data.s11[min_idx].freq)
         #
         # if self.checkbox_move_marker.isChecked():
-        #     self.app.markers[0].setFrequency(str(self.app.data11[min_idx].freq))
-        #     self.app.markers[0].frequencyInput.setText(str(self.app.data11[min_idx].freq))
+        #     self.app.markers[0].setFrequency(str(self.app.data.s11[min_idx].freq))
+        #     self.app.markers[0].frequencyInput.setText(str(self.app.data.s11[min_idx].freq))
 
         threshold = self.input_vswr_limit.value()
         minimums = self.find_minimums(data, threshold)
@@ -127,23 +127,23 @@ class VSWRAnalysis(Analysis):
                     logger.debug(
                         "Section from %d to %d, lowest at %d", start, end, lowest)
                     self.layout.addRow("Start", QtWidgets.QLabel(
-                        format_frequency(self.app.data11[start].freq)))
+                        format_frequency(self.app.data.s11[start].freq)))
                     self.layout.addRow(
                         "Minimum",
                         QtWidgets.QLabel(
-                            f"{format_frequency(self.app.data11[lowest].freq)}"
+                            f"{format_frequency(self.app.data.s11[lowest].freq)}"
                             f" ({round(data[lowest], 2)})"))
                     self.layout.addRow("End", QtWidgets.QLabel(
-                        format_frequency(self.app.data11[end].freq)))
+                        format_frequency(self.app.data.s11[end].freq)))
                     self.layout.addRow(
                         "Span",
                         QtWidgets.QLabel(
-                            format_frequency(self.app.data11[end].freq -
-                                             self.app.data11[start].freq)))
+                            format_frequency(self.app.data.s11[end].freq -
+                                             self.app.data.s11[start].freq)))
                     self.layout.addWidget(PeakSearchAnalysis.QHLine())
                 else:
                     self.layout.addRow("Low spot", QtWidgets.QLabel(
-                        format_frequency(self.app.data11[lowest].freq)))
+                        format_frequency(self.app.data.s11[lowest].freq)))
                     self.layout.addWidget(PeakSearchAnalysis.QHLine())
             # Remove the final separator line
             self.layout.removeRow(self.layout.rowCount() - 1)
@@ -186,11 +186,11 @@ class ResonanceAnalysis(Analysis):
         self.layout.addRow(self.results_label)
 
     def _get_data(self, index):
-        my_data = {"freq": self.app.data11[index].freq,
-                   "s11": self.app.data11[index].z,
-                   "lambda": self.app.data11[index].wavelength,
-                   "impedance": self.app.data11[index].impedance(),
-                   "vswr": self.app.data11[index].vswr,
+        my_data = {"freq": self.app.data.s11[index].freq,
+                   "s11": self.app.data.s11[index].z,
+                   "lambda": self.app.data.s11[index].wavelength,
+                   "impedance": self.app.data.s11[index].impedance(),
+                   "vswr": self.app.data.s11[index].vswr,
                    }
         my_data["vswr_49"] = self.vswr_transformed(
             my_data["impedance"], 49)
@@ -204,7 +204,7 @@ class ResonanceAnalysis(Analysis):
     def _get_crossing(self):
 
         data = []
-        for d in self.app.data11:
+        for d in self.app.data.s11:
             data.append(d.phase)
 
         crossing = sorted(self.find_crossing_zero(data))
@@ -251,11 +251,11 @@ class ResonanceAnalysis(Analysis):
                     self.layout.addRow(
                         "Resonance",
                         QtWidgets.QLabel(
-                            f"{format_frequency(self.app.data11[lowest].freq)}"
-                            f" ({format_complex_imp(self.app.data11[lowest].impedance())})"))
+                            f"{format_frequency(self.app.data.s11[lowest].freq)}"
+                            f" ({format_complex_imp(self.app.data.s11[lowest].impedance())})"))
                 else:
                     self.layout.addRow("Resonance", QtWidgets.QLabel(
-                        format_frequency(self.app.data11[lowest].freq)))
+                        format_frequency(self.app.data.s11[lowest].freq)))
                     self.layout.addWidget(PeakSearchAnalysis.QHLine())
             # Remove the final separator line
             self.layout.removeRow(self.layout.rowCount() - 1)
@@ -296,7 +296,7 @@ class EFHWAnalysis(ResonanceAnalysis):
         crossing = self._get_crossing()
 
         data = []
-        for d in self.app.data11:
+        for d in self.app.data.s11:
             data.append(d.impedance().real)
 
         maximums = sorted(self.find_maximums(data, threshold=500))
@@ -342,9 +342,9 @@ class EFHWAnalysis(ResonanceAnalysis):
                 #                     self.app.markers[i].label['returnloss'].setMinimumWidth(80)
 
                 self.app.markers[i].setFrequency(
-                    str(self.app.data11[both[i]].freq))
+                    str(self.app.data.s11[both[i]].freq))
                 self.app.markers[i].frequencyInput.setText(
-                    str(self.app.data11[both[i]].freq))
+                    str(self.app.data.s11[both[i]].freq))
         else:
             logger.info("TO DO: find near data")
             for m in crossing:
@@ -382,9 +382,9 @@ class EFHWAnalysis(ResonanceAnalysis):
         for i, index in enumerate(sorted(extended_data.keys())):
 
             self.layout.addRow(
-                f"{format_frequency_short(self.app.data11[index].freq)}",
+                f"{format_frequency_short(self.app.data.s11[index].freq)}",
                 QtWidgets.QLabel(f" ({diff[i]['freq']})"
-                                 f" {format_complex_imp(self.app.data11[index].impedance())}"
+                                 f" {format_complex_imp(self.app.data.s11[index].impedance())}"
                                  f" ({diff[i]['r']})"
                                  f" {diff[i]['lambda']} m"))
 
