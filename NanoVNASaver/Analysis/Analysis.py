@@ -118,8 +118,7 @@ class Analysis:
 #         maximums = argrelextrema(my_data, np.greater)[0]
         if threshold is None:
             return peaks
-        else:
-            return [k for k in peaks if data[k] > threshold]
+        return [k for k in peaks if data[k] > threshold]
 
     def __init__(self, app: QtWidgets.QWidget):
         self.app = app

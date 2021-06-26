@@ -467,13 +467,13 @@ class FrequencyChart(Chart):
                  self.reference[len(self.reference)-1].freq < self.fstart)):
             # Data outside frequency range
             qp.setBackgroundMode(QtCore.Qt.OpaqueMode)
-            qp.setBackground(self.backgroundColor)
-            qp.setPen(self.textColor)
+            qp.setBackground(self.color.background)
+            qp.setPen(self.color.text)
             qp.drawText(self.leftMargin + self.chartWidth/2 - 70,
                         self.topMargin + self.chartHeight/2 - 20,
                         "Data outside frequency span")
         if self.draggedBox and self.draggedBoxCurrent[0] != -1:
-            dashed_pen = QtGui.QPen(self.foregroundColor, 1, QtCore.Qt.DashLine)
+            dashed_pen = QtGui.QPen(self.color.foreground, 1, QtCore.Qt.DashLine)
             qp.setPen(dashed_pen)
             top_left = QtCore.QPoint(self.draggedBoxStart[0], self.draggedBoxStart[1])
             bottom_right = QtCore.QPoint(self.draggedBoxCurrent[0], self.draggedBoxCurrent[1])
@@ -482,9 +482,9 @@ class FrequencyChart(Chart):
         qp.end()
 
     def drawChart(self, qp: QtGui.QPainter):
-        qp.setPen(QtGui.QPen(self.textColor))
+        qp.setPen(QtGui.QPen(self.color.text))
         qp.drawText(3, 15, self.name)
-        qp.setPen(QtGui.QPen(self.foregroundColor))
+        qp.setPen(QtGui.QPen(self.color.foreground))
         qp.drawLine(self.leftMargin, self.topMargin - 5,
                     self.leftMargin, self.topMargin + self.chartHeight + 5)
         qp.drawLine(self.leftMargin-5, self.topMargin + self.chartHeight,
@@ -493,7 +493,7 @@ class FrequencyChart(Chart):
 
     def drawFrequencyTicks(self, qp):
         fspan = self.fstop - self.fstart
-        qp.setPen(self.textColor)
+        qp.setPen(self.color.text)
         qp.drawText(self.leftMargin - 20,
                     self.topMargin + self.chartHeight + 15,
                     format_frequency_chart(self.fstart))
@@ -505,9 +505,9 @@ class FrequencyChart(Chart):
                 freq = round(math.exp(((i + 1) * fspan / ticks) + math.log(self.fstart)))
             else:
                 freq = round(fspan / ticks * (i + 1) + self.fstart)
-            qp.setPen(QtGui.QPen(self.foregroundColor))
+            qp.setPen(QtGui.QPen(self.color.foreground))
             qp.drawLine(x, self.topMargin, x, self.topMargin + self.chartHeight + 5)
-            qp.setPen(self.textColor)
+            qp.setPen(self.color.text)
             qp.drawText(x - 20,
                         self.topMargin + self.chartHeight + 15,
                         format_frequency_chart(freq))

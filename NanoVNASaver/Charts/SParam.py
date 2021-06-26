@@ -51,16 +51,16 @@ class SParameterChart(FrequencyChart):
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
                                                  QtWidgets.QSizePolicy.MinimumExpanding))
         pal = QtGui.QPalette()
-        pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
+        pal.setColor(QtGui.QPalette.Background, self.color.background)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
     def drawChart(self, qp: QtGui.QPainter):
-        qp.setPen(QtGui.QPen(self.textColor))
+        qp.setPen(QtGui.QPen(self.color.text))
         qp.drawText(int(round(self.chartWidth / 2)) - 20, 15, self.name + "")
         qp.drawText(10, 15, "Real")
         qp.drawText(self.leftMargin + self.chartWidth - 15, 15, "Imag")
-        qp.setPen(QtGui.QPen(self.foregroundColor))
+        qp.setPen(QtGui.QPen(self.color.foreground))
         qp.drawLine(self.leftMargin, self.topMargin - 5,
                     self.leftMargin, self.topMargin+self.chartHeight+5)
         qp.drawLine(self.leftMargin-5, self.topMargin+self.chartHeight,
@@ -128,24 +128,24 @@ class SParameterChart(FrequencyChart):
         for i in range(tick_count):
             val = minValue + i * tick_step
             y = self.topMargin + round((maxValue - val)/span*self.chartHeight)
-            qp.setPen(QtGui.QPen(self.foregroundColor))
+            qp.setPen(QtGui.QPen(self.color.foreground))
             qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.chartWidth, y)
             if val > minValue and val != maxValue:
-                qp.setPen(QtGui.QPen(self.textColor))
+                qp.setPen(QtGui.QPen(self.color.text))
                 qp.drawText(3, y + 4, str(round(val, 2)))
 
-        qp.setPen(QtGui.QPen(self.foregroundColor))
+        qp.setPen(QtGui.QPen(self.color.foreground))
         qp.drawLine(self.leftMargin - 5, self.topMargin,
                     self.leftMargin + self.chartWidth, self.topMargin)
-        qp.setPen(self.textColor)
+        qp.setPen(self.color.text)
         qp.drawText(3, self.topMargin + 4, str(maxValue))
         qp.drawText(3, self.chartHeight+self.topMargin, str(minValue))
         self.drawFrequencyTicks(qp)
 
-        self.drawData(qp, self.data, self.sweepColor, self.getReYPosition)
-        self.drawData(qp, self.reference, self.referenceColor, self.getReYPosition)
-        self.drawData(qp, self.data, self.secondarySweepColor, self.getImYPosition)
-        self.drawData(qp, self.reference, self.secondaryReferenceColor, self.getImYPosition)
+        self.drawData(qp, self.data, self.color.sweep, self.getReYPosition)
+        self.drawData(qp, self.reference, self.color.reference, self.getReYPosition)
+        self.drawData(qp, self.data, self.color.sweep_secondary, self.getImYPosition)
+        self.drawData(qp, self.reference, self.color.reference_secondary, self.getImYPosition)
         self.drawMarkers(qp, y_function=self.getReYPosition)
         self.drawMarkers(qp, y_function=self.getImYPosition)
 

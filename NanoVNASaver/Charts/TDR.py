@@ -51,7 +51,7 @@ class TDRChart(Chart):
                 QtWidgets.QSizePolicy.MinimumExpanding,
                 QtWidgets.QSizePolicy.MinimumExpanding))
         pal = QtGui.QPalette()
-        pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
+        pal.setColor(QtGui.QPalette.Background, self.color.background)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
@@ -271,13 +271,13 @@ class TDRChart(Chart):
 
     def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
         qp = QtGui.QPainter(self)
-        qp.setPen(QtGui.QPen(self.textColor))
+        qp.setPen(QtGui.QPen(self.color.text))
         qp.drawText(3, 15, self.name)
 
         width = self.width() - self.leftMargin - self.rightMargin
         height = self.height() - self.bottomMargin - self.topMargin
 
-        qp.setPen(QtGui.QPen(self.foregroundColor))
+        qp.setPen(QtGui.QPen(self.color.foreground))
         qp.drawLine(self.leftMargin - 5,
                     self.height() - self.bottomMargin,
                     self.width() - self.rightMargin,
@@ -323,9 +323,9 @@ class TDRChart(Chart):
 
             for i in range(ticks):
                 x = self.leftMargin + round((i + 1) * width / ticks)
-                qp.setPen(QtGui.QPen(self.foregroundColor))
+                qp.setPen(QtGui.QPen(self.color.foreground))
                 qp.drawLine(x, self.topMargin, x, self.topMargin + height)
-                qp.setPen(QtGui.QPen(self.textColor))
+                qp.setPen(QtGui.QPen(self.color.text))
                 qp.drawText(
                     x - 15,
                     self.topMargin + height + 15,
@@ -335,7 +335,7 @@ class TDRChart(Chart):
                             int((x - self.leftMargin) * x_step) - 1] / 2,
                         1)) + "m")
 
-            qp.setPen(QtGui.QPen(self.textColor))
+            qp.setPen(QtGui.QPen(self.color.text))
             qp.drawText(
                 self.leftMargin - 10,
                 self.topMargin + height + 15,
@@ -347,15 +347,15 @@ class TDRChart(Chart):
 
             for i in range(y_ticks):
                 y = self.bottomMargin + int(i * y_tick_step)
-                qp.setPen(self.foregroundColor)
+                qp.setPen(self.color.foreground)
                 qp.drawLine(self.leftMargin, y, self.leftMargin + width, y)
                 y_val = max_impedance - y_impedance_step * i * y_tick_step
-                qp.setPen(self.textColor)
+                qp.setPen(self.color.text)
                 qp.drawText(3, y + 3, str(round(y_val, 1)))
 
             qp.drawText(3, self.topMargin + height + 3, str(round(min_impedance, 1)))
 
-            pen = QtGui.QPen(self.sweepColor)
+            pen = QtGui.QPen(self.color.sweep)
             pen.setWidth(self.pointSize)
             qp.setPen(pen)
             for i in range(min_index, max_index):
@@ -365,7 +365,7 @@ class TDRChart(Chart):
                 x = self.leftMargin + int((i - min_index) / x_step)
                 y = (self.topMargin + height) - int(self.tdrWindow.td[i] / y_step)
                 if self.isPlotable(x, y):
-                    pen.setColor(self.sweepColor)
+                    pen.setColor(self.color.sweep)
                     qp.setPen(pen)
                     qp.drawPoint(x, y)
 
@@ -373,7 +373,7 @@ class TDRChart(Chart):
                 y = (self.topMargin + height) -\
                     int((self.tdrWindow.step_response_Z[i]-min_impedance) / y_impedance_step)
                 if self.isPlotable(x, y):
-                    pen.setColor(self.secondarySweepColor)
+                    pen.setColor(self.color.sweep_secondary)
                     qp.setPen(pen)
                     qp.drawPoint(x, y)
 
@@ -383,7 +383,7 @@ class TDRChart(Chart):
                 (self.topMargin + height) - int(self.tdrWindow.td[id_max] / y_step))
             qp.setPen(self.markers[0].color)
             qp.drawEllipse(max_point, 2, 2)
-            qp.setPen(self.textColor)
+            qp.setPen(self.color.text)
             qp.drawText(max_point.x() - 10, max_point.y() - 5,
                         str(round(self.tdrWindow.distance_axis[id_max] / 2,
                                   2)) + "m")
@@ -394,7 +394,7 @@ class TDRChart(Chart):
                     int((self.markerLocation - min_index) / x_step),
                     (self.topMargin + height) -
                     int(self.tdrWindow.td[self.markerLocation] / y_step))
-                qp.setPen(self.textColor)
+                qp.setPen(self.color.text)
                 qp.drawEllipse(marker_point, 2, 2)
                 qp.drawText(
                     marker_point.x() - 10,
@@ -403,7 +403,7 @@ class TDRChart(Chart):
                               2)) + "m")
 
         if self.draggedBox and self.draggedBoxCurrent[0] != -1:
-            dashed_pen = QtGui.QPen(self.foregroundColor, 1, QtCore.Qt.DashLine)
+            dashed_pen = QtGui.QPen(self.color.foreground, 1, QtCore.Qt.DashLine)
             qp.setPen(dashed_pen)
             top_left = QtCore.QPoint(self.draggedBoxStart[0], self.draggedBoxStart[1])
             bottom_right = QtCore.QPoint(self.draggedBoxCurrent[0], self.draggedBoxCurrent[1])

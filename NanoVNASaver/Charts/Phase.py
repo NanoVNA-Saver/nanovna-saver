@@ -50,7 +50,7 @@ class PhaseChart(FrequencyChart):
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
                                                  QtWidgets.QSizePolicy.MinimumExpanding))
         pal = QtGui.QPalette()
-        pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
+        pal.setColor(QtGui.QPalette.Background, self.color.background)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
@@ -112,7 +112,7 @@ class PhaseChart(FrequencyChart):
             angle = minAngle + span * i / tickcount
             y = self.topMargin + round((self.maxAngle - angle) / self.span * self.chartHeight)
             if angle != minAngle and angle != maxAngle:
-                qp.setPen(QtGui.QPen(self.textColor))
+                qp.setPen(QtGui.QPen(self.color.text))
                 if angle != 0:
                     digits = max(0, min(2, math.floor(3 - math.log10(abs(angle)))))
                     if digits == 0:
@@ -122,13 +122,13 @@ class PhaseChart(FrequencyChart):
                 else:
                     anglestr = "0"
                 qp.drawText(3, y + 3, anglestr + "°")
-                qp.setPen(QtGui.QPen(self.foregroundColor))
+                qp.setPen(QtGui.QPen(self.color.foreground))
                 qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.chartWidth, y)
         qp.drawLine(self.leftMargin - 5,
                     self.topMargin,
                     self.leftMargin + self.chartWidth,
                     self.topMargin)
-        qp.setPen(self.textColor)
+        qp.setPen(self.color.text)
         qp.drawText(3, self.topMargin + 5, str(maxAngle) + "°")
         qp.drawText(3, self.chartHeight + self.topMargin, str(minAngle) + "°")
 
@@ -150,8 +150,8 @@ class PhaseChart(FrequencyChart):
             self.drawBands(qp, fstart, fstop)
 
         self.drawFrequencyTicks(qp)
-        self.drawData(qp, self.data, self.sweepColor)
-        self.drawData(qp, self.reference, self.referenceColor)
+        self.drawData(qp, self.data, self.color.sweep)
+        self.drawData(qp, self.reference, self.color.reference)
         self.drawMarkers(qp)
 
     def getYPosition(self, d: Datapoint) -> int:

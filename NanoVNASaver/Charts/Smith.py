@@ -35,7 +35,7 @@ class SmithChart(SquareChart):
 
         self.setMinimumSize(self.chartWidth + 40, self.chartHeight + 40)
         pal = QtGui.QPalette()
-        pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
+        pal.setColor(QtGui.QPalette.Background, self.color.background)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
@@ -49,9 +49,9 @@ class SmithChart(SquareChart):
     def drawSmithChart(self, qp: QtGui.QPainter):
         centerX = int(self.width()/2)
         centerY = int(self.height()/2)
-        qp.setPen(QtGui.QPen(self.textColor))
+        qp.setPen(QtGui.QPen(self.color.text))
         qp.drawText(3, 15, self.name)
-        qp.setPen(QtGui.QPen(self.foregroundColor))
+        qp.setPen(QtGui.QPen(self.color.foreground))
         qp.drawEllipse(QtCore.QPoint(centerX, centerY),
                        int(self.chartWidth / 2),
                        int(self.chartHeight / 2))
@@ -104,7 +104,7 @@ class SmithChart(SquareChart):
 
         self.drawTitle(qp)
 
-        qp.setPen(self.swrColor)
+        qp.setPen(self.color.swr)
         for swr in self.swrMarkers:
             if swr <= 1:
                 continue
@@ -118,9 +118,9 @@ class SmithChart(SquareChart):
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
-        pen = QtGui.QPen(self.sweepColor)
+        pen = QtGui.QPen(self.color.sweep)
         pen.setWidth(self.pointSize)
-        line_pen = QtGui.QPen(self.sweepColor)
+        line_pen = QtGui.QPen(self.color.sweep)
         line_pen.setWidth(self.lineThickness)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(1)
@@ -135,8 +135,8 @@ class SmithChart(SquareChart):
                 qp.setPen(line_pen)
                 qp.drawLine(x, y, prevx, prevy)
                 qp.setPen(pen)
-        pen.setColor(self.referenceColor)
-        line_pen.setColor(self.referenceColor)
+        pen.setColor(self.color.reference)
+        line_pen.setColor(self.color.reference)
         qp.setPen(pen)
         if len(self.data) > 0:
             fstart = self.data[0].freq

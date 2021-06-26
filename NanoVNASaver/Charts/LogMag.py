@@ -46,14 +46,14 @@ class LogMagChart(FrequencyChart):
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
                                                  QtWidgets.QSizePolicy.MinimumExpanding))
         pal = QtGui.QPalette()
-        pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
+        pal.setColor(QtGui.QPalette.Background, self.color.background)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
     def drawChart(self, qp: QtGui.QPainter):
-        qp.setPen(QtGui.QPen(self.textColor))
+        qp.setPen(QtGui.QPen(self.color.text))
         qp.drawText(3, 15, self.name + " (dB)")
-        qp.setPen(QtGui.QPen(self.foregroundColor))
+        qp.setPen(QtGui.QPen(self.color.foreground))
         qp.drawLine(self.leftMargin, self.topMargin - 5,
                     self.leftMargin, self.topMargin+self.chartHeight+5)
         qp.drawLine(self.leftMargin-5, self.topMargin+self.chartHeight,
@@ -165,25 +165,25 @@ class LogMagChart(FrequencyChart):
         for i in range(tick_count):
             db = first_tick + i * tick_step
             y = self.topMargin + round((maxValue - db)/span*self.chartHeight)
-            qp.setPen(QtGui.QPen(self.foregroundColor))
+            qp.setPen(QtGui.QPen(self.color.foreground))
             qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.chartWidth, y)
             if db > minValue and db != maxValue:
-                qp.setPen(QtGui.QPen(self.textColor))
+                qp.setPen(QtGui.QPen(self.color.text))
                 if tick_step < 1:
                     dbstr = str(round(db, 1))
                 else:
                     dbstr = str(db)
                 qp.drawText(3, y + 4, dbstr)
 
-        qp.setPen(QtGui.QPen(self.foregroundColor))
+        qp.setPen(QtGui.QPen(self.color.foreground))
         qp.drawLine(self.leftMargin - 5, self.topMargin,
                     self.leftMargin + self.chartWidth, self.topMargin)
-        qp.setPen(self.textColor)
+        qp.setPen(self.color.text)
         qp.drawText(3, self.topMargin + 4, str(maxValue))
         qp.drawText(3, self.chartHeight+self.topMargin, str(minValue))
         self.drawFrequencyTicks(qp)
 
-        qp.setPen(self.swrColor)
+        qp.setPen(self.color.swr)
         for vswr in self.swrMarkers:
             if vswr <= 1:
                 continue
@@ -194,8 +194,8 @@ class LogMagChart(FrequencyChart):
             qp.drawLine(self.leftMargin, y, self.leftMargin + self.chartWidth, y)
             qp.drawText(self.leftMargin + 3, y - 1, "VSWR: " + str(vswr))
 
-        self.drawData(qp, self.data, self.sweepColor)
-        self.drawData(qp, self.reference, self.referenceColor)
+        self.drawData(qp, self.data, self.color.sweep)
+        self.drawData(qp, self.reference, self.color.reference)
         self.drawMarkers(qp)
 
     def getYPosition(self, d: Datapoint) -> int:

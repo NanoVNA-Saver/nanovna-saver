@@ -44,7 +44,7 @@ class VSWRChart(FrequencyChart):
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
                                                  QtWidgets.QSizePolicy.MinimumExpanding))
         pal = QtGui.QPalette()
-        pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
+        pal.setColor(QtGui.QPalette.Background, self.color.background)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
@@ -94,7 +94,7 @@ class VSWRChart(FrequencyChart):
             for i in range(target_ticks):
                 y = int(self.topMargin + (i / target_ticks) * self.chartHeight)
                 vswr = self.valueAtPosition(y)[0]
-                qp.setPen(self.textColor)
+                qp.setPen(self.color.text)
                 if vswr != 0:
                     digits = max(0, min(2, math.floor(3 - math.log10(abs(vswr)))))
                     if digits == 0:
@@ -102,11 +102,11 @@ class VSWRChart(FrequencyChart):
                     else:
                         vswrstr = str(round(vswr, digits))
                     qp.drawText(3, y+3, vswrstr)
-                qp.setPen(QtGui.QPen(self.foregroundColor))
+                qp.setPen(QtGui.QPen(self.color.foreground))
                 qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.chartWidth, y)
             qp.drawLine(self.leftMargin - 5, self.topMargin + self.chartHeight,
                         self.leftMargin + self.chartWidth, self.topMargin + self.chartHeight)
-            qp.setPen(self.textColor)
+            qp.setPen(self.color.text)
             digits = max(0, min(2, math.floor(3 - math.log10(abs(minVSWR)))))
             if digits == 0:
                 vswrstr = str(round(minVSWR))
@@ -117,7 +117,7 @@ class VSWRChart(FrequencyChart):
             for i in range(target_ticks):
                 vswr = minVSWR + i * self.span/target_ticks
                 y = self.getYPositionFromValue(vswr)
-                qp.setPen(self.textColor)
+                qp.setPen(self.color.text)
                 if vswr != 0:
                     digits = max(0, min(2, math.floor(3 - math.log10(abs(vswr)))))
                     if digits == 0:
@@ -125,13 +125,13 @@ class VSWRChart(FrequencyChart):
                     else:
                         vswrstr = str(round(vswr, digits))
                     qp.drawText(3, y+3, vswrstr)
-                qp.setPen(QtGui.QPen(self.foregroundColor))
+                qp.setPen(QtGui.QPen(self.color.foreground))
                 qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.chartWidth, y)
             qp.drawLine(self.leftMargin - 5,
                         self.topMargin,
                         self.leftMargin + self.chartWidth,
                         self.topMargin)
-            qp.setPen(self.textColor)
+            qp.setPen(self.color.text)
             digits = max(0, min(2, math.floor(3 - math.log10(abs(maxVSWR)))))
             if digits == 0:
                 vswrstr = str(round(maxVSWR))
@@ -139,15 +139,15 @@ class VSWRChart(FrequencyChart):
                 vswrstr = str(round(maxVSWR, digits))
             qp.drawText(3, 35, vswrstr)
 
-        qp.setPen(self.swrColor)
+        qp.setPen(self.color.swr)
         for vswr in self.swrMarkers:
             y = self.getYPositionFromValue(vswr)
             qp.drawLine(self.leftMargin, y, self.leftMargin + self.chartWidth, y)
             qp.drawText(self.leftMargin + 3, y - 1, str(vswr))
 
         self.drawFrequencyTicks(qp)
-        self.drawData(qp, self.data, self.sweepColor)
-        self.drawData(qp, self.reference, self.referenceColor)
+        self.drawData(qp, self.data, self.color.sweep)
+        self.drawData(qp, self.reference, self.color.reference)
         self.drawMarkers(qp)
 
     def getYPositionFromValue(self, vswr) -> int:

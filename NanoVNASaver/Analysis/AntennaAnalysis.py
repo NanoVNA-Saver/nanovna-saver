@@ -67,7 +67,7 @@ class MagLoopAnalysis(VSWRAnalysis):
             self.layout.addRow("", QtWidgets.QLabel(
                 "Multiple minimums, not magloop or try to lower VSWR limit"))
             return
-        elif len(self.minimums) == 1:
+        if len(self.minimums) == 1:
             m = self.minimums[0]
             start, lowest, end = m
             if start != end:
@@ -93,7 +93,6 @@ class MagLoopAnalysis(VSWRAnalysis):
                 self.input_vswr_limit.setValue(self.vswr_limit_value)
                 logger.debug(
                     "found higher minimum, lowering vswr search to %s", self.vswr_limit_value)
-
         else:
             new_start = new_start - 5 * self.bandwith
             new_end = new_end + 5 * self.bandwith

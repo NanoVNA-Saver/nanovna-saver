@@ -19,7 +19,7 @@
 import logging
 import math
 
-from dataclasses import dataclass
+from dataclasses import dataclass, fields, replace
 from typing import List, Set, Tuple, ClassVar
 
 from PyQt5 import QtWidgets, QtGui, QtCore
@@ -30,17 +30,20 @@ from NanoVNASaver.Marker import Marker
 
 logger = logging.getLogger(__name__)
 
-@dataclass
-class Chart(QtWidgets.QWidget):
 
-    backgroundColor: QtGui.QColor = QtGui.QColor(QtCore.Qt.white)
-    foregroundColor: QtGui.QColor = QtGui.QColor(QtCore.Qt.lightGray)
-    referenceColor: QtGui.QColor = QtGui.QColor(QtCore.Qt.blue).setAlpha(64)
-    secondaryReferenceColor: QtGui.QColor = QtGui.QColor(QtCore.Qt.blue).setAlpha(64)
-    secondarySweepColor: QtGui.QColor = QtCore.Qt.darkMagenta
-    sweepColor: QtGui.QColor = QtCore.Qt.darkYellow
-    swrColor: QtGui.QColor = QtGui.QColor(QtCore.Qt.red).setAlpha(128)
-    textColor: QtGui.QColor = QtGui.QColor(QtCore.Qt.black)
+@dataclass
+class ChartColors:
+    background: QtGui.QColor = QtGui.QColor(QtCore.Qt.white)
+    foreground: QtGui.QColor = QtGui.QColor(QtCore.Qt.lightGray)
+    reference: QtGui.QColor = QtGui.QColor(QtCore.Qt.blue).setAlpha(64)
+    reference_secondary: QtGui.QColor = QtGui.QColor(QtCore.Qt.blue).setAlpha(64)
+    sweep: QtGui.QColor = QtCore.Qt.darkYellow
+    sweep_secondary: QtGui.QColor = QtCore.Qt.darkMagenta
+    swr: QtGui.QColor = QtGui.QColor(QtCore.Qt.red).setAlpha(128)
+    text: QtGui.QColor = QtGui.QColor(QtCore.Qt.black)
+
+
+class Chart(QtWidgets.QWidget):
 
     name: str = ""
     sweepTitle: str = ""
@@ -75,7 +78,7 @@ class Chart(QtWidgets.QWidget):
     def __init__(self, name):
         super().__init__()
         self.name = name
-
+        self.color = ChartColors()
         self.data: List[Datapoint] = []
         self.reference: List[Datapoint] = []
         self.markers: List[Marker] = []
@@ -93,34 +96,34 @@ class Chart(QtWidgets.QWidget):
         self.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
 
     def setSweepColor(self, color: QtGui.QColor):
-        self.sweepColor = color
+        self.color.sweep = color
         self.update()
 
     def setSecondarySweepColor(self, color: QtGui.QColor):
-        self.secondarySweepColor = color
+        self.color.sweep_secondary = color
         self.update()
 
     def setReferenceColor(self, color: QtGui.QColor):
-        self.referenceColor = color
+        self.color.reference = color
         self.update()
 
     def setSecondaryReferenceColor(self, color: QtGui.QColor):
-        self.secondaryReferenceColor = color
+        self.color.reference_secondary = color
         self.update()
 
     def setBackgroundColor(self, color: QtGui.QColor):
-        self.backgroundColor = color
+        self.color.background = color
         pal = self.palette()
         pal.setColor(QtGui.QPalette.Background, color)
         self.setPalette(pal)
         self.update()
 
     def setForegroundColor(self, color: QtGui.QColor):
-        self.foregroundColor = color
+        self.color.foreground = color
         self.update()
 
     def setTextColor(self, color: QtGui.QColor):
-        self.textColor = color
+        self.color.text = color
         self.update()
 
     def setReference(self, data):
@@ -250,15 +253,9 @@ class Chart(QtWidgets.QWidget):
     def copy(self):
         new_chart = self.__class__(self.name)
         new_chart.data = self.data
+        new_chart.color = replace(self.color)
         new_chart.reference = self.reference
-        new_chart.sweepColor = self.sweepColor
-        new_chart.secondarySweepColor = self.secondarySweepColor
-        new_chart.referenceColor = self.referenceColor
-        new_chart.secondaryReferenceColor = self.secondaryReferenceColor
-        new_chart.setBackgroundColor(self.backgroundColor)
-        new_chart.textColor = self.textColor
-        new_chart.foregroundColor = self.foregroundColor
-        new_chart.swrColor = self.swrColor
+        new_chart.setBackgroundColor(self.color.background)
         new_chart.markers = self.markers
         new_chart.swrMarkers = self.swrMarkers
         new_chart.bands = self.bands
@@ -290,7 +287,7 @@ class Chart(QtWidgets.QWidget):
         self.update()
 
     def setSWRColor(self, color: QtGui.QColor):
-        self.swrColor = color
+        self.color.swr = color
         self.update()
 
     def drawMarker(self, x, y, qp: QtGui.QPainter, color: QtGui.QColor, number=0):
@@ -316,7 +313,7 @@ class Chart(QtWidgets.QWidget):
 
     def drawTitle(self, qp: QtGui.QPainter, position: QtCore.QPoint = None):
         if self.sweepTitle != "":
-            qp.setPen(self.textColor)
+            qp.setPen(self.color.text)
             if position is None:
                 qf = QtGui.QFontMetricsF(self.font())
                 width = qf.boundingRect(self.sweepTitle).width()

@@ -54,9 +54,7 @@ class Datapoint(NamedTuple):
         mag = abs(self.z)
         if mag == 1:
             return 1
-        else:
-            vswr = (1 + mag) / (1 - mag)
-        return vswr
+        return (1 + mag) / (1 - mag)
 
     @property
     def wavelength(self) -> float:
@@ -167,8 +165,7 @@ def corr_att_data(data: List[Datapoint], att: float) -> List[Datapoint]:
     """Correct the ratio for a given attenuation on s21 input"""
     if att <= 0:
         return data
-    else:
-        att = 10**(att / 20)
+    att = 10**(att / 20)
     ndata = []
     for dp in data:
         corrected = dp.z * att

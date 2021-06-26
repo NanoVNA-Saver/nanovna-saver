@@ -47,7 +47,7 @@ class MagnitudeZChart(FrequencyChart):
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
                                                  QtWidgets.QSizePolicy.MinimumExpanding))
         pal = QtGui.QPalette()
-        pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
+        pal.setColor(QtGui.QPalette.Background, self.color.background)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
@@ -121,10 +121,10 @@ class MagnitudeZChart(FrequencyChart):
         fmt = Format(max_nr_digits=4)
         for i in range(horizontal_ticks):
             y = self.topMargin + round(i * self.chartHeight / horizontal_ticks)
-            qp.setPen(QtGui.QPen(self.foregroundColor))
+            qp.setPen(QtGui.QPen(self.color.foreground))
             qp.drawLine(self.leftMargin - 5, y,
                         self.leftMargin + self.chartWidth + 5, y)
-            qp.setPen(QtGui.QPen(self.textColor))
+            qp.setPen(QtGui.QPen(self.color.text))
             val = Value(self.valueAtPosition(y)[0], fmt=fmt)
             qp.drawText(3, y + 4, str(val))
 
@@ -134,8 +134,8 @@ class MagnitudeZChart(FrequencyChart):
 
         self.drawFrequencyTicks(qp)
 
-        self.drawData(qp, self.data, self.sweepColor)
-        self.drawData(qp, self.reference, self.referenceColor)
+        self.drawData(qp, self.data, self.color.sweep)
+        self.drawData(qp, self.reference, self.color.reference)
         self.drawMarkers(qp)
 
     def getYPosition(self, d: Datapoint) -> int:
@@ -148,8 +148,7 @@ class MagnitudeZChart(FrequencyChart):
                 return self.topMargin + round(
                     (math.log(self.maxValue) - math.log(mag)) / span * self.chartHeight)
             return self.topMargin + round((self.maxValue - mag) / self.span * self.chartHeight)
-        else:
-            return self.topMargin
+        return self.topMargin
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
