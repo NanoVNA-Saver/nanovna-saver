@@ -22,6 +22,7 @@ from typing import List
 
 from PyQt5 import QtWidgets, QtGui
 
+from NanoVNASaver.Formatting import format_frequency_chart
 from NanoVNASaver.Marker import Marker
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.SITools import Format, Value
@@ -517,9 +518,9 @@ class RealImaginaryChart(FrequencyChart):
 
     def contextMenuEvent(self, event):
         self.action_set_fixed_start.setText(
-            f"Start ({Chart.shortenFrequency(self.minFrequency)})")
+            f"Start ({format_frequency_chart(self.minFrequency)})")
         self.action_set_fixed_stop.setText(
-            f"Stop ({Chart.shortenFrequency(self.maxFrequency)})")
+            f"Stop ({format_frequency_chart(self.maxFrequency)})")
         self.action_set_fixed_minimum_real.setText(
             f"Minimum R ({self.minDisplayReal})")
         self.action_set_fixed_maximum_real.setText(

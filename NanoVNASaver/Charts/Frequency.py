@@ -23,7 +23,7 @@ from typing import List
 import numpy as np
 from PyQt5 import QtWidgets, QtGui, QtCore
 
-from NanoVNASaver.Formatting import parse_frequency
+from NanoVNASaver.Formatting import parse_frequency, format_frequency_chart
 from NanoVNASaver.RFTools import Datapoint
 from .Chart import Chart
 
@@ -84,11 +84,11 @@ class FrequencyChart(Chart):
         self.x_menu.addSeparator()
 
         self.action_set_fixed_start = QtWidgets.QAction(
-            "Start (" + Chart.shortenFrequency(self.minFrequency) + ")")
+            "Start (" + format_frequency_chart(self.minFrequency) + ")")
         self.action_set_fixed_start.triggered.connect(self.setMinimumFrequency)
 
         self.action_set_fixed_stop = QtWidgets.QAction(
-            "Stop (" + Chart.shortenFrequency(self.maxFrequency) + ")")
+            "Stop (" + format_frequency_chart(self.maxFrequency) + ")")
         self.action_set_fixed_stop.triggered.connect(self.setMaximumFrequency)
 
         self.x_menu.addAction(self.action_set_fixed_start)
@@ -167,9 +167,9 @@ class FrequencyChart(Chart):
 
     def contextMenuEvent(self, event):
         self.action_set_fixed_start.setText(
-            f"Start ({Chart.shortenFrequency(self.minFrequency)})")
+            f"Start ({format_frequency_chart(self.minFrequency)})")
         self.action_set_fixed_stop.setText(
-            f"Stop ({Chart.shortenFrequency(self.maxFrequency)})")
+            f"Stop ({format_frequency_chart(self.maxFrequency)})")
         self.action_set_fixed_minimum.setText(
             f"Minimum ({self.minDisplayValue})")
         self.action_set_fixed_maximum.setText(
@@ -496,7 +496,7 @@ class FrequencyChart(Chart):
         qp.setPen(self.textColor)
         qp.drawText(self.leftMargin - 20,
                     self.topMargin + self.chartHeight + 15,
-                    Chart.shortenFrequency(self.fstart))
+                    format_frequency_chart(self.fstart))
         ticks = math.floor(self.chartWidth / 100)  # Number of ticks does not include the origin
         for i in range(ticks):
             x = self.leftMargin + round((i + 1) * self.chartWidth / ticks)
@@ -510,7 +510,7 @@ class FrequencyChart(Chart):
             qp.setPen(self.textColor)
             qp.drawText(x - 20,
                         self.topMargin + self.chartHeight + 15,
-                        Chart.shortenFrequency(freq))
+                        format_frequency_chart(freq))
 
     def drawBands(self, qp, fstart, fstop):
         qp.setBrush(self.bands.color)

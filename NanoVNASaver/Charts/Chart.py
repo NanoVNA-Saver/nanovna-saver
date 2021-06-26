@@ -16,71 +16,81 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import math
-from typing import List, Set, Tuple
 import logging
+import math
+
+from dataclasses import dataclass
+from typing import List, Set, Tuple, ClassVar
 
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSignal
 
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.Marker import Marker
+
 logger = logging.getLogger(__name__)
 
-
+@dataclass
 class Chart(QtWidgets.QWidget):
-    sweepColor = QtCore.Qt.darkYellow
-    secondarySweepColor = QtCore.Qt.darkMagenta
-    referenceColor: QtGui.QColor = QtGui.QColor(QtCore.Qt.blue)
-    referenceColor.setAlpha(64)
-    secondaryReferenceColor: QtGui.QColor = QtGui.QColor(QtCore.Qt.blue)
-    secondaryReferenceColor.setAlpha(64)
+
     backgroundColor: QtGui.QColor = QtGui.QColor(QtCore.Qt.white)
     foregroundColor: QtGui.QColor = QtGui.QColor(QtCore.Qt.lightGray)
+    referenceColor: QtGui.QColor = QtGui.QColor(QtCore.Qt.blue).setAlpha(64)
+    secondaryReferenceColor: QtGui.QColor = QtGui.QColor(QtCore.Qt.blue).setAlpha(64)
+    secondarySweepColor: QtGui.QColor = QtCore.Qt.darkMagenta
+    sweepColor: QtGui.QColor = QtCore.Qt.darkYellow
+    swrColor: QtGui.QColor = QtGui.QColor(QtCore.Qt.red).setAlpha(128)
     textColor: QtGui.QColor = QtGui.QColor(QtCore.Qt.black)
-    swrColor: QtGui.QColor = QtGui.QColor(QtCore.Qt.red)
-    swrColor.setAlpha(128)
-    data: List[Datapoint] = []
-    reference: List[Datapoint] = []
-    markers: List[Marker] = []
-    swrMarkers: Set[float] = set()
-    bands = None
-    draggedMarker: Marker = None
-    name = ""
-    sweepTitle = ""
-    drawLines = False
-    minChartHeight = 200
-    minChartWidth = 200
-    chartWidth = minChartWidth
-    chartHeight = minChartHeight
-    lineThickness = 1
-    pointSize = 2
-    markerSize = 3
-    drawMarkerNumbers = False
-    markerAtTip = False
-    filledMarkers = False
-    draggedBox = False
-    draggedBoxStart = (0, 0)
-    draggedBoxCurrent = (-1, -1)
-    moveStartX = -1
-    moveStartY = -1
 
-    isPopout = False
-    popoutRequested = pyqtSignal(object)
+    name: str = ""
+    sweepTitle: str = ""
+
+    minChartHeight: int = 200
+    minChartWidth: int = 200
+    chartHeight: int = 200
+    chartWidth: int = 200
+
+ 
+    draggedMarker: Marker = None
+    drawMarkerNumbers: bool = False
+    filledMarkers: bool = False
+    markerAtTip: bool = False
+    markerSize: int = 3
+
+    draggedBoxCurrent: Tuple[int]  = (-1, -1)
+    draggedBoxStart: Tuple[int] = (0, 0)
+    draggedBox: bool = False
+
+    drawLines: bool = False
+    isPopout: bool = False
+
+    lineThickness: int = 1
+    moveStartX: int = -1
+    moveStartY: int = -1
+    pointSize: int = 2
+    
+    bands: ClassVar = None
+    popoutRequested: ClassVar = pyqtSignal(object)
 
     def __init__(self, name):
         super().__init__()
         self.name = name
 
-        self.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
-        self.action_save_screenshot = QtWidgets.QAction("Save image")
-        self.action_save_screenshot.triggered.connect(self.saveScreenshot)
-        self.addAction(self.action_save_screenshot)
+        self.data: List[Datapoint] = []
+        self.reference: List[Datapoint] = []
+        self.markers: List[Marker] = []
+        self.swrMarkers: Set[float] = set()
+
+
         self.action_popout = QtWidgets.QAction("Popout chart")
         self.action_popout.triggered.connect(lambda: self.popoutRequested.emit(self))
         self.addAction(self.action_popout)
 
-        self.swrMarkers = set()
+        self.action_save_screenshot = QtWidgets.QAction("Save image")
+        self.action_save_screenshot.triggered.connect(self.saveScreenshot)
+        self.addAction(self.action_save_screenshot)
+
+        self.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
 
     def setSweepColor(self, color: QtGui.QColor):
         self.sweepColor = color
@@ -194,16 +204,6 @@ class Chart(QtWidgets.QWidget):
     def setFilledMarkers(self, filled_markers):
         self.filledMarkers = filled_markers
         self.update()
-
-    @staticmethod
-    def shortenFrequency(frequency: int) -> str:
-        if frequency < 50000:
-            return str(frequency)
-        if frequency < 5000000:
-            return str(round(frequency / 1000)) + "k"
-        if frequency < 50000000:
-            return str(round(frequency / 1000000, 2)) + "M"
-        return str(round(frequency / 1000000, 1)) + "M"
 
     def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
         if event.buttons() == QtCore.Qt.RightButton:
