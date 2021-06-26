@@ -107,6 +107,14 @@ class TestTouchstoneTouchstone(unittest.TestCase):
             ts.load()
         self.assertRegex(cm.output[0], "No such file or directory")
 
+    def test_swap(self):
+        ts = Touchstone("./test/data/valid.s2p")
+        ts.load()
+        s11, s21, s12, s22 = ts.sdata
+        ts.swap()
+        s11_, s21_, s12_, s22_ = ts.sdata
+        self.assertEqual([s11_, s21_, s12_, s22_] ,[s22, s12, s21, s11])
+
     def test_db_conversation(self):
         ts_db = Touchstone("./test/data/attenuator-0643_DB.s2p")
         ts_db.load()

@@ -149,9 +149,8 @@ class Touchstone:
                          float(self._interp[name]["real"](freq)),
                          float(self._interp[name]["imag"](freq)))
 
-    def s_swap(self):
-        for idx, s11, s21, s12, s22 in enumerate(self.sdata):
-            self.sdata[idx] = s22, s12, s21, s11
+    def swap(self):
+        self.sdata = [self.s22, self.s12, self.s21, self.s11]
 
     def min_freq(self) -> int:
         return self.s("11")[0].freq
