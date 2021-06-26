@@ -19,7 +19,7 @@
 import logging
 import math
 
-from dataclasses import dataclass, fields, replace
+from dataclasses import dataclass, replace
 from typing import List, Set, Tuple, ClassVar
 
 from PyQt5 import QtWidgets, QtGui, QtCore

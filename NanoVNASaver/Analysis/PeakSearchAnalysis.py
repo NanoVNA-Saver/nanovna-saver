@@ -180,6 +180,6 @@ class PeakSearchAnalysis(Analysis):
 
         logger.debug("Results start at %d, out of %d",
                      self.results_header, self.layout.rowCount())
-        for i in range(self.results_header, self.layout.rowCount()):
+        for _ in range(self.results_header, self.layout.rowCount()):
             logger.debug("deleting %s", self.layout.rowCount())
             self.layout.removeRow(self.layout.rowCount() - 1)

@@ -1,8 +1,6 @@
 import logging
-from NanoVNASaver.Hardware.Serial import drain_serial, Interface
+from NanoVNASaver.Hardware.Serial import Interface
 import serial
-import struct
-import numpy as np
 from PyQt5 import QtGui
 
 from NanoVNASaver.Hardware.NanoVNA import NanoVNA

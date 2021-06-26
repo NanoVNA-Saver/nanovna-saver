@@ -19,7 +19,6 @@
 import logging
 import math
 import numpy as np
-from scipy.signal import argrelextrema
 from PyQt5 import QtWidgets
 from scipy import signal
 

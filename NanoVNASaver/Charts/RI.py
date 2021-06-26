@@ -27,7 +27,6 @@ from NanoVNASaver.Marker import Marker
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.SITools import Format, Value
 
-from .Chart import Chart
 from .Frequency import FrequencyChart
 
 logger = logging.getLogger(__name__)
