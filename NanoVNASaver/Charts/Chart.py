@@ -20,7 +20,7 @@ import logging
 import math
 
 from dataclasses import dataclass, replace
-from typing import List, Set, Tuple, ClassVar
+from typing import List, Set, Tuple, ClassVar, Any
 
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSignal
@@ -42,23 +42,26 @@ class ChartColors:
     swr: QtGui.QColor = QtGui.QColor(QtCore.Qt.red).setAlpha(128)
     text: QtGui.QColor = QtGui.QColor(QtCore.Qt.black)
 
+@dataclass
+class ChartDimensions:
+    height: int = 200
+    height_min: int = 200
+    width: int = 200
+    width_min: int = 200
+    line: int = 1
+    marker: int = 3
+    point: int = 2
+
 
 class Chart(QtWidgets.QWidget):
 
     name: str = ""
     sweepTitle: str = ""
 
-    minChartHeight: int = 200
-    minChartWidth: int = 200
-    chartHeight: int = 200
-    chartWidth: int = 200
-
- 
     draggedMarker: Marker = None
     drawMarkerNumbers: bool = False
     filledMarkers: bool = False
     markerAtTip: bool = False
-    markerSize: int = 3
 
     draggedBoxCurrent: Tuple[int]  = (-1, -1)
     draggedBoxStart: Tuple[int] = (0, 0)
@@ -67,18 +70,17 @@ class Chart(QtWidgets.QWidget):
     drawLines: bool = False
     isPopout: bool = False
 
-    lineThickness: int = 1
     moveStartX: int = -1
     moveStartY: int = -1
-    pointSize: int = 2
-    
-    bands: ClassVar = None
-    popoutRequested: ClassVar = pyqtSignal(object)
+
+    bands: ClassVar[Any] = None
+    popoutRequested: ClassVar[Any] = pyqtSignal(object)
 
     def __init__(self, name):
         super().__init__()
         self.name = name
         self.color = ChartColors()
+        self.dim = ChartDimensions()
         self.data: List[Datapoint] = []
         self.reference: List[Datapoint] = []
         self.markers: List[Marker] = []
@@ -145,15 +147,15 @@ class Chart(QtWidgets.QWidget):
         self.bands = bands
 
     def setLineThickness(self, thickness):
-        self.lineThickness = thickness
+        self.dim.line = thickness
         self.update()
 
     def setPointSize(self, size):
-        self.pointSize = size
+        self.dim.point = size
         self.update()
 
     def setMarkerSize(self, size):
-        self.markerSize = size
+        self.dim.marker = size
         self.update()
 
     def setSweepTitle(self, title):
@@ -260,13 +262,13 @@ class Chart(QtWidgets.QWidget):
         new_chart.swrMarkers = self.swrMarkers
         new_chart.bands = self.bands
         new_chart.drawLines = self.drawLines
-        new_chart.markerSize = self.markerSize
+        new_chart.markerSize = self.dim.marker
         new_chart.drawMarkerNumbers = self.drawMarkerNumbers
         new_chart.filledMarkers = self.filledMarkers
         new_chart.markerAtTip = self.markerAtTip
         new_chart.resize(self.width(), self.height())
-        new_chart.setPointSize(self.pointSize)
-        new_chart.setLineThickness(self.lineThickness)
+        new_chart.setPointSize(self.dim.point)
+        new_chart.setLineThickness(self.dim.line)
         return new_chart
 
     def addSWRMarker(self, swr: float):
@@ -292,14 +294,14 @@ class Chart(QtWidgets.QWidget):
 
     def drawMarker(self, x, y, qp: QtGui.QPainter, color: QtGui.QColor, number=0):
         if self.markerAtTip:
-            y -= self.markerSize
+            y -= self.dim.marker
         pen = QtGui.QPen(color)
         qp.setPen(pen)
         qpp = QtGui.QPainterPath()
-        qpp.moveTo(x, y + self.markerSize)
-        qpp.lineTo(x - self.markerSize, y - self.markerSize)
-        qpp.lineTo(x + self.markerSize, y - self.markerSize)
-        qpp.lineTo(x, y + self.markerSize)
+        qpp.moveTo(x, y + self.dim.marker)
+        qpp.lineTo(x - self.dim.marker, y - self.markerSize)
+        qpp.lineTo(x + self.dim.marker, y - self.markerSize)
+        qpp.lineTo(x, y + self.dim.marker)
 
         if self.filledMarkers:
             qp.fillPath(qpp, color)
@@ -308,7 +310,7 @@ class Chart(QtWidgets.QWidget):
 
         if self.drawMarkerNumbers:
             number_x = x - 3
-            number_y = y - self.markerSize - 3
+            number_y = y - self.dim.marker - 3
             qp.drawText(number_x, number_y, str(number))
 
     def drawTitle(self, qp: QtGui.QPainter, position: QtCore.QPoint = None):

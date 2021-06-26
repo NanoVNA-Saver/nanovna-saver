@@ -32,8 +32,8 @@ class QualityFactorChart(FrequencyChart):
     def __init__(self, name=""):
         super().__init__(name)
         self.leftMargin = 35
-        self.chartWidth = 250
-        self.chartHeight = 250
+        self.dim.width = 250
+        self.dim.height = 250
         self.fstart = 0
         self.fstop = 0
         self.minQ = 0
@@ -42,8 +42,8 @@ class QualityFactorChart(FrequencyChart):
         self.minDisplayValue = 0
         self.maxDisplayValue = 100
 
-        self.setMinimumSize(self.chartWidth + self.rightMargin + self.leftMargin,
-                            self.chartHeight + self.topMargin + self.bottomMargin)
+        self.setMinimumSize(self.dim.width + self.rightMargin + self.leftMargin,
+                            self.dim.height + self.topMargin + self.bottomMargin)
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
                                                  QtWidgets.QSizePolicy.MinimumExpanding))
         pal = QtGui.QPalette()
@@ -75,11 +75,11 @@ class QualityFactorChart(FrequencyChart):
         if self.span == 0:
             return  # No data to draw the graph from
 
-        tickcount = math.floor(self.chartHeight / 60)
+        tickcount = math.floor(self.dim.height / 60)
 
         for i in range(tickcount):
             q = self.minQ + i * self.span / tickcount
-            y = self.topMargin + round((self.maxQ - q) / self.span * self.chartHeight)
+            y = self.topMargin + round((self.maxQ - q) / self.span * self.dim.height)
             if q < 10:
                 q = round(q, 2)
             elif q < 20:
@@ -89,10 +89,10 @@ class QualityFactorChart(FrequencyChart):
             qp.setPen(QtGui.QPen(self.color.text))
             qp.drawText(3, y+3, str(q))
             qp.setPen(QtGui.QPen(self.color.foreground))
-            qp.drawLine(self.leftMargin-5, y, self.leftMargin + self.chartWidth, y)
+            qp.drawLine(self.leftMargin-5, y, self.leftMargin + self.dim.width, y)
         qp.drawLine(self.leftMargin - 5,
                     self.topMargin,
-                    self.leftMargin + self.chartWidth, self.topMargin)
+                    self.leftMargin + self.dim.width, self.topMargin)
         qp.setPen(self.color.text)
         if maxQ < 10:
             qstr = str(round(maxQ, 2))
@@ -108,9 +108,9 @@ class QualityFactorChart(FrequencyChart):
         if self.span == 0:
             return
         pen = QtGui.QPen(self.color.sweep)
-        pen.setWidth(self.pointSize)
+        pen.setWidth(self.dim.point)
         line_pen = QtGui.QPen(self.color.sweep)
-        line_pen.setWidth(self.lineThickness)
+        line_pen.setWidth(self.dim.line)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(1)
         if self.fixedSpan:
@@ -137,9 +137,9 @@ class QualityFactorChart(FrequencyChart):
 
     def getYPosition(self, d: Datapoint) -> int:
         Q = d.qFactor()
-        return self.topMargin + round((self.maxQ - Q) / self.span * self.chartHeight)
+        return self.topMargin + round((self.maxQ - Q) / self.span * self.dim.height)
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
-        val = -1 * ((absy / self.chartHeight * self.span) - self.maxQ)
+        val = -1 * ((absy / self.dim.height * self.span) - self.maxQ)
         return [val]

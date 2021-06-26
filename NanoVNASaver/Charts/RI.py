@@ -37,8 +37,8 @@ class RealImaginaryChart(FrequencyChart):
         super().__init__(name)
         self.leftMargin = 45
         self.rightMargin = 45
-        self.chartWidth = 230
-        self.chartHeight = 250
+        self.dim.width = 230
+        self.dim.height = 250
         self.fstart = 0
         self.fstop = 0
         self.span_real = 0.01
@@ -104,8 +104,8 @@ class RealImaginaryChart(FrequencyChart):
         #
 
         self.setMinimumSize(
-            self.chartWidth + self.leftMargin + self.rightMargin,
-            self.chartHeight + 40)
+            self.dim.width + self.leftMargin + self.rightMargin,
+            self.dim.height + 40)
         self.setSizePolicy(
             QtWidgets.QSizePolicy(
                 QtWidgets.QSizePolicy.MinimumExpanding,
@@ -129,25 +129,25 @@ class RealImaginaryChart(FrequencyChart):
         qp.drawText(self.leftMargin + 5, 15,
                     f"{self.name} (\N{OHM SIGN})")
         qp.drawText(10, 15, "R")
-        qp.drawText(self.leftMargin + self.chartWidth + 10, 15, "X")
+        qp.drawText(self.leftMargin + self.dim.width + 10, 15, "X")
         qp.setPen(QtGui.QPen(self.color.foreground))
         qp.drawLine(self.leftMargin,
                     self.topMargin - 5,
                     self.leftMargin,
-                    self.topMargin + self.chartHeight + 5)
+                    self.topMargin + self.dim.height + 5)
         qp.drawLine(self.leftMargin-5,
-                    self.topMargin + self.chartHeight,
-                    self.leftMargin + self.chartWidth + 5,
-                    self.topMargin + self.chartHeight)
+                    self.topMargin + self.dim.height,
+                    self.leftMargin + self.dim.width + 5,
+                    self.topMargin + self.dim.height)
         self.drawTitle(qp)
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
         pen = QtGui.QPen(self.color.sweep)
-        pen.setWidth(self.pointSize)
+        pen.setWidth(self.dim.point)
         line_pen = QtGui.QPen(self.color.sweep)
-        line_pen.setWidth(self.lineThickness)
+        line_pen.setWidth(self.dim.line)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(1)
         if self.fixedSpan:
@@ -253,22 +253,22 @@ class RealImaginaryChart(FrequencyChart):
         self.span_imag = span_imag
 
         # We want one horizontal tick per 50 pixels, at most
-        horizontal_ticks = math.floor(self.chartHeight/50)
+        horizontal_ticks = math.floor(self.dim.height/50)
 
         fmt = Format(max_nr_digits=4)
         for i in range(horizontal_ticks):
-            y = self.topMargin + round(i * self.chartHeight / horizontal_ticks)
+            y = self.topMargin + round(i * self.dim.height / horizontal_ticks)
             qp.setPen(QtGui.QPen(self.color.foreground))
-            qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.chartWidth + 5, y)
+            qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.dim.width + 5, y)
             qp.setPen(QtGui.QPen(self.color.text))
             re = max_real - i * span_real / horizontal_ticks
             im = max_imag - i * span_imag / horizontal_ticks
             qp.drawText(3, y + 4, str(Value(re, fmt=fmt)))
-            qp.drawText(self.leftMargin + self.chartWidth + 8, y + 4, str(Value(im, fmt=fmt)))
+            qp.drawText(self.leftMargin + self.dim.width + 8, y + 4, str(Value(im, fmt=fmt)))
 
-        qp.drawText(3, self.chartHeight + self.topMargin, str(Value(min_real, fmt=fmt)))
-        qp.drawText(self.leftMargin + self.chartWidth + 8,
-                    self.chartHeight + self.topMargin,
+        qp.drawText(3, self.dim.height + self.topMargin, str(Value(min_real, fmt=fmt)))
+        qp.drawText(self.leftMargin + self.dim.width + 8,
+                    self.dim.height + self.topMargin,
                     str(Value(min_imag, fmt=fmt)))
 
         self.drawFrequencyTicks(qp)
@@ -286,12 +286,12 @@ class RealImaginaryChart(FrequencyChart):
             c.setAlpha(255)
             pen.setColor(c)
             qp.setPen(pen)
-            qp.drawLine(self.leftMargin + self.chartWidth, 9,
-                        self.leftMargin + self.chartWidth + 5, 9)
+            qp.drawLine(self.leftMargin + self.dim.width, 9,
+                        self.leftMargin + self.dim.width + 5, 9)
 
-        primary_pen.setWidth(self.pointSize)
-        secondary_pen.setWidth(self.pointSize)
-        line_pen.setWidth(self.lineThickness)
+        primary_pen.setWidth(self.dim.point)
+        secondary_pen.setWidth(self.dim.point)
+        line_pen.setWidth(self.dim.line)
 
         for i in range(len(self.data)):
             x = self.getXPosition(self.data[i])
@@ -348,8 +348,8 @@ class RealImaginaryChart(FrequencyChart):
             pen = QtGui.QPen(c)
             pen.setWidth(2)
             qp.setPen(pen)
-            qp.drawLine(self.leftMargin + self.chartWidth, 14,
-                        self.leftMargin + self.chartWidth + 5, 14)
+            qp.drawLine(self.leftMargin + self.dim.width, 14,
+                        self.leftMargin + self.dim.width + 5, 14)
 
         for i in range(len(self.reference)):
             if self.reference[i].freq < fstart or self.reference[i].freq > fstop:
@@ -404,18 +404,18 @@ class RealImaginaryChart(FrequencyChart):
 
     def getImYPosition(self, d: Datapoint) -> int:
         im = self.impedance(d).imag
-        return self.topMargin + round((self.max_imag - im) / self.span_imag * self.chartHeight)
+        return self.topMargin + round((self.max_imag - im) / self.span_imag * self.dim.height)
 
     def getReYPosition(self, d: Datapoint) -> int:
         re = self.impedance(d).real
         if math.isfinite(re):
-            return self.topMargin + round((self.max_real - re) / self.span_real * self.chartHeight)
+            return self.topMargin + round((self.max_real - re) / self.span_real * self.dim.height)
         return self.topMargin
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
-        valRe = -1 * ((absy / self.chartHeight * self.span_real) - self.max_real)
-        valIm = -1 * ((absy / self.chartHeight * self.span_imag) - self.max_imag)
+        valRe = -1 * ((absy / self.dim.height * self.span_real) - self.max_real)
+        valIm = -1 * ((absy / self.dim.height * self.span_imag) - self.max_imag)
         return [valRe, valIm]
 
     def zoomTo(self, x1, y1, x2, y2):

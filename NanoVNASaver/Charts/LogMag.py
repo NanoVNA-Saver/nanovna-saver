@@ -41,8 +41,8 @@ class LogMagChart(FrequencyChart):
 
         self.isInverted = False
 
-        self.setMinimumSize(self.chartWidth + self.rightMargin + self.leftMargin,
-                            self.chartHeight + self.topMargin + self.bottomMargin)
+        self.setMinimumSize(self.dim.width + self.rightMargin + self.leftMargin,
+                            self.dim.height + self.topMargin + self.bottomMargin)
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
                                                  QtWidgets.QSizePolicy.MinimumExpanding))
         pal = QtGui.QPalette()
@@ -55,9 +55,9 @@ class LogMagChart(FrequencyChart):
         qp.drawText(3, 15, self.name + " (dB)")
         qp.setPen(QtGui.QPen(self.color.foreground))
         qp.drawLine(self.leftMargin, self.topMargin - 5,
-                    self.leftMargin, self.topMargin+self.chartHeight+5)
-        qp.drawLine(self.leftMargin-5, self.topMargin+self.chartHeight,
-                    self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)
+                    self.leftMargin, self.topMargin+self.dim.height+5)
+        qp.drawLine(self.leftMargin-5, self.topMargin+self.dim.height,
+                    self.leftMargin+self.dim.width, self.topMargin + self.dim.height)
         self.drawTitle(qp)
 
     def drawValues(self, qp: QtGui.QPainter):
@@ -164,9 +164,9 @@ class LogMagChart(FrequencyChart):
 
         for i in range(tick_count):
             db = first_tick + i * tick_step
-            y = self.topMargin + round((maxValue - db)/span*self.chartHeight)
+            y = self.topMargin + round((maxValue - db)/span*self.dim.height)
             qp.setPen(QtGui.QPen(self.color.foreground))
-            qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.chartWidth, y)
+            qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.dim.width, y)
             if db > minValue and db != maxValue:
                 qp.setPen(QtGui.QPen(self.color.text))
                 if tick_step < 1:
@@ -177,10 +177,10 @@ class LogMagChart(FrequencyChart):
 
         qp.setPen(QtGui.QPen(self.color.foreground))
         qp.drawLine(self.leftMargin - 5, self.topMargin,
-                    self.leftMargin + self.chartWidth, self.topMargin)
+                    self.leftMargin + self.dim.width, self.topMargin)
         qp.setPen(self.color.text)
         qp.drawText(3, self.topMargin + 4, str(maxValue))
-        qp.drawText(3, self.chartHeight+self.topMargin, str(minValue))
+        qp.drawText(3, self.dim.height+self.topMargin, str(minValue))
         self.drawFrequencyTicks(qp)
 
         qp.setPen(self.color.swr)
@@ -190,8 +190,8 @@ class LogMagChart(FrequencyChart):
             logMag = 20 * math.log10((vswr-1)/(vswr+1))
             if self.isInverted:
                 logMag = logMag * -1
-            y = self.topMargin + round((self.maxValue - logMag) / self.span * self.chartHeight)
-            qp.drawLine(self.leftMargin, y, self.leftMargin + self.chartWidth, y)
+            y = self.topMargin + round((self.maxValue - logMag) / self.span * self.dim.height)
+            qp.drawLine(self.leftMargin, y, self.leftMargin + self.dim.width, y)
             qp.drawText(self.leftMargin + 3, y - 1, "VSWR: " + str(vswr))
 
         self.drawData(qp, self.data, self.color.sweep)
@@ -202,11 +202,11 @@ class LogMagChart(FrequencyChart):
         logMag = self.logMag(d)
         if math.isinf(logMag):
             return None
-        return self.topMargin + round((self.maxValue - logMag) / self.span * self.chartHeight)
+        return self.topMargin + round((self.maxValue - logMag) / self.span * self.dim.height)
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
-        val = -1 * ((absy / self.chartHeight * self.span) - self.maxValue)
+        val = -1 * ((absy / self.dim.height * self.span) - self.maxValue)
         return [val]
 
     def logMag(self, p: Datapoint) -> float:

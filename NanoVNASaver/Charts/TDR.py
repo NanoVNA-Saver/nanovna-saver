@@ -127,8 +127,8 @@ class TDRChart(Chart):
             lambda: self.popoutRequested.emit(self))
         self.menu.addAction(self.action_popout)
 
-        self.chartWidth = self.width() - self.leftMargin - self.rightMargin
-        self.chartHeight = self.height() - self.bottomMargin - self.topMargin
+        self.dim.width = self.width() - self.leftMargin - self.rightMargin
+        self.dim.height = self.height() - self.bottomMargin - self.topMargin
 
     def contextMenuEvent(self, event):
         self.action_set_fixed_start.setText(
@@ -235,8 +235,8 @@ class TDRChart(Chart):
                 dx = self.moveStartX - a0.x()
                 dy = self.moveStartY - a0.y()
                 self.zoomTo(self.leftMargin + dx, self.topMargin + dy,
-                            self.leftMargin + self.chartWidth + dx,
-                            self.topMargin + self.chartHeight + dy)
+                            self.leftMargin + self.dim.width + dx,
+                            self.topMargin + self.dim.height + dy)
             self.moveStartX = a0.x()
             self.moveStartY = a0.y()
             return
@@ -356,7 +356,7 @@ class TDRChart(Chart):
             qp.drawText(3, self.topMargin + height + 3, str(round(min_impedance, 1)))
 
             pen = QtGui.QPen(self.color.sweep)
-            pen.setWidth(self.pointSize)
+            pen.setWidth(self.dim.point)
             qp.setPen(pen)
             for i in range(min_index, max_index):
                 if i < min_index or i > max_index:
@@ -474,8 +474,8 @@ class TDRChart(Chart):
         if len(self.tdrWindow.td) == 0:
             a0.ignore()
             return
-        chart_height = self.chartHeight
-        chart_width = self.chartWidth
+        chart_height = self.dim.height
+        chart_width = self.dim.width
         do_zoom_x = do_zoom_y = True
         if a0.modifiers() == QtCore.Qt.ShiftModifier:
             do_zoom_x = False
@@ -534,5 +534,5 @@ class TDRChart(Chart):
 
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
         super().resizeEvent(a0)
-        self.chartWidth = self.width() - self.leftMargin - self.rightMargin
-        self.chartHeight = self.height() - self.bottomMargin - self.topMargin
+        self.dim.width = self.width() - self.leftMargin - self.rightMargin
+        self.dim.height = self.height() - self.bottomMargin - self.topMargin

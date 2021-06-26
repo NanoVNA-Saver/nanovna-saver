@@ -40,8 +40,8 @@ class InductanceChart(FrequencyChart):
         self.maxValue = 1
         self.span = 1
 
-        self.setMinimumSize(self.chartWidth + self.rightMargin + self.leftMargin,
-                            self.chartHeight + self.topMargin + self.bottomMargin)
+        self.setMinimumSize(self.dim.width + self.rightMargin + self.leftMargin,
+                            self.dim.height + self.topMargin + self.bottomMargin)
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
                                                  QtWidgets.QSizePolicy.MinimumExpanding))
         pal = QtGui.QPalette()
@@ -53,9 +53,9 @@ class InductanceChart(FrequencyChart):
         qp.setPen(QtGui.QPen(self.color.text))
         qp.drawText(3, 15, self.name + " (H)")
         qp.setPen(QtGui.QPen(self.color.foreground))
-        qp.drawLine(self.leftMargin, 20, self.leftMargin, self.topMargin+self.chartHeight+5)
-        qp.drawLine(self.leftMargin-5, self.topMargin+self.chartHeight,
-                    self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)
+        qp.drawLine(self.leftMargin, 20, self.leftMargin, self.topMargin+self.dim.height+5)
+        qp.drawLine(self.leftMargin-5, self.topMargin+self.dim.height,
+                    self.leftMargin+self.dim.width, self.topMargin + self.dim.height)
         self.drawTitle(qp)
 
     def drawValues(self, qp: QtGui.QPainter):
@@ -111,24 +111,24 @@ class InductanceChart(FrequencyChart):
             span = 1e-15
         self.span = span
 
-        target_ticks = math.floor(self.chartHeight / 60)
+        target_ticks = math.floor(self.dim.height / 60)
         fmt = Format(max_nr_digits=1)
         for i in range(target_ticks):
             val = minValue + (i / target_ticks) * span
-            y = self.topMargin + round((self.maxValue - val) / self.span * self.chartHeight)
+            y = self.topMargin + round((self.maxValue - val) / self.span * self.dim.height)
             qp.setPen(self.color.text)
             if val != minValue:
                 valstr = str(Value(val, fmt=fmt))
                 qp.drawText(3, y + 3, valstr)
             qp.setPen(QtGui.QPen(self.color.foreground))
-            qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.chartWidth, y)
+            qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.dim.width, y)
 
         qp.setPen(QtGui.QPen(self.color.foreground))
         qp.drawLine(self.leftMargin - 5, self.topMargin,
-                    self.leftMargin + self.chartWidth, self.topMargin)
+                    self.leftMargin + self.dim.width, self.topMargin)
         qp.setPen(self.color.text)
         qp.drawText(3, self.topMargin + 4, str(Value(maxValue, fmt=fmt)))
-        qp.drawText(3, self.chartHeight+self.topMargin, str(Value(minValue, fmt=fmt)))
+        qp.drawText(3, self.dim.height+self.topMargin, str(Value(minValue, fmt=fmt)))
         self.drawFrequencyTicks(qp)
 
         self.drawData(qp, self.data, self.color.sweep)
@@ -138,11 +138,11 @@ class InductanceChart(FrequencyChart):
     def getYPosition(self, d: Datapoint) -> int:
         return (self.topMargin +
                 round((self.maxValue - d.inductiveEquivalent()) /
-                      self.span * self.chartHeight))
+                      self.span * self.dim.height))
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
-        val = -1 * ((absy / self.chartHeight * self.span) - self.maxValue)
+        val = -1 * ((absy / self.dim.height * self.span) - self.maxValue)
         return [val * 10e11]
 
     def copy(self):
