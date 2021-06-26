@@ -269,7 +269,7 @@ class TDRChart(Chart):
             self.update()
         return
 
-    def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
+    def paintEvent(self, _: QtGui.QPaintEvent) -> None:
         qp = QtGui.QPainter(self)
         qp.setPen(QtGui.QPen(self.color.text))
         qp.drawText(3, 15, self.name)

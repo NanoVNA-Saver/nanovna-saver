@@ -30,7 +30,7 @@ class Analysis:
     _widget = None
 
     @classmethod
-    def find_crossing_zero(cls, data, threshold=0):
+    def find_crossing_zero(cls, data):
         '''
 
         Find values  crossing zero
@@ -45,7 +45,6 @@ class Analysis:
 
         :param cls:
         :param data: list of values
-        :param threshold: unused, for future manage flipping around 0
         '''
         my_data = np.array(data)
         zeroes = np.where(my_data == 0)[0]

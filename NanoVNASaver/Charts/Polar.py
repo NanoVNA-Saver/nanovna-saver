@@ -39,7 +39,7 @@ class PolarChart(SquareChart):
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
-    def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
+    def paintEvent(self, _: QtGui.QPaintEvent) -> None:
         qp = QtGui.QPainter(self)
         self.drawChart(qp)
         self.drawValues(qp)
