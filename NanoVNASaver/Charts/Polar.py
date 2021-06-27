@@ -83,7 +83,7 @@ class PolarChart(SquareChart):
             x = self.getXPosition(self.data[i])
             y = self.height()/2 + self.data[i].im * -1 * self.dim.height/2
             qp.drawPoint(int(x), int(y))
-            if self.drawLines and i > 0:
+            if self.flag.draw_lines and i > 0:
                 prevx = self.getXPosition(self.data[i-1])
                 prevy = self.height() / 2 + self.data[i-1].im * -1 * self.dim.height / 2
                 qp.setPen(line_pen)
@@ -105,7 +105,7 @@ class PolarChart(SquareChart):
             x = self.getXPosition(self.reference[i])
             y = self.height()/2 + data.im * -1 * self.dim.height/2
             qp.drawPoint(int(x), int(y))
-            if self.drawLines and i > 0:
+            if self.flag.draw_lines and i > 0:
                 prevx = self.getXPosition(self.reference[i-1])
                 prevy = self.height() / 2 + self.reference[i-1].im * -1 * self.dim.height / 2
                 qp.setPen(line_pen)

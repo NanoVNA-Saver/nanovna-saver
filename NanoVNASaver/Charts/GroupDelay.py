@@ -215,7 +215,7 @@ class GroupDelayChart(FrequencyChart):
             y = self.getYPositionFromDelay(self.groupDelay[i])
             if self.isPlotable(x, y):
                 qp.drawPoint(int(x), int(y))
-            if self.drawLines and i > 0:
+            if self.flag.draw_lines and i > 0:
                 prevx = self.getXPosition(self.data[i - 1])
                 prevy = self.getYPositionFromDelay(self.groupDelay[i - 1])
                 qp.setPen(line_pen)
@@ -240,7 +240,7 @@ class GroupDelayChart(FrequencyChart):
             y = self.getYPositionFromDelay(self.groupDelayReference[i])
             if self.isPlotable(x, y):
                 qp.drawPoint(int(x), int(y))
-            if self.drawLines and i > 0:
+            if self.flag.draw_lines and i > 0:
                 prevx = self.getXPosition(self.reference[i - 1])
                 prevy = self.getYPositionFromDelay(self.groupDelayReference[i - 1])
                 qp.setPen(line_pen)

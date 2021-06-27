@@ -303,7 +303,7 @@ class RealImaginaryChart(FrequencyChart):
             qp.setPen(secondary_pen)
             if self.isPlotable(x, y_im):
                 qp.drawPoint(x, y_im)
-            if self.drawLines and i > 0:
+            if self.flag.draw_lines and i > 0:
                 prev_x = self.getXPosition(self.data[i - 1])
                 prev_y_re = self.getReYPosition(self.data[i-1])
                 prev_y_im = self.getImYPosition(self.data[i-1])
@@ -363,7 +363,7 @@ class RealImaginaryChart(FrequencyChart):
             qp.setPen(secondary_pen)
             if self.isPlotable(x, y_im):
                 qp.drawPoint(x, y_im)
-            if self.drawLines and i > 0:
+            if self.flag.draw_lines and i > 0:
                 prev_x = self.getXPosition(self.reference[i - 1])
                 prev_y_re = self.getReYPosition(self.reference[i-1])
                 prev_y_im = self.getImYPosition(self.reference[i-1])

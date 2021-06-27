@@ -231,20 +231,20 @@ class TDRChart(Chart):
         if a0.buttons() == QtCore.Qt.MiddleButton:
             # Drag the display
             a0.accept()
-            if self.moveStartX != -1 and self.moveStartY != -1:
-                dx = self.moveStartX - a0.x()
-                dy = self.moveStartY - a0.y()
+            if self.dragbox.move_x != -1 and self.dragbox.move_y != -1:
+                dx = self.dragbox.move_x - a0.x()
+                dy = self.dragbox.move_y - a0.y()
                 self.zoomTo(self.leftMargin + dx, self.topMargin + dy,
                             self.leftMargin + self.dim.width + dx,
                             self.topMargin + self.dim.height + dy)
-            self.moveStartX = a0.x()
-            self.moveStartY = a0.y()
+            self.dragbox.move_x = a0.x()
+            self.dragbox.move_y = a0.y()
             return
         if a0.modifiers() == QtCore.Qt.ControlModifier:
             # Dragging a box
-            if not self.draggedBox:
-                self.draggedBoxStart = (a0.x(), a0.y())
-            self.draggedBoxCurrent = (a0.x(), a0.y())
+            if not self.dragbox.state:
+                self.dragbox.pos_start = (a0.x(), a0.y())
+            self.dragbox.pos = (a0.x(), a0.y())
             self.update()
             a0.accept()
             return
@@ -402,11 +402,11 @@ class TDRChart(Chart):
                     str(round(self.tdrWindow.distance_axis[self.markerLocation] / 2,
                               2)) + "m")
 
-        if self.draggedBox and self.draggedBoxCurrent[0] != -1:
+        if self.dragbox.state and self.dragbox.pos[0] != -1:
             dashed_pen = QtGui.QPen(self.color.foreground, 1, QtCore.Qt.DashLine)
             qp.setPen(dashed_pen)
-            top_left = QtCore.QPoint(self.draggedBoxStart[0], self.draggedBoxStart[1])
-            bottom_right = QtCore.QPoint(self.draggedBoxCurrent[0], self.draggedBoxCurrent[1])
+            top_left = QtCore.QPoint(self.dragbox.pos_start[0], self.dragbox.stateStart[1])
+            bottom_right = QtCore.QPoint(self.dragbox.pos[0], self.dragbox.stateCurrent[1])
             rect = QtCore.QRect(top_left, bottom_right)
             qp.drawRect(rect)
 

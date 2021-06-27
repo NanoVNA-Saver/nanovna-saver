@@ -30,7 +30,6 @@ from NanoVNASaver.Marker import Marker
 
 logger = logging.getLogger(__name__)
 
-
 @dataclass
 class ChartColors:
     background: QtGui.QColor = QtGui.QColor(QtCore.Qt.white)
@@ -52,40 +51,47 @@ class ChartDimensions:
     marker: int = 3
     point: int = 2
 
+@dataclass
+class ChartDragBox:
+    pos: Tuple[int]  = (-1, -1)
+    pos_start: Tuple[int] = (0, 0)
+    state: bool = False
+    move_x: int = -1
+    move_y: int = -1
+
+@dataclass
+class ChartMarkerFlags:
+    draw_numbers: bool = False
+    filled: bool = False
+    at_tip: bool = False
+
+@dataclass
+class ChartFlags:
+    draw_lines: bool = False
+    is_popout: bool = False
 
 class Chart(QtWidgets.QWidget):
-
-    name: str = ""
-    sweepTitle: str = ""
-
-    draggedMarker: Marker = None
-    drawMarkerNumbers: bool = False
-    filledMarkers: bool = False
-    markerAtTip: bool = False
-
-    draggedBoxCurrent: Tuple[int]  = (-1, -1)
-    draggedBoxStart: Tuple[int] = (0, 0)
-    draggedBox: bool = False
-
-    drawLines: bool = False
-    isPopout: bool = False
-
-    moveStartX: int = -1
-    moveStartY: int = -1
-
     bands: ClassVar[Any] = None
     popoutRequested: ClassVar[Any] = pyqtSignal(object)
 
     def __init__(self, name):
         super().__init__()
         self.name = name
+        self.sweepTitle = ""
+
         self.color = ChartColors()
         self.dim = ChartDimensions()
+        self.dragbox = ChartDragBox()
+        self.flag = ChartFlags()
+        self.marker_flag = ChartMarkerFlags()
+
+        self.draggedMarker = None
+
         self.data: List[Datapoint] = []
         self.reference: List[Datapoint] = []
+
         self.markers: List[Marker] = []
         self.swrMarkers: Set[float] = set()
-
 
         self.action_popout = QtWidgets.QAction("Popout chart")
         self.action_popout.triggered.connect(lambda: self.popoutRequested.emit(self))
@@ -195,19 +201,19 @@ class Chart(QtWidgets.QWidget):
         return self.getXPosition(d), self.getYPosition(d)
 
     def setDrawLines(self, draw_lines):
-        self.drawLines = draw_lines
+        self.flag.draw_lines = draw_lines
         self.update()
 
     def setDrawMarkerNumbers(self, draw_marker_numbers):
-        self.drawMarkerNumbers = draw_marker_numbers
+        self.marker_flag.draw_numbers = draw_marker_numbers
         self.update()
 
     def setMarkerAtTip(self, marker_at_tip):
-        self.markerAtTip = marker_at_tip
+        self.marker_flag.at_tip = marker_at_tip
         self.update()
 
     def setFilledMarkers(self, filled_markers):
-        self.filledMarkers = filled_markers
+        self.marker_flag.filled = filled_markers
         self.update()
 
     def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
@@ -217,25 +223,25 @@ class Chart(QtWidgets.QWidget):
         if event.buttons() == QtCore.Qt.MiddleButton:
             # Drag event
             event.accept()
-            self.moveStartX = event.x()
-            self.moveStartY = event.y()
+            self.dragbox.move_x = event.x()
+            self.dragbox.move_y = event.y()
             return
         if event.modifiers() == QtCore.Qt.ShiftModifier:
             self.draggedMarker = self.getNearestMarker(event.x(), event.y())
         elif event.modifiers() == QtCore.Qt.ControlModifier:
             event.accept()
-            self.draggedBox = True
-            self.draggedBoxStart = (event.x(), event.y())
+            self.dragbox.state = True
+            self.dragbox.pos_start = (event.x(), event.y())
             return
         self.mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, a0: QtGui.QMouseEvent) -> None:
         self.draggedMarker = None
-        if self.draggedBox:
-            self.zoomTo(self.draggedBoxStart[0], self.draggedBoxStart[1], a0.x(), a0.y())
-            self.draggedBox = False
-            self.draggedBoxCurrent = (-1, -1)
-            self.draggedBoxStart = (0, 0)
+        if self.dragbox.state:
+            self.zoomTo(self.dragbox.pos_start[0], self.dragbox.pos_start[1], a0.x(), a0.y())
+            self.dragbox.state = False
+            self.dragbox.pos = (-1, -1)
+            self.dragbox.pos_start = (0, 0)
             self.update()
 
     def zoomTo(self, x1, y1, x2, y2):
@@ -255,20 +261,19 @@ class Chart(QtWidgets.QWidget):
     def copy(self):
         new_chart = self.__class__(self.name)
         new_chart.data = self.data
-        new_chart.color = replace(self.color)
         new_chart.reference = self.reference
-        new_chart.setBackgroundColor(self.color.background)
+        new_chart.color = replace(self.color)
+        new_chart.dim = replace(self.dim)
+        new_chart.flag = replace(self.flag)
+        new_chart.marker_flag = replace(self.marker_flag)
         new_chart.markers = self.markers
         new_chart.swrMarkers = self.swrMarkers
         new_chart.bands = self.bands
-        new_chart.drawLines = self.drawLines
-        new_chart.markerSize = self.dim.marker
-        new_chart.drawMarkerNumbers = self.drawMarkerNumbers
-        new_chart.filledMarkers = self.filledMarkers
-        new_chart.markerAtTip = self.markerAtTip
+
         new_chart.resize(self.width(), self.height())
         new_chart.setPointSize(self.dim.point)
         new_chart.setLineThickness(self.dim.line)
+        new_chart.setBackgroundColor(self.color.background)
         return new_chart
 
     def addSWRMarker(self, swr: float):
@@ -293,22 +298,22 @@ class Chart(QtWidgets.QWidget):
         self.update()
 
     def drawMarker(self, x, y, qp: QtGui.QPainter, color: QtGui.QColor, number=0):
-        if self.markerAtTip:
+        if self.marker_flag.at_tip:
             y -= self.dim.marker
         pen = QtGui.QPen(color)
         qp.setPen(pen)
         qpp = QtGui.QPainterPath()
         qpp.moveTo(x, y + self.dim.marker)
-        qpp.lineTo(x - self.dim.marker, y - self.markerSize)
-        qpp.lineTo(x + self.dim.marker, y - self.markerSize)
+        qpp.lineTo(x - self.dim.marker, y - self.dim.marker)
+        qpp.lineTo(x + self.dim.marker, y - self.dim.marker)
         qpp.lineTo(x, y + self.dim.marker)
 
-        if self.filledMarkers:
+        if self.marker_flag.filled:
             qp.fillPath(qpp, color)
         else:
             qp.drawPath(qpp)
 
-        if self.drawMarkerNumbers:
+        if self.marker_flag.draw_numbers:
             number_x = x - 3
             number_y = y - self.dim.marker - 3
             qp.drawText(number_x, number_y, str(number))

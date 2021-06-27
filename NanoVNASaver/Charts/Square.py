@@ -36,7 +36,7 @@ class SquareChart(Chart):
         self.dim.height = self.height()-40
 
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
-        if not self.isPopout:
+        if not self.flag.is_popout:
             self.setFixedWidth(a0.size().height())
             self.dim.width = a0.size().height()-40
             self.dim.height = a0.size().height()-40
