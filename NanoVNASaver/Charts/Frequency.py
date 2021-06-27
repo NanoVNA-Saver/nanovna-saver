@@ -165,6 +165,30 @@ class FrequencyChart(Chart):
         self.menu.addAction(self.action_popout)
         self.setFocusPolicy(QtCore.Qt.ClickFocus)
 
+        self.setMinimumSize(self.dim.width + self.rightMargin + self.leftMargin,
+                            self.dim.height + self.topMargin + self.bottomMargin)
+        self.setSizePolicy(
+            QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
+                                  QtWidgets.QSizePolicy.MinimumExpanding))
+        pal = QtGui.QPalette()
+        pal.setColor(QtGui.QPalette.Background, self.color.background)
+        self.setPalette(pal)
+        self.setAutoFillBackground(True)
+
+    def _set_start_stop(self):
+        if self.fixedSpan:
+            fstart = self.minFrequency
+            fstop = self.maxFrequency
+        else:
+            if len(self.data) > 0:
+                fstart = self.data[0].freq
+                fstop = self.data[len(self.data)-1].freq
+            else:
+                fstart = self.reference[0].freq
+                fstop = self.reference[len(self.reference) - 1].freq
+        self.fstart = fstart
+        self.fstop = fstop
+
     def contextMenuEvent(self, event):
         self.action_set_fixed_start.setText(
             f"Start ({format_frequency_chart(self.minFrequency)})")
@@ -475,8 +499,8 @@ class FrequencyChart(Chart):
         if self.dragbox.state and self.dragbox.pos[0] != -1:
             dashed_pen = QtGui.QPen(self.color.foreground, 1, QtCore.Qt.DashLine)
             qp.setPen(dashed_pen)
-            top_left = QtCore.QPoint(self.dragbox.pos_start[0], self.dragbox.stateStart[1])
-            bottom_right = QtCore.QPoint(self.dragbox.pos[0], self.dragbox.stateCurrent[1])
+            top_left = QtCore.QPoint(self.dragbox.pos_start[0], self.dragbox.pos_start[1])
+            bottom_right = QtCore.QPoint(self.dragbox.pos[0], self.dragbox.pos[1])
             rect = QtCore.QRect(top_left, bottom_right)
             qp.drawRect(rect)
         qp.end()

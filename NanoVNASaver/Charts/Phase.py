@@ -45,15 +45,6 @@ class PhaseChart(FrequencyChart):
         self.minDisplayValue = -180
         self.maxDisplayValue = 180
 
-        self.setMinimumSize(self.dim.width + self.rightMargin + self.leftMargin,
-                            self.dim.height + self.topMargin + self.bottomMargin)
-        self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
-                                                 QtWidgets.QSizePolicy.MinimumExpanding))
-        pal = QtGui.QPalette()
-        pal.setColor(QtGui.QPalette.Background, self.color.background)
-        self.setPalette(pal)
-        self.setAutoFillBackground(True)
-
         self.y_menu.addSeparator()
         self.action_unwrap = QtWidgets.QAction("Unwrap")
         self.action_unwrap.setCheckable(True)
@@ -132,22 +123,11 @@ class PhaseChart(FrequencyChart):
         qp.drawText(3, self.topMargin + 5, str(maxAngle) + "°")
         qp.drawText(3, self.dim.height + self.topMargin, str(minAngle) + "°")
 
-        if self.fixedSpan:
-            fstart = self.minFrequency
-            fstop = self.maxFrequency
-        else:
-            if len(self.data) > 0:
-                fstart = self.data[0].freq
-                fstop = self.data[len(self.data)-1].freq
-            else:
-                fstart = self.reference[0].freq
-                fstop = self.reference[len(self.reference) - 1].freq
-        self.fstart = fstart
-        self.fstop = fstop
+        self._set_start_stop()
 
         # Draw bands if required
         if self.bands.enabled:
-            self.drawBands(qp, fstart, fstop)
+            self.drawBands(qp, self.fstart, self.fstop)
 
         self.drawFrequencyTicks(qp)
         self.drawData(qp, self.data, self.color.sweep)

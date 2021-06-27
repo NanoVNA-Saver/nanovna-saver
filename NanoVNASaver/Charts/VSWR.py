@@ -39,15 +39,6 @@ class VSWRChart(FrequencyChart):
         self.maxVSWR = 3
         self.span = 2
 
-        self.setMinimumSize(self.dim.width + self.rightMargin + self.leftMargin,
-                            self.dim.height + self.topMargin + self.bottomMargin)
-        self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
-                                                 QtWidgets.QSizePolicy.MinimumExpanding))
-        pal = QtGui.QPalette()
-        pal.setColor(QtGui.QPalette.Background, self.color.background)
-        self.setPalette(pal)
-        self.setAutoFillBackground(True)
-
     def logarithmicYAllowed(self) -> bool:
         return True
 

@@ -42,35 +42,15 @@ class MagnitudeZChart(FrequencyChart):
         self.maxValue = 1
         self.span = 1
 
-        self.setMinimumSize(self.dim.width + self.rightMargin + self.leftMargin,
-                            self.dim.height + self.topMargin + self.bottomMargin)
-        self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
-                                                 QtWidgets.QSizePolicy.MinimumExpanding))
-        pal = QtGui.QPalette()
-        pal.setColor(QtGui.QPalette.Background, self.color.background)
-        self.setPalette(pal)
-        self.setAutoFillBackground(True)
-
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
 
-        if not self.fixedSpan:
-            if len(self.data) > 0:
-                fstart = self.data[0].freq
-                fstop = self.data[len(self.data)-1].freq
-            else:
-                fstart = self.reference[0].freq
-                fstop = self.reference[len(self.reference) - 1].freq
-            self.fstart = fstart
-            self.fstop = fstop
-        else:
-            fstart = self.fstart = self.minFrequency
-            fstop = self.fstop = self.maxFrequency
+        self._set_start_stop()
 
         # Draw bands if required
         if self.bands.enabled:
-            self.drawBands(qp, fstart, fstop)
+            self.drawBands(qp, self.fstart, self.fstop)
 
         if self.fixedValues:
             maxValue = self.maxDisplayValue

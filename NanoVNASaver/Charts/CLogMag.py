@@ -48,15 +48,6 @@ class CombinedLogMagChart(FrequencyChart):
 
         self.isInverted = False
 
-        self.setMinimumSize(self.dim.width + self.rightMargin + self.leftMargin,
-                            self.dim.height + self.topMargin + self.bottomMargin)
-        self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
-                                                 QtWidgets.QSizePolicy.MinimumExpanding))
-        pal = QtGui.QPalette()
-        pal.setColor(QtGui.QPalette.Background, self.color.background)
-        self.setPalette(pal)
-        self.setAutoFillBackground(True)
-
     def setCombinedData(self, data11, data21):
         self.data11 = data11
         self.data21 = data21

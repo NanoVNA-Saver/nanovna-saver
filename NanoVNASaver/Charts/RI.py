@@ -99,22 +99,6 @@ class RealImaginaryChart(FrequencyChart):
         self.y_menu.addAction(self.action_set_fixed_maximum_imag)
         self.y_menu.addAction(self.action_set_fixed_minimum_imag)
 
-        #
-        # Set up size policy and palette
-        #
-
-        self.setMinimumSize(
-            self.dim.width + self.leftMargin + self.rightMargin,
-            self.dim.height + 40)
-        self.setSizePolicy(
-            QtWidgets.QSizePolicy(
-                QtWidgets.QSizePolicy.MinimumExpanding,
-                QtWidgets.QSizePolicy.MinimumExpanding))
-        pal = QtGui.QPalette()
-        pal.setColor(QtGui.QPalette.Background, self.color.background)
-        self.setPalette(pal)
-        self.setAutoFillBackground(True)
-
     def copy(self):
         new_chart: RealImaginaryChart = super().copy()
 
@@ -150,22 +134,12 @@ class RealImaginaryChart(FrequencyChart):
         line_pen.setWidth(self.dim.line)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(1)
-        if self.fixedSpan:
-            fstart = self.minFrequency
-            fstop = self.maxFrequency
-        else:
-            if len(self.data) > 0:
-                fstart = self.data[0].freq
-                fstop = self.data[len(self.data)-1].freq
-            else:
-                fstart = self.reference[0].freq
-                fstop = self.reference[len(self.reference) - 1].freq
-        self.fstart = fstart
-        self.fstop = fstop
+
+        self._set_start_stop()
 
         # Draw bands if required
         if self.bands.enabled:
-            self.drawBands(qp, fstart, fstop)
+            self.drawBands(qp, self.fstart, self.fstop)
 
         # Find scaling
         if self.fixedValues:
@@ -192,7 +166,7 @@ class RealImaginaryChart(FrequencyChart):
                 if im < min_imag:
                     min_imag = im
             for d in self.reference:  # Also check min/max for the reference sweep
-                if d.freq < fstart or d.freq > fstop:
+                if d.freq < self.fstart or d.freq > self.fstop:
                     continue
                 imp = self.impedance(d)
                 re, im = imp.real, imp.imag
@@ -352,7 +326,7 @@ class RealImaginaryChart(FrequencyChart):
                         self.leftMargin + self.dim.width + 5, 14)
 
         for i in range(len(self.reference)):
-            if self.reference[i].freq < fstart or self.reference[i].freq > fstop:
+            if self.reference[i].freq < self.fstart or self.reference[i].freq > self.fstop:
                 continue
             x = self.getXPosition(self.reference[i])
             y_re = self.getReYPosition(self.reference[i])
