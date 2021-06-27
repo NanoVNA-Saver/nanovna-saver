@@ -753,6 +753,3 @@ class NanoVNASaver(QtWidgets.QWidget):
     def update_sweep_title(self):
         for c in self.subscribing_charts:
             c.setSweepTitle(self.sweep.properties.name)
-
-    def set_tx_power(self, freq_range, power_desc):
-        self.vna.setTXPower(freq_range, power_desc)

@@ -252,4 +252,4 @@ class SweepSettingsWindow(QtWidgets.QWidget):
     def update_tx_power(self, freq_range, power_desc):
         logger.debug("update_tx_power(%r)", power_desc)
         with self.app.sweep.lock:
-            self.app.set_tx_power(freq_range, power_desc)
+            self.app.vna.setTXPower(freq_range, power_desc)

@@ -32,6 +32,9 @@ logger = logging.getLogger(__name__)
 class GroupDelayChart(FrequencyChart):
     def __init__(self, name="", reflective=True):
         super().__init__(name)
+
+        self.name_unit = "ns"
+
         self.leftMargin = 40
         self.dim.width = 250
         self.dim.height = 250
@@ -115,15 +118,6 @@ class GroupDelayChart(FrequencyChart):
                 self.groupDelayReference.append(delay)
 
         self.update()
-
-    def drawChart(self, qp: QtGui.QPainter):
-        qp.setPen(QtGui.QPen(self.color.text))
-        qp.drawText(3, 15, self.name + " (ns)")
-        qp.setPen(QtGui.QPen(self.color.foreground))
-        qp.drawLine(self.leftMargin, 20, self.leftMargin, self.topMargin+self.dim.height+5)
-        qp.drawLine(self.leftMargin-5, self.topMargin+self.dim.height,
-                    self.leftMargin+self.dim.width, self.topMargin + self.dim.height)
-        self.drawTitle(qp)
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:

@@ -25,6 +25,7 @@ from PyQt5 import QtWidgets, QtGui, QtCore
 
 from NanoVNASaver.Formatting import parse_frequency, format_frequency_chart
 from NanoVNASaver.RFTools import Datapoint
+from NanoVNASaver.SITools import Format, Value
 from .Chart import Chart
 
 logger = logging.getLogger(__name__)
@@ -58,6 +59,13 @@ class FrequencyChart(Chart):
         self.dim.height = 250
         self.fstart = 0
         self.fstop = 0
+
+        self.name_unit = ""
+        self.value_function = lambda x: 0.0
+
+        self.minValue = -1
+        self.maxValue = 1
+        self.span = 1
 
         self.setContextMenuPolicy(QtCore.Qt.DefaultContextMenu)
         mode_group = QtWidgets.QActionGroup(self)
@@ -321,6 +329,12 @@ class FrequencyChart(Chart):
                 self.dim.width * (d.freq - self.fstart) / span)
         return math.floor(self.width()/2)
 
+    def getYPosition(self, d: Datapoint) -> int:
+        return (
+            self.topMargin +
+            round((self.maxValue - d.capacitiveEquivalent()) /
+                  self.span * self.dim.height))
+
     def frequencyAtPosition(self, x, limit=True) -> int:
         """
         Calculates the frequency at a given X-position
@@ -358,7 +372,9 @@ class FrequencyChart(Chart):
                  is above or below the chart, returns maximum
                  or minimum values.
         """
-        return []
+        absy = y - self.topMargin
+        val = -1 * ((absy / self.dim.height * self.span) - self.maxValue)
+        return [val * 10e11]
 
     def wheelEvent(self, a0: QtGui.QWheelEvent) -> None:
         if len(self.data) == 0 and len(self.reference) == 0:
@@ -507,13 +523,90 @@ class FrequencyChart(Chart):
 
     def drawChart(self, qp: QtGui.QPainter):
         qp.setPen(QtGui.QPen(self.color.text))
-        qp.drawText(3, 15, self.name)
+        headline = self.name
+        if self.name_unit:
+            headline += f" ({self.name_unit})"
+        qp.drawText(3, 15, headline)
         qp.setPen(QtGui.QPen(self.color.foreground))
-        qp.drawLine(self.leftMargin, self.topMargin - 5,
-                    self.leftMargin, self.topMargin + self.dim.height + 5)
-        qp.drawLine(self.leftMargin-5, self.topMargin + self.dim.height,
+        qp.drawLine(self.leftMargin, 20,
+                    self.leftMargin, self.topMargin+self.dim.height+5)
+        qp.drawLine(self.leftMargin-5, self.topMargin+self.dim.height,
                     self.leftMargin+self.dim.width, self.topMargin + self.dim.height)
         self.drawTitle(qp)
+
+    def drawValues(self, qp: QtGui.QPainter):
+        if len(self.data) == 0 and len(self.reference) == 0:
+            return
+        pen = QtGui.QPen(self.color.sweep)
+        pen.setWidth(self.dim.point)
+        line_pen = QtGui.QPen(self.color.sweep)
+        line_pen.setWidth(self.dim.line)
+        highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
+        highlighter.setWidth(1)
+
+        self._set_start_stop()
+
+        # Draw bands if required
+        if self.bands.enabled:
+            self.drawBands(qp, self.fstart, self.fstop)
+
+        if self.fixedValues:
+            maxValue = self.maxDisplayValue / 10e11
+            minValue = self.minDisplayValue / 10e11
+            self.maxValue = maxValue
+            self.minValue = minValue
+        else:
+            # Find scaling
+            minValue = 1
+            maxValue = -1
+            for d in self.data:
+                val = self.value_function(d)
+                if val > maxValue:
+                    maxValue = val
+                if val < minValue:
+                    minValue = val
+            for d in self.reference:  # Also check min/max for the reference sweep
+                if d.freq < self.fstart or d.freq > self.fstop:
+                    continue
+                val = self.value_function(d)
+                if val > maxValue:
+                    maxValue = val
+                if val < minValue:
+                    minValue = val
+            self.maxValue = maxValue
+            self.minValue = minValue
+
+        minValue = self.minValue
+        maxValue = self.maxValue
+        span = maxValue - minValue
+        if span == 0:
+            logger.info("Span is zero for %s-Chart, setting to a small value.", self.name)
+            span = 1e-15
+        self.span = span
+
+        target_ticks = math.floor(self.dim.height / 60)
+        fmt = Format(max_nr_digits=1)
+        for i in range(target_ticks):
+            val = minValue + (i / target_ticks) * span
+            y = self.topMargin + round((self.maxValue - val) / self.span * self.dim.height)
+            qp.setPen(self.color.text)
+            if val != minValue:
+                valstr = str(Value(val, fmt=fmt))
+                qp.drawText(3, y + 3, valstr)
+            qp.setPen(QtGui.QPen(self.color.foreground))
+            qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.dim.width, y)
+
+        qp.setPen(QtGui.QPen(self.color.foreground))
+        qp.drawLine(self.leftMargin - 5, self.topMargin,
+                    self.leftMargin + self.dim.width, self.topMargin)
+        qp.setPen(self.color.text)
+        qp.drawText(3, self.topMargin + 4, str(Value(maxValue, fmt=fmt)))
+        qp.drawText(3, self.dim.height+self.topMargin, str(Value(minValue, fmt=fmt)))
+        self.drawFrequencyTicks(qp)
+
+        self.drawData(qp, self.data, self.color.sweep)
+        self.drawData(qp, self.reference, self.color.reference)
+        self.drawMarkers(qp)
 
     def drawFrequencyTicks(self, qp):
         fspan = self.fstop - self.fstart
@@ -637,6 +730,7 @@ class FrequencyChart(Chart):
         new_chart.fstop = self.fstop
         new_chart.maxFrequency = self.maxFrequency
         new_chart.minFrequency = self.minFrequency
+        new_chart.span = self.span
         new_chart.minDisplayValue = self.minDisplayValue
         new_chart.maxDisplayValue = self.maxDisplayValue
         new_chart.pointSize = self.dim.point

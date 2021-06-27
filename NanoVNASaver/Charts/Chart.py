@@ -31,7 +31,7 @@ from NanoVNASaver.Marker import Marker
 logger = logging.getLogger(__name__)
 
 @dataclass
-class ChartColors:
+class ChartColors:  # pylint: disable=too-many-instance-attributes
     background: QtGui.QColor = QtGui.QColor(QtCore.Qt.white)
     foreground: QtGui.QColor = QtGui.QColor(QtCore.Qt.lightGray)
     reference: QtGui.QColor = QtGui.QColor(QtCore.Qt.blue).setAlpha(64)
@@ -191,9 +191,11 @@ class Chart(QtWidgets.QWidget):
                 nearest = m
         return nearest
 
+    # pylint: disable=no-self-use
     def getYPosition(self, _: Datapoint) -> int:
         return 0
 
+    # pylint: disable=no-self-use
     def getXPosition(self, _: Datapoint) -> int:
         return 0
 
@@ -226,13 +228,13 @@ class Chart(QtWidgets.QWidget):
             self.dragbox.move_x = event.x()
             self.dragbox.move_y = event.y()
             return
-        if event.modifiers() == QtCore.Qt.ShiftModifier:
-            self.draggedMarker = self.getNearestMarker(event.x(), event.y())
-        elif event.modifiers() == QtCore.Qt.ControlModifier:
+        if event.modifiers() == QtCore.Qt.ControlModifier:
             event.accept()
             self.dragbox.state = True
             self.dragbox.pos_start = (event.x(), event.y())
             return
+        if event.modifiers() == QtCore.Qt.ShiftModifier:
+            self.draggedMarker = self.getNearestMarker(event.x(), event.y())
         self.mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, a0: QtGui.QMouseEvent) -> None:
@@ -249,14 +251,16 @@ class Chart(QtWidgets.QWidget):
 
     def saveScreenshot(self):
         logger.info("Saving %s to file...", self.name)
-        filename, _ = QtWidgets.QFileDialog.getSaveFileName(parent=self, caption="Save image",
-                                                            filter="PNG (*.png);;All files (*.*)")
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
+            parent=self, caption="Save image",
+            filter="PNG (*.png);;All files (*.*)")
 
         logger.debug("Filename: %s", filename)
-        if filename != "":
-            if not QtCore.QFileInfo(filename).suffix():
-                filename += ".png"
-            self.grab().save(filename)
+        if not filename:
+            return
+        if not QtCore.QFileInfo(filename).suffix():
+            filename += ".png"
+        self.grab().save(filename)
 
     def copy(self):
         new_chart = self.__class__(self.name)
@@ -319,10 +323,11 @@ class Chart(QtWidgets.QWidget):
             qp.drawText(number_x, number_y, str(number))
 
     def drawTitle(self, qp: QtGui.QPainter, position: QtCore.QPoint = None):
-        if self.sweepTitle != "":
-            qp.setPen(self.color.text)
-            if position is None:
-                qf = QtGui.QFontMetricsF(self.font())
-                width = qf.boundingRect(self.sweepTitle).width()
-                position = QtCore.QPointF(self.width()/2 - width/2, 15)
-            qp.drawText(position, self.sweepTitle)
+        if not self.sweepTitle:
+            return
+        qp.setPen(self.color.text)
+        if position is None:
+            qf = QtGui.QFontMetricsF(self.font())
+            width = qf.boundingRect(self.sweepTitle).width()
+            position = QtCore.QPointF(self.width()/2 - width/2, 15)
+        qp.drawText(position, self.sweepTitle)
