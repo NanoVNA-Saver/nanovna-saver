@@ -32,6 +32,8 @@ class LogMagChart(FrequencyChart):
     def __init__(self, name=""):
         super().__init__(name)
 
+        self.name_unit = "dB"
+
         self.minDisplayValue = -80
         self.maxDisplayValue = 10
 
@@ -40,16 +42,6 @@ class LogMagChart(FrequencyChart):
         self.span = 1
 
         self.isInverted = False
-
-    def drawChart(self, qp: QtGui.QPainter):
-        qp.setPen(QtGui.QPen(self.color.text))
-        qp.drawText(3, 15, self.name + " (dB)")
-        qp.setPen(QtGui.QPen(self.color.foreground))
-        qp.drawLine(self.leftMargin, self.topMargin - 5,
-                    self.leftMargin, self.topMargin+self.dim.height+5)
-        qp.drawLine(self.leftMargin-5, self.topMargin+self.dim.height,
-                    self.leftMargin+self.dim.width, self.topMargin + self.dim.height)
-        self.drawTitle(qp)
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
