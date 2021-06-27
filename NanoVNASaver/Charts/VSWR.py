@@ -39,15 +39,6 @@ class VSWRChart(FrequencyChart):
         self.maxVSWR = 3
         self.span = 2
 
-        self.setMinimumSize(self.chartWidth + self.rightMargin + self.leftMargin,
-                            self.chartHeight + self.topMargin + self.bottomMargin)
-        self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
-                                                 QtWidgets.QSizePolicy.MinimumExpanding))
-        pal = QtGui.QPalette()
-        pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
-        self.setPalette(pal)
-        self.setAutoFillBackground(True)
-
     def logarithmicYAllowed(self) -> bool:
         return True
 
@@ -88,13 +79,13 @@ class VSWRChart(FrequencyChart):
             span = 0.01
         self.span = span
 
-        target_ticks = math.floor(self.chartHeight / 60)
+        target_ticks = math.floor(self.dim.height / 60)
 
         if self.logarithmicY:
             for i in range(target_ticks):
-                y = int(self.topMargin + (i / target_ticks) * self.chartHeight)
+                y = int(self.topMargin + (i / target_ticks) * self.dim.height)
                 vswr = self.valueAtPosition(y)[0]
-                qp.setPen(self.textColor)
+                qp.setPen(self.color.text)
                 if vswr != 0:
                     digits = max(0, min(2, math.floor(3 - math.log10(abs(vswr)))))
                     if digits == 0:
@@ -102,22 +93,22 @@ class VSWRChart(FrequencyChart):
                     else:
                         vswrstr = str(round(vswr, digits))
                     qp.drawText(3, y+3, vswrstr)
-                qp.setPen(QtGui.QPen(self.foregroundColor))
-                qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.chartWidth, y)
-            qp.drawLine(self.leftMargin - 5, self.topMargin + self.chartHeight,
-                        self.leftMargin + self.chartWidth, self.topMargin + self.chartHeight)
-            qp.setPen(self.textColor)
+                qp.setPen(QtGui.QPen(self.color.foreground))
+                qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.dim.width, y)
+            qp.drawLine(self.leftMargin - 5, self.topMargin + self.dim.height,
+                        self.leftMargin + self.dim.width, self.topMargin + self.dim.height)
+            qp.setPen(self.color.text)
             digits = max(0, min(2, math.floor(3 - math.log10(abs(minVSWR)))))
             if digits == 0:
                 vswrstr = str(round(minVSWR))
             else:
                 vswrstr = str(round(minVSWR, digits))
-            qp.drawText(3, self.topMargin + self.chartHeight, vswrstr)
+            qp.drawText(3, self.topMargin + self.dim.height, vswrstr)
         else:
             for i in range(target_ticks):
                 vswr = minVSWR + i * self.span/target_ticks
                 y = self.getYPositionFromValue(vswr)
-                qp.setPen(self.textColor)
+                qp.setPen(self.color.text)
                 if vswr != 0:
                     digits = max(0, min(2, math.floor(3 - math.log10(abs(vswr)))))
                     if digits == 0:
@@ -125,13 +116,13 @@ class VSWRChart(FrequencyChart):
                     else:
                         vswrstr = str(round(vswr, digits))
                     qp.drawText(3, y+3, vswrstr)
-                qp.setPen(QtGui.QPen(self.foregroundColor))
-                qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.chartWidth, y)
+                qp.setPen(QtGui.QPen(self.color.foreground))
+                qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.dim.width, y)
             qp.drawLine(self.leftMargin - 5,
                         self.topMargin,
-                        self.leftMargin + self.chartWidth,
+                        self.leftMargin + self.dim.width,
                         self.topMargin)
-            qp.setPen(self.textColor)
+            qp.setPen(self.color.text)
             digits = max(0, min(2, math.floor(3 - math.log10(abs(maxVSWR)))))
             if digits == 0:
                 vswrstr = str(round(maxVSWR))
@@ -139,15 +130,15 @@ class VSWRChart(FrequencyChart):
                 vswrstr = str(round(maxVSWR, digits))
             qp.drawText(3, 35, vswrstr)
 
-        qp.setPen(self.swrColor)
+        qp.setPen(self.color.swr)
         for vswr in self.swrMarkers:
             y = self.getYPositionFromValue(vswr)
-            qp.drawLine(self.leftMargin, y, self.leftMargin + self.chartWidth, y)
+            qp.drawLine(self.leftMargin, y, self.leftMargin + self.dim.width, y)
             qp.drawText(self.leftMargin + 3, y - 1, str(vswr))
 
         self.drawFrequencyTicks(qp)
-        self.drawData(qp, self.data, self.sweepColor)
-        self.drawData(qp, self.reference, self.referenceColor)
+        self.drawData(qp, self.data, self.color.sweep)
+        self.drawData(qp, self.reference, self.color.reference)
         self.drawMarkers(qp)
 
     def getYPositionFromValue(self, vswr) -> int:
@@ -159,8 +150,8 @@ class VSWRChart(FrequencyChart):
                 return -1
             return (
                 self.topMargin +
-                round((math.log(self.maxVSWR) - math.log(vswr)) / span * self.chartHeight))
-        return self.topMargin + round((self.maxVSWR - vswr) / self.span * self.chartHeight)
+                round((math.log(self.maxVSWR) - math.log(vswr)) / span * self.dim.height))
+        return self.topMargin + round((self.maxVSWR - vswr) / self.span * self.dim.height)
 
     def getYPosition(self, d: Datapoint) -> int:
         return self.getYPositionFromValue(d.vswr)
@@ -171,12 +162,12 @@ class VSWRChart(FrequencyChart):
             min_val = self.maxVSWR - self.span
             if self.maxVSWR > 0 and min_val > 0:
                 span = math.log(self.maxVSWR) - math.log(min_val)
-                step = span / self.chartHeight
+                step = span / self.dim.height
                 val = math.exp(math.log(self.maxVSWR) - absy * step)
             else:
                 val = -1
         else:
-            val = -1 * ((absy / self.chartHeight * self.span) - self.maxVSWR)
+            val = -1 * ((absy / self.dim.height * self.span) - self.maxVSWR)
         return [val]
 
     def resetDisplayLimits(self):

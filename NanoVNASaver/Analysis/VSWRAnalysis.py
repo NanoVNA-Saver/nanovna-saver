@@ -27,9 +27,6 @@ from NanoVNASaver.Formatting import format_complex_imp
 from NanoVNASaver.RFTools import reflection_coefficient
 import os
 import csv
-from NanoVNASaver.Marker.Values import Label
-from NanoVNASaver.Marker.Widget import MarkerLabel
-from NanoVNASaver.Marker.Widget import Marker
 from collections import OrderedDict
 from NanoVNASaver.Formatting import format_frequency_short
 from NanoVNASaver.Formatting import format_resistance
@@ -101,7 +98,7 @@ class VSWRAnalysis(Analysis):
         results_header = self.layout.indexOf(self.results_label)
         logger.debug("Results start at %d, out of %d",
                      results_header, self.layout.rowCount())
-        for i in range(results_header, self.layout.rowCount()):
+        for _ in range(results_header, self.layout.rowCount()):
             self.layout.removeRow(self.layout.rowCount() - 1)
 
         if len(minimums) > max_dips_shown:
@@ -228,7 +225,7 @@ class ResonanceAnalysis(Analysis):
         results_header = self.layout.indexOf(self.results_label)
         logger.debug("Results start at %d, out of %d",
                      results_header, self.layout.rowCount())
-        for i in range(results_header, self.layout.rowCount()):
+        for _ in range(results_header, self.layout.rowCount()):
             self.layout.removeRow(self.layout.rowCount() - 1)
 
 #         if len(crossing) > max_dips_shown:
@@ -347,8 +344,7 @@ class EFHWAnalysis(ResonanceAnalysis):
                     str(self.app.data.s11[both[i]].freq))
         else:
             logger.info("TO DO: find near data")
-            for m in crossing:
-                start, lowest, end = m
+            for _, lowest, _ in crossing:
                 my_data = self._get_data(lowest)
 
                 if lowest in extended_data:

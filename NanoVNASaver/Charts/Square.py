@@ -32,15 +32,15 @@ class SquareChart(Chart):
             QtWidgets.QSizePolicy.Fixed,
             QtWidgets.QSizePolicy.MinimumExpanding)
         self.setSizePolicy(sizepolicy)
-        self.chartWidth = self.width()-40
-        self.chartHeight = self.height()-40
+        self.dim.width = self.width()-40
+        self.dim.height = self.height()-40
 
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
-        if not self.isPopout:
+        if not self.flag.is_popout:
             self.setFixedWidth(a0.size().height())
-            self.chartWidth = a0.size().height()-40
-            self.chartHeight = a0.size().height()-40
+            self.dim.width = a0.size().height()-40
+            self.dim.height = a0.size().height()-40
         else:
             min_dimension = min(a0.size().height(), a0.size().width())
-            self.chartWidth = self.chartHeight = min_dimension - 40
+            self.dim.width = self.dim.height = min_dimension - 40
         self.update()

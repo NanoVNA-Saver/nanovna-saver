@@ -45,15 +45,6 @@ class PhaseChart(FrequencyChart):
         self.minDisplayValue = -180
         self.maxDisplayValue = 180
 
-        self.setMinimumSize(self.chartWidth + self.rightMargin + self.leftMargin,
-                            self.chartHeight + self.topMargin + self.bottomMargin)
-        self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
-                                                 QtWidgets.QSizePolicy.MinimumExpanding))
-        pal = QtGui.QPalette()
-        pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
-        self.setPalette(pal)
-        self.setAutoFillBackground(True)
-
         self.y_menu.addSeparator()
         self.action_unwrap = QtWidgets.QAction("Unwrap")
         self.action_unwrap.setCheckable(True)
@@ -106,13 +97,13 @@ class PhaseChart(FrequencyChart):
         self.maxAngle = maxAngle
         self.span = span
 
-        tickcount = math.floor(self.chartHeight / 60)
+        tickcount = math.floor(self.dim.height / 60)
 
         for i in range(tickcount):
             angle = minAngle + span * i / tickcount
-            y = self.topMargin + round((self.maxAngle - angle) / self.span * self.chartHeight)
+            y = self.topMargin + round((self.maxAngle - angle) / self.span * self.dim.height)
             if angle != minAngle and angle != maxAngle:
-                qp.setPen(QtGui.QPen(self.textColor))
+                qp.setPen(QtGui.QPen(self.color.text))
                 if angle != 0:
                     digits = max(0, min(2, math.floor(3 - math.log10(abs(angle)))))
                     if digits == 0:
@@ -122,36 +113,25 @@ class PhaseChart(FrequencyChart):
                 else:
                     anglestr = "0"
                 qp.drawText(3, y + 3, anglestr + "°")
-                qp.setPen(QtGui.QPen(self.foregroundColor))
-                qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.chartWidth, y)
+                qp.setPen(QtGui.QPen(self.color.foreground))
+                qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.dim.width, y)
         qp.drawLine(self.leftMargin - 5,
                     self.topMargin,
-                    self.leftMargin + self.chartWidth,
+                    self.leftMargin + self.dim.width,
                     self.topMargin)
-        qp.setPen(self.textColor)
+        qp.setPen(self.color.text)
         qp.drawText(3, self.topMargin + 5, str(maxAngle) + "°")
-        qp.drawText(3, self.chartHeight + self.topMargin, str(minAngle) + "°")
+        qp.drawText(3, self.dim.height + self.topMargin, str(minAngle) + "°")
 
-        if self.fixedSpan:
-            fstart = self.minFrequency
-            fstop = self.maxFrequency
-        else:
-            if len(self.data) > 0:
-                fstart = self.data[0].freq
-                fstop = self.data[len(self.data)-1].freq
-            else:
-                fstart = self.reference[0].freq
-                fstop = self.reference[len(self.reference) - 1].freq
-        self.fstart = fstart
-        self.fstop = fstop
+        self._set_start_stop()
 
         # Draw bands if required
         if self.bands.enabled:
-            self.drawBands(qp, fstart, fstop)
+            self.drawBands(qp, self.fstart, self.fstop)
 
         self.drawFrequencyTicks(qp)
-        self.drawData(qp, self.data, self.sweepColor)
-        self.drawData(qp, self.reference, self.referenceColor)
+        self.drawData(qp, self.data, self.color.sweep)
+        self.drawData(qp, self.reference, self.color.reference)
         self.drawMarkers(qp)
 
     def getYPosition(self, d: Datapoint) -> int:
@@ -164,9 +144,9 @@ class PhaseChart(FrequencyChart):
                 angle = math.degrees(d.phase)
         else:
             angle = math.degrees(d.phase)
-        return self.topMargin + round((self.maxAngle - angle) / self.span * self.chartHeight)
+        return self.topMargin + round((self.maxAngle - angle) / self.span * self.dim.height)
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
-        val = -1 * ((absy / self.chartHeight * self.span) - self.maxAngle)
+        val = -1 * ((absy / self.dim.height * self.span) - self.maxAngle)
         return [val]

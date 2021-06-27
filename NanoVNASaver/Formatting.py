@@ -52,6 +52,8 @@ def format_frequency_inputs(freq: float) -> str:
 def format_frequency_short(freq: Number) -> str:
     return str(SITools.Value(freq, "Hz", FMT_FREQ_SHORT))
 
+def format_frequency_chart(freq: Number) -> str:
+    return str(SITools.Value(freq, "", FMT_FREQ_SHORT))
 
 def format_frequency_space(freq: float, fmt=FMT_FREQ_SPACE) -> str:
     return str(SITools.Value(freq, "Hz", fmt))

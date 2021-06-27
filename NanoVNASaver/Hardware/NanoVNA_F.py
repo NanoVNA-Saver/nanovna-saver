@@ -18,10 +18,6 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-import serial
-import numpy as np
-from PyQt5 import QtGui
-
 from NanoVNASaver.Hardware.NanoVNA import NanoVNA
 from NanoVNASaver.Hardware.Serial import Interface
 

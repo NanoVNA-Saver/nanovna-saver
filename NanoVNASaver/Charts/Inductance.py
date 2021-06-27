@@ -40,44 +40,24 @@ class InductanceChart(FrequencyChart):
         self.maxValue = 1
         self.span = 1
 
-        self.setMinimumSize(self.chartWidth + self.rightMargin + self.leftMargin,
-                            self.chartHeight + self.topMargin + self.bottomMargin)
-        self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
-                                                 QtWidgets.QSizePolicy.MinimumExpanding))
-        pal = QtGui.QPalette()
-        pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
-        self.setPalette(pal)
-        self.setAutoFillBackground(True)
-
     def drawChart(self, qp: QtGui.QPainter):
-        qp.setPen(QtGui.QPen(self.textColor))
+        qp.setPen(QtGui.QPen(self.color.text))
         qp.drawText(3, 15, self.name + " (H)")
-        qp.setPen(QtGui.QPen(self.foregroundColor))
-        qp.drawLine(self.leftMargin, 20, self.leftMargin, self.topMargin+self.chartHeight+5)
-        qp.drawLine(self.leftMargin-5, self.topMargin+self.chartHeight,
-                    self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)
+        qp.setPen(QtGui.QPen(self.color.foreground))
+        qp.drawLine(self.leftMargin, 20, self.leftMargin, self.topMargin+self.dim.height+5)
+        qp.drawLine(self.leftMargin-5, self.topMargin+self.dim.height,
+                    self.leftMargin+self.dim.width, self.topMargin + self.dim.height)
         self.drawTitle(qp)
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
 
-        if not self.fixedSpan:
-            if len(self.data) > 0:
-                fstart = self.data[0].freq
-                fstop = self.data[len(self.data)-1].freq
-            else:
-                fstart = self.reference[0].freq
-                fstop = self.reference[len(self.reference) - 1].freq
-            self.fstart = fstart
-            self.fstop = fstop
-        else:
-            fstart = self.fstart = self.minFrequency
-            fstop = self.fstop = self.maxFrequency
+        self._set_start_stop()
 
         # Draw bands if required
         if self.bands.enabled:
-            self.drawBands(qp, fstart, fstop)
+            self.drawBands(qp, self.fstart, self.fstop)
 
         if self.fixedValues:
             maxValue = self.maxDisplayValue / 10e11
@@ -111,38 +91,38 @@ class InductanceChart(FrequencyChart):
             span = 1e-15
         self.span = span
 
-        target_ticks = math.floor(self.chartHeight / 60)
+        target_ticks = math.floor(self.dim.height / 60)
         fmt = Format(max_nr_digits=1)
         for i in range(target_ticks):
             val = minValue + (i / target_ticks) * span
-            y = self.topMargin + round((self.maxValue - val) / self.span * self.chartHeight)
-            qp.setPen(self.textColor)
+            y = self.topMargin + round((self.maxValue - val) / self.span * self.dim.height)
+            qp.setPen(self.color.text)
             if val != minValue:
                 valstr = str(Value(val, fmt=fmt))
                 qp.drawText(3, y + 3, valstr)
-            qp.setPen(QtGui.QPen(self.foregroundColor))
-            qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.chartWidth, y)
+            qp.setPen(QtGui.QPen(self.color.foreground))
+            qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.dim.width, y)
 
-        qp.setPen(QtGui.QPen(self.foregroundColor))
+        qp.setPen(QtGui.QPen(self.color.foreground))
         qp.drawLine(self.leftMargin - 5, self.topMargin,
-                    self.leftMargin + self.chartWidth, self.topMargin)
-        qp.setPen(self.textColor)
+                    self.leftMargin + self.dim.width, self.topMargin)
+        qp.setPen(self.color.text)
         qp.drawText(3, self.topMargin + 4, str(Value(maxValue, fmt=fmt)))
-        qp.drawText(3, self.chartHeight+self.topMargin, str(Value(minValue, fmt=fmt)))
+        qp.drawText(3, self.dim.height+self.topMargin, str(Value(minValue, fmt=fmt)))
         self.drawFrequencyTicks(qp)
 
-        self.drawData(qp, self.data, self.sweepColor)
-        self.drawData(qp, self.reference, self.referenceColor)
+        self.drawData(qp, self.data, self.color.sweep)
+        self.drawData(qp, self.reference, self.color.reference)
         self.drawMarkers(qp)
 
     def getYPosition(self, d: Datapoint) -> int:
         return (self.topMargin +
                 round((self.maxValue - d.inductiveEquivalent()) /
-                      self.span * self.chartHeight))
+                      self.span * self.dim.height))
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
-        val = -1 * ((absy / self.chartHeight * self.span) - self.maxValue)
+        val = -1 * ((absy / self.dim.height * self.span) - self.maxValue)
         return [val * 10e11]
 
     def copy(self):
