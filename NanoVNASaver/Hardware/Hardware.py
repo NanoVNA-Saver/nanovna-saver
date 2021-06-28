@@ -32,6 +32,7 @@ from NanoVNASaver.Hardware.NanoVNA_F_V2 import NanoVNA_F_V2
 from NanoVNASaver.Hardware.NanoVNA_H import NanoVNA_H
 from NanoVNASaver.Hardware.NanoVNA_H4 import NanoVNA_H4
 from NanoVNASaver.Hardware.NanoVNA_V2 import NanoVNA_V2
+from NanoVNASaver.Hardware.TinySA import TinySA
 from NanoVNASaver.Hardware.Serial import drain_serial, Interface
 
 
@@ -75,6 +76,7 @@ def get_interfaces() -> List[Interface]:
             iface = Interface('serial', t.name)
             iface.port = d.device
             interfaces.append(iface)
+    logger.debug("Interfaces: %s", interfaces)
     return interfaces
 
 
@@ -111,6 +113,9 @@ def get_VNA(iface: Interface) -> 'VNA':
     if info.find("NanoVNA") >= 0:
         logger.info("Type: Generic NanoVNA")
         return NanoVNA(iface)
+    if info.find("tinySA") >= 0:
+        logger.info("Type: tinySA Spectrum Analyser")
+        return TinySA(iface)
     logger.warning("Did not recognize NanoVNA type from firmware.")
     return NanoVNA(iface)
 
@@ -159,4 +164,5 @@ def get_info(serial_port: serial.Serial) -> str:
                 logger.debug("Needed retries: %s", retries)
                 break
             lines.append(line)
+        logger.debug("Info output: %s", lines)
         return "\n".join(lines)
