@@ -23,6 +23,7 @@ from collections import OrderedDict
 from time import sleep, strftime, localtime
 
 from PyQt5 import QtWidgets, QtCore, QtGui
+from numpy import exp
 
 from .Windows import (
     AboutWindow, AnalysisWindow, CalibrationWindow,
@@ -94,7 +95,10 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.bands = BandsModel()
 
         self.interface = Interface("serial", "None")
-        self.vna = VNA(self.interface)
+        try:
+            self.vna = VNA(self.interface)
+        except IOError as exc:
+            self.showError(f"{exc}\n\nPlease try reconnect")
 
         self.dataLock = threading.Lock()
         self.data = Touchstone()

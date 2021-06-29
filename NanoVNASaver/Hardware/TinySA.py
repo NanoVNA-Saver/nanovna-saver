@@ -106,19 +106,17 @@ class TinySA(VNA):
         self.start = start
         self.stop = stop
         list(self.exec_command(f"sweep {start} {stop} {self.datapoints}"))
-        list(self.exec_command(f"trigger auto"))
+        list(self.exec_command("trigger auto"))
 
     def readFrequencies(self) -> List[int]:
         logger.debug("readFrequencies")
-        return [int(line) for line in self.exec_command(
-            f"frequencies")]
+        return [int(line) for line in self.exec_command("frequencies")]
 
     def readValues(self, value) -> List[str]:
         logger.debug("Read: %s", value)
         if value == "data 0":
             self._sweepdata = []
-            for line in self.exec_command(
-                    f"data"):
+            for line in self.exec_command("data"):
                 self._sweepdata.append(f"0 {line.strip()}")
         return self._sweepdata
         if value == "data 0":

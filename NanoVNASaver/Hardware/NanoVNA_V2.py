@@ -214,8 +214,8 @@ class NanoVNA_V2(VNA):
             sleep(WRITE_SLEEP)
             resp = self.serial.read(2)
         if len(resp) != 2:
-            logger.error("Timeout reading version registers")
-            return None
+            logger.error("Timeout reading version registers. Got: %s", resp)
+            raise IOError("Timeout reading version registers")
         result = Version(f"{resp[0]}.0.{resp[1]}")
         logger.debug("readVersion: %s", result)
         return result
