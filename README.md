@@ -19,6 +19,12 @@ Latest Changes
 
 ### Changes in v0.3.10
 
+- Default Band ranges for 5 and 9cm
+- Layout should fit on smaller screens
+- Fixed fixed axis settings
+- Show VNA type in port selector
+- Recognise tinySA
+
 
 ### Changes in v0.3.9
 
