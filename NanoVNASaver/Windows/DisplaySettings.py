@@ -77,6 +77,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         self.btnColorPicker = QtWidgets.QPushButton("█")
         self.btnColorPicker.setFixedWidth(20)
+        self.btnColorPicker.setMinimumHeight(20)
         self.sweepColor = self.app.settings.value(
             "SweepColor", defaultValue=QtGui.QColor(160, 140, 20, 128),
             type=QtGui.QColor)
@@ -89,6 +90,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         self.btnSecondaryColorPicker = QtWidgets.QPushButton("█")
         self.btnSecondaryColorPicker.setFixedWidth(20)
+        self.btnSecondaryColorPicker.setMinimumHeight(20)
         self.secondarySweepColor = self.app.settings.value("SecondarySweepColor",
                                                            defaultValue=QtGui.QColor(
                                                                20, 160, 140, 128),
@@ -102,6 +104,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         self.btnReferenceColorPicker = QtWidgets.QPushButton("█")
         self.btnReferenceColorPicker.setFixedWidth(20)
+        self.btnReferenceColorPicker.setMinimumHeight(20)
         self.referenceColor = self.app.settings.value(
             "ReferenceColor", defaultValue=QtGui.QColor(0, 0, 255, 48),
             type=QtGui.QColor)
@@ -114,6 +117,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         self.btnSecondaryReferenceColorPicker = QtWidgets.QPushButton("█")
         self.btnSecondaryReferenceColorPicker.setFixedWidth(20)
+        self.btnSecondaryReferenceColorPicker.setMinimumHeight(20)
         self.secondaryReferenceColor = self.app.settings.value(
             "SecondaryReferenceColor",
             defaultValue=QtGui.QColor(0, 0, 255, 48),
@@ -130,6 +134,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self.btnSecondaryReferenceColorPicker)
 
         self.pointSizeInput = QtWidgets.QSpinBox()
+        self.pointSizeInput.setMinimumHeight(20)
         pointsize = self.app.settings.value("PointSize", 2, int)
         self.pointSizeInput.setValue(pointsize)
         self.changePointSize(pointsize)
@@ -141,6 +146,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         display_options_layout.addRow("Point size", self.pointSizeInput)
 
         self.lineThicknessInput = QtWidgets.QSpinBox()
+        self.lineThicknessInput.setMinimumHeight(20)
         linethickness = self.app.settings.value("LineThickness", 1, int)
         self.lineThicknessInput.setValue(linethickness)
         self.changeLineThickness(linethickness)
@@ -152,6 +158,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         display_options_layout.addRow("Line thickness", self.lineThicknessInput)
 
         self.markerSizeInput = QtWidgets.QSpinBox()
+        self.markerSizeInput.setMinimumHeight(20)
         markersize = self.app.settings.value("MarkerSize", 6, int)
         self.markerSizeInput.setValue(markersize)
         self.changeMarkerSize(markersize)
@@ -200,6 +207,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         self.btn_background_picker = QtWidgets.QPushButton("█")
         self.btn_background_picker.setFixedWidth(20)
+        self.btn_background_picker.setMinimumHeight(20)
         self.btn_background_picker.clicked.connect(
             lambda: self.setColor(
                 "background",
@@ -212,6 +220,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         self.btn_foreground_picker = QtWidgets.QPushButton("█")
         self.btn_foreground_picker.setFixedWidth(20)
+        self.btn_foreground_picker.setMinimumHeight(20)
         self.btn_foreground_picker.clicked.connect(
             lambda: self.setColor(
                 "foreground",
@@ -223,6 +232,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         self.btn_text_picker = QtWidgets.QPushButton("█")
         self.btn_text_picker.setFixedWidth(20)
+        self.btn_text_picker.setMinimumHeight(20)
         self.btn_text_picker.clicked.connect(
             lambda: self.setColor(
                 "text",
@@ -238,6 +248,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         font_options_box = QtWidgets.QGroupBox("Font")
         font_options_layout = QtWidgets.QFormLayout(font_options_box)
         self.font_dropdown = QtWidgets.QComboBox()
+        self.font_dropdown.setMinimumHeight(20)
         self.font_dropdown.addItems(["7", "8", "9", "10", "11", "12"])
         font_size = self.app.settings.value("FontSize",
                                             defaultValue="8",
@@ -258,6 +269,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         self.btn_bands_picker = QtWidgets.QPushButton("█")
         self.btn_bands_picker.setFixedWidth(20)
+        self.btn_bands_picker.setMinimumHeight(20)
         self.btn_bands_picker.clicked.connect(
             lambda: self.setColor(
                 "bands",
@@ -268,6 +280,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         bands_layout.addRow("Chart bands", self.btn_bands_picker)
 
         self.btn_manage_bands = QtWidgets.QPushButton("Manage bands")
+        self.btn_manage_bands.setMinimumHeight(20)
 
         self.bandsWindow = BandsWindow(self.app)
         self.btn_manage_bands.clicked.connect(self.displayBandsWindow)
@@ -288,6 +301,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         self.btn_vswr_picker = QtWidgets.QPushButton("█")
         self.btn_vswr_picker.setFixedWidth(20)
+        self.btn_vswr_picker.setMinimumHeight(20)
         self.btn_vswr_picker.clicked.connect(
             lambda: self.setColor(
                 "vswr",
@@ -298,6 +312,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         vswr_marker_layout.addRow("VSWR Markers", self.btn_vswr_picker)
 
         self.vswr_marker_dropdown = QtWidgets.QComboBox()
+        self.vswr_marker_dropdown.setMinimumHeight(20)
         vswr_marker_layout.addRow(self.vswr_marker_dropdown)
 
         if len(self.vswrMarkers) == 0:
@@ -310,7 +325,9 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         self.vswr_marker_dropdown.setCurrentIndex(0)
         btn_add_vswr_marker = QtWidgets.QPushButton("Add ...")
+        btn_add_vswr_marker.setMinimumHeight(20)
         btn_remove_vswr_marker = QtWidgets.QPushButton("Remove")
+        btn_remove_vswr_marker.setMinimumHeight(20)
         vswr_marker_btn_layout = QtWidgets.QHBoxLayout()
         vswr_marker_btn_layout.addWidget(btn_add_vswr_marker)
         vswr_marker_btn_layout.addWidget(btn_remove_vswr_marker)
@@ -323,10 +340,13 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         markers_layout = QtWidgets.QFormLayout(markers_box)
 
         btn_add_marker = QtWidgets.QPushButton("Add")
+        btn_add_marker.setMinimumHeight(30)
         btn_add_marker.clicked.connect(self.addMarker)
         self.btn_remove_marker = QtWidgets.QPushButton("Remove")
+        self.btn_remove_marker.setMinimumHeight(30)
         self.btn_remove_marker.clicked.connect(self.removeMarker)
         btn_marker_settings = QtWidgets.QPushButton("Settings ...")
+        btn_marker_settings.setMinimumHeight(30)
         btn_marker_settings.clicked.connect(self.displayMarkerWindow)
 
         marker_btn_layout = QtWidgets.QHBoxLayout()
@@ -355,6 +375,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         selections.append("None")
         chart00_selection = QtWidgets.QComboBox()
+        chart00_selection.setMinimumHeight(30)
         chart00_selection.addItems(selections)
         chart00 = self.app.settings.value("Chart00", "S11 Smith Chart")
         if chart00_selection.findText(chart00) > -1:
@@ -366,6 +387,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         charts_layout.addWidget(chart00_selection, 0, 0)
 
         chart01_selection = QtWidgets.QComboBox()
+        chart01_selection.setMinimumHeight(30)
         chart01_selection.addItems(selections)
         chart01 = self.app.settings.value("Chart01", "S11 Return Loss")
         if chart01_selection.findText(chart01) > -1:
@@ -377,6 +399,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         charts_layout.addWidget(chart01_selection, 0, 1)
 
         chart02_selection = QtWidgets.QComboBox()
+        chart02_selection.setMinimumHeight(30)
         chart02_selection.addItems(selections)
         chart02 = self.app.settings.value("Chart02", "None")
         if chart02_selection.findText(chart02) > -1:
@@ -388,6 +411,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         charts_layout.addWidget(chart02_selection, 0, 2)
 
         chart10_selection = QtWidgets.QComboBox()
+        chart10_selection.setMinimumHeight(30)
         chart10_selection.addItems(selections)
         chart10 = self.app.settings.value("Chart10", "S21 Polar Plot")
         if chart10_selection.findText(chart10) > -1:
@@ -399,6 +423,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         charts_layout.addWidget(chart10_selection, 1, 0)
 
         chart11_selection = QtWidgets.QComboBox()
+        chart11_selection.setMinimumHeight(30)
         chart11_selection.addItems(selections)
         chart11 = self.app.settings.value("Chart11", "S21 Gain")
         if chart11_selection.findText(chart11) > -1:
@@ -410,6 +435,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         charts_layout.addWidget(chart11_selection, 1, 1)
 
         chart12_selection = QtWidgets.QComboBox()
+        chart12_selection.setMinimumHeight(30)
         chart12_selection.addItems(selections)
         chart12 = self.app.settings.value("Chart12", "None")
         if chart12_selection.findText(chart12) > -1:
