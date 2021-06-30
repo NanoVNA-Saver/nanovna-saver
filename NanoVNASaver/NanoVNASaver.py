@@ -192,6 +192,8 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.charts_layout = QtWidgets.QGridLayout()
 
+        QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+Q"), self, self.close)
+
         ###############################################################
         #  Create main layout
         ###############################################################
@@ -301,7 +303,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.windows["analysis"] = AnalysisWindow(self)
         btn_show_analysis = QtWidgets.QPushButton("Analysis ...")
-        btn_show_analysis.setFixedHeight(20)
+        btn_show_analysis.setMinimumHeight(20)
         btn_show_analysis.clicked.connect(
             lambda: self.display_window("analysis"))
         self.marker_column.addWidget(btn_show_analysis)
@@ -322,13 +324,13 @@ class NanoVNASaver(QtWidgets.QWidget):
         tdr_control_box.setMaximumWidth(240)
 
         self.tdr_result_label = QtWidgets.QLabel()
-        self.tdr_result_label.setFixedHeight(20)
+        self.tdr_result_label.setMinimumHeight(20)
         tdr_control_layout.addRow(
             "Estimated cable length:", self.tdr_result_label)
 
         self.tdr_button = QtWidgets.QPushButton(
             "Time Domain Reflectometry ...")
-        self.tdr_button.setFixedHeight(20)
+        self.tdr_button.setMinimumHeight(20)
         self.tdr_button.clicked.connect(lambda: self.display_window("tdr"))
 
         tdr_control_layout.addRow(self.tdr_button)
@@ -353,10 +355,10 @@ class NanoVNASaver(QtWidgets.QWidget):
         reference_control_layout = QtWidgets.QFormLayout(reference_control_box)
 
         btn_set_reference = QtWidgets.QPushButton("Set current as reference")
-        btn_set_reference.setFixedHeight(20)
+        btn_set_reference.setMinimumHeight(20)
         btn_set_reference.clicked.connect(self.setReference)
         self.btnResetReference = QtWidgets.QPushButton("Reset reference")
-        self.btnResetReference.setFixedHeight(20)
+        self.btnResetReference.setMinimumHeight(20)
         self.btnResetReference.clicked.connect(self.resetReference)
         self.btnResetReference.setDisabled(True)
 
@@ -374,11 +376,11 @@ class NanoVNASaver(QtWidgets.QWidget):
         serial_control_box.setTitle("Serial port control")
         serial_control_layout = QtWidgets.QFormLayout(serial_control_box)
         self.serialPortInput = QtWidgets.QComboBox()
-        self.serialPortInput.setFixedHeight(20)
+        self.serialPortInput.setMinimumHeight(20)
         self.rescanSerialPort()
         self.serialPortInput.setEditable(True)
         btn_rescan_serial_port = QtWidgets.QPushButton("Rescan")
-        btn_rescan_serial_port.setFixedHeight(20)
+        btn_rescan_serial_port.setMinimumHeight(20)
         btn_rescan_serial_port.setFixedWidth(60)
         btn_rescan_serial_port.clicked.connect(self.rescanSerialPort)
         serial_port_input_layout = QtWidgets.QHBoxLayout()
@@ -390,12 +392,12 @@ class NanoVNASaver(QtWidgets.QWidget):
         serial_button_layout = QtWidgets.QHBoxLayout()
 
         self.btnSerialToggle = QtWidgets.QPushButton("Connect to device")
-        self.btnSerialToggle.setFixedHeight(20)
+        self.btnSerialToggle.setMinimumHeight(20)
         self.btnSerialToggle.clicked.connect(self.serialButtonClick)
         serial_button_layout.addWidget(self.btnSerialToggle, stretch=1)
 
         self.btnDeviceSettings = QtWidgets.QPushButton("Manage")
-        self.btnDeviceSettings.setFixedHeight(20)
+        self.btnDeviceSettings.setMinimumHeight(20)
         self.btnDeviceSettings.setFixedWidth(60)
         self.btnDeviceSettings.clicked.connect(
             lambda: self.display_window("device_settings"))
@@ -408,7 +410,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         ###############################################################
 
         btnOpenCalibrationWindow = QtWidgets.QPushButton("Calibration ...")
-        btnOpenCalibrationWindow.setFixedHeight(20)
+        btnOpenCalibrationWindow.setMinimumHeight(20)
         self.calibrationWindow = CalibrationWindow(self)
         btnOpenCalibrationWindow.clicked.connect(
             lambda: self.display_window("calibration"))
@@ -418,13 +420,13 @@ class NanoVNASaver(QtWidgets.QWidget):
         ###############################################################
 
         btn_display_setup = QtWidgets.QPushButton("Display setup ...")
-        btn_display_setup.setFixedHeight(20)
+        btn_display_setup.setMinimumHeight(20)
         btn_display_setup.setMaximumWidth(240)
         btn_display_setup.clicked.connect(
             lambda: self.display_window("setup"))
 
         btn_about = QtWidgets.QPushButton("About ...")
-        btn_about.setFixedHeight(20)
+        btn_about.setMinimumHeight(20)
         btn_about.setMaximumWidth(240)
 
         btn_about.clicked.connect(
@@ -432,7 +434,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
 
         btn_open_file_window = QtWidgets.QPushButton("Files")
-        btn_open_file_window.setFixedHeight(20)
+        btn_open_file_window.setMinimumHeight(20)
         btn_open_file_window.setMaximumWidth(240)
 
         btn_open_file_window.clicked.connect(
