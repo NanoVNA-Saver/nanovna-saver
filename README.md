@@ -12,7 +12,7 @@ sweep frequency spans in segments to gain more than 101 data
 points, and generally display and analyze the resulting data.
 
 - Copyright 2019, 2020 Rune B. Broberg
-- Copyright 2020 NanoVNA-Saver Authors
+- Copyright 2020, 2021 NanoVNA-Saver Authors
 
 Latest Changes
 --------------
