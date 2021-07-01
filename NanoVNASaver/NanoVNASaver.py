@@ -255,7 +255,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.marker_data_layout.addWidget(m.get_data_layout())
 
         scroll2 = QtWidgets.QScrollArea()
-        scroll2.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        #scroll2.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
         scroll2.setWidgetResizable(True)
         scroll2.setVisible(True)
 
@@ -277,6 +277,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         s11_control_box = QtWidgets.QGroupBox()
         s11_control_box.setTitle("S11")
         s11_control_layout = QtWidgets.QFormLayout()
+        s11_control_layout.setVerticalSpacing(0)
         s11_control_box.setLayout(s11_control_layout)
 
         self.s11_min_swr_label = QtWidgets.QLabel()
@@ -289,6 +290,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         s21_control_box = QtWidgets.QGroupBox()
         s21_control_box.setTitle("S21")
         s21_control_layout = QtWidgets.QFormLayout()
+        s21_control_layout.setVerticalSpacing(0)
         s21_control_box.setLayout(s21_control_layout)
 
         self.s21_min_gain_label = QtWidgets.QLabel()
