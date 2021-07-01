@@ -16,20 +16,19 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import logging
-
-from PyQt5 import QtWidgets
-import numpy as np
-
-from NanoVNASaver.Analysis import Analysis, PeakSearchAnalysis
-from NanoVNASaver.Formatting import format_frequency
-from NanoVNASaver.Formatting import format_complex_imp
-from NanoVNASaver.RFTools import reflection_coefficient
 import os
 import csv
+import logging
 from collections import OrderedDict
-from NanoVNASaver.Formatting import format_frequency_short
-from NanoVNASaver.Formatting import format_resistance
+
+import numpy as np
+from PyQt5 import QtWidgets
+
+from NanoVNASaver.Analysis import Analysis, PeakSearchAnalysis
+from NanoVNASaver.Formatting import (
+    format_frequency, format_complex_imp,
+    format_frequency_short, format_resistance)
+from NanoVNASaver.RFTools import reflection_coefficient
 
 logger = logging.getLogger(__name__)
 
@@ -75,10 +74,9 @@ class VSWRAnalysis(Analysis):
 
     def runAnalysis(self):
         max_dips_shown = self.max_dips_shown
-        data = []
 
-        for d in self.app.data.s11:
-            data.append(d.vswr)
+        data = [d.vswr for d in self.app.data.s11]
+
         # min_idx = np.argmin(data)
         #
         # logger.debug("Minimum at %d", min_idx)
@@ -110,7 +108,7 @@ class VSWRAnalysis(Analysis):
                 dips.append(data[lowest])
 
             best_dips = []
-            for i in range(max_dips_shown):
+            for _ in range(max_dips_shown):
                 min_idx = np.argmin(dips)
                 best_dips.append(minimums[min_idx])
                 dips.remove(dips[min_idx])
@@ -137,11 +135,10 @@ class VSWRAnalysis(Analysis):
                         QtWidgets.QLabel(
                             format_frequency(self.app.data.s11[end].freq -
                                              self.app.data.s11[start].freq)))
-                    self.layout.addWidget(PeakSearchAnalysis.QHLine())
                 else:
                     self.layout.addRow("Low spot", QtWidgets.QLabel(
                         format_frequency(self.app.data.s11[lowest].freq)))
-                    self.layout.addWidget(PeakSearchAnalysis.QHLine())
+                self.layout.addWidget(PeakSearchAnalysis.QHLine())
             # Remove the final separator line
             self.layout.removeRow(self.layout.rowCount() - 1)
         else:
@@ -199,13 +196,8 @@ class ResonanceAnalysis(Analysis):
         return my_data
 
     def _get_crossing(self):
-
-        data = []
-        for d in self.app.data.s11:
-            data.append(d.phase)
-
-        crossing = sorted(self.find_crossing_zero(data))
-        return crossing
+        data = [d.phase for d in self.app.data.s11]
+        return sorted(self.find_crossing_zero(data))
 
     def runAnalysis(self):
         self.reset()
@@ -231,11 +223,9 @@ class ResonanceAnalysis(Analysis):
 #         if len(crossing) > max_dips_shown:
 #             self.layout.addRow(QtWidgets.QLabel("<b>More than " + str(max_dips_shown) +
 #                                                 " dips found. Lowest shown.</b>"))
-
 #         self.crossing = crossing[:max_dips_shown]
-        extended_data = []
         if len(crossing) > 0:
-
+            extended_data = []
             for m in crossing:
                 start, lowest, end = m
                 my_data = self._get_data(lowest)
@@ -398,16 +388,17 @@ class EFHWAnalysis(ResonanceAnalysis):
                     row = extended_data[index]
                     writer.writerow(row)
 
-    def compare(self, old, new, fields=[("freq", str), ]):
+    def compare(self, old, new, fields=None):
         '''
         Compare data to help changes
 
         NB
-        must be same sweep 
+        must be same sweep
         ( same index must be same frequence )
         :param old:
         :param new:
         '''
+        fields = fields or [("freq", str), ]
 
         def no_compare():
 
@@ -451,7 +442,7 @@ class EFHWAnalysis(ResonanceAnalysis):
                 if delta_f > 0:
 
                     logger.debug("possible missing band, ")
-                    if (len(old_idx) > (i + split + 1)):
+                    if len(old_idx) > (i + split + 1):
                         if abs(new[k]["freq"] - old[old_idx[i + split + 1]]["freq"]) < max_delta_f:
                             logger.debug("new is missing band, compare next ")
                             split += 1

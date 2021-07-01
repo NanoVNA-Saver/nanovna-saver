@@ -17,11 +17,10 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import unittest
+from math import inf
 
 # Import targets to be tested
 from NanoVNASaver.SITools import Format, Value
-from decimal import Decimal
-from math import inf
 
 F_DEFAULT = Format()
 

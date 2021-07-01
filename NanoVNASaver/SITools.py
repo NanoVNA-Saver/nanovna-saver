@@ -158,8 +158,8 @@ class Value:
             try:
                 self._value = (decimal.Decimal(value, context=Value.CTX)
                                * decimal.Decimal(factor, context=Value.CTX))
-            except decimal.InvalidOperation:
-                raise ValueError
+            except decimal.InvalidOperation as exc:
+                raise ValueError() from exc
             self._value = clamp_value(
                 self._value, self.fmt.parse_clamp_min, self.fmt.parse_clamp_max)
         return self

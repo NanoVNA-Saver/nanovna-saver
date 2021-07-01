@@ -26,7 +26,6 @@ from PyQt5 import QtGui
 
 from NanoVNASaver.Hardware.Serial import drain_serial, Interface
 from NanoVNASaver.Hardware.VNA import VNA
-from NanoVNASaver.Version import Version
 
 logger = logging.getLogger(__name__)
 

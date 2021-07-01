@@ -23,7 +23,6 @@ from collections import OrderedDict
 from time import sleep, strftime, localtime
 
 from PyQt5 import QtWidgets, QtCore, QtGui
-from numpy import exp
 
 from .Windows import (
     AboutWindow, AnalysisWindow, CalibrationWindow,

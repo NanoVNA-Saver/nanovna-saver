@@ -202,6 +202,8 @@ class NanoVNA_V2(VNA):
             ret = [str(x.real) + ' ' + str(x.imag) for x in ret]
             return ret
 
+        return []
+
     def resetSweep(self, start: int, stop: int):
         self.setSweep(start, stop)
 

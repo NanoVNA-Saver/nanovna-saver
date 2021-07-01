@@ -103,8 +103,7 @@ def groupDelay(data: List[Datapoint], index: int) -> float:
     delta_freq = data[idx1].freq - data[idx0].freq
     if delta_freq == 0:
         return 0
-    val = -delta_angle / math.tau / delta_freq
-    return val
+    return -delta_angle / math.tau / delta_freq
 
 
 def impedance_to_capacitance(z: complex, freq: float) -> float:

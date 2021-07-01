@@ -20,7 +20,7 @@ import math
 import logging
 from typing import List
 
-from PyQt5 import QtWidgets, QtGui
+from PyQt5 import QtGui
 
 from NanoVNASaver.RFTools import Datapoint
 from .Frequency import FrequencyChart

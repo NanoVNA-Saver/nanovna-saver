@@ -97,8 +97,7 @@ class CalDataSet:
         return self.data[freq]
 
     def items(self):
-        for item in self.data.items():
-            yield item
+        yield from self.data.items()
 
     def values(self):
         for freq in self.frequencies():
@@ -212,14 +211,14 @@ class Calibration:
                 caldata["delta_e"] = - ((g1 * (gm2 - gm3) - g2 * gm2 + g3 *
                                          gm3) * gm1 + (g2 * gm3 - g3 * gm3) *
                                         gm2) / denominator
-            except ZeroDivisionError:
+            except ZeroDivisionError as exc:
                 self.isCalculated = False
                 logger.error(
                     "Division error - did you use the same measurement"
                     " for two of short, open and load?")
                 raise ValueError(
                     f"Two of short, open and load returned the same"
-                    f" values at frequency {freq}Hz.")
+                    f" values at frequency {freq}Hz.") from exc
 
             if self.isValid2Port():
                 caldata["e30"] = caldata["isolation"].z
@@ -354,12 +353,10 @@ class Calibration:
                     self.notes.append(note)
                     continue
                 if line.startswith("#"):
-                    if not parsed_header:
-                        # Check that this is a valid header
-                        if line == (
-                                "# Hz ShortR ShortI OpenR OpenI LoadR LoadI"
-                                " ThroughR ThroughI IsolationR IsolationI"):
-                            parsed_header = True
+                    if not parsed_header and line == (
+                        "# Hz ShortR ShortI OpenR OpenI LoadR LoadI"
+                            " ThroughR ThroughI IsolationR IsolationI"):
+                        parsed_header = True
                     continue
                 if not parsed_header:
                     logger.warning(
@@ -372,11 +369,7 @@ class Calibration:
                     logger.warning("Illegal data in cal file. Line %i", i)
                 cal = m.groupdict()
 
-                if cal["throughr"]:
-                    nr_cals = 5
-                else:
-                    nr_cals = 3
-
+                nr_cals = 5 if cal["throughr"] else 3
                 for name in Calibration.CAL_NAMES[:nr_cals]:
                     self.dataset.insert(
                         name,
