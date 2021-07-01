@@ -87,7 +87,7 @@ class Marker(QtCore.QObject, Value):
             self.name = f"Marker {Marker._instances}"
 
         self.frequencyInput = FrequencyInput()
-        self.frequencyInput.setFixedHeight(20)
+        self.frequencyInput.setMinimumHeight(20)
         self.frequencyInput.setAlignment(QtCore.Qt.AlignRight)
         self.frequencyInput.editingFinished.connect(
             lambda: self.setFrequency(
@@ -108,7 +108,7 @@ class Marker(QtCore.QObject, Value):
         ###############################################################
 
         self.btnColorPicker = QtWidgets.QPushButton("█")
-        self.btnColorPicker.setFixedHeight(20)
+        self.btnColorPicker.setMinimumHeight(20)
         self.btnColorPicker.setFixedWidth(20)
         self.btnColorPicker.clicked.connect(
             lambda: self.setColor(QtWidgets.QColorDialog.getColor(
@@ -143,7 +143,9 @@ class Marker(QtCore.QObject, Value):
 
         # line only if more then 3 selected
         self.left_form = QtWidgets.QFormLayout()
+        self.left_form.setVerticalSpacing(0)
         self.right_form = QtWidgets.QFormLayout()
+        self.right_form.setVerticalSpacing(0)
         box_layout.addLayout(self.left_form)
         box_layout.addWidget(line)
         box_layout.addLayout(self.right_form)

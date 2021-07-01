@@ -140,6 +140,8 @@ def detect_version(serial_port: serial.Serial) -> str:
         # -H versions
         if data.startswith("\r\nch> "):
             return "vh"
+        if data.startswith("\r\n?\r\nch> "):
+            return "vh"
         if data.startswith("2"):
             return "v2"
         logger.debug("Retry detection: %s", i + 1)
