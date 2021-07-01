@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020 NanoVNA-Saver Authors
+#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -103,8 +103,7 @@ def groupDelay(data: List[Datapoint], index: int) -> float:
     delta_freq = data[idx1].freq - data[idx0].freq
     if delta_freq == 0:
         return 0
-    val = -delta_angle / math.tau / delta_freq
-    return val
+    return -delta_angle / math.tau / delta_freq
 
 
 def impedance_to_capacitance(z: complex, freq: float) -> float:

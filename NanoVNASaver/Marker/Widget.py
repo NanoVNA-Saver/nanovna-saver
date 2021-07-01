@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020 NanoVNA-Saver Authors
+#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -87,7 +87,7 @@ class Marker(QtCore.QObject, Value):
             self.name = f"Marker {Marker._instances}"
 
         self.frequencyInput = FrequencyInput()
-        self.frequencyInput.setFixedHeight(20)
+        self.frequencyInput.setMinimumHeight(20)
         self.frequencyInput.setAlignment(QtCore.Qt.AlignRight)
         self.frequencyInput.editingFinished.connect(
             lambda: self.setFrequency(
@@ -108,7 +108,7 @@ class Marker(QtCore.QObject, Value):
         ###############################################################
 
         self.btnColorPicker = QtWidgets.QPushButton("█")
-        self.btnColorPicker.setFixedHeight(20)
+        self.btnColorPicker.setMinimumHeight(20)
         self.btnColorPicker.setFixedWidth(20)
         self.btnColorPicker.clicked.connect(
             lambda: self.setColor(QtWidgets.QColorDialog.getColor(
@@ -143,7 +143,9 @@ class Marker(QtCore.QObject, Value):
 
         # line only if more then 3 selected
         self.left_form = QtWidgets.QFormLayout()
+        self.left_form.setVerticalSpacing(0)
         self.right_form = QtWidgets.QFormLayout()
+        self.right_form.setVerticalSpacing(0)
         box_layout.addLayout(self.left_form)
         box_layout.addWidget(line)
         box_layout.addLayout(self.right_form)

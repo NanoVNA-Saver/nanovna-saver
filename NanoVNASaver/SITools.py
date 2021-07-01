@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020 NanoVNA-Saver Authors
+#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -158,8 +158,8 @@ class Value:
             try:
                 self._value = (decimal.Decimal(value, context=Value.CTX)
                                * decimal.Decimal(factor, context=Value.CTX))
-            except decimal.InvalidOperation:
-                raise ValueError
+            except decimal.InvalidOperation as exc:
+                raise ValueError() from exc
             self._value = clamp_value(
                 self._value, self.fmt.parse_clamp_min, self.fmt.parse_clamp_max)
         return self

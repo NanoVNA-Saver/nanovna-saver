@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020 NanoVNA-Saver Authors
+#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -201,6 +201,8 @@ class NanoVNA_V2(VNA):
             ret = [x[1] for x in self._sweepdata]
             ret = [str(x.real) + ' ' + str(x.imag) for x in ret]
             return ret
+
+        return []
 
     def resetSweep(self, start: int, stop: int):
         self.setSweep(start, stop)
