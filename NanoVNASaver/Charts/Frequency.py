@@ -18,12 +18,14 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
 import logging
-from typing import List
+from typing import List, Text
 
 import numpy as np
 from PyQt5 import QtWidgets, QtGui, QtCore
 
-from NanoVNASaver.Formatting import parse_frequency, format_frequency_chart
+from NanoVNASaver.Formatting import (
+    parse_frequency, parse_value,
+    format_frequency_chart, format_y_axis)
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.SITools import Format, Value
 from .Chart import Chart
@@ -275,12 +277,13 @@ class FrequencyChart(Chart):
         self.update()
 
     def setMinimumValue(self):
-        min_val, selected = QtWidgets.QInputDialog.getDouble(
+        text, selected = QtWidgets.QInputDialog.getText(
             self, "Minimum value",
-            "Set minimum value", value=self.minDisplayValue,
-            decimals=3)
+            "Set minimum value",
+            text=format_y_axis(self.minDisplayValue, self.name_unit))
         if not selected:
             return
+        min_val = parse_value(text)
         yspan = abs(self.maxDisplayValue - self.minDisplayValue)
         self.minDisplayValue = min_val
         if self.minDisplayValue >= self.maxDisplayValue:
@@ -292,12 +295,13 @@ class FrequencyChart(Chart):
         self.update()
 
     def setMaximumValue(self):
-        max_val, selected = QtWidgets.QInputDialog.getDouble(
+        text, selected = QtWidgets.QInputDialog.getText(
             self, "Maximum value",
-            "Set maximum value", value=self.maxDisplayValue,
-            decimals=3)
+            "Set maximum value",
+            text=format_y_axis(self.maxDisplayValue, self.name_unit))
         if not selected:
             return
+        max_val = parse_value(text)
         yspan = abs(self.maxDisplayValue - self.minDisplayValue)
         self.maxDisplayValue = max_val
         if self.maxDisplayValue <= self.minDisplayValue:

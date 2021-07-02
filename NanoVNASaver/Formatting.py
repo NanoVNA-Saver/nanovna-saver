@@ -20,6 +20,7 @@ import math
 from numbers import Number
 
 from NanoVNASaver import SITools
+from NanoVNASaver.RFTools import FMT_SHORT
 
 FMT_FREQ = SITools.Format()
 FMT_FREQ_SHORT = SITools.Format(max_nr_digits=4)
@@ -120,9 +121,18 @@ def format_complex_imp(z: complex, allow_negative: bool = False) -> str:
 def format_wavelength(length: Number) -> str:
     return str(SITools.Value(length, "m", FMT_WAVELENGTH))
 
+def format_y_axis(val: float, unit: str="") -> str:
+    return str(SITools.Value(val, unit, FMT_SHORT))
 
 def parse_frequency(freq: str) -> int:
     try:
         return int(SITools.Value(freq, "Hz", FMT_PARSE))
     except (ValueError, IndexError):
         return -1
+
+def parse_value(val: str) -> int:
+    try:
+        val.replace(',', '.')
+        return float(SITools.Value(val, "", FMT_PARSE))
+    except (ValueError, IndexError):
+        return 0.0
