@@ -38,7 +38,7 @@ class TinySA(VNA):
 
     def __init__(self, iface: Interface):
         super().__init__(iface)
-        self.features = set('Screenshots')
+        self.features = set(('Screenshots',))
         logger.debug("Setting initial start,stop")
         self.start, self.stop = self._get_running_frequencies()
         self.sweep_max_freq_Hz = 950e6
