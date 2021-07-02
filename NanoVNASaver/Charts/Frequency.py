@@ -40,6 +40,7 @@ class FrequencyChart(Chart):
     maxFrequency = 100000000
     minFrequency = 1000000
 
+    # TODO: use unscaled values instead of unit dependend ones
     minDisplayValue = -1
     maxDisplayValue = 1
 
