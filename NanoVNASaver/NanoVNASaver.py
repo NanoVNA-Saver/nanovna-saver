@@ -29,9 +29,9 @@ from .Windows import (
     DeviceSettingsWindow, DisplaySettingsWindow, SweepSettingsWindow,
     TDRWindow, FilesWindow
 )
-from .Controls import MarkerControl, SweepControl
+from .Controls import MarkerControl, SweepControl, SerialControl
 from .Formatting import format_frequency, format_vswr, format_gain
-from .Hardware.Hardware import Interface, get_interfaces, get_VNA
+from .Hardware.Hardware import Interface
 from .Hardware.VNA import VNA
 from .RFTools import corr_att_data
 from .Charts.Chart import Chart
@@ -71,7 +71,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.settings = QtCore.QSettings(QtCore.QSettings.IniFormat,
                                          QtCore.QSettings.UserScope,
                                          "NanoVNASaver", "NanoVNASaver")
-        print(f"Settings: {self.settings.fileName()}")
+        logger.info("Settings from: %s", self.settings.fileName())
         self.threadpool = QtCore.QThreadPool()
         self.sweep = Sweep()
         self.worker = SweepWorker(self)
@@ -90,6 +90,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.sweep_control = SweepControl(self)
         self.marker_control = MarkerControl(self)
+        self.serial_control = SerialControl(self)
 
         self.bands = BandsModel()
 
@@ -178,8 +179,9 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.combinedCharts = list(self.charts["combined"].values())
 
         # List of all charts that can be selected for display
-        self.selectable_charts = self.s11charts + self.s21charts + self.combinedCharts
-        self.selectable_charts.append(self.tdr_mainwindow_chart)
+        self.selectable_charts = (
+            self.s11charts + self.s21charts +
+            self.combinedCharts + [self.tdr_mainwindow_chart, ])
 
         # List of all charts that subscribe to updates (including duplicates!)
         self.subscribing_charts = []
@@ -372,39 +374,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         #  Serial control
         ###############################################################
 
-        serial_control_box = QtWidgets.QGroupBox()
-        serial_control_box.setMaximumWidth(240)
-        serial_control_box.setTitle("Serial port control")
-        serial_control_layout = QtWidgets.QFormLayout(serial_control_box)
-        self.serialPortInput = QtWidgets.QComboBox()
-        self.serialPortInput.setMinimumHeight(20)
-        self.rescanSerialPort()
-        self.serialPortInput.setEditable(True)
-        btn_rescan_serial_port = QtWidgets.QPushButton("Rescan")
-        btn_rescan_serial_port.setMinimumHeight(20)
-        btn_rescan_serial_port.setFixedWidth(60)
-        btn_rescan_serial_port.clicked.connect(self.rescanSerialPort)
-        serial_port_input_layout = QtWidgets.QHBoxLayout()
-        serial_port_input_layout.addWidget(QtWidgets.QLabel("Port"), stretch=0)
-        serial_port_input_layout.addWidget(self.serialPortInput, stretch=1)
-        serial_port_input_layout.addWidget(btn_rescan_serial_port, stretch=0)
-        serial_control_layout.addRow(serial_port_input_layout)
-
-        serial_button_layout = QtWidgets.QHBoxLayout()
-
-        self.btnSerialToggle = QtWidgets.QPushButton("Connect to device")
-        self.btnSerialToggle.setMinimumHeight(20)
-        self.btnSerialToggle.clicked.connect(self.serialButtonClick)
-        serial_button_layout.addWidget(self.btnSerialToggle, stretch=1)
-
-        self.btnDeviceSettings = QtWidgets.QPushButton("Manage")
-        self.btnDeviceSettings.setMinimumHeight(20)
-        self.btnDeviceSettings.setFixedWidth(60)
-        self.btnDeviceSettings.clicked.connect(
-            lambda: self.display_window("device_settings"))
-        serial_button_layout.addWidget(self.btnDeviceSettings, stretch=0)
-        serial_control_layout.addRow(serial_button_layout)
-        left_column.addWidget(serial_control_box)
+        left_column.addWidget(self.serial_control)
 
         ###############################################################
         #  Calibration
@@ -449,78 +419,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         left_column.addLayout(button_grid)
 
         logger.debug("Finished building interface")
-
-    def rescanSerialPort(self):
-        self.serialPortInput.clear()
-        for iface in get_interfaces():
-            self.serialPortInput.insertItem(1, f"{iface}", iface)
-        self.serialPortInput.repaint()
-
-    def serialButtonClick(self):
-        if not self.vna.connected():
-            self.connect_device()
-        else:
-            self.disconnect_device()
-
-    def connect_device(self):
-        if not self.interface:
-            return
-        with self.interface.lock:
-            self.interface = self.serialPortInput.currentData()
-            logger.info("Connection %s", self.interface)
-            try:
-                self.interface.open()
-
-            except (IOError, AttributeError) as exc:
-                logger.error("Tried to open %s and failed: %s",
-                             self.interface, exc)
-                return
-            if not self.interface.isOpen():
-                logger.error("Unable to open port %s", self.interface)
-                return
-            self.interface.timeout = 0.05
-        sleep(0.1)
-        try:
-            self.vna = get_VNA(self.interface)
-        except IOError as exc:
-            logger.error("Unable to connect to VNA: %s", exc)
-
-        self.vna.validateInput = self.settings.value(
-            "SerialInputValidation", True, bool)
-
-        # connected
-        self.btnSerialToggle.setText("Disconnect")
-        self.btnSerialToggle.repaint()
-
-        frequencies = self.vna.readFrequencies()
-        if not frequencies:
-            logger.warning("No frequencies read")
-            return
-        logger.info("Read starting frequency %s and end frequency %s",
-                    frequencies[0], frequencies[-1])
-        self.sweep_control.set_start(frequencies[0])
-        if frequencies[0] < frequencies[-1]:
-            self.sweep_control.set_end(frequencies[-1])
-        else:
-            self.sweep_control.set_end(
-                frequencies[0] +
-                self.vna.datapoints * self.sweep_control.get_segments())
-
-        self.sweep_control.set_segments(1)  # speed up things
-        self.sweep_control.update_center_span()
-        self.sweep_control.update_step_size()
-
-        self.windows["sweep_settings"].vna_connected()
-
-        logger.debug("Starting initial sweep")
-        self.sweep_start()
-
-    def disconnect_device(self):
-        with self.interface.lock:
-            logger.info("Closing connection to %s", self.interface)
-            self.interface.close()
-            self.btnSerialToggle.setText("Connect to device")
-            self.btnSerialToggle.repaint()
 
     def sweep_start(self):
         # Run the device data update
