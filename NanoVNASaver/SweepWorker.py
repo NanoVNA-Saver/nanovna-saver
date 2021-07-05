@@ -52,7 +52,6 @@ class WorkerSignals(QtCore.QObject):
     updated = pyqtSignal()
     finished = pyqtSignal()
     sweepError = pyqtSignal()
-    fatalSweepError = pyqtSignal()
 
 
 class SweepWorker(QtCore.QRunnable):

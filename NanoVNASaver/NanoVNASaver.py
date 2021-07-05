@@ -79,7 +79,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.worker.signals.updated.connect(self.dataUpdated)
         self.worker.signals.finished.connect(self.sweepFinished)
         self.worker.signals.sweepError.connect(self.showSweepError)
-        self.worker.signals.fatalSweepError.connect(self.showFatalSweepError)
 
         self.markers = []
 
@@ -589,10 +588,6 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def showError(self, text):
         QtWidgets.QMessageBox.warning(self, "Error", text)
-
-    def showFatalSweepError(self):
-        self.showError(self.worker.error_message)
-        self.stopSerial()
 
     def showSweepError(self):
         self.showError(self.worker.error_message)
