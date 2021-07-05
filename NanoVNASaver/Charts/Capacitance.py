@@ -18,6 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
 import logging
+from decimal import InvalidOperation
 from typing import List
 
 from PyQt5 import QtWidgets, QtGui
@@ -122,11 +123,15 @@ class CapacitanceChart(FrequencyChart):
         fmt = Format(max_nr_digits=1)
         for i in range(target_ticks):
             val = minValue + (i / target_ticks) * span
-            y = self.topMargin + round((self.maxValue - val) / self.span * self.dim.height)
-            qp.setPen(self.color.text)
-            if val != minValue:
-                valstr = str(Value(val, fmt=fmt))
-                qp.drawText(3, y + 3, valstr)
+            try:
+                y = self.topMargin + round((self.maxValue - val) / self.span * self.dim.height)
+                qp.setPen(self.color.text)
+                if val != minValue:
+                    valstr = str(Value(val, fmt=fmt))
+                    qp.drawText(3, y + 3, valstr)
+            except (ValueError, InvalidOperation) as exc:
+                logger.debug("Drawing wrent wrong: %s", exc)
+                y = self.topMargin
             qp.setPen(QtGui.QPen(self.color.foreground))
             qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.dim.width, y)
 
@@ -143,10 +148,13 @@ class CapacitanceChart(FrequencyChart):
         self.drawMarkers(qp)
 
     def getYPosition(self, d: Datapoint) -> int:
-        return (
-            self.topMargin +
-            round((self.maxValue - d.capacitiveEquivalent()) /
-                  self.span * self.dim.height))
+        try:
+            return (
+                self.topMargin +
+                round((self.maxValue - d.capacitiveEquivalent()) /
+                    self.span * self.dim.height))
+        except ValueError:
+            return self.topMargin
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
