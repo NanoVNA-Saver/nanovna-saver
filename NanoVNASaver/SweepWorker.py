@@ -106,13 +106,11 @@ class SweepWorker(QtCore.QRunnable):
             self.sweep = sweep
             self.init_data()
 
-        finished = False
-        while not finished:
+        while True:
             for i in range(sweep.segments):
                 logger.debug("Sweep segment no %d", i)
                 if self.stopped:
                     logger.debug("Stopping sweeping as signalled")
-                    finished = True
                     break
                 start, stop = sweep.get_index_range(i)
 
@@ -126,9 +124,10 @@ class SweepWorker(QtCore.QRunnable):
                     self.stopped = True
                     self.running = False
                     self.signals.sweepError.emit()
-
-            if not sweep.properties.mode == SweepMode.CONTINOUS:
-                finished = True
+            else:
+                if sweep.properties.mode == SweepMode.CONTINOUS:
+                    continue
+            break
 
         if sweep.segments > 1:
             start = sweep.start
@@ -190,14 +189,10 @@ class SweepWorker(QtCore.QRunnable):
                          raw_data21: List[Datapoint]
                          ) -> Tuple[List[Datapoint], List[Datapoint]]:
         if self.offsetDelay != 0:
-            tmp = []
-            for dp in raw_data11:
-                tmp.append(correct_delay(dp, self.offsetDelay, reflect=True))
-            raw_data11 = tmp
-            tmp = []
-            for dp in raw_data21:
-                tmp.append(correct_delay(dp, self.offsetDelay))
-            raw_data21 = tmp
+            raw_data11 = [correct_delay(
+                dp, self.offsetDelay, reflect=True) for dp in raw_data11]
+            raw_data21 = [correct_delay(dp, self.offsetDelay)
+                          for dp in raw_data21]
 
         if not self.app.calibration.isCalculated:
             return raw_data11, raw_data21
