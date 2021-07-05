@@ -17,7 +17,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-import math
 
 from dataclasses import dataclass, replace
 from typing import List, Set, Tuple, ClassVar, Any
@@ -183,21 +182,11 @@ class Chart(QtWidgets.QWidget):
         nearest = None
         for m in self.markers:
             mx, my = self.getPosition(self.data[m.location])
-            dx = abs(x - mx)
-            dy = abs(y - my)
-            distance = math.sqrt(dx**2 + dy**2)
+            distance = abs(complex(x - mx, y - my))
             if distance < shortest:
                 shortest = distance
                 nearest = m
         return nearest
-
-    # pylint: disable=no-self-use
-    def getYPosition(self, _: Datapoint) -> int:
-        return 0
-
-    # pylint: disable=no-self-use
-    def getXPosition(self, _: Datapoint) -> int:
-        return 0
 
     def getPosition(self, d: Datapoint) -> Tuple[int, int]:
         return self.getXPosition(d), self.getYPosition(d)
@@ -237,7 +226,7 @@ class Chart(QtWidgets.QWidget):
             self.draggedMarker = self.getNearestMarker(event.x(), event.y())
         self.mouseMoveEvent(event)
 
-    def mouseReleaseEvent(self, a0: QtGui.QMouseEvent) -> None:
+    def mouseReleaseEvent(self, a0: QtGui.QMouseEvent):
         self.draggedMarker = None
         if self.dragbox.state:
             self.zoomTo(self.dragbox.pos_start[0], self.dragbox.pos_start[1], a0.x(), a0.y())
@@ -247,7 +236,7 @@ class Chart(QtWidgets.QWidget):
             self.update()
 
     def zoomTo(self, x1, y1, x2, y2):
-        pass
+        raise NotImplementedError()
 
     def saveScreenshot(self):
         logger.info("Saving %s to file...", self.name)

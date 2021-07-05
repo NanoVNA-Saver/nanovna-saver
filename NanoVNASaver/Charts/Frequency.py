@@ -18,7 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
 import logging
-from typing import List, Text
+from typing import List, Tuple
 
 import numpy as np
 from PyQt5 import QtWidgets, QtGui, QtCore
@@ -382,7 +382,8 @@ class FrequencyChart(Chart):
         return [val * 10e11]
 
     def wheelEvent(self, a0: QtGui.QWheelEvent) -> None:
-        if len(self.data) == 0 and len(self.reference) == 0:
+        if ((len(self.data) == 0 and len(self.reference) == 0) or
+                a0.angleDelta().y() == 0):
             a0.ignore()
             return
         do_zoom_x = do_zoom_y = True
@@ -390,54 +391,28 @@ class FrequencyChart(Chart):
             do_zoom_x = False
         if a0.modifiers() == QtCore.Qt.ControlModifier:
             do_zoom_y = False
-        if a0.angleDelta().y() > 0:
-            # Zoom in
-            a0.accept()
-            # Center of zoom = a0.x(), a0.y()
-            # We zoom in by 1/10 of the width/height.
-            rate = a0.angleDelta().y() / 120
-            if do_zoom_x:
-                zoomx = rate * self.dim.width / 10
-            else:
-                zoomx = 0
-            if do_zoom_y:
-                zoomy = rate * self.dim.height / 10
-            else:
-                zoomy = 0
-            absx = max(0, a0.x() - self.leftMargin)
-            absy = max(0, a0.y() - self.topMargin)
-            ratiox = absx/self.dim.width
-            ratioy = absy/self.dim.height
-            p1x = int(self.leftMargin + ratiox * zoomx)
-            p1y = int(self.topMargin + ratioy * zoomy)
-            p2x = int(self.leftMargin + self.dim.width - (1 - ratiox) * zoomx)
-            p2y = int(self.topMargin + self.dim.height - (1 - ratioy) * zoomy)
-            self.zoomTo(p1x, p1y, p2x, p2y)
-        elif a0.angleDelta().y() < 0:
-            # Zoom out
-            a0.accept()
-            # Center of zoom = a0.x(), a0.y()
-            # We zoom out by 1/9 of the width/height, to match zoom in.
-            rate = -a0.angleDelta().y() / 120
-            if do_zoom_x:
-                zoomx = rate * self.dim.width / 9
-            else:
-                zoomx = 0
-            if do_zoom_y:
-                zoomy = rate * self.dim.height / 9
-            else:
-                zoomy = 0
-            absx = max(0, a0.x() - self.leftMargin)
-            absy = max(0, a0.y() - self.topMargin)
-            ratiox = absx/self.dim.width
-            ratioy = absy/self.dim.height
-            p1x = int(self.leftMargin - ratiox * zoomx)
-            p1y = int(self.topMargin - ratioy * zoomy)
-            p2x = int(self.leftMargin + self.dim.width + (1 - ratiox) * zoomx)
-            p2y = int(self.topMargin + self.dim.height + (1 - ratioy) * zoomy)
-            self.zoomTo(p1x, p1y, p2x, p2y)
-        else:
-            a0.ignore()
+        self._wheel_zomm(
+            a0, do_zoom_x, do_zoom_y,
+            math.copysign(1, a0.angleDelta().y()))
+
+
+    def _wheel_zomm(self, a0, do_zoom_x, do_zoom_y, sign: int=1):
+        # Zoom in
+        a0.accept()
+        # Center of zoom = a0.x(), a0.y()
+        # We zoom in by 1/10 of the width/height.
+        rate = sign * a0.angleDelta().y() / 120
+        zoomx = rate * self.dim.width / 10 if do_zoom_x else 0
+        zoomy = rate * self.dim.height / 10 if do_zoom_y else 0
+        absx = max(0, a0.x() - self.leftMargin)
+        absy = max(0, a0.y() - self.topMargin)
+        ratiox = absx/self.dim.width
+        ratioy = absy/self.dim.height
+        p1x = int(self.leftMargin + ratiox * zoomx)
+        p1y = int(self.topMargin + ratioy * zoomy)
+        p2x = int(self.leftMargin + self.dim.width - (1 - ratiox) * zoomx)
+        p2y = int(self.topMargin + self.dim.height - (1 - ratioy) * zoomy)
+        self.zoomTo(p1x, p1y, p2x, p2y)
 
     def zoomTo(self, x1, y1, x2, y2):
         val1 = self.valueAtPosition(y1)
@@ -503,6 +478,12 @@ class FrequencyChart(Chart):
         qp = QtGui.QPainter(self)
         self.drawChart(qp)
         self.drawValues(qp)
+        self._check_frequency_boundaries(qp)
+        if self.dragbox.state and self.dragbox.pos[0] != -1:
+            self.drawDragbog(qp)
+        qp.end()
+
+    def _check_frequency_boundaries(self, qp: QtGui.QPainter):
         if (len(self.data) > 0 and
                 (self.data[0].freq > self.fstop or
                  self.data[len(self.data)-1].freq < self.fstart)
@@ -517,14 +498,14 @@ class FrequencyChart(Chart):
             qp.drawText(self.leftMargin + self.dim.width/2 - 70,
                         self.topMargin + self.dim.height/2 - 20,
                         "Data outside frequency span")
-        if self.dragbox.state and self.dragbox.pos[0] != -1:
-            dashed_pen = QtGui.QPen(self.color.foreground, 1, QtCore.Qt.DashLine)
-            qp.setPen(dashed_pen)
-            top_left = QtCore.QPoint(self.dragbox.pos_start[0], self.dragbox.pos_start[1])
-            bottom_right = QtCore.QPoint(self.dragbox.pos[0], self.dragbox.pos[1])
-            rect = QtCore.QRect(top_left, bottom_right)
-            qp.drawRect(rect)
-        qp.end()
+
+    def drawDragbog(self, qp: QtGui.QPainter):
+        dashed_pen = QtGui.QPen(self.color.foreground, 1, QtCore.Qt.DashLine)
+        qp.setPen(dashed_pen)
+        top_left = QtCore.QPoint(self.dragbox.pos_start[0], self.dragbox.pos_start[1])
+        bottom_right = QtCore.QPoint(self.dragbox.pos[0], self.dragbox.pos[1])
+        rect = QtCore.QRect(top_left, bottom_right)
+        qp.drawRect(rect)
 
     def drawChart(self, qp: QtGui.QPainter):
         qp.setPen(QtGui.QPen(self.color.text))
@@ -555,35 +536,10 @@ class FrequencyChart(Chart):
         if self.bands.enabled:
             self.drawBands(qp, self.fstart, self.fstop)
 
-        if self.fixedValues:
-            maxValue = self.maxDisplayValue / 10e11
-            minValue = self.minDisplayValue / 10e11
-            self.maxValue = maxValue
-            self.minValue = minValue
-        else:
-            # Find scaling
-            minValue = 1
-            maxValue = -1
-            for d in self.data:
-                val = self.value_function(d)
-                if val > maxValue:
-                    maxValue = val
-                if val < minValue:
-                    minValue = val
-            for d in self.reference:  # Also check min/max for the reference sweep
-                if d.freq < self.fstart or d.freq > self.fstop:
-                    continue
-                val = self.value_function(d)
-                if val > maxValue:
-                    maxValue = val
-                if val < minValue:
-                    minValue = val
-            self.maxValue = maxValue
-            self.minValue = minValue
-
-        minValue = self.minValue
-        maxValue = self.maxValue
-        span = maxValue - minValue
+        min_value, max_value = self._find_scaling()
+        self.maxValue = max_value
+        self.minValue = min_value
+        span = max_value - min_value
         if span == 0:
             logger.info("Span is zero for %s-Chart, setting to a small value.", self.name)
             span = 1e-15
@@ -592,10 +548,10 @@ class FrequencyChart(Chart):
         target_ticks = math.floor(self.dim.height / 60)
         fmt = Format(max_nr_digits=1)
         for i in range(target_ticks):
-            val = minValue + (i / target_ticks) * span
+            val = min_value + (i / target_ticks) * span
             y = self.topMargin + round((self.maxValue - val) / self.span * self.dim.height)
             qp.setPen(self.color.text)
-            if val != minValue:
+            if val != min_value:
                 valstr = str(Value(val, fmt=fmt))
                 qp.drawText(3, y + 3, valstr)
             qp.setPen(QtGui.QPen(self.color.foreground))
@@ -605,13 +561,35 @@ class FrequencyChart(Chart):
         qp.drawLine(self.leftMargin - 5, self.topMargin,
                     self.leftMargin + self.dim.width, self.topMargin)
         qp.setPen(self.color.text)
-        qp.drawText(3, self.topMargin + 4, str(Value(maxValue, fmt=fmt)))
-        qp.drawText(3, self.dim.height+self.topMargin, str(Value(minValue, fmt=fmt)))
+        qp.drawText(3, self.topMargin + 4, str(Value(max_value, fmt=fmt)))
+        qp.drawText(3, self.dim.height+self.topMargin, str(Value(min_value, fmt=fmt)))
         self.drawFrequencyTicks(qp)
 
         self.drawData(qp, self.data, self.color.sweep)
         self.drawData(qp, self.reference, self.color.reference)
         self.drawMarkers(qp)
+
+    def _find_scaling(self) -> Tuple[int, int]:
+        if self.fixedValues:
+            return (self.minDisplayValue / 10e11,
+                    self.maxDisplayValue / 10e11)
+        min_value = 1
+        max_value = -1
+        for d in self.data:
+            val = self.value_function(d)
+            if val > max_value:
+                max_value = val
+            if val < min_value:
+                min_value = val
+        for d in self.reference:  # Also check min/max for the reference sweep
+            if d.freq < self.fstart or d.freq > self.fstop:
+                continue
+            val = self.value_function(d)
+            if val > max_value:
+                max_value = val
+            if val < min_value:
+                min_value = val
+        return (min_value, max_value)
 
     def drawFrequencyTicks(self, qp):
         fspan = self.fstop - self.fstart
@@ -762,10 +740,10 @@ class FrequencyChart(Chart):
     def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
         m = self.getActiveMarker()
         if m is not None and a0.modifiers() == QtCore.Qt.NoModifier:
-            if a0.key() == QtCore.Qt.Key_Down or a0.key() == QtCore.Qt.Key_Left:
+            if a0.key() in [QtCore.Qt.Key_Down, QtCore.Qt.Key_Left]:
                 m.frequencyInput.keyPressEvent(QtGui.QKeyEvent(
                     a0.type(), QtCore.Qt.Key_Down, a0.modifiers()))
-            elif a0.key() == QtCore.Qt.Key_Up or a0.key() == QtCore.Qt.Key_Right:
+            elif a0.key() in [QtCore.Qt.Key_Up, QtCore.Qt.Key_Right]:
                 m.frequencyInput.keyPressEvent(QtGui.QKeyEvent(
                     a0.type(), QtCore.Qt.Key_Up, a0.modifiers()))
         else:

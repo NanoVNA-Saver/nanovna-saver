@@ -99,6 +99,7 @@ def main():
         app.exec_()
     except BaseException as exc:
         logger.exception("%s", exc)
+        raise exc
 
 if __name__ == '__main__':
     main()
