@@ -20,7 +20,7 @@ import logging
 import sys
 import threading
 from collections import OrderedDict
-from time import sleep, strftime, localtime
+from time import strftime, localtime
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 

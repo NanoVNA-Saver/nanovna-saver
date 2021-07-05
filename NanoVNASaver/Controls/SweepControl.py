@@ -38,7 +38,7 @@ class SweepControl(QtWidgets.QGroupBox):
         self.app = app
         self.setMaximumWidth(240)
         self.setTitle(title)
-        control_layout = QtWidgets.QFormLayout(self)
+        self.layout = QtWidgets.QFormLayout(self)
 
         line = QtWidgets.QFrame()
         line.setFrameShape(QtWidgets.QFrame.VLine)
@@ -49,7 +49,7 @@ class SweepControl(QtWidgets.QGroupBox):
         input_layout.addLayout(input_left_layout)
         input_layout.addWidget(line)
         input_layout.addLayout(input_right_layout)
-        control_layout.addRow(input_layout)
+        self.layout.addRow(input_layout)
 
         self.input_start = FrequencyInputWidget()
         self.input_start.setFixedHeight(20)
@@ -93,19 +93,19 @@ class SweepControl(QtWidgets.QGroupBox):
         segment_layout = QtWidgets.QHBoxLayout()
         segment_layout.addWidget(self.input_segments)
         segment_layout.addWidget(self.label_step)
-        control_layout.addRow(QtWidgets.QLabel("Segments"), segment_layout)
+        self.layout.addRow(QtWidgets.QLabel("Segments"), segment_layout)
 
         btn_settings_window = QtWidgets.QPushButton("Sweep settings ...")
         btn_settings_window.setFixedHeight(20)
         btn_settings_window.clicked.connect(
             lambda: self.app.display_window("sweep_settings"))
 
-        control_layout.addRow(btn_settings_window)
+        self.layout.addRow(btn_settings_window)
 
         self.progress_bar = QtWidgets.QProgressBar()
         self.progress_bar.setMaximum(100)
         self.progress_bar.setValue(0)
-        control_layout.addRow(self.progress_bar)
+        self.layout.addRow(self.progress_bar)
 
         self.btn_start = QtWidgets.QPushButton("Sweep")
         self.btn_start.setFixedHeight(20)
@@ -122,7 +122,7 @@ class SweepControl(QtWidgets.QGroupBox):
         btn_layout.setContentsMargins(0, 0, 0, 0)
         btn_layout_widget = QtWidgets.QWidget()
         btn_layout_widget.setLayout(btn_layout)
-        control_layout.addRow(btn_layout_widget)
+        self.layout.addRow(btn_layout_widget)
 
         self.input_start.textEdited.emit(self.input_start.text())
         self.input_start.textChanged.emit(self.input_start.text())

@@ -35,7 +35,7 @@ class SerialControl(QtWidgets.QGroupBox):
         self.setTitle(title)
         self.setMaximumWidth(240)
 
-        control_layout = QtWidgets.QFormLayout(self)
+        self.layout = QtWidgets.QFormLayout(self)
         self.inp_port = QtWidgets.QComboBox()
         self.inp_port.setMinimumHeight(20)
         self.rescanSerialPort()
@@ -48,7 +48,7 @@ class SerialControl(QtWidgets.QGroupBox):
         intput_layout.addWidget(QtWidgets.QLabel("Port"), stretch=0)
         intput_layout.addWidget(self.inp_port, stretch=1)
         intput_layout.addWidget(self.btn_rescan, stretch=0)
-        control_layout.addRow(intput_layout)
+        self.layout.addRow(intput_layout)
 
         button_layout = QtWidgets.QHBoxLayout()
 
@@ -64,7 +64,7 @@ class SerialControl(QtWidgets.QGroupBox):
             lambda: self.app.display_window("device_settings"))
 
         button_layout.addWidget(self.btn_settings, stretch=0)
-        control_layout.addRow(button_layout)
+        self.layout.addRow(button_layout)
 
     def rescanSerialPort(self):
         self.inp_port.clear()
