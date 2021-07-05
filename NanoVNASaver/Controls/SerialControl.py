@@ -19,23 +19,19 @@
 import logging
 from time import sleep
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets
 
 from NanoVNASaver.Hardware.Hardware import Interface, get_interfaces, get_VNA
+from NanoVNASaver.Controls.Control import Control
 
 logger = logging.getLogger(__name__)
 
-class SerialControl(QtWidgets.QGroupBox):
-    updated = QtCore.pyqtSignal(object)
+class SerialControl(Control):
 
-    def __init__(self, app: QtWidgets.QWidget, title: str="Serial port control"):
-        super().__init__()
-        self.app = app
+    def __init__(self, app: QtWidgets.QWidget):
+        super().__init__(app, "Serial port control")
+
         self.interface = Interface("serial", "none")
-        self.setTitle(title)
-        self.setMaximumWidth(240)
-
-        self.layout = QtWidgets.QFormLayout(self)
         self.inp_port = QtWidgets.QComboBox()
         self.inp_port.setMinimumHeight(20)
         self.rescanSerialPort()

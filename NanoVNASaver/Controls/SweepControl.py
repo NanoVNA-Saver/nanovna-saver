@@ -19,26 +19,20 @@
 import logging
 
 from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtCore import pyqtSignal
-
 
 from NanoVNASaver.Formatting import (
     format_frequency_sweep, format_frequency_short,
     parse_frequency)
 from NanoVNASaver.Inputs import FrequencyInputWidget
+from NanoVNASaver.Controls.Control import Control
 
 logger = logging.getLogger(__name__)
 
 
-class SweepControl(QtWidgets.QGroupBox):
-    updated = pyqtSignal(object)
+class SweepControl(Control):
 
-    def __init__(self, app: QtWidgets.QWidget, title: str = "Sweep control"):
-        super().__init__()
-        self.app = app
-        self.setMaximumWidth(240)
-        self.setTitle(title)
-        self.layout = QtWidgets.QFormLayout(self)
+    def __init__(self, app: QtWidgets.QWidget):
+        super().__init__(app, "Sweep control")
 
         line = QtWidgets.QFrame()
         line.setFrameShape(QtWidgets.QFrame.VLine)
