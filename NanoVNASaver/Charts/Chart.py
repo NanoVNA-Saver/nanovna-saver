@@ -59,15 +59,49 @@ class ChartDragBox:
     move_y: int = -1
 
 @dataclass
-class ChartMarkerFlags:
-    draw_numbers: bool = False
-    filled: bool = False
-    at_tip: bool = False
-
-@dataclass
 class ChartFlags:
     draw_lines: bool = False
     is_popout: bool = False
+
+@dataclass
+class ChartMarkerConfig:
+    draw_label: bool = False
+    fill: bool = False
+    at_tip: bool = False
+    size: int = 3
+    color: QtGui.QColor = QtGui.QColor(QtCore.Qt.lightGray)
+    label_text: str = ""
+
+class ChartMarker(QtWidgets.QWidget):
+    def __init__(self, qp: QtGui.QPaintDevice,
+                 defaults: ChartMarkerConfig=ChartMarkerConfig()):
+        super().__init__()
+        self.qp = qp
+        self.cfg = defaults
+
+    def draw(self, x: int, y: int, color: QtGui.QColor = None, text: str = ""):
+        if self.cfg.at_tip:
+            y -= self.cfg.size
+        if not color:
+            color = self.cfg.color
+        pen = QtGui.QPen(color)
+        self.qp.setPen(pen)
+        qpp = QtGui.QPainterPath()
+        qpp.moveTo(x, y + self.cfg.size)
+        qpp.lineTo(x - self.cfg.size, y - self.cfg.size)
+        qpp.lineTo(x + self.cfg.size, y - self.cfg.size)
+        qpp.lineTo(x, y + self.cfg.size)
+
+        if self.cfg.fill:
+            self.qp.fillPath(qpp, color)
+        else:
+            self.qp.drawPath(qpp)
+
+        if not text:
+            text = self.cfg.label_text
+        if text and self.cfg.draw_label:
+            self.qp.drawText(x-3, y-3 - self.cfg.size, text)
+
 
 class Chart(QtWidgets.QWidget):
     bands: ClassVar[Any] = None
@@ -82,7 +116,7 @@ class Chart(QtWidgets.QWidget):
         self.dim = ChartDimensions()
         self.dragbox = ChartDragBox()
         self.flag = ChartFlags()
-        self.marker_flag = ChartMarkerFlags()
+        self.marker_cfg = ChartMarkerConfig()
 
         self.draggedMarker = None
 
@@ -196,15 +230,15 @@ class Chart(QtWidgets.QWidget):
         self.update()
 
     def setDrawMarkerNumbers(self, draw_marker_numbers):
-        self.marker_flag.draw_numbers = draw_marker_numbers
+        self.marker_cfg.draw_label = draw_marker_numbers
         self.update()
 
     def setMarkerAtTip(self, marker_at_tip):
-        self.marker_flag.at_tip = marker_at_tip
+        self.marker_cfg.at_tip = marker_at_tip
         self.update()
 
     def setFilledMarkers(self, filled_markers):
-        self.marker_flag.filled = filled_markers
+        self.marker_cfg.fill = filled_markers
         self.update()
 
     def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
@@ -258,7 +292,7 @@ class Chart(QtWidgets.QWidget):
         new_chart.color = replace(self.color)
         new_chart.dim = replace(self.dim)
         new_chart.flag = replace(self.flag)
-        new_chart.marker_flag = replace(self.marker_flag)
+        new_chart.marker_cfg = replace(self.marker_cfg)
         new_chart.markers = self.markers
         new_chart.swrMarkers = self.swrMarkers
         new_chart.bands = self.bands
@@ -291,25 +325,8 @@ class Chart(QtWidgets.QWidget):
         self.update()
 
     def drawMarker(self, x, y, qp: QtGui.QPainter, color: QtGui.QColor, number=0):
-        if self.marker_flag.at_tip:
-            y -= self.dim.marker
-        pen = QtGui.QPen(color)
-        qp.setPen(pen)
-        qpp = QtGui.QPainterPath()
-        qpp.moveTo(x, y + self.dim.marker)
-        qpp.lineTo(x - self.dim.marker, y - self.dim.marker)
-        qpp.lineTo(x + self.dim.marker, y - self.dim.marker)
-        qpp.lineTo(x, y + self.dim.marker)
-
-        if self.marker_flag.filled:
-            qp.fillPath(qpp, color)
-        else:
-            qp.drawPath(qpp)
-
-        if self.marker_flag.draw_numbers:
-            number_x = x - 3
-            number_y = y - self.dim.marker - 3
-            qp.drawText(number_x, number_y, str(number))
+        cmarker = ChartMarker(qp, self.marker_cfg)
+        cmarker.draw(x, y, color, str(number))
 
     def drawTitle(self, qp: QtGui.QPainter, position: QtCore.QPoint = None):
         if not self.sweepTitle:
