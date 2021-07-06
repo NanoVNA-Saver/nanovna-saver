@@ -23,8 +23,9 @@ from typing import List
 from PyQt5 import QtGui
 
 from NanoVNASaver.RFTools import Datapoint
-from .Frequency import FrequencyChart
-from .LogMag import LogMagChart
+from NanoVNASaver.Charts.Chart import Chart
+from NanoVNASaver.Charts.Frequency import FrequencyChart
+from NanoVNASaver.Charts.LogMag import LogMagChart
 
 logger = logging.getLogger(__name__)
 
@@ -47,11 +48,11 @@ class SParameterChart(FrequencyChart):
         self.isInverted = False
 
     def drawChart(self, qp: QtGui.QPainter):
-        qp.setPen(QtGui.QPen(self.color.text))
+        qp.setPen(QtGui.QPen(Chart.color.text))
         qp.drawText(int(round(self.dim.width / 2)) - 20, 15, self.name + "")
         qp.drawText(10, 15, "Real")
         qp.drawText(self.leftMargin + self.dim.width - 15, 15, "Imag")
-        qp.setPen(QtGui.QPen(self.color.foreground))
+        qp.setPen(QtGui.QPen(Chart.color.foreground))
         qp.drawLine(self.leftMargin, self.topMargin - 5,
                     self.leftMargin, self.topMargin+self.dim.height+5)
         qp.drawLine(self.leftMargin-5, self.topMargin+self.dim.height,
@@ -109,24 +110,24 @@ class SParameterChart(FrequencyChart):
         for i in range(tick_count):
             val = minValue + i * tick_step
             y = self.topMargin + round((maxValue - val)/span*self.dim.height)
-            qp.setPen(QtGui.QPen(self.color.foreground))
+            qp.setPen(QtGui.QPen(Chart.color.foreground))
             qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.dim.width, y)
             if val > minValue and val != maxValue:
-                qp.setPen(QtGui.QPen(self.color.text))
+                qp.setPen(QtGui.QPen(Chart.color.text))
                 qp.drawText(3, y + 4, str(round(val, 2)))
 
-        qp.setPen(QtGui.QPen(self.color.foreground))
+        qp.setPen(QtGui.QPen(Chart.color.foreground))
         qp.drawLine(self.leftMargin - 5, self.topMargin,
                     self.leftMargin + self.dim.width, self.topMargin)
-        qp.setPen(self.color.text)
+        qp.setPen(Chart.color.text)
         qp.drawText(3, self.topMargin + 4, str(maxValue))
         qp.drawText(3, self.dim.height+self.topMargin, str(minValue))
         self.drawFrequencyTicks(qp)
 
-        self.drawData(qp, self.data, self.color.sweep, self.getReYPosition)
-        self.drawData(qp, self.reference, self.color.reference, self.getReYPosition)
-        self.drawData(qp, self.data, self.color.sweep_secondary, self.getImYPosition)
-        self.drawData(qp, self.reference, self.color.reference_secondary, self.getImYPosition)
+        self.drawData(qp, self.data, Chart.color.sweep, self.getReYPosition)
+        self.drawData(qp, self.reference, Chart.color.reference, self.getReYPosition)
+        self.drawData(qp, self.data, Chart.color.sweep_secondary, self.getImYPosition)
+        self.drawData(qp, self.reference, Chart.color.reference_secondary, self.getImYPosition)
         self.drawMarkers(qp, y_function=self.getReYPosition)
         self.drawMarkers(qp, y_function=self.getImYPosition)
 

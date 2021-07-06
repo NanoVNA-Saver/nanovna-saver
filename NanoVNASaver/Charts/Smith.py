@@ -22,7 +22,8 @@ import logging
 from PyQt5 import QtGui, QtCore
 
 from NanoVNASaver.RFTools import Datapoint
-from .Square import SquareChart
+from NanoVNASaver.Charts.Chart import Chart
+from NanoVNASaver.Charts.Square import SquareChart
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +36,7 @@ class SmithChart(SquareChart):
 
         self.setMinimumSize(self.dim.width + 40, self.dim.height + 40)
         pal = QtGui.QPalette()
-        pal.setColor(QtGui.QPalette.Background, self.color.background)
+        pal.setColor(QtGui.QPalette.Background, Chart.color.background)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
@@ -49,9 +50,9 @@ class SmithChart(SquareChart):
     def drawSmithChart(self, qp: QtGui.QPainter):
         centerX = int(self.width()/2)
         centerY = int(self.height()/2)
-        qp.setPen(QtGui.QPen(self.color.text))
+        qp.setPen(QtGui.QPen(Chart.color.text))
         qp.drawText(3, 15, self.name)
-        qp.setPen(QtGui.QPen(self.color.foreground))
+        qp.setPen(QtGui.QPen(Chart.color.foreground))
         qp.drawEllipse(QtCore.QPoint(centerX, centerY),
                        int(self.dim.width / 2),
                        int(self.dim.height / 2))
@@ -104,7 +105,7 @@ class SmithChart(SquareChart):
 
         self.drawTitle(qp)
 
-        qp.setPen(self.color.swr)
+        qp.setPen(Chart.color.swr)
         for swr in self.swrMarkers:
             if swr <= 1:
                 continue
@@ -118,9 +119,9 @@ class SmithChart(SquareChart):
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
-        pen = QtGui.QPen(self.color.sweep)
+        pen = QtGui.QPen(Chart.color.sweep)
         pen.setWidth(self.dim.point)
-        line_pen = QtGui.QPen(self.color.sweep)
+        line_pen = QtGui.QPen(Chart.color.sweep)
         line_pen.setWidth(self.dim.line)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(1)
@@ -135,8 +136,8 @@ class SmithChart(SquareChart):
                 qp.setPen(line_pen)
                 qp.drawLine(x, y, prevx, prevy)
                 qp.setPen(pen)
-        pen.setColor(self.color.reference)
-        line_pen.setColor(self.color.reference)
+        pen.setColor(Chart.color.reference)
+        line_pen.setColor(Chart.color.reference)
         qp.setPen(pen)
         if len(self.data) > 0:
             fstart = self.data[0].freq

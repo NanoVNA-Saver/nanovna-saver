@@ -29,16 +29,18 @@ from NanoVNASaver.Marker import Marker
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class ChartColors:  # pylint: disable=too-many-instance-attributes
     background: QtGui.QColor = QtGui.QColor(QtCore.Qt.white)
     foreground: QtGui.QColor = QtGui.QColor(QtCore.Qt.lightGray)
-    reference: QtGui.QColor = QtGui.QColor(QtCore.Qt.blue).setAlpha(64)
-    reference_secondary: QtGui.QColor = QtGui.QColor(QtCore.Qt.blue).setAlpha(64)
-    sweep: QtGui.QColor = QtCore.Qt.darkYellow
-    sweep_secondary: QtGui.QColor = QtCore.Qt.darkMagenta
-    swr: QtGui.QColor = QtGui.QColor(QtCore.Qt.red).setAlpha(128)
+    reference: QtGui.QColor = QtGui.QColor(0, 0, 255, 64)
+    reference_secondary: QtGui.QColor = QtGui.QColor(0, 0, 192, 48)
+    sweep: QtGui.QColor =  QtGui.QColor(QtCore.Qt.darkYellow)
+    sweep_secondary: QtGui.QColor = QtGui.QColor(QtCore.Qt.darkMagenta)
+    swr: QtGui.QColor = QtGui.QColor(255, 0, 0, 128)
     text: QtGui.QColor = QtGui.QColor(QtCore.Qt.black)
+    bands: QtGui.QColor = QtGui.QColor(128, 128, 128, 48)
 
 @dataclass
 class ChartDimensions:
@@ -47,7 +49,6 @@ class ChartDimensions:
     width: int = 200
     width_min: int = 200
     line: int = 1
-    marker: int = 3
     point: int = 2
 
 @dataclass
@@ -69,42 +70,41 @@ class ChartMarkerConfig:
     fill: bool = False
     at_tip: bool = False
     size: int = 3
-    label_text: str = ""
-
 
 class ChartMarker(QtWidgets.QWidget):
-    def __init__(self, qp: QtGui.QPaintDevice,
-                 defaults: ChartMarkerConfig=ChartMarkerConfig()):
+    cfg: ClassVar[ChartMarkerConfig] = ChartMarkerConfig()
+
+    def __init__(self, qp: QtGui.QPaintDevice):
         super().__init__()
         self.qp = qp
-        self.cfg = defaults
 
     def draw(self, x: int, y: int, color: QtGui.QColor, text: str = ""):
+        offset = self.cfg.size // 2
         if self.cfg.at_tip:
-            y -= self.cfg.size
+            y -= offset
         pen = QtGui.QPen(color)
         self.qp.setPen(pen)
         qpp = QtGui.QPainterPath()
-        qpp.moveTo(x, y + self.cfg.size)
-        qpp.lineTo(x - self.cfg.size, y - self.cfg.size)
-        qpp.lineTo(x + self.cfg.size, y - self.cfg.size)
-        qpp.lineTo(x, y + self.cfg.size)
+        qpp.moveTo(x, y + offset)
+        qpp.lineTo(x - offset, y - offset)
+        qpp.lineTo(x + offset, y - offset)
+        qpp.lineTo(x, y + offset)
 
         if self.cfg.fill:
             self.qp.fillPath(qpp, color)
         else:
             self.qp.drawPath(qpp)
 
-        if not text:
-            text = self.cfg.label_text
         if text and self.cfg.draw_label:
-            self.qp.drawText(x-3, y-3 - self.cfg.size, text)
+            text_width = self.qp.fontMetrics().horizontalAdvance(text)
+            self.qp.drawText(x - text_width // 2, y - 3 - offset, text)
 
 
 class Chart(QtWidgets.QWidget):
     bands: ClassVar[Any] = None
     popoutRequested: ClassVar[Any] = pyqtSignal(object)
     color: ClassVar[ChartColors] = ChartColors()
+    marker_cfg: ClassVar[ChartMarkerConfig] = ChartMarkerConfig()
 
     def __init__(self, name):
         super().__init__()
@@ -114,7 +114,6 @@ class Chart(QtWidgets.QWidget):
         self.dim = ChartDimensions()
         self.dragbox = ChartDragBox()
         self.flag = ChartFlags()
-        self.marker_cfg = ChartMarkerConfig()
 
         self.draggedMarker = None
 
@@ -161,7 +160,7 @@ class Chart(QtWidgets.QWidget):
         self.update()
 
     def setMarkerSize(self, size):
-        self.dim.marker = size
+        ChartMarker.cfg.size = size
         self.update()
 
     def setSweepTitle(self, title):
@@ -194,18 +193,6 @@ class Chart(QtWidgets.QWidget):
 
     def setDrawLines(self, draw_lines):
         self.flag.draw_lines = draw_lines
-        self.update()
-
-    def setDrawMarkerNumbers(self, draw_marker_numbers):
-        self.marker_cfg.draw_label = draw_marker_numbers
-        self.update()
-
-    def setMarkerAtTip(self, marker_at_tip):
-        self.marker_cfg.at_tip = marker_at_tip
-        self.update()
-
-    def setFilledMarkers(self, filled_markers):
-        self.marker_cfg.fill = filled_markers
         self.update()
 
     def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
@@ -266,7 +253,6 @@ class Chart(QtWidgets.QWidget):
         new_chart.resize(self.width(), self.height())
         new_chart.setPointSize(self.dim.point)
         new_chart.setLineThickness(self.dim.line)
-        new_chart.setBackgroundColor(self.color.background)
         return new_chart
 
     def addSWRMarker(self, swr: float):
@@ -287,13 +273,13 @@ class Chart(QtWidgets.QWidget):
         self.update()
 
     def drawMarker(self, x, y, qp: QtGui.QPainter, color: QtGui.QColor, number=0):
-        cmarker = ChartMarker(qp, self.marker_cfg)
+        cmarker = ChartMarker(qp)
         cmarker.draw(x, y, color, str(number))
 
     def drawTitle(self, qp: QtGui.QPainter, position: QtCore.QPoint = None):
         if not self.sweepTitle:
             return
-        qp.setPen(self.color.text)
+        qp.setPen(Chart.color.text)
         if position is None:
             qf = QtGui.QFontMetricsF(self.font())
             width = qf.boundingRect(self.sweepTitle).width()
@@ -302,6 +288,6 @@ class Chart(QtWidgets.QWidget):
 
     def update(self):
         pal = self.palette()
-        pal.setColor(QtGui.QPalette.Background, self.color.background)
+        pal.setColor(QtGui.QPalette.Background, Chart.color.background)
         self.setPalette(pal)
         super().update()

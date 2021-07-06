@@ -24,8 +24,9 @@ from PyQt5 import QtGui
 
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.SITools import Format, Value
-from .Frequency import FrequencyChart
-from .LogMag import LogMagChart
+from NanoVNASaver.Charts.Chart import Chart
+from NanoVNASaver.Charts.Frequency import FrequencyChart
+from NanoVNASaver.Charts.LogMag import LogMagChart
 
 
 logger = logging.getLogger(__name__)
@@ -101,10 +102,10 @@ class MagnitudeZChart(FrequencyChart):
         fmt = Format(max_nr_digits=4)
         for i in range(horizontal_ticks):
             y = self.topMargin + round(i * self.dim.height / horizontal_ticks)
-            qp.setPen(QtGui.QPen(self.color.foreground))
+            qp.setPen(QtGui.QPen(Chart.color.foreground))
             qp.drawLine(self.leftMargin - 5, y,
                         self.leftMargin + self.dim.width + 5, y)
-            qp.setPen(QtGui.QPen(self.color.text))
+            qp.setPen(QtGui.QPen(Chart.color.text))
             val = Value(self.valueAtPosition(y)[0], fmt=fmt)
             qp.drawText(3, y + 4, str(val))
 
@@ -114,8 +115,8 @@ class MagnitudeZChart(FrequencyChart):
 
         self.drawFrequencyTicks(qp)
 
-        self.drawData(qp, self.data, self.color.sweep)
-        self.drawData(qp, self.reference, self.color.reference)
+        self.drawData(qp, self.data, Chart.color.sweep)
+        self.drawData(qp, self.reference, Chart.color.reference)
         self.drawMarkers(qp)
 
     def getYPosition(self, d: Datapoint) -> int:

@@ -640,8 +640,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         qf_normal = QtGui.QFontMetricsF(normal_font)
         # Characters we would normally display
         standard_string = "0.123456789 0.123456789 MHz \N{OHM SIGN}"
-        new_width = qf_new.boundingRect(standard_string).width()
-        old_width = qf_normal.boundingRect(standard_string).width()
+        new_width = qf_new.horizontalAdvance(standard_string)
+        old_width = qf_normal.horizontalAdvance(standard_string)
         self.scaleFactor = new_width / old_width
         logger.debug("New font width: %f, normal font: %f, factor: %f",
                      new_width, old_width, self.scaleFactor)

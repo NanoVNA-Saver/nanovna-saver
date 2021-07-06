@@ -23,8 +23,9 @@ from typing import List
 from PyQt5 import QtGui
 
 from NanoVNASaver.RFTools import Datapoint
-from .Frequency import FrequencyChart
-from .LogMag import LogMagChart
+from NanoVNASaver.Charts.Chart import Chart
+from NanoVNASaver.Charts.Frequency import FrequencyChart
+from NanoVNASaver.Charts.LogMag import LogMagChart
 
 logger = logging.getLogger(__name__)
 
@@ -69,11 +70,11 @@ class CombinedLogMagChart(FrequencyChart):
         self.update()
 
     def drawChart(self, qp: QtGui.QPainter):
-        qp.setPen(QtGui.QPen(self.color.text))
+        qp.setPen(QtGui.QPen(Chart.color.text))
         qp.drawText(int(round(self.dim.width / 2)) - 20, 15, self.name + " (dB)")
         qp.drawText(10, 15, "S11")
         qp.drawText(self.leftMargin + self.dim.width - 8, 15, "S21")
-        qp.setPen(QtGui.QPen(self.color.foreground))
+        qp.setPen(QtGui.QPen(Chart.color.foreground))
         qp.drawLine(self.leftMargin, self.topMargin - 5,
                     self.leftMargin, self.topMargin+self.dim.height+5)
         qp.drawLine(self.leftMargin-5, self.topMargin+self.dim.height,
@@ -82,9 +83,9 @@ class CombinedLogMagChart(FrequencyChart):
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data11) == 0 and len(self.reference11) == 0:
             return
-        pen = QtGui.QPen(self.color.sweep)
+        pen = QtGui.QPen(Chart.color.sweep)
         pen.setWidth(self.dim.point)
-        line_pen = QtGui.QPen(self.color.sweep)
+        line_pen = QtGui.QPen(Chart.color.sweep)
         line_pen.setWidth(self.dim.line)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(1)
@@ -208,25 +209,25 @@ class CombinedLogMagChart(FrequencyChart):
         for i in range(tick_count):
             db = first_tick + i * tick_step
             y = self.topMargin + round((maxValue - db)/span*self.dim.height)
-            qp.setPen(QtGui.QPen(self.color.foreground))
+            qp.setPen(QtGui.QPen(Chart.color.foreground))
             qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.dim.width, y)
             if db > minValue and db != maxValue:
-                qp.setPen(QtGui.QPen(self.color.text))
+                qp.setPen(QtGui.QPen(Chart.color.text))
                 if tick_step < 1:
                     dbstr = str(round(db, 1))
                 else:
                     dbstr = str(db)
                 qp.drawText(3, y + 4, dbstr)
 
-        qp.setPen(QtGui.QPen(self.color.foreground))
+        qp.setPen(QtGui.QPen(Chart.color.foreground))
         qp.drawLine(self.leftMargin - 5, self.topMargin,
                     self.leftMargin + self.dim.width, self.topMargin)
-        qp.setPen(self.color.text)
+        qp.setPen(Chart.color.text)
         qp.drawText(3, self.topMargin + 4, str(maxValue))
         qp.drawText(3, self.dim.height+self.topMargin, str(minValue))
         self.drawFrequencyTicks(qp)
 
-        qp.setPen(self.color.swr)
+        qp.setPen(Chart.color.swr)
         for vswr in self.swrMarkers:
             if vswr <= 1:
                 continue
@@ -240,13 +241,13 @@ class CombinedLogMagChart(FrequencyChart):
             qp.drawText(self.leftMargin + 3, y - 1, "VSWR: " + str(vswr))
 
         if len(self.data11) > 0:
-            c = QtGui.QColor(self.color.sweep)
+            c = QtGui.QColor(Chart.color.sweep)
             c.setAlpha(255)
             pen = QtGui.QPen(c)
             pen.setWidth(2)
             qp.setPen(pen)
             qp.drawLine(33, 9, 38, 9)
-            c = QtGui.QColor(self.color.sweep_secondary)
+            c = QtGui.QColor(Chart.color.sweep_secondary)
             c.setAlpha(255)
             pen = QtGui.QPen(c)
             pen.setWidth(2)
@@ -255,13 +256,13 @@ class CombinedLogMagChart(FrequencyChart):
                         self.leftMargin + self.dim.width - 15, 9)
 
         if len(self.reference11) > 0:
-            c = QtGui.QColor(self.color.reference)
+            c = QtGui.QColor(Chart.color.reference)
             c.setAlpha(255)
             pen = QtGui.QPen(c)
             pen.setWidth(2)
             qp.setPen(pen)
             qp.drawLine(33, 14, 38, 14)
-            c = QtGui.QColor(self.color.reference_secondary)
+            c = QtGui.QColor(Chart.color.reference_secondary)
             c.setAlpha(255)
             pen = QtGui.QPen(c)
             pen.setWidth(2)
@@ -269,10 +270,10 @@ class CombinedLogMagChart(FrequencyChart):
             qp.drawLine(self.leftMargin + self.dim.width - 20, 14,
                         self.leftMargin + self.dim.width - 15, 14)
 
-        self.drawData(qp, self.data11, self.color.sweep)
-        self.drawData(qp, self.data21, self.color.sweep_secondary)
-        self.drawData(qp, self.reference11, self.color.reference)
-        self.drawData(qp, self.reference21, self.color.reference_secondary)
+        self.drawData(qp, self.data11, Chart.color.sweep)
+        self.drawData(qp, self.data21, Chart.color.sweep_secondary)
+        self.drawData(qp, self.reference11, Chart.color.reference)
+        self.drawData(qp, self.reference21, Chart.color.reference_secondary)
         self.drawMarkers(qp, data=self.data11)
         self.drawMarkers(qp, data=self.data21)
 

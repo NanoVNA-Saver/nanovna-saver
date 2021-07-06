@@ -25,7 +25,8 @@ from PyQt5 import QtGui
 from NanoVNASaver.Marker import Marker
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.SITools import Format, Value
-from .Frequency import FrequencyChart
+from NanoVNASaver.Charts.Chart import Chart
+from NanoVNASaver.Charts.Frequency import FrequencyChart
 logger = logging.getLogger(__name__)
 
 
@@ -52,11 +53,11 @@ class PermeabilityChart(FrequencyChart):
         return new_chart
 
     def drawChart(self, qp: QtGui.QPainter):
-        qp.setPen(QtGui.QPen(self.color.text))
+        qp.setPen(QtGui.QPen(Chart.color.text))
         qp.drawText(self.leftMargin + 5, 15, self.name + " (\N{MICRO SIGN}\N{OHM SIGN} / Hz)")
         qp.drawText(10, 15, "R")
         qp.drawText(self.leftMargin + self.dim.width + 10, 15, "X")
-        qp.setPen(QtGui.QPen(self.color.foreground))
+        qp.setPen(QtGui.QPen(Chart.color.foreground))
         qp.drawLine(self.leftMargin, self.topMargin - 5,
                     self.leftMargin, self.topMargin + self.dim.height + 5)
         qp.drawLine(self.leftMargin-5, self.topMargin + self.dim.height,
@@ -66,9 +67,9 @@ class PermeabilityChart(FrequencyChart):
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
-        pen = QtGui.QPen(self.color.sweep)
+        pen = QtGui.QPen(Chart.color.sweep)
         pen.setWidth(self.dim.point)
-        line_pen = QtGui.QPen(self.color.sweep)
+        line_pen = QtGui.QPen(Chart.color.sweep)
         line_pen.setWidth(self.dim.line)
 
         self._set_start_stop()
@@ -128,10 +129,10 @@ class PermeabilityChart(FrequencyChart):
         fmt = Format(max_nr_digits=4)
         for i in range(horizontal_ticks):
             y = self.topMargin + round(i * self.dim.height / horizontal_ticks)
-            qp.setPen(QtGui.QPen(self.color.foreground))
+            qp.setPen(QtGui.QPen(Chart.color.foreground))
             qp.drawLine(self.leftMargin - 5, y,
                         self.leftMargin + self.dim.width + 5, y)
-            qp.setPen(QtGui.QPen(self.color.text))
+            qp.setPen(QtGui.QPen(Chart.color.text))
             val = Value(self.valueAtPosition(y)[0], fmt=fmt)
             qp.drawText(3, y + 4, str(val))
 
@@ -142,15 +143,15 @@ class PermeabilityChart(FrequencyChart):
         self.drawFrequencyTicks(qp)
 
         primary_pen = pen
-        secondary_pen = QtGui.QPen(self.color.sweep_secondary)
+        secondary_pen = QtGui.QPen(Chart.color.sweep_secondary)
         if len(self.data) > 0:
-            c = QtGui.QColor(self.color.sweep)
+            c = QtGui.QColor(Chart.color.sweep)
             c.setAlpha(255)
             pen = QtGui.QPen(c)
             pen.setWidth(2)
             qp.setPen(pen)
             qp.drawLine(20, 9, 25, 9)
-            c = QtGui.QColor(self.color.sweep_secondary)
+            c = QtGui.QColor(Chart.color.sweep_secondary)
             c.setAlpha(255)
             pen.setColor(c)
             qp.setPen(pen)
@@ -178,7 +179,7 @@ class PermeabilityChart(FrequencyChart):
                 prev_y_im = self.getImYPosition(self.data[i-1])
 
                 # Real part first
-                line_pen.setColor(self.color.sweep)
+                line_pen.setColor(Chart.color.sweep)
                 qp.setPen(line_pen)
                 if self.isPlotable(x, y_re) and self.isPlotable(prev_x, prev_y_re):
                     qp.drawLine(x, y_re, prev_x, prev_y_re)
@@ -190,7 +191,7 @@ class PermeabilityChart(FrequencyChart):
                     qp.drawLine(prev_x, prev_y_re, new_x, new_y)
 
                 # Imag part second
-                line_pen.setColor(self.color.sweep_secondary)
+                line_pen.setColor(Chart.color.sweep_secondary)
                 qp.setPen(line_pen)
                 if self.isPlotable(x, y_im) and self.isPlotable(prev_x, prev_y_im):
                     qp.drawLine(x, y_im, prev_x, prev_y_im)
@@ -201,18 +202,18 @@ class PermeabilityChart(FrequencyChart):
                     new_x, new_y = self.getPlotable(prev_x, prev_y_im, x, y_im)
                     qp.drawLine(prev_x, prev_y_im, new_x, new_y)
 
-        primary_pen.setColor(self.color.reference)
-        line_pen.setColor(self.color.reference)
-        secondary_pen.setColor(self.color.reference_secondary)
+        primary_pen.setColor(Chart.color.reference)
+        line_pen.setColor(Chart.color.reference)
+        secondary_pen.setColor(Chart.color.reference_secondary)
         qp.setPen(primary_pen)
         if len(self.reference) > 0:
-            c = QtGui.QColor(self.color.reference)
+            c = QtGui.QColor(Chart.color.reference)
             c.setAlpha(255)
             pen = QtGui.QPen(c)
             pen.setWidth(2)
             qp.setPen(pen)
             qp.drawLine(20, 14, 25, 14)
-            c = QtGui.QColor(self.color.reference_secondary)
+            c = QtGui.QColor(Chart.color.reference_secondary)
             c.setAlpha(255)
             pen = QtGui.QPen(c)
             pen.setWidth(2)
@@ -237,7 +238,7 @@ class PermeabilityChart(FrequencyChart):
                 prev_y_re = self.getReYPosition(self.reference[i-1])
                 prev_y_im = self.getImYPosition(self.reference[i-1])
 
-                line_pen.setColor(self.color.reference)
+                line_pen.setColor(Chart.color.reference)
                 qp.setPen(line_pen)
                 # Real part first
                 if self.isPlotable(x, y_re) and self.isPlotable(prev_x, prev_y_re):
@@ -249,7 +250,7 @@ class PermeabilityChart(FrequencyChart):
                     new_x, new_y = self.getPlotable(prev_x, prev_y_re, x, y_re)
                     qp.drawLine(prev_x, prev_y_re, new_x, new_y)
 
-                line_pen.setColor(self.color.reference_secondary)
+                line_pen.setColor(Chart.color.reference_secondary)
                 qp.setPen(line_pen)
                 # Imag part second
                 if self.isPlotable(x, y_im) and self.isPlotable(prev_x, prev_y_im):

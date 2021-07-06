@@ -23,7 +23,8 @@ from typing import List
 from PyQt5 import QtGui
 
 from NanoVNASaver.RFTools import Datapoint
-from .Frequency import FrequencyChart
+from NanoVNASaver.Charts.Chart import Chart
+from NanoVNASaver.Charts.Frequency import FrequencyChart
 
 logger = logging.getLogger(__name__)
 
@@ -137,25 +138,25 @@ class LogMagChart(FrequencyChart):
         for i in range(tick_count):
             db = first_tick + i * tick_step
             y = self.topMargin + round((maxValue - db)/span*self.dim.height)
-            qp.setPen(QtGui.QPen(self.color.foreground))
+            qp.setPen(QtGui.QPen(Chart.color.foreground))
             qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.dim.width, y)
             if db > minValue and db != maxValue:
-                qp.setPen(QtGui.QPen(self.color.text))
+                qp.setPen(QtGui.QPen(Chart.color.text))
                 if tick_step < 1:
                     dbstr = str(round(db, 1))
                 else:
                     dbstr = str(db)
                 qp.drawText(3, y + 4, dbstr)
 
-        qp.setPen(QtGui.QPen(self.color.foreground))
+        qp.setPen(QtGui.QPen(Chart.color.foreground))
         qp.drawLine(self.leftMargin - 5, self.topMargin,
                     self.leftMargin + self.dim.width, self.topMargin)
-        qp.setPen(self.color.text)
+        qp.setPen(Chart.color.text)
         qp.drawText(3, self.topMargin + 4, str(maxValue))
         qp.drawText(3, self.dim.height+self.topMargin, str(minValue))
         self.drawFrequencyTicks(qp)
 
-        qp.setPen(self.color.swr)
+        qp.setPen(Chart.color.swr)
         for vswr in self.swrMarkers:
             if vswr <= 1:
                 continue
@@ -166,8 +167,8 @@ class LogMagChart(FrequencyChart):
             qp.drawLine(self.leftMargin, y, self.leftMargin + self.dim.width, y)
             qp.drawText(self.leftMargin + 3, y - 1, "VSWR: " + str(vswr))
 
-        self.drawData(qp, self.data, self.color.sweep)
-        self.drawData(qp, self.reference, self.color.reference)
+        self.drawData(qp, self.data, Chart.color.sweep)
+        self.drawData(qp, self.reference, Chart.color.reference)
         self.drawMarkers(qp)
 
     def getYPosition(self, d: Datapoint) -> int:
