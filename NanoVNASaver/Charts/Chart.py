@@ -69,8 +69,8 @@ class ChartMarkerConfig:
     fill: bool = False
     at_tip: bool = False
     size: int = 3
-    color: QtGui.QColor = QtGui.QColor(QtCore.Qt.lightGray)
     label_text: str = ""
+
 
 class ChartMarker(QtWidgets.QWidget):
     def __init__(self, qp: QtGui.QPaintDevice,
@@ -79,11 +79,9 @@ class ChartMarker(QtWidgets.QWidget):
         self.qp = qp
         self.cfg = defaults
 
-    def draw(self, x: int, y: int, color: QtGui.QColor = None, text: str = ""):
+    def draw(self, x: int, y: int, color: QtGui.QColor, text: str = ""):
         if self.cfg.at_tip:
             y -= self.cfg.size
-        if not color:
-            color = self.cfg.color
         pen = QtGui.QPen(color)
         self.qp.setPen(pen)
         qpp = QtGui.QPainterPath()
@@ -106,13 +104,13 @@ class ChartMarker(QtWidgets.QWidget):
 class Chart(QtWidgets.QWidget):
     bands: ClassVar[Any] = None
     popoutRequested: ClassVar[Any] = pyqtSignal(object)
+    color: ClassVar[ChartColors] = ChartColors()
 
     def __init__(self, name):
         super().__init__()
         self.name = name
         self.sweepTitle = ""
 
-        self.color = ChartColors()
         self.dim = ChartDimensions()
         self.dragbox = ChartDragBox()
         self.flag = ChartFlags()
@@ -135,37 +133,6 @@ class Chart(QtWidgets.QWidget):
         self.addAction(self.action_save_screenshot)
 
         self.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
-
-    def setSweepColor(self, color: QtGui.QColor):
-        self.color.sweep = color
-        self.update()
-
-    def setSecondarySweepColor(self, color: QtGui.QColor):
-        self.color.sweep_secondary = color
-        self.update()
-
-    def setReferenceColor(self, color: QtGui.QColor):
-        self.color.reference = color
-        self.update()
-
-    def setSecondaryReferenceColor(self, color: QtGui.QColor):
-        self.color.reference_secondary = color
-        self.update()
-
-    def setBackgroundColor(self, color: QtGui.QColor):
-        self.color.background = color
-        pal = self.palette()
-        pal.setColor(QtGui.QPalette.Background, color)
-        self.setPalette(pal)
-        self.update()
-
-    def setForegroundColor(self, color: QtGui.QColor):
-        self.color.foreground = color
-        self.update()
-
-    def setTextColor(self, color: QtGui.QColor):
-        self.color.text = color
-        self.update()
 
     def setReference(self, data):
         self.reference = data
@@ -289,7 +256,6 @@ class Chart(QtWidgets.QWidget):
         new_chart = self.__class__(self.name)
         new_chart.data = self.data
         new_chart.reference = self.reference
-        new_chart.color = replace(self.color)
         new_chart.dim = replace(self.dim)
         new_chart.flag = replace(self.flag)
         new_chart.marker_cfg = replace(self.marker_cfg)
@@ -320,10 +286,6 @@ class Chart(QtWidgets.QWidget):
         self.swrMarkers.clear()
         self.update()
 
-    def setSWRColor(self, color: QtGui.QColor):
-        self.color.swr = color
-        self.update()
-
     def drawMarker(self, x, y, qp: QtGui.QPainter, color: QtGui.QColor, number=0):
         cmarker = ChartMarker(qp, self.marker_cfg)
         cmarker.draw(x, y, color, str(number))
@@ -337,3 +299,9 @@ class Chart(QtWidgets.QWidget):
             width = qf.boundingRect(self.sweepTitle).width()
             position = QtCore.QPointF(self.width()/2 - width/2, 15)
         qp.drawText(position, self.sweepTitle)
+
+    def update(self):
+        pal = self.palette()
+        pal.setColor(QtGui.QPalette.Background, self.color.background)
+        self.setPalette(pal)
+        super().update()
