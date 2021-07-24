@@ -120,10 +120,7 @@ class SweepWorker(QtCore.QRunnable):
                     self.percentage = (i + 1) * 100 / sweep.segments
                     self.updateData(freq, values11, values21, i)
                 except ValueError as e:
-                    self.error_message = str(e)
-                    self.stopped = True
-                    self.running = False
-                    self.signals.sweepError.emit()
+                    self.gui_error(str(e))
             else:
                 if sweep.properties.mode == SweepMode.CONTINOUS:
                     continue
@@ -191,7 +188,7 @@ class SweepWorker(QtCore.QRunnable):
 
         data11: List[Datapoint] = []
         data21: List[Datapoint] = []
-        
+
         if not self.app.calibration.isCalculated:
             data11 = raw_data11.copy()
             data21 = raw_data21.copy()
@@ -207,7 +204,7 @@ class SweepWorker(QtCore.QRunnable):
                     data21.append(self.app.calibration.correct21(dp))
             else:
                 data21 = raw_data21.copy()
-        
+
         if self.offsetDelay != 0:
             data11 = [correct_delay(dp, self.offsetDelay, reflect=True) for dp in data11]
             data21 = [correct_delay(dp, self.offsetDelay) for dp in data21]
