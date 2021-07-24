@@ -34,6 +34,7 @@ from PyQt5 import QtWidgets, QtCore
 
 from NanoVNASaver.About import VERSION, INFO
 from NanoVNASaver.NanoVNASaver import NanoVNASaver
+from NanoVNASaver.Touchstone import Touchstone
 
 
 def main():
@@ -44,6 +45,10 @@ def main():
                         help="Set loglevel to debug")
     parser.add_argument("-D", "--debug-file",
                         help="File to write debug logging output to")
+    parser.add_argument("-f", "--file",
+                        help="Touchstone file to load as sweep for off device usage")
+    parser.add_argument("-r", "--ref-file",
+                        help="Touchstone file to load as reference for off device usage")
     parser.add_argument("--version", action="version",
                         version=f"NanoVNASaver {VERSION}")
     args = parser.parse_args()
@@ -79,10 +84,22 @@ def main():
     app = QtWidgets.QApplication(sys.argv)
     window = NanoVNASaver()
     window.show()
+
+    if args.file:
+        t = Touchstone(args.file)
+        t.load()
+        window.saveData(t.s11, t.s21, args.file)
+        window.dataUpdated()
+    if args.ref_file:
+        t = Touchstone(args.ref_file)
+        t.load()
+        window.setReference(t.s11, t.s21, args.ref_file)
+        window.dataUpdated()
     try:
         app.exec_()
     except BaseException as exc:
         logger.exception("%s", exc)
+        raise exc
 
 if __name__ == '__main__':
     main()

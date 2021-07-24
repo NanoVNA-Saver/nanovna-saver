@@ -52,7 +52,6 @@ class WorkerSignals(QtCore.QObject):
     updated = pyqtSignal()
     finished = pyqtSignal()
     sweepError = pyqtSignal()
-    fatalSweepError = pyqtSignal()
 
 
 class SweepWorker(QtCore.QRunnable):
@@ -107,13 +106,11 @@ class SweepWorker(QtCore.QRunnable):
             self.sweep = sweep
             self.init_data()
 
-        finished = False
-        while not finished:
+        while True:
             for i in range(sweep.segments):
                 logger.debug("Sweep segment no %d", i)
                 if self.stopped:
                     logger.debug("Stopping sweeping as signalled")
-                    finished = True
                     break
                 start, stop = sweep.get_index_range(i)
 
@@ -123,13 +120,11 @@ class SweepWorker(QtCore.QRunnable):
                     self.percentage = (i + 1) * 100 / sweep.segments
                     self.updateData(freq, values11, values21, i)
                 except ValueError as e:
-                    self.error_message = str(e)
-                    self.stopped = True
-                    self.running = False
-                    self.signals.sweepError.emit()
-
-            if not sweep.properties.mode == SweepMode.CONTINOUS:
-                finished = True
+                    self.gui_error(str(e))
+            else:
+                if sweep.properties.mode == SweepMode.CONTINOUS:
+                    continue
+            break
 
         if sweep.segments > 1:
             start = sweep.start
@@ -190,33 +185,30 @@ class SweepWorker(QtCore.QRunnable):
                          raw_data11: List[Datapoint],
                          raw_data21: List[Datapoint]
                          ) -> Tuple[List[Datapoint], List[Datapoint]]:
-        if self.offsetDelay != 0:
-            tmp = []
-            for dp in raw_data11:
-                tmp.append(correct_delay(dp, self.offsetDelay, reflect=True))
-            raw_data11 = tmp
-            tmp = []
-            for dp in raw_data21:
-                tmp.append(correct_delay(dp, self.offsetDelay))
-            raw_data21 = tmp
-
-        if not self.app.calibration.isCalculated:
-            return raw_data11, raw_data21
 
         data11: List[Datapoint] = []
         data21: List[Datapoint] = []
 
-        if self.app.calibration.isValid1Port():
-            for dp in raw_data11:
-                data11.append(self.app.calibration.correct11(dp))
+        if not self.app.calibration.isCalculated:
+            data11 = raw_data11.copy()
+            data21 = raw_data21.copy()
         else:
-            data11 = raw_data11
+            if self.app.calibration.isValid1Port():
+                for dp in raw_data11:
+                    data11.append(self.app.calibration.correct11(dp))
+            else:
+                data11 = raw_data11.copy()
 
-        if self.app.calibration.isValid2Port():
-            for dp in raw_data21:
-                data21.append(self.app.calibration.correct21(dp))
-        else:
-            data21 = raw_data21
+            if self.app.calibration.isValid2Port():
+                for dp in raw_data21:
+                    data21.append(self.app.calibration.correct21(dp))
+            else:
+                data21 = raw_data21.copy()
+
+        if self.offsetDelay != 0:
+            data11 = [correct_delay(dp, self.offsetDelay, reflect=True) for dp in data11]
+            data21 = [correct_delay(dp, self.offsetDelay) for dp in data21]
+
         return data11, data21
 
     def readAveragedSegment(self, start, stop, averages=1):

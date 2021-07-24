@@ -18,13 +18,15 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
 import logging
+from decimal import InvalidOperation
 from typing import List
 
 from PyQt5 import QtWidgets, QtGui
 
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.SITools import Format, Value
-from .Frequency import FrequencyChart
+from NanoVNASaver.Charts.Chart import Chart
+from NanoVNASaver.Charts.Frequency import FrequencyChart
 
 logger = logging.getLogger(__name__)
 
@@ -47,14 +49,14 @@ class CapacitanceChart(FrequencyChart):
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
                                                  QtWidgets.QSizePolicy.MinimumExpanding))
         pal = QtGui.QPalette()
-        pal.setColor(QtGui.QPalette.Background, self.color.background)
+        pal.setColor(QtGui.QPalette.Background, Chart.color.background)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
     def drawChart(self, qp: QtGui.QPainter):
-        qp.setPen(QtGui.QPen(self.color.text))
+        qp.setPen(QtGui.QPen(Chart.color.text))
         qp.drawText(3, 15, self.name + " (F)")
-        qp.setPen(QtGui.QPen(self.color.foreground))
+        qp.setPen(QtGui.QPen(Chart.color.foreground))
         qp.drawLine(self.leftMargin, 20, self.leftMargin, self.topMargin+self.dim.height+5)
         qp.drawLine(self.leftMargin-5, self.topMargin+self.dim.height,
                     self.leftMargin+self.dim.width, self.topMargin + self.dim.height)
@@ -63,9 +65,9 @@ class CapacitanceChart(FrequencyChart):
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
-        pen = QtGui.QPen(self.color.sweep)
+        pen = QtGui.QPen(Chart.color.sweep)
         pen.setWidth(self.dim.point)
-        line_pen = QtGui.QPen(self.color.sweep)
+        line_pen = QtGui.QPen(Chart.color.sweep)
         line_pen.setWidth(self.dim.line)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(1)
@@ -122,31 +124,38 @@ class CapacitanceChart(FrequencyChart):
         fmt = Format(max_nr_digits=1)
         for i in range(target_ticks):
             val = minValue + (i / target_ticks) * span
-            y = self.topMargin + round((self.maxValue - val) / self.span * self.dim.height)
-            qp.setPen(self.color.text)
-            if val != minValue:
-                valstr = str(Value(val, fmt=fmt))
-                qp.drawText(3, y + 3, valstr)
-            qp.setPen(QtGui.QPen(self.color.foreground))
+            try:
+                y = self.topMargin + round((self.maxValue - val) / self.span * self.dim.height)
+                qp.setPen(Chart.color.text)
+                if val != minValue:
+                    valstr = str(Value(val, fmt=fmt))
+                    qp.drawText(3, y + 3, valstr)
+            except (ValueError, InvalidOperation) as exc:
+                logger.debug("Drawing wrent wrong: %s", exc)
+                y = self.topMargin
+            qp.setPen(QtGui.QPen(Chart.color.foreground))
             qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.dim.width, y)
 
-        qp.setPen(QtGui.QPen(self.color.foreground))
+        qp.setPen(QtGui.QPen(Chart.color.foreground))
         qp.drawLine(self.leftMargin - 5, self.topMargin,
                     self.leftMargin + self.dim.width, self.topMargin)
-        qp.setPen(self.color.text)
+        qp.setPen(Chart.color.text)
         qp.drawText(3, self.topMargin + 4, str(Value(maxValue, fmt=fmt)))
         qp.drawText(3, self.dim.height+self.topMargin, str(Value(minValue, fmt=fmt)))
         self.drawFrequencyTicks(qp)
 
-        self.drawData(qp, self.data, self.color.sweep)
-        self.drawData(qp, self.reference, self.color.reference)
+        self.drawData(qp, self.data, Chart.color.sweep)
+        self.drawData(qp, self.reference, Chart.color.reference)
         self.drawMarkers(qp)
 
     def getYPosition(self, d: Datapoint) -> int:
-        return (
-            self.topMargin +
-            round((self.maxValue - d.capacitiveEquivalent()) /
-                  self.span * self.dim.height))
+        try:
+            return (
+                self.topMargin +
+                round((self.maxValue - d.capacitiveEquivalent()) /
+                    self.span * self.dim.height))
+        except ValueError:
+            return self.topMargin
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
@@ -177,14 +186,14 @@ class InductanceChart(FrequencyChart):
         self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
                                                  QtWidgets.QSizePolicy.MinimumExpanding))
         pal = QtGui.QPalette()
-        pal.setColor(QtGui.QPalette.Background, self.color.background)
+        pal.setColor(QtGui.QPalette.Background, Chart.color.background)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
     def drawChart(self, qp: QtGui.QPainter):
-        qp.setPen(QtGui.QPen(self.color.text))
+        qp.setPen(QtGui.QPen(Chart.color.text))
         qp.drawText(3, 15, self.name + " (H)")
-        qp.setPen(QtGui.QPen(self.color.foreground))
+        qp.setPen(QtGui.QPen(Chart.color.foreground))
         qp.drawLine(self.leftMargin, 20, self.leftMargin, self.topMargin+self.dim.height+5)
         qp.drawLine(self.leftMargin-5, self.topMargin+self.dim.height,
                     self.leftMargin+self.dim.width, self.topMargin + self.dim.height)
@@ -193,9 +202,9 @@ class InductanceChart(FrequencyChart):
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
-        pen = QtGui.QPen(self.color.sweep)
+        pen = QtGui.QPen(Chart.color.sweep)
         pen.setWidth(self.dim.point)
-        line_pen = QtGui.QPen(self.color.sweep)
+        line_pen = QtGui.QPen(Chart.color.sweep)
         line_pen.setWidth(self.dim.line)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(1)
@@ -253,23 +262,23 @@ class InductanceChart(FrequencyChart):
         for i in range(target_ticks):
             val = minValue + (i / target_ticks) * span
             y = self.topMargin + round((self.maxValue - val) / self.span * self.dim.height)
-            qp.setPen(self.color.text)
+            qp.setPen(Chart.color.text)
             if val != minValue:
                 valstr = str(Value(val, fmt=fmt))
                 qp.drawText(3, y + 3, valstr)
-            qp.setPen(QtGui.QPen(self.color.foreground))
+            qp.setPen(QtGui.QPen(Chart.color.foreground))
             qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.dim.width, y)
 
-        qp.setPen(QtGui.QPen(self.color.foreground))
+        qp.setPen(QtGui.QPen(Chart.color.foreground))
         qp.drawLine(self.leftMargin - 5, self.topMargin,
                     self.leftMargin + self.dim.width, self.topMargin)
-        qp.setPen(self.color.text)
+        qp.setPen(Chart.color.text)
         qp.drawText(3, self.topMargin + 4, str(Value(maxValue, fmt=fmt)))
         qp.drawText(3, self.dim.height+self.topMargin, str(Value(minValue, fmt=fmt)))
         self.drawFrequencyTicks(qp)
 
-        self.drawData(qp, self.data, self.color.sweep)
-        self.drawData(qp, self.reference, self.color.reference)
+        self.drawData(qp, self.data, Chart.color.sweep)
+        self.drawData(qp, self.reference, Chart.color.reference)
         self.drawMarkers(qp)
 
     def getYPosition(self, d: Datapoint) -> int:
