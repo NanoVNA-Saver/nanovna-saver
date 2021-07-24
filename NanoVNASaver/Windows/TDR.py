@@ -63,6 +63,10 @@ class TDRWindow(QtWidgets.QWidget):
         self.tdr_velocity_dropdown.addItem("RG-8/U Foam (Belden 8214) (0.78)", 0.78)
         self.tdr_velocity_dropdown.addItem("RG-8/U (Belden 9913) (0.84)", 0.84)
         self.tdr_velocity_dropdown.addItem("RG-8X (Belden 9258) (0.82)", 0.82)
+        # Added by EKZ, KC3KZ, from measurement of actual cable
+        self.tdr_velocity_dropdown.addItem("RG-8X (Wireman \"Super 8\" CQ106) (0.81)", 0.81)
+        self.tdr_velocity_dropdown.addItem("RG-8X (Wireman \"MINI-8 Lo-Loss\" CQ118) (0.82)", 0.82)
+        self.tdr_velocity_dropdown.addItem("RG-58 (Wireman \"CQ 58 Lo-Loss Flex\" CQ129FF) (0.79)", 0.79)
         self.tdr_velocity_dropdown.addItem(
             "RG-11/U 75\N{OHM SIGN} Foam HDPE (Belden 9292) (0.84)", 0.84)
         self.tdr_velocity_dropdown.addItem("RG-58/U 52\N{OHM SIGN} PE (Belden 9201) (0.66)", 0.66)
