@@ -188,29 +188,30 @@ class SweepWorker(QtCore.QRunnable):
                          raw_data11: List[Datapoint],
                          raw_data21: List[Datapoint]
                          ) -> Tuple[List[Datapoint], List[Datapoint]]:
-        if self.offsetDelay != 0:
-            raw_data11 = [correct_delay(
-                dp, self.offsetDelay, reflect=True) for dp in raw_data11]
-            raw_data21 = [correct_delay(dp, self.offsetDelay)
-                          for dp in raw_data21]
-
-        if not self.app.calibration.isCalculated:
-            return raw_data11, raw_data21
 
         data11: List[Datapoint] = []
         data21: List[Datapoint] = []
-
-        if self.app.calibration.isValid1Port():
-            for dp in raw_data11:
-                data11.append(self.app.calibration.correct11(dp))
+        
+        if not self.app.calibration.isCalculated:
+            data11 = raw_data11.copy()
+            data21 = raw_data21.copy()
         else:
-            data11 = raw_data11
+            if self.app.calibration.isValid1Port():
+                for dp in raw_data11:
+                    data11.append(self.app.calibration.correct11(dp))
+            else:
+                data11 = raw_data11.copy()
 
-        if self.app.calibration.isValid2Port():
-            for dp in raw_data21:
-                data21.append(self.app.calibration.correct21(dp))
-        else:
-            data21 = raw_data21
+            if self.app.calibration.isValid2Port():
+                for dp in raw_data21:
+                    data21.append(self.app.calibration.correct21(dp))
+            else:
+                data21 = raw_data21.copy()
+        
+        if self.offsetDelay != 0:
+            data11 = [correct_delay(dp, self.offsetDelay, reflect=True) for dp in data11]
+            data21 = [correct_delay(dp, self.offsetDelay) for dp in data21]
+
         return data11, data21
 
     def readAveragedSegment(self, start, stop, averages=1):
