@@ -9,6 +9,8 @@ v0.3.10
 - Fixed fixed axis settings
 - Show VNA type in port selector
 - Recognise tinySA
+- Some more cables in TDR
+- Reference plane applied after calibration
 
 v0.3.9
 ------
