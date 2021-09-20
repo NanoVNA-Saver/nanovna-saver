@@ -138,7 +138,7 @@ class TDRWindow(QtWidgets.QWidget):
         for d in self.app.data.s11:
             s11.append(np.complex(d.re, d.im))
 
-        window = np.blackman(len(self.app.data11))
+        window = np.blackman(len(self.app.data.s11))
 
         windowed_s11 = window * s11
         self.td = np.abs(np.fft.ifft(windowed_s11, FFT_POINTS))
