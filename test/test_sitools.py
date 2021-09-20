@@ -18,6 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import unittest
 from math import inf
+from decimal import Decimal  # Needed for test_representation()
 
 # Import targets to be tested
 from NanoVNASaver.SITools import Format, Value
