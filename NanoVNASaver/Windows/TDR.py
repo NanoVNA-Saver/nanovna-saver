@@ -128,7 +128,7 @@ class TDRWindow(QtWidgets.QWidget):
         except ValueError:
             return
 
-        step_size = self.app.data11[1].freq - self.app.data11[0].freq
+        step_size = self.app.data.s11[1].freq - self.app.data.s11[0].freq
         if step_size == 0:
             self.tdr_result_label.setText("")
             logger.info("Cannot compute cable length at 0 span")
