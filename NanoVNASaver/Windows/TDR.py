@@ -114,7 +114,7 @@ class TDRWindow(QtWidgets.QWidget):
         # TODO: Let the user select whether to use high or low resolution TDR?
         FFT_POINTS = 2**14
 
-        if len(self.app.data11) < 2:
+        if len(self.app.data.s11) < 2:
             return
 
         if self.tdr_velocity_dropdown.currentData() == -1:
