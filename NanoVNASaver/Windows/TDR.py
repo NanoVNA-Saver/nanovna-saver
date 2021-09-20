@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
+#  Copyright (C) 2020, 2021 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -62,11 +62,14 @@ class TDRWindow(QtWidgets.QWidget):
         self.tdr_velocity_dropdown.addItem("RG-8/U PE 50\N{OHM SIGN} (Belden 8237) (0.66)", 0.66)
         self.tdr_velocity_dropdown.addItem("RG-8/U Foam (Belden 8214) (0.78)", 0.78)
         self.tdr_velocity_dropdown.addItem("RG-8/U (Belden 9913) (0.84)", 0.84)
+        # Next one added by EKZ, KC3KZ, from measurement of actual cable
+        self.tdr_velocity_dropdown.addItem("RG-8/U (Shireen RFC®400 Low Loss) (0.86)", 0.86)
         self.tdr_velocity_dropdown.addItem("RG-8X (Belden 9258) (0.82)", 0.82)
-        # Added by EKZ, KC3KZ, from measurement of actual cable
+        # Next three added by EKZ, KC3KZ, from measurement of actual cable
         self.tdr_velocity_dropdown.addItem("RG-8X (Wireman \"Super 8\" CQ106) (0.81)", 0.81)
         self.tdr_velocity_dropdown.addItem("RG-8X (Wireman \"MINI-8 Lo-Loss\" CQ118) (0.82)", 0.82)
-        self.tdr_velocity_dropdown.addItem("RG-58 (Wireman \"CQ 58 Lo-Loss Flex\" CQ129FF) (0.79)", 0.79)
+        self.tdr_velocity_dropdown.addItem(
+            "RG-58 (Wireman \"CQ 58 Lo-Loss Flex\" CQ129FF) (0.79)", 0.79)
         self.tdr_velocity_dropdown.addItem(
             "RG-11/U 75\N{OHM SIGN} Foam HDPE (Belden 9292) (0.84)", 0.84)
         self.tdr_velocity_dropdown.addItem("RG-58/U 52\N{OHM SIGN} PE (Belden 9201) (0.66)", 0.66)
