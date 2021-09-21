@@ -230,7 +230,7 @@ class RealImaginaryChart(FrequencyChart):
         # We want one horizontal tick per 50 pixels, at most
         horizontal_ticks = math.floor(self.dim.height/50)
 
-        fmt = Format(max_nr_digits=4)
+        fmt = Format(max_nr_digits=3)
         for i in range(horizontal_ticks):
             y = self.topMargin + round(i * self.dim.height / horizontal_ticks)
             qp.setPen(QtGui.QPen(Chart.color.foreground))
