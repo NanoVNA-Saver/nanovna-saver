@@ -1,5 +1,5 @@
-scipy
-cython
-pyqt5
-pyserial
-numpy
+pyserial==3.5
+PyQt5==5.15.4
+numpy==1.21.1
+scipy==1.7.1
+cython==0.29.24
