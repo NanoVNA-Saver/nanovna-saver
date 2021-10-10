@@ -17,7 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-VERSION = "0.3.10-pre06"
+VERSION = "0.3.10-pre07"
 VERSION_URL = (
     "https://raw.githubusercontent.com/"
     "NanoVNA-Saver/nanovna-saver/master/NanoVNASaver/About.py")
