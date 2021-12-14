@@ -25,6 +25,7 @@ from PyQt5.QtCore import pyqtSignal
 from NanoVNASaver import RFTools
 from NanoVNASaver.Formatting import (
     format_capacitance,
+    format_complex_adm,
     format_complex_imp,
     format_frequency_space,
     format_gain,
@@ -328,7 +329,7 @@ class Marker(QtCore.QObject, Value):
 
         self.label['actualfreq'].setText(format_frequency_space(_s11.freq))
         self.label['lambda'].setText(format_wavelength(_s11.wavelength))
-        self.label['admittance'].setText(format_complex_imp(imp_p))
+        self.label['admittance'].setText(format_complex_adm(imp))
         self.label['impedance'].setText(format_complex_imp(imp))
         self.label['parc'].setText(cap_p_str)
         self.label['parl'].setText(ind_p_str)
