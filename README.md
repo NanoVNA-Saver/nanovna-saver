@@ -23,10 +23,10 @@ Latest Changes
 - Layout should fit on smaller screens
 - Fixed fixed axis settings
 - Show VNA type in port selector
-- Recognise tinySA
+- Recognise tinySA (screenshot only)
 - Some more cables in TDR
 - Reference plane applied after calibration
-
+- Calibration fixes by DiSlord
 
 ### Changes in v0.3.9
 
