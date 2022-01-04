@@ -110,6 +110,18 @@ def format_phase(val: float) -> str:
     return f"{math.degrees(val):.2f}""\N{DEGREE SIGN}"
 
 
+def format_complex_adm(z: complex, allow_negative: bool = False) -> str:
+    if z == 0:
+        return "- S"
+    adm = 1/z
+
+    fmt_re = FMT_COMPLEX
+    if allow_negative:
+        fmt_re = FMT_COMPLEX_NEG
+    re = SITools.Value(adm.real, fmt=fmt_re)
+    im = SITools.Value(abs(adm.imag), fmt=FMT_COMPLEX)
+    return f"{re}{'-' if adm.imag < 0 else '+'}j{im} S"
+
 def format_complex_imp(z: complex, allow_negative: bool = False) -> str:
     fmt_re = FMT_COMPLEX
     if allow_negative:
