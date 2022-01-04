@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020 NanoVNA-Saver Authors
+#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -51,6 +51,15 @@ class TestCases(unittest.TestCase):
         self.assertEqual(fmt.format_frequency_short(1234567890), '1.235GHz')
         self.assertEqual(fmt.format_frequency_short(0), '0.000Hz')
         self.assertEqual(fmt.format_frequency_short(-1), '-1.000Hz')
+
+        self.assertEqual(fmt.format_frequency_chart(1), '1.000')
+        self.assertEqual(fmt.format_frequency_chart(12), '12.00')
+        self.assertEqual(fmt.format_frequency_chart(123), '123.0')
+        self.assertEqual(fmt.format_frequency_chart(1234), '1.234k')
+        self.assertEqual(fmt.format_frequency_chart(1234567), '1.235M')
+        self.assertEqual(fmt.format_frequency_chart(1234567890), '1.235G')
+        self.assertEqual(fmt.format_frequency_chart(0), '0.000')
+        self.assertEqual(fmt.format_frequency_chart(-1), '-1.000')
 
     def test_format_frequency_inputs(self):
         self.assertEqual(fmt.format_frequency_inputs(1), '1Hz')

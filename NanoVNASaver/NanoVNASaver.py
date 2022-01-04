@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020 NanoVNA-Saver Authors
+#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -20,21 +20,20 @@ import logging
 import sys
 import threading
 from collections import OrderedDict
-from time import sleep, strftime, localtime
-from typing import List
+from time import strftime, localtime
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 
 from .Windows import (
     AboutWindow, AnalysisWindow, CalibrationWindow,
     DeviceSettingsWindow, DisplaySettingsWindow, SweepSettingsWindow,
-    TDRWindow
+    TDRWindow, FilesWindow
 )
-from .Controls import MarkerControl, SweepControl
+from .Controls import MarkerControl, SweepControl, SerialControl
 from .Formatting import format_frequency, format_vswr, format_gain
-from .Hardware.Hardware import Interface, get_interfaces, get_VNA
+from .Hardware.Hardware import Interface
 from .Hardware.VNA import VNA
-from .RFTools import Datapoint, corr_att_data
+from .RFTools import corr_att_data
 from .Charts.Chart import Chart
 from .Charts import (
     CapacitanceChart,
@@ -72,7 +71,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.settings = QtCore.QSettings(QtCore.QSettings.IniFormat,
                                          QtCore.QSettings.UserScope,
                                          "NanoVNASaver", "NanoVNASaver")
-        print(f"Settings: {self.settings.fileName()}")
+        logger.info("Settings from: %s", self.settings.fileName())
         self.threadpool = QtCore.QThreadPool()
         self.sweep = Sweep()
         self.worker = SweepWorker(self)
@@ -80,7 +79,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.worker.signals.updated.connect(self.dataUpdated)
         self.worker.signals.finished.connect(self.sweepFinished)
         self.worker.signals.sweepError.connect(self.showSweepError)
-        self.worker.signals.fatalSweepError.connect(self.showFatalSweepError)
 
         self.markers = []
 
@@ -91,18 +89,19 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.sweep_control = SweepControl(self)
         self.marker_control = MarkerControl(self)
+        self.serial_control = SerialControl(self)
 
         self.bands = BandsModel()
 
         self.interface = Interface("serial", "None")
-        self.vna = VNA(self.interface)
+        try:
+            self.vna = VNA(self.interface)
+        except IOError as exc:
+            self.showError(f"{exc}\n\nPlease try reconnect")
 
         self.dataLock = threading.Lock()
-        # TODO: use Touchstone class as data container
-        self.data11: List[Datapoint] = []
-        self.data21: List[Datapoint] = []
-        self.referenceS11data: List[Datapoint] = []
-        self.referenceS21data: List[Datapoint] = []
+        self.data = Touchstone()
+        self.ref_data = Touchstone()
 
         self.sweepSource = ""
         self.referenceSource = ""
@@ -179,8 +178,9 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.combinedCharts = list(self.charts["combined"].values())
 
         # List of all charts that can be selected for display
-        self.selectable_charts = self.s11charts + self.s21charts + self.combinedCharts
-        self.selectable_charts.append(self.tdr_mainwindow_chart)
+        self.selectable_charts = (
+            self.s11charts + self.s21charts +
+            self.combinedCharts + [self.tdr_mainwindow_chart, ])
 
         # List of all charts that subscribe to updates (including duplicates!)
         self.subscribing_charts = []
@@ -191,6 +191,8 @@ class NanoVNASaver(QtWidgets.QWidget):
             c.popoutRequested.connect(self.popoutChart)
 
         self.charts_layout = QtWidgets.QGridLayout()
+
+        QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+Q"), self, self.close)
 
         ###############################################################
         #  Create main layout
@@ -224,7 +226,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             # "analysis": AnalysisWindow(self),
             "calibration": CalibrationWindow(self),
             "device_settings": DeviceSettingsWindow(self),
-            "file": QtWidgets.QWidget(),
+            "file": FilesWindow(self),
             "sweep_settings": SweepSettingsWindow(self),
             "setup": DisplaySettingsWindow(self),
             "tdr": TDRWindow(self),
@@ -253,7 +255,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.marker_data_layout.addWidget(m.get_data_layout())
 
         scroll2 = QtWidgets.QScrollArea()
-        scroll2.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        #scroll2.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
         scroll2.setWidgetResizable(True)
         scroll2.setVisible(True)
 
@@ -275,6 +277,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         s11_control_box = QtWidgets.QGroupBox()
         s11_control_box.setTitle("S11")
         s11_control_layout = QtWidgets.QFormLayout()
+        s11_control_layout.setVerticalSpacing(0)
         s11_control_box.setLayout(s11_control_layout)
 
         self.s11_min_swr_label = QtWidgets.QLabel()
@@ -287,6 +290,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         s21_control_box = QtWidgets.QGroupBox()
         s21_control_box.setTitle("S21")
         s21_control_layout = QtWidgets.QFormLayout()
+        s21_control_layout.setVerticalSpacing(0)
         s21_control_box.setLayout(s21_control_layout)
 
         self.s21_min_gain_label = QtWidgets.QLabel()
@@ -301,6 +305,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.windows["analysis"] = AnalysisWindow(self)
         btn_show_analysis = QtWidgets.QPushButton("Analysis ...")
+        btn_show_analysis.setMinimumHeight(20)
         btn_show_analysis.clicked.connect(
             lambda: self.display_window("analysis"))
         self.marker_column.addWidget(btn_show_analysis)
@@ -318,14 +323,16 @@ class NanoVNASaver(QtWidgets.QWidget):
         tdr_control_box.setTitle("TDR")
         tdr_control_layout = QtWidgets.QFormLayout()
         tdr_control_box.setLayout(tdr_control_layout)
-        tdr_control_box.setMaximumWidth(250)
+        tdr_control_box.setMaximumWidth(240)
 
         self.tdr_result_label = QtWidgets.QLabel()
+        self.tdr_result_label.setMinimumHeight(20)
         tdr_control_layout.addRow(
             "Estimated cable length:", self.tdr_result_label)
 
         self.tdr_button = QtWidgets.QPushButton(
             "Time Domain Reflectometry ...")
+        self.tdr_button.setMinimumHeight(20)
         self.tdr_button.clicked.connect(lambda: self.display_window("tdr"))
 
         tdr_control_layout.addRow(self.tdr_button)
@@ -345,13 +352,15 @@ class NanoVNASaver(QtWidgets.QWidget):
         ###############################################################
 
         reference_control_box = QtWidgets.QGroupBox()
-        reference_control_box.setMaximumWidth(250)
+        reference_control_box.setMaximumWidth(240)
         reference_control_box.setTitle("Reference sweep")
         reference_control_layout = QtWidgets.QFormLayout(reference_control_box)
 
         btn_set_reference = QtWidgets.QPushButton("Set current as reference")
+        btn_set_reference.setMinimumHeight(20)
         btn_set_reference.clicked.connect(self.setReference)
         self.btnResetReference = QtWidgets.QPushButton("Reset reference")
+        self.btnResetReference.setMinimumHeight(20)
         self.btnResetReference.clicked.connect(self.resetReference)
         self.btnResetReference.setDisabled(True)
 
@@ -364,84 +373,14 @@ class NanoVNASaver(QtWidgets.QWidget):
         #  Serial control
         ###############################################################
 
-        serial_control_box = QtWidgets.QGroupBox()
-        serial_control_box.setMaximumWidth(250)
-        serial_control_box.setTitle("Serial port control")
-        serial_control_layout = QtWidgets.QFormLayout(serial_control_box)
-        self.serialPortInput = QtWidgets.QComboBox()
-        self.rescanSerialPort()
-        self.serialPortInput.setEditable(True)
-        btn_rescan_serial_port = QtWidgets.QPushButton("Rescan")
-        btn_rescan_serial_port.setFixedWidth(65)
-        btn_rescan_serial_port.clicked.connect(self.rescanSerialPort)
-        serial_port_input_layout = QtWidgets.QHBoxLayout()
-        serial_port_input_layout.addWidget(self.serialPortInput)
-        serial_port_input_layout.addWidget(btn_rescan_serial_port)
-        serial_control_layout.addRow(
-            QtWidgets.QLabel("Serial port"), serial_port_input_layout)
-
-        serial_button_layout = QtWidgets.QHBoxLayout()
-
-        self.btnSerialToggle = QtWidgets.QPushButton("Connect to device")
-        self.btnSerialToggle.clicked.connect(self.serialButtonClick)
-        serial_button_layout.addWidget(self.btnSerialToggle, stretch=1)
-
-        self.btnDeviceSettings = QtWidgets.QPushButton("Manage")
-        self.btnDeviceSettings.setFixedWidth(65)
-        self.btnDeviceSettings.clicked.connect(
-            lambda: self.display_window("device_settings"))
-        serial_button_layout.addWidget(self.btnDeviceSettings, stretch=0)
-        serial_control_layout.addRow(serial_button_layout)
-        left_column.addWidget(serial_control_box)
-
-        ###############################################################
-        #  File control
-        ###############################################################
-
-        self.windows["file"].setWindowTitle("Files")
-        self.windows["file"].setWindowIcon(self.icon)
-        self.windows["file"].setMinimumWidth(200)
-        QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self.windows["file"],
-                            self.windows["file"].hide)
-        file_window_layout = QtWidgets.QVBoxLayout()
-        self.windows["file"].setLayout(file_window_layout)
-
-        load_file_control_box = QtWidgets.QGroupBox("Import file")
-        load_file_control_box.setMaximumWidth(300)
-        load_file_control_layout = QtWidgets.QFormLayout(load_file_control_box)
-
-        btn_load_sweep = QtWidgets.QPushButton("Load as sweep")
-        btn_load_sweep.clicked.connect(self.loadSweepFile)
-        btn_load_reference = QtWidgets.QPushButton("Load reference")
-        btn_load_reference.clicked.connect(self.loadReferenceFile)
-        load_file_control_layout.addRow(btn_load_sweep)
-        load_file_control_layout.addRow(btn_load_reference)
-
-        file_window_layout.addWidget(load_file_control_box)
-
-        save_file_control_box = QtWidgets.QGroupBox("Export file")
-        save_file_control_box.setMaximumWidth(300)
-        save_file_control_layout = QtWidgets.QFormLayout(save_file_control_box)
-
-        btn_export_file = QtWidgets.QPushButton("Save 1-Port file (S1P)")
-        btn_export_file.clicked.connect(lambda: self.exportFile(1))
-        save_file_control_layout.addRow(btn_export_file)
-
-        btn_export_file = QtWidgets.QPushButton("Save 2-Port file (S2P)")
-        btn_export_file.clicked.connect(lambda: self.exportFile(4))
-        save_file_control_layout.addRow(btn_export_file)
-
-        file_window_layout.addWidget(save_file_control_box)
-
-        btn_open_file_window = QtWidgets.QPushButton("Files ...")
-        btn_open_file_window.clicked.connect(
-            lambda: self.display_window("file"))
+        left_column.addWidget(self.serial_control)
 
         ###############################################################
         #  Calibration
         ###############################################################
 
         btnOpenCalibrationWindow = QtWidgets.QPushButton("Calibration ...")
+        btnOpenCalibrationWindow.setMinimumHeight(20)
         self.calibrationWindow = CalibrationWindow(self)
         btnOpenCalibrationWindow.clicked.connect(
             lambda: self.display_window("calibration"))
@@ -451,15 +390,25 @@ class NanoVNASaver(QtWidgets.QWidget):
         ###############################################################
 
         btn_display_setup = QtWidgets.QPushButton("Display setup ...")
-        btn_display_setup.setMaximumWidth(250)
+        btn_display_setup.setMinimumHeight(20)
+        btn_display_setup.setMaximumWidth(240)
         btn_display_setup.clicked.connect(
             lambda: self.display_window("setup"))
 
         btn_about = QtWidgets.QPushButton("About ...")
-        btn_about.setMaximumWidth(250)
+        btn_about.setMinimumHeight(20)
+        btn_about.setMaximumWidth(240)
 
         btn_about.clicked.connect(
             lambda: self.display_window("about"))
+
+
+        btn_open_file_window = QtWidgets.QPushButton("Files")
+        btn_open_file_window.setMinimumHeight(20)
+        btn_open_file_window.setMaximumWidth(240)
+
+        btn_open_file_window.clicked.connect(
+            lambda: self.display_window("file"))
 
         button_grid = QtWidgets.QGridLayout()
         button_grid.addWidget(btn_open_file_window, 0, 0)
@@ -469,119 +418,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         left_column.addLayout(button_grid)
 
         logger.debug("Finished building interface")
-
-    def rescanSerialPort(self):
-        self.serialPortInput.clear()
-        for iface in get_interfaces():
-            self.serialPortInput.insertItem(1, f"{iface}", iface)
-        self.serialPortInput.repaint()
-
-    def exportFile(self, nr_params: int = 1):
-        if len(self.data11) == 0:
-            QtWidgets.QMessageBox.warning(
-                self, "No data to save", "There is no data to save.")
-            return
-        if nr_params > 2 and len(self.data21) == 0:
-            QtWidgets.QMessageBox.warning(
-                self, "No S21 data to save", "There is no S21 data to save.")
-            return
-
-        filedialog = QtWidgets.QFileDialog(self)
-        if nr_params == 1:
-            filedialog.setDefaultSuffix("s1p")
-            filedialog.setNameFilter(
-                "Touchstone 1-Port Files (*.s1p);;All files (*.*)")
-        else:
-            filedialog.setDefaultSuffix("s2p")
-            filedialog.setNameFilter(
-                "Touchstone 2-Port Files (*.s2p);;All files (*.*)")
-        filedialog.setAcceptMode(QtWidgets.QFileDialog.AcceptSave)
-        selected = filedialog.exec()
-        if not selected:
-            return
-        filename = filedialog.selectedFiles()[0]
-        if filename == "":
-            logger.debug("No file name selected.")
-            return
-
-        ts = Touchstone(filename)
-        ts.sdata[0] = self.data11
-        if nr_params > 1:
-            ts.sdata[1] = self.data21
-            for dp in self.data11:
-                ts.sdata[2].append(Datapoint(dp.freq, 0, 0))
-                ts.sdata[3].append(Datapoint(dp.freq, 0, 0))
-        try:
-            ts.save(nr_params)
-        except IOError as e:
-            logger.exception("Error during file export: %s", e)
-            return
-
-    def serialButtonClick(self):
-        if not self.vna.connected():
-            self.connect_device()
-        else:
-            self.disconnect_device()
-
-    def connect_device(self):
-        if not self.interface:
-            return
-        with self.interface.lock:
-            self.interface = self.serialPortInput.currentData()
-            logger.info("Connection %s", self.interface)
-            try:
-                self.interface.open()
-
-            except (IOError, AttributeError) as exc:
-                logger.error("Tried to open %s and failed: %s",
-                             self.interface, exc)
-                return
-            if not self.interface.isOpen():
-                logger.error("Unable to open port %s", self.interface)
-                return
-            self.interface.timeout = 0.05
-        sleep(0.1)
-        try:
-            self.vna = get_VNA(self.interface)
-        except IOError as exc:
-            logger.error("Unable to connect to VNA: %s", exc)
-
-        self.vna.validateInput = self.settings.value(
-            "SerialInputValidation", True, bool)
-
-        # connected
-        self.btnSerialToggle.setText("Disconnect")
-        self.btnSerialToggle.repaint()
-
-        frequencies = self.vna.readFrequencies()
-        if not frequencies:
-            logger.warning("No frequencies read")
-            return
-        logger.info("Read starting frequency %s and end frequency %s",
-                    frequencies[0], frequencies[-1])
-        self.sweep_control.set_start(frequencies[0])
-        if frequencies[0] < frequencies[-1]:
-            self.sweep_control.set_end(frequencies[-1])
-        else:
-            self.sweep_control.set_end(
-                frequencies[0] +
-                self.vna.datapoints * self.sweep_control.get_segments())
-
-        self.sweep_control.set_segments(1)  # speed up things
-        self.sweep_control.update_center_span()
-        self.sweep_control.update_step_size()
-
-        self.windows["sweep_settings"].vna_connected()
-
-        logger.debug("Starting initial sweep")
-        self.sweep_start()
-
-    def disconnect_device(self):
-        with self.interface.lock:
-            logger.info("Closing connection to %s", self.interface)
-            self.interface.close()
-            self.btnSerialToggle.setText("Connect to device")
-            self.btnSerialToggle.repaint()
 
     def sweep_start(self):
         # Run the device data update
@@ -612,10 +448,10 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def saveData(self, data, data21, source=None):
         with self.dataLock:
-            self.data11 = data
-            self.data21 = data21
+            self.data.s11 = data
+            self.data.s21 = data21
             if self.s21att > 0:
-                self.data21 = corr_att_data(self.data21, self.s21att)
+                self.data.s21 = corr_att_data(self.data.s21, self.s21att)
         if source is not None:
             self.sweepSource = source
         else:
@@ -626,9 +462,9 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def markerUpdated(self, marker: Marker):
         with self.dataLock:
-            marker.findLocation(self.data11)
+            marker.findLocation(self.data.s11)
             marker.resetLabels()
-            marker.updateLabels(self.data11, self.data21)
+            marker.updateLabels(self.data.s11, self.data.s21)
             for c in self.subscribing_charts:
                 c.update()
         if Marker.count() >= 2 and not self.delta_marker_layout.isHidden():
@@ -641,27 +477,27 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def dataUpdated(self):
         with self.dataLock:
-            s11data = self.data11[:]
-            s21data = self.data21[:]
+            s11 = self.data.s11[:]
+            s21 = self.data.s21[:]
 
         for m in self.markers:
             m.resetLabels()
-            m.updateLabels(s11data, s21data)
+            m.updateLabels(s11, s21)
 
         for c in self.s11charts:
-            c.setData(s11data)
+            c.setData(s11)
 
         for c in self.s21charts:
-            c.setData(s21data)
+            c.setData(s21)
 
         for c in self.combinedCharts:
-            c.setCombinedData(s11data, s21data)
+            c.setCombinedData(s11, s21)
 
         self.sweep_control.progress_bar.setValue(self.worker.percentage)
         self.windows["tdr"].updateTDR()
 
-        if s11data:
-            min_vswr = min(s11data, key=lambda data: data.vswr)
+        if s11:
+            min_vswr = min(s11, key=lambda data: data.vswr)
             self.s11_min_swr_label.setText(
                 f"{format_vswr(min_vswr.vswr)} @ {format_frequency(min_vswr.freq)}")
             self.s11_min_rl_label.setText(format_gain(min_vswr.gain))
@@ -669,9 +505,9 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.s11_min_swr_label.setText("")
             self.s11_min_rl_label.setText("")
 
-        if s21data:
-            min_gain = min(s21data, key=lambda data: data.gain)
-            max_gain = max(s21data, key=lambda data: data.gain)
+        if s21:
+            min_gain = min(s21, key=lambda data: data.gain)
+            max_gain = max(s21, key=lambda data: data.gain)
             self.s21_min_gain_label.setText(
                 f"{format_gain(min_gain.gain)}"
                 f" @ {format_frequency(min_gain.freq)}")
@@ -695,22 +531,22 @@ class NanoVNASaver(QtWidgets.QWidget):
             marker.frequencyInput.textEdited.emit(
                 marker.frequencyInput.text())
 
-    def setReference(self, s11data=None, s21data=None, source=None):
-        if not s11data:
+    def setReference(self, s11=None, s21=None, source=None):
+        if not s11:
             with self.dataLock:
-                s11data = self.data11[:]
-                s21data = self.data21[:]
+                s11 = self.data.s11[:]
+                s21 = self.data.s21[:]
 
-        self.referenceS11data = s11data
+        self.ref_data.s11 = s11
         for c in self.s11charts:
-            c.setReference(s11data)
+            c.setReference(s11)
 
-        self.referenceS21data = s21data
+        self.ref_data.s21 = s21
         for c in self.s21charts:
-            c.setReference(s21data)
+            c.setReference(s21)
 
         for c in self.combinedCharts:
-            c.setCombinedReference(s11data, s21data)
+            c.setCombinedReference(s11, s21)
 
         self.btnResetReference.setDisabled(False)
 
@@ -725,44 +561,23 @@ class NanoVNASaver(QtWidgets.QWidget):
         insert = "("
         if self.sweepSource != "":
             insert += (
-                f"Sweep: {self.sweepSource} @ {len(self.data11)} points"
+                f"Sweep: {self.sweepSource} @ {len(self.data.s11)} points"
                 f"{', ' if self.referenceSource else ''}")
         if self.referenceSource != "":
             insert += (
                 f"Reference: {self.referenceSource} @"
-                f" {len(self.referenceS11data)} points")
+                f" {len(self.ref_data.s11)} points")
         insert += ")"
         title = f"{self.baseTitle} {insert if insert else ''}"
         self.setWindowTitle(title)
 
     def resetReference(self):
-        self.referenceS11data = []
-        self.referenceS21data = []
+        self.ref_data = Touchstone()
         self.referenceSource = ""
         self.updateTitle()
         for c in self.subscribing_charts:
             c.resetReference()
         self.btnResetReference.setDisabled(True)
-
-    def loadReferenceFile(self):
-        filename, _ = QtWidgets.QFileDialog.getOpenFileName(
-            filter="Touchstone Files (*.s1p *.s2p);;All files (*.*)")
-        if filename != "":
-            self.resetReference()
-            t = Touchstone(filename)
-            t.load()
-            self.setReference(t.s11data, t.s21data, filename)
-
-    def loadSweepFile(self):
-        filename, _ = QtWidgets.QFileDialog.getOpenFileName(
-            filter="Touchstone Files (*.s1p *.s2p);;All files (*.*)")
-        if filename != "":
-            self.data11 = []
-            self.data21 = []
-            t = Touchstone(filename)
-            t.load()
-            self.saveData(t.s11data, t.s21data, filename)
-            self.dataUpdated()
 
     def sizeHint(self) -> QtCore.QSize:
         return QtCore.QSize(1100, 950)
@@ -773,10 +588,6 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def showError(self, text):
         QtWidgets.QMessageBox.warning(self, "Error", text)
-
-    def showFatalSweepError(self):
-        self.showError(self.worker.error_message)
-        self.stopSerial()
 
     def showSweepError(self):
         self.showError(self.worker.error_message)
@@ -829,8 +640,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         qf_normal = QtGui.QFontMetricsF(normal_font)
         # Characters we would normally display
         standard_string = "0.123456789 0.123456789 MHz \N{OHM SIGN}"
-        new_width = qf_new.boundingRect(standard_string).width()
-        old_width = qf_normal.boundingRect(standard_string).width()
+        new_width = qf_new.horizontalAdvance(standard_string)
+        old_width = qf_normal.horizontalAdvance(standard_string)
         self.scaleFactor = new_width / old_width
         logger.debug("New font width: %f, normal font: %f, factor: %f",
                      new_width, old_width, self.scaleFactor)
@@ -842,6 +653,3 @@ class NanoVNASaver(QtWidgets.QWidget):
     def update_sweep_title(self):
         for c in self.subscribing_charts:
             c.setSweepTitle(self.sweep.properties.name)
-
-    def set_tx_power(self, freq_range, power_desc):
-        self.vna.setTXPower(freq_range, power_desc)

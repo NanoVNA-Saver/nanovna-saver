@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020 NanoVNA-Saver Authors
+#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@
 import logging
 import math
 import numpy as np
-from scipy.signal import argrelextrema
 from PyQt5 import QtWidgets
 from scipy import signal
 
@@ -30,7 +29,7 @@ class Analysis:
     _widget = None
 
     @classmethod
-    def find_crossing_zero(cls, data, threshold=0):
+    def find_crossing_zero(cls, data):
         '''
 
         Find values  crossing zero
@@ -45,7 +44,6 @@ class Analysis:
 
         :param cls:
         :param data: list of values
-        :param threshold: unused, for future manage flipping around 0
         '''
         my_data = np.array(data)
         zeroes = np.where(my_data == 0)[0]
@@ -118,8 +116,7 @@ class Analysis:
 #         maximums = argrelextrema(my_data, np.greater)[0]
         if threshold is None:
             return peaks
-        else:
-            return [k for k in peaks if data[k] > threshold]
+        return [k for k in peaks if data[k] > threshold]
 
     def __init__(self, app: QtWidgets.QWidget):
         self.app = app
@@ -136,10 +133,10 @@ class Analysis:
     def calculateRolloff(self, location1, location2):
         if location1 == location2:
             return 0, 0
-        frequency1 = self.app.data21[location1].freq
-        frequency2 = self.app.data21[location2].freq
-        gain1 = self.app.data21[location1].gain
-        gain2 = self.app.data21[location2].gain
+        frequency1 = self.app.data.s21[location1].freq
+        frequency2 = self.app.data.s21[location2].freq
+        gain1 = self.app.data.s21[location1].gain
+        gain2 = self.app.data.s21[location2].gain
         frequency_factor = frequency2 / frequency1
         if frequency_factor < 1:
             frequency_factor = 1 / frequency_factor

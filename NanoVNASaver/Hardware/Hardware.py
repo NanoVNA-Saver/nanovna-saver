@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020 NanoVNA-Saver Authors
+#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -32,6 +32,7 @@ from NanoVNASaver.Hardware.NanoVNA_F_V2 import NanoVNA_F_V2
 from NanoVNASaver.Hardware.NanoVNA_H import NanoVNA_H
 from NanoVNASaver.Hardware.NanoVNA_H4 import NanoVNA_H4
 from NanoVNASaver.Hardware.NanoVNA_V2 import NanoVNA_V2
+from NanoVNASaver.Hardware.TinySA import TinySA
 from NanoVNASaver.Hardware.Serial import drain_serial, Interface
 
 
@@ -48,10 +49,24 @@ RETRIES = 3
 TIMEOUT = 0.2
 WAIT = 0.05
 
+NAME2DEVICE = {
+    "S-A-A-2" : NanoVNA_V2,
+    "AVNA": AVNA,
+    "H4": NanoVNA_H4,
+    "H": NanoVNA_H,
+    "F_V2": NanoVNA_F_V2,
+    "F": NanoVNA_F,
+    "NanoVNA": NanoVNA,
+    "tinySA": TinySA,
+    "Unknown": NanoVNA,
+}
+
 # The USB Driver for NanoVNA V2 seems to deliver an
 # incompatible hardware info like:
 # 'PORTS\\VID_04B4&PID_0008\\DEMO'
 # This function will fix it.
+
+
 def _fix_v2_hwinfo(dev):
     if dev.hwid == r'PORTS\VID_04B4&PID_0008\DEMO':
         dev.vid, dev.pid = 0x04b4, 0x0008
@@ -72,63 +87,67 @@ def get_interfaces() -> List[Interface]:
                          t.name, d.vid, d.pid, d.device)
             iface = Interface('serial', t.name)
             iface.port = d.device
+            iface.open()
+            iface.comment = get_comment(iface)
+            iface.close()
             interfaces.append(iface)
+
+    logger.debug("Interfaces: %s", interfaces)
     return interfaces
 
 
 def get_VNA(iface: Interface) -> 'VNA':
     # serial_port.timeout = TIMEOUT
+    return NAME2DEVICE[iface.comment](iface)
 
+def get_comment(iface: Interface) -> str:
     logger.info("Finding correct VNA type...")
     with iface.lock:
         vna_version = detect_version(iface)
 
     if vna_version == 'v2':
-        logger.info("Type: NanoVNA-V2")
-        return NanoVNA_V2(iface)
+        return "S-A-A-2"
 
     logger.info("Finding firmware variant...")
     info = get_info(iface)
-    if info.find("AVNA + Teensy") >= 0:
-        logger.info("Type: AVNA")
-        return AVNA(iface)
-    if info.find("NanoVNA-H 4") >= 0:
-        logger.info("Type: NanoVNA-H4")
-        vna = NanoVNA_H4(iface)
-        return vna
-    if info.find("NanoVNA-H") >= 0:
-        logger.info("Type: NanoVNA-H")
-        vna = NanoVNA_H(iface)
-        return vna
-    if info.find("NanoVNA-F_V2") >= 0:
-        logger.info("Type: NanoVNA-F_V2")
-        return NanoVNA_F_V2(iface)
-    if info.find("NanoVNA-F") >= 0:
-        logger.info("Type: NanoVNA-F")
-        return NanoVNA_F(iface)
-    if info.find("NanoVNA") >= 0:
-        logger.info("Type: Generic NanoVNA")
-        return NanoVNA(iface)
+    for search, name in (
+        ("AVNA + Teensy", "AVNA"),
+        ("NanoVNA-H 4", "H4"),
+        ("NanoVNA-H", "H"),
+        ("NanoVNA-F_V2", "F_V2"),
+        ("NanoVNA-F", "F"),
+        ("NanoVNA", "NanoVNA"),
+        ("tinySA", "tinySA"),
+    ):
+        if info.find(search) >= 0:
+            return  name
     logger.warning("Did not recognize NanoVNA type from firmware.")
-    return NanoVNA(iface)
+    return "Unknown"
 
 def detect_version(serial_port: serial.Serial) -> str:
     data = ""
     for i in range(RETRIES):
         drain_serial(serial_port)
         serial_port.write("\r".encode("ascii"))
+        # workaround for some UnicodeDecodeError ... repeat ;-)
+        drain_serial(serial_port)
+        serial_port.write("\r".encode("ascii"))
         sleep(0.05)
+
         data = serial_port.read(128).decode("ascii")
         if data.startswith("ch> "):
             return "v1"
         # -H versions
         if data.startswith("\r\nch> "):
             return "vh"
+        if data.startswith("\r\n?\r\nch> "):
+            return "vh"
         if data.startswith("2"):
             return "v2"
         logger.debug("Retry detection: %s", i + 1)
     logger.error('No VNA detected. Hardware responded to CR with: %s', data)
     return ""
+
 
 def get_info(serial_port: serial.Serial) -> str:
     for _ in range(RETRIES):
@@ -151,4 +170,5 @@ def get_info(serial_port: serial.Serial) -> str:
                 logger.debug("Needed retries: %s", retries)
                 break
             lines.append(line)
+        logger.debug("Info output: %s", lines)
         return "\n".join(lines)

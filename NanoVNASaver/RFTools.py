@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020 NanoVNA-Saver Authors
+#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -18,11 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
 import cmath
-from threading import Lock
-from typing import Iterator, List, NamedTuple, Tuple
-
-import numpy as np
-from scipy.interpolate import interp1d
+from typing import List, NamedTuple
 
 from NanoVNASaver.SITools import Format, clamp_value
 
@@ -38,8 +34,7 @@ class Datapoint(NamedTuple):
 
     @property
     def z(self) -> complex:
-        """ return the datapoint impedance as complex number """
-        # FIXME: not impedance, but s11 ?
+        """ return the s value complex number """
         return complex(self.re, self.im)
 
     @property
@@ -108,8 +103,7 @@ def groupDelay(data: List[Datapoint], index: int) -> float:
     delta_freq = data[idx1].freq - data[idx0].freq
     if delta_freq == 0:
         return 0
-    val = -delta_angle / math.tau / delta_freq
-    return val
+    return -delta_angle / math.tau / delta_freq
 
 
 def impedance_to_capacitance(z: complex, freq: float) -> float:
@@ -170,8 +164,7 @@ def corr_att_data(data: List[Datapoint], att: float) -> List[Datapoint]:
     """Correct the ratio for a given attenuation on s21 input"""
     if att <= 0:
         return data
-    else:
-        att = 10**(att / 20)
+    att = 10**(att / 20)
     ndata = []
     for dp in data:
         corrected = dp.z * att

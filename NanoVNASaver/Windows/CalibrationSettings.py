@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020 NanoVNA-Saver Authors
+#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -71,11 +71,13 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.cal_label[label_name] = QtWidgets.QLabel("Uncalibrated")
             cal_btn[label_name] = QtWidgets.QPushButton(
                 label_name.capitalize())
+            cal_btn[label_name].setMinimumHeight(20)
             cal_btn[label_name].clicked.connect(partial(self.manual_save, label_name))
             calibration_control_layout.addRow(
                 cal_btn[label_name], self.cal_label[label_name])
 
         self.input_offset_delay = QtWidgets.QDoubleSpinBox()
+        self.input_offset_delay.setMinimumHeight(20)
         self.input_offset_delay.setValue(0)
         self.input_offset_delay.setSuffix(" ps")
         self.input_offset_delay.setAlignment(QtCore.Qt.AlignRight)
@@ -86,15 +88,18 @@ class CalibrationWindow(QtWidgets.QWidget):
         calibration_control_layout.addRow("Offset delay", self.input_offset_delay)
 
         self.btn_automatic = QtWidgets.QPushButton("Calibration assistant")
+        self.btn_automatic.setMinimumHeight(20)
         calibration_control_layout.addRow(self.btn_automatic)
         self.btn_automatic.clicked.connect(self.automaticCalibration)
 
         apply_reset_layout = QtWidgets.QHBoxLayout()
 
         btn_apply = QtWidgets.QPushButton("Apply")
+        btn_apply.setMinimumHeight(20)
         btn_apply.clicked.connect(self.calculate)
 
         btn_reset = QtWidgets.QPushButton("Reset")
+        btn_reset.setMinimumHeight(20)
         btn_reset.clicked.connect(self.reset)
 
         apply_reset_layout.addWidget(btn_apply)
@@ -114,8 +119,10 @@ class CalibrationWindow(QtWidgets.QWidget):
         file_box = QtWidgets.QGroupBox("Files")
         file_layout = QtWidgets.QFormLayout(file_box)
         btn_save_file = QtWidgets.QPushButton("Save calibration")
+        btn_save_file.setMinimumHeight(20)
         btn_save_file.clicked.connect(lambda: self.saveCalibration())
         btn_load_file = QtWidgets.QPushButton("Load calibration")
+        btn_load_file.setMinimumHeight(20)
         btn_load_file.clicked.connect(lambda: self.loadCalibration())
 
         save_load_layout = QtWidgets.QHBoxLayout()
@@ -137,10 +144,15 @@ class CalibrationWindow(QtWidgets.QWidget):
         cal_short_form = QtWidgets.QFormLayout(self.cal_short_box)
         self.cal_short_box.setDisabled(True)
         self.short_l0_input = QtWidgets.QLineEdit("0")
+        self.short_l0_input.setMinimumHeight(20)
         self.short_l1_input = QtWidgets.QLineEdit("0")
+        self.short_l1_input.setMinimumHeight(20)
         self.short_l2_input = QtWidgets.QLineEdit("0")
+        self.short_l2_input.setMinimumHeight(20)
         self.short_l3_input = QtWidgets.QLineEdit("0")
+        self.short_l3_input.setMinimumHeight(20)
         self.short_length = QtWidgets.QLineEdit("0")
+        self.short_length.setMinimumHeight(20)
         cal_short_form.addRow("L0 (H(e-12))", self.short_l0_input)
         cal_short_form.addRow("L1 (H(e-24))", self.short_l1_input)
         cal_short_form.addRow("L2 (H(e-33))", self.short_l2_input)
@@ -151,10 +163,15 @@ class CalibrationWindow(QtWidgets.QWidget):
         cal_open_form = QtWidgets.QFormLayout(self.cal_open_box)
         self.cal_open_box.setDisabled(True)
         self.open_c0_input = QtWidgets.QLineEdit("50")
+        self.open_c0_input.setMinimumHeight(20)
         self.open_c1_input = QtWidgets.QLineEdit("0")
+        self.open_c1_input.setMinimumHeight(20)
         self.open_c2_input = QtWidgets.QLineEdit("0")
+        self.open_c2_input.setMinimumHeight(20)
         self.open_c3_input = QtWidgets.QLineEdit("0")
+        self.open_c3_input.setMinimumHeight(20)
         self.open_length = QtWidgets.QLineEdit("0")
+        self.open_length.setMinimumHeight(20)
         cal_open_form.addRow("C0 (F(e-15))", self.open_c0_input)
         cal_open_form.addRow("C1 (F(e-27))", self.open_c1_input)
         cal_open_form.addRow("C2 (F(e-36))", self.open_c2_input)
@@ -165,19 +182,24 @@ class CalibrationWindow(QtWidgets.QWidget):
         cal_load_form = QtWidgets.QFormLayout(self.cal_load_box)
         self.cal_load_box.setDisabled(True)
         self.load_resistance = QtWidgets.QLineEdit("50")
+        self.load_resistance.setMinimumHeight(20)
         self.load_inductance = QtWidgets.QLineEdit("0")
-        # self.load_capacitance = QtWidgets.QLineEdit("0")
-        # self.load_capacitance.setDisabled(True)  # Not yet implemented
+        self.load_inductance.setMinimumHeight(20)
+        self.load_capacitance = QtWidgets.QLineEdit("0")
+        self.load_capacitance.setMinimumHeight(20)
+        #self.load_capacitance.setDisabled(True)  # Not yet implemented
         self.load_length = QtWidgets.QLineEdit("0")
+        self.load_length.setMinimumHeight(20)
         cal_load_form.addRow("Resistance (\N{OHM SIGN})", self.load_resistance)
         cal_load_form.addRow("Inductance (H(e-12))", self.load_inductance)
-        # cal_load_form.addRow("Capacitance (F(e-12))", self.load_capacitance)
+        cal_load_form.addRow("Capacitance (F(e-15))", self.load_capacitance)
         cal_load_form.addRow("Offset Delay (ps)", self.load_length)
 
         self.cal_through_box = QtWidgets.QGroupBox("Through")
         cal_through_form = QtWidgets.QFormLayout(self.cal_through_box)
         self.cal_through_box.setDisabled(True)
         self.through_length = QtWidgets.QLineEdit("0")
+        self.through_length.setMinimumHeight(20)
         cal_through_form.addRow("Offset Delay (ps)", self.through_length)
 
         cal_standard_layout.addWidget(self.cal_short_box)
@@ -190,14 +212,18 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.cal_standard_save_box.setDisabled(True)
 
         self.cal_standard_save_selector = QtWidgets.QComboBox()
+        self.cal_standard_save_selector.setMinimumHeight(20)
         self.listCalibrationStandards()
         cal_standard_save_layout.addWidget(self.cal_standard_save_selector)
         cal_standard_save_button_layout = QtWidgets.QHBoxLayout()
         btn_save_standard = QtWidgets.QPushButton("Save")
+        btn_save_standard.setMinimumHeight(20)
         btn_save_standard.clicked.connect(self.saveCalibrationStandard)
         btn_load_standard = QtWidgets.QPushButton("Load")
+        btn_load_standard.setMinimumHeight(20)
         btn_load_standard.clicked.connect(self.loadCalibrationStandard)
         btn_delete_standard = QtWidgets.QPushButton("Delete")
+        btn_delete_standard.setMinimumHeight(20)
         btn_delete_standard.clicked.connect(self.deleteCalibrationStandard)
         cal_standard_save_button_layout.addWidget(btn_load_standard)
         cal_standard_save_button_layout.addWidget(btn_save_standard)
@@ -231,11 +257,11 @@ class CalibrationWindow(QtWidgets.QWidget):
 
     def cal_save(self, name: str):
         if name in ("through", "isolation"):
-            self.app.calibration.insert(name, self.app.data21)
+            self.app.calibration.insert(name, self.app.data.s21)
         else:
-            self.app.calibration.insert(name, self.app.data11)
+            self.app.calibration.insert(name, self.app.data.s11)
         self.cal_label[name].setText(
-            _format_cal_label(len(self.app.data11)))
+            _format_cal_label(len(self.app.data.s11)))
 
     def manual_save(self, name: str):
         if self.checkExpertUser():
@@ -287,7 +313,7 @@ class CalibrationWindow(QtWidgets.QWidget):
 
         self.app.settings.setValue("LoadR", self.load_resistance.text())
         self.app.settings.setValue("LoadL", self.load_inductance.text())
-        # self.app.settings.setValue("LoadC", self.load_capacitance.text())
+        self.app.settings.setValue("LoadC", self.load_capacitance.text())
         self.app.settings.setValue("LoadDelay", self.load_length.text())
 
         self.app.settings.setValue("ThroughDelay", self.through_length.text())
@@ -322,7 +348,7 @@ class CalibrationWindow(QtWidgets.QWidget):
 
         self.load_resistance.setText(str(self.app.settings.value("LoadR", 50)))
         self.load_inductance.setText(str(self.app.settings.value("LoadL", 0)))
-        # self.load_capacitance.setText(str(self.app.settings.value("LoadC", 0)))
+        self.load_capacitance.setText(str(self.app.settings.value("LoadC", 0)))
         self.load_length.setText(str(self.app.settings.value("LoadDelay", 0)))
 
         self.through_length.setText(str(self.app.settings.value("ThroughDelay", 0)))
@@ -485,8 +511,6 @@ class CalibrationWindow(QtWidgets.QWidget):
             try:
                 self.app.calibration.openC0 = self.getFloatValue(
                     self.open_c0_input.text())/10**15
-                if self.app.calibration.openC0 == 0:
-                    raise ValueError("C0 cannot be 0.")
                 self.app.calibration.openC1 = self.getFloatValue(
                     self.open_c1_input.text())/10**27
                 self.app.calibration.openC2 = self.getFloatValue(
@@ -505,9 +529,9 @@ class CalibrationWindow(QtWidgets.QWidget):
                 self.app.calibration.loadR = self.getFloatValue(
                     self.load_resistance.text())
                 self.app.calibration.loadL = self.getFloatValue(
-                    self.load_inductance.text())/10**12
-                # self.app.calibration.loadC = self.getFloatValue(
-                #   self.load_capacitance.text()) / 10 ** 12
+                    self.load_inductance.text()) / 10**12
+                self.app.calibration.loadC = self.getFloatValue(
+                    self.load_capacitance.text()) / 10 ** 15
                 self.app.calibration.loadLength = self.getFloatValue(
                     self.load_length.text())/10**12
                 self.app.calibration.useIdealLoad = False

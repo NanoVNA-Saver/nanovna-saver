@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020 NanoVNA-Saver Authors
+#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -97,19 +97,19 @@ class PeakSearchAnalysis(Analysis):
         count = self.input_number_of_peaks.value()
         if self.rbtn_data_vswr.isChecked():
             fn = format_vswr
-            for d in self.app.data11:
+            for d in self.app.data.s11:
                 data.append(d.vswr)
         elif self.rbtn_data_s21_gain.isChecked():
             fn = format_gain
-            for d in self.app.data21:
+            for d in self.app.data.s21:
                 data.append(d.gain)
         elif self.rbtn_data_resistance.isChecked():
             fn = format_resistance
-            for d in self.app.data11:
+            for d in self.app.data.s11:
                 data.append(d.impedance().real)
         elif self.rbtn_data_reactance.isChecked():
             fn = str
-            for d in self.app.data11:
+            for d in self.app.data.s11:
                 data.append(d.impedance().imag)
 
         else:
@@ -150,10 +150,10 @@ class PeakSearchAnalysis(Analysis):
             logger.debug("Index %d", i)
             logger.debug("Prominence %f", prominences[i])
             logger.debug("Index in sweep %d", peaks[i])
-            logger.debug("Frequency %d", self.app.data11[peaks[i]].freq)
+            logger.debug("Frequency %d", self.app.data.s11[peaks[i]].freq)
             logger.debug("Value %f", sign * data[peaks[i]])
             self.layout.addRow(
-                f"Freq {format_frequency_short(self.app.data11[peaks[i]].freq)}",
+                f"Freq {format_frequency_short(self.app.data.s11[peaks[i]].freq)}",
                 QtWidgets.QLabel(f" value {fn(sign * data[peaks[i]])}"
                                  ))
 
@@ -162,9 +162,9 @@ class PeakSearchAnalysis(Analysis):
                 logger.warning("More peaks found than there are markers")
             for i in range(min(count, len(self.app.markers))):
                 self.app.markers[i].setFrequency(
-                    str(self.app.data11[peaks[indices[i]]].freq))
+                    str(self.app.data.s11[peaks[indices[i]]].freq))
                 self.app.markers[i].frequencyInput.setText(
-                    str(self.app.data11[peaks[indices[i]]].freq))
+                    str(self.app.data.s11[peaks[indices[i]]].freq))
 
         max_val = -10**10
         max_idx = -1
@@ -180,6 +180,6 @@ class PeakSearchAnalysis(Analysis):
 
         logger.debug("Results start at %d, out of %d",
                      self.results_header, self.layout.rowCount())
-        for i in range(self.results_header, self.layout.rowCount()):
+        for _ in range(self.results_header, self.layout.rowCount()):
             logger.debug("deleting %s", self.layout.rowCount())
             self.layout.removeRow(self.layout.rowCount() - 1)

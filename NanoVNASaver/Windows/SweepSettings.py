@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020 NanoVNA-Saver Authors
+#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -56,6 +56,7 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         layout = QtWidgets.QFormLayout(box)
 
         input_title = QtWidgets.QLineEdit(self.app.sweep.properties.name)
+        input_title.setMinimumHeight(20)
         input_title.editingFinished.connect(
             lambda: self.update_title(input_title.text()))
         layout.addRow(input_title)
@@ -66,26 +67,33 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         layout = QtWidgets.QFormLayout(box)
 
         # Sweep Mode
+        sweep_btn_layout = QtWidgets.QHBoxLayout()
+
         radio_button = QtWidgets.QRadioButton("Single sweep")
+        radio_button.setMinimumHeight(20)
         radio_button.setChecked(
             self.app.sweep.properties.mode == SweepMode.SINGLE)
         radio_button.clicked.connect(
             lambda: self.update_mode(SweepMode.SINGLE))
-        layout.addWidget(radio_button)
+        sweep_btn_layout.addWidget(radio_button)
 
         radio_button = QtWidgets.QRadioButton("Continous sweep")
+        radio_button.setMinimumHeight(20)
         radio_button.setChecked(
             self.app.sweep.properties.mode == SweepMode.CONTINOUS)
         radio_button.clicked.connect(
             lambda: self.update_mode(SweepMode.CONTINOUS))
-        layout.addWidget(radio_button)
+        sweep_btn_layout.addWidget(radio_button)
 
         radio_button = QtWidgets.QRadioButton("Averaged sweep")
+        radio_button.setMinimumHeight(20)
         radio_button.setChecked(
             self.app.sweep.properties.mode == SweepMode.AVERAGE)
         radio_button.clicked.connect(
             lambda: self.update_mode(SweepMode.AVERAGE))
-        layout.addWidget(radio_button)
+        sweep_btn_layout.addWidget(radio_button)
+
+        layout.addRow(sweep_btn_layout)
 
         # Log sweep
         label = QtWidgets.QLabel(
@@ -94,23 +102,28 @@ class SweepSettingsWindow(QtWidgets.QWidget):
             " amount of datapoints and many segments. Step display in"
             " SweepControl cannot reflect this currently.")
         label.setWordWrap(True)
+        label.setMinimumSize(600,70)
         layout.addRow(label)
         checkbox = QtWidgets.QCheckBox("Logarithmic sweep")
+        checkbox.setMinimumHeight(20)
         checkbox.setCheckState(self.app.sweep.properties.logarithmic)
         checkbox.toggled.connect(
             lambda: self.update_logarithmic(checkbox.isChecked()))
-        layout.addWidget(checkbox)
+        layout.addRow(checkbox)
 
         # Averaging
         label = QtWidgets.QLabel(
             "Averaging allows discarding outlying samples to get better"
             " averages. Common values are 3/0, 5/2, 9/4 and 25/6.")
         label.setWordWrap(True)
+        label.setMinimumHeight(50)
         layout.addRow(label)
         averages = QtWidgets.QLineEdit(
             str(self.app.sweep.properties.averages[0]))
+        averages.setMinimumHeight(20)
         truncates = QtWidgets.QLineEdit(
             str(self.app.sweep.properties.averages[1]))
+        truncates.setMinimumHeight(20)
         averages.editingFinished.connect(
             lambda: self.update_averaging(averages, truncates))
         truncates.editingFinished.connect(
@@ -124,9 +137,11 @@ class SweepSettingsWindow(QtWidgets.QWidget):
             " attenuator in line with  the S21 input (CH1) here you can"
             " specify it.")
         label.setWordWrap(True)
+        label.setMinimumHeight(50)
         layout.addRow(label)
 
         input_att = QtWidgets.QLineEdit(str(self.app.s21att))
+        input_att.setMinimumHeight(20)
         input_att.editingFinished.connect(
             lambda: self.update_attenuator(input_att))
         layout.addRow("Attenuator in port CH1 (s21) in dB", input_att)
@@ -135,26 +150,29 @@ class SweepSettingsWindow(QtWidgets.QWidget):
     def sweep_box(self) -> 'QtWidgets.QWidget':
         box = QtWidgets.QGroupBox("Sweep band")
         layout = QtWidgets.QFormLayout(box)
+        sweep_pad_layout = QtWidgets.QHBoxLayout()
 
         self.band_list = QtWidgets.QComboBox()
+        self.band_list.setMinimumHeight(20)
         self.band_list.setModel(self.app.bands)
         # pylint: disable=unnecessary-lambda
         self.band_list.currentIndexChanged.connect(lambda: self.update_band())
         layout.addRow("Select band", self.band_list)
 
-        for raw_label, btn_label, value in (("Pad band limits", "None", 0),
-                                            ("", "10%", 10),
-                                            ("", "25%", 25),
-                                            ("", "100%", 100),):
+        sweep_pad_layout.addWidget(QtWidgets.QLabel("Pad band limits:"))
+        for btn_label, value in (("None", 0), ("10%", 10), ("25%", 25), ("100%", 100),):
             radio_button = QtWidgets.QRadioButton(btn_label)
+            radio_button.setMinimumHeight(20)
             radio_button.setChecked(self.padding == value)
             radio_button.clicked.connect(partial(self.update_padding, value))
-            layout.addRow(raw_label, radio_button)
+            sweep_pad_layout.addWidget(radio_button)
 
+        layout.addRow(sweep_pad_layout)
         self.band_label = QtWidgets.QLabel()
         layout.addRow(self.band_label)
 
         btn_set_band_sweep = QtWidgets.QPushButton("Set band sweep")
+        btn_set_band_sweep.setMinimumHeight(20)
         btn_set_band_sweep.clicked.connect(lambda: self.update_band(True))
         layout.addRow(btn_set_band_sweep)
         return box
@@ -252,4 +270,4 @@ class SweepSettingsWindow(QtWidgets.QWidget):
     def update_tx_power(self, freq_range, power_desc):
         logger.debug("update_tx_power(%r)", power_desc)
         with self.app.sweep.lock:
-            self.app.set_tx_power(freq_range, power_desc)
+            self.app.vna.setTXPower(freq_range, power_desc)

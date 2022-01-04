@@ -26,23 +26,22 @@ from PyQt5 import QtGui
 
 from NanoVNASaver.Hardware.Serial import drain_serial, Interface
 from NanoVNASaver.Hardware.VNA import VNA
-from NanoVNASaver.Version import Version
 
 logger = logging.getLogger(__name__)
 
 
-class NanoVNA(VNA):
-    name = "NanoVNA"
+class TinySA(VNA):
+    name = "tinySA"
     screenwidth = 320
     screenheight = 240
+    valid_datapoints = (290, )
 
     def __init__(self, iface: Interface):
         super().__init__(iface)
-        self.sweep_method = "sweep"
-        self.read_features()
+        self.features = set(('Screenshots',))
         logger.debug("Setting initial start,stop")
         self.start, self.stop = self._get_running_frequencies()
-        self.sweep_max_freq_Hz = 300e6
+        self.sweep_max_freq_Hz = 950e6
         self._sweepdata = []
 
     def _get_running_frequencies(self):
@@ -100,50 +99,26 @@ class NanoVNA(VNA):
         return QtGui.QPixmap()
 
     def resetSweep(self, start: int, stop: int):
-        list(self.exec_command(f"sweep {start} {stop} {self.datapoints}"))
-        list(self.exec_command("resume"))
+        return
 
     def setSweep(self, start, stop):
         self.start = start
         self.stop = stop
-        if self.sweep_method == "sweep":
-            list(self.exec_command(f"sweep {start} {stop} {self.datapoints}"))
-        elif self.sweep_method == "scan":
-            list(self.exec_command(f"scan {start} {stop} {self.datapoints}"))
-
-    def read_features(self):
-        super().read_features()
-        if self.version >= Version("0.7.1"):
-            logger.debug("Using scan mask command.")
-            self.features.add("Scan mask command")
-            self.sweep_method = "scan_mask"
-        elif self.version >= Version("0.2.0"):
-            logger.debug("Using new scan command.")
-            self.features.add("Scan command")
-            self.sweep_method = "scan"
+        list(self.exec_command(f"sweep {start} {stop} {self.datapoints}"))
+        list(self.exec_command("trigger auto"))
 
     def readFrequencies(self) -> List[int]:
-        logger.debug("readFrequencies: %s", self.sweep_method)
-        if self.sweep_method != "scan_mask":
-            return super().readFrequencies()
-        return [int(line) for line in self.exec_command(
-            f"scan {self.start} {self.stop} {self.datapoints} 0b001")]
+        logger.debug("readFrequencies")
+        return [int(line) for line in self.exec_command("frequencies")]
 
     def readValues(self, value) -> List[str]:
-        if self.sweep_method != "scan_mask":
-            return super().readValues(value)
-        logger.debug("readValue with scan mask (%s)", value)
-        # Actually grab the data only when requesting channel 0.
-        # The hardware will return all channels which we will store.
+        logger.debug("Read: %s", value)
         if value == "data 0":
             self._sweepdata = []
-            for line in self.exec_command(
-                    f"scan {self.start} {self.stop} {self.datapoints} 0b110"):
-                data = line.split()
-                self._sweepdata.append((
-                    f"{data[0]} {data[1]}",
-                    f"{data[2]} {data[3]}"))
+            for line in self.exec_command("data"):
+                self._sweepdata.append(f"0 {line.strip()}")
+        return self._sweepdata
         if value == "data 0":
             return [x[0] for x in self._sweepdata]
         if value == "data 1":
-            return [x[1] for x in self._sweepdata]
+            return [x[0] for x in self._sweepdata]

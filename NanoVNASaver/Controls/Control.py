@@ -18,13 +18,16 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from NanoVNASaver.RFTools import Datapoint
-from .RI import RealImaginaryChart
+from PyQt5 import QtWidgets, QtCore
 
 logger = logging.getLogger(__name__)
 
+class Control(QtWidgets.QGroupBox):
+    updated = QtCore.pyqtSignal(object)
 
-class RealImaginarySeriesChart(RealImaginaryChart):
-
-    def impedance(self, p: Datapoint) -> complex:
-        return p.seriesImpedance()
+    def __init__(self, app: QtWidgets.QWidget, title: str = ""):
+        super().__init__()
+        self.app = app
+        self.setMaximumWidth(240)
+        self.setTitle(title)
+        self.layout = QtWidgets.QFormLayout(self)

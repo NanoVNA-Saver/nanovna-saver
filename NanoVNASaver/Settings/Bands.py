@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020 NanoVNA-Saver Authors
+#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -41,6 +41,8 @@ _DEFAULT_BANDS = (
     "70 cm;432000000;438000000",
     "23 cm;1240000000;1300000000",
     "13 cm;2320000000;2450000000",
+    "9 cm;3300000000;3500000000",
+    "5 cm;5650000000;5925000000",
 )
 
 _HEADER_DATA = ("Band", "Start (Hz)", "End (Hz)")

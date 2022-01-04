@@ -1,6 +1,18 @@
 Changelog
 =========
 
+v0.3.10
+------
+
+- Default Band ranges for 5 and 9cm
+- Layout should fit on smaller screens
+- Fixed fixed axis settings
+- Show VNA type in port selector
+- Recognise tinySA (screenshot only)
+- Some more cables in TDR
+- Reference plane applied after calibration
+- Calibration fixes by DiSlord
+
 v0.3.9
 ------
 

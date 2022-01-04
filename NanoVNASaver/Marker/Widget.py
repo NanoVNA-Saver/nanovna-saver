@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020 NanoVNA-Saver Authors
+#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ from PyQt5.QtCore import pyqtSignal
 from NanoVNASaver import RFTools
 from NanoVNASaver.Formatting import (
     format_capacitance,
+    format_complex_adm,
     format_complex_imp,
     format_frequency_space,
     format_gain,
@@ -87,6 +88,7 @@ class Marker(QtCore.QObject, Value):
             self.name = f"Marker {Marker._instances}"
 
         self.frequencyInput = FrequencyInput()
+        self.frequencyInput.setMinimumHeight(20)
         self.frequencyInput.setAlignment(QtCore.Qt.AlignRight)
         self.frequencyInput.editingFinished.connect(
             lambda: self.setFrequency(
@@ -107,6 +109,7 @@ class Marker(QtCore.QObject, Value):
         ###############################################################
 
         self.btnColorPicker = QtWidgets.QPushButton("█")
+        self.btnColorPicker.setMinimumHeight(20)
         self.btnColorPicker.setFixedWidth(20)
         self.btnColorPicker.clicked.connect(
             lambda: self.setColor(QtWidgets.QColorDialog.getColor(
@@ -141,7 +144,9 @@ class Marker(QtCore.QObject, Value):
 
         # line only if more then 3 selected
         self.left_form = QtWidgets.QFormLayout()
+        self.left_form.setVerticalSpacing(0)
         self.right_form = QtWidgets.QFormLayout()
+        self.right_form.setVerticalSpacing(0)
         box_layout.addLayout(self.left_form)
         box_layout.addWidget(line)
         box_layout.addLayout(self.right_form)
@@ -281,32 +286,36 @@ class Marker(QtCore.QObject, Value):
             v.setText("")
 
     def updateLabels(self,
-                     s11data: List[RFTools.Datapoint],
-                     s21data: List[RFTools.Datapoint]):
-        if not s11data:
+                     s11: List[RFTools.Datapoint],
+                     s21: List[RFTools.Datapoint]):
+        if not s11:
             return
         if self.location == -1:  # initial position
             try:
-                location = (self.index -1) / (self._instances - 1) * (len(s11data) - 1)
+                location = (self.index -1) / (self._instances - 1) * (len(s11) - 1)
                 self.location = int(location)
             except ZeroDivisionError:
                 self.location = 0
         try:
-            s11 = s11data[self.location]
+            _s11 = s11[self.location]
         except IndexError:
             self.location = 0
             return
 
-        self.frequencyInput.setText(s11.freq)
-        self.store(self.location, s11data, s21data)
+        self.frequencyInput.setText(_s11.freq)
+        self.store(self.location, s11, s21)
 
-        imp = s11.impedance()
-        cap_str = format_capacitance(RFTools.impedance_to_capacitance(imp, s11.freq))
-        ind_str = format_inductance(RFTools.impedance_to_inductance(imp, s11.freq))
+        imp = _s11.impedance()
+        cap_str = format_capacitance(
+            RFTools.impedance_to_capacitance(imp, _s11.freq))
+        ind_str = format_inductance(
+            RFTools.impedance_to_inductance(imp, _s11.freq))
 
         imp_p = RFTools.serial_to_parallel(imp)
-        cap_p_str = format_capacitance(RFTools.impedance_to_capacitance(imp_p, s11.freq))
-        ind_p_str = format_inductance(RFTools.impedance_to_inductance(imp_p, s11.freq))
+        cap_p_str = format_capacitance(
+            RFTools.impedance_to_capacitance(imp_p, _s11.freq))
+        ind_p_str = format_inductance(
+            RFTools.impedance_to_inductance(imp_p, _s11.freq))
 
         if imp.imag < 0:
             x_str = cap_str
@@ -318,40 +327,44 @@ class Marker(QtCore.QObject, Value):
         else:
             x_p_str = ind_p_str
 
-        self.label['actualfreq'].setText(format_frequency_space(s11.freq))
-        self.label['lambda'].setText(format_wavelength(s11.wavelength))
-        self.label['admittance'].setText(format_complex_imp(imp_p))
+        self.label['actualfreq'].setText(format_frequency_space(_s11.freq))
+        self.label['lambda'].setText(format_wavelength(_s11.wavelength))
+        self.label['admittance'].setText(format_complex_adm(imp))
         self.label['impedance'].setText(format_complex_imp(imp))
         self.label['parc'].setText(cap_p_str)
         self.label['parl'].setText(ind_p_str)
         self.label['parlc'].setText(x_p_str)
         self.label['parr'].setText(format_resistance(imp_p.real))
         self.label['returnloss'].setText(
-            format_gain(s11.gain, self.returnloss_is_positive))
+            format_gain(_s11.gain, self.returnloss_is_positive))
         self.label['s11groupdelay'].setText(
-            format_group_delay(RFTools.groupDelay(s11data, self.location)))
-        self.label['s11mag'].setText(format_magnitude(abs(s11.z)))
-        self.label['s11phase'].setText(format_phase(s11.phase))
+            format_group_delay(RFTools.groupDelay(s11, self.location)))
+        self.label['s11mag'].setText(format_magnitude(abs(_s11.z)))
+        self.label['s11phase'].setText(format_phase(_s11.phase))
         self.label['s11polar'].setText(
-            str(round(abs(s11.z), 2)) + "∠" + format_phase(s11.phase))
-        self.label['s11q'].setText(format_q_factor(s11.qFactor()))
+            str(round(abs(_s11.z), 2)) + "∠" + format_phase(_s11.phase))
+        self.label['s11q'].setText(format_q_factor(_s11.qFactor()))
         self.label['s11z'].setText(format_resistance(abs(imp)))
         self.label['serc'].setText(cap_str)
         self.label['serl'].setText(ind_str)
         self.label['serlc'].setText(x_str)
         self.label['serr'].setText(format_resistance(imp.real))
-        self.label['vswr'].setText(format_vswr(s11.vswr))
+        self.label['vswr'].setText(format_vswr(_s11.vswr))
 
-        if len(s21data) == len(s11data):
-            s21 = s21data[self.location]
-            self.label['s21gain'].setText(format_gain(s21.gain))
+        if len(s21) == len(s11):
+            _s21 = s21[self.location]
+            self.label['s21gain'].setText(format_gain(_s21.gain))
             self.label['s21groupdelay'].setText(
-                format_group_delay(RFTools.groupDelay(s21data, self.location) / 2))
-            self.label['s21mag'].setText(format_magnitude(abs(s21.z)))
-            self.label['s21phase'].setText(format_phase(s21.phase))
+                format_group_delay(RFTools.groupDelay(s21, self.location) / 2))
+            self.label['s21mag'].setText(format_magnitude(abs(_s21.z)))
+            self.label['s21phase'].setText(format_phase(_s21.phase))
             self.label['s21polar'].setText(
-                str(round(abs(s21.z), 2)) + "∠" + format_phase(s21.phase))
-            self.label['s21magshunt'].setText(format_magnitude(abs(s21.shuntImpedance())))
-            self.label['s21magseries'].setText(format_magnitude(abs(s21.seriesImpedance())))
-            self.label['s21realimagshunt'].setText(format_complex_imp(s21.shuntImpedance(), allow_negative=True))
-            self.label['s21realimagseries'].setText(format_complex_imp(s21.seriesImpedance(), allow_negative=True))
+                str(round(abs(_s21.z), 2)) + "∠" + format_phase(_s21.phase))
+            self.label['s21magshunt'].setText(
+                format_magnitude(abs(_s21.shuntImpedance())))
+            self.label['s21magseries'].setText(
+                format_magnitude(abs(_s21.seriesImpedance())))
+            self.label['s21realimagshunt'].setText(
+                format_complex_imp(_s21.shuntImpedance(), allow_negative=True))
+            self.label['s21realimagseries'].setText(
+                format_complex_imp(_s21.seriesImpedance(), allow_negative=True))

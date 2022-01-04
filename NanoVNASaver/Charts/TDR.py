@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020 NanoVNA-Saver Authors
+#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@ import logging
 import numpy as np
 from PyQt5 import QtWidgets, QtGui, QtCore
 
-from .Chart import Chart
+from NanoVNASaver.Charts.Chart import Chart
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +51,7 @@ class TDRChart(Chart):
                 QtWidgets.QSizePolicy.MinimumExpanding,
                 QtWidgets.QSizePolicy.MinimumExpanding))
         pal = QtGui.QPalette()
-        pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
+        pal.setColor(QtGui.QPalette.Background, Chart.color.background)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
@@ -127,8 +127,8 @@ class TDRChart(Chart):
             lambda: self.popoutRequested.emit(self))
         self.menu.addAction(self.action_popout)
 
-        self.chartWidth = self.width() - self.leftMargin - self.rightMargin
-        self.chartHeight = self.height() - self.bottomMargin - self.topMargin
+        self.dim.width = self.width() - self.leftMargin - self.rightMargin
+        self.dim.height = self.height() - self.bottomMargin - self.topMargin
 
     def contextMenuEvent(self, event):
         self.action_set_fixed_start.setText(
@@ -231,20 +231,20 @@ class TDRChart(Chart):
         if a0.buttons() == QtCore.Qt.MiddleButton:
             # Drag the display
             a0.accept()
-            if self.moveStartX != -1 and self.moveStartY != -1:
-                dx = self.moveStartX - a0.x()
-                dy = self.moveStartY - a0.y()
+            if self.dragbox.move_x != -1 and self.dragbox.move_y != -1:
+                dx = self.dragbox.move_x - a0.x()
+                dy = self.dragbox.move_y - a0.y()
                 self.zoomTo(self.leftMargin + dx, self.topMargin + dy,
-                            self.leftMargin + self.chartWidth + dx,
-                            self.topMargin + self.chartHeight + dy)
-            self.moveStartX = a0.x()
-            self.moveStartY = a0.y()
+                            self.leftMargin + self.dim.width + dx,
+                            self.topMargin + self.dim.height + dy)
+            self.dragbox.move_x = a0.x()
+            self.dragbox.move_y = a0.y()
             return
         if a0.modifiers() == QtCore.Qt.ControlModifier:
             # Dragging a box
-            if not self.draggedBox:
-                self.draggedBoxStart = (a0.x(), a0.y())
-            self.draggedBoxCurrent = (a0.x(), a0.y())
+            if not self.dragbox.state:
+                self.dragbox.pos_start = (a0.x(), a0.y())
+            self.dragbox.pos = (a0.x(), a0.y())
             self.update()
             a0.accept()
             return
@@ -269,15 +269,15 @@ class TDRChart(Chart):
             self.update()
         return
 
-    def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
+    def paintEvent(self, _: QtGui.QPaintEvent) -> None:
         qp = QtGui.QPainter(self)
-        qp.setPen(QtGui.QPen(self.textColor))
+        qp.setPen(QtGui.QPen(Chart.color.text))
         qp.drawText(3, 15, self.name)
 
         width = self.width() - self.leftMargin - self.rightMargin
         height = self.height() - self.bottomMargin - self.topMargin
 
-        qp.setPen(QtGui.QPen(self.foregroundColor))
+        qp.setPen(QtGui.QPen(Chart.color.foreground))
         qp.drawLine(self.leftMargin - 5,
                     self.height() - self.bottomMargin,
                     self.width() - self.rightMargin,
@@ -323,9 +323,9 @@ class TDRChart(Chart):
 
             for i in range(ticks):
                 x = self.leftMargin + round((i + 1) * width / ticks)
-                qp.setPen(QtGui.QPen(self.foregroundColor))
+                qp.setPen(QtGui.QPen(Chart.color.foreground))
                 qp.drawLine(x, self.topMargin, x, self.topMargin + height)
-                qp.setPen(QtGui.QPen(self.textColor))
+                qp.setPen(QtGui.QPen(Chart.color.text))
                 qp.drawText(
                     x - 15,
                     self.topMargin + height + 15,
@@ -335,7 +335,7 @@ class TDRChart(Chart):
                             int((x - self.leftMargin) * x_step) - 1] / 2,
                         1)) + "m")
 
-            qp.setPen(QtGui.QPen(self.textColor))
+            qp.setPen(QtGui.QPen(Chart.color.text))
             qp.drawText(
                 self.leftMargin - 10,
                 self.topMargin + height + 15,
@@ -347,16 +347,16 @@ class TDRChart(Chart):
 
             for i in range(y_ticks):
                 y = self.bottomMargin + int(i * y_tick_step)
-                qp.setPen(self.foregroundColor)
+                qp.setPen(Chart.color.foreground)
                 qp.drawLine(self.leftMargin, y, self.leftMargin + width, y)
                 y_val = max_impedance - y_impedance_step * i * y_tick_step
-                qp.setPen(self.textColor)
+                qp.setPen(Chart.color.text)
                 qp.drawText(3, y + 3, str(round(y_val, 1)))
 
             qp.drawText(3, self.topMargin + height + 3, str(round(min_impedance, 1)))
 
-            pen = QtGui.QPen(self.sweepColor)
-            pen.setWidth(self.pointSize)
+            pen = QtGui.QPen(Chart.color.sweep)
+            pen.setWidth(self.dim.point)
             qp.setPen(pen)
             for i in range(min_index, max_index):
                 if i < min_index or i > max_index:
@@ -365,7 +365,7 @@ class TDRChart(Chart):
                 x = self.leftMargin + int((i - min_index) / x_step)
                 y = (self.topMargin + height) - int(self.tdrWindow.td[i] / y_step)
                 if self.isPlotable(x, y):
-                    pen.setColor(self.sweepColor)
+                    pen.setColor(Chart.color.sweep)
                     qp.setPen(pen)
                     qp.drawPoint(x, y)
 
@@ -373,7 +373,7 @@ class TDRChart(Chart):
                 y = (self.topMargin + height) -\
                     int((self.tdrWindow.step_response_Z[i]-min_impedance) / y_impedance_step)
                 if self.isPlotable(x, y):
-                    pen.setColor(self.secondarySweepColor)
+                    pen.setColor(Chart.color.sweep_secondary)
                     qp.setPen(pen)
                     qp.drawPoint(x, y)
 
@@ -383,7 +383,7 @@ class TDRChart(Chart):
                 (self.topMargin + height) - int(self.tdrWindow.td[id_max] / y_step))
             qp.setPen(self.markers[0].color)
             qp.drawEllipse(max_point, 2, 2)
-            qp.setPen(self.textColor)
+            qp.setPen(Chart.color.text)
             qp.drawText(max_point.x() - 10, max_point.y() - 5,
                         str(round(self.tdrWindow.distance_axis[id_max] / 2,
                                   2)) + "m")
@@ -394,7 +394,7 @@ class TDRChart(Chart):
                     int((self.markerLocation - min_index) / x_step),
                     (self.topMargin + height) -
                     int(self.tdrWindow.td[self.markerLocation] / y_step))
-                qp.setPen(self.textColor)
+                qp.setPen(Chart.color.text)
                 qp.drawEllipse(marker_point, 2, 2)
                 qp.drawText(
                     marker_point.x() - 10,
@@ -402,11 +402,11 @@ class TDRChart(Chart):
                     str(round(self.tdrWindow.distance_axis[self.markerLocation] / 2,
                               2)) + "m")
 
-        if self.draggedBox and self.draggedBoxCurrent[0] != -1:
-            dashed_pen = QtGui.QPen(self.foregroundColor, 1, QtCore.Qt.DashLine)
+        if self.dragbox.state and self.dragbox.pos[0] != -1:
+            dashed_pen = QtGui.QPen(Chart.color.foreground, 1, QtCore.Qt.DashLine)
             qp.setPen(dashed_pen)
-            top_left = QtCore.QPoint(self.draggedBoxStart[0], self.draggedBoxStart[1])
-            bottom_right = QtCore.QPoint(self.draggedBoxCurrent[0], self.draggedBoxCurrent[1])
+            top_left = QtCore.QPoint(self.dragbox.pos_start[0], self.dragbox.stateStart[1])
+            bottom_right = QtCore.QPoint(self.dragbox.pos[0], self.dragbox.stateCurrent[1])
             rect = QtCore.QRect(top_left, bottom_right)
             qp.drawRect(rect)
 
@@ -474,8 +474,8 @@ class TDRChart(Chart):
         if len(self.tdrWindow.td) == 0:
             a0.ignore()
             return
-        chart_height = self.chartHeight
-        chart_width = self.chartWidth
+        chart_height = self.dim.height
+        chart_width = self.dim.width
         do_zoom_x = do_zoom_y = True
         if a0.modifiers() == QtCore.Qt.ShiftModifier:
             do_zoom_x = False
@@ -534,5 +534,5 @@ class TDRChart(Chart):
 
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
         super().resizeEvent(a0)
-        self.chartWidth = self.width() - self.leftMargin - self.rightMargin
-        self.chartHeight = self.height() - self.bottomMargin - self.topMargin
+        self.dim.width = self.width() - self.leftMargin - self.rightMargin
+        self.dim.height = self.height() - self.bottomMargin - self.topMargin

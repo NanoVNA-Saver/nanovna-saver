@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020 NanoVNA-Saver Authors
+#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -98,7 +98,7 @@ class Options:
 class Touchstone:
     FIELD_ORDER = ("11", "21", "12", "22")
 
-    def __init__(self, filename: str):
+    def __init__(self, filename: str=""):
         self.filename = filename
         self.sdata = [[], [], [], []]  # at max 4 data pairs
         self.comments = []
@@ -106,35 +106,35 @@ class Touchstone:
         self._interp = {}
 
     @property
-    def s11data(self) -> List[Datapoint]:
+    def s11(self) -> List[Datapoint]:
         return self.s("11")
 
-    @s11data.setter
-    def s11data(self, value: List[Datapoint]):
+    @s11.setter
+    def s11(self, value: List[Datapoint]):
         self.sdata[0] = value
 
     @property
-    def s12data(self) -> List[Datapoint]:
+    def s12(self) -> List[Datapoint]:
         return self.s("12")
 
-    @s12data.setter
-    def s12data(self, value: List[Datapoint]):
+    @s12.setter
+    def s12(self, value: List[Datapoint]):
         self.sdata[2] = value
 
     @property
-    def s21data(self) -> List[Datapoint]:
+    def s21(self) -> List[Datapoint]:
         return self.s("21")
 
-    @s21data.setter
-    def s21data(self, value: List[Datapoint]):
+    @s21.setter
+    def s21(self, value: List[Datapoint]):
         self.sdata[1] = value
 
     @property
-    def s22data(self) -> List[Datapoint]:
+    def s22(self) -> List[Datapoint]:
         return self.s("22")
 
-    @s22data.setter
-    def s22data(self, value: List[Datapoint]):
+    @s22.setter
+    def s22(self, value: List[Datapoint]):
         self.sdata[3] = value
 
     @property
@@ -148,6 +148,9 @@ class Touchstone:
         return Datapoint(freq,
                          float(self._interp[name]["real"](freq)),
                          float(self._interp[name]["imag"](freq)))
+
+    def swap(self):
+        self.sdata = [self.s22, self.s12, self.s21, self.s11]
 
     def min_freq(self) -> int:
         return self.s("11")[0].freq
@@ -279,7 +282,7 @@ class Touchstone:
         assert nr_params in (1, 4)
 
         ts_str = "# HZ S RI R 50\n"
-        for i, dp_s11 in enumerate(self.s11data):
+        for i, dp_s11 in enumerate(self.s11):
             ts_str += f"{dp_s11.freq} {dp_s11.re} {dp_s11.im}"
             for j in range(1, nr_params):
                 dp = self.sdata[j][i]

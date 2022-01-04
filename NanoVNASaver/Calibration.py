@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020 NanoVNA-Saver Authors
+#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -97,8 +97,7 @@ class CalDataSet:
         return self.data[freq]
 
     def items(self):
-        for item in self.data.items():
-            yield item
+        yield from self.data.items()
 
     def values(self):
         for freq in self.frequencies():
@@ -212,14 +211,14 @@ class Calibration:
                 caldata["delta_e"] = - ((g1 * (gm2 - gm3) - g2 * gm2 + g3 *
                                          gm3) * gm1 + (g2 * gm3 - g3 * gm3) *
                                         gm2) / denominator
-            except ZeroDivisionError:
+            except ZeroDivisionError as exc:
                 self.isCalculated = False
                 logger.error(
                     "Division error - did you use the same measurement"
                     " for two of short, open and load?")
                 raise ValueError(
                     f"Two of short, open and load returned the same"
-                    f" values at frequency {freq}Hz.")
+                    f" values at frequency {freq}Hz.") from exc
 
             if self.isValid2Port():
                 caldata["e30"] = caldata["isolation"].z
@@ -236,38 +235,36 @@ class Calibration:
         g = Calibration.IDEAL_SHORT
         if not self.useIdealShort:
             logger.debug("Using short calibration set values.")
-            Zsp = complex(0, 1) * 2 * math.pi * freq * (
+            Zsp = complex(0, 2 * math.pi * freq * (
                 self.shortL0 + self.shortL1 * freq +
-                self.shortL2 * freq**2 + self.shortL3 * freq**3)
+                self.shortL2 * freq**2 + self.shortL3 * freq**3))
             # Referencing https://arxiv.org/pdf/1606.02446.pdf (18) - (21)
             g = (Zsp / 50 - 1) / (Zsp / 50 + 1) * cmath.exp(
-                complex(0, 1) * 2 * math.pi * 2 * freq *
-                self.shortLength * -1)
+                complex(0, 2 * math.pi * 2 * freq * self.shortLength * -1))
         return g
 
     def gamma_open(self, freq: int) -> complex:
         g = Calibration.IDEAL_OPEN
         if not self.useIdealOpen:
             logger.debug("Using open calibration set values.")
-            divisor = (2 * math.pi * freq * (
+            Zop = complex(0, 2 * math.pi * freq * (
                 self.openC0 + self.openC1 * freq +
                 self.openC2 * freq**2 + self.openC3 * freq**3))
-            if divisor != 0:
-                Zop = complex(0, -1) / divisor
-                g = ((Zop / 50 - 1) / (Zop / 50 + 1)) * cmath.exp(
-                    complex(0, 1) * 2 * math.pi *
-                    2 * freq * self.openLength * -1)
+            g = ((1 - 50 * Zop) / (1 + 50 * Zop)) * cmath.exp(
+                complex(0, 2 * math.pi * 2 * freq * self.openLength * -1))
         return g
 
     def gamma_load(self, freq: int) -> complex:
         g = Calibration.IDEAL_LOAD
         if not self.useIdealLoad:
             logger.debug("Using load calibration set values.")
-            Zl = self.loadR + (complex(0, 1) * 2 *
-                               math.pi * freq * self.loadL)
+            Zl = complex(self.loadR, 0)
+            if self.loadC > 0:
+                Zl = self.loadR / complex(1, 2 * self.loadR * math.pi * freq * self.loadC)
+            if self.loadL > 0:
+                Zl = Zl + complex(0, 2 * math.pi * freq * self.loadL)
             g = (Zl / 50 - 1) / (Zl / 50 + 1) * cmath.exp(
-                complex(0, 1) * 2 * math.pi *
-                2 * freq * self.loadLength * -1)
+                complex(0, 2 * math.pi * 2 * freq * self.loadLength * -1))
         return g
 
     def gamma_through(self, freq: int) -> complex:
@@ -354,12 +351,10 @@ class Calibration:
                     self.notes.append(note)
                     continue
                 if line.startswith("#"):
-                    if not parsed_header:
-                        # Check that this is a valid header
-                        if line == (
-                                "# Hz ShortR ShortI OpenR OpenI LoadR LoadI"
-                                " ThroughR ThroughI IsolationR IsolationI"):
-                            parsed_header = True
+                    if not parsed_header and line == (
+                        "# Hz ShortR ShortI OpenR OpenI LoadR LoadI"
+                            " ThroughR ThroughI IsolationR IsolationI"):
+                        parsed_header = True
                     continue
                 if not parsed_header:
                     logger.warning(
@@ -372,11 +367,7 @@ class Calibration:
                     logger.warning("Illegal data in cal file. Line %i", i)
                 cal = m.groupdict()
 
-                if cal["throughr"]:
-                    nr_cals = 5
-                else:
-                    nr_cals = 3
-
+                nr_cals = 5 if cal["throughr"] else 3
                 for name in Calibration.CAL_NAMES[:nr_cals]:
                     self.dataset.insert(
                         name,

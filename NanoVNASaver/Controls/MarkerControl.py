@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020 NanoVNA-Saver Authors
+#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -19,26 +19,23 @@
 import logging
 
 from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QCheckBox
 
 from NanoVNASaver.Marker import Marker
+from NanoVNASaver.Controls.Control import Control
+
 
 logger = logging.getLogger(__name__)
 
-class MarkerControl(QtWidgets.QGroupBox):
-    updated = pyqtSignal(object)
+class MarkerControl(Control):
 
-    def __init__(self, app: QtWidgets.QWidget, title: str = "Markers"):
-        super().__init__()
-        self.app = app
-        self.setMaximumWidth(250)
-        self.setTitle(title)
-        self.layout = QtWidgets.QFormLayout(self)
+    def __init__(self, app: QtWidgets.QWidget):
+        super().__init__(app, "Markers")
 
         marker_count = max(self.app.settings.value("MarkerCount", 3, int), 1)
         for i in range(marker_count):
             marker = Marker("", self.app.settings)
+            #marker.setFixedHeight(20)
             marker.updated.connect(self.app.markerUpdated)
             label, layout = marker.getRow()
             self.layout.addRow(label, layout)
@@ -51,6 +48,7 @@ class MarkerControl(QtWidgets.QGroupBox):
         self.layout.addRow(self.check_delta)
 
         self.showMarkerButton = QtWidgets.QPushButton()
+        self.showMarkerButton.setFixedHeight(20)
         if self.app.marker_frame.isHidden():
             self.showMarkerButton.setText("Show data")
         else:
@@ -68,16 +66,13 @@ class MarkerControl(QtWidgets.QGroupBox):
         self.layout.addRow(hbox)
 
     def toggle_frame(self):
-        if self.app.marker_frame.isHidden():
-            self.app.marker_frame.setHidden(False)
-            self.app.settings.setValue("MarkersVisible", True)
-            self.showMarkerButton.setText("Hide data")
+        def settings(hidden: bool):
+            self.app.marker_frame.setHidden(not hidden)
+            self.app.settings.setValue("MarkersVisible", hidden)
+            self.showMarkerButton.setText(
+                "Hide data" if hidden else "Show data")
             self.showMarkerButton.repaint()
-        else:
-            self.app.marker_frame.setHidden(True)
-            self.app.settings.setValue("MarkersVisible", False)
-            self.showMarkerButton.setText("Show data")
-            self.showMarkerButton.repaint()
+        settings(self.app.marker_frame.isHidden())
 
     def toggle_delta(self):
         self.app.delta_marker_layout.setVisible(self.check_delta.isChecked())

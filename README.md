@@ -12,10 +12,21 @@ sweep frequency spans in segments to gain more than 101 data
 points, and generally display and analyze the resulting data.
 
 - Copyright 2019, 2020 Rune B. Broberg
-- Copyright 2020 NanoVNA-Saver Authors
+- Copyright 2020, 2021 NanoVNA-Saver Authors
 
 Latest Changes
 --------------
+
+### Changes in v0.3.10
+
+- Default Band ranges for 5 and 9cm
+- Layout should fit on smaller screens
+- Fixed fixed axis settings
+- Show VNA type in port selector
+- Recognise tinySA (screenshot only)
+- Some more cables in TDR
+- Reference plane applied after calibration
+- Calibration fixes by DiSlord
 
 ### Changes in v0.3.9
 
@@ -23,13 +34,6 @@ Latest Changes
 - New analysis
 - Magnitude Z Chart
 - VSWR Chart improvements
-
-### Changes in v0.3.8
-
-- Allow editing of bands above 2.4GHz
-- Restore column layout on start
-- Support for Nanovna-F V2
-- Fixes a crash with S21 hack
 
 Introduction
 ------------
@@ -69,13 +73,14 @@ Running the application
 
 The software was written in Python on Windows, using Pycharm, and the modules
 PyQT5, numpy, scipy and pyserial.
+Main development is currently done on Linux (Ubuntu 21.04)
 
 ### Binary releases
 
 You can find 64bit binary releases for Windows, Linux and MacOS under
 <https://github.com/NanoVNA-Saver/nanovna-saver/releases/>
 
-Versions older than Windows 7 are not known to work.  
+Versions older than Windows 7 are not known to work.
 
 #### Windows 7
 
@@ -102,11 +107,14 @@ The downloadable executable runs directly, and requires no installation.
 
     NanoVNASaver
 
-#### Ubuntu 18.04 & 19.04
+#### Ubuntu 20.04
 
-1. Install python3.7 and pip
+1. Install python3.8 and pip
 
-    sudo apt install python3.7 python3-pip
+    sudo apt install python3.8 python3-pip
+    python3 -m venv ~/.venv_nano
+    . ~/.venv_nano/bin/activate
+    pip install -U pip
 
 2. Clone repo and cd into the directory
 
@@ -115,8 +123,7 @@ The downloadable executable runs directly, and requires no installation.
 
 3. Update pip and run the pip installation
 
-    python3.7 -m pip install -U pip
-    python3.7 -m pip install .
+    python3 -m pip install .
 
    (You may need to install the additional packages python3-distutils,
    python3-setuptools and python3-wheel for this command to work on some
@@ -124,7 +131,9 @@ The downloadable executable runs directly, and requires no installation.
 
 4. Once completed run with the following command
 
-    python3.7 nanovna-saver.py
+    . ~/.venv_nano/bin/activate
+    python3 nanovna-saver.py
+
 
 #### MacPorts
 
@@ -144,19 +153,19 @@ Via a MacPorts distribution maintained by @ra1nb0w.
 1. Install Homebrew from <https://brew.sh/> (This will ask for your password)
 
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
-  
+
 
 2. Python :
 
         brew install python
 
-3. Pip :<br/> 
+3. Pip :<br/>
     Download the get-pip.py file and run it to install pip
 
         curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
         python3 get-pip.py
 
-4. NanoVNASaver Installation : <br/> 
+4. NanoVNASaver Installation : <br/>
     clone the source code to the nanovna-saver folder
 
         git clone https://github.com/NanoVNA-Saver/nanovna-saver

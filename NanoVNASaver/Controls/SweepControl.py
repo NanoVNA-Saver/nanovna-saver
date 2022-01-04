@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020 NanoVNA-Saver Authors
+#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -19,26 +19,20 @@
 import logging
 
 from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtCore import pyqtSignal
-
 
 from NanoVNASaver.Formatting import (
     format_frequency_sweep, format_frequency_short,
     parse_frequency)
 from NanoVNASaver.Inputs import FrequencyInputWidget
+from NanoVNASaver.Controls.Control import Control
 
 logger = logging.getLogger(__name__)
 
 
-class SweepControl(QtWidgets.QGroupBox):
-    updated = pyqtSignal(object)
+class SweepControl(Control):
 
-    def __init__(self, app: QtWidgets.QWidget, title: str = "Sweep control"):
-        super().__init__()
-        self.app = app
-        self.setMaximumWidth(250)
-        self.setTitle(title)
-        control_layout = QtWidgets.QFormLayout(self)
+    def __init__(self, app: QtWidgets.QWidget):
+        super().__init__(app, "Sweep control")
 
         line = QtWidgets.QFrame()
         line.setFrameShape(QtWidgets.QFrame.VLine)
@@ -49,9 +43,10 @@ class SweepControl(QtWidgets.QGroupBox):
         input_layout.addLayout(input_left_layout)
         input_layout.addWidget(line)
         input_layout.addLayout(input_right_layout)
-        control_layout.addRow(input_layout)
+        self.layout.addRow(input_layout)
 
         self.input_start = FrequencyInputWidget()
+        self.input_start.setFixedHeight(20)
         self.input_start.setMinimumWidth(60)
         self.input_start.setAlignment(QtCore.Qt.AlignRight)
         self.input_start.textEdited.connect(self.update_center_span)
@@ -59,12 +54,14 @@ class SweepControl(QtWidgets.QGroupBox):
         input_left_layout.addRow(QtWidgets.QLabel("Start"), self.input_start)
 
         self.input_end = FrequencyInputWidget()
+        self.input_end.setFixedHeight(20)
         self.input_end.setAlignment(QtCore.Qt.AlignRight)
         self.input_end.textEdited.connect(self.update_center_span)
         self.input_end.textChanged.connect(self.update_step_size)
         input_left_layout.addRow(QtWidgets.QLabel("Stop"), self.input_end)
 
         self.input_center = FrequencyInputWidget()
+        self.input_center.setFixedHeight(20)
         self.input_center.setMinimumWidth(60)
         self.input_center.setAlignment(QtCore.Qt.AlignRight)
         self.input_center.textEdited.connect(self.update_start_end)
@@ -72,6 +69,7 @@ class SweepControl(QtWidgets.QGroupBox):
         input_right_layout.addRow(QtWidgets.QLabel("Center"), self.input_center)
 
         self.input_span = FrequencyInputWidget()
+        self.input_span.setFixedHeight(20)
         self.input_span.setAlignment(QtCore.Qt.AlignRight)
         self.input_span.textEdited.connect(self.update_start_end)
 
@@ -79,6 +77,7 @@ class SweepControl(QtWidgets.QGroupBox):
 
         self.input_segments = QtWidgets.QLineEdit(self.app.settings.value("Segments", "1"))
         self.input_segments.setAlignment(QtCore.Qt.AlignRight)
+        self.input_segments.setFixedHeight(20)
         self.input_segments.setFixedWidth(60)
         self.input_segments.textEdited.connect(self.update_step_size)
 
@@ -88,23 +87,26 @@ class SweepControl(QtWidgets.QGroupBox):
         segment_layout = QtWidgets.QHBoxLayout()
         segment_layout.addWidget(self.input_segments)
         segment_layout.addWidget(self.label_step)
-        control_layout.addRow(QtWidgets.QLabel("Segments"), segment_layout)
+        self.layout.addRow(QtWidgets.QLabel("Segments"), segment_layout)
 
         btn_settings_window = QtWidgets.QPushButton("Sweep settings ...")
+        btn_settings_window.setFixedHeight(20)
         btn_settings_window.clicked.connect(
             lambda: self.app.display_window("sweep_settings"))
 
-        control_layout.addRow(btn_settings_window)
+        self.layout.addRow(btn_settings_window)
 
         self.progress_bar = QtWidgets.QProgressBar()
         self.progress_bar.setMaximum(100)
         self.progress_bar.setValue(0)
-        control_layout.addRow(self.progress_bar)
+        self.layout.addRow(self.progress_bar)
 
         self.btn_start = QtWidgets.QPushButton("Sweep")
+        self.btn_start.setFixedHeight(20)
         self.btn_start.clicked.connect(self.app.sweep_start)
         self.btn_start.setShortcut(QtCore.Qt.Key_W | QtCore.Qt.CTRL)
         self.btn_stop = QtWidgets.QPushButton("Stop")
+        self.btn_stop.setFixedHeight(20)
         self.btn_stop.clicked.connect(self.app.sweep_stop)
         self.btn_stop.setShortcut(QtCore.Qt.Key_Escape)
         self.btn_stop.setDisabled(True)
@@ -114,7 +116,7 @@ class SweepControl(QtWidgets.QGroupBox):
         btn_layout.setContentsMargins(0, 0, 0, 0)
         btn_layout_widget = QtWidgets.QWidget()
         btn_layout_widget.setLayout(btn_layout)
-        control_layout.addRow(btn_layout_widget)
+        self.layout.addRow(btn_layout_widget)
 
         self.input_start.textEdited.emit(self.input_start.text())
         self.input_start.textChanged.emit(self.input_start.text())

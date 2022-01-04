@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020 NanoVNA-Saver Authors
+#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -81,22 +81,22 @@ class SimplePeakSearchAnalysis(Analysis):
         if self.rbtn_data_vswr.isChecked():
             suffix = ""
             data = []
-            for d in self.app.data11:
+            for d in self.app.data.s11:
                 data.append(d.vswr)
         elif self.rbtn_data_resistance.isChecked():
             suffix = " \N{OHM SIGN}"
             data = []
-            for d in self.app.data11:
+            for d in self.app.data.s11:
                 data.append(d.impedance().real)
         elif self.rbtn_data_reactance.isChecked():
             suffix = " \N{OHM SIGN}"
             data = []
-            for d in self.app.data11:
+            for d in self.app.data.s11:
                 data.append(d.impedance().imag)
         elif self.rbtn_data_s21_gain.isChecked():
             suffix = " dB"
             data = []
-            for d in self.app.data21:
+            for d in self.app.data.s21:
                 data.append(d.gain)
         else:
             logger.warning("Searching for peaks on unknown data")
@@ -117,10 +117,10 @@ class SimplePeakSearchAnalysis(Analysis):
             return
 
         self.peak_frequency.setText(
-            format_frequency(self.app.data11[idx_peak].freq))
+            format_frequency(self.app.data.s11[idx_peak].freq))
         self.peak_value.setText(str(round(data[idx_peak], 3)) + suffix)
 
         if self.checkbox_move_marker.isChecked() and len(self.app.markers) >= 1:
-            self.app.markers[0].setFrequency(str(self.app.data11[idx_peak].freq))
+            self.app.markers[0].setFrequency(str(self.app.data.s11[idx_peak].freq))
             self.app.markers[0].frequencyInput.setText(
-                format_frequency(self.app.data11[idx_peak].freq))
+                format_frequency(self.app.data.s11[idx_peak].freq))

@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020 NanoVNA-Saver Authors
+#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -68,26 +68,26 @@ def default_label_ids() -> str:
 class Value():
     """Contains the data area to calculate marker values from"""
     def __init__(self, freq: int = 0,
-                 s11data: List[Datapoint] = None,
-                 s21data: List[Datapoint] = None):
+                 s11: List[Datapoint] = None,
+                 s21: List[Datapoint] = None):
         self.freq = freq
-        self.s11data = [] if s11data is None else s11data[:]
-        self.s21data = [] if s21data is None else s21data[:]
+        self.s11 = [] if s11 is None else s11[:]
+        self.s21 = [] if s21 is None else s21[:]
 
     def store(self, index: int,
-              s11data: List[Datapoint],
-              s21data: List[Datapoint]):
+              s11: List[Datapoint],
+              s21: List[Datapoint]):
         # handle boundaries
         if index == 0:
             index = 1
-            s11data = [s11data[0], ] + s11data
-            if s21data:
-                s21data = [s21data[0], ] + s21data
-        if index == len(s11data):
-            s11data = s11data + [s11data[-1], ]
-            if s21data:
-                s21data = s21data + [s21data[-1], ]
-        self.freq = s11data[1].freq
-        self.s11data = s11data[index-1:index+2]
-        if s21data:
-            self.s21data = s21data[index-1:index+2]
+            s11 = [s11[0], ] + s11
+            if s21:
+                s21 = [s21[0], ] + s21
+        if index == len(s11):
+            s11 = s11 + [s11[-1], ]
+            if s21:
+                s21 = s21 + [s21[-1], ]
+        self.freq = s11[1].freq
+        self.s11 = s11[index-1:index+2]
+        if s21:
+            self.s21 = s21[index-1:index+2]

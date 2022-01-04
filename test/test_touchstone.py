@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020 NanoVNA-Saver Authors
+#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -63,18 +63,18 @@ class TestTouchstoneTouchstone(unittest.TestCase):
         ts = Touchstone("./test/data/valid.s1p")
         ts.load()
         self.assertEqual(str(ts.opts), "# HZ S RI R 50")
-        self.assertEqual(len(ts.s11data), 1010)
-        self.assertEqual(len(ts.s21data), 0)
+        self.assertEqual(len(ts.s11), 1010)
+        self.assertEqual(len(ts.s21), 0)
         self.assertEqual(ts.r, 50)
 
         ts = Touchstone("./test/data/valid.s2p")
         ts.load()
         ts.gen_interpolation()
         self.assertEqual(str(ts.opts), "# HZ S RI R 50")
-        self.assertEqual(len(ts.s11data), 1020)
-        self.assertEqual(len(ts.s21data), 1020)
-        self.assertEqual(len(ts.s12data), 1020)
-        self.assertEqual(len(ts.s22data), 1020)
+        self.assertEqual(len(ts.s11), 1020)
+        self.assertEqual(len(ts.s21), 1020)
+        self.assertEqual(len(ts.s12), 1020)
+        self.assertEqual(len(ts.s22), 1020)
         self.assertIn("! Vector Network Analyzer VNA R2", ts.comments)
         self.assertEqual(ts.min_freq(), 500000)
         self.assertEqual(ts.max_freq(), 900000000)
@@ -107,6 +107,14 @@ class TestTouchstoneTouchstone(unittest.TestCase):
             ts.load()
         self.assertRegex(cm.output[0], "No such file or directory")
 
+    def test_swap(self):
+        ts = Touchstone("./test/data/valid.s2p")
+        ts.load()
+        s11, s21, s12, s22 = ts.sdata
+        ts.swap()
+        s11_, s21_, s12_, s22_ = ts.sdata
+        self.assertEqual([s11_, s21_, s12_, s22_] ,[s22, s12, s21, s11])
+
     def test_db_conversation(self):
         ts_db = Touchstone("./test/data/attenuator-0643_DB.s2p")
         ts_db.load()
@@ -114,12 +122,12 @@ class TestTouchstoneTouchstone(unittest.TestCase):
         ts_ri.load()
         ts_ma = Touchstone("./test/data/attenuator-0643_MA.s2p")
         ts_ma.load()
-        self.assertEqual(len(ts_db.s11data), len(ts_ri.s11data))
-        for dps_db, dps_ri in zip(ts_db.s11data, ts_ri.s11data):
+        self.assertEqual(len(ts_db.s11), len(ts_ri.s11))
+        for dps_db, dps_ri in zip(ts_db.s11, ts_ri.s11):
             self.assertAlmostEqual(dps_db.z, dps_ri.z, places=5)
 
-        self.assertEqual(len(ts_db.s11data), len(ts_ma.s11data))
-        for dps_db, dps_ma in zip(ts_db.s11data, ts_ma.s11data):
+        self.assertEqual(len(ts_db.s11), len(ts_ma.s11))
+        for dps_db, dps_ma in zip(ts_db.s11, ts_ma.s11):
             self.assertAlmostEqual(dps_db.z, dps_ma.z, places=5)
 
     def test_load_scikit(self):
@@ -137,21 +145,21 @@ class TestTouchstoneTouchstone(unittest.TestCase):
             'WARNING:NanoVNASaver.Touchstone:Reordering data',
             ])
         self.assertEqual(str(ts.opts), "# HZ S RI R 50")
-        self.assertEqual(len(ts.s11data), 101)
+        self.assertEqual(len(ts.s11), 101)
         self.assertIn("!freq ReS11 ImS11 ReS21 ImS21 ReS12 ImS12 ReS22 ImS22",
                       ts.comments)
 
     def test_setter(self):
         ts = Touchstone("")
         dp_list = [Datapoint(1, 0.0, 0.0), Datapoint(3, 1.0, 1.0)]
-        ts.s11data = dp_list[:]
-        ts.s21data = dp_list[:]
-        ts.s12data = dp_list[:]
-        ts.s22data = dp_list[:]
-        self.assertEqual(ts.s11data, dp_list)
-        self.assertEqual(ts.s21data, dp_list)
-        self.assertEqual(ts.s12data, dp_list)
-        self.assertEqual(ts.s22data, dp_list)
+        ts.s11 = dp_list[:]
+        ts.s21 = dp_list[:]
+        ts.s12 = dp_list[:]
+        ts.s22 = dp_list[:]
+        self.assertEqual(ts.s11, dp_list)
+        self.assertEqual(ts.s21, dp_list)
+        self.assertEqual(ts.s12, dp_list)
+        self.assertEqual(ts.s22, dp_list)
         self.assertEqual(ts.min_freq(), 1)
         self.assertEqual(ts.max_freq(), 3)
         ts.gen_interpolation()
@@ -182,6 +190,6 @@ class TestTouchstoneTouchstone(unittest.TestCase):
         ts.filename = ""
         self.assertRaises(FileNotFoundError, ts.save)
 
-        ts.s11data[0] = Datapoint(100, 0.1, 0.1)
+        ts.s11[0] = Datapoint(100, 0.1, 0.1)
         self.assertRaisesRegex(
             LookupError, "Frequencies of sdata not correlated", ts.saves, 4)

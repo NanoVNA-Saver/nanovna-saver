@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020 NanoVNA-Saver Authors
+#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -16,23 +16,19 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import logging
-
-from PyQt5 import QtWidgets
-import numpy as np
-
-from NanoVNASaver.Analysis import Analysis, PeakSearchAnalysis
-from NanoVNASaver.Formatting import format_frequency
-from NanoVNASaver.Formatting import format_complex_imp
-from NanoVNASaver.RFTools import reflection_coefficient
 import os
 import csv
-from NanoVNASaver.Marker.Values import Label
-from NanoVNASaver.Marker.Widget import MarkerLabel
-from NanoVNASaver.Marker.Widget import Marker
+import logging
 from collections import OrderedDict
-from NanoVNASaver.Formatting import format_frequency_short
-from NanoVNASaver.Formatting import format_resistance
+
+import numpy as np
+from PyQt5 import QtWidgets
+
+from NanoVNASaver.Analysis import Analysis, PeakSearchAnalysis
+from NanoVNASaver.Formatting import (
+    format_frequency, format_complex_imp,
+    format_frequency_short, format_resistance)
+from NanoVNASaver.RFTools import reflection_coefficient
 
 logger = logging.getLogger(__name__)
 
@@ -78,19 +74,18 @@ class VSWRAnalysis(Analysis):
 
     def runAnalysis(self):
         max_dips_shown = self.max_dips_shown
-        data = []
 
-        for d in self.app.data11:
-            data.append(d.vswr)
+        data = [d.vswr for d in self.app.data.s11]
+
         # min_idx = np.argmin(data)
         #
         # logger.debug("Minimum at %d", min_idx)
         # logger.debug("Value at minimum: %f", data[min_idx])
-        # logger.debug("Frequency: %d", self.app.data11[min_idx].freq)
+        # logger.debug("Frequency: %d", self.app.data.s11[min_idx].freq)
         #
         # if self.checkbox_move_marker.isChecked():
-        #     self.app.markers[0].setFrequency(str(self.app.data11[min_idx].freq))
-        #     self.app.markers[0].frequencyInput.setText(str(self.app.data11[min_idx].freq))
+        #     self.app.markers[0].setFrequency(str(self.app.data.s11[min_idx].freq))
+        #     self.app.markers[0].frequencyInput.setText(str(self.app.data.s11[min_idx].freq))
 
         threshold = self.input_vswr_limit.value()
         minimums = self.find_minimums(data, threshold)
@@ -101,7 +96,7 @@ class VSWRAnalysis(Analysis):
         results_header = self.layout.indexOf(self.results_label)
         logger.debug("Results start at %d, out of %d",
                      results_header, self.layout.rowCount())
-        for i in range(results_header, self.layout.rowCount()):
+        for _ in range(results_header, self.layout.rowCount()):
             self.layout.removeRow(self.layout.rowCount() - 1)
 
         if len(minimums) > max_dips_shown:
@@ -113,7 +108,7 @@ class VSWRAnalysis(Analysis):
                 dips.append(data[lowest])
 
             best_dips = []
-            for i in range(max_dips_shown):
+            for _ in range(max_dips_shown):
                 min_idx = np.argmin(dips)
                 best_dips.append(minimums[min_idx])
                 dips.remove(dips[min_idx])
@@ -127,24 +122,23 @@ class VSWRAnalysis(Analysis):
                     logger.debug(
                         "Section from %d to %d, lowest at %d", start, end, lowest)
                     self.layout.addRow("Start", QtWidgets.QLabel(
-                        format_frequency(self.app.data11[start].freq)))
+                        format_frequency(self.app.data.s11[start].freq)))
                     self.layout.addRow(
                         "Minimum",
                         QtWidgets.QLabel(
-                            f"{format_frequency(self.app.data11[lowest].freq)}"
+                            f"{format_frequency(self.app.data.s11[lowest].freq)}"
                             f" ({round(data[lowest], 2)})"))
                     self.layout.addRow("End", QtWidgets.QLabel(
-                        format_frequency(self.app.data11[end].freq)))
+                        format_frequency(self.app.data.s11[end].freq)))
                     self.layout.addRow(
                         "Span",
                         QtWidgets.QLabel(
-                            format_frequency(self.app.data11[end].freq -
-                                             self.app.data11[start].freq)))
-                    self.layout.addWidget(PeakSearchAnalysis.QHLine())
+                            format_frequency(self.app.data.s11[end].freq -
+                                             self.app.data.s11[start].freq)))
                 else:
                     self.layout.addRow("Low spot", QtWidgets.QLabel(
-                        format_frequency(self.app.data11[lowest].freq)))
-                    self.layout.addWidget(PeakSearchAnalysis.QHLine())
+                        format_frequency(self.app.data.s11[lowest].freq)))
+                self.layout.addWidget(PeakSearchAnalysis.QHLine())
             # Remove the final separator line
             self.layout.removeRow(self.layout.rowCount() - 1)
         else:
@@ -186,11 +180,11 @@ class ResonanceAnalysis(Analysis):
         self.layout.addRow(self.results_label)
 
     def _get_data(self, index):
-        my_data = {"freq": self.app.data11[index].freq,
-                   "s11": self.app.data11[index].z,
-                   "lambda": self.app.data11[index].wavelength,
-                   "impedance": self.app.data11[index].impedance(),
-                   "vswr": self.app.data11[index].vswr,
+        my_data = {"freq": self.app.data.s11[index].freq,
+                   "s11": self.app.data.s11[index].z,
+                   "lambda": self.app.data.s11[index].wavelength,
+                   "impedance": self.app.data.s11[index].impedance(),
+                   "vswr": self.app.data.s11[index].vswr,
                    }
         my_data["vswr_49"] = self.vswr_transformed(
             my_data["impedance"], 49)
@@ -202,13 +196,8 @@ class ResonanceAnalysis(Analysis):
         return my_data
 
     def _get_crossing(self):
-
-        data = []
-        for d in self.app.data11:
-            data.append(d.phase)
-
-        crossing = sorted(self.find_crossing_zero(data))
-        return crossing
+        data = [d.phase for d in self.app.data.s11]
+        return sorted(self.find_crossing_zero(data))
 
     def runAnalysis(self):
         self.reset()
@@ -228,17 +217,15 @@ class ResonanceAnalysis(Analysis):
         results_header = self.layout.indexOf(self.results_label)
         logger.debug("Results start at %d, out of %d",
                      results_header, self.layout.rowCount())
-        for i in range(results_header, self.layout.rowCount()):
+        for _ in range(results_header, self.layout.rowCount()):
             self.layout.removeRow(self.layout.rowCount() - 1)
 
 #         if len(crossing) > max_dips_shown:
 #             self.layout.addRow(QtWidgets.QLabel("<b>More than " + str(max_dips_shown) +
 #                                                 " dips found. Lowest shown.</b>"))
-
 #         self.crossing = crossing[:max_dips_shown]
-        extended_data = []
         if len(crossing) > 0:
-
+            extended_data = []
             for m in crossing:
                 start, lowest, end = m
                 my_data = self._get_data(lowest)
@@ -251,11 +238,11 @@ class ResonanceAnalysis(Analysis):
                     self.layout.addRow(
                         "Resonance",
                         QtWidgets.QLabel(
-                            f"{format_frequency(self.app.data11[lowest].freq)}"
-                            f" ({format_complex_imp(self.app.data11[lowest].impedance())})"))
+                            f"{format_frequency(self.app.data.s11[lowest].freq)}"
+                            f" ({format_complex_imp(self.app.data.s11[lowest].impedance())})"))
                 else:
                     self.layout.addRow("Resonance", QtWidgets.QLabel(
-                        format_frequency(self.app.data11[lowest].freq)))
+                        format_frequency(self.app.data.s11[lowest].freq)))
                     self.layout.addWidget(PeakSearchAnalysis.QHLine())
             # Remove the final separator line
             self.layout.removeRow(self.layout.rowCount() - 1)
@@ -296,7 +283,7 @@ class EFHWAnalysis(ResonanceAnalysis):
         crossing = self._get_crossing()
 
         data = []
-        for d in self.app.data11:
+        for d in self.app.data.s11:
             data.append(d.impedance().real)
 
         maximums = sorted(self.find_maximums(data, threshold=500))
@@ -342,13 +329,12 @@ class EFHWAnalysis(ResonanceAnalysis):
                 #                     self.app.markers[i].label['returnloss'].setMinimumWidth(80)
 
                 self.app.markers[i].setFrequency(
-                    str(self.app.data11[both[i]].freq))
+                    str(self.app.data.s11[both[i]].freq))
                 self.app.markers[i].frequencyInput.setText(
-                    str(self.app.data11[both[i]].freq))
+                    str(self.app.data.s11[both[i]].freq))
         else:
             logger.info("TO DO: find near data")
-            for m in crossing:
-                start, lowest, end = m
+            for _, lowest, _ in crossing:
                 my_data = self._get_data(lowest)
 
                 if lowest in extended_data:
@@ -382,9 +368,9 @@ class EFHWAnalysis(ResonanceAnalysis):
         for i, index in enumerate(sorted(extended_data.keys())):
 
             self.layout.addRow(
-                f"{format_frequency_short(self.app.data11[index].freq)}",
+                f"{format_frequency_short(self.app.data.s11[index].freq)}",
                 QtWidgets.QLabel(f" ({diff[i]['freq']})"
-                                 f" {format_complex_imp(self.app.data11[index].impedance())}"
+                                 f" {format_complex_imp(self.app.data.s11[index].impedance())}"
                                  f" ({diff[i]['r']})"
                                  f" {diff[i]['lambda']} m"))
 
@@ -402,16 +388,17 @@ class EFHWAnalysis(ResonanceAnalysis):
                     row = extended_data[index]
                     writer.writerow(row)
 
-    def compare(self, old, new, fields=[("freq", str), ]):
+    def compare(self, old, new, fields=None):
         '''
         Compare data to help changes
 
         NB
-        must be same sweep 
+        must be same sweep
         ( same index must be same frequence )
         :param old:
         :param new:
         '''
+        fields = fields or [("freq", str), ]
 
         def no_compare():
 
@@ -455,7 +442,7 @@ class EFHWAnalysis(ResonanceAnalysis):
                 if delta_f > 0:
 
                     logger.debug("possible missing band, ")
-                    if (len(old_idx) > (i + split + 1)):
+                    if len(old_idx) > (i + split + 1):
                         if abs(new[k]["freq"] - old[old_idx[i + split + 1]]["freq"]) < max_delta_f:
                             logger.debug("new is missing band, compare next ")
                             split += 1

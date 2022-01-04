@@ -3,7 +3,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020 NanoVNA-Saver Authors
+#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -17,24 +17,16 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import math
 import logging
-from typing import List
-
-from PyQt5 import QtWidgets, QtGui
 
 from NanoVNASaver.RFTools import Datapoint
 from .MagnitudeZ import MagnitudeZChart
-
 
 logger = logging.getLogger(__name__)
 
 
 class MagnitudeZShuntChart(MagnitudeZChart):
-    def __init__(self, name=""):
-        super().__init__(name)
 
     @staticmethod
     def magnitude(p: Datapoint) -> float:
         return abs(p.shuntImpedance())
-

@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020 NanoVNA-Saver Authors
+#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -22,12 +22,13 @@ from typing import List
 
 from PyQt5 import QtWidgets, QtGui
 
+from NanoVNASaver.Formatting import format_frequency_chart
 from NanoVNASaver.Marker import Marker
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.SITools import Format, Value
 
-from .Chart import Chart
-from .Frequency import FrequencyChart
+from NanoVNASaver.Charts.Chart import Chart
+from NanoVNASaver.Charts.Frequency import FrequencyChart
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +38,8 @@ class RealImaginaryChart(FrequencyChart):
         super().__init__(name)
         self.leftMargin = 45
         self.rightMargin = 45
-        self.chartWidth = 230
-        self.chartHeight = 250
+        self.dim.width = 230
+        self.dim.height = 250
         self.fstart = 0
         self.fstop = 0
         self.span_real = 0.01
@@ -99,22 +100,6 @@ class RealImaginaryChart(FrequencyChart):
         self.y_menu.addAction(self.action_set_fixed_maximum_imag)
         self.y_menu.addAction(self.action_set_fixed_minimum_imag)
 
-        #
-        # Set up size policy and palette
-        #
-
-        self.setMinimumSize(
-            self.chartWidth + self.leftMargin + self.rightMargin,
-            self.chartHeight + 40)
-        self.setSizePolicy(
-            QtWidgets.QSizePolicy(
-                QtWidgets.QSizePolicy.MinimumExpanding,
-                QtWidgets.QSizePolicy.MinimumExpanding))
-        pal = QtGui.QPalette()
-        pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
-        self.setPalette(pal)
-        self.setAutoFillBackground(True)
-
     def copy(self):
         new_chart: RealImaginaryChart = super().copy()
 
@@ -125,47 +110,37 @@ class RealImaginaryChart(FrequencyChart):
         return new_chart
 
     def drawChart(self, qp: QtGui.QPainter):
-        qp.setPen(QtGui.QPen(self.textColor))
+        qp.setPen(QtGui.QPen(Chart.color.text))
         qp.drawText(self.leftMargin + 5, 15,
                     f"{self.name} (\N{OHM SIGN})")
         qp.drawText(10, 15, "R")
-        qp.drawText(self.leftMargin + self.chartWidth + 10, 15, "X")
-        qp.setPen(QtGui.QPen(self.foregroundColor))
+        qp.drawText(self.leftMargin + self.dim.width + 10, 15, "X")
+        qp.setPen(QtGui.QPen(Chart.color.foreground))
         qp.drawLine(self.leftMargin,
                     self.topMargin - 5,
                     self.leftMargin,
-                    self.topMargin + self.chartHeight + 5)
+                    self.topMargin + self.dim.height + 5)
         qp.drawLine(self.leftMargin-5,
-                    self.topMargin + self.chartHeight,
-                    self.leftMargin + self.chartWidth + 5,
-                    self.topMargin + self.chartHeight)
+                    self.topMargin + self.dim.height,
+                    self.leftMargin + self.dim.width + 5,
+                    self.topMargin + self.dim.height)
         self.drawTitle(qp)
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
-        pen = QtGui.QPen(self.sweepColor)
-        pen.setWidth(self.pointSize)
-        line_pen = QtGui.QPen(self.sweepColor)
-        line_pen.setWidth(self.lineThickness)
+        pen = QtGui.QPen(Chart.color.sweep)
+        pen.setWidth(self.dim.point)
+        line_pen = QtGui.QPen(Chart.color.sweep)
+        line_pen.setWidth(self.dim.line)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(1)
-        if self.fixedSpan:
-            fstart = self.minFrequency
-            fstop = self.maxFrequency
-        else:
-            if len(self.data) > 0:
-                fstart = self.data[0].freq
-                fstop = self.data[len(self.data)-1].freq
-            else:
-                fstart = self.reference[0].freq
-                fstop = self.reference[len(self.reference) - 1].freq
-        self.fstart = fstart
-        self.fstop = fstop
+
+        self._set_start_stop()
 
         # Draw bands if required
         if self.bands.enabled:
-            self.drawBands(qp, fstart, fstop)
+            self.drawBands(qp, self.fstart, self.fstop)
 
         # Find scaling
         if self.fixedValues:
@@ -192,7 +167,7 @@ class RealImaginaryChart(FrequencyChart):
                 if im < min_imag:
                     min_imag = im
             for d in self.reference:  # Also check min/max for the reference sweep
-                if d.freq < fstart or d.freq > fstop:
+                if d.freq < self.fstart or d.freq > self.fstop:
                     continue
                 imp = self.impedance(d)
                 re, im = imp.real, imp.imag
@@ -253,45 +228,45 @@ class RealImaginaryChart(FrequencyChart):
         self.span_imag = span_imag
 
         # We want one horizontal tick per 50 pixels, at most
-        horizontal_ticks = math.floor(self.chartHeight/50)
+        horizontal_ticks = math.floor(self.dim.height/50)
 
-        fmt = Format(max_nr_digits=4)
+        fmt = Format(max_nr_digits=3)
         for i in range(horizontal_ticks):
-            y = self.topMargin + round(i * self.chartHeight / horizontal_ticks)
-            qp.setPen(QtGui.QPen(self.foregroundColor))
-            qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.chartWidth + 5, y)
-            qp.setPen(QtGui.QPen(self.textColor))
+            y = self.topMargin + round(i * self.dim.height / horizontal_ticks)
+            qp.setPen(QtGui.QPen(Chart.color.foreground))
+            qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.dim.width + 5, y)
+            qp.setPen(QtGui.QPen(Chart.color.text))
             re = max_real - i * span_real / horizontal_ticks
             im = max_imag - i * span_imag / horizontal_ticks
             qp.drawText(3, y + 4, str(Value(re, fmt=fmt)))
-            qp.drawText(self.leftMargin + self.chartWidth + 8, y + 4, str(Value(im, fmt=fmt)))
+            qp.drawText(self.leftMargin + self.dim.width + 8, y + 4, str(Value(im, fmt=fmt)))
 
-        qp.drawText(3, self.chartHeight + self.topMargin, str(Value(min_real, fmt=fmt)))
-        qp.drawText(self.leftMargin + self.chartWidth + 8,
-                    self.chartHeight + self.topMargin,
+        qp.drawText(3, self.dim.height + self.topMargin, str(Value(min_real, fmt=fmt)))
+        qp.drawText(self.leftMargin + self.dim.width + 8,
+                    self.dim.height + self.topMargin,
                     str(Value(min_imag, fmt=fmt)))
 
         self.drawFrequencyTicks(qp)
 
         primary_pen = pen
-        secondary_pen = QtGui.QPen(self.secondarySweepColor)
+        secondary_pen = QtGui.QPen(Chart.color.sweep_secondary)
         if len(self.data) > 0:
-            c = QtGui.QColor(self.sweepColor)
+            c = QtGui.QColor(Chart.color.sweep)
             c.setAlpha(255)
             pen = QtGui.QPen(c)
             pen.setWidth(2)
             qp.setPen(pen)
             qp.drawLine(20, 9, 25, 9)
-            c = QtGui.QColor(self.secondarySweepColor)
+            c = QtGui.QColor(Chart.color.sweep_secondary)
             c.setAlpha(255)
             pen.setColor(c)
             qp.setPen(pen)
-            qp.drawLine(self.leftMargin + self.chartWidth, 9,
-                        self.leftMargin + self.chartWidth + 5, 9)
+            qp.drawLine(self.leftMargin + self.dim.width, 9,
+                        self.leftMargin + self.dim.width + 5, 9)
 
-        primary_pen.setWidth(self.pointSize)
-        secondary_pen.setWidth(self.pointSize)
-        line_pen.setWidth(self.lineThickness)
+        primary_pen.setWidth(self.dim.point)
+        secondary_pen.setWidth(self.dim.point)
+        line_pen.setWidth(self.dim.line)
 
         for i in range(len(self.data)):
             x = self.getXPosition(self.data[i])
@@ -303,13 +278,13 @@ class RealImaginaryChart(FrequencyChart):
             qp.setPen(secondary_pen)
             if self.isPlotable(x, y_im):
                 qp.drawPoint(x, y_im)
-            if self.drawLines and i > 0:
+            if self.flag.draw_lines and i > 0:
                 prev_x = self.getXPosition(self.data[i - 1])
                 prev_y_re = self.getReYPosition(self.data[i-1])
                 prev_y_im = self.getImYPosition(self.data[i-1])
 
                 # Real part first
-                line_pen.setColor(self.sweepColor)
+                line_pen.setColor(Chart.color.sweep)
                 qp.setPen(line_pen)
                 if self.isPlotable(x, y_re) and self.isPlotable(prev_x, prev_y_re):
                     qp.drawLine(x, y_re, prev_x, prev_y_re)
@@ -321,7 +296,7 @@ class RealImaginaryChart(FrequencyChart):
                     qp.drawLine(prev_x, prev_y_re, new_x, new_y)
 
                 # Imag part second
-                line_pen.setColor(self.secondarySweepColor)
+                line_pen.setColor(Chart.color.sweep_secondary)
                 qp.setPen(line_pen)
                 if self.isPlotable(x, y_im) and self.isPlotable(prev_x, prev_y_im):
                     qp.drawLine(x, y_im, prev_x, prev_y_im)
@@ -332,27 +307,27 @@ class RealImaginaryChart(FrequencyChart):
                     new_x, new_y = self.getPlotable(prev_x, prev_y_im, x, y_im)
                     qp.drawLine(prev_x, prev_y_im, new_x, new_y)
 
-        primary_pen.setColor(self.referenceColor)
-        line_pen.setColor(self.referenceColor)
-        secondary_pen.setColor(self.secondaryReferenceColor)
+        primary_pen.setColor(Chart.color.reference)
+        line_pen.setColor(Chart.color.reference)
+        secondary_pen.setColor(Chart.color.reference_secondary)
         qp.setPen(primary_pen)
         if len(self.reference) > 0:
-            c = QtGui.QColor(self.referenceColor)
+            c = QtGui.QColor(Chart.color.reference)
             c.setAlpha(255)
             pen = QtGui.QPen(c)
             pen.setWidth(2)
             qp.setPen(pen)
             qp.drawLine(20, 14, 25, 14)
-            c = QtGui.QColor(self.secondaryReferenceColor)
+            c = QtGui.QColor(Chart.color.reference_secondary)
             c.setAlpha(255)
             pen = QtGui.QPen(c)
             pen.setWidth(2)
             qp.setPen(pen)
-            qp.drawLine(self.leftMargin + self.chartWidth, 14,
-                        self.leftMargin + self.chartWidth + 5, 14)
+            qp.drawLine(self.leftMargin + self.dim.width, 14,
+                        self.leftMargin + self.dim.width + 5, 14)
 
         for i in range(len(self.reference)):
-            if self.reference[i].freq < fstart or self.reference[i].freq > fstop:
+            if self.reference[i].freq < self.fstart or self.reference[i].freq > self.fstop:
                 continue
             x = self.getXPosition(self.reference[i])
             y_re = self.getReYPosition(self.reference[i])
@@ -363,12 +338,12 @@ class RealImaginaryChart(FrequencyChart):
             qp.setPen(secondary_pen)
             if self.isPlotable(x, y_im):
                 qp.drawPoint(x, y_im)
-            if self.drawLines and i > 0:
+            if self.flag.draw_lines and i > 0:
                 prev_x = self.getXPosition(self.reference[i - 1])
                 prev_y_re = self.getReYPosition(self.reference[i-1])
                 prev_y_im = self.getImYPosition(self.reference[i-1])
 
-                line_pen.setColor(self.referenceColor)
+                line_pen.setColor(Chart.color.reference)
                 qp.setPen(line_pen)
                 # Real part first
                 if self.isPlotable(x, y_re) and self.isPlotable(prev_x, prev_y_re):
@@ -380,7 +355,7 @@ class RealImaginaryChart(FrequencyChart):
                     new_x, new_y = self.getPlotable(prev_x, prev_y_re, x, y_re)
                     qp.drawLine(prev_x, prev_y_re, new_x, new_y)
 
-                line_pen.setColor(self.secondaryReferenceColor)
+                line_pen.setColor(Chart.color.reference_secondary)
                 qp.setPen(line_pen)
                 # Imag part second
                 if self.isPlotable(x, y_im) and self.isPlotable(prev_x, prev_y_im):
@@ -404,19 +379,18 @@ class RealImaginaryChart(FrequencyChart):
 
     def getImYPosition(self, d: Datapoint) -> int:
         im = self.impedance(d).imag
-        return self.topMargin + round((self.max_imag - im) / self.span_imag * self.chartHeight)
+        return self.topMargin + round((self.max_imag - im) / self.span_imag * self.dim.height)
 
     def getReYPosition(self, d: Datapoint) -> int:
         re = self.impedance(d).real
         if math.isfinite(re):
-            return self.topMargin + round((self.max_real - re) / self.span_real * self.chartHeight)
-        else:
-            return self.topMargin
+            return self.topMargin + round((self.max_real - re) / self.span_real * self.dim.height)
+        return self.topMargin
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
-        valRe = -1 * ((absy / self.chartHeight * self.span_real) - self.max_real)
-        valIm = -1 * ((absy / self.chartHeight * self.span_imag) - self.max_imag)
+        valRe = -1 * ((absy / self.dim.height * self.span_real) - self.max_real)
+        valIm = -1 * ((absy / self.dim.height * self.span_imag) - self.max_imag)
         return [valRe, valIm]
 
     def zoomTo(self, x1, y1, x2, y2):
@@ -517,9 +491,9 @@ class RealImaginaryChart(FrequencyChart):
 
     def contextMenuEvent(self, event):
         self.action_set_fixed_start.setText(
-            f"Start ({Chart.shortenFrequency(self.minFrequency)})")
+            f"Start ({format_frequency_chart(self.minFrequency)})")
         self.action_set_fixed_stop.setText(
-            f"Stop ({Chart.shortenFrequency(self.maxFrequency)})")
+            f"Stop ({format_frequency_chart(self.maxFrequency)})")
         self.action_set_fixed_minimum_real.setText(
             f"Minimum R ({self.minDisplayReal})")
         self.action_set_fixed_maximum_real.setText(

@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020 NanoVNA-Saver Authors
+#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ from PyQt5 import QtCore
 from NanoVNASaver import RFTools
 from NanoVNASaver.Formatting import (
     format_capacitance,
+    format_complex_adm,
     format_complex_imp,
     format_frequency_space,
     format_gain,
@@ -51,8 +52,8 @@ class DeltaMarker(Marker):
     def updateLabels(self):  # pylint: disable=arguments-differ
         a = self.marker_a
         b = self.marker_b
-        s11_a = a.s11data[1]
-        s11_b = b.s11data[1]
+        s11_a = a.s11[1]
+        s11_b = b.s11[1]
 
         imp_a = s11_a.impedance()
         imp_b = s11_b.impedance()
@@ -90,7 +91,7 @@ class DeltaMarker(Marker):
             format_frequency_space(s11_b.freq - s11_a.freq))
         self.label['lambda'].setText(
             format_wavelength(s11_b.wavelength - s11_a.wavelength))
-        self.label['admittance'].setText(format_complex_imp(imp_p, True))
+        self.label['admittance'].setText(format_complex_adm(imp_p, True))
         self.label['impedance'].setText(format_complex_imp(imp, True))
 
         self.label['parc'].setText(cap_p_str)
@@ -101,8 +102,8 @@ class DeltaMarker(Marker):
         self.label['returnloss'].setText(
             format_gain(s11_b.gain - s11_a.gain, self.returnloss_is_positive))
         self.label['s11groupdelay'].setText(format_group_delay(
-            RFTools.groupDelay(b.s11data, 1) -
-            RFTools.groupDelay(a.s11data, 1)))
+            RFTools.groupDelay(b.s11, 1) -
+            RFTools.groupDelay(a.s11, 1)))
 
         self.label['s11mag'].setText(
             format_magnitude(abs(s11_b.z) - abs(s11_a.z)))
@@ -119,14 +120,14 @@ class DeltaMarker(Marker):
         self.label['serr'].setText(format_resistance(imp.real, True))
         self.label['vswr'].setText(format_vswr(s11_b.vswr - s11_a.vswr))
 
-        if len(a.s21data) == len(a.s11data):
-            s21_a = a.s21data[1]
-            s21_b = b.s21data[1]
+        if len(a.s21) == len(a.s11):
+            s21_a = a.s21[1]
+            s21_b = b.s21[1]
             self.label['s21gain'].setText(format_gain(
                 s21_b.gain - s21_a.gain))
             self.label['s21groupdelay'].setText(format_group_delay(
-                (RFTools.groupDelay(b.s21data, 1) -
-                 RFTools.groupDelay(a.s21data, 1)) / 2))
+                (RFTools.groupDelay(b.s21, 1) -
+                 RFTools.groupDelay(a.s21, 1)) / 2))
             self.label['s21mag'].setText(format_magnitude(
                 abs(s21_b.z) - abs(s21_a.z)))
             self.label['s21phase'].setText(format_phase(

@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020 NanoVNA-Saver Authors
+#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -25,7 +25,8 @@ import numpy as np
 from PyQt5 import QtWidgets, QtGui
 
 from NanoVNASaver.RFTools import Datapoint
-from .Frequency import FrequencyChart
+from NanoVNASaver.Charts.Chart import Chart
+from NanoVNASaver.Charts.Frequency import FrequencyChart
 
 logger = logging.getLogger(__name__)
 
@@ -33,11 +34,7 @@ logger = logging.getLogger(__name__)
 class PhaseChart(FrequencyChart):
     def __init__(self, name=""):
         super().__init__(name)
-        self.leftMargin = 40
-        self.chartWidth = 250
-        self.chartHeight = 250
-        self.fstart = 0
-        self.fstop = 0
+
         self.minAngle = 0
         self.maxAngle = 0
         self.span = 0
@@ -49,15 +46,6 @@ class PhaseChart(FrequencyChart):
         self.minDisplayValue = -180
         self.maxDisplayValue = 180
 
-        self.setMinimumSize(self.chartWidth + self.rightMargin + self.leftMargin,
-                            self.chartHeight + self.topMargin + self.bottomMargin)
-        self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
-                                                 QtWidgets.QSizePolicy.MinimumExpanding))
-        pal = QtGui.QPalette()
-        pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
-        self.setPalette(pal)
-        self.setAutoFillBackground(True)
-
         self.y_menu.addSeparator()
         self.action_unwrap = QtWidgets.QAction("Unwrap")
         self.action_unwrap.setCheckable(True)
@@ -65,7 +53,7 @@ class PhaseChart(FrequencyChart):
         self.y_menu.addAction(self.action_unwrap)
 
     def copy(self):
-        new_chart: PhaseChart = super().copy()
+        new_chart = super().copy()
         new_chart.setUnwrap(self.unwrap)
         new_chart.action_unwrap.setChecked(self.unwrap)
         return new_chart
@@ -77,10 +65,6 @@ class PhaseChart(FrequencyChart):
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
-        pen = QtGui.QPen(self.sweepColor)
-        pen.setWidth(self.pointSize)
-        line_pen = QtGui.QPen(self.sweepColor)
-        line_pen.setWidth(self.lineThickness)
 
         if self.unwrap:
             rawData = []
@@ -114,13 +98,13 @@ class PhaseChart(FrequencyChart):
         self.maxAngle = maxAngle
         self.span = span
 
-        tickcount = math.floor(self.chartHeight / 60)
+        tickcount = math.floor(self.dim.height / 60)
 
         for i in range(tickcount):
             angle = minAngle + span * i / tickcount
-            y = self.topMargin + round((self.maxAngle - angle) / self.span * self.chartHeight)
+            y = self.topMargin + round((self.maxAngle - angle) / self.span * self.dim.height)
             if angle != minAngle and angle != maxAngle:
-                qp.setPen(QtGui.QPen(self.textColor))
+                qp.setPen(QtGui.QPen(Chart.color.text))
                 if angle != 0:
                     digits = max(0, min(2, math.floor(3 - math.log10(abs(angle)))))
                     if digits == 0:
@@ -130,37 +114,25 @@ class PhaseChart(FrequencyChart):
                 else:
                     anglestr = "0"
                 qp.drawText(3, y + 3, anglestr + "°")
-                qp.setPen(QtGui.QPen(self.foregroundColor))
-                qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.chartWidth, y)
+                qp.setPen(QtGui.QPen(Chart.color.foreground))
+                qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.dim.width, y)
         qp.drawLine(self.leftMargin - 5,
                     self.topMargin,
-                    self.leftMargin + self.chartWidth,
+                    self.leftMargin + self.dim.width,
                     self.topMargin)
-        qp.setPen(self.textColor)
+        qp.setPen(Chart.color.text)
         qp.drawText(3, self.topMargin + 5, str(maxAngle) + "°")
-        qp.drawText(3, self.chartHeight + self.topMargin, str(minAngle) + "°")
+        qp.drawText(3, self.dim.height + self.topMargin, str(minAngle) + "°")
 
-        if self.fixedSpan:
-            fstart = self.minFrequency
-            fstop = self.maxFrequency
-        else:
-            if len(self.data) > 0:
-                fstart = self.data[0].freq
-                fstop = self.data[len(self.data)-1].freq
-            else:
-                fstart = self.reference[0].freq
-                fstop = self.reference[len(self.reference) - 1].freq
-        self.fstart = fstart
-        self.fstop = fstop
+        self._set_start_stop()
 
         # Draw bands if required
         if self.bands.enabled:
-            self.drawBands(qp, fstart, fstop)
+            self.drawBands(qp, self.fstart, self.fstop)
 
         self.drawFrequencyTicks(qp)
-
-        self.drawData(qp, self.data, self.sweepColor)
-        self.drawData(qp, self.reference, self.referenceColor)
+        self.drawData(qp, self.data, Chart.color.sweep)
+        self.drawData(qp, self.reference, Chart.color.reference)
         self.drawMarkers(qp)
 
     def getYPosition(self, d: Datapoint) -> int:
@@ -173,9 +145,9 @@ class PhaseChart(FrequencyChart):
                 angle = math.degrees(d.phase)
         else:
             angle = math.degrees(d.phase)
-        return self.topMargin + round((self.maxAngle - angle) / self.span * self.chartHeight)
+        return self.topMargin + round((self.maxAngle - angle) / self.span * self.dim.height)
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
-        val = -1 * ((absy / self.chartHeight * self.span) - self.maxAngle)
+        val = -1 * ((absy / self.dim.height * self.span) - self.maxAngle)
         return [val]

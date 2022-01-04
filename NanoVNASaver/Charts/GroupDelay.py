@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020 NanoVNA-Saver Authors
+#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -22,8 +22,9 @@ from typing import List
 
 import numpy as np
 
-from PyQt5 import QtWidgets, QtGui
+from PyQt5 import QtGui
 
+from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.RFTools import Datapoint
 from .Frequency import FrequencyChart
 logger = logging.getLogger(__name__)
@@ -32,9 +33,12 @@ logger = logging.getLogger(__name__)
 class GroupDelayChart(FrequencyChart):
     def __init__(self, name="", reflective=True):
         super().__init__(name)
+
+        self.name_unit = "ns"
+
         self.leftMargin = 40
-        self.chartWidth = 250
-        self.chartHeight = 250
+        self.dim.width = 250
+        self.dim.height = 250
         self.fstart = 0
         self.fstop = 0
         self.minDelay = 0
@@ -48,15 +52,6 @@ class GroupDelayChart(FrequencyChart):
 
         self.minDisplayValue = -180
         self.maxDisplayValue = 180
-
-        self.setMinimumSize(self.chartWidth + self.rightMargin + self.leftMargin,
-                            self.chartHeight + self.topMargin + self.bottomMargin)
-        self.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
-                                                 QtWidgets.QSizePolicy.MinimumExpanding))
-        pal = QtGui.QPalette()
-        pal.setColor(QtGui.QPalette.Background, self.backgroundColor)
-        self.setPalette(pal)
-        self.setAutoFillBackground(True)
 
     def copy(self):
         new_chart: GroupDelayChart = super().copy()
@@ -125,22 +120,13 @@ class GroupDelayChart(FrequencyChart):
 
         self.update()
 
-    def drawChart(self, qp: QtGui.QPainter):
-        qp.setPen(QtGui.QPen(self.textColor))
-        qp.drawText(3, 15, self.name + " (ns)")
-        qp.setPen(QtGui.QPen(self.foregroundColor))
-        qp.drawLine(self.leftMargin, 20, self.leftMargin, self.topMargin+self.chartHeight+5)
-        qp.drawLine(self.leftMargin-5, self.topMargin+self.chartHeight,
-                    self.leftMargin+self.chartWidth, self.topMargin + self.chartHeight)
-        self.drawTitle(qp)
-
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
-        pen = QtGui.QPen(self.sweepColor)
-        pen.setWidth(self.pointSize)
-        line_pen = QtGui.QPen(self.sweepColor)
-        line_pen.setWidth(self.lineThickness)
+        pen = QtGui.QPen(Chart.color.sweep)
+        pen.setWidth(self.dim.point)
+        line_pen = QtGui.QPen(Chart.color.sweep)
+        line_pen.setWidth(self.dim.line)
 
         if self.fixedValues:
             min_delay = self.minDisplayValue
@@ -159,13 +145,13 @@ class GroupDelayChart(FrequencyChart):
         self.maxDelay = max_delay
         self.span = span
 
-        tickcount = math.floor(self.chartHeight / 60)
+        tickcount = math.floor(self.dim.height / 60)
 
         for i in range(tickcount):
             delay = min_delay + span * i / tickcount
-            y = self.topMargin + round((self.maxDelay - delay) / self.span * self.chartHeight)
+            y = self.topMargin + round((self.maxDelay - delay) / self.span * self.dim.height)
             if delay != min_delay and delay != max_delay:
-                qp.setPen(QtGui.QPen(self.textColor))
+                qp.setPen(QtGui.QPen(Chart.color.text))
                 if delay != 0:
                     digits = max(0, min(2, math.floor(3 - math.log10(abs(delay)))))
                     if digits == 0:
@@ -175,47 +161,36 @@ class GroupDelayChart(FrequencyChart):
                 else:
                     delaystr = "0"
                 qp.drawText(3, y + 3, delaystr)
-                qp.setPen(QtGui.QPen(self.foregroundColor))
-                qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.chartWidth, y)
+                qp.setPen(QtGui.QPen(Chart.color.foreground))
+                qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.dim.width, y)
         qp.drawLine(self.leftMargin - 5,
                     self.topMargin,
-                    self.leftMargin + self.chartWidth,
+                    self.leftMargin + self.dim.width,
                     self.topMargin)
-        qp.setPen(self.textColor)
+        qp.setPen(Chart.color.text)
         qp.drawText(3, self.topMargin + 5, str(max_delay))
-        qp.drawText(3, self.chartHeight + self.topMargin, str(min_delay))
+        qp.drawText(3, self.dim.height + self.topMargin, str(min_delay))
 
-        if self.fixedSpan:
-            fstart = self.minFrequency
-            fstop = self.maxFrequency
-        else:
-            if len(self.data) > 0:
-                fstart = self.data[0].freq
-                fstop = self.data[len(self.data)-1].freq
-            else:
-                fstart = self.reference[0].freq
-                fstop = self.reference[len(self.reference) - 1].freq
-        self.fstart = fstart
-        self.fstop = fstop
+        self._set_start_stop()
 
         # Draw bands if required
         if self.bands.enabled:
-            self.drawBands(qp, fstart, fstop)
+            self.drawBands(qp, self.fstart, self.fstop)
 
         self.drawFrequencyTicks(qp)
 
-        color = self.sweepColor
+        color = Chart.color.sweep
         pen = QtGui.QPen(color)
-        pen.setWidth(self.pointSize)
+        pen.setWidth(self.dim.point)
         line_pen = QtGui.QPen(color)
-        line_pen.setWidth(self.lineThickness)
+        line_pen.setWidth(self.dim.line)
         qp.setPen(pen)
         for i in range(len(self.data)):
             x = self.getXPosition(self.data[i])
             y = self.getYPositionFromDelay(self.groupDelay[i])
             if self.isPlotable(x, y):
                 qp.drawPoint(int(x), int(y))
-            if self.drawLines and i > 0:
+            if self.flag.draw_lines and i > 0:
                 prevx = self.getXPosition(self.data[i - 1])
                 prevy = self.getYPositionFromDelay(self.groupDelay[i - 1])
                 qp.setPen(line_pen)
@@ -229,18 +204,18 @@ class GroupDelayChart(FrequencyChart):
                     qp.drawLine(prevx, prevy, new_x, new_y)
                 qp.setPen(pen)
 
-        color = self.referenceColor
+        color = Chart.color.reference
         pen = QtGui.QPen(color)
-        pen.setWidth(self.pointSize)
+        pen.setWidth(self.dim.point)
         line_pen = QtGui.QPen(color)
-        line_pen.setWidth(self.lineThickness)
+        line_pen.setWidth(self.dim.line)
         qp.setPen(pen)
         for i in range(len(self.reference)):
             x = self.getXPosition(self.reference[i])
             y = self.getYPositionFromDelay(self.groupDelayReference[i])
             if self.isPlotable(x, y):
                 qp.drawPoint(int(x), int(y))
-            if self.drawLines and i > 0:
+            if self.flag.draw_lines and i > 0:
                 prevx = self.getXPosition(self.reference[i - 1])
                 prevy = self.getYPositionFromDelay(self.groupDelayReference[i - 1])
                 qp.setPen(line_pen)
@@ -267,9 +242,9 @@ class GroupDelayChart(FrequencyChart):
         return self.getYPositionFromDelay(delay)
 
     def getYPositionFromDelay(self, delay: float):
-        return self.topMargin + round((self.maxDelay - delay) / self.span * self.chartHeight)
+        return self.topMargin + round((self.maxDelay - delay) / self.span * self.dim.height)
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
-        val = -1 * ((absy / self.chartHeight * self.span) - self.maxDelay)
+        val = -1 * ((absy / self.dim.height * self.span) - self.maxDelay)
         return [val]
