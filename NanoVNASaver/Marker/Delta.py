@@ -21,6 +21,7 @@ from PyQt5 import QtCore
 from NanoVNASaver import RFTools
 from NanoVNASaver.Formatting import (
     format_capacitance,
+    format_complex_adm,
     format_complex_imp,
     format_frequency_space,
     format_gain,
@@ -90,7 +91,7 @@ class DeltaMarker(Marker):
             format_frequency_space(s11_b.freq - s11_a.freq))
         self.label['lambda'].setText(
             format_wavelength(s11_b.wavelength - s11_a.wavelength))
-        self.label['admittance'].setText(format_complex_imp(imp_p, True))
+        self.label['admittance'].setText(format_complex_adm(imp_p, True))
         self.label['impedance'].setText(format_complex_imp(imp, True))
 
         self.label['parc'].setText(cap_p_str)

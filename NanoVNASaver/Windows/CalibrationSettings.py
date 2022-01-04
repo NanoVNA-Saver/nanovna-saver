@@ -185,14 +185,14 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.load_resistance.setMinimumHeight(20)
         self.load_inductance = QtWidgets.QLineEdit("0")
         self.load_inductance.setMinimumHeight(20)
-        # self.load_capacitance = QtWidgets.QLineEdit("0")
-        # self.load_capacitance.setMinimumHeight(20)
-        # self.load_capacitance.setDisabled(True)  # Not yet implemented
+        self.load_capacitance = QtWidgets.QLineEdit("0")
+        self.load_capacitance.setMinimumHeight(20)
+        #self.load_capacitance.setDisabled(True)  # Not yet implemented
         self.load_length = QtWidgets.QLineEdit("0")
         self.load_length.setMinimumHeight(20)
         cal_load_form.addRow("Resistance (\N{OHM SIGN})", self.load_resistance)
         cal_load_form.addRow("Inductance (H(e-12))", self.load_inductance)
-        # cal_load_form.addRow("Capacitance (F(e-12))", self.load_capacitance)
+        cal_load_form.addRow("Capacitance (F(e-15))", self.load_capacitance)
         cal_load_form.addRow("Offset Delay (ps)", self.load_length)
 
         self.cal_through_box = QtWidgets.QGroupBox("Through")
@@ -313,7 +313,7 @@ class CalibrationWindow(QtWidgets.QWidget):
 
         self.app.settings.setValue("LoadR", self.load_resistance.text())
         self.app.settings.setValue("LoadL", self.load_inductance.text())
-        # self.app.settings.setValue("LoadC", self.load_capacitance.text())
+        self.app.settings.setValue("LoadC", self.load_capacitance.text())
         self.app.settings.setValue("LoadDelay", self.load_length.text())
 
         self.app.settings.setValue("ThroughDelay", self.through_length.text())
@@ -348,7 +348,7 @@ class CalibrationWindow(QtWidgets.QWidget):
 
         self.load_resistance.setText(str(self.app.settings.value("LoadR", 50)))
         self.load_inductance.setText(str(self.app.settings.value("LoadL", 0)))
-        # self.load_capacitance.setText(str(self.app.settings.value("LoadC", 0)))
+        self.load_capacitance.setText(str(self.app.settings.value("LoadC", 0)))
         self.load_length.setText(str(self.app.settings.value("LoadDelay", 0)))
 
         self.through_length.setText(str(self.app.settings.value("ThroughDelay", 0)))
@@ -511,8 +511,6 @@ class CalibrationWindow(QtWidgets.QWidget):
             try:
                 self.app.calibration.openC0 = self.getFloatValue(
                     self.open_c0_input.text())/10**15
-                if self.app.calibration.openC0 == 0:
-                    raise ValueError("C0 cannot be 0.")
                 self.app.calibration.openC1 = self.getFloatValue(
                     self.open_c1_input.text())/10**27
                 self.app.calibration.openC2 = self.getFloatValue(
@@ -531,9 +529,9 @@ class CalibrationWindow(QtWidgets.QWidget):
                 self.app.calibration.loadR = self.getFloatValue(
                     self.load_resistance.text())
                 self.app.calibration.loadL = self.getFloatValue(
-                    self.load_inductance.text())/10**12
-                # self.app.calibration.loadC = self.getFloatValue(
-                #   self.load_capacitance.text()) / 10 ** 12
+                    self.load_inductance.text()) / 10**12
+                self.app.calibration.loadC = self.getFloatValue(
+                    self.load_capacitance.text()) / 10 ** 15
                 self.app.calibration.loadLength = self.getFloatValue(
                     self.load_length.text())/10**12
                 self.app.calibration.useIdealLoad = False
