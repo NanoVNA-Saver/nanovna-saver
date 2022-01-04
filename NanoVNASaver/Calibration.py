@@ -235,38 +235,36 @@ class Calibration:
         g = Calibration.IDEAL_SHORT
         if not self.useIdealShort:
             logger.debug("Using short calibration set values.")
-            Zsp = complex(0, 1) * 2 * math.pi * freq * (
+            Zsp = complex(0, 2 * math.pi * freq * (
                 self.shortL0 + self.shortL1 * freq +
-                self.shortL2 * freq**2 + self.shortL3 * freq**3)
+                self.shortL2 * freq**2 + self.shortL3 * freq**3))
             # Referencing https://arxiv.org/pdf/1606.02446.pdf (18) - (21)
             g = (Zsp / 50 - 1) / (Zsp / 50 + 1) * cmath.exp(
-                complex(0, 1) * 2 * math.pi * 2 * freq *
-                self.shortLength * -1)
+                complex(0, 2 * math.pi * 2 * freq * self.shortLength * -1))
         return g
 
     def gamma_open(self, freq: int) -> complex:
         g = Calibration.IDEAL_OPEN
         if not self.useIdealOpen:
             logger.debug("Using open calibration set values.")
-            divisor = (2 * math.pi * freq * (
+            Zop = complex(0, 2 * math.pi * freq * (
                 self.openC0 + self.openC1 * freq +
                 self.openC2 * freq**2 + self.openC3 * freq**3))
-            if divisor != 0:
-                Zop = complex(0, -1) / divisor
-                g = ((Zop / 50 - 1) / (Zop / 50 + 1)) * cmath.exp(
-                    complex(0, 1) * 2 * math.pi *
-                    2 * freq * self.openLength * -1)
+            g = ((1 - 50 * Zop) / (1 + 50 * Zop)) * cmath.exp(
+                complex(0, 2 * math.pi * 2 * freq * self.openLength * -1))
         return g
 
     def gamma_load(self, freq: int) -> complex:
         g = Calibration.IDEAL_LOAD
         if not self.useIdealLoad:
             logger.debug("Using load calibration set values.")
-            Zl = self.loadR + (complex(0, 1) * 2 *
-                               math.pi * freq * self.loadL)
+            Zl = complex(self.loadR, 0)
+            if self.loadC > 0:
+                Zl = self.loadR / complex(1, 2 * self.loadR * math.pi * freq * self.loadC)
+            if self.loadL > 0:
+                Zl = Zl + complex(0, 2 * math.pi * freq * self.loadL)
             g = (Zl / 50 - 1) / (Zl / 50 + 1) * cmath.exp(
-                complex(0, 1) * 2 * math.pi *
-                2 * freq * self.loadLength * -1)
+                complex(0, 2 * math.pi * 2 * freq * self.loadLength * -1))
         return g
 
     def gamma_through(self, freq: int) -> complex:
