@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
+#  Copyright (C) 2020ff NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -73,7 +73,10 @@ class VSWRChart(FrequencyChart):
                 vswr = d.vswr
                 if vswr > maxVSWR:
                     maxVSWR = vswr
-            maxVSWR = min(self.maxDisplayValue, math.ceil(maxVSWR))
+            try:
+                maxVSWR = min(self.maxDisplayValue, math.ceil(maxVSWR))
+            except OverflowError:
+                maxVSWR = self.maxDisplayValue
         self.maxVSWR = maxVSWR
         span = maxVSWR-minVSWR
         if span == 0:
@@ -152,7 +155,10 @@ class VSWRChart(FrequencyChart):
             return (
                 self.topMargin +
                 round((math.log(self.maxVSWR) - math.log(vswr)) / span * self.dim.height))
-        return self.topMargin + round((self.maxVSWR - vswr) / self.span * self.dim.height)
+        try:
+            return self.topMargin + round((self.maxVSWR - vswr) / self.span * self.dim.height)
+        except OverflowError:
+            return self.topMargin
 
     def getYPosition(self, d: Datapoint) -> int:
         return self.getYPositionFromValue(d.vswr)

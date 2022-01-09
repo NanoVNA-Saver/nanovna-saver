@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
+#  Copyright (C) 2020ff NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -143,6 +143,7 @@ class TestRFToolsDatapoint(unittest.TestCase):
         self.dp50 = Datapoint(100000, 1, 0)
         self.dp75 = Datapoint(100000, 0.2, 0)
         self.dp_im50 = Datapoint(100000, 0, 1)
+        self.dp_ill = Datapoint(100000, 1.1, 0) 
 
     def test_properties(self):
         self.assertEqual(self.dp.z, complex(0.1091, 0.3118))
@@ -150,7 +151,10 @@ class TestRFToolsDatapoint(unittest.TestCase):
         self.assertAlmostEqual(self.dp.phase, 1.23420722)
         self.assertEqual(self.dp0.gain, -math.inf)
         self.assertAlmostEqual(self.dp.gain, -9.6208748)
-        self.assertEqual(self.dp50.vswr, 1.0)
+        self.assertEqual(self.dp50.vswr, math.inf)
+        self.assertEqual(self.dp_im50.vswr, math.inf)
+        self.assertEqual(self.dp_ill.vswr, math.inf)
+        self.assertEqual(self.dp0.vswr, 1)
         self.assertAlmostEqual(self.dp.vswr, 1.9865736)
         self.assertAlmostEqual(self.dp.impedance(),
                                complex(49.997525, 34.9974501))
