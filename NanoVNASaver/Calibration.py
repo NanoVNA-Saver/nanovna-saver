@@ -34,6 +34,7 @@ RXP_CAL_LINE = re.compile(r"""^\s*
     (?P<openr>[-0-9Ee.]+) \s+ (?P<openi>[-0-9Ee.]+) \s+
     (?P<loadr>[-0-9Ee.]+) \s+ (?P<loadi>[-0-9Ee.]+)(?: \s
     (?P<throughr>[-0-9Ee.]+) \s+ (?P<throughi>[-0-9Ee.]+) \s+
+    (?P<thrureflr>[-0-9Ee.]+) \s+ (?P<thrurefli>[-0-9Ee.]+) \s+
     (?P<isolationr>[-0-9Ee.]+) \s+ (?P<isolationi>[-0-9Ee.]+)
     )?
 """, re.VERBOSE)
@@ -55,16 +56,19 @@ class CalData(UserDict):
             "open": None,
             "load": None,
             "through": None,
+            "thrurefl": None,
             "isolation": None,
             # the frequence
             "freq": 0,
             # 1 Port
             "e00": 0.0,  # Directivity
-            "e11": 0.0,  # Port match
+            "e11": 0.0,  # Port1 match
             "delta_e": 0.0,  # Tracking
+            "e10e01": 0.0,  # Forward Reflection Tracking
             # 2 port
-            "e30": 0.0,  # Port match
-            "e10e32": 0.0,  # Transmission
+            "e30": 0.0,  # Forward isolation
+            "e22": 0.0,  # Port2 match
+            "e10e32": 0.0,  # Forward transmission
         }
         super().__init__(data)
 
@@ -76,6 +80,7 @@ class CalData(UserDict):
              f' {d["load"].re} {d["load"].im}')
         if d["through"] is not None:
             s += (f' {d["through"].re} {d["through"].im}'
+                  f' {d["thrurefl"].re} {d["thrurefl"].im}'
                   f' {d["isolation"].re} {d["isolation"].im}')
         return s
 
@@ -115,14 +120,14 @@ class CalDataSet:
 
     def complete2port(self) -> bool:
         for val in self.data.values():
-            for name in ("short", "open", "load", "through", "isolation"):
+            for name in ("short", "open", "load", "through", "thrurefl", "isolation"):
                 if val[name] is None:
                     return False
         return any(self.data)
 
 
 class Calibration:
-    CAL_NAMES = ("short", "open", "load", "through", "isolation",)
+    CAL_NAMES = ("short", "open", "load", "through", "thrurefl", "isolation",)
     IDEAL_SHORT = complex(-1, 0)
     IDEAL_OPEN = complex(1, 0)
     IDEAL_LOAD = complex(0, 0)
@@ -222,10 +227,18 @@ class Calibration:
 
             if self.isValid2Port():
                 caldata["e30"] = caldata["isolation"].z
-
                 gt = self.gamma_through(freq)
-                caldata["e10e32"] = (caldata["through"].z / gt - caldata["e30"]
-                                     ) * (1 - caldata["e11"]**2)
+                gm4 = caldata["through"].z
+                gm5 = caldata["thrurefl"].z
+                gm6 = caldata["isolation"].z
+
+                caldata["e10e01"] = caldata["e00"] * caldata["e11"] - caldata["delta_e"]
+                gm7 = gm5 - caldata["e00"]
+                caldata["e22"] = gm7 /(gm7*caldata["e11"]*gt**2+caldata["e10e01"]*gt**2)
+                caldata["e10e32"] = (gm4-gm6)*(1-caldata["e11"]*caldata["e22"]*gt**2)/gt
+
+
+
 
         self.gen_interpolation()
         self.isCalculated = True
@@ -280,7 +293,9 @@ class Calibration:
         e00 = []
         e11 = []
         delta_e = []
+        e10e01 = []
         e30 = []
+        e22 = []
         e10e32 = []
 
         for caldata in self.dataset.values():
@@ -288,7 +303,9 @@ class Calibration:
             e00.append(caldata["e00"])
             e11.append(caldata["e11"])
             delta_e.append(caldata["delta_e"])
+            e10e01.append(caldata["e10e01"])
             e30.append(caldata["e30"])
+            e22.append(caldata["e22"])
             e10e32.append(caldata["e10e32"])
 
         self.interp = {
@@ -301,9 +318,15 @@ class Calibration:
             "delta_e": interp1d(freq, delta_e,
                                 kind="slinear", bounds_error=False,
                                 fill_value=(delta_e[0], delta_e[-1])),
+            "e10e01": interp1d(freq, e10e01,
+                                kind="slinear", bounds_error=False,
+                                fill_value=(e10e01[0], e10e01[-1])),
             "e30": interp1d(freq, e30,
                             kind="slinear", bounds_error=False,
                             fill_value=(e30[0], e30[-1])),
+            "e22": interp1d(freq, e22,
+                            kind="slinear", bounds_error=False,
+                            fill_value=(e22[0], e22[-1])),
             "e10e32": interp1d(freq, e10e32,
                                kind="slinear", bounds_error=False,
                                fill_value=(e10e32[0], e10e32[-1])),
@@ -315,10 +338,27 @@ class Calibration:
             (dp.z * i["e11"](dp.freq)) - i["delta_e"](dp.freq))
         return Datapoint(dp.freq, s11.real, s11.imag)
 
-    def correct21(self, dp: Datapoint):
+    def correct21(self, dp: Datapoint, dp11: Datapoint):
         i = self.interp
         s21 = (dp.z - i["e30"](dp.freq)) / i["e10e32"](dp.freq)
+        s21 = s21 * (i["e10e01"](dp.freq)/(i["e11"](dp.freq)*dp11.z-i["delta_e"](dp.freq)))
         return Datapoint(dp.freq, s21.real, s21.imag)
+
+    def dump_correct(self, dp: Datapoint, dp11: Datapoint):
+        i = self.interp
+        if dp.freq == 2520000000 or dp.freq == 2600000000:
+            print("freq: ", dp.freq)
+            print("z11: ", dp11.z)
+            print("z21: ", dp.z)
+            print("e00: ", i["e00"](dp.freq))
+            print("e11: ", i["e11"](dp.freq))
+            print("delta_e: ", i["delta_e"](dp.freq))
+            print("e10e01: ", i["e10e01"](dp.freq))
+            print("e30: ", i["e30"](dp.freq))
+            print("e22: ", i["e22"](dp.freq))
+            print("e10e32: ", i["e10e32"](dp.freq))
+
+
 
     # TODO: implement tests
     def save(self, filename: str):
@@ -331,7 +371,7 @@ class Calibration:
                 calfile.write(f"! {note}\n")
             calfile.write(
                 "# Hz ShortR ShortI OpenR OpenI LoadR LoadI"
-                " ThroughR ThroughI IsolationR IsolationI\n")
+                " ThroughR ThroughI ThrureflR ThrureflI IsolationR IsolationI\n")
             for freq in self.dataset.frequencies():
                 calfile.write(f"{self.dataset.get(freq)}\n")
 
@@ -353,7 +393,7 @@ class Calibration:
                 if line.startswith("#"):
                     if not parsed_header and line == (
                         "# Hz ShortR ShortI OpenR OpenI LoadR LoadI"
-                            " ThroughR ThroughI IsolationR IsolationI"):
+                            " ThroughR ThroughI ThrureflR ThrureflI IsolationR IsolationI"):
                         parsed_header = True
                     continue
                 if not parsed_header:
@@ -367,7 +407,7 @@ class Calibration:
                     logger.warning("Illegal data in cal file. Line %i", i)
                 cal = m.groupdict()
 
-                nr_cals = 5 if cal["throughr"] else 3
+                nr_cals = 6 if cal["throughr"] else 3
                 for name in Calibration.CAL_NAMES[:nr_cals]:
                     self.dataset.insert(
                         name,

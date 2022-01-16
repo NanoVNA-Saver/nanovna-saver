@@ -199,11 +199,12 @@ class SweepWorker(QtCore.QRunnable):
             else:
                 data11 = raw_data11.copy()
 
-            if self.app.calibration.isValid2Port():
-                for dp in raw_data21:
-                    data21.append(self.app.calibration.correct21(dp))
-            else:
-                data21 = raw_data21.copy()
+        if self.app.calibration.isValid2Port():
+            for counter, dp in enumerate(raw_data21):
+                dp11 = raw_data11[counter]
+                data21.append(self.app.calibration.correct21(dp, dp11))
+        else:
+            data21 = raw_data21
 
         if self.offsetDelay != 0:
             data11 = [correct_delay(dp, self.offsetDelay, reflect=True) for dp in data11]
