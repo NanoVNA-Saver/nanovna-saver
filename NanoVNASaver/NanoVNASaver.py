@@ -493,7 +493,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         for c in self.combinedCharts:
             c.setCombinedData(s11, s21)
 
-        self.sweep_control.progress_bar.setValue(self.worker.percentage)
+        self.sweep_control.progress_bar.setValue(int(self.worker.percentage))
         self.windows["tdr"].updateTDR()
 
         if s11:
