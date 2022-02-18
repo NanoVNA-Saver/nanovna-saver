@@ -185,6 +185,43 @@ class Calibration:
     def isValid2Port(self) -> bool:
         return self.dataset.complete2port()
 
+    def _calc_port_1(self, freq: int, cal: CalData):
+        g1 = self.gamma_short(freq)
+        g2 = self.gamma_open(freq)
+        g3 = self.gamma_load(freq)
+
+        gm1 = cal["short"].z
+        gm2 = cal["open"].z
+        gm3 = cal["load"].z
+
+        denominator = (g1 * (g2 - g3) * gm1 +
+                       g2 * g3 * gm2 - g2 * g3 * gm3 -
+                       (g2 * gm2 - g3 * gm3) * g1)
+        cal["e00"] = - ((g2 * gm3 - g3 * gm3) * g1 * gm2 -
+                          (g2 * g3 * gm2 - g2 * g3 * gm3 -
+                           (g3 * gm2 - g2 * gm3) * g1) * gm1
+                          ) / denominator
+        cal["e11"] = ((g2 - g3) * gm1 - g1 * (gm2 - gm3) +
+                        g3 * gm2 - g2 * gm3) / denominator
+        cal["delta_e"] = - ((g1 * (gm2 - gm3) - g2 * gm2 + g3 *
+                               gm3) * gm1 + (g2 * gm3 - g3 * gm3) *
+                              gm2) / denominator
+
+    def _calc_port_2(self, freq: int, cal: CalData):
+        gt = self.gamma_through(freq)
+
+        gm4 = cal["through"].z
+        gm5 = cal["thrurefl"].z
+        gm6 = cal["isolation"].z
+        gm7 = gm5 - cal["e00"]
+
+        cal["e30"] = cal["isolation"].z
+        cal["e10e01"] = cal["e00"] * cal["e11"] - cal["delta_e"]
+        cal["e22"] = gm7 / (
+            gm7 * cal["e11"] * gt**2 + cal["e10e01"] * gt**2)
+        cal["e10e32"] = (gm4 - gm6) * (
+            1 - cal["e11"] * cal["e22"] *gt**2) / gt
+
     def calc_corrections(self):
         if not self.isValid1Port():
             logger.warning(
@@ -195,27 +232,10 @@ class Calibration:
         logger.debug("Calculating calibration for %d points.", self.size())
 
         for freq, caldata in self.dataset.items():
-            g1 = self.gamma_short(freq)
-            g2 = self.gamma_open(freq)
-            g3 = self.gamma_load(freq)
-
-            gm1 = caldata["short"].z
-            gm2 = caldata["open"].z
-            gm3 = caldata["load"].z
-
             try:
-                denominator = (g1 * (g2 - g3) * gm1 +
-                               g2 * g3 * gm2 - g2 * g3 * gm3 -
-                               (g2 * gm2 - g3 * gm3) * g1)
-                caldata["e00"] = - ((g2 * gm3 - g3 * gm3) * g1 * gm2 -
-                                    (g2 * g3 * gm2 - g2 * g3 * gm3 -
-                                     (g3 * gm2 - g2 * gm3) * g1) * gm1
-                                    ) / denominator
-                caldata["e11"] = ((g2 - g3) * gm1 - g1 * (gm2 - gm3) +
-                                  g3 * gm2 - g2 * gm3) / denominator
-                caldata["delta_e"] = - ((g1 * (gm2 - gm3) - g2 * gm2 + g3 *
-                                         gm3) * gm1 + (g2 * gm3 - g3 * gm3) *
-                                        gm2) / denominator
+                self._calc_port_1(freq, caldata)
+                if self.isValid2Port():
+                    self._calc_port_2(freq, caldata)
             except ZeroDivisionError as exc:
                 self.isCalculated = False
                 logger.error(
@@ -224,21 +244,6 @@ class Calibration:
                 raise ValueError(
                     f"Two of short, open and load returned the same"
                     f" values at frequency {freq}Hz.") from exc
-
-            if self.isValid2Port():
-                caldata["e30"] = caldata["isolation"].z
-                gt = self.gamma_through(freq)
-                gm4 = caldata["through"].z
-                gm5 = caldata["thrurefl"].z
-                gm6 = caldata["isolation"].z
-
-                caldata["e10e01"] = caldata["e00"] * caldata["e11"] - caldata["delta_e"]
-                gm7 = gm5 - caldata["e00"]
-                caldata["e22"] = gm7 /(gm7*caldata["e11"]*gt**2+caldata["e10e01"]*gt**2)
-                caldata["e10e32"] = (gm4-gm6)*(1-caldata["e11"]*caldata["e22"]*gt**2)/gt
-
-
-
 
         self.gen_interpolation()
         self.isCalculated = True
@@ -344,28 +349,12 @@ class Calibration:
         s21 = s21 * (i["e10e01"](dp.freq)/(i["e11"](dp.freq)*dp11.z-i["delta_e"](dp.freq)))
         return Datapoint(dp.freq, s21.real, s21.imag)
 
-    def dump_correct(self, dp: Datapoint, dp11: Datapoint):
-        i = self.interp
-        if dp.freq == 2520000000 or dp.freq == 2600000000:
-            print("freq: ", dp.freq)
-            print("z11: ", dp11.z)
-            print("z21: ", dp.z)
-            print("e00: ", i["e00"](dp.freq))
-            print("e11: ", i["e11"](dp.freq))
-            print("delta_e: ", i["delta_e"](dp.freq))
-            print("e10e01: ", i["e10e01"](dp.freq))
-            print("e30: ", i["e30"](dp.freq))
-            print("e22: ", i["e22"](dp.freq))
-            print("e10e32: ", i["e10e32"](dp.freq))
-
-
-
     # TODO: implement tests
     def save(self, filename: str):
         # Save the calibration data to file
         if not self.isValid1Port():
             raise ValueError("Not a valid 1-Port calibration")
-        with open(f"{filename}", "w") as calfile:
+        with open(filename, mode="w", encoding='utf-8') as calfile:
             calfile.write("# Calibration data for NanoVNA-Saver\n")
             for note in self.notes:
                 calfile.write(f"! {note}\n")
@@ -383,7 +372,7 @@ class Calibration:
         self.notes = []
 
         parsed_header = False
-        with open(filename) as calfile:
+        with open(filename, encoding='utf-8') as calfile:
             for i, line in enumerate(calfile):
                 line = line.strip()
                 if line.startswith("!"):
