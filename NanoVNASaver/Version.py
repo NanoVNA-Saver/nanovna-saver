@@ -54,13 +54,13 @@ class Version:
         return False
 
     def __lt__(self, other: "Version") -> bool:
-        return other > self
+        return other.__gt__(self)
 
     def __ge__(self, other: "Version") -> bool:
-        return self > other or self == other
+        return self.__gt__(other) or self.__eq__(other)
 
     def __le__(self, other: "Version") -> bool:
-        return self < other or self == other
+        return other.__gt__(self) or self.__eq__(other)
 
     def __eq__(self, other: "Version") -> bool:
         return self.data == other.data
