@@ -154,7 +154,7 @@ class AboutWindow(QtWidgets.QWidget):
         latest_url = ""
         try:
             req = request.Request(VERSION_URL)
-            req.add_header('User-Agent', "NanoVNA-Saver/" + self.app.version)
+            req.add_header('User-Agent', f'NanoVNA-Saver/{self.app.version}')
             for line in request.urlopen(req, timeout=3):
                 line = line.decode("utf-8")
                 if line.startswith("VERSION ="):
