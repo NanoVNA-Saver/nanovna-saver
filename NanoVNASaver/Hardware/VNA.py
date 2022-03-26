@@ -141,9 +141,8 @@ class VNA:
             return [1000, ]
 
     def set_bandwidth(self, bandwidth: int):
-        bw_val = bandwidth
-        if self.bw_method == "dislord":
-            bw_val = DISLORD_BW[bandwidth]
+        bw_val = DISLORD_BW[bandwidth] \
+            if self.bw_method == "dislord" else bandwidth
         result = " ".join(self.exec_command(f"bandwidth {bw_val}"))
         if self.bw_method == "ttrftech" and result:
             raise IOError(f"set_bandwith({bandwidth}: {result}")

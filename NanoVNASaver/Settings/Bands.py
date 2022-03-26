@@ -62,10 +62,10 @@ class BandsModel(QtCore.QAbstractTableModel):
         self.settings.setIniCodec("UTF-8")
 
         self.enabled = self.settings.value("ShowBands", False, bool)
-        self.bands = []
-
-        for band in self.settings.value("bands", _DEFAULT_BANDS):
-            self.bands.append(band.split(";"))
+        self.bands = [
+            band.split(";")
+            for band in self.settings.value("bands", _DEFAULT_BANDS)
+        ]
 
     def saveSettings(self):
         self.settings.setValue(
@@ -74,9 +74,7 @@ class BandsModel(QtCore.QAbstractTableModel):
         self.settings.sync()
 
     def resetBands(self):
-        self.bands = []
-        for band in _DEFAULT_BANDS:
-            self.bands.append(band.split(";"))
+        self.bands = [band.split(";") for band in _DEFAULT_BANDS]
         self.layoutChanged.emit()
         self.saveSettings()
 
@@ -87,8 +85,9 @@ class BandsModel(QtCore.QAbstractTableModel):
         return len(self.bands)
 
     def data(self, index: QModelIndex, role: int = ...) -> QtCore.QVariant:
-        if (role == QtCore.Qt.DisplayRole or
-                role == QtCore.Qt.ItemDataRole or role == QtCore.Qt.EditRole):
+        if role in [
+            QtCore.Qt.DisplayRole, QtCore.Qt.ItemDataRole, QtCore.Qt.EditRole,
+        ]:
             return QtCore.QVariant(self.bands[index.row()][index.column()])
         if role == QtCore.Qt.TextAlignmentRole:
             if index.column() == 0:

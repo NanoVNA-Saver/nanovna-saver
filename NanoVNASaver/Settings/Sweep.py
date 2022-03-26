@@ -85,11 +85,13 @@ class Sweep():
         return round(self.span / (self.points  * self.segments - 1))
 
     def check(self):
-        if not(self.segments > 0 and
-               self.points > 0 and
-               self.start > 0 and
-               self.end > 0 and
-               self.stepsize >= 1):
+        if (
+            self.segments <= 0
+            or self.points <= 0
+            or self.start <= 0
+            or self.end <= 0
+            or self.stepsize < 1
+        ):
             raise ValueError(f"Illegal sweep settings: {self}")
 
     def _exp_factor(self, index: int) -> float:
