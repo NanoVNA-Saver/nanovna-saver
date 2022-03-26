@@ -96,34 +96,34 @@ The downloadable executable runs directly, and requires no installation.
 
 1. Clone repo and cd into the directory
 
-    git clone https://github.com/NanoVNA-Saver/nanovna-saver
-    cd nanovna-saver
+        git clone https://github.com/NanoVNA-Saver/nanovna-saver
+        cd nanovna-saver
 
 2. Run the pip installation
 
-    pip3 install .
+        pip3 install .
 
 3. Once completed run with the following command
 
-    NanoVNASaver
+        NanoVNASaver
 
 #### Ubuntu 20.04
 
 1. Install python3.8 and pip
 
-    sudo apt install python3.8 python3-pip
-    python3 -m venv ~/.venv_nano
-    . ~/.venv_nano/bin/activate
-    pip install -U pip
+        sudo apt install python3.8 python3-pip
+        python3 -m venv ~/.venv_nano
+        . ~/.venv_nano/bin/activate
+        pip install -U pip
 
 2. Clone repo and cd into the directory
 
-    git clone https://github.com/NanoVNA-Saver/nanovna-saver
-    cd nanovna-saver
+        git clone https://github.com/NanoVNA-Saver/nanovna-saver
+        cd nanovna-saver
 
 3. Update pip and run the pip installation
 
-    python3 -m pip install .
+        python3 -m pip install .
 
    (You may need to install the additional packages python3-distutils,
    python3-setuptools and python3-wheel for this command to work on some
@@ -131,8 +131,8 @@ The downloadable executable runs directly, and requires no installation.
 
 4. Once completed run with the following command
 
-    . ~/.venv_nano/bin/activate
-    python3 nanovna-saver.py
+        . ~/.venv_nano/bin/activate
+        python3 nanovna-saver.py
 
 
 #### MacPorts
