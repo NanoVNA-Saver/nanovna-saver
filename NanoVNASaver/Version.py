@@ -15,10 +15,8 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-from lib2to3.pytree import type_repr
 import logging
 import re
-from typing import Type
 
 logger = logging.getLogger(__name__)
 

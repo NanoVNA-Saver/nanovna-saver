@@ -71,7 +71,7 @@ class Options:
 
     def parse(self, line: str):
         if not line.startswith("#"):
-            raise TypeError("Not an option line: " + line)
+            raise TypeError(f"Not an option line: {line}")
         punit = pparam = pformat = presist = False
         params = iter(line[1:].lower().split())
         for p in params:
@@ -92,7 +92,7 @@ class Options:
                     logger.warning("Non integer resistance value: %s", rstr)
                     self.resistance = int(float(rstr))
             else:
-                raise TypeError("Illegal option line: " + line)
+                raise TypeError(f"Illegal option line: {line}")
 
 
 class Touchstone:
@@ -203,7 +203,7 @@ class Touchstone:
     def load(self):
         logger.info("Attempting to open file %s", self.filename)
         try:
-            with open(self.filename) as infile:
+            with open(self.filename, encoding='utf-8') as infile:
                 self.loads(infile.read())
         except IOError as e:
             logger.exception("Failed to open %s: %s", self.filename, e)
@@ -241,6 +241,9 @@ class Touchstone:
                 data = data.split()
                 freq, data = round(float(data[0]) * self.opts.factor), data[1:]
                 data_len = len(data)
+                if data_len % 2 != 0:
+                    raise TypeError("Data values aren't pairs: " + line)
+
 
                 # consistency checks
                 if freq <= prev_freq:
@@ -250,10 +253,8 @@ class Touchstone:
 
                 if prev_len == 0:
                     prev_len = data_len
-                    if data_len % 2:
-                        raise TypeError("Data values aren't pairs: " + line)
                 elif data_len != prev_len:
-                    raise TypeError("Inconsistent number of pairs: " + line)
+                    raise TypeError(f"Inconsistent number of pairs: {line}")
 
                 self._append_line_data(freq, data)
             if need_reorder:
@@ -270,7 +271,7 @@ class Touchstone:
 
         logger.info("Attempting to open file %s for writing",
                     self.filename)
-        with open(self.filename, "w") as outfile:
+        with open(self.filename, "w", encoding="utf-8") as outfile:
             outfile.write(self.saves(nr_params))
 
     def saves(self, nr_params: int = 1) -> str:
@@ -279,7 +280,7 @@ class Touchstone:
         Args:
             nr_params: Number of s-parameters. 1 for s1p, 4 for s2p
         """
-        assert nr_params in (1, 4)
+        assert nr_params in {1, 4}
 
         ts_str = "# HZ S RI R 50\n"
         for i, dp_s11 in enumerate(self.s11):
