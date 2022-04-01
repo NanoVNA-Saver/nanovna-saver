@@ -12,10 +12,18 @@ sweep frequency spans in segments to gain more than 101 data
 points, and generally display and analyze the resulting data.
 
 - Copyright 2019, 2020 Rune B. Broberg
-- Copyright 2020, 2021 NanoVNA-Saver Authors
+- Copyright 2020ff NanoVNA-Saver Authors
 
 Latest Changes
 --------------
+
+### Changes in 0.4.0
+
+ - PA0JOZ Enhanced Response Correction
+   This is the reason vor minor version increase as older callibration data shouldn't
+   be use.
+ - Fix linux binary build
+ - Many bugfixes
 
 ### Changes in v0.3.10
 
@@ -73,7 +81,7 @@ Running the application
 
 The software was written in Python on Windows, using Pycharm, and the modules
 PyQT5, numpy, scipy and pyserial.
-Main development is currently done on Linux (Ubuntu 21.04)
+Main development is currently done on Linux (Mint 20.3 Cinnamon)
 
 ### Binary releases
 
