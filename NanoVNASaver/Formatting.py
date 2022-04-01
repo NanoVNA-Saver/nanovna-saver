@@ -115,17 +115,13 @@ def format_complex_adm(z: complex, allow_negative: bool = False) -> str:
         return "- S"
     adm = 1/z
 
-    fmt_re = FMT_COMPLEX
-    if allow_negative:
-        fmt_re = FMT_COMPLEX_NEG
+    fmt_re = FMT_COMPLEX_NEG if allow_negative else FMT_COMPLEX
     re = SITools.Value(adm.real, fmt=fmt_re)
     im = SITools.Value(abs(adm.imag), fmt=FMT_COMPLEX)
     return f"{re}{'-' if adm.imag < 0 else '+'}j{im} S"
 
 def format_complex_imp(z: complex, allow_negative: bool = False) -> str:
-    fmt_re = FMT_COMPLEX
-    if allow_negative:
-        fmt_re = FMT_COMPLEX_NEG
+    fmt_re = FMT_COMPLEX_NEG if allow_negative else FMT_COMPLEX
     re = SITools.Value(z.real, fmt=fmt_re)
     im = SITools.Value(abs(z.imag), fmt=FMT_COMPLEX)
     return f"{re}{'-' if z.imag < 0 else '+'}j{im} ""\N{OHM SIGN}"

@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
+#  Copyright (C) 2020ff NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -52,8 +52,8 @@ class Datapoint(NamedTuple):
     @property
     def vswr(self) -> float:
         mag = abs(self.z)
-        if mag == 1:
-            return 1
+        if mag >= 1:
+            return math.inf
         return (1 + mag) / (1 - mag)
 
     @property

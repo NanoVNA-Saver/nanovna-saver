@@ -1,6 +1,13 @@
 Changelog
 =========
 
+0.4.0
+-----
+
+ - PA0JOZ Enhanced Response Correction
+ - Fix linux binary build
+ - Many bugfixes
+
 v0.3.10
 ------
 

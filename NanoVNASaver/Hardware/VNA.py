@@ -29,12 +29,17 @@ from NanoVNASaver.Hardware.Serial import Interface, drain_serial
 logger = logging.getLogger(__name__)
 
 DISLORD_BW = OrderedDict((
-    (10, 181),
-    (33, 58),
-    (100, 19),
-    (333, 5),
-    (1000, 1),
-    (2000, 0),
+    (10, 363),
+    (33, 117),
+    (50, 78),
+    (100, 39),
+    (200, 19),
+    (250, 15),
+    (333, 11),
+    (500, 7),
+    (1000, 3),
+    (2000, 1),
+    (4000, 0),
 ))
 WAIT = 0.05
 
@@ -136,9 +141,8 @@ class VNA:
             return [1000, ]
 
     def set_bandwidth(self, bandwidth: int):
-        bw_val = bandwidth
-        if self.bw_method == "dislord":
-            bw_val = DISLORD_BW[bandwidth]
+        bw_val = DISLORD_BW[bandwidth] \
+            if self.bw_method == "dislord" else bandwidth
         result = " ".join(self.exec_command(f"bandwidth {bw_val}"))
         if self.bw_method == "ttrftech" and result:
             raise IOError(f"set_bandwith({bandwidth}: {result}")
