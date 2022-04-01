@@ -15,8 +15,10 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+from lib2to3.pytree import type_repr
 import logging
 import re
+from typing import Type
 
 logger = logging.getLogger(__name__)
 
@@ -25,8 +27,8 @@ class Version:
     RXP = re.compile(r"""^
         \D*
         (?P<major>\d+)\.
-        (?P<minor>\d+)\.
-        (?P<revision>\d+)
+        (?P<minor>\d+)\.?
+        (?P<revision>\d+)?
         (?P<note>.*)
         $""", re.VERBOSE)
 
@@ -41,6 +43,8 @@ class Version:
             self.data = Version.RXP.search(vstring).groupdict()
             for name in ("major", "minor", "revision"):
                 self.data[name] = int(self.data[name])
+        except TypeError:
+            self.data["revision"] = 0
         except AttributeError:
             logger.error("Unable to parse version: %s", vstring)
 
