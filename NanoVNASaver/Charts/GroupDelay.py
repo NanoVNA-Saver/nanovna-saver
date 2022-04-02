@@ -62,58 +62,39 @@ class GroupDelayChart(FrequencyChart):
 
     def setReference(self, data):
         self.reference = data
-
         self.calculateGroupDelay()
 
     def setData(self, data):
         self.data = data
-
         self.calculateGroupDelay()
 
     def calculateGroupDelay(self):
-        rawData = [d.phase for d in self.data]
-        rawReference = [d.phase for d in self.reference]
-
-        if len(self.data) > 1:
-            unwrappedData = np.degrees(np.unwrap(rawData))
-            self.groupDelay = []
-            for i in range(len(self.data)):
-                # TODO: Replace with call to RFTools.groupDelay
-                if i == 0:
-                    phase_change = unwrappedData[1] - unwrappedData[0]
-                    freq_change = self.data[1].freq - self.data[0].freq
-                elif i == len(self.data)-1:
-                    idx = len(self.data)-1
-                    phase_change = unwrappedData[idx] - unwrappedData[idx-1]
-                    freq_change = self.data[idx].freq - self.data[idx-1].freq
-                else:
-                    phase_change = unwrappedData[i+1] - unwrappedData[i-1]
-                    freq_change = self.data[i+1].freq - self.data[i-1].freq
-                delay = (-phase_change / (freq_change * 360)) * 10e8
-                if not self.reflective:
-                    delay /= 2
-                self.groupDelay.append(delay)
-
-        if len(self.reference) > 1:
-            unwrappedReference = np.degrees(np.unwrap(rawReference))
-            self.groupDelayReference = []
-            for i in range(len(self.reference)):
-                if i == 0:
-                    phase_change = unwrappedReference[1] - unwrappedReference[0]
-                    freq_change = self.reference[1].freq - self.reference[0].freq
-                elif i == len(self.reference)-1:
-                    idx = len(self.reference)-1
-                    phase_change = unwrappedReference[idx] - unwrappedReference[idx-1]
-                    freq_change = self.reference[idx].freq - self.reference[idx-1].freq
-                else:
-                    phase_change = unwrappedReference[i+1] - unwrappedReference[i-1]
-                    freq_change = self.reference[i+1].freq - self.reference[i-1].freq
-                delay = (-phase_change / (freq_change * 360)) * 10e8
-                if not self.reflective:
-                    delay /= 2
-                self.groupDelayReference.append(delay)
-
+        self.groupDelay = self.calc_data(self.data)
+        self.groupDelayReference = self.calc_data(self.reference)
         self.update()
+
+    def calc_data(self, data: List[Datapoint]):
+        data_len = len(data)
+        if data_len <= 1:
+            return []
+        unwrapped = np.degrees(np.unwrap([d.phase for d in data]))
+        delay_data = []
+        for i, d in enumerate(data):
+            # TODO: Replace with call to RFTools.groupDelay
+            if i == 0:
+                phase_change = unwrapped[1] - unwrapped[i]
+                freq_change = self.data[1].freq - d.freq
+            elif i == data_len - 1:
+                phase_change = unwrapped[-1] - unwrapped[-2]
+                freq_change = d.freq - data[-1].freq
+            else:
+                phase_change = unwrapped[i+1] - unwrapped[i-1]
+                freq_change = d[i+1].freq - d[i-1].freq
+            delay = (-phase_change / (freq_change * 360)) * 10e8
+            if not self.reflective:
+                delay /= 2
+            delay_data.append(delay)
+        return delay_data
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
@@ -170,27 +151,23 @@ class GroupDelayChart(FrequencyChart):
 
         self.drawFrequencyTicks(qp)
 
-        color = Chart.color.sweep
-        pen = QtGui.QPen(color)
-        pen.setWidth(self.dim.point)
-        line_pen = QtGui.QPen(color)
-        line_pen.setWidth(self.dim.line)
-        self._draw_data(self.data, self.groupDelay, qp, pen, line_pen)
-
-        color = Chart.color.reference
-        pen = QtGui.QPen(color)
-        pen.setWidth(self.dim.point)
-        line_pen = QtGui.QPen(color)
-        line_pen.setWidth(self.dim.line)
-        self._draw_data(self.reference, self.groupDelayReference, qp, pen, line_pen)
+        self.draw_data(qp, Chart.color.sweep,
+                       pen, line_pen, self.data, self.groupDelay)
+        self.draw_data(qp, Chart.color.reference,
+                       self.reference, self.groupDelayReference)
 
         self.drawMarkers(qp)
 
-    def _draw_data(self, data, delay, qp, pen, line_pen):
+    def draw_data(self, qp: QtGui.QPainter, color: QtGui.QColor,
+                  data: List[Datapoint], delay: List[Datapoint]):
+        pen = QtGui.QPen(color)
+        pen.setWidth(self.dim.point)
+        line_pen = QtGui.QPen(color)
+        line_pen.setWidth(self.dim.line)
         qp.setPen(pen)
-        for i in range(len(data)):
-            x = self.getXPosition(data[i])
-            y = self.getYPositionFromDelay(delay[i])
+        for i, d in enumerate(data):
+            x = self.getXPosition(d)
+            y = self.getYPositionFromDelay(d)
             if self.isPlotable(x, y):
                 qp.drawPoint(int(x), int(y))
             if self.flag.draw_lines and i > 0:
@@ -209,12 +186,13 @@ class GroupDelayChart(FrequencyChart):
 
     def getYPosition(self, d: Datapoint) -> int:
         # TODO: Find a faster way than these expensive "d in data" lookups
-        if d in self.data:
+        try:
             delay = self.groupDelay[self.data.index(d)]
-        elif d in self.reference:
-            delay = self.groupDelayReference[self.reference.index(d)]
-        else:
-            delay = 0
+        except ValueError:
+            try:
+                delay = self.groupDelayReference[self.reference.index(d)]
+            except ValueError:
+                delay = 0
         return self.getYPositionFromDelay(delay)
 
     def getYPositionFromDelay(self, delay: float):
