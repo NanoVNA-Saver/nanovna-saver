@@ -18,6 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
 import logging
+from typing import List
 
 from PyQt5 import QtGui, QtCore
 
@@ -116,48 +117,36 @@ class SmithChart(SquareChart):
                 QtCore.QRect(centerX - 50, centerY - 4 + r, 100, 20),
                 QtCore.Qt.AlignCenter, str(swr))
 
-    def drawValues(self, qp: QtGui.QPainter):
-        if len(self.data) == 0 and len(self.reference) == 0:
+    def draw_data(self, qp: QtGui.QPainter, color: QtGui.QColor,
+        data: List[Datapoint]):
+        if not data:
             return
-        pen = QtGui.QPen(Chart.color.sweep)
+        pen = QtGui.QPen(color)
         pen.setWidth(self.dim.point)
-        line_pen = QtGui.QPen(Chart.color.sweep)
+        line_pen = QtGui.QPen(color)
         line_pen.setWidth(self.dim.line)
+
+        qp.setPen(pen)
+        prev_x = self.getXPosition(data[0])
+        prev_y = int(self.height() / 2 + data[0].im * -1 * self.dim.height / 2)
+        for i, d in enumerate(data):
+            x = self.getXPosition(d)
+            y = int(self.height()/2 + d.im * -1 * self.dim.height/2)
+            qp.drawPoint(x, y)
+            if self.flag.draw_lines and i > 0:
+                qp.setPen(line_pen)
+                qp.drawLine(x, y, prev_x, prev_y)
+                qp.setPen(pen)
+                prev_x, prev_y = x, y
+
+    def drawValues(self, qp: QtGui.QPainter):
+        if not (self.data or self.reference):
+            return
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(1)
-        qp.setPen(pen)
-        for i in range(len(self.data)):
-            x = self.getXPosition(self.data[i])
-            y = int(self.height()/2 + self.data[i].im * -1 * self.dim.height/2)
-            qp.drawPoint(x, y)
-            if self.flag.draw_lines and i > 0:
-                prevx = self.getXPosition(self.data[i-1])
-                prevy = int(self.height() / 2 + self.data[i-1].im * -1 * self.dim.height / 2)
-                qp.setPen(line_pen)
-                qp.drawLine(x, y, prevx, prevy)
-                qp.setPen(pen)
-        pen.setColor(Chart.color.reference)
-        line_pen.setColor(Chart.color.reference)
-        qp.setPen(pen)
-        if len(self.data) > 0:
-            fstart = self.data[0].freq
-            fstop = self.data[len(self.data)-1].freq
-        else:
-            fstart = self.reference[0].freq
-            fstop = self.reference[len(self.reference)-1].freq
-        for i in range(len(self.reference)):
-            data = self.reference[i]
-            if data.freq < fstart or data.freq > fstop:
-                continue
-            x = self.getXPosition(data)
-            y = int(self.height()/2 + data.im * -1 * self.dim.height/2)
-            qp.drawPoint(x, y)
-            if self.flag.draw_lines and i > 0:
-                prevx = self.getXPosition(self.reference[i-1])
-                prevy = int(self.height() / 2 + self.reference[i-1].im * -1 * self.dim.height / 2)
-                qp.setPen(line_pen)
-                qp.drawLine(x, y, prevx, prevy)
-                qp.setPen(pen)
+        self.draw_data(qp, Chart.color.sweep, self.data)
+        self.draw_data(qp, Chart.color.reference, self.reference)
+
         # Now draw the markers
         for m in self.markers:
             if m.location != -1:
@@ -165,19 +154,20 @@ class SmithChart(SquareChart):
                 y = self.height() / 2 + self.data[m.location].im * -1 * self.dim.height / 2
                 self.drawMarker(x, y, qp, m.color, self.markers.index(m)+1)
 
+    def zoomTo(self, x1, y1, x2, y2):
+        raise NotImplementedError()
+
     def getXPosition(self, d: Datapoint) -> int:
         return int(self.width()/2 + d.re * self.dim.width/2)
 
     def getYPosition(self, d: Datapoint) -> int:
         return int(self.height()/2 + d.im * -1 * self.dim.height/2)
 
-    def heightForWidth(self, a0: int) -> int:
-        return a0
-
-    def mouseMoveEvent(self, a0: QtGui.QMouseEvent) -> None:
+    def mouseMoveEvent(self, a0: QtGui.QMouseEvent):
         if a0.buttons() == QtCore.Qt.RightButton:
             a0.ignore()
             return
+
         x = a0.x()
         y = a0.y()
         absx = x - (self.width() - self.dim.width) / 2
@@ -188,19 +178,22 @@ class SmithChart(SquareChart):
             return
         a0.accept()
 
-        if len(self.data) > 0:
-            target = self.data
-        else:
-            target = self.reference
+        target = self.data or self.reference
         positions = []
-        for d in target:
-            thisx = self.width() / 2 + d.re * self.dim.width / 2
-            thisy = self.height() / 2 + d.im * -1 * self.dim.height / 2
-            positions.append(math.sqrt((x - thisx)**2 + (y - thisy)**2))
+
+        dim_x_2 = self.dim.width / 2
+        dim_y_2 = self.dim.height / 2
+        width_2 = self.width() / 2
+        height_2 = self.height() / 2
+
+        positions = [
+            math.sqrt(
+                (x - (width_2 + d.re * dim_x_2))**2 +
+                (y - (height_2 - d.im * dim_y_2))**2)
+            for d in target
+        ]
 
         minimum_position = positions.index(min(positions))
-        m = self.getActiveMarker()
-        if m is not None:
+        if m := self.getActiveMarker():
             m.setFrequency(str(round(target[minimum_position].freq)))
             m.frequencyInput.setText(str(round(target[minimum_position].freq)))
-        return

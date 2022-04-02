@@ -109,7 +109,7 @@ class Chart(QtWidgets.QWidget):
     def __init__(self, name):
         super().__init__()
         self.name = name
-        self.sweepTitle = ""
+        self.sweepTitle = ''
 
         self.dim = ChartDimensions()
         self.dragbox = ChartDragBox()
@@ -268,7 +268,6 @@ class Chart(QtWidgets.QWidget):
             self.swrMarkers.remove(swr)
         except KeyError:
             logger.debug("KeyError from %s", self.name)
-            return
         finally:
             self.update()
 
@@ -281,8 +280,6 @@ class Chart(QtWidgets.QWidget):
         cmarker.draw(x, y, color, str(number))
 
     def drawTitle(self, qp: QtGui.QPainter, position: QtCore.QPoint = None):
-        if not self.sweepTitle:
-            return
         qp.setPen(Chart.color.text)
         if position is None:
             qf = QtGui.QFontMetricsF(self.font())
