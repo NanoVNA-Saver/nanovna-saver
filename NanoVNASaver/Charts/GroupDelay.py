@@ -83,13 +83,13 @@ class GroupDelayChart(FrequencyChart):
             # TODO: Replace with call to RFTools.groupDelay
             if i == 0:
                 phase_change = unwrapped[1] - unwrapped[i]
-                freq_change = self.data[1].freq - d.freq
+                freq_change = data[1].freq - d.freq
             elif i == data_len - 1:
                 phase_change = unwrapped[-1] - unwrapped[-2]
-                freq_change = d.freq - data[-1].freq
+                freq_change = d.freq - data[-2].freq
             else:
                 phase_change = unwrapped[i+1] - unwrapped[i-1]
-                freq_change = d[i+1].freq - d[i-1].freq
+                freq_change = data[i+1].freq - data[i-1].freq
             delay = (-phase_change / (freq_change * 360)) * 10e8
             if not self.reflective:
                 delay /= 2
@@ -152,7 +152,7 @@ class GroupDelayChart(FrequencyChart):
         self.drawFrequencyTicks(qp)
 
         self.draw_data(qp, Chart.color.sweep,
-                       pen, line_pen, self.data, self.groupDelay)
+                       self.data, self.groupDelay)
         self.draw_data(qp, Chart.color.reference,
                        self.reference, self.groupDelayReference)
 
@@ -167,7 +167,7 @@ class GroupDelayChart(FrequencyChart):
         qp.setPen(pen)
         for i, d in enumerate(data):
             x = self.getXPosition(d)
-            y = self.getYPositionFromDelay(d)
+            y = self.getYPositionFromDelay(delay[i])
             if self.isPlotable(x, y):
                 qp.drawPoint(int(x), int(y))
             if self.flag.draw_lines and i > 0:
