@@ -41,7 +41,7 @@ def drain_serial(serial_port: serial.Serial):
 class Interface(serial.Serial):
     def __init__(self, interface_type: str, comment, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        assert interface_type in ('serial', 'usb', 'bt', 'network')
+        assert interface_type in {'serial', 'usb', 'bt', 'network'}
         self.type = interface_type
         self.comment = comment
         self.port = None
