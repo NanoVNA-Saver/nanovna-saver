@@ -16,6 +16,7 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+import contextlib
 import logging
 import typing
 
@@ -132,10 +133,8 @@ class BandsModel(QtCore.QAbstractTableModel):
                    orientation: QtCore.Qt.Orientation, role: int = ...):
         if (role == QtCore.Qt.DisplayRole and
                 orientation == QtCore.Qt.Horizontal):
-            try:
+            with contextlib.suppress(IndexError):
                 return _HEADER_DATA[section]
-            except IndexError:
-                pass
         return None
 
     def flags(self, index: QModelIndex) -> QtCore.Qt.ItemFlags:

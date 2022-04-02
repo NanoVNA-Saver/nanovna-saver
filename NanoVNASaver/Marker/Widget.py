@@ -271,7 +271,7 @@ class Marker(QtCore.QObject, Value):
                 self.location = i-1
                 if i < datasize:
                     self.frequencyInput.nextFrequency = item.freq
-                if (i-2) >= 0:
+                if i >= 2:
                     self.frequencyInput.previousFrequency = data[i-2].freq
                 return
         # If we still didn't find a best spot, it was the last value
@@ -317,15 +317,8 @@ class Marker(QtCore.QObject, Value):
         ind_p_str = format_inductance(
             RFTools.impedance_to_inductance(imp_p, _s11.freq))
 
-        if imp.imag < 0:
-            x_str = cap_str
-        else:
-            x_str = ind_str
-
-        if imp_p.imag < 0:
-            x_p_str = cap_p_str
-        else:
-            x_p_str = ind_p_str
+        x_str = cap_str if imp.imag < 0 else ind_str
+        x_p_str = cap_p_str if imp_p.imag < 0 else ind_p_str
 
         self.label['actualfreq'].setText(format_frequency_space(_s11.freq))
         self.label['lambda'].setText(format_wavelength(_s11.wavelength))
@@ -342,7 +335,9 @@ class Marker(QtCore.QObject, Value):
         self.label['s11mag'].setText(format_magnitude(abs(_s11.z)))
         self.label['s11phase'].setText(format_phase(_s11.phase))
         self.label['s11polar'].setText(
-            str(round(abs(_s11.z), 2)) + "∠" + format_phase(_s11.phase))
+            f'{str(round(abs(_s11.z), 2))}∠{format_phase(_s11.phase)}'
+        )
+
         self.label['s11q'].setText(format_q_factor(_s11.qFactor()))
         self.label['s11z'].setText(format_resistance(abs(imp)))
         self.label['serc'].setText(cap_str)
@@ -359,7 +354,9 @@ class Marker(QtCore.QObject, Value):
             self.label['s21mag'].setText(format_magnitude(abs(_s21.z)))
             self.label['s21phase'].setText(format_phase(_s21.phase))
             self.label['s21polar'].setText(
-                str(round(abs(_s21.z), 2)) + "∠" + format_phase(_s21.phase))
+                f'{str(round(abs(_s21.z), 2))}∠{format_phase(_s21.phase)}'
+            )
+
             self.label['s21magshunt'].setText(
                 format_magnitude(abs(_s21.shuntImpedance())))
             self.label['s21magseries'].setText(

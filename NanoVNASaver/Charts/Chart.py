@@ -170,10 +170,14 @@ class Chart(QtWidgets.QWidget):
     def getActiveMarker(self) -> Marker:
         if self.draggedMarker is not None:
             return self.draggedMarker
-        for m in self.markers:
-            if m.isMouseControlledRadioButton.isChecked():
-                return m
-        return None
+        return next(
+            (
+                m
+                for m in self.markers
+                if m.isMouseControlledRadioButton.isChecked()
+            ),
+            None,
+        )
 
     def getNearestMarker(self, x, y) -> Marker:
         if len(self.data) == 0:

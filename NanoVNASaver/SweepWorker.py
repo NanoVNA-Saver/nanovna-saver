@@ -192,12 +192,10 @@ class SweepWorker(QtCore.QRunnable):
         if not self.app.calibration.isCalculated:
             data11 = raw_data11.copy()
             data21 = raw_data21.copy()
+        elif self.app.calibration.isValid1Port():
+            data11.extend(self.app.calibration.correct11(dp) for dp in raw_data11)
         else:
-            if self.app.calibration.isValid1Port():
-                for dp in raw_data11:
-                    data11.append(self.app.calibration.correct11(dp))
-            else:
-                data11 = raw_data11.copy()
+            data11 = raw_data11.copy()
 
         if self.app.calibration.isValid2Port():
             for counter, dp in enumerate(raw_data21):
