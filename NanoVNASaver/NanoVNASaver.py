@@ -473,7 +473,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             m2 = None
             if self.marker_ref:
                 if self.ref_data:
-                    m2 = Marker()
+                    m2 = Marker("Reference")
                     m2.location = self.markers[0].location
                     m2.resetLabels()
                     m2.updateLabels(self.ref_data.s11,
