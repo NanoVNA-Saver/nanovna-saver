@@ -40,7 +40,9 @@ FMT_SHORT = SITools.Format(max_nr_digits=4)
 FMT_WAVELENGTH = SITools.Format(max_nr_digits=4, space_str=" ")
 FMT_PARSE = SITools.Format(parse_sloppy_unit=True, parse_sloppy_kilo=True,
                            parse_clamp_min=0)
-FMT_PARSE_VALUE = SITools.Format(parse_sloppy_unit=True, parse_sloppy_kilo=True)
+FMT_PARSE_VALUE = SITools.Format(
+    parse_sloppy_unit=True, parse_sloppy_kilo=True)
+
 
 def format_frequency(freq: Number) -> str:
     return str(SITools.Value(freq, "Hz", FMT_FREQ))
@@ -53,8 +55,14 @@ def format_frequency_inputs(freq: float) -> str:
 def format_frequency_short(freq: Number) -> str:
     return str(SITools.Value(freq, "Hz", FMT_FREQ_SHORT))
 
+
 def format_frequency_chart(freq: Number) -> str:
     return str(SITools.Value(freq, "", FMT_FREQ_SHORT))
+
+
+def format_frequency_chart_2(freq: Number) -> str:
+    return str(SITools.Value(freq, "", FMT_FREQ))
+
 
 def format_frequency_space(freq: float, fmt=FMT_FREQ_SPACE) -> str:
     return str(SITools.Value(freq, "Hz", fmt))
@@ -113,12 +121,13 @@ def format_phase(val: float) -> str:
 def format_complex_adm(z: complex, allow_negative: bool = False) -> str:
     if z == 0:
         return "- S"
-    adm = 1/z
+    adm = 1 / z
 
     fmt_re = FMT_COMPLEX_NEG if allow_negative else FMT_COMPLEX
     re = SITools.Value(adm.real, fmt=fmt_re)
     im = SITools.Value(abs(adm.imag), fmt=FMT_COMPLEX)
     return f"{re}{'-' if adm.imag < 0 else '+'}j{im} S"
+
 
 def format_complex_imp(z: complex, allow_negative: bool = False) -> str:
     fmt_re = FMT_COMPLEX_NEG if allow_negative else FMT_COMPLEX
@@ -126,17 +135,21 @@ def format_complex_imp(z: complex, allow_negative: bool = False) -> str:
     im = SITools.Value(abs(z.imag), fmt=FMT_COMPLEX)
     return f"{re}{'-' if z.imag < 0 else '+'}j{im} ""\N{OHM SIGN}"
 
+
 def format_wavelength(length: Number) -> str:
     return str(SITools.Value(length, "m", FMT_WAVELENGTH))
 
+
 def format_y_axis(val: float, unit: str="") -> str:
     return str(SITools.Value(val, unit, FMT_SHORT))
+
 
 def parse_frequency(freq: str) -> int:
     try:
         return int(SITools.Value(freq, "Hz", FMT_PARSE))
     except (ValueError, IndexError):
         return -1
+
 
 def parse_value(val: str, unit: str = "",
                 fmt: SITools.Format = FMT_PARSE_VALUE) -> int:
