@@ -11,8 +11,7 @@ modules:
     buildsystem: simple
     build-commands:
       - pip3 install --prefix=/app wheel
-        #- pip3 install --prefix=/app git+https://github.com/zarath/nanovna-saver.git@feature/flatpak
-      - pip3 install --prefix=/app git+https://github.com/zarath/nanovna-saver.git@feature/linting_220402
+      - pip3 install --prefix=/app git+https://github.com/NanoVNA-Saver/nanovna-saver.git
 finish-args:
   # X11 + XShm access
   - --share=ipc
