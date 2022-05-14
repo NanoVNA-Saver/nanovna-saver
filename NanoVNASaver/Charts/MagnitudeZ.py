@@ -23,7 +23,8 @@ from typing import List
 from PyQt5 import QtGui
 
 from NanoVNASaver.RFTools import Datapoint
-from NanoVNASaver.SITools import Format, Value
+from NanoVNASaver.SITools import (
+    Format, Value, round_ceil, round_floor, clamp_value)
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Charts.Frequency import FrequencyChart
 from NanoVNASaver.Charts.LogMag import LogMagChart
@@ -54,48 +55,34 @@ class MagnitudeZChart(FrequencyChart):
             self.drawBands(qp, self.fstart, self.fstop)
 
         if self.fixedValues:
-            maxValue = self.maxDisplayValue
-            minValue = self.minDisplayValue
-            self.maxValue = maxValue
-            if self.logarithmicY and minValue <= 0:
-                self.minValue = 0.01
-            else:
-                self.minValue = minValue
+            self.maxValue = self.maxDisplayValue
+            self.minValue = max(
+                self.minDisplayValue, 0.01) if self.logarithmicY else self.minDisplayValue
         else:
             # Find scaling
-            minValue = 100
-            maxValue = 0
+            self.minValue = 100
+            self.maxValue = 0
             for d in self.data:
                 mag = self.magnitude(d)
-                if math.isinf(mag): # Avoid infinite scales
+                if math.isinf(mag):  # Avoid infinite scales
                     continue
-                if mag > maxValue:
-                    maxValue = mag
-                if mag < minValue:
-                    minValue = mag
+                self.maxValue = max(self.maxValue, mag)
+                self.minValue = min(self.minValue, mag)
             for d in self.reference:  # Also check min/max for the reference sweep
                 if d.freq < self.fstart or d.freq > self.fstop:
                     continue
                 mag = self.magnitude(d)
-                if math.isinf(mag): # Avoid infinite scales
+                if math.isinf(mag):  # Avoid infinite scales
                     continue
-                if mag > maxValue:
-                    maxValue = mag
-                if mag < minValue:
-                    minValue = mag
+                self.maxValue = max(self.maxValue, mag)
+                self.minValue = min(self.minValue, mag)
 
-            minValue = 10*math.floor(minValue/10)
-            if self.logarithmicY and minValue <= 0:
-                minValue = 0.01
-            self.minValue = minValue
+            self.minValue = round_floor(self.minValue, 2)
+            if self.logarithmicY and self.minValue <= 0:
+                self.minValue = 0.01
+            self.maxValue = round_ceil(self.maxValue, 2)
 
-            maxValue = 10*math.ceil(maxValue/10)
-            self.maxValue = maxValue
-
-        span = maxValue-minValue
-        if span == 0:
-            span = 0.01
-        self.span = span
+        self.span = (self.maxValue - self.minValue) or 0.01
 
         # We want one horizontal tick per 50 pixels, at most
         horizontal_ticks = math.floor(self.dim.height/50)

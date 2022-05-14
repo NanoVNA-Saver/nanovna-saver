@@ -189,17 +189,15 @@ class FrequencyChart(Chart):
 
     def _set_start_stop(self):
         if self.fixedSpan:
-            fstart = self.minFrequency
-            fstop = self.maxFrequency
-        else:
-            if len(self.data) > 0:
-                fstart = self.data[0].freq
-                fstop = self.data[len(self.data) - 1].freq
-            else:
-                fstart = self.reference[0].freq
-                fstop = self.reference[len(self.reference) - 1].freq
-        self.fstart = fstart
-        self.fstop = fstop
+            self.fstart = self.minFrequency
+            self.fstop = self.maxFrequency
+            return
+        if self.data:
+            self.fstart = self.data[0].freq
+            self.fstop = self.data[len(self.data) - 1].freq
+            return
+        self.fstart = self.reference[0].freq
+        self.fstop = self.reference[len(self.reference) - 1].freq
 
     def contextMenuEvent(self, event):
         self.action_set_fixed_start.setText(
@@ -336,10 +334,13 @@ class FrequencyChart(Chart):
         return math.floor(self.width() / 2)
 
     def getYPosition(self, d: Datapoint) -> int:
-        return (
-            self.topMargin +
-            round((self.maxValue - d.capacitiveEquivalent()) /
-                  self.span * self.dim.height))
+        try:
+            return (
+                self.topMargin +
+                round((self.maxValue - self.value_function(d) /
+                    self.span * self.dim.height)))
+        except ValueError:
+            return self.topMargin
 
     def frequencyAtPosition(self, x, limit=True) -> int:
         """
@@ -352,20 +353,21 @@ class FrequencyChart(Chart):
                       and the value is before or after the chart,
                       returns minimum or maximum frequencies.
         """
-        if self.fstop - self.fstart > 0:
-            absx = x - self.leftMargin
-            if limit and absx < 0:
+        if self.fstop - self.fstart <= 0:
+            return -1
+        absx = x - self.leftMargin
+        if limit:
+            if absx < 0:
                 return self.fstart
-            if limit and absx > self.dim.width:
+            if absx > self.dim.width:
                 return self.fstop
-            if self.logarithmicX:
-                span = math.log(self.fstop) - math.log(self.fstart)
-                step = span / self.dim.width
-                return round(math.exp(math.log(self.fstart) + absx * step))
-            span = self.fstop - self.fstart
+        if self.logarithmicX:
+            span = math.log(self.fstop) - math.log(self.fstart)
             step = span / self.dim.width
-            return round(self.fstart + absx * step)
-        return -1
+            return round(math.exp(math.log(self.fstart) + absx * step))
+        span = self.fstop - self.fstart
+        step = span / self.dim.width
+        return round(self.fstart + absx * step)
 
     def valueAtPosition(self, y) -> List[float]:
         """
