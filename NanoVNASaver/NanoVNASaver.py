@@ -64,7 +64,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.s21att = 0.0
         if getattr(sys, 'frozen', False):
             logger.debug("Running from pyinstaller bundle")
-            self.icon = QtGui.QIcon(f"{sys._MEIPASS}/icon_48x48.png")  # pylint: disable=no-member
+            self.icon = QtGui.QIcon(
+                f"{sys._MEIPASS}/icon_48x48.png")  # pylint: disable=no-member
         else:
             self.icon = QtGui.QIcon("icon_48x48.png")
         self.setWindowIcon(self.icon)
@@ -81,6 +82,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.worker.signals.sweepError.connect(self.showSweepError)
 
         self.markers = []
+        self.marker_ref = False
 
         self.marker_column = QtWidgets.QVBoxLayout()
         self.marker_frame = QtWidgets.QFrame()
@@ -255,7 +257,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.marker_data_layout.addWidget(m.get_data_layout())
 
         scroll2 = QtWidgets.QScrollArea()
-        #scroll2.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        # scroll2.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
         scroll2.setWidgetResizable(True)
         scroll2.setVisible(True)
 
@@ -402,7 +404,6 @@ class NanoVNASaver(QtWidgets.QWidget):
         btn_about.clicked.connect(
             lambda: self.display_window("about"))
 
-
         btn_open_file_window = QtWidgets.QPushButton("Files")
         btn_open_file_window.setMinimumHeight(20)
         btn_open_file_window.setMaximumWidth(240)
@@ -467,13 +468,31 @@ class NanoVNASaver(QtWidgets.QWidget):
             marker.updateLabels(self.data.s11, self.data.s21)
             for c in self.subscribing_charts:
                 c.update()
-        if Marker.count() >= 2 and not self.delta_marker_layout.isHidden():
-            self.delta_marker.set_markers(self.markers[0], self.markers[1])
-            self.delta_marker.resetLabels()
-            try:
-                self.delta_marker.updateLabels()
-            except IndexError:
-                pass
+        if not self.delta_marker_layout.isHidden():
+            m1 = self.markers[0]
+            m2 = None
+            if self.marker_ref:
+                if self.ref_data:
+                    m2 = Marker("Reference")
+                    m2.location = self.markers[0].location
+                    m2.resetLabels()
+                    m2.updateLabels(self.ref_data.s11,
+                                    self.ref_data.s21)
+                else:
+                    logger.warning("No reference data for marker")
+
+            elif Marker.count() >= 2:
+                m2 = self.markers[1]
+
+            if m2 is None:
+                logger.error("No data for delta, missing marker or reference")
+            else:
+                self.delta_marker.set_markers(m1, m2)
+                self.delta_marker.resetLabels()
+                try:
+                    self.delta_marker.updateLabels()
+                except IndexError:
+                    pass
 
     def dataUpdated(self):
         with self.dataLock:
