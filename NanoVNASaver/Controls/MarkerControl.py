@@ -27,6 +27,7 @@ from NanoVNASaver.Controls.Control import Control
 
 logger = logging.getLogger(__name__)
 
+
 class MarkerControl(Control):
 
     def __init__(self, app: QtWidgets.QWidget):
@@ -35,7 +36,7 @@ class MarkerControl(Control):
         marker_count = max(self.app.settings.value("MarkerCount", 3, int), 1)
         for i in range(marker_count):
             marker = Marker("", self.app.settings)
-            #marker.setFixedHeight(20)
+            # marker.setFixedHeight(20)
             marker.updated.connect(self.app.markerUpdated)
             label, layout = marker.getRow()
             self.layout.addRow(label, layout)
@@ -45,7 +46,15 @@ class MarkerControl(Control):
 
         self.check_delta = QCheckBox("Enable Delta Marker")
         self.check_delta.toggled.connect(self.toggle_delta)
-        self.layout.addRow(self.check_delta)
+
+        self.check_delta_reference = QCheckBox("reference")
+        self.check_delta_reference.toggled.connect(self.toggle_delta_reference)
+
+        layout2 = QtWidgets.QHBoxLayout()
+        layout2.addWidget(self.check_delta)
+        layout2.addWidget(self.check_delta_reference)
+
+        self.layout.addRow(layout2)
 
         self.showMarkerButton = QtWidgets.QPushButton()
         self.showMarkerButton.setFixedHeight(20)
@@ -76,3 +85,15 @@ class MarkerControl(Control):
 
     def toggle_delta(self):
         self.app.delta_marker_layout.setVisible(self.check_delta.isChecked())
+
+    def toggle_delta_reference(self):
+        self.app.marker_ref = bool(self.check_delta_reference.isChecked())
+
+        if self.app.marker_ref:
+            new_name = "Delta Reference - Marker 1"
+
+        else:
+            new_name = "Delta Marker 2 - Marker 1"
+            # FIXME: reset
+        self.app.delta_marker.group_box.setTitle(new_name)
+        self.app.delta_marker.resetLabels()
