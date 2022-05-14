@@ -70,22 +70,20 @@ class MagLoopAnalysis(VSWRAnalysis):
         if len(self.minimums) == 1:
             m = self.minimums[0]
             start, lowest, end = m
-            if start != end:
-                if self.vswr_limit_value == self.vswr_bandwith_value:
-                    Q = self.app.data.s11[lowest].freq / \
-                        (self.app.data.s11[end].freq -
-                         self.app.data.s11[start].freq)
-                    self.layout.addRow(
-                        "Q", QtWidgets.QLabel("{}".format(int(Q))))
-                    new_start = self.app.data.s11[start].freq - self.bandwith
-                    new_end = self.app.data.s11[end].freq + self.bandwith
-                    logger.debug("Single Spot, new scan on %s-%s",
-                                 new_start, new_end)
-
-            else:
+            if start == end:
                 new_start = self.app.data.s11[start].freq - 2 * self.bandwith
                 new_end = self.app.data.s11[end].freq + 2 * self.bandwith
                 logger.debug(" Zoom to %s-%s", new_start, new_end)
+
+            elif self.vswr_limit_value == self.vswr_bandwith_value:
+                Q = self.app.data.s11[lowest].freq / \
+                    (self.app.data.s11[end].freq -
+                     self.app.data.s11[start].freq)
+                self.layout.addRow("Q", QtWidgets.QLabel(f"{int(Q)}"))
+                new_start = self.app.data.s11[start].freq - self.bandwith
+                new_end = self.app.data.s11[end].freq + self.bandwith
+                logger.debug("Single Spot, new scan on %s-%s",
+                             new_start, new_end)
 
             if self.vswr_limit_value > self.vswr_bandwith_value:
                 self.vswr_limit_value = max(
@@ -96,13 +94,14 @@ class MagLoopAnalysis(VSWRAnalysis):
         else:
             new_start = new_start - 5 * self.bandwith
             new_end = new_end + 5 * self.bandwith
-            if all((new_start <= self.min_freq,
-                    new_end >= self.max_freq)):
-                if self.vswr_limit_value < 10:
-                    self.vswr_limit_value += 2
-                    self.input_vswr_limit.setValue(self.vswr_limit_value)
-                    logger.debug(
-                        "no minimum found, looking for higher value %s", self.vswr_limit_value)
+            if (
+                all((new_start <= self.min_freq, new_end >= self.max_freq))
+                and self.vswr_limit_value < 10
+            ):
+                self.vswr_limit_value += 2
+                self.input_vswr_limit.setValue(self.vswr_limit_value)
+                logger.debug(
+                    "no minimum found, looking for higher value %s", self.vswr_limit_value)
         new_start = max(self.min_freq, new_start)
         new_end = min(self.max_freq, new_end)
         logger.debug("next search will be %s - %s for vswr %s",

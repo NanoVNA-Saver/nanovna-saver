@@ -1,0 +1,24 @@
+app-id: io.github.zarath.nanovna-saver
+runtime: org.kde.Platform
+runtime-version: '5.15-21.08'
+sdk: org.kde.Sdk
+command: /app/bin/NanoVNASaver
+build-options:
+    build-args:
+      - --share=network
+modules:
+  - name: nanonva-saver
+    buildsystem: simple
+    build-commands:
+      - pip3 install --prefix=/app wheel
+      - pip3 install --prefix=/app git+https://github.com/NanoVNA-Saver/nanovna-saver.git
+finish-args:
+  # X11 + XShm access
+  - --share=ipc
+  - --socket=x11
+  # Wayland access
+  - --socket=wayland
+  # Needs access to NanoVNAs
+  - --device=all
+  # Needs to save files locally
+  - --filesystem=xdg-documents

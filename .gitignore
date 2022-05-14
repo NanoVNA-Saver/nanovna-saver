@@ -11,4 +11,5 @@
 settings.json
 .gitignore
 .coverage
+.flatpak-builder
 /nanovna-saver.exe.spec

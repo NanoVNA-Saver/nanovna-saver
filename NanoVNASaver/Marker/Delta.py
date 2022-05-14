@@ -77,15 +77,8 @@ class DeltaMarker(Marker):
             RFTools.impedance_to_inductance(imp_p_b, s11_b.freq)-
             RFTools.impedance_to_inductance(imp_p_a, s11_a.freq))
 
-        if imp.imag < 0:
-            x_str = cap_str
-        else:
-            x_str = ind_str
-
-        if imp_p.imag < 0:
-            x_p_str = cap_p_str
-        else:
-            x_p_str = ind_p_str
+        x_str = cap_str if imp.imag < 0 else ind_str
+        x_p_str = cap_p_str if imp_p.imag < 0 else ind_p_str
 
         self.label['actualfreq'].setText(
             format_frequency_space(s11_b.freq - s11_a.freq))

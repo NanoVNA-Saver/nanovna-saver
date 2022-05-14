@@ -62,63 +62,39 @@ class GroupDelayChart(FrequencyChart):
 
     def setReference(self, data):
         self.reference = data
-
         self.calculateGroupDelay()
 
     def setData(self, data):
         self.data = data
-
         self.calculateGroupDelay()
 
     def calculateGroupDelay(self):
-        rawData = []
-        for d in self.data:
-            rawData.append(d.phase)
-
-        rawReference = []
-        for d in self.reference:
-            rawReference.append(d.phase)
-
-        if len(self.data) > 1:
-            unwrappedData = np.degrees(np.unwrap(rawData))
-            self.groupDelay = []
-            for i in range(len(self.data)):
-                # TODO: Replace with call to RFTools.groupDelay
-                if i == 0:
-                    phase_change = unwrappedData[1] - unwrappedData[0]
-                    freq_change = self.data[1].freq - self.data[0].freq
-                elif i == len(self.data)-1:
-                    idx = len(self.data)-1
-                    phase_change = unwrappedData[idx] - unwrappedData[idx-1]
-                    freq_change = self.data[idx].freq - self.data[idx-1].freq
-                else:
-                    phase_change = unwrappedData[i+1] - unwrappedData[i-1]
-                    freq_change = self.data[i+1].freq - self.data[i-1].freq
-                delay = (-phase_change / (freq_change * 360)) * 10e8
-                if not self.reflective:
-                    delay /= 2
-                self.groupDelay.append(delay)
-
-        if len(self.reference) > 1:
-            unwrappedReference = np.degrees(np.unwrap(rawReference))
-            self.groupDelayReference = []
-            for i in range(len(self.reference)):
-                if i == 0:
-                    phase_change = unwrappedReference[1] - unwrappedReference[0]
-                    freq_change = self.reference[1].freq - self.reference[0].freq
-                elif i == len(self.reference)-1:
-                    idx = len(self.reference)-1
-                    phase_change = unwrappedReference[idx] - unwrappedReference[idx-1]
-                    freq_change = self.reference[idx].freq - self.reference[idx-1].freq
-                else:
-                    phase_change = unwrappedReference[i+1] - unwrappedReference[i-1]
-                    freq_change = self.reference[i+1].freq - self.reference[i-1].freq
-                delay = (-phase_change / (freq_change * 360)) * 10e8
-                if not self.reflective:
-                    delay /= 2
-                self.groupDelayReference.append(delay)
-
+        self.groupDelay = self.calc_data(self.data)
+        self.groupDelayReference = self.calc_data(self.reference)
         self.update()
+
+    def calc_data(self, data: List[Datapoint]):
+        data_len = len(data)
+        if data_len <= 1:
+            return []
+        unwrapped = np.degrees(np.unwrap([d.phase for d in data]))
+        delay_data = []
+        for i, d in enumerate(data):
+            # TODO: Replace with call to RFTools.groupDelay
+            if i == 0:
+                phase_change = unwrapped[1] - unwrapped[i]
+                freq_change = data[1].freq - d.freq
+            elif i == data_len - 1:
+                phase_change = unwrapped[-1] - unwrapped[-2]
+                freq_change = d.freq - data[-2].freq
+            else:
+                phase_change = unwrapped[i+1] - unwrapped[i-1]
+                freq_change = data[i+1].freq - data[i-1].freq
+            delay = (-phase_change / (freq_change * 360)) * 10e8
+            if not self.reflective:
+                delay /= 2
+            delay_data.append(delay)
+        return delay_data
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
@@ -146,23 +122,19 @@ class GroupDelayChart(FrequencyChart):
         self.span = span
 
         tickcount = math.floor(self.dim.height / 60)
-
         for i in range(tickcount):
             delay = min_delay + span * i / tickcount
             y = self.topMargin + round((self.maxDelay - delay) / self.span * self.dim.height)
-            if delay != min_delay and delay != max_delay:
+            if delay not in {min_delay, max_delay}:
                 qp.setPen(QtGui.QPen(Chart.color.text))
-                if delay != 0:
-                    digits = max(0, min(2, math.floor(3 - math.log10(abs(delay)))))
-                    if digits == 0:
-                        delaystr = str(round(delay))
-                    else:
-                        delaystr = str(round(delay, digits))
-                else:
-                    delaystr = "0"
+                # TODO use format class
+                digits = 0 if delay == 0 else max(
+                    0, min(2, math.floor(3 - math.log10(abs(delay)))))
+                delaystr = str(round(delay, digits if digits != 0 else None))
                 qp.drawText(3, y + 3, delaystr)
                 qp.setPen(QtGui.QPen(Chart.color.foreground))
                 qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.dim.width, y)
+
         qp.drawLine(self.leftMargin - 5,
                     self.topMargin,
                     self.leftMargin + self.dim.width,
@@ -179,66 +151,48 @@ class GroupDelayChart(FrequencyChart):
 
         self.drawFrequencyTicks(qp)
 
-        color = Chart.color.sweep
-        pen = QtGui.QPen(color)
-        pen.setWidth(self.dim.point)
-        line_pen = QtGui.QPen(color)
-        line_pen.setWidth(self.dim.line)
-        qp.setPen(pen)
-        for i in range(len(self.data)):
-            x = self.getXPosition(self.data[i])
-            y = self.getYPositionFromDelay(self.groupDelay[i])
-            if self.isPlotable(x, y):
-                qp.drawPoint(int(x), int(y))
-            if self.flag.draw_lines and i > 0:
-                prevx = self.getXPosition(self.data[i - 1])
-                prevy = self.getYPositionFromDelay(self.groupDelay[i - 1])
-                qp.setPen(line_pen)
-                if self.isPlotable(x, y) and self.isPlotable(prevx, prevy):
-                    qp.drawLine(x, y, prevx, prevy)
-                elif self.isPlotable(x, y) and not self.isPlotable(prevx, prevy):
-                    new_x, new_y = self.getPlotable(x, y, prevx, prevy)
-                    qp.drawLine(x, y, new_x, new_y)
-                elif not self.isPlotable(x, y) and self.isPlotable(prevx, prevy):
-                    new_x, new_y = self.getPlotable(prevx, prevy, x, y)
-                    qp.drawLine(prevx, prevy, new_x, new_y)
-                qp.setPen(pen)
-
-        color = Chart.color.reference
-        pen = QtGui.QPen(color)
-        pen.setWidth(self.dim.point)
-        line_pen = QtGui.QPen(color)
-        line_pen.setWidth(self.dim.line)
-        qp.setPen(pen)
-        for i in range(len(self.reference)):
-            x = self.getXPosition(self.reference[i])
-            y = self.getYPositionFromDelay(self.groupDelayReference[i])
-            if self.isPlotable(x, y):
-                qp.drawPoint(int(x), int(y))
-            if self.flag.draw_lines and i > 0:
-                prevx = self.getXPosition(self.reference[i - 1])
-                prevy = self.getYPositionFromDelay(self.groupDelayReference[i - 1])
-                qp.setPen(line_pen)
-                if self.isPlotable(x, y) and self.isPlotable(prevx, prevy):
-                    qp.drawLine(x, y, prevx, prevy)
-                elif self.isPlotable(x, y) and not self.isPlotable(prevx, prevy):
-                    new_x, new_y = self.getPlotable(x, y, prevx, prevy)
-                    qp.drawLine(x, y, new_x, new_y)
-                elif not self.isPlotable(x, y) and self.isPlotable(prevx, prevy):
-                    new_x, new_y = self.getPlotable(prevx, prevy, x, y)
-                    qp.drawLine(prevx, prevy, new_x, new_y)
-                qp.setPen(pen)
+        self.draw_data(qp, Chart.color.sweep,
+                       self.data, self.groupDelay)
+        self.draw_data(qp, Chart.color.reference,
+                       self.reference, self.groupDelayReference)
 
         self.drawMarkers(qp)
 
+    def draw_data(self, qp: QtGui.QPainter, color: QtGui.QColor,
+                  data: List[Datapoint], delay: List[Datapoint]):
+        pen = QtGui.QPen(color)
+        pen.setWidth(self.dim.point)
+        line_pen = QtGui.QPen(color)
+        line_pen.setWidth(self.dim.line)
+        qp.setPen(pen)
+        for i, d in enumerate(data):
+            x = self.getXPosition(d)
+            y = self.getYPositionFromDelay(delay[i])
+            if self.isPlotable(x, y):
+                qp.drawPoint(int(x), int(y))
+            if self.flag.draw_lines and i > 0:
+                prevx = self.getXPosition(data[i - 1])
+                prevy = self.getYPositionFromDelay(delay[i - 1])
+                qp.setPen(line_pen)
+                if self.isPlotable(x, y) and self.isPlotable(prevx, prevy):
+                    qp.drawLine(x, y, prevx, prevy)
+                elif self.isPlotable(x, y) and not self.isPlotable(prevx, prevy):
+                    new_x, new_y = self.getPlotable(x, y, prevx, prevy)
+                    qp.drawLine(x, y, new_x, new_y)
+                elif not self.isPlotable(x, y) and self.isPlotable(prevx, prevy):
+                    new_x, new_y = self.getPlotable(prevx, prevy, x, y)
+                    qp.drawLine(prevx, prevy, new_x, new_y)
+                qp.setPen(pen)
+
     def getYPosition(self, d: Datapoint) -> int:
-        # TODO: Find a faster way than these expensive "d in self.data" lookups
-        if d in self.data:
+        # TODO: Find a faster way than these expensive "d in data" lookups
+        try:
             delay = self.groupDelay[self.data.index(d)]
-        elif d in self.reference:
-            delay = self.groupDelayReference[self.reference.index(d)]
-        else:
-            delay = 0
+        except ValueError:
+            try:
+                delay = self.groupDelayReference[self.reference.index(d)]
+            except ValueError:
+                delay = 0
         return self.getYPositionFromDelay(delay)
 
     def getYPositionFromDelay(self, delay: float):

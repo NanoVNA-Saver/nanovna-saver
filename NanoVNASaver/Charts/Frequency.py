@@ -96,11 +96,11 @@ class FrequencyChart(Chart):
         self.x_menu.addSeparator()
 
         self.action_set_fixed_start = QtWidgets.QAction(
-            "Start (" + format_frequency_chart(self.minFrequency) + ")")
+            f"Start ({format_frequency_chart(self.minFrequency)})")
         self.action_set_fixed_start.triggered.connect(self.setMinimumFrequency)
 
         self.action_set_fixed_stop = QtWidgets.QAction(
-            "Stop (" + format_frequency_chart(self.maxFrequency) + ")")
+            f"Stop ({format_frequency_chart(self.maxFrequency)})")
         self.action_set_fixed_stop.triggered.connect(self.setMaximumFrequency)
 
         self.x_menu.addAction(self.action_set_fixed_start)
