@@ -54,7 +54,7 @@ class AboutWindow(QtWidgets.QWidget):
         layout.addWidget(QtWidgets.QLabel(""))
         layout.addWidget(QtWidgets.QLabel(
             "\N{COPYRIGHT SIGN} Copyright 2019, 2020 Rune B. Broberg\n"
-            "\N{COPYRIGHT SIGN} Copyright 2020 NanoVNA-Saver Authors"
+            "\N{COPYRIGHT SIGN} Copyright 2020ff NanoVNA-Saver Authors"
             ))
         layout.addWidget(QtWidgets.QLabel(
             "This program comes with ABSOLUTELY NO WARRANTY"))

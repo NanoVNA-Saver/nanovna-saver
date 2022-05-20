@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
+#  Copyright (C) 2020ff NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -35,30 +35,22 @@ logger = logging.getLogger(__name__)
 
 
 class FrequencyChart(Chart):
-    fstart = 0
-    fstop = 0
 
-    maxFrequency = 100000000
-    minFrequency = 1000000
-
-    # TODO: use unscaled values instead of unit dependend ones
-    minDisplayValue = -1
-    maxDisplayValue = 1
-
-    fixedSpan = False
-    fixedValues = False
-
-    logarithmicX = False
-    logarithmicY = False
-
-    leftMargin = 30
-    rightMargin = 20
-    bottomMargin = 20
-    topMargin = 30
 
     def __init__(self, name):
         super().__init__(name)
+        self.maxFrequency = 100000000
+        self.minFrequency = 1000000
+        self.fixedSpan = False
+        self.fixedValues = False
+        self.logarithmicX = False
+        self.logarithmicY = False
+
         self.leftMargin = 30
+        self.rightMargin = 20
+        self.bottomMargin = 20
+        self.topMargin = 30
+
         self.dim.width = 250
         self.dim.height = 250
         self.fstart = 0
@@ -66,6 +58,10 @@ class FrequencyChart(Chart):
 
         self.name_unit = ""
         self.value_function = lambda x: 0.0
+
+        # TODO: use unscaled values instead of unit dependend ones
+        self.minDisplayValue = -1
+        self.maxDisplayValue = 1
 
         self.minValue = -1
         self.maxValue = 1
@@ -576,26 +572,21 @@ class FrequencyChart(Chart):
         self.drawData(qp, self.reference, Chart.color.reference)
         self.drawMarkers(qp)
 
-    def _find_scaling(self) -> Tuple[int, int]:
+    def _find_scaling(self) -> Tuple[float, float]:
+        min_value = self.minDisplayValue / 10e11
+        max_value = self.maxDisplayValue / 10e11
         if self.fixedValues:
-            return (self.minDisplayValue / 10e11,
-                    self.maxDisplayValue / 10e11)
-        min_value = 1
-        max_value = -1
+            return (min_value, max_value)
         for d in self.data:
             val = self.value_function(d)
-            if val > max_value:
-                max_value = val
-            if val < min_value:
-                min_value = val
+            min_value = min(min_value, val)
+            max_value = max(max_value, val)
         for d in self.reference:  # Also check min/max for the reference sweep
             if d.freq < self.fstart or d.freq > self.fstop:
                 continue
             val = self.value_function(d)
-            if val > max_value:
-                max_value = val
-            if val < min_value:
-                min_value = val
+            min_value = min(min_value, val)
+            max_value = max(max_value, val)
         return (min_value, max_value)
 
     def drawFrequencyTicks(self, qp):

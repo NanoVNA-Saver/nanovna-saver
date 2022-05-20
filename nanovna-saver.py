@@ -15,10 +15,13 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-try:
+from contextlib import suppress
+
+with suppress(ImportError):
+    # pylint: disable=no-name-in-module,import-error,unused-import
+    # pyright: reportMissingImports=false
     import pkg_resources.py2_warn
-except ImportError:
-    pass
+
 from NanoVNASaver.__main__ import main
 
 if __name__ == '__main__':

@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020 NanoVNA-Saver Authors
+#  Copyright (C) 2020ff NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -30,8 +30,3 @@ class InductanceChart(FrequencyChart):
         self.maxDisplayValue = 100
         self.name_unit = "H"
         self.value_function = lambda x: x.inductiveEquivalent()
-
-    def copy(self):
-        new_chart: InductanceChart = super().copy()
-        new_chart.span = self.span
-        return new_chart
