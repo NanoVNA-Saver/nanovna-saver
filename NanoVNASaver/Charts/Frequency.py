@@ -30,6 +30,7 @@ from NanoVNASaver.Formatting import (
     format_y_axis)
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.SITools import Format, Value
+import csv
 
 logger = logging.getLogger(__name__)
 
@@ -171,6 +172,14 @@ class FrequencyChart(Chart):
         self.menu.addMenu(self.y_menu)
         self.menu.addSeparator()
         self.menu.addAction(self.action_save_screenshot)
+
+        self.expdcsv = QtWidgets.QAction("Export data to CSV")
+        self.expdcsv.triggered.connect(self.exportDataToCSV)
+        self.menu.addAction(self.expdcsv)
+        self.exprcsv = QtWidgets.QAction("Export reference to CSV")
+        self.exprcsv.triggered.connect(self.exportReferenceToCSV)
+        self.menu.addAction(self.exprcsv)
+
         self.action_popout = QtWidgets.QAction("Popout chart")
         self.action_popout.triggered.connect(
             lambda: self.popoutRequested.emit(self))
@@ -186,6 +195,32 @@ class FrequencyChart(Chart):
         pal.setColor(QtGui.QPalette.Background, Chart.color.background)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
+
+    def exportDataToCSV(self):
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
+            filter="CSV files (*.csv);;All files (*.*)", initialFilter = 'CSV files (*.csv)')
+        if filename:
+            dd = []
+            for p in self.data:
+                dd.append([p.freq, p.gain])
+            csv.register_dialect('exppointvirgule', delimiter=';', quoting=csv.QUOTE_NONE)
+            myFile = open(filename, 'w')
+            with myFile:
+                writer = csv.writer(myFile, dialect='exppointvirgule')
+                writer.writerows(dd)
+
+    def exportReferenceToCSV(self):
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
+            filter="CSV files (*.csv);;All files (*.*)", initialFilter = 'CSV files (*.csv)')
+        if filename:
+            dd = []
+            for p in self.data:
+                dd.append([p.freq, p.gain])
+            csv.register_dialect('exppointvirgule', delimiter=';', quoting=csv.QUOTE_NONE)
+            myFile = open(filename, 'w')
+            with myFile:
+                writer = csv.writer(myFile, dialect='exppointvirgule')
+                writer.writerows(dd)
 
     def _set_start_stop(self):
         if self.fixedSpan:
