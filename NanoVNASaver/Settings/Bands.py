@@ -79,6 +79,17 @@ class BandsModel(QtCore.QAbstractTableModel):
         self.layoutChanged.emit()
         self.saveSettings()
 
+    def loadBands(self, sb, b):
+        self.enabled = sb
+        self.bands = []
+        lsb = b.split(",")
+
+        for band in lsb:
+            band = band.replace('"', '')
+            self.bands.append(band.split(";"))
+        self.layoutChanged.emit()
+        self.saveSettings()
+
     def columnCount(self, _) -> int:
         return 3
 

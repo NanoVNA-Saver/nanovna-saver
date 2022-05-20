@@ -17,6 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
+import configparser
 
 from PyQt5 import QtWidgets, QtCore
 
@@ -46,15 +47,18 @@ class BandsWindow(QtWidgets.QWidget):
         btn_add_row = QtWidgets.QPushButton("Add row")
         btn_delete_row = QtWidgets.QPushButton("Delete row")
         btn_reset_bands = QtWidgets.QPushButton("Reset bands")
+        btn_load_bands = QtWidgets.QPushButton("Load bands")
         btn_layout = QtWidgets.QHBoxLayout()
         btn_layout.addWidget(btn_add_row)
         btn_layout.addWidget(btn_delete_row)
         btn_layout.addWidget(btn_reset_bands)
+        btn_layout.addWidget(btn_load_bands)
         layout.addLayout(btn_layout)
 
         btn_add_row.clicked.connect(self.app.bands.addRow)
         btn_delete_row.clicked.connect(self.deleteRows)
         btn_reset_bands.clicked.connect(self.resetBands)
+        btn_load_bands.clicked.connect(self.loadBands)
 
     def deleteRows(self):
         rows = self.bands_table.selectedIndexes()
@@ -69,3 +73,13 @@ class BandsWindow(QtWidgets.QWidget):
             QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Cancel).exec()
         if confirm == QtWidgets.QMessageBox.Yes:
             self.app.bands.resetBands()
+
+    def loadBands(self):
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(
+            filter="Band Config Files (*.ini);;All files (*.*)")
+        if filename:
+            config = configparser.ConfigParser()
+            config.read(filename)
+            showbands = config['General']['ShowBands']
+            bands = config['General']['bands']
+            self.app.bands.loadBands(showbands, bands)
