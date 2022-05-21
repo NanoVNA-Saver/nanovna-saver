@@ -58,6 +58,8 @@ TYPES = (
     Label("s21magseries", "S21 |Z| series", "S21 Z Magnitude series", False),
     Label("s21realimagshunt", "S21 R+jX shunt", "S21 Z Real+Imag shunt", False),
     Label("s21realimagseries", "S21 R+jX series", "S21 Z Real+Imag series", False),
+
+    Label("imp_matching", "Match", "Components for 50 ohms impedance matching", False),
 )
 
 

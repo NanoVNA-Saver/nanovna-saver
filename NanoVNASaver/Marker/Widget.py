@@ -346,6 +346,9 @@ class Marker(QtCore.QObject, Value):
         self.label['serr'].setText(format_resistance(imp.real))
         self.label['vswr'].setText(format_vswr(_s11.vswr))
 
+        imp_match_sol = RFTools.match_calc_lc_match_calc(imp.real, imp.imag)
+        self.label['imp_matching'].setText(RFTools.match_calc_ConcatenateResults(_s11.freq, imp_match_sol))
+
         if len(s21) == len(s11):
             _s21 = s21[self.location]
             self.label['s21gain'].setText(format_gain(_s21.gain))

@@ -170,3 +170,168 @@ def corr_att_data(data: List[Datapoint], att: float) -> List[Datapoint]:
         corrected = dp.z * att
         ndata.append(Datapoint(dp.freq, corrected.real, corrected.imag))
     return ndata
+
+def match_calc_string_value_with_prefix(val,unit):
+    buf = ""
+    prefix = ""
+    if val < 0:
+        val = -val
+        buf = '-'
+    if val < 1e-12:
+        prefix = 'f'
+        val *= 1e15
+    elif val < 1e-9:
+        prefix = 'p'
+        val *= 1e12
+    elif val < 1e-6:
+        prefix = 'n'
+        val *= 1e9
+    elif val < 1e-3:
+        prefix = 'µ'
+        val *= 1e6
+    elif val < 1:
+        prefix = 'm'
+        val *= 1e3
+    elif val < 1e3:
+        prefix = 0
+    elif val < 1e6:
+        prefix = 'k'
+        val /= 1e3
+    elif val < 1e9:
+        prefix = 'M'
+        val /= 1e6
+    else:
+        prefix = 'G'
+        val /= 1e9
+
+    if val < 10:
+        buf = buf + "%.2f"%val
+    elif val < 100:
+        buf = buf + "%.1f"%val
+    else :
+        buf = buf + "%d"%int(val)
+
+    if prefix!="":
+        buf = buf + " %s"%prefix
+    if unit!="":
+        buf = buf+unit
+    return buf
+
+def match_calc_ComponentString (freq, X):
+    if math.isnan(X) or X==0:
+        return ""
+    if X < 0:
+        X = -1.0 / X; 
+        type = 'F'
+    else:
+        type = 'H'
+    val = X / (2 * math.pi * freq)
+    return match_calc_string_value_with_prefix(val,type)
+
+def match_calc_swr(re, im) :
+	x = math.sqrt(re*re + im*im)
+	if x > 1:
+		return float('inf')
+	return (1 + x)/(1 - x)
+
+def match_calc_lc_match_quadratic_equation(a, b, c):
+    x = [0.0, 0.0]
+    d = (b * b) - (4.0 * a * c)
+    if d < 0:
+        x[0] = x[1] = 0.0
+        return x
+    sd = math.sqrt(d)
+    a2 = 2.0 * a
+    x[0] = (-b + sd) / a2
+    x[1] = (-b - sd) / a2
+    return x
+
+def match_calc_lc_match_calc_hi(R0, RL, XL):
+
+    a = R0 - RL
+    b = 2.0 * XL * R0
+    c = R0 * ((XL * XL) + (RL * RL))
+    xp=match_calc_lc_match_quadratic_equation(a, b, c)
+
+    RL1 = -XL * xp[0]
+    XL1 =  RL * xp[0]
+    RL2 =  RL + 0.0
+    XL2 =  XL + xp[0]
+    xs1  = ((RL1 * XL2) - (RL2 * XL1)) / ((RL2 * RL2) + (XL2 * XL2));
+    xps1 = 0.0
+    xpl1 = xp[0]
+
+    RL3 = -XL * xp[1]
+    XL3 =  RL * xp[1]
+    RL4 =  RL + 0.0
+    XL4 =  XL + xp[1]
+    xs2  = ((RL3 * XL4) - (RL4 * XL3)) / ((RL4 * RL4) + (XL4 * XL4))
+    xps2 = 0.0
+    xpl2 = xp[1]
+    return [(xpl1, xs1, xps1), (xpl2, xs2, xps2)]
+
+def match_calc_lc_match_calc_lo(R0, RL, XL):
+
+    a = 1.0
+    b = 2.0 * XL
+    c = (RL * RL) + (XL * XL) - (R0 * RL)
+    xs=match_calc_lc_match_quadratic_equation(a, b, c)
+
+    RL1 = RL  + 0.0
+    XL1 = XL  + xs[0]
+    RL3 = RL1 * R0
+    XL3 = XL1 * R0
+    RL5 = RL1 - R0
+    XL5 = XL1 - 0.0
+    xs1  = xs[0]
+    xps1 = ((RL5 * XL3) - (RL3 * XL5)) / ((RL5 * RL5) + (XL5 * XL5))
+    xpl1 = 0.0
+
+    RL2 = RL  + 0.0
+    XL2 = XL  + xs[1]
+    RL4 = RL2 * R0
+    XL4 = XL2 * R0
+    RL6 = RL2 - R0
+    XL6 = XL2 - 0.0
+    xs2  = xs[1]
+    xps2 = ((RL6 * XL4) - (RL4 * XL6)) / ((RL6 * RL6) + (XL6 * XL6))
+    xpl2 = 0.0
+    return [(xpl1, xs1, xps1), (xpl2, xs2, xps2)]
+
+
+def match_calc_lc_match_calc(RL, XL):
+
+    R0 = 50
+    if RL < 0.5 :
+        return [(-1, -1, -1)]
+
+    q_factor = XL / RL
+    vswr = match_calc_swr(RL,XL)
+    if vswr <= 1.1 or q_factor >= 100 :
+        return [(0,0,0)]
+
+    if (RL * 1.1) > R0  and RL < (R0 * 1.1):
+        return [(0, -XL, 0)]
+
+    if RL >= R0:
+        return match_calc_lc_match_calc_hi(R0, RL, XL)
+
+    x1=match_calc_lc_match_calc_lo(R0, RL, XL)
+    if (RL + (XL * q_factor)) <= R0:
+        return x1
+
+    return x1 + match_calc_lc_match_calc_hi(R0, RL, XL)
+
+def match_calc_ConcatenateResults(freq, sol):
+    txt = ''
+    i=0
+    for s in sol:
+        i = i+1
+        xpl, xs, xps = s
+        txt = txt + "ZLSh=%s\r\n"%match_calc_ComponentString (freq, xpl)
+        txt = txt + "ZSer=%s\r\n"%match_calc_ComponentString (freq, xs)
+        if i==len(sol):
+            txt = txt + "ZSSh=%s"%match_calc_ComponentString (freq, xps)
+        else:
+            txt = txt + "ZSSh=%s\r\n\r\n"%match_calc_ComponentString (freq, xps)
+    return txt
