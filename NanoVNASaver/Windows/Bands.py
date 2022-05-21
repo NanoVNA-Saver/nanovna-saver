@@ -18,6 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 import configparser
+import os
 
 from PyQt5 import QtWidgets, QtCore
 
@@ -75,8 +76,9 @@ class BandsWindow(QtWidgets.QWidget):
             self.app.bands.resetBands()
 
     def loadBands(self):
+        bandsdir = os.path.join(os.getcwd(), "NanoVNASaver", "Bands")
         filename, _ = QtWidgets.QFileDialog.getOpenFileName(
-            filter="Band Config Files (*.ini);;All files (*.*)")
+            filter="Band Config Files (*.ini);;All files (*.*)", directory = bandsdir)
         if filename:
             config = configparser.ConfigParser()
             config.read(filename)
