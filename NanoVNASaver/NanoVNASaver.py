@@ -248,6 +248,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         for c in self.subscribing_charts:
             c.setMarkers(self.markers)
+            c.setMarkerSize(self.settings.value("MarkerSize", 6, int))
             c.setBands(self.bands)
 
         self.marker_data_layout = QtWidgets.QVBoxLayout()
