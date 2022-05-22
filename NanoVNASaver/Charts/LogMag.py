@@ -54,6 +54,27 @@ class LogMagChart(FrequencyChart):
         self.exprcsvref = QtWidgets.QAction("Export reference Return Loss to CSV")
         self.exprcsvref.triggered.connect(self.exportReferenceToCSV)
         self.menu.addAction(self.exprcsvref)
+        self.menu.addSeparator()
+        self.impdcsvdat = QtWidgets.QAction("Import S11 Return Loss from CSV")
+        self.impdcsvdat.triggered.connect(self.importDataFromCSV)
+        self.menu.addAction(self.impdcsvdat)
+
+    def importDataFromCSV(self):
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(
+            filter="CSV files (*.csv);;All files (*.*)", initialFilter = 'CSV files (*.csv)')
+        if filename:
+            ref: List[Datapoint] = []
+            with open(filename, newline='') as csvfile:
+                spamreader = csv.reader(csvfile, delimiter=',')
+                for row in spamreader:
+                    try :
+                        f = int(float(row[0])*1000000000.0)
+                        re = math.pow(10,float(row[1])/20)
+                        ref.append(Datapoint(f, re, 0))
+                    except :
+                        pass
+            self.reference = ref
+            self.update()
 
     def exportDataToCSV(self):
         filename, _ = QtWidgets.QFileDialog.getSaveFileName(
@@ -209,7 +230,7 @@ class LogMagChart(FrequencyChart):
             y = self.topMargin + round((self.maxValue - logMag) / self.span * self.dim.height)
             qp.drawLine(self.leftMargin, y, self.leftMargin + self.dim.width, y)
             qp.drawText(self.leftMargin + 3, y - 1, "VSWR: " + str(vswr))
-
+        
         self.drawData(qp, self.data, Chart.color.sweep)
         self.drawData(qp, self.reference, Chart.color.reference)
         self.drawMarkers(qp)
