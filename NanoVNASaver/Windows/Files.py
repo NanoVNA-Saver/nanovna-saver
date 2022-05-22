@@ -22,6 +22,9 @@ from PyQt5 import QtWidgets, QtCore
 from NanoVNASaver.Touchstone import Touchstone
 from NanoVNASaver.RFTools import Datapoint
 
+import csv
+import tempfile
+
 logger = logging.getLogger(__name__)
 
 class FilesWindow(QtWidgets.QWidget):
@@ -44,8 +47,11 @@ class FilesWindow(QtWidgets.QWidget):
         btn_load_sweep.clicked.connect(self.loadSweepFile)
         btn_load_reference = QtWidgets.QPushButton("Load reference")
         btn_load_reference.clicked.connect(self.loadReferenceFile)
+        btn_load_GHzReIm = QtWidgets.QPushButton("CSV S param (GHz,Re,Im)")
+        btn_load_GHzReIm.clicked.connect(self.loadGHzReIm)
         load_file_control_layout.addRow(btn_load_sweep)
         load_file_control_layout.addRow(btn_load_reference)
+        load_file_control_layout.addRow(btn_load_GHzReIm)
 
         file_window_layout.addWidget(load_file_control_box)
 
@@ -116,6 +122,43 @@ class FilesWindow(QtWidgets.QWidget):
             t = Touchstone(filename)
             t.load()
             self.app.setReference(t.s11, t.s21, filename)
+
+    def ConvertCSVFileGHzReImtoS1p(self, fn):
+        with open(fn, newline='') as csvfile:
+            lm = csv.reader(csvfile, delimiter=',')
+            src = []
+            for row in lm:
+                try :
+                    f = int(float(row[0])*1000000000)
+                    reim = row[1].split(' ')
+                    re = float(reim[0])
+                    imstr = reim[1]+reim[2]
+                    imstr = imstr.replace('i','')
+                    im = float(imstr)
+                    src.append([f, re, im])
+                except :
+                    pass
+            f = tempfile.NamedTemporaryFile(delete=False)
+            print(f.name)
+            csv.register_dialect('exp_space', delimiter=' ', quoting=csv.QUOTE_NONE)
+            outfile = open(f.name, 'w')
+            with outfile:
+                outfile.write("# HZ S RI R 50\n")
+                writer = csv.writer(outfile, dialect='exp_space')
+                writer.writerows(src)
+        return f.name
+
+    def loadGHzReIm(self):
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(
+            filter="CSV file (*.csv);;All files (*.*)")
+        if filename != "":     
+            print(filename)       
+            self.app.resetReference()
+            fn = self.ConvertCSVFileGHzReImtoS1p(filename)
+            if fn!="":
+                t = Touchstone(fn)
+                t.load()
+                self.app.setReference(t.s11, t.s21, filename)
 
     def loadSweepFile(self):
         filename, _ = QtWidgets.QFileDialog.getOpenFileName(
