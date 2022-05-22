@@ -16,23 +16,47 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-from cgitb import reset
 import json
 import dataclasses as DC
-from operator import ge
-from tkinter import N
-from tkinter.messagebox import NO
-from webbrowser import get
 
 from PyQt5.QtCore import QSettings
 
+@DC.dataclass
+class GUI:
+    window_height: int = 950
+    window_width: int = 1433
+    font_size: int = 8
+    dark_mode: bool = False
+    splitter_sizes: list = DC.field(default_factory=lambda: [])
 
 @DC.dataclass
-class ChartMarkerConfig:
+class ChartMarker:
     draw_label: bool = False
     fill: bool = False
     at_tip: bool = False
     size: int = 8
+
+@DC.dataclass
+class CFG:
+    gui: object = GUI()
+    chart_marker: object = ChartMarker()
+
+
+def restore(settings: 'AppSettings') -> CFG:
+    result = CFG()
+    for field in DC.fields(result):
+        value = settings.restore_dataclass(field.name.upper(),
+                                           getattr(result, field.name))
+        setattr(result, field.name, value)
+    return result
+
+
+def store(settings: 'AppSettings', data: CFG) -> None:
+    assert type(data) is CFG
+    for field in DC.fields(data):
+        data_class  = getattr(data, field.name)
+        assert DC.is_dataclass(data_class)
+        settings.store_dataclass(field.name.upper(), data_class)
 
 
 class AppSettings(QSettings):
@@ -53,8 +77,9 @@ class AppSettings(QSettings):
         self.beginGroup(name)
         for field in DC.fields(data):
             value = self.value(field.name)
-            value = getattr(data, field.name) if value is None else value
-            if field.type in (int, float, str, bool):
+            if value is None:
+                value = getattr(data, field.name)
+            elif field.type in (int, float, str, bool):
                 value = field.type(value)
             else:
                 value = json.loads(value)

@@ -34,8 +34,14 @@ class TConfig:
 class TestCases(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.settings = CFG.AppSettings(
-            CFG.QSettings.IniFormat, CFG.QSettings.UserScope, "NanoVNASaver", "Test")
+        self.settings_1 = CFG.AppSettings(
+            CFG.QSettings.IniFormat,
+            CFG.QSettings.UserScope, 
+            "NanoVNASaver", "Test_1")
+        self.settings_2 = CFG.AppSettings(
+            CFG.QSettings.IniFormat,
+            CFG.QSettings.UserScope,
+            "NanoVNASaver", "Test_2")
         self.config_1 = TConfig()
         self.config_2 = TConfig(
             my_int=4,
@@ -45,12 +51,12 @@ class TestCases(unittest.TestCase):
             my_list=[4, 5, 6])
 
     def test_store_dataclass(self):
-        self.settings.store_dataclass("Section1", self.config_1)
-        self.settings.store_dataclass("Section2", self.config_2)
+        self.settings_1.store_dataclass("Section1", self.config_1)
+        self.settings_1.store_dataclass("Section2", self.config_2)
 
     def test_restore_dataclass(self):
-        tc_1 = self.settings.restore_dataclass("Section1", TConfig())
-        tc_2 = self.settings.restore_dataclass("Section2", TConfig())
+        tc_1 = self.settings_1.restore_dataclass("Section1", TConfig())
+        tc_2 = self.settings_1.restore_dataclass("Section2", TConfig())
         self.assertNotEqual(tc_1, tc_2)
         self.assertEqual(tc_1, self.config_1)
         self.assertEqual(tc_2, self.config_2)
@@ -61,3 +67,15 @@ class TestCases(unittest.TestCase):
         self.assertEqual(tc_2.my_list, [4, 5, 6])
         self.assertIsInstance(tc_2.my_int, int)
         self.assertIsInstance(tc_2.my_float, float)
+
+    def test_restore_empty(self):
+        tc_3 = self.settings_1.restore_dataclass("Section3", TConfig())
+        self.assertEqual(tc_3, TConfig())
+
+    def test_store(self):
+        tc_1 = CFG.CFG()
+        tc_1.gui.dark_mode = not tc_1.gui.dark_mode
+        CFG.store(self.settings_2, tc_1)
+        tc_2 = CFG.restore(self.settings_2)
+        self.assertEqual(tc_1, tc_2)
+        self.assertNotEqual(tc_2.gui, CFG.GUI())
