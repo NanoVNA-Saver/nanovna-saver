@@ -20,11 +20,14 @@ import math
 import logging
 from typing import List
 
-from PyQt5 import QtGui
+from PyQt5 import QtWidgets, QtGui
 
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Charts.Frequency import FrequencyChart
+
+import os
+import csv
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +46,46 @@ class LogMagChart(FrequencyChart):
         self.span = 1
 
         self.isInverted = False
+ 
+        self.menu.addSeparator()
+        self.expdcsvdat = QtWidgets.QAction("Export S11 Return Loss to CSV")
+        self.expdcsvdat.triggered.connect(self.exportDataToCSV)
+        self.menu.addAction(self.expdcsvdat)
+        self.exprcsvref = QtWidgets.QAction("Export reference Return Loss to CSV")
+        self.exprcsvref.triggered.connect(self.exportReferenceToCSV)
+        self.menu.addAction(self.exprcsvref)
+
+    def exportDataToCSV(self):
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
+            filter="CSV files (*.csv);;All files (*.*)", initialFilter = 'CSV files (*.csv)')
+        if filename:
+            f, ext = os.path.splitext(filename)
+            if ext!=".csv":
+                filename = filename+".csv"
+            dd = []
+            for p in self.data:
+                dd.append([p.freq, p.gain])
+            csv.register_dialect('exppointvirgule', delimiter=';', quoting=csv.QUOTE_NONE)
+            myFile = open(filename, 'w')
+            with myFile:
+                writer = csv.writer(myFile, dialect='exppointvirgule')
+                writer.writerows(dd)
+
+    def exportReferenceToCSV(self):
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
+            filter="CSV files (*.csv);;All files (*.*)", initialFilter = 'CSV files (*.csv)')
+        if filename:
+            f, ext = os.path.splitext(filename)
+            if ext!=".csv":
+                filename = filename+".csv"
+            dd = []
+            for p in self.reference:
+                dd.append([p.freq, p.gain])
+            csv.register_dialect('exppointvirgule', delimiter=';', quoting=csv.QUOTE_NONE)
+            myFile = open(filename, 'w')
+            with myFile:
+                writer = csv.writer(myFile, dialect='exppointvirgule')
+                writer.writerows(dd)
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:

@@ -22,6 +22,7 @@ from typing import List, Tuple
 
 import numpy as np
 from PyQt5 import QtWidgets, QtGui, QtCore
+from regex import D
 
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Formatting import (
@@ -30,7 +31,6 @@ from NanoVNASaver.Formatting import (
     format_y_axis)
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.SITools import Format, Value
-import csv
 
 logger = logging.getLogger(__name__)
 
@@ -173,13 +173,6 @@ class FrequencyChart(Chart):
         self.menu.addSeparator()
         self.menu.addAction(self.action_save_screenshot)
 
-        self.expdcsv = QtWidgets.QAction("Export data to CSV")
-        self.expdcsv.triggered.connect(self.exportDataToCSV)
-        self.menu.addAction(self.expdcsv)
-        self.exprcsv = QtWidgets.QAction("Export reference to CSV")
-        self.exprcsv.triggered.connect(self.exportReferenceToCSV)
-        self.menu.addAction(self.exprcsv)
-
         self.action_popout = QtWidgets.QAction("Popout chart")
         self.action_popout.triggered.connect(
             lambda: self.popoutRequested.emit(self))
@@ -195,32 +188,6 @@ class FrequencyChart(Chart):
         pal.setColor(QtGui.QPalette.Background, Chart.color.background)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
-
-    def exportDataToCSV(self):
-        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
-            filter="CSV files (*.csv);;All files (*.*)", initialFilter = 'CSV files (*.csv)')
-        if filename:
-            dd = []
-            for p in self.data:
-                dd.append([p.freq, p.gain])
-            csv.register_dialect('exppointvirgule', delimiter=';', quoting=csv.QUOTE_NONE)
-            myFile = open(filename, 'w')
-            with myFile:
-                writer = csv.writer(myFile, dialect='exppointvirgule')
-                writer.writerows(dd)
-
-    def exportReferenceToCSV(self):
-        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
-            filter="CSV files (*.csv);;All files (*.*)", initialFilter = 'CSV files (*.csv)')
-        if filename:
-            dd = []
-            for p in self.data:
-                dd.append([p.freq, p.gain])
-            csv.register_dialect('exppointvirgule', delimiter=';', quoting=csv.QUOTE_NONE)
-            myFile = open(filename, 'w')
-            with myFile:
-                writer = csv.writer(myFile, dialect='exppointvirgule')
-                writer.writerows(dd)
 
     def _set_start_stop(self):
         if self.fixedSpan:
@@ -422,21 +389,21 @@ class FrequencyChart(Chart):
                 a0.angleDelta().y() == 0):
             a0.ignore()
             return
+
         do_zoom_x = do_zoom_y = True
         if a0.modifiers() == QtCore.Qt.ShiftModifier:
             do_zoom_x = False
         if a0.modifiers() == QtCore.Qt.ControlModifier:
             do_zoom_y = False
-        self._wheel_zomm(
-            a0, do_zoom_x, do_zoom_y,
-            math.copysign(1, a0.angleDelta().y()))
+        self._wheel_zomm(a0, do_zoom_x, do_zoom_y)
 
-    def _wheel_zomm(self, a0, do_zoom_x, do_zoom_y, sign: int=1):
+    def _wheel_zomm(self, a0, do_zoom_x, do_zoom_y):
         # Zoom in
         a0.accept()
         # Center of zoom = a0.x(), a0.y()
         # We zoom in by 1/10 of the width/height.
-        rate = sign * a0.angleDelta().y() / 120
+#        rate = sign * a0.angleDelta().y() / 120
+        rate = a0.angleDelta().y() / 120
         zoomx = rate * self.dim.width / 10 if do_zoom_x else 0
         zoomy = rate * self.dim.height / 10 if do_zoom_y else 0
         absx = max(0, a0.x() - self.leftMargin)

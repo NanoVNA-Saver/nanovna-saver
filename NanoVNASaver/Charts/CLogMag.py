@@ -20,12 +20,15 @@ import math
 import logging
 from typing import List
 
-from PyQt5 import QtGui
+from PyQt5 import QtWidgets, QtGui, QtCore
 
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Charts.Frequency import FrequencyChart
 from NanoVNASaver.Charts.LogMag import LogMagChart
+
+import os
+import csv
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +52,46 @@ class CombinedLogMagChart(FrequencyChart):
 
         self.isInverted = False
 
+        self.menu.addSeparator()
+        self.expdcsvs11s21 = QtWidgets.QAction("Export S11 and S21 LogMag to CSV")
+        self.expdcsvs11s21.triggered.connect(self.exportS11S21ToCSV)
+        self.menu.addAction(self.expdcsvs11s21)
+        self.exprcsvref1ref2 = QtWidgets.QAction("Export Ref1 and Ref2 LogMag to CSV")
+        self.exprcsvref1ref2.triggered.connect(self.exportRef1Ref2ToCSV)
+        self.menu.addAction(self.exprcsvref1ref2)
+
+    def exportS11S21ToCSV(self):
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
+            filter="CSV files (*.csv);;All files (*.*)", initialFilter = 'CSV files (*.csv)')
+        if filename:
+            f, ext = os.path.splitext(filename)
+            if ext!=".csv":
+                filename = filename+".csv"
+            dd = []
+            for i in range (0, len(self.data11)):
+                dd.append([self.data11[i].freq, self.data11[i].gain, self.data21[i].gain])
+            csv.register_dialect('exppointvirgule', delimiter=';', quoting=csv.QUOTE_NONE)
+            myFile = open(filename, 'w')
+            with myFile:
+                writer = csv.writer(myFile, dialect='exppointvirgule')
+                writer.writerows(dd)
+
+    def exportRef1Ref2ToCSV(self):
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
+            filter="CSV files (*.csv);;All files (*.*)", initialFilter = 'CSV files (*.csv)')
+        if filename:
+            f, ext = os.path.splitext(filename)
+            if ext!=".csv":
+                filename = filename+".csv"
+            dd = []
+            for i in range (0, len(self.reference11)):
+                dd.append([self.reference11[i].freq, self.reference11[i].gain, self.reference21[i].gain])
+            csv.register_dialect('exppointvirgule', delimiter=';', quoting=csv.QUOTE_NONE)
+            myFile = open(filename, 'w')
+            with myFile:
+                writer = csv.writer(myFile, dialect='exppointvirgule')
+                writer.writerows(dd)
+
     def setCombinedData(self, data11, data21):
         self.data11 = data11
         self.data21 = data21
@@ -64,10 +107,22 @@ class CombinedLogMagChart(FrequencyChart):
         self.reference21 = []
         self.update()
 
-    def resetDisplayLimits(self):
-        self.reference11 = []
-        self.reference21 = []
-        self.update()
+    # def resetDisplayLimits(self):
+    #     # self.reference11 = []
+    #     # self.reference21 = []
+    #     # self.update()
+
+    def wheelEvent(self, a0: QtGui.QWheelEvent) -> None:
+        if ((len(self.data11) == 0 and len(self.reference11) == 0) or
+                a0.angleDelta().y() == 0):
+            a0.ignore()
+            return
+        do_zoom_x = do_zoom_y = True
+        if a0.modifiers() == QtCore.Qt.ShiftModifier:
+            do_zoom_x = False
+        if a0.modifiers() == QtCore.Qt.ControlModifier:
+            do_zoom_y = False
+        self._wheel_zomm(a0, do_zoom_x, do_zoom_y)
 
     def drawChart(self, qp: QtGui.QPainter):
         qp.setPen(QtGui.QPen(Chart.color.text))
