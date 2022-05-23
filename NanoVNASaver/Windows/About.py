@@ -79,21 +79,6 @@ class AboutWindow(QtWidgets.QWidget):
         btn_check_version.clicked.connect(self.findUpdates)
 
         self.updateLabel = QtWidgets.QLabel("Last checked: ")
-        self.updateCheckBox = QtWidgets.QCheckBox(
-            "Check for updates on startup")
-
-        self.updateCheckBox.toggled.connect(self.updateSettings)
-
-        check_for_updates = self.app.settings.value(
-            "CheckForUpdates", "Ask")
-        if check_for_updates == "Yes":
-            self.updateCheckBox.setChecked(True)
-            self.findUpdates(automatic=True)
-        elif check_for_updates == "No":
-            self.updateCheckBox.setChecked(False)
-        else:
-            logger.debug("Starting timer")
-            QtCore.QTimer.singleShot(2000, self.askAboutUpdates)
 
         update_hbox = QtWidgets.QHBoxLayout()
         update_hbox.addWidget(btn_check_version)
@@ -101,7 +86,6 @@ class AboutWindow(QtWidgets.QWidget):
         update_hbox.addLayout(update_form)
         update_hbox.addStretch()
         update_form.addRow(self.updateLabel)
-        update_form.addRow(self.updateCheckBox)
         layout.addLayout(update_hbox)
 
         layout.addStretch()
@@ -127,27 +111,6 @@ class AboutWindow(QtWidgets.QWidget):
             self.app.settings.setValue("CheckForUpdates", "Yes")
         else:
             self.app.settings.setValue("CheckForUpdates", "No")
-
-    def askAboutUpdates(self):
-        logger.debug("Asking about automatic update checks")
-        selection = QtWidgets.QMessageBox.question(
-            self.app,
-            "Enable checking for updates?",
-            "Would you like NanoVNA-Saver to"
-            " check for updates automatically?")
-        if selection == QtWidgets.QMessageBox.Yes:
-            self.updateCheckBox.setChecked(True)
-            self.app.settings.setValue("CheckForUpdates", "Yes")
-            self.findUpdates()
-        elif selection == QtWidgets.QMessageBox.No:
-            self.updateCheckBox.setChecked(False)
-            self.app.settings.setValue("CheckForUpdates", "No")
-            QtWidgets.QMessageBox.information(
-                self.app,
-                "Checking for updates disabled",
-                'You can check for updates using the "About" window.')
-        else:
-            self.app.settings.setValue("CheckForUpdates", "Ask")
 
     def findUpdates(self, automatic=False):
         latest_version = Version()
