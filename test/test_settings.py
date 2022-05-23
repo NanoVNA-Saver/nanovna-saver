@@ -29,6 +29,7 @@ class TConfig:
     my_str: str = "Hello World"
     my_bool: bool = True
     my_list: list = field(default_factory=lambda: [1, 2, 3])
+    my_bytearray: bytearray = field(default_factory=lambda: bytearray((1,2,3)))
 
 
 class TestCases(unittest.TestCase):
@@ -77,5 +78,6 @@ class TestCases(unittest.TestCase):
         tc_1.gui.dark_mode = not tc_1.gui.dark_mode
         CFG.store(self.settings_2, tc_1)
         tc_2 = CFG.restore(self.settings_2)
+        print(f"\n{tc_1}\n{tc_2}\n")
         self.assertEqual(tc_1, tc_2)
         self.assertNotEqual(tc_2.gui, CFG.GUI())

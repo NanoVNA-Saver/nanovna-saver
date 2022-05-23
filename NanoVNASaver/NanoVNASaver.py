@@ -123,9 +123,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         outer.addWidget(scrollarea)
         self.setLayout(outer)
         scrollarea.setWidgetResizable(True)
-        window_width = self.settings.value("WindowWidth", 1350, type=int)
-        window_height = self.settings.value("WindowHeight", 950, type=int)
-        self.resize(window_width, window_height)
+        self.resize(Defaults.cfg.gui.window_width,
+                    Defaults.cfg.gui.window_height)
         scrollarea.setSizePolicy(
             QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
         self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
@@ -213,10 +212,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.splitter.addWidget(self.marker_frame)
         self.splitter.addWidget(chart_widget)
 
-        try:
-            self.splitter.restoreState(self.settings.value("SplitterSizes"))
-        except TypeError:
-            pass
+        self.splitter.restoreState(Defaults.cfg.gui.splitter_sizes)
 
         layout.addLayout(left_column)
         layout.addWidget(self.splitter, 2)
@@ -643,14 +639,15 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.settings.setValue("MarkerCount", Marker.count())
         for marker in self.markers:
             marker.update_settings()
-
-        self.settings.setValue("WindowHeight", self.height())
-        self.settings.setValue("WindowWidth", self.width())
-        self.settings.setValue("SplitterSizes", self.splitter.saveState())
-
         self.settings.sync()
         self.bands.saveSettings()
         self.threadpool.waitForDone(2500)
+
+        Defaults.cfg.gui.window_width = self.width()
+        Defaults.cfg.gui.window_height = self.height()
+        Defaults.cfg.gui.splitter_sizes = self.splitter.saveState()
+        Defaults.store(self.settings, Defaults.cfg)
+
         a0.accept()
         sys.exit()
 

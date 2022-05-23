@@ -17,22 +17,26 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import base64
 import dataclasses as DC
 import logging
 import json
+from ssl import DefaultVerifyPaths
+from tkinter.messagebox import NO
 
 from PyQt5.QtCore import QSettings
 
 
 logger = logging.getLogger(__name__)
 
+# pylint: disable=too-few-public-methods
 @DC.dataclass
 class GUI:
     window_height: int = 950
     window_width: int = 1433
     font_size: int = 8
     dark_mode: bool = False
-    splitter_sizes: list = DC.field(default_factory=lambda: [])
+    splitter_sizes: bytearray = DC.field(default_factory=bytearray)
 
 @DC.dataclass
 class ChartMarker:
@@ -55,13 +59,13 @@ def restore(settings: 'AppSettings') -> CFG:
         value = settings.restore_dataclass(field.name.upper(),
                                            getattr(result, field.name))
         setattr(result, field.name, value)
-    logger.debug(f"restored {result}")
+    logger.debug("restored\n(\n%s\n)", result)
     return result
 
 
 def store(settings: 'AppSettings', data: CFG) -> None:
-    assert type(data) is CFG
-    logger.debug(f"storing {data}")
+    assert isinstance(data, CFG)
+    logger.debug("storing\n(\n%s\n)", data)
     for field in DC.fields(data):
         data_class  = getattr(data, field.name)
         assert DC.is_dataclass(data_class)
@@ -75,10 +79,13 @@ class AppSettings(QSettings):
         for field in DC.fields(data):
             value = getattr(data, field.name)
             if field.type not in (int, float, str):
-                value = json.dumps(value)
+                try:
+                    value = json.dumps(value)
+                except TypeError:
+                    value = field.type(value).hex()                    
             self.setValue(field.name, value)
         self.endGroup()
-    
+
     def restore_dataclass(self, name: str, data: object) -> object:
         assert DC.is_dataclass(data)
 
@@ -87,17 +94,19 @@ class AppSettings(QSettings):
         for field in DC.fields(data):
             value = None
             if field.type in (int, float, str):
-                value = self.value(field.name, 
+                value = self.value(field.name,
                                    type=field.type,
                                    defaultValue=field.default)
             else:
-                value = field.type(json.loads(
-                    self.value(field.name,
-                               type=str,
-                               defaultValue=json.dumps(
-                                   getattr(data, field.name)
-                               ))))
-            setattr(result, field.name, value)
+                default = getattr(data, field.name)
+                try:
+                    value = json.loads(
+                        self.value(field.name, type=str,
+                                   defaultValue=json.dumps(default)))
+                except TypeError:
+                    value = self.value(field.name)
+                    value = bytes.fromhex(value) if value is str else default
+            setattr(result, field.name, field.type(value))
         self.endGroup()
-        
+
         return result
