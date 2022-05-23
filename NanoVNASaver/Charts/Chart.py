@@ -72,8 +72,8 @@ class ChartMarker(QtWidgets.QWidget):
         self.qp = qp
 
     def draw(self, x: int, y: int, color: QtGui.QColor, text: str = ""):
-        offset = Defaults.cfg.chart_marker.size // 2
-        if Defaults.cfg.chart_marker.at_tip:
+        offset = Defaults.cfg.chart.marker_size // 2
+        if Defaults.cfg.chart.marker_at_tip:
             y -= offset
         pen = QtGui.QPen(color)
         self.qp.setPen(pen)
@@ -83,12 +83,12 @@ class ChartMarker(QtWidgets.QWidget):
         qpp.lineTo(x + offset, y - offset)
         qpp.lineTo(x, y + offset)
 
-        if Defaults.cfg.chart_marker.fill:
+        if Defaults.cfg.chart.marker_filled:
             self.qp.fillPath(qpp, color)
         else:
             self.qp.drawPath(qpp)
 
-        if text and Defaults.cfg.chart_marker.draw_label:
+        if text and Defaults.cfg.chart.marker_label:
             text_width = self.qp.fontMetrics().horizontalAdvance(text)
             self.qp.drawText(x - text_width // 2, y - 3 - offset, text)
 
@@ -97,7 +97,6 @@ class Chart(QtWidgets.QWidget):
     bands: ClassVar[Any] = None
     popoutRequested: ClassVar[Any] = pyqtSignal(object)
     color: ClassVar[ChartColors] = ChartColors()
-    marker_cfg: ClassVar[Defaults.ChartMarker] = Defaults.cfg.chart_marker
 
     def __init__(self, name):
         super().__init__()
@@ -153,7 +152,7 @@ class Chart(QtWidgets.QWidget):
         self.update()
 
     def setMarkerSize(self, size):
-        Defaults.cfg.chart_marker.size = size
+        Defaults.cfg.chart.marker_size = size
         self.update()
 
     def setSweepTitle(self, title):
@@ -242,7 +241,6 @@ class Chart(QtWidgets.QWidget):
         new_chart.reference = self.reference
         new_chart.dim = replace(self.dim)
         new_chart.flag = replace(self.flag)
-        new_chart.marker_cfg = replace(self.marker_cfg)
         new_chart.markers = self.markers
         new_chart.swrMarkers = self.swrMarkers
         new_chart.bands = self.bands

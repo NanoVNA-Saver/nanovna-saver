@@ -38,17 +38,22 @@ class GUI:
     dark_mode: bool = False
     splitter_sizes: bytearray = DC.field(default_factory=bytearray)
 
+
 @DC.dataclass
-class ChartMarker:
-    draw_label: bool = False
-    fill: bool = False
-    at_tip: bool = False
-    size: int = 8
+class Chart:
+    point_size: int = 2
+    line_thickness: int = 1
+    marker_count: int = 3
+    marker_label: bool = False
+    marker_filled: bool = False
+    marker_at_tip: bool = False
+    marker_size: int = 8
+
 
 @DC.dataclass
 class CFG:
     gui: object = GUI()
-    chart_marker: object = ChartMarker()
+    chart: object = Chart()
 
 
 cfg = CFG()
@@ -78,7 +83,7 @@ class AppSettings(QSettings):
         self.beginGroup(name)
         for field in DC.fields(data):
             value = getattr(data, field.name)
-            if field.type not in (int, float, str):
+            if field.type not in (int, float, str, bool):
                 try:
                     value = json.dumps(value)
                 except TypeError:
@@ -93,7 +98,7 @@ class AppSettings(QSettings):
         self.beginGroup(name)
         for field in DC.fields(data):
             value = None
-            if field.type in (int, float, str):
+            if field.type in (int, float, str, bool):
                 value = self.value(field.name,
                                    type=field.type,
                                    defaultValue=field.default)

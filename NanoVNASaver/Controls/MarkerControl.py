@@ -21,6 +21,7 @@ import logging
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QCheckBox
 
+import NanoVNASaver.Defaults as Defaults
 from NanoVNASaver.Marker import Marker
 from NanoVNASaver.Controls.Control import Control
 
@@ -33,8 +34,7 @@ class MarkerControl(Control):
     def __init__(self, app: QtWidgets.QWidget):
         super().__init__(app, "Markers")
 
-        marker_count = max(self.app.settings.value("MarkerCount", 3, int), 1)
-        for i in range(marker_count):
+        for i in range(Defaults.cfg.chart.marker_count):
             marker = Marker("", self.app.settings)
             # marker.setFixedHeight(20)
             marker.updated.connect(self.app.markerUpdated)

@@ -107,7 +107,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         self.markerSizeInput = QtWidgets.QSpinBox()
         self.markerSizeInput.setMinimumHeight(20)
-        markersize = Defaults.cfg.chart_marker.size
+        markersize = Defaults.cfg.chart.marker_size
         self.markerSizeInput.setValue(markersize)
         self.markerSizeInput.setMinimum(4)
         self.markerSizeInput.setMaximum(20)
@@ -161,10 +161,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.font_dropdown = QtWidgets.QComboBox()
         self.font_dropdown.setMinimumHeight(20)
         self.font_dropdown.addItems(["7", "8", "9", "10", "11", "12"])
-        font_size = self.app.settings.value("FontSize",
-                                            defaultValue="8",
-                                            type=str)
-        self.font_dropdown.setCurrentText(font_size)
+        self.font_dropdown.setCurrentText(str(Defaults.cfg.gui.font_size))
         self.changeFont()
 
         self.font_dropdown.currentTextChanged.connect(self.changeFont)
@@ -363,14 +360,13 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             "VSWRColor", defaultValue=ChartColors.swr,
             type=QtGui.QColor)
 
-        self.dark_mode_option.setChecked(
-            self.app.settings.value("DarkMode", False, bool))
+        self.dark_mode_option.setChecked(Defaults.cfg.gui.dark_mode)
         self.show_lines_option.setChecked(
             self.app.settings.value("ShowLines", False, bool))
         self.show_marker_number_option.setChecked(
-            Defaults.cfg.chart_marker.draw_label)
+            Defaults.cfg.chart.marker_label)
         self.filled_marker_option.setChecked(
-            Defaults.cfg.chart_marker.fill)
+            Defaults.cfg.chart.marker_filled)
         if self.app.settings.value("UseCustomColors",
                                    defaultValue=False, type=bool):
             self.dark_mode_option.setDisabled(True)
@@ -465,17 +461,17 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             c.setDrawLines(state)
 
     def changeShowMarkerNumber(self):
-        Defaults.cfg.chart_marker.draw_label = \
+        Defaults.cfg.chart.marker_label = \
             self.show_marker_number_option.isChecked()
         self.updateCharts()
 
     def changeFilledMarkers(self):
-        Defaults.cfg.chart_marker.fill = \
+        Defaults.cfg.chart.marker_filled = \
             self.filled_marker_option.isChecked()
         self.updateCharts()
 
     def changeMarkerAtTip(self):
-        Defaults.cfg.chart_marker.at_tip = \
+        Defaults.cfg.chart.marker_at_tip = \
             self.marker_at_tip.isChecked()
         self.updateCharts()
 
@@ -491,22 +487,21 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
     def changeMarkerSize(self, size: int):
         self.app.settings.setValue("MarkerSize", size)
-        Defaults.cfg.chart_marker.size = size
+        Defaults.cfg.chart.marker_size = size
         self.markerSizeInput.setValue(size)
         self.updateCharts()
 
     def changeDarkMode(self):
         state = self.dark_mode_option.isChecked()
-        self.app.settings.setValue("DarkMode", state)
+        Defaults.cfg.gui.dark_mode = state
         Chart.color.foreground = QtGui.QColor(QtCore.Qt.lightGray)
         if state:
             Chart.color.background = QtGui.QColor(QtCore.Qt.black)
             Chart.color.text = QtGui.QColor(QtCore.Qt.white)
-            Chart.color.swr = Chart.color.swr
         else:
             Chart.color.background = QtGui.QColor(QtCore.Qt.white)
             Chart.color.text = QtGui.QColor(QtCore.Qt.black)
-            Chart.color.swr = Chart.color.swr
+        Chart.color.swr = Chart.color.swr
         self.updateCharts()
 
     def changeSetting(self, setting: str, value: str):
@@ -543,7 +538,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
     def changeFont(self):
         font_size = self.font_dropdown.currentText()
-        self.app.settings.setValue("FontSize", font_size)
+        Defaults.cfg.gui.font_size = font_size
         app: QtWidgets.QApplication = QtWidgets.QApplication.instance()
         font = app.font()
         font.setPointSize(int(font_size))

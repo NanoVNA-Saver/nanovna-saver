@@ -636,13 +636,13 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
         self.worker.stopped = True
-        self.settings.setValue("MarkerCount", Marker.count())
         for marker in self.markers:
             marker.update_settings()
         self.settings.sync()
         self.bands.saveSettings()
         self.threadpool.waitForDone(2500)
 
+        Defaults.cfg.chart.marker_count = Marker.count()
         Defaults.cfg.gui.window_width = self.width()
         Defaults.cfg.gui.window_height = self.height()
         Defaults.cfg.gui.splitter_sizes = self.splitter.saveState()
