@@ -16,10 +16,15 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import json
+
 import dataclasses as DC
+import logging
+import json
 
 from PyQt5.QtCore import QSettings
+
+
+logger = logging.getLogger(__name__)
 
 @DC.dataclass
 class GUI:
@@ -42,17 +47,21 @@ class CFG:
     chart_marker: object = ChartMarker()
 
 
+cfg = CFG()
+
 def restore(settings: 'AppSettings') -> CFG:
     result = CFG()
     for field in DC.fields(result):
         value = settings.restore_dataclass(field.name.upper(),
                                            getattr(result, field.name))
         setattr(result, field.name, value)
+    logger.debug(f"restored {result}")
     return result
 
 
 def store(settings: 'AppSettings', data: CFG) -> None:
     assert type(data) is CFG
+    logger.debug(f"storing {data}")
     for field in DC.fields(data):
         data_class  = getattr(data, field.name)
         assert DC.is_dataclass(data_class)
