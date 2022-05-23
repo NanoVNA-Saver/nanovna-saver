@@ -74,7 +74,7 @@ class AppSettings(QSettings):
         self.beginGroup(name)
         for field in DC.fields(data):
             value = getattr(data, field.name)
-            if field.type not in (int, float, str, bool):
+            if field.type not in (int, float, str):
                 value = json.dumps(value)
             self.setValue(field.name, value)
         self.endGroup()
@@ -85,13 +85,18 @@ class AppSettings(QSettings):
         result = DC.replace(data)
         self.beginGroup(name)
         for field in DC.fields(data):
-            value = self.value(field.name)
-            if value is None:
-                value = getattr(data, field.name)
-            elif field.type in (int, float, str, bool):
-                value = field.type(value)
+            value = None
+            if field.type in (int, float, str):
+                value = self.value(field.name,
+                                   type=field.type,
+                                   defaultValue=field.default)
             else:
-                value = json.loads(value)
+                value = field.type(json.loads(
+                    self.value(field.name,
+                               type=str,
+                               defaultValue=json.dumps(
+                                   getattr(data, field.name)
+                               ))))
             setattr(result, field.name, value)
         self.endGroup()
         
