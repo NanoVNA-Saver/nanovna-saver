@@ -87,7 +87,7 @@ class AppSettings(QSettings):
         for field in DC.fields(data):
             value = None
             if field.type in (int, float, str):
-                value = self.value(field.name,
+                value = self.value(field.name, 
                                    type=field.type,
                                    defaultValue=field.default)
             else:
