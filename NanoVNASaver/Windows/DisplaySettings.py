@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
+#  Copyright (C) 2020ff NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -21,8 +21,9 @@ from typing import List
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 
+import NanoVNASaver.Defaults as Defaults
 from NanoVNASaver.Charts.Chart import (
-    Chart, ChartColors, ChartMarker, ChartMarkerConfig)
+    Chart, ChartColors)
 from NanoVNASaver.Windows.Bands import BandsWindow
 from NanoVNASaver.Windows.MarkerSettings import MarkerSettingsWindow
 from NanoVNASaver.Marker import Marker
@@ -37,7 +38,6 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.app = app
         self.setWindowTitle("Display settings")
         self.setWindowIcon(self.app.icon)
-        self.marker_cfg = ChartMarkerConfig()
         self.marker_window = MarkerSettingsWindow(self.app)
         self.callback_params = {}
 
@@ -107,9 +107,8 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         self.markerSizeInput = QtWidgets.QSpinBox()
         self.markerSizeInput.setMinimumHeight(20)
-        markersize = self.app.settings.value("MarkerSize", 6, int)
+        markersize = Defaults.cfg.chart_marker.size
         self.markerSizeInput.setValue(markersize)
-        self.markerSizeInput.setMinimum(4)
         self.markerSizeInput.setMinimum(4)
         self.markerSizeInput.setMaximum(20)
         self.markerSizeInput.setSingleStep(2)
@@ -369,10 +368,9 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.show_lines_option.setChecked(
             self.app.settings.value("ShowLines", False, bool))
         self.show_marker_number_option.setChecked(
-            self.app.settings.value("ShowMarkerNumbers", ChartMarkerConfig.draw_label, bool))
+            Defaults.cfg.chart_marker.draw_label)
         self.filled_marker_option.setChecked(
-            self.app.settings.value("FilledMarkers", ChartMarkerConfig.fill, bool))
-
+            Defaults.cfg.chart_marker.fill)
         if self.app.settings.value("UseCustomColors",
                                    defaultValue=False, type=bool):
             self.dark_mode_option.setDisabled(True)
@@ -467,21 +465,18 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             c.setDrawLines(state)
 
     def changeShowMarkerNumber(self):
-        state = self.show_marker_number_option.isChecked()
-        self.app.settings.setValue("ShowMarkerNumbers", state)
-        ChartMarker.cfg.draw_label = state
+        Defaults.cfg.chart_marker.draw_label = \
+            self.show_marker_number_option.isChecked()
         self.updateCharts()
 
     def changeFilledMarkers(self):
-        state = self.filled_marker_option.isChecked()
-        self.app.settings.setValue("FilledMarkers", state)
-        ChartMarker.cfg.fill = state
+        Defaults.cfg.chart_marker.fill = \
+            self.filled_marker_option.isChecked()
         self.updateCharts()
 
     def changeMarkerAtTip(self):
-        state = self.marker_at_tip.isChecked()
-        self.app.settings.setValue("MarkerAtTip", state)
-        ChartMarker.cfg.at_tip = state
+        Defaults.cfg.chart_marker.at_tip = \
+            self.marker_at_tip.isChecked()
         self.updateCharts()
 
     def changePointSize(self, size: int):
@@ -496,7 +491,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
     def changeMarkerSize(self, size: int):
         self.app.settings.setValue("MarkerSize", size)
-        ChartMarker.cfg.size = size
+        Defaults.cfg.chart_marker.size = size
         self.markerSizeInput.setValue(size)
         self.updateCharts()
 
@@ -628,3 +623,4 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
     def updateCharts(self):
         for c in self.app.subscribing_charts:
             c.update()
+        Defaults.store(self.app.settings, Defaults.cfg)

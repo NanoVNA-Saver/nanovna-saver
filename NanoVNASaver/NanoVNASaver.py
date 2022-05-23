@@ -24,6 +24,7 @@ from time import strftime, localtime
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 
+import NanoVNASaver.Defaults as Defaults
 from .Windows import (
     AboutWindow, AnalysisWindow, CalibrationWindow,
     DeviceSettingsWindow, DisplaySettingsWindow, SweepSettingsWindow,
@@ -69,10 +70,11 @@ class NanoVNASaver(QtWidgets.QWidget):
         else:
             self.icon = QtGui.QIcon("icon_48x48.png")
         self.setWindowIcon(self.icon)
-        self.settings = QtCore.QSettings(QtCore.QSettings.IniFormat,
+        self.settings = Defaults.AppSettings(QtCore.QSettings.IniFormat,
                                          QtCore.QSettings.UserScope,
                                          "NanoVNASaver", "NanoVNASaver")
         logger.info("Settings from: %s", self.settings.fileName())
+        Defaults.cfg = Defaults.restore(self.settings)
         self.threadpool = QtCore.QThreadPool()
         self.sweep = Sweep()
         self.worker = SweepWorker(self)

@@ -24,6 +24,7 @@ from typing import List, Set, Tuple, ClassVar, Any
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSignal
 
+import NanoVNASaver.Defaults as Defaults
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.Marker import Marker
 
@@ -64,23 +65,15 @@ class ChartFlags:
     draw_lines: bool = False
     is_popout: bool = False
 
-@dataclass
-class ChartMarkerConfig:
-    draw_label: bool = False
-    fill: bool = False
-    at_tip: bool = False
-    size: int = 3
 
 class ChartMarker(QtWidgets.QWidget):
-    cfg: ClassVar[ChartMarkerConfig] = ChartMarkerConfig()
-
     def __init__(self, qp: QtGui.QPaintDevice):
         super().__init__()
         self.qp = qp
 
     def draw(self, x: int, y: int, color: QtGui.QColor, text: str = ""):
-        offset = self.cfg.size // 2
-        if self.cfg.at_tip:
+        offset = Defaults.cfg.chart_marker.size // 2
+        if Defaults.cfg.chart_marker.at_tip:
             y -= offset
         pen = QtGui.QPen(color)
         self.qp.setPen(pen)
@@ -90,12 +83,12 @@ class ChartMarker(QtWidgets.QWidget):
         qpp.lineTo(x + offset, y - offset)
         qpp.lineTo(x, y + offset)
 
-        if self.cfg.fill:
+        if Defaults.cfg.chart_marker.fill:
             self.qp.fillPath(qpp, color)
         else:
             self.qp.drawPath(qpp)
 
-        if text and self.cfg.draw_label:
+        if text and Defaults.cfg.chart_marker.draw_label:
             text_width = self.qp.fontMetrics().horizontalAdvance(text)
             self.qp.drawText(x - text_width // 2, y - 3 - offset, text)
 
@@ -104,7 +97,7 @@ class Chart(QtWidgets.QWidget):
     bands: ClassVar[Any] = None
     popoutRequested: ClassVar[Any] = pyqtSignal(object)
     color: ClassVar[ChartColors] = ChartColors()
-    marker_cfg: ClassVar[ChartMarkerConfig] = ChartMarkerConfig()
+    marker_cfg: ClassVar[Defaults.ChartMarker] = Defaults.cfg.chart_marker
 
     def __init__(self, name):
         super().__init__()
@@ -160,7 +153,7 @@ class Chart(QtWidgets.QWidget):
         self.update()
 
     def setMarkerSize(self, size):
-        ChartMarker.cfg.size = size
+        Defaults.cfg.chart_marker.size = size
         self.update()
 
     def setSweepTitle(self, title):
