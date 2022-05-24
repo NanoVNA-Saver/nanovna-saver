@@ -17,12 +17,9 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import base64
 import dataclasses as DC
 import logging
 import json
-from ssl import DefaultVerifyPaths
-from tkinter.messagebox import NO
 
 from PyQt5.QtCore import QSettings
 
@@ -30,24 +27,29 @@ from PyQt5.QtCore import QSettings
 logger = logging.getLogger(__name__)
 
 # pylint: disable=too-few-public-methods
+# pylint: disable=too-many-instance-attributes
 @DC.dataclass
 class GUI:
     window_height: int = 950
     window_width: int = 1433
     font_size: int = 8
     dark_mode: bool = False
+    # TODO: implement QByteArray
     splitter_sizes: bytearray = DC.field(default_factory=bytearray)
+    markers_hidden: bool = False
 
 
 @DC.dataclass
 class Chart:
     point_size: int = 2
+    show_lines: bool = False
     line_thickness: int = 1
     marker_count: int = 3
     marker_label: bool = False
     marker_filled: bool = False
     marker_at_tip: bool = False
     marker_size: int = 8
+    returnloss_is_positive: bool = False
 
 
 @DC.dataclass
@@ -69,8 +71,8 @@ def restore(settings: 'AppSettings') -> CFG:
 
 
 def store(settings: 'AppSettings', data: CFG) -> None:
-    assert isinstance(data, CFG)
     logger.debug("storing\n(\n%s\n)", data)
+    assert isinstance(data, CFG)
     for field in DC.fields(data):
         data_class  = getattr(data, field.name)
         assert DC.is_dataclass(data_class)
@@ -83,11 +85,17 @@ class AppSettings(QSettings):
         self.beginGroup(name)
         for field in DC.fields(data):
             value = getattr(data, field.name)
+            try:
+                assert isinstance(value, field.type)
+            except AssertionError:
+                logger.error("%s: %s is not a %s", name, field.name,
+                               field.type)
+                continue
             if field.type not in (int, float, str, bool):
                 try:
                     value = json.dumps(value)
                 except TypeError:
-                    value = field.type(value).hex()                    
+                    value = field.type(value).hex()
             self.setValue(field.name, value)
         self.endGroup()
 

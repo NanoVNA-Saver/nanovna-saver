@@ -21,12 +21,21 @@ import logging
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QCheckBox
 
-import NanoVNASaver.Defaults as Defaults
+from NanoVNASaver import Defaults
 from NanoVNASaver.Marker import Marker
 from NanoVNASaver.Controls.Control import Control
 
 
 logger = logging.getLogger(__name__)
+
+
+class ShowButton(QtWidgets.QPushButton):
+    def setText(self, text: str=''):
+        if not text:
+            text = ("Show data"
+                    if Defaults.cfg.gui.markers_hidden else "Hide data")
+        super().setText(text)
+        self.setToolTip("Toggle visibility of marker readings area")
 
 
 class MarkerControl(Control):
@@ -56,12 +65,9 @@ class MarkerControl(Control):
 
         self.layout.addRow(layout2)
 
-        self.showMarkerButton = QtWidgets.QPushButton()
+        self.showMarkerButton = ShowButton()
         self.showMarkerButton.setFixedHeight(20)
-        if self.app.marker_frame.isHidden():
-            self.showMarkerButton.setText("Show data")
-        else:
-            self.showMarkerButton.setText("Hide data")
+        self.showMarkerButton.setText()
         self.showMarkerButton.clicked.connect(self.toggle_frame)
 
         lock_radiobutton = QtWidgets.QRadioButton("Locked")
@@ -76,10 +82,10 @@ class MarkerControl(Control):
 
     def toggle_frame(self):
         def settings(hidden: bool):
-            self.app.marker_frame.setHidden(not hidden)
-            self.app.settings.setValue("MarkersVisible", hidden)
-            self.showMarkerButton.setText(
-                "Hide data" if hidden else "Show data")
+            Defaults.cfg.gui.markers_hidden = not hidden
+            self.app.marker_frame.setHidden(
+                Defaults.cfg.gui.markers_hidden)
+            self.showMarkerButton.setText()
             self.showMarkerButton.repaint()
         settings(self.app.marker_frame.isHidden())
 

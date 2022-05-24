@@ -16,6 +16,7 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+import contextlib
 import logging
 from time import strftime, localtime
 from urllib import request, error
@@ -99,18 +100,10 @@ class AboutWindow(QtWidgets.QWidget):
         self.updateLabels()
 
     def updateLabels(self):
-        try:
+        with contextlib.suppress(IOError, AttributeError):
             self.versionLabel.setText(
                 f"NanoVNA Firmware Version: {self.app.vna.name} "
                 f"v{self.app.vna.version}")
-        except (IOError, AttributeError):
-            pass
-
-    def updateSettings(self):
-        if self.updateCheckBox.isChecked():
-            self.app.settings.setValue("CheckForUpdates", "Yes")
-        else:
-            self.app.settings.setValue("CheckForUpdates", "No")
 
     def findUpdates(self, automatic=False):
         latest_version = Version()

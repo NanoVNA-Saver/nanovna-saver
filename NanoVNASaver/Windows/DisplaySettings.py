@@ -21,7 +21,7 @@ from typing import List
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 
-import NanoVNASaver.Defaults as Defaults
+from NanoVNASaver import Defaults
 from NanoVNASaver.Charts.Chart import (
     Chart, ChartColors)
 from NanoVNASaver.Windows.Bands import BandsWindow
@@ -61,10 +61,10 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         display_options_layout.addRow("Return loss is:", self.returnloss_is_negative)
         display_options_layout.addRow("", self.returnloss_is_positive)
 
-        if self.app.settings.value("ReturnLossPositive", False, bool):
-            self.returnloss_is_positive.setChecked(True)
-        else:
-            self.returnloss_is_negative.setChecked(True)
+        self.returnloss_is_positive.setChecked(
+            Defaults.cfg.chart.returnloss_is_positive)
+        self.returnloss_is_negative.setChecked(
+            not Defaults.cfg.chart.returnloss_is_positive)
 
         self.returnloss_is_positive.toggled.connect(self.changeReturnLoss)
         self.changeReturnLoss()
@@ -83,7 +83,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         self.pointSizeInput = QtWidgets.QSpinBox()
         self.pointSizeInput.setMinimumHeight(20)
-        pointsize = self.app.settings.value("PointSize", 2, int)
+        pointsize = Defaults.cfg.chart.point_size
         self.pointSizeInput.setValue(pointsize)
         self.changePointSize(pointsize)
         self.pointSizeInput.setMinimum(1)
@@ -95,7 +95,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         self.lineThicknessInput = QtWidgets.QSpinBox()
         self.lineThicknessInput.setMinimumHeight(20)
-        linethickness = self.app.settings.value("LineThickness", 1, int)
+        linethickness = Defaults.cfg.chart.line_thickness
         self.lineThicknessInput.setValue(linethickness)
         self.changeLineThickness(linethickness)
         self.lineThicknessInput.setMinimum(1)
@@ -136,10 +136,8 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         display_options_layout.addRow("Data point is:", self.marker_at_center)
         display_options_layout.addRow("", self.marker_at_tip)
 
-        if self.app.settings.value("MarkerAtTip", False, bool):
-            self.marker_at_tip.setChecked(True)
-        else:
-            self.marker_at_center.setChecked(True)
+        self.marker_at_tip.setChecked(Defaults.cfg.chart.marker_at_tip)
+        self.marker_at_center.setChecked(not Defaults.cfg.chart.marker_at_tip)
 
         self.marker_at_tip.toggled.connect(self.changeMarkerAtTip)
         self.changeMarkerAtTip()
@@ -192,11 +190,8 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.vswrMarkers: List[float] = self.app.settings.value("VSWRMarkers", [], float)
 
         if isinstance(self.vswrMarkers, float):
-            if self.vswrMarkers == 0:
-                self.vswrMarkers = []
-            else:
-                # Single values from the .ini become floats rather than lists. Convert them.
-                self.vswrMarkers = [self.vswrMarkers]
+            # Single values from the .ini become floats rather than lists. Convert them.
+            self.vswrMarkers = [] if self.vswrMarkers == 0.0 else [self.vswrMarkers]
 
         vswr_marker_layout.addRow(
             "VSWR Markers",self.color_picker("VSWRColor", "swr"))
@@ -205,7 +200,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.vswr_marker_dropdown.setMinimumHeight(20)
         vswr_marker_layout.addRow(self.vswr_marker_dropdown)
 
-        if len(self.vswrMarkers) == 0:
+        if not self.vswrMarkers:
             self.vswr_marker_dropdown.addItem("None")
         else:
             for m in self.vswrMarkers:
@@ -258,10 +253,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         #               "S21 Phase",
         #               "None"]
 
-        selections = []
-
-        for c in self.app.selectable_charts:
-            selections.append(c.name)
+        selections = [c.name for c in self.app.selectable_charts]
 
         selections.append("None")
         chart00_selection = QtWidgets.QComboBox()
@@ -361,12 +353,11 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             type=QtGui.QColor)
 
         self.dark_mode_option.setChecked(Defaults.cfg.gui.dark_mode)
-        self.show_lines_option.setChecked(
-            self.app.settings.value("ShowLines", False, bool))
+        self.show_lines_option.setChecked(Defaults.cfg.chart.show_lines)
         self.show_marker_number_option.setChecked(
             Defaults.cfg.chart.marker_label)
-        self.filled_marker_option.setChecked(
-            Defaults.cfg.chart.marker_filled)
+        self.filled_marker_option.setChecked(Defaults.cfg.chart.marker_filled)
+
         if self.app.settings.value("UseCustomColors",
                                    defaultValue=False, type=bool):
             self.dark_mode_option.setDisabled(True)
@@ -444,8 +435,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
     def changeReturnLoss(self):
         state = self.returnloss_is_positive.isChecked()
-        self.app.settings.setValue("ReturnLossPositive", state)
-
+        Defaults.cfg.chart.returnloss_is_positive = bool(state)
         for m in self.app.markers:
             m.returnloss_is_positive = state
             m.updateLabels(self.app.data.s11, self.app.data.s21)
@@ -456,44 +446,43 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
     def changeShowLines(self):
         state = self.show_lines_option.isChecked()
-        self.app.settings.setValue("ShowLines", state)
+        Defaults.cfg.chart.show_lines = bool(state)
         for c in self.app.subscribing_charts:
             c.setDrawLines(state)
 
     def changeShowMarkerNumber(self):
-        Defaults.cfg.chart.marker_label = \
-            self.show_marker_number_option.isChecked()
+        Defaults.cfg.chart.marker_label = bool(
+            self.show_marker_number_option.isChecked())
         self.updateCharts()
 
     def changeFilledMarkers(self):
-        Defaults.cfg.chart.marker_filled = \
-            self.filled_marker_option.isChecked()
+        Defaults.cfg.chart.marker_filled = bool(
+            self.filled_marker_option.isChecked())
         self.updateCharts()
 
     def changeMarkerAtTip(self):
-        Defaults.cfg.chart.marker_at_tip = \
-            self.marker_at_tip.isChecked()
+        Defaults.cfg.chart.marker_at_tip = bool(
+            self.marker_at_tip.isChecked())
         self.updateCharts()
 
     def changePointSize(self, size: int):
-        self.app.settings.setValue("PointSize", size)
+        Defaults.cfg.chart.point_size = size
         for c in self.app.subscribing_charts:
             c.setPointSize(size)
 
     def changeLineThickness(self, size: int):
-        self.app.settings.setValue("LineThickness", size)
+        Defaults.cfg.chart.line_thickness = int(size)
         for c in self.app.subscribing_charts:
             c.setLineThickness(size)
 
     def changeMarkerSize(self, size: int):
-        self.app.settings.setValue("MarkerSize", size)
         Defaults.cfg.chart.marker_size = size
         self.markerSizeInput.setValue(size)
         self.updateCharts()
 
     def changeDarkMode(self):
         state = self.dark_mode_option.isChecked()
-        Defaults.cfg.gui.dark_mode = state
+        Defaults.cfg.gui.dark_mode = bool(state)
         Chart.color.foreground = QtGui.QColor(QtCore.Qt.lightGray)
         if state:
             Chart.color.background = QtGui.QColor(QtCore.Qt.black)
@@ -537,11 +526,11 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             c.update()
 
     def changeFont(self):
-        font_size = self.font_dropdown.currentText()
+        font_size = int(self.font_dropdown.currentText())
         Defaults.cfg.gui.font_size = font_size
         app: QtWidgets.QApplication = QtWidgets.QApplication.instance()
         font = app.font()
-        font.setPointSize(int(font_size))
+        font.setPointSize(font_size)
         app.setFont(font)
         self.app.changeFont(font)
 

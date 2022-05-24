@@ -24,7 +24,7 @@ from typing import List, Set, Tuple, ClassVar, Any
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSignal
 
-import NanoVNASaver.Defaults as Defaults
+from NanoVNASaver import Defaults
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.Marker import Marker
 

@@ -24,7 +24,7 @@ from time import strftime, localtime
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 
-import NanoVNASaver.Defaults as Defaults
+from NanoVNASaver import Defaults
 from .Windows import (
     AboutWindow, AnalysisWindow, CalibrationWindow,
     DeviceSettingsWindow, DisplaySettingsWindow, SweepSettingsWindow,
@@ -204,8 +204,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         left_column = QtWidgets.QVBoxLayout()
         right_column = QtWidgets.QVBoxLayout()
         right_column.addLayout(self.charts_layout)
-        self.marker_frame.setHidden(
-            not self.settings.value("MarkersVisible", True, bool))
+        self.marker_frame.setHidden(Defaults.cfg.gui.markers_hidden)
         chart_widget = QtWidgets.QWidget()
         chart_widget.setLayout(right_column)
         self.splitter = QtWidgets.QSplitter()
@@ -645,7 +644,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         Defaults.cfg.chart.marker_count = Marker.count()
         Defaults.cfg.gui.window_width = self.width()
         Defaults.cfg.gui.window_height = self.height()
-        Defaults.cfg.gui.splitter_sizes = self.splitter.saveState()
+        Defaults.cfg.gui.splitter_sizes = bytearray(self.splitter.saveState())
         Defaults.store(self.settings, Defaults.cfg)
 
         a0.accept()
