@@ -24,6 +24,7 @@ from time import strftime, localtime
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 
+from NanoVNASaver import Defaults
 from .Windows import (
     AboutWindow, AnalysisWindow, CalibrationWindow,
     DeviceSettingsWindow, DisplaySettingsWindow, SweepSettingsWindow,
@@ -69,10 +70,11 @@ class NanoVNASaver(QtWidgets.QWidget):
         else:
             self.icon = QtGui.QIcon("icon_48x48.png")
         self.setWindowIcon(self.icon)
-        self.settings = QtCore.QSettings(QtCore.QSettings.IniFormat,
+        self.settings = Defaults.AppSettings(QtCore.QSettings.IniFormat,
                                          QtCore.QSettings.UserScope,
                                          "NanoVNASaver", "NanoVNASaver")
         logger.info("Settings from: %s", self.settings.fileName())
+        Defaults.cfg = Defaults.restore(self.settings)
         self.threadpool = QtCore.QThreadPool()
         self.sweep = Sweep()
         self.worker = SweepWorker(self)
@@ -121,9 +123,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         outer.addWidget(scrollarea)
         self.setLayout(outer)
         scrollarea.setWidgetResizable(True)
-        window_width = self.settings.value("WindowWidth", 1350, type=int)
-        window_height = self.settings.value("WindowHeight", 950, type=int)
-        self.resize(window_width, window_height)
+        self.resize(Defaults.cfg.gui.window_width,
+                    Defaults.cfg.gui.window_height)
         scrollarea.setSizePolicy(
             QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
         self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
@@ -203,18 +204,14 @@ class NanoVNASaver(QtWidgets.QWidget):
         left_column = QtWidgets.QVBoxLayout()
         right_column = QtWidgets.QVBoxLayout()
         right_column.addLayout(self.charts_layout)
-        self.marker_frame.setHidden(
-            not self.settings.value("MarkersVisible", True, bool))
+        self.marker_frame.setHidden(Defaults.cfg.gui.markers_hidden)
         chart_widget = QtWidgets.QWidget()
         chart_widget.setLayout(right_column)
         self.splitter = QtWidgets.QSplitter()
         self.splitter.addWidget(self.marker_frame)
         self.splitter.addWidget(chart_widget)
 
-        try:
-            self.splitter.restoreState(self.settings.value("SplitterSizes"))
-        except TypeError:
-            pass
+        self.splitter.restoreState(Defaults.cfg.gui.splitter_sizes)
 
         layout.addLayout(left_column)
         layout.addWidget(self.splitter, 2)
@@ -638,17 +635,18 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
         self.worker.stopped = True
-        self.settings.setValue("MarkerCount", Marker.count())
         for marker in self.markers:
             marker.update_settings()
-
-        self.settings.setValue("WindowHeight", self.height())
-        self.settings.setValue("WindowWidth", self.width())
-        self.settings.setValue("SplitterSizes", self.splitter.saveState())
-
         self.settings.sync()
         self.bands.saveSettings()
         self.threadpool.waitForDone(2500)
+
+        Defaults.cfg.chart.marker_count = Marker.count()
+        Defaults.cfg.gui.window_width = self.width()
+        Defaults.cfg.gui.window_height = self.height()
+        Defaults.cfg.gui.splitter_sizes = bytearray(self.splitter.saveState())
+        Defaults.store(self.settings, Defaults.cfg)
+
         a0.accept()
         sys.exit()
 
