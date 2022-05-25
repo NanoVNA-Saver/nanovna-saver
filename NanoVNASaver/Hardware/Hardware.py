@@ -88,7 +88,11 @@ def get_interfaces() -> List[Interface]:
                          t.name, d.vid, d.pid, d.device)
             iface = Interface('serial', t.name)
             iface.port = d.device
-            iface.open()
+            try:
+                iface.open()
+            except serial.SerialException:
+                logger.warning("Could not open serial port %s", d.device)
+                continue
             iface.comment = get_comment(iface)
             iface.close()
             interfaces.append(iface)
