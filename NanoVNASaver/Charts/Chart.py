@@ -32,18 +32,6 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class ChartColors:  # pylint: disable=too-many-instance-attributes
-    background: QtGui.QColor = QtGui.QColor(QtCore.Qt.white)
-    foreground: QtGui.QColor = QtGui.QColor(QtCore.Qt.lightGray)
-    reference: QtGui.QColor = QtGui.QColor(0, 0, 255, 64)
-    reference_secondary: QtGui.QColor = QtGui.QColor(0, 0, 192, 48)
-    sweep: QtGui.QColor =  QtGui.QColor(QtCore.Qt.darkYellow)
-    sweep_secondary: QtGui.QColor = QtGui.QColor(QtCore.Qt.darkMagenta)
-    swr: QtGui.QColor = QtGui.QColor(255, 0, 0, 128)
-    text: QtGui.QColor = QtGui.QColor(QtCore.Qt.black)
-    bands: QtGui.QColor = QtGui.QColor(128, 128, 128, 48)
-
-@dataclass
 class ChartDimensions:
     height: int = 200
     height_min: int = 200
@@ -96,7 +84,7 @@ class ChartMarker(QtWidgets.QWidget):
 class Chart(QtWidgets.QWidget):
     bands: ClassVar[Any] = None
     popoutRequested: ClassVar[Any] = pyqtSignal(object)
-    color: ClassVar[ChartColors] = ChartColors()
+    color: ClassVar[Defaults.ChartColors] = Defaults.cfg.chart_colors
 
     def __init__(self, name):
         super().__init__()
@@ -271,7 +259,7 @@ class Chart(QtWidgets.QWidget):
         cmarker.draw(x, y, color, str(number))
 
     def drawTitle(self, qp: QtGui.QPainter, position: QtCore.QPoint = None):
-        qp.setPen(Chart.color.text)
+        qp.setPen(Defaults.cfg.chart_colors.text)
         if position is None:
             qf = QtGui.QFontMetricsF(self.font())
             width = qf.boundingRect(self.sweepTitle).width()

@@ -57,7 +57,7 @@ class TestCases(unittest.TestCase):
         illegal_config = TConfig(
             my_int=4, my_float=3.0, my_str="Goodbye World",
             my_bool="False", my_list=(4, 5, 6))
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(TypeError):
             self.settings_1.store_dataclass("SectionX", illegal_config)
 
     def test_restore_dataclass(self):

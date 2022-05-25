@@ -644,7 +644,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         Defaults.cfg.chart.marker_count = Marker.count()
         Defaults.cfg.gui.window_width = self.width()
         Defaults.cfg.gui.window_height = self.height()
-        Defaults.cfg.gui.splitter_sizes = bytearray(self.splitter.saveState())
+        Defaults.cfg.gui.splitter_sizes = self.splitter.saveState()
         Defaults.store(self.settings, Defaults.cfg)
 
         a0.accept()

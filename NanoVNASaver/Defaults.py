@@ -19,10 +19,11 @@
 
 import dataclasses as DC
 import logging
-import json
+from ast import literal_eval
 
-from PyQt5.QtCore import QSettings
-
+from PyQt5 import QtGui, QtCore
+from PyQt5.QtCore import QSettings, QByteArray
+from PyQt5.QtGui import QColor
 
 logger = logging.getLogger(__name__)
 
@@ -34,9 +35,18 @@ class GUI:
     window_width: int = 1433
     font_size: int = 8
     dark_mode: bool = False
-    # TODO: implement QByteArray
-    splitter_sizes: bytearray = DC.field(default_factory=bytearray)
+    splitter_sizes: QByteArray = DC.field(default_factory=QByteArray)
     markers_hidden: bool = False
+    
+
+@DC.dataclass
+class ChartsSelected:
+    chart_00: str = 'S11 Smith Chart'
+    chart_01: str = 'S11 Return Loss'
+    chart_02: str = 'None'
+    chart_10: str = 'S21 Polar Plot'
+    chart_11: str = 'S21 Gain'
+    chart_12: str = 'None'
 
 
 @DC.dataclass
@@ -53,10 +63,24 @@ class Chart:
 
 
 @DC.dataclass
+class ChartColors:  # pylint: disable=too-many-instance-attributes
+    background: QColor = QColor(QtCore.Qt.white)
+    foreground: QColor = QColor(QtCore.Qt.lightGray)
+    reference: QColor = QColor(0, 0, 255, 64)
+    reference_secondary: QColor = QColor(0, 0, 192, 48)
+    sweep: QColor =  QColor(QtCore.Qt.darkYellow)
+    sweep_secondary: QColor = QColor(QtCore.Qt.darkMagenta)
+    swr: QColor = QColor(255, 0, 0, 128)
+    text: QColor = QColor(QtCore.Qt.black)
+    bands: QColor = QColor(128, 128, 128, 48)
+
+
+@DC.dataclass
 class CFG:
     gui: object = GUI()
+    charts_selected: object = ChartsSelected()
     chart: object = Chart()
-
+    chart_colors: object = ChartColors()
 
 cfg = CFG()
 
@@ -70,7 +94,8 @@ def restore(settings: 'AppSettings') -> CFG:
     return result
 
 
-def store(settings: 'AppSettings', data: CFG) -> None:
+def store(settings: 'AppSettings', data: CFG=None) -> None:
+    data = data or cfg
     logger.debug("storing\n(\n%s\n)", data)
     assert isinstance(data, CFG)
     for field in DC.fields(data):
@@ -78,6 +103,29 @@ def store(settings: 'AppSettings', data: CFG) -> None:
         assert DC.is_dataclass(data_class)
         settings.store_dataclass(field.name.upper(), data_class)
 
+
+def from_type(data) -> str:
+    type_map = {
+        bytearray: lambda x: x.hex(),
+        QColor: lambda x: x.getRgb(),
+        QByteArray: lambda x: x.toHex(),
+    }
+    if type(data) in type_map:
+        return str(type_map[type(data)](data))
+    return str(data)
+
+def to_type(data: object, data_type: type) -> object:
+    type_map = {
+        bool: lambda x: literal_eval(x),
+        bytearray: lambda x: bytearray.fromhex(x),
+        list: lambda x: literal_eval(x),
+        QColor: lambda x: QColor.fromRgb(*literal_eval(x)),
+        QByteArray: lambda x: QByteArray.fromHex(*literal_eval(x)),
+    }
+    if data_type in type_map:
+        return type_map[data_type](data)
+    return data_type(data)
+    
 
 class AppSettings(QSettings):
     def store_dataclass(self, name: str, data: object) -> None:
@@ -87,16 +135,11 @@ class AppSettings(QSettings):
             value = getattr(data, field.name)
             try:
                 assert isinstance(value, field.type)
-            except AssertionError:
-                logger.error("%s: %s is not a %s", name, field.name,
-                               field.type)
-                continue
-            if field.type not in (int, float, str, bool):
-                try:
-                    value = json.dumps(value)
-                except TypeError:
-                    value = field.type(value).hex()
-            self.setValue(field.name, value)
+            except AssertionError as exc:
+                logger.error("%s: %s of type %s is not a %s",
+                             name, field.name, type(value), field.type)
+                raise TypeError from exc
+            self.setValue(field.name, from_type(value))
         self.endGroup()
 
     def restore_dataclass(self, name: str, data: object) -> object:
@@ -105,21 +148,14 @@ class AppSettings(QSettings):
         result = DC.replace(data)
         self.beginGroup(name)
         for field in DC.fields(data):
-            value = None
-            if field.type in (int, float, str, bool):
-                value = self.value(field.name,
-                                   type=field.type,
-                                   defaultValue=field.default)
-            else:
-                default = getattr(data, field.name)
-                try:
-                    value = json.loads(
-                        self.value(field.name, type=str,
-                                   defaultValue=json.dumps(default)))
-                except TypeError:
-                    value = self.value(field.name)
-                    value = bytes.fromhex(value) if value is str else default
-            setattr(result, field.name, field.type(value))
+            default = getattr(data, field.name)
+            value = self.value(field.name, type=str, defaultValue="")
+            if not value:
+                setattr(result, field.name, default)
+                continue
+            try:
+                setattr(result, field.name, to_type(value, field.type))
+            except TypeError:
+                setattr(result, field.name, default)                
         self.endGroup()
-
         return result
