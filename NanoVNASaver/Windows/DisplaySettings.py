@@ -22,8 +22,8 @@ from typing import List
 from PyQt5 import QtWidgets, QtCore, QtGui
 
 from NanoVNASaver import Defaults
-from NanoVNASaver.Charts.Chart import (
-    Chart, ChartColors)
+from NanoVNASaver.Charts.Chart import Chart
+from NanoVNASaver.Defaults import ChartColors
 from NanoVNASaver.Windows.Bands import BandsWindow
 from NanoVNASaver.Windows.MarkerSettings import MarkerSettingsWindow
 from NanoVNASaver.Marker import Marker
@@ -40,6 +40,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.setWindowIcon(self.app.icon)
         self.marker_window = MarkerSettingsWindow(self.app)
         self.callback_params = {}
+        self.charts = {}
 
         QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
@@ -241,100 +242,6 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         markers_layout.addRow(marker_btn_layout)
 
-        charts_box = QtWidgets.QGroupBox("Displayed charts")
-        charts_layout = QtWidgets.QGridLayout(charts_box)
-
-        # selections = ["S11 Smith chart",
-        #               "S11 LogMag",
-        #               "S11 VSWR",
-        #               "S11 Phase",
-        #               "S21 Smith chart",
-        #               "S21 LogMag",
-        #               "S21 Phase",
-        #               "None"]
-
-        selections = [c.name for c in self.app.selectable_charts]
-
-        selections.append("None")
-        chart00_selection = QtWidgets.QComboBox()
-        chart00_selection.setMinimumHeight(30)
-        chart00_selection.addItems(selections)
-        chart00 = self.app.settings.value("Chart00", "S11 Smith Chart")
-        if chart00_selection.findText(chart00) > -1:
-            chart00_selection.setCurrentText(chart00)
-        else:
-            chart00_selection.setCurrentText("S11 Smith Chart")
-        chart00_selection.currentTextChanged.connect(
-            lambda: self.changeChart(0, 0, chart00_selection.currentText()))
-        charts_layout.addWidget(chart00_selection, 0, 0)
-
-        chart01_selection = QtWidgets.QComboBox()
-        chart01_selection.setMinimumHeight(30)
-        chart01_selection.addItems(selections)
-        chart01 = self.app.settings.value("Chart01", "S11 Return Loss")
-        if chart01_selection.findText(chart01) > -1:
-            chart01_selection.setCurrentText(chart01)
-        else:
-            chart01_selection.setCurrentText("S11 Return Loss")
-        chart01_selection.currentTextChanged.connect(
-            lambda: self.changeChart(0, 1, chart01_selection.currentText()))
-        charts_layout.addWidget(chart01_selection, 0, 1)
-
-        chart02_selection = QtWidgets.QComboBox()
-        chart02_selection.setMinimumHeight(30)
-        chart02_selection.addItems(selections)
-        chart02 = self.app.settings.value("Chart02", "None")
-        if chart02_selection.findText(chart02) > -1:
-            chart02_selection.setCurrentText(chart02)
-        else:
-            chart02_selection.setCurrentText("None")
-        chart02_selection.currentTextChanged.connect(
-            lambda: self.changeChart(0, 2, chart02_selection.currentText()))
-        charts_layout.addWidget(chart02_selection, 0, 2)
-
-        chart10_selection = QtWidgets.QComboBox()
-        chart10_selection.setMinimumHeight(30)
-        chart10_selection.addItems(selections)
-        chart10 = self.app.settings.value("Chart10", "S21 Polar Plot")
-        if chart10_selection.findText(chart10) > -1:
-            chart10_selection.setCurrentText(chart10)
-        else:
-            chart10_selection.setCurrentText("S21 Polar Plot")
-        chart10_selection.currentTextChanged.connect(
-            lambda: self.changeChart(1, 0, chart10_selection.currentText()))
-        charts_layout.addWidget(chart10_selection, 1, 0)
-
-        chart11_selection = QtWidgets.QComboBox()
-        chart11_selection.setMinimumHeight(30)
-        chart11_selection.addItems(selections)
-        chart11 = self.app.settings.value("Chart11", "S21 Gain")
-        if chart11_selection.findText(chart11) > -1:
-            chart11_selection.setCurrentText(chart11)
-        else:
-            chart11_selection.setCurrentText("S21 Gain")
-        chart11_selection.currentTextChanged.connect(
-            lambda: self.changeChart(1, 1, chart11_selection.currentText()))
-        charts_layout.addWidget(chart11_selection, 1, 1)
-
-        chart12_selection = QtWidgets.QComboBox()
-        chart12_selection.setMinimumHeight(30)
-        chart12_selection.addItems(selections)
-        chart12 = self.app.settings.value("Chart12", "None")
-        if chart12_selection.findText(chart12) > -1:
-            chart12_selection.setCurrentText(chart12)
-        else:
-            chart12_selection.setCurrentText("None")
-        chart12_selection.currentTextChanged.connect(
-            lambda: self.changeChart(1, 2, chart12_selection.currentText()))
-        charts_layout.addWidget(chart12_selection, 1, 2)
-
-        self.changeChart(0, 0, chart00_selection.currentText())
-        self.changeChart(0, 1, chart01_selection.currentText())
-        self.changeChart(0, 2, chart02_selection.currentText())
-        self.changeChart(1, 0, chart10_selection.currentText())
-        self.changeChart(1, 1, chart11_selection.currentText())
-        self.changeChart(1, 2, chart12_selection.currentText())
-
         Chart.color.background = self.app.settings.value(
             "BackgroundColor", defaultValue=ChartColors.background,
             type=QtGui.QColor)
@@ -365,7 +272,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self.use_custom_colors.setChecked(True)
 
         left_layout.addWidget(display_options_box)
-        left_layout.addWidget(charts_box)
+        left_layout.addWidget(self.create_chart_box())
         left_layout.addWidget(markers_box)
         left_layout.addStretch(1)
 
@@ -376,6 +283,47 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         right_layout.addStretch(1)
         self.update()
 
+    def create_chart_box(self) -> QtWidgets.QGroupBox:
+        box = QtWidgets.QGroupBox("Displayed charts")
+        layout = QtWidgets.QGridLayout(box)
+
+        selections = [c.name for c in self.app.selectable_charts] + ["None"]
+
+        for i in ((0, 0), (0, 1), (0, 2), (1, 0), (1, 1), (1, 2)):
+            self.charts[i] = QtWidgets.QComboBox()
+            self.charts[i].setMinimumHeight(30)
+            self.charts[i].addItems(selections)
+            self.charts[i].setCurrentText(
+                getattr(Defaults.cfg.charts_selected, f"chart_{i[0]}{i[1]}"))
+            self.charts[i].currentTextChanged.connect(
+                lambda _, i=i: self.changeChart(i))
+            layout.addWidget(self.charts[i], i[0], i[1])
+            self.changeChart(i)
+        return box
+
+    def changeChart(self, i):
+        x, y = i[:]
+        name = self.charts[(x, y)].currentText()
+        found = next(
+            (c for c in self.app.selectable_charts if c.name == name),
+            None)
+        setattr(Defaults.cfg.charts_selected, f"chart_{x}{y}", name)
+
+        old_widget = self.app.charts_layout.itemAtPosition(x, y)
+        if old_widget is not None:
+            w = old_widget.widget()
+            self.app.charts_layout.removeWidget(w)
+            w.hide()
+        if found is not None:
+            if self.app.charts_layout.indexOf(found) > -1:
+                logger.debug("%s is already shown, duplicating.", found.name)
+                found = self.app.copyChart(found)
+
+            self.app.charts_layout.addWidget(found, x, y)
+            if found.isHidden():
+                found.show()
+
+  
     def trace_colors(self, layout: QtWidgets.QLayout):
         for setting, name, attr in (
             ('SweepColor', 'Sweep color', 'sweep'),
@@ -410,28 +358,6 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         p.setColor(QtGui.QPalette.ButtonText, getattr(Chart.color, attr))
         cp.setPalette(p)
         return cp
-
-    def changeChart(self, x, y, chart):
-        found = None
-        for c in self.app.selectable_charts:
-            if c.name == chart:
-                found = c
-
-        self.app.settings.setValue("Chart" + str(x) + str(y), chart)
-
-        old_widget = self.app.charts_layout.itemAtPosition(x, y)
-        if old_widget is not None:
-            w = old_widget.widget()
-            self.app.charts_layout.removeWidget(w)
-            w.hide()
-        if found is not None:
-            if self.app.charts_layout.indexOf(found) > -1:
-                logger.debug("%s is already shown, duplicating.", found.name)
-                found = self.app.copyChart(found)
-
-            self.app.charts_layout.addWidget(found, x, y)
-            if found.isHidden():
-                found.show()
 
     def changeReturnLoss(self):
         state = self.returnloss_is_positive.isChecked()
@@ -471,7 +397,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             c.setPointSize(size)
 
     def changeLineThickness(self, size: int):
-        Defaults.cfg.chart.line_thickness = int(size)
+        Defaults.cfg.chart.line_thickness = size
         for c in self.app.subscribing_charts:
             c.setLineThickness(size)
 
