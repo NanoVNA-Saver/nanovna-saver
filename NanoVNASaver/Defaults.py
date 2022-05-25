@@ -21,7 +21,7 @@ import dataclasses as DC
 import logging
 from ast import literal_eval
 
-from PyQt5 import QtGui, QtCore
+from PyQt5 import QtCore
 from PyQt5.QtCore import QSettings, QByteArray
 from PyQt5.QtGui import QColor
 
@@ -37,7 +37,7 @@ class GUI:
     dark_mode: bool = False
     splitter_sizes: QByteArray = DC.field(default_factory=QByteArray)
     markers_hidden: bool = False
-    
+
 
 @DC.dataclass
 class ChartsSelected:
@@ -116,16 +116,17 @@ def from_type(data) -> str:
 
 def to_type(data: object, data_type: type) -> object:
     type_map = {
-        bool: lambda x: literal_eval(x),
-        bytearray: lambda x: bytearray.fromhex(x),
-        list: lambda x: literal_eval(x),
+        bool: literal_eval,
+        bytearray: bytearray.fromhex,
+        list: literal_eval,
+        tuple: literal_eval,
         QColor: lambda x: QColor.fromRgb(*literal_eval(x)),
         QByteArray: lambda x: QByteArray.fromHex(*literal_eval(x)),
     }
     if data_type in type_map:
         return type_map[data_type](data)
     return data_type(data)
-    
+
 
 class AppSettings(QSettings):
     def store_dataclass(self, name: str, data: object) -> None:
@@ -156,6 +157,6 @@ class AppSettings(QSettings):
             try:
                 setattr(result, field.name, to_type(value, field.type))
             except TypeError:
-                setattr(result, field.name, default)                
+                setattr(result, field.name, default)
         self.endGroup()
         return result
