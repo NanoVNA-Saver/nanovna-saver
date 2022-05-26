@@ -18,7 +18,6 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import contextlib
 import math
-from this import d
 from typing import List
 
 from PyQt5 import QtGui, QtWidgets, QtCore
@@ -43,7 +42,7 @@ from NanoVNASaver.Formatting import (
     parse_frequency,
 )
 from NanoVNASaver.Inputs import MarkerFrequencyInputWidget as FrequencyInput
-from NanoVNASaver.Marker.Values import TYPES, Value, default_label_ids
+from NanoVNASaver.Marker.Values import TYPES, Value
 
 
 class MarkerLabel(QtWidgets.QLabel):

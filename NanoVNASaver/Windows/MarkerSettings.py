@@ -23,7 +23,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from NanoVNASaver import Defaults
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.Marker import Marker
-from NanoVNASaver.Marker.Values import TYPES, default_label_ids
+from NanoVNASaver.Marker.Values import TYPES
 
 logger = logging.getLogger(__name__)
 
@@ -110,15 +110,14 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
 
     def updateField(self, field: QtGui.QStandardItem):
         if field.checkState() == QtCore.Qt.Checked:
-            if not field.data() in self.currentFieldSelection:
+            if field.data() not in self.currentFieldSelection:
                 self.currentFieldSelection = []
                 for i in range(self.model.rowCount()):
                     field = self.model.item(i, 0)
                     if field.checkState() == QtCore.Qt.Checked:
                         self.currentFieldSelection.append(field.data())
-        else:
-            if field.data() in self.currentFieldSelection:
-                self.currentFieldSelection.remove(field.data())
+        elif field.data() in self.currentFieldSelection:
+            self.currentFieldSelection.remove(field.data())
         self.updateMarker()
 
     def applyButtonClick(self):
@@ -140,7 +139,7 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
         self.close()
 
     def defaultButtonClick(self):
-        self.currentFieldSelection = default_label_ids()
+        self.currentFieldSelection = Defaults.Markers().active_labels
         self.update_displayed_data_form()
         self.updateMarker()
 

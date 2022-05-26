@@ -61,10 +61,6 @@ TYPES = (
 )
 
 
-def default_label_ids() -> list[str]:
-    return [label.label_id for label in TYPES if label.default_active]
-
-
 class Value():
     """Contains the data area to calculate marker values from"""
 
