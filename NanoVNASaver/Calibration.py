@@ -198,14 +198,14 @@ class Calibration:
                        g2 * g3 * gm2 - g2 * g3 * gm3 -
                        (g2 * gm2 - g3 * gm3) * g1)
         cal["e00"] = - ((g2 * gm3 - g3 * gm3) * g1 * gm2 -
-                          (g2 * g3 * gm2 - g2 * g3 * gm3 -
-                           (g3 * gm2 - g2 * gm3) * g1) * gm1
-                          ) / denominator
+                        (g2 * g3 * gm2 - g2 * g3 * gm3 -
+                         (g3 * gm2 - g2 * gm3) * g1) * gm1
+                        ) / denominator
         cal["e11"] = ((g2 - g3) * gm1 - g1 * (gm2 - gm3) +
-                        g3 * gm2 - g2 * gm3) / denominator
+                      g3 * gm2 - g2 * gm3) / denominator
         cal["delta_e"] = - ((g1 * (gm2 - gm3) - g2 * gm2 + g3 *
-                               gm3) * gm1 + (g2 * gm3 - g3 * gm3) *
-                              gm2) / denominator
+                             gm3) * gm1 + (g2 * gm3 - g3 * gm3) *
+                            gm2) / denominator
 
     def _calc_port_2(self, freq: int, cal: CalData):
         gt = self.gamma_through(freq)
@@ -218,9 +218,9 @@ class Calibration:
         cal["e30"] = cal["isolation"].z
         cal["e10e01"] = cal["e00"] * cal["e11"] - cal["delta_e"]
         cal["e22"] = gm7 / (
-            gm7 * cal["e11"] * gt**2 + cal["e10e01"] * gt**2)
+                gm7 * cal["e11"] * gt ** 2 + cal["e10e01"] * gt ** 2)
         cal["e10e32"] = (gm4 - gm6) * (
-            1 - cal["e11"] * cal["e22"] *gt**2) / gt
+                1 - cal["e11"] * cal["e22"] * gt ** 2) / gt
 
     def calc_corrections(self):
         if not self.isValid1Port():
@@ -254,8 +254,8 @@ class Calibration:
         if not self.useIdealShort:
             logger.debug("Using short calibration set values.")
             Zsp = complex(0, 2 * math.pi * freq * (
-                self.shortL0 + self.shortL1 * freq +
-                self.shortL2 * freq**2 + self.shortL3 * freq**3))
+                    self.shortL0 + self.shortL1 * freq +
+                    self.shortL2 * freq ** 2 + self.shortL3 * freq ** 3))
             # Referencing https://arxiv.org/pdf/1606.02446.pdf (18) - (21)
             g = (Zsp / 50 - 1) / (Zsp / 50 + 1) * cmath.exp(
                 complex(0, 2 * math.pi * 2 * freq * self.shortLength * -1))
@@ -266,8 +266,8 @@ class Calibration:
         if not self.useIdealOpen:
             logger.debug("Using open calibration set values.")
             Zop = complex(0, 2 * math.pi * freq * (
-                self.openC0 + self.openC1 * freq +
-                self.openC2 * freq**2 + self.openC3 * freq**3))
+                    self.openC0 + self.openC1 * freq +
+                    self.openC2 * freq ** 2 + self.openC3 * freq ** 3))
             g = ((1 - 50 * Zop) / (1 + 50 * Zop)) * cmath.exp(
                 complex(0, 2 * math.pi * 2 * freq * self.openLength * -1))
         return g
@@ -324,8 +324,8 @@ class Calibration:
                                 kind="slinear", bounds_error=False,
                                 fill_value=(delta_e[0], delta_e[-1])),
             "e10e01": interp1d(freq, e10e01,
-                                kind="slinear", bounds_error=False,
-                                fill_value=(e10e01[0], e10e01[-1])),
+                               kind="slinear", bounds_error=False,
+                               fill_value=(e10e01[0], e10e01[-1])),
             "e30": interp1d(freq, e30,
                             kind="slinear", bounds_error=False,
                             fill_value=(e30[0], e30[-1])),
@@ -340,13 +340,13 @@ class Calibration:
     def correct11(self, dp: Datapoint):
         i = self.interp
         s11 = (dp.z - i["e00"](dp.freq)) / (
-            (dp.z * i["e11"](dp.freq)) - i["delta_e"](dp.freq))
+                (dp.z * i["e11"](dp.freq)) - i["delta_e"](dp.freq))
         return Datapoint(dp.freq, s11.real, s11.imag)
 
     def correct21(self, dp: Datapoint, dp11: Datapoint):
         i = self.interp
         s21 = (dp.z - i["e30"](dp.freq)) / i["e10e32"](dp.freq)
-        s21 = s21 * (i["e10e01"](dp.freq)/(i["e11"](dp.freq)*dp11.z-i["delta_e"](dp.freq)))
+        s21 = s21 * (i["e10e01"](dp.freq) / (i["e11"](dp.freq) * dp11.z - i["delta_e"](dp.freq)))
         return Datapoint(dp.freq, s21.real, s21.imag)
 
     # TODO: implement tests
@@ -381,7 +381,7 @@ class Calibration:
                     continue
                 if line.startswith("#"):
                     if not parsed_header and line == (
-                        "# Hz ShortR ShortI OpenR OpenI LoadR LoadI"
+                            "# Hz ShortR ShortI OpenR OpenI LoadR LoadI"
                             " ThroughR ThroughI ThrureflR ThrureflI IsolationR IsolationI"):
                         parsed_header = True
                     continue

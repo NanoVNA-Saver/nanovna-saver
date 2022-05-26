@@ -61,7 +61,6 @@ class NanoVNA(VNA):
         timeout = self.serial.timeout
         with self.serial.lock:
             drain_serial(self.serial)
-            timeout = self.serial.timeout
             self.serial.write("capture\r".encode('ascii'))
             self.serial.readline()
             self.serial.timeout = 4

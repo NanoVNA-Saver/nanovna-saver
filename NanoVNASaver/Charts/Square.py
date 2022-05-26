@@ -119,7 +119,6 @@ class SquareChart(Chart):
         a0.accept()
 
         target = self.data or self.reference
-        positions = []
 
         dim_x_2 = self.dim.width / 2
         dim_y_2 = self.dim.height / 2
