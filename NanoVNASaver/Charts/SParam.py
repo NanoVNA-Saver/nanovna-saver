@@ -41,15 +41,15 @@ class SParameterChart(FrequencyChart):
         self.y_action_automatic.setChecked(False)
         self.y_action_fixed_span.setChecked(True)
 
-        self.minValue = 0
-        self.maxValue = 1
+        self.min_value = 0
+        self.max_value = 1
         self.span = 1
 
         self.isInverted = False
 
     def drawChart(self, qp: QtGui.QPainter):
         qp.setPen(QtGui.QPen(Chart.color.text))
-        qp.drawText(int(round(self.dim.width / 2)) - 20, 15, self.name + "")
+        qp.drawText(int(round(self.dim.width / 2)) - 20, 15,self.name)
         qp.drawText(10, 15, "Real")
         qp.drawText(self.leftMargin + self.dim.width - 15, 15, "Imag")
         qp.setPen(QtGui.QPen(Chart.color.foreground))
@@ -69,37 +69,31 @@ class SParameterChart(FrequencyChart):
             self.drawBands(qp, self.fstart, self.fstop)
 
         if self.fixedValues:
-            maxValue = self.maxDisplayValue
-            minValue = self.minDisplayValue
-            self.maxValue = maxValue
-            self.minValue = minValue
+            max_value = self.maxDisplayValue
+            min_value = self.minDisplayValue
         else:
             # Find scaling
-            minValue = -1
-            maxValue = 1
-            self.maxValue = maxValue
-            self.minValue = minValue
-            # for d in self.data:
-            #     val = d.re
-            #     if val > maxValue:
-            #         maxValue = val
-            #     if val < minValue:
-            #         minValue = val
-            # for d in self.reference:  # Also check min/max for the reference sweep
-            #     if d.freq < self.fstart or d.freq > self.fstop:
-            #         continue
-            #     logmag = self.logMag(d)
-            #     if logmag > maxValue:
-            #         maxValue = logmag
-            #     if logmag < minValue:
-            #         minValue = logmag
+            min_value = -1
+            max_value = 1
+                # for d in self.data:
+                #     val = d.re
+                #     min_value = min(min_value, val)
+                #     max_value = max(max_value, val)
+                # for d in self.reference:  # Also check min/max for the reference sweep
+                #     if d.freq < self.fstart or d.freq > self.fstop:
+                #         continue
+                #     val = self.logMag(d)
+                #     min_value = min(min_value, val)
+                #     max_value = max(max_value, val)
+                # min_value = round_floor(min_value, -1)
+                # self.min_value = min_value
+                # max_value = round_ceil(max_value, -1)
+                # self.max_value = max_value
 
-            # minValue = 10*math.floor(minValue/10)
-            # self.minValue = minValue
-            # maxValue = 10*math.ceil(maxValue/10)
-            # self.maxValue = maxValue
+        self.max_value = max_value
+        self.min_value = min_value
 
-        span = maxValue-minValue
+        span = max_value-min_value
         if span == 0:
             span = 0.01
         self.span = span
@@ -108,11 +102,11 @@ class SParameterChart(FrequencyChart):
         tick_step = self.span / tick_count
 
         for i in range(tick_count):
-            val = minValue + i * tick_step
-            y = self.topMargin + round((maxValue - val)/span*self.dim.height)
+            val = min_value + i * tick_step
+            y = self.topMargin + round((max_value - val)/span*self.dim.height)
             qp.setPen(QtGui.QPen(Chart.color.foreground))
             qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.dim.width, y)
-            if val > minValue and val != maxValue:
+            if val > min_value and val != max_value:
                 qp.setPen(QtGui.QPen(Chart.color.text))
                 qp.drawText(3, y + 4, str(round(val, 2)))
 
@@ -120,8 +114,8 @@ class SParameterChart(FrequencyChart):
         qp.drawLine(self.leftMargin - 5, self.topMargin,
                     self.leftMargin + self.dim.width, self.topMargin)
         qp.setPen(Chart.color.text)
-        qp.drawText(3, self.topMargin + 4, str(maxValue))
-        qp.drawText(3, self.dim.height+self.topMargin, str(minValue))
+        qp.drawText(3, self.topMargin + 4, str(max_value))
+        qp.drawText(3, self.dim.height+self.topMargin, str(min_value))
         self.drawFrequencyTicks(qp)
 
         self.drawData(qp, self.data, Chart.color.sweep, self.getReYPosition)
@@ -132,23 +126,21 @@ class SParameterChart(FrequencyChart):
         self.drawMarkers(qp, y_function=self.getImYPosition)
 
     def getYPosition(self, d: Datapoint) -> int:
-        return self.topMargin + round((self.maxValue - d.re) / self.span * self.dim.height)
+        return self.topMargin + round((self.max_value - d.re) / self.span * self.dim.height)
 
     def getReYPosition(self, d: Datapoint) -> int:
-        return self.topMargin + round((self.maxValue - d.re) / self.span * self.dim.height)
+        return self.topMargin + round((self.max_value - d.re) / self.span * self.dim.height)
 
     def getImYPosition(self, d: Datapoint) -> int:
-        return self.topMargin + round((self.maxValue - d.im) / self.span * self.dim.height)
+        return self.topMargin + round((self.max_value - d.im) / self.span * self.dim.height)
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
-        val = -1 * ((absy / self.dim.height * self.span) - self.maxValue)
+        val = -1 * ((absy / self.dim.height * self.span) - self.max_value)
         return [val]
 
     def logMag(self, p: Datapoint) -> float:
-        if self.isInverted:
-            return -p.gain
-        return p.gain
+        return -p.gain if self.isInverted else p.gain
 
     def copy(self):
         new_chart: LogMagChart = super().copy()

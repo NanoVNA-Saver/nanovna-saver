@@ -2,7 +2,7 @@
 #
 #  A python program to view and export Touchstone data from a NanoVNA
 #  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
+#  Copyright (C) 2020ff NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ from PyQt5 import QtWidgets, QtGui
 from NanoVNASaver.Formatting import format_frequency_chart
 from NanoVNASaver.Marker import Marker
 from NanoVNASaver.RFTools import Datapoint
-from NanoVNASaver.SITools import Format, Value
+from NanoVNASaver.SITools import Format, Value, clamp_value
 
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Charts.Frequency import FrequencyChart
@@ -38,10 +38,6 @@ class RealImaginaryChart(FrequencyChart):
         super().__init__(name)
         self.leftMargin = 45
         self.rightMargin = 45
-        self.dim.width = 230
-        self.dim.height = 250
-        self.fstart = 0
-        self.fstop = 0
         self.span_real = 0.01
         self.span_imag = 0.01
         self.max_real = 0
@@ -142,91 +138,10 @@ class RealImaginaryChart(FrequencyChart):
         if self.bands.enabled:
             self.drawBands(qp, self.fstart, self.fstop)
 
-        # Find scaling
-        if self.fixedValues:
-            min_real = self.minDisplayReal
-            max_real = self.maxDisplayReal
-            min_imag = self.minDisplayImag
-            max_imag = self.maxDisplayImag
-        else:
-            min_real = 1000
-            min_imag = 1000
-            max_real = 0
-            max_imag = -1000
-            for d in self.data:
-                imp = self.impedance(d)
-                re, im = imp.real, imp.imag
-                if math.isinf(re): # Avoid infinite scales
-                    continue
-                if re > max_real:
-                    max_real = re
-                if re < min_real:
-                    min_real = re
-                if im > max_imag:
-                    max_imag = im
-                if im < min_imag:
-                    min_imag = im
-            for d in self.reference:  # Also check min/max for the reference sweep
-                if d.freq < self.fstart or d.freq > self.fstop:
-                    continue
-                imp = self.impedance(d)
-                re, im = imp.real, imp.imag
-                if math.isinf(re): # Avoid infinite scales
-                    continue
-                if re > max_real:
-                    max_real = re
-                if re < min_real:
-                    min_real = re
-                if im > max_imag:
-                    max_imag = im
-                if im < min_imag:
-                    min_imag = im
-
-            # Always have at least 8 numbered horizontal lines
-            max_real = max(8, math.ceil(max_real))
-            min_real = max(0, math.floor(min_real))  # Negative real resistance? No.
-            max_imag = math.ceil(max_imag)
-            min_imag = math.floor(min_imag)
-
-            if max_imag - min_imag < 8:
-                missing = 8 - (max_imag - min_imag)
-                max_imag += math.ceil(missing/2)
-                min_imag -= math.floor(missing/2)
-
-            if 0 > max_imag > -2:
-                max_imag = 0
-            if 0 < min_imag < 2:
-                min_imag = 0
-
-            if (max_imag - min_imag) > 8 and min_imag < 0 < max_imag:
-                # We should show a "0" line for the reactive part
-                span = max_imag - min_imag
-                step_size = span / 8
-                if max_imag < step_size:
-                    # The 0 line is the first step after the top. Scale accordingly.
-                    max_imag = -min_imag/7
-                elif -min_imag < step_size:
-                    # The 0 line is the last step before the bottom. Scale accordingly.
-                    min_imag = -max_imag/7
-                else:
-                    # Scale max_imag to be a whole factor of min_imag
-                    num_min = math.floor(min_imag/step_size * -1)
-                    num_max = 8 - num_min
-                    max_imag = num_max * (min_imag / num_min) * -1
-
-        self.max_real = max_real
-        self.max_imag = max_imag
-
-        span_real = max_real - min_real
-        if span_real == 0:
-            span_real = 0.01
-        self.span_real = span_real
-
-        span_imag = max_imag - min_imag
-        if span_imag == 0:
-            span_imag = 0.01
-        self.span_imag = span_imag
-
+        min_real, self.max_real, min_imag, self.max_imag = self.find_scaling()
+        self.span_real = clamp_value(self.max_real - min_real, 0.01, 1000.0)
+        self.span_imag = clamp_value(self.max_imag - min_imag, 0.01, 1000.0)
+ 
         # We want one horizontal tick per 50 pixels, at most
         horizontal_ticks = math.floor(self.dim.height/50)
 
@@ -236,15 +151,17 @@ class RealImaginaryChart(FrequencyChart):
             qp.setPen(QtGui.QPen(Chart.color.foreground))
             qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.dim.width + 5, y)
             qp.setPen(QtGui.QPen(Chart.color.text))
-            re = max_real - i * span_real / horizontal_ticks
-            im = max_imag - i * span_imag / horizontal_ticks
+            re = self.max_real - i * self.span_real / horizontal_ticks
+            im = self.max_imag - i * self.span_imag / horizontal_ticks
             qp.drawText(3, y + 4, str(Value(re, fmt=fmt)))
-            qp.drawText(self.leftMargin + self.dim.width + 8, y + 4, str(Value(im, fmt=fmt)))
+            qp.drawText(self.leftMargin + self.dim.width + 8, y + 4,
+                        f"{Value(im, fmt=fmt)}")
 
-        qp.drawText(3, self.dim.height + self.topMargin, str(Value(min_real, fmt=fmt)))
+        qp.drawText(3, self.dim.height + self.topMargin,
+                    f"{Value(self.min_real, fmt=fmt)}")
         qp.drawText(self.leftMargin + self.dim.width + 8,
                     self.dim.height + self.topMargin,
-                    str(Value(min_imag, fmt=fmt)))
+                    f"{Value(self.min_imag, fmt=fmt)}")
 
         self.drawFrequencyTicks(qp)
 
@@ -268,10 +185,10 @@ class RealImaginaryChart(FrequencyChart):
         secondary_pen.setWidth(self.dim.point)
         line_pen.setWidth(self.dim.line)
 
-        for i in range(len(self.data)):
-            x = self.getXPosition(self.data[i])
-            y_re = self.getReYPosition(self.data[i])
-            y_im = self.getImYPosition(self.data[i])
+        for i, data in enumerate(self.data):
+            x = self.getXPosition(data)
+            y_re = self.getReYPosition(data)
+            y_im = self.getImYPosition(data)
             qp.setPen(primary_pen)
             if self.isPlotable(x, y_re):
                 qp.drawPoint(x, y_re)
@@ -326,12 +243,12 @@ class RealImaginaryChart(FrequencyChart):
             qp.drawLine(self.leftMargin + self.dim.width, 14,
                         self.leftMargin + self.dim.width + 5, 14)
 
-        for i in range(len(self.reference)):
-            if self.reference[i].freq < self.fstart or self.reference[i].freq > self.fstop:
+        for i, data in enumerate(self.reference):
+            if data.freq < self.fstart or data.freq > self.fstop:
                 continue
-            x = self.getXPosition(self.reference[i])
-            y_re = self.getReYPosition(self.reference[i])
-            y_im = self.getImYPosition(self.reference[i])
+            x = self.getXPosition(data)
+            y_re = self.getReYPosition(data)
+            y_im = self.getImYPosition(data)
             qp.setPen(primary_pen)
             if self.isPlotable(x, y_re):
                 qp.drawPoint(x, y_re)
@@ -367,7 +284,9 @@ class RealImaginaryChart(FrequencyChart):
                     new_x, new_y = self.getPlotable(prev_x, prev_y_im, x, y_im)
                     qp.drawLine(prev_x, prev_y_im, new_x, new_y)
 
-        # Now draw the markers
+        self.draw_markers(qp)
+
+    def draw_markers(self, qp: QtGui.QPainter) -> None:
         for m in self.markers:
             if m.location != -1:
                 x = self.getXPosition(self.data[m.location])
@@ -377,12 +296,73 @@ class RealImaginaryChart(FrequencyChart):
                 self.drawMarker(x, y_re, qp, m.color, self.markers.index(m)+1)
                 self.drawMarker(x, y_im, qp, m.color, self.markers.index(m)+1)
 
+    def find_scaling(self) -> tuple[float, float, float, float]:
+        if self.fixedValues:
+            return(self.minDisplayReal, self.maxDisplayReal,
+                   self.minDisplayImag, self.maxDisplayImag)
+        min_real = 1000
+        min_imag = 1000
+        max_real = 0
+        max_imag = -1000
+        for data in self.data:
+            val = data.impedance()
+            re, im = val.real, val.imag
+            if math.isinf(re): # Avoid infinite scales
+                continue
+            min_real = min(min_real, re)
+            max_real = max(max_real, re)
+            min_imag = min(min_imag, im)
+            max_imag = max(max_imag, im)
+        for data in self.reference:  # Also check min/max for the reference sweep
+            if data.freq < self.fstart or data.freq > self.fstop:
+                continue
+            val = data.impedance()
+            re, im = val.real, val.imag
+            if math.isinf(re): # Avoid infinite scales
+                continue
+            min_real = min(min_real, re)
+            max_real = max(max_real, re)
+            min_imag = min(min_imag, im)
+            max_imag = max(max_imag, im)
+
+        # Always have at least 8 numbered horizontal lines
+        max_real = max(8, math.ceil(max_real))
+        min_real = max(0, math.floor(min_real))  # Negative real resistance? No.
+        max_imag = math.ceil(max_imag)
+        min_imag = math.floor(min_imag)
+
+        if max_imag - min_imag < 8:
+            missing = 8 - (max_imag - min_imag)
+            max_imag += math.ceil(missing/2)
+            min_imag -= math.floor(missing/2)
+
+        max_imag = clamp_value(max_imag, 0, 1000)
+        min_imag = clamp_value(min_imag, -1000, 0)
+
+        if (max_imag - min_imag) > 8 and min_imag < 0 < max_imag:
+            # We should show a "0" line for the reactive part
+            span = max_imag - min_imag
+            step_size = span / 8
+            if max_imag < step_size:
+                # The 0 line is the first step after the top. Scale accordingly.
+                max_imag = -min_imag/7
+            elif -min_imag < step_size:
+                # The 0 line is the last step before the bottom. Scale accordingly.
+                min_imag = -max_imag/7
+            else:
+                # Scale max_imag to be a whole factor of min_imag
+                num_min = math.floor(min_imag/step_size * -1)
+                num_max = 8 - num_min
+                max_imag = num_max * (min_imag / num_min) * -1
+
+        return(min_real, max_real, min_imag, max_imag)
+
     def getImYPosition(self, d: Datapoint) -> int:
-        im = self.impedance(d).imag
+        im = d.impedance().imag
         return self.topMargin + round((self.max_imag - im) / self.span_imag * self.dim.height)
 
     def getReYPosition(self, d: Datapoint) -> int:
-        re = self.impedance(d).real
+        re = d.impedance().real
         if math.isfinite(re):
             return self.topMargin + round((self.max_real - re) / self.span_real * self.dim.height)
         return self.topMargin
@@ -503,6 +483,3 @@ class RealImaginaryChart(FrequencyChart):
         self.action_set_fixed_maximum_imag.setText(
             f"Maximum jX ({self.maxDisplayImag})")
         self.menu.exec_(event.globalPos())
-
-    def impedance(self, p: Datapoint) -> complex:
-        return p.impedance()

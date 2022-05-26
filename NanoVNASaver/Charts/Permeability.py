@@ -27,6 +27,7 @@ from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.SITools import Format, Value
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Charts.Frequency import FrequencyChart
+
 logger = logging.getLogger(__name__)
 
 
@@ -35,12 +36,8 @@ class PermeabilityChart(FrequencyChart):
         super().__init__(name)
         self.leftMargin = 40
         self.rightMargin = 30
-        self.dim.width = 230
-        self.dim.height = 250
-        self.fstart = 0
-        self.fstop = 0
         self.span = 0.01
-        self.max = 0
+        self.max_value = 0
 
         self.maxDisplayValue = 100
         self.minDisplayValue = -100
@@ -48,13 +45,10 @@ class PermeabilityChart(FrequencyChart):
     def logarithmicYAllowed(self) -> bool:
         return True;
 
-    def copy(self):
-        new_chart: PermeabilityChart = super().copy()
-        return new_chart
-
     def drawChart(self, qp: QtGui.QPainter):
         qp.setPen(QtGui.QPen(Chart.color.text))
-        qp.drawText(self.leftMargin + 5, 15, self.name + " (\N{MICRO SIGN}\N{OHM SIGN} / Hz)")
+        qp.drawText(self.leftMargin + 5, 15,
+                    f"{self.name} (\N{MICRO SIGN}\N{OHM SIGN} / Hz)")
         qp.drawText(10, 15, "R")
         qp.drawText(self.leftMargin + self.dim.width + 10, 15, "X")
         qp.setPen(QtGui.QPen(Chart.color.foreground))
@@ -78,46 +72,12 @@ class PermeabilityChart(FrequencyChart):
         if self.bands.enabled:
             self.drawBands(qp, self.fstart, self.fstop)
 
-        # Find scaling
-        if self.fixedValues:
-            min_val = self.minDisplayValue
-            max_val = self.maxDisplayValue
-        else:
-            min_val = 1000
-            max_val = -1000
-            for d in self.data:
-                imp = d.impedance()
-                re, im = imp.real, imp.imag
-                re = re * 10e6 / d.freq
-                im = im * 10e6 / d.freq
-                if re > max_val:
-                    max_val = re
-                if re < min_val:
-                    min_val = re
-                if im > max_val:
-                    max_val = im
-                if im < min_val:
-                    min_val = im
-            for d in self.reference:  # Also check min/max for the reference sweep
-                if d.freq < self.fstart or d.freq > self.fstop:
-                    continue
-                imp = d.impedance()
-                re, im = imp.real, imp.imag
-                re = re * 10e6 / d.freq
-                im = im * 10e6 / d.freq
-                if re > max_val:
-                    max_val = re
-                if re < min_val:
-                    min_val = re
-                if im > max_val:
-                    max_val = im
-                if im < min_val:
-                    min_val = im
-
+        min_val, max_val = self.find_scaling()
+        
         if self.logarithmicY:
             min_val = max(0.01, min_val)
 
-        self.max = max_val
+        self.max_value = max_val
 
         span = max_val - min_val
         if span == 0:
@@ -163,10 +123,10 @@ class PermeabilityChart(FrequencyChart):
         secondary_pen.setWidth(self.dim.point)
         line_pen.setWidth(self.dim.line)
 
-        for i in range(len(self.data)):
-            x = self.getXPosition(self.data[i])
-            y_re = self.getReYPosition(self.data[i])
-            y_im = self.getImYPosition(self.data[i])
+        for i, data in enumerate(self.data):
+            x = self.getXPosition(data)
+            y_re = self.getReYPosition(data)
+            y_im = self.getImYPosition(data)
             qp.setPen(primary_pen)
             if self.isPlotable(x, y_re):
                 qp.drawPoint(x, y_re)
@@ -221,12 +181,12 @@ class PermeabilityChart(FrequencyChart):
             qp.drawLine(self.leftMargin + self.dim.width, 14,
                         self.leftMargin + self.dim.width + 5, 14)
 
-        for i in range(len(self.reference)):
-            if self.reference[i].freq < self.fstart or self.reference[i].freq > self.fstop:
+        for i, data in enumerate(self.reference):
+            if data.freq < self.fstart or data.freq > self.fstop:
                 continue
-            x = self.getXPosition(self.reference[i])
-            y_re = self.getReYPosition(self.reference[i])
-            y_im = self.getImYPosition(self.reference[i])
+            x = self.getXPosition(data)
+            y_re = self.getReYPosition(data)
+            y_im = self.getImYPosition(data)
             qp.setPen(primary_pen)
             if self.isPlotable(x, y_re):
                 qp.drawPoint(x, y_re)
@@ -272,48 +232,75 @@ class PermeabilityChart(FrequencyChart):
                 self.drawMarker(x, y_re, qp, m.color, self.markers.index(m)+1)
                 self.drawMarker(x, y_im, qp, m.color, self.markers.index(m)+1)
 
+    def find_scaling(self) -> tuple[float, float]:
+        if self.fixedValues:
+            return(self.minDisplayValue, self.maxDisplayValue)
+        min_val = 1000
+        max_val = -1000
+        for data in self.data:
+            imp = data.impedance()
+            re, im = imp.real, imp.imag
+            re = re * 10e6 / data.freq
+            im = im * 10e6 / data.freq
+            min_val = min(min_val, re)
+            max_val = max(max_val, re)
+            min_val = min(min_val, im)
+            max_val = max(max_val, im)
+        for data in self.reference:
+            if data.freq < self.fstart or data.freq > self.fstop:
+                continue
+            imp = data.impedance()
+            re, im = imp.real, imp.imag
+            re = re * 10e6 / data.freq
+            im = im * 10e6 / data.freq
+            min_val = min(min_val, re)
+            max_val = max(max_val, re)
+            min_val = min(min_val, im)
+            max_val = max(max_val, im)
+        return(min_val, max_val)
+
     def getImYPosition(self, d: Datapoint) -> int:
         im = d.impedance().imag
         im = im * 10e6 / d.freq
         if self.logarithmicY:
-            min_val = self.max - self.span
-            if self.max > 0 and min_val > 0 and im > 0:
-                span = math.log(self.max) - math.log(min_val)
+            min_val = self.max_value - self.span
+            if self.max_value > 0 and min_val > 0 and im > 0:
+                span = math.log(self.max_value) - math.log(min_val)
             else:
                 return -1
             return self.topMargin + round(
-                (math.log(self.max) - math.log(im)) /
+                (math.log(self.max_value) - math.log(im)) /
                 span * self.dim.height)
         return self.topMargin + round(
-            (self.max - im) / self.span * self.dim.height)
+            (self.max_value - im) / self.span * self.dim.height)
 
     def getReYPosition(self, d: Datapoint) -> int:
         re = d.impedance().real
         re = re * 10e6 / d.freq
         if self.logarithmicY:
-            min_val = self.max - self.span
-            if self.max > 0 and min_val > 0 and re > 0:
-                span = math.log(self.max) - math.log(min_val)
+            min_val = self.max_value - self.span
+            if self.max_value > 0 and min_val > 0 and re > 0:
+                span = math.log(self.max_value) - math.log(min_val)
             else:
                 return -1
             return self.topMargin + round(
-                (math.log(self.max) - math.log(re)) /
+                (math.log(self.max_value) - math.log(re)) /
                 span * self.dim.height)
         return self.topMargin + round(
-            (self.max - re) / self.span * self.dim.height)
+            (self.max_value - re) / self.span * self.dim.height)
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
         if self.logarithmicY:
-            min_val = self.max - self.span
-            if self.max > 0 and min_val > 0:
-                span = math.log(self.max) - math.log(min_val)
+            min_val = self.max_value - self.span
+            if self.max_value > 0 and min_val > 0:
+                span = math.log(self.max_value) - math.log(min_val)
                 step = span / self.dim.height
-                val = math.exp(math.log(self.max) - absy * step)
+                val = math.exp(math.log(self.max_value) - absy * step)
             else:
                 val = -1
         else:
-            val = -1 * ((absy / self.dim.height * self.span) - self.max)
+            val = -1 * ((absy / self.dim.height * self.span) - self.max_value)
         return [val]
 
     def getNearestMarker(self, x, y) -> Marker:

@@ -30,15 +30,15 @@ from NanoVNASaver.Charts.Frequency import FrequencyChart
 logger = logging.getLogger(__name__)
 
 
-def get_ticks(span: float, minValue: float) -> tuple[float]:
+def get_ticks(span: float, min_value: float) -> tuple[float]:
     span2step = (
         (50, 10), (20, 5), (10, 2),
         (5, 1), (2, 0.5), (1, 0.2),
         (0.0, 0.1),)
     for spn, step in span2step:
         if span >= spn:
-            first_tick = math.ceil(minValue/step) * step
-            if first_tick <= minValue:
+            first_tick = math.ceil(min_value/step) * step
+            if first_tick <= min_value:
                 first_tick += step
             tick_count = math.floor(span/step)
             break
@@ -54,7 +54,7 @@ class LogMagChart(FrequencyChart):
         self.minDisplayValue = -80
         self.maxDisplayValue = 10
 
-        self.maxValue = 1
+        self.max_value = 1
         self.span = 1
 
         self.isInverted = False
@@ -70,7 +70,7 @@ class LogMagChart(FrequencyChart):
             self.drawBands(qp, self.fstart, self.fstop)
 
         min_value, max_value = self.find_scaling()
-        self.maxValue = max_value
+        self.max_value = max_value
         span = max_value - min_value
         if span == 0:
             span = 0.01
@@ -96,7 +96,7 @@ class LogMagChart(FrequencyChart):
             if self.isInverted:
                 logMag = logMag * -1
             y = self.topMargin + \
-                round((self.maxValue - logMag) / self.span * self.dim.height)
+                round((self.max_value - logMag) / self.span * self.dim.height)
             qp.drawLine(self.leftMargin, y,
                         self.leftMargin + self.dim.width, y)
             qp.drawText(self.leftMargin + 3, y - 1, f"VSWR: {vswr}")
@@ -126,14 +126,14 @@ class LogMagChart(FrequencyChart):
             max_value = max(max_value, val)
         return(round_floor(min_value, -1), round_ceil(max_value, -1))
 
-    def draw_grid(self, qp, maxValue, minValue, span, first_tick, tick_step, tick_count):
+    def draw_grid(self, qp, max_value, min_value, span, first_tick, tick_step, tick_count):
         for i in range(tick_count):
             db = first_tick + i * tick_step
-            y = self.topMargin + round((maxValue - db)/span*self.dim.height)
+            y = self.topMargin + round((max_value - db)/span*self.dim.height)
             qp.setPen(QtGui.QPen(Chart.color.foreground))
             qp.drawLine(self.leftMargin-5, y,
                         self.leftMargin+self.dim.width, y)
-            if db > minValue and db != maxValue:
+            if db > min_value and db != max_value:
                 qp.setPen(QtGui.QPen(Chart.color.text))
                 dbstr = str(round(db, 1)) if tick_step < 1 else str(db)
                 qp.drawText(3, y + 4, dbstr)
@@ -142,11 +142,11 @@ class LogMagChart(FrequencyChart):
         logMag = self.logMag(d)
         if math.isinf(logMag):
             return None
-        return self.topMargin + round((self.maxValue - logMag) / self.span * self.dim.height)
+        return self.topMargin + round((self.max_value - logMag) / self.span * self.dim.height)
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
-        val = -1 * ((absy / self.dim.height * self.span) - self.maxValue)
+        val = -1 * ((absy / self.dim.height * self.span) - self.max_value)
         return [val]
 
     def logMag(self, p: Datapoint) -> float:

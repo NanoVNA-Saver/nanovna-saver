@@ -123,7 +123,7 @@ class CombinedLogMagChart(LogMagChart):
             logMag = 20 * math.log10((vswr-1)/(vswr+1))
             if self.isInverted:
                 logMag = logMag * -1
-            y = self.topMargin + round((self.maxValue - logMag) /
+            y = self.topMargin + round((self.max_value - logMag) /
                                        self.span * self.dim.height)
             qp.drawLine(self.leftMargin, y,
                         self.leftMargin + self.dim.width, y)

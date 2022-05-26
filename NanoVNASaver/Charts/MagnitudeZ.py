@@ -40,8 +40,8 @@ class MagnitudeZChart(FrequencyChart):
         self.minDisplayValue = 0
         self.maxDisplayValue = 100
 
-        self.minValue = 0
-        self.maxValue = 1
+        self.min_value = 0
+        self.max_value = 1
         self.span = 1
 
     def drawValues(self, qp: QtGui.QPainter):
@@ -55,34 +55,34 @@ class MagnitudeZChart(FrequencyChart):
             self.drawBands(qp, self.fstart, self.fstop)
 
         if self.fixedValues:
-            self.maxValue = self.maxDisplayValue
-            self.minValue = max(
+            self.max_value = self.maxDisplayValue
+            self.min_value = max(
                 self.minDisplayValue, 0.01) if self.logarithmicY else self.minDisplayValue
         else:
             # Find scaling
-            self.minValue = 100
-            self.maxValue = 0
+            self.min_value = 100
+            self.max_value = 0
             for d in self.data:
                 mag = self.magnitude(d)
                 if math.isinf(mag):  # Avoid infinite scales
                     continue
-                self.maxValue = max(self.maxValue, mag)
-                self.minValue = min(self.minValue, mag)
+                self.max_value = max(self.max_value, mag)
+                self.min_value = min(self.min_value, mag)
             for d in self.reference:  # Also check min/max for the reference sweep
                 if d.freq < self.fstart or d.freq > self.fstop:
                     continue
                 mag = self.magnitude(d)
                 if math.isinf(mag):  # Avoid infinite scales
                     continue
-                self.maxValue = max(self.maxValue, mag)
-                self.minValue = min(self.minValue, mag)
+                self.max_value = max(self.max_value, mag)
+                self.min_value = min(self.min_value, mag)
 
-            self.minValue = round_floor(self.minValue, 2)
-            if self.logarithmicY and self.minValue <= 0:
-                self.minValue = 0.01
-            self.maxValue = round_ceil(self.maxValue, 2)
+            self.min_value = round_floor(self.min_value, 2)
+            if self.logarithmicY and self.min_value <= 0:
+                self.min_value = 0.01
+            self.max_value = round_ceil(self.max_value, 2)
 
-        self.span = (self.maxValue - self.minValue) or 0.01
+        self.span = (self.max_value - self.min_value) or 0.01
 
         # We want one horizontal tick per 50 pixels, at most
         horizontal_ticks = math.floor(self.dim.height/50)
@@ -98,7 +98,7 @@ class MagnitudeZChart(FrequencyChart):
 
         qp.drawText(3,
                     self.dim.height + self.topMargin,
-                    str(Value(self.minValue, fmt=fmt)))
+                    str(Value(self.min_value, fmt=fmt)))
 
         self.drawFrequencyTicks(qp)
 
@@ -112,19 +112,19 @@ class MagnitudeZChart(FrequencyChart):
             return self.topMargin - self.dim.height
         if math.isfinite(mag):
             if self.logarithmicY:
-                span = math.log(self.maxValue) - math.log(self.minValue)
+                span = math.log(self.max_value) - math.log(self.min_value)
                 return self.topMargin + round(
-                    (math.log(self.maxValue) - math.log(mag)) / span * self.dim.height)
-            return self.topMargin + round((self.maxValue - mag) / self.span * self.dim.height)
+                    (math.log(self.max_value) - math.log(mag)) / span * self.dim.height)
+            return self.topMargin + round((self.max_value - mag) / self.span * self.dim.height)
         return self.topMargin
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
         if self.logarithmicY:
-            span = math.log(self.maxValue) - math.log(self.minValue)
-            val = math.exp(math.log(self.maxValue) - absy * span / self.dim.height)
+            span = math.log(self.max_value) - math.log(self.min_value)
+            val = math.exp(math.log(self.max_value) - absy * span / self.dim.height)
         else:
-            val = self.maxValue - (absy / self.dim.height * self.span)
+            val = self.max_value - (absy / self.dim.height * self.span)
         return [val]
 
     @staticmethod

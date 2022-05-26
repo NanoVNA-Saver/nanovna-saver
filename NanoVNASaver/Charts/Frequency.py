@@ -35,8 +35,6 @@ logger = logging.getLogger(__name__)
 
 
 class FrequencyChart(Chart):
-
-
     def __init__(self, name):
         super().__init__(name)
         self.maxFrequency = 100000000
@@ -63,7 +61,7 @@ class FrequencyChart(Chart):
         self.minDisplayValue = -1
         self.maxDisplayValue = 1
 
-        self.maxValue = 1
+        self.max_value = 1
         self.span = 1
 
         self.setContextMenuPolicy(QtCore.Qt.DefaultContextMenu)
@@ -332,7 +330,7 @@ class FrequencyChart(Chart):
         try:
             return (
                 self.topMargin +
-                round((self.maxValue - self.value_function(d) /
+                round((self.max_value - self.value_function(d) /
                     self.span * self.dim.height)))
         except ValueError:
             return self.topMargin
@@ -376,7 +374,7 @@ class FrequencyChart(Chart):
                  or minimum values.
         """
         absy = y - self.topMargin
-        val = -1 * ((absy / self.dim.height * self.span) - self.maxValue)
+        val = -1 * ((absy / self.dim.height * self.span) - self.max_value)
         return [val * 10e11]
 
     def wheelEvent(self, a0: QtGui.QWheelEvent) -> None:
@@ -535,7 +533,7 @@ class FrequencyChart(Chart):
             self.drawBands(qp, self.fstart, self.fstop)
 
         min_value, max_value = self.find_scaling()
-        self.maxValue = max_value
+        self.max_value = max_value
         span = max_value - min_value
         if span == 0:
             logger.info(
@@ -548,7 +546,7 @@ class FrequencyChart(Chart):
         for i in range(target_ticks):
             val = min_value + (i / target_ticks) * span
             y = self.topMargin + \
-                round((self.maxValue - val) / self.span * self.dim.height)
+                round((self.max_value - val) / self.span * self.dim.height)
             qp.setPen(Chart.color.text)
             if val != min_value:
                 valstr = str(Value(val, fmt=fmt))
