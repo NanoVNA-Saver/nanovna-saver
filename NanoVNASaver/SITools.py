@@ -35,11 +35,11 @@ def clamp_value(value: Real, rmin: Real, rmax: Real) -> Real:
     return value
 
 def round_ceil(value: Real, digits: int=0) -> Real:
-    factor = 10 ** digits
+    factor = 10 ** -digits
     return factor * math.ceil(value / factor)
 
 def round_floor(value: Real, digits: int=0) -> Real:
-    factor = 10 ** digits
+    factor = 10 ** -digits
     return factor * math.floor(value / factor)
 
 class Format(NamedTuple):

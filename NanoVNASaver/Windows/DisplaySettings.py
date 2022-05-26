@@ -296,12 +296,12 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self.charts[i].setCurrentText(
                 getattr(Defaults.cfg.charts_selected, f"chart_{i[0]}{i[1]}"))
             self.charts[i].currentTextChanged.connect(
-                lambda _, i=i: self.changeChart(i))
+                lambda _, i=i: self.change_chart(i))
             layout.addWidget(self.charts[i], i[0], i[1])
-            self.changeChart(i)
+            self.change_chart(i)
         return box
 
-    def changeChart(self, i):
+    def change_chart(self, i):
         x, y = i[:]
         name = self.charts[(x, y)].currentText()
         found = next(
@@ -323,7 +323,6 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             if found.isHidden():
                 found.show()
 
-  
     def trace_colors(self, layout: QtWidgets.QLayout):
         for setting, name, attr in (
             ('SweepColor', 'Sweep color', 'sweep'),

@@ -37,10 +37,6 @@ class GroupDelayChart(FrequencyChart):
         self.name_unit = "ns"
 
         self.leftMargin = 40
-        self.dim.width = 250
-        self.dim.height = 250
-        self.fstart = 0
-        self.fstop = 0
         self.minDelay = 0
         self.maxDelay = 0
         self.span = 0

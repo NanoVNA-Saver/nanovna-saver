@@ -595,7 +595,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             c.resetReference()
         self.btnResetReference.setDisabled(True)
 
-    def sizeHint(self) -> QtCore.QSize:
+    def sizeHint(self) -> QtCore.QSize: # pylint: disable=no-self-use
         return QtCore.QSize(1100, 950)
 
     def display_window(self, name):

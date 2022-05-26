@@ -63,7 +63,6 @@ class FrequencyChart(Chart):
         self.minDisplayValue = -1
         self.maxDisplayValue = 1
 
-        self.minValue = -1
         self.maxValue = 1
         self.span = 1
 
@@ -535,9 +534,8 @@ class FrequencyChart(Chart):
         if self.bands.enabled:
             self.drawBands(qp, self.fstart, self.fstop)
 
-        min_value, max_value = self._find_scaling()
+        min_value, max_value = self.find_scaling()
         self.maxValue = max_value
-        self.minValue = min_value
         span = max_value - min_value
         if span == 0:
             logger.info(
@@ -572,7 +570,7 @@ class FrequencyChart(Chart):
         self.drawData(qp, self.reference, Chart.color.reference)
         self.drawMarkers(qp)
 
-    def _find_scaling(self) -> Tuple[float, float]:
+    def find_scaling(self) -> Tuple[float, float]:
         min_value = self.minDisplayValue / 10e11
         max_value = self.maxDisplayValue / 10e11
         if self.fixedValues:
