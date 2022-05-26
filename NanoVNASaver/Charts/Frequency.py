@@ -421,11 +421,9 @@ class FrequencyChart(Chart):
 
         freq1 = max(1, self.frequencyAtPosition(x1, limit=False))
         freq2 = max(1, self.frequencyAtPosition(x2, limit=False))
-
-        if freq1 > 0 and freq2 > 0 and freq1 != freq2:
-            self.minFrequency = min(freq1, freq2)
-            self.maxFrequency = max(freq1, freq2)
-            self.setFixedSpan(True)
+        self.minFrequency = min(freq1, freq2)
+        self.maxFrequency = max(freq1, freq2)
+        self.setFixedSpan(True)
 
         self.update()
 

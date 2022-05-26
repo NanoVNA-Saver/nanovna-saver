@@ -462,11 +462,9 @@ class TDRChart(Chart):
 
         len1 = max(0, self.lengthAtPosition(x1, limit=False))
         len2 = max(0, self.lengthAtPosition(x2, limit=False))
-
-        if len1 >= 0 and len2 >= 0 and len1 != len2:
-            self.minDisplayLength = min(len1, len2)
-            self.maxDisplayLength = max(len1, len2)
-            self.setFixedSpan(True)
+        self.minDisplayLength = min(len1, len2)
+        self.maxDisplayLength = max(len1, len2)
+        self.setFixedSpan(True)
 
         self.update()
 

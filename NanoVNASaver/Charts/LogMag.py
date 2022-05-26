@@ -31,7 +31,7 @@ from NanoVNASaver.Charts.Frequency import FrequencyChart
 logger = logging.getLogger(__name__)
 
 
-def get_ticks(span: float, min_value: float) -> tuple[float]:
+def get_ticks(span: float, min_value: float) -> tuple[float, float, float]:
     span2step = (
         (50, 10), (20, 5), (10, 2),
         (5, 1), (2, 0.5), (1, 0.2),

@@ -41,6 +41,7 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
 
         self.setWindowTitle("Marker settings")
         self.setWindowIcon(self.app.icon)
+        self.model = QtGui.QStandardItemModel()
 
         QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.cancelButtonClick)
 
@@ -145,7 +146,6 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
         self.updateMarker()
 
     def update_displayed_data_form(self):
-        self.model = QtGui.QStandardItemModel()
         for label in TYPES:
             item = QtGui.QStandardItem(label.description)
             item.setData(label.label_id)

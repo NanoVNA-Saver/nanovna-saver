@@ -44,7 +44,7 @@ class PermeabilityChart(FrequencyChart):
         self.minDisplayValue = -100
 
     def logarithmicYAllowed(self) -> bool:
-        return True;
+        return True
 
     def drawChart(self, qp: QtGui.QPainter):
         qp.setPen(QtGui.QPen(Chart.color.text))

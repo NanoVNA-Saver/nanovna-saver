@@ -101,10 +101,9 @@ class GroupDelayChart(FrequencyChart):
         line_pen = QtGui.QPen(Chart.color.sweep)
         line_pen.setWidth(self.dim.line)
 
-        if self.fixedValues:
-            min_delay = self.minDisplayValue
-            max_delay = self.maxDisplayValue
-        elif self.data:
+        min_delay = self.minDisplayValue
+        max_delay = self.maxDisplayValue
+        if self.data:
             min_delay = math.floor(np.min(self.groupDelay))
             max_delay = math.ceil(np.max(self.groupDelay))
         elif self.reference:
