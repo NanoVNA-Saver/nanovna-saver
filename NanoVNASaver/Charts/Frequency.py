@@ -23,6 +23,7 @@ from typing import List, Tuple
 import numpy as np
 from PyQt5 import QtWidgets, QtGui, QtCore
 
+from NanoVNASaver import Defaults
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Formatting import (
     parse_frequency, parse_value,
@@ -329,9 +330,9 @@ class FrequencyChart(Chart):
     def getYPosition(self, d: Datapoint) -> int:
         try:
             return (
-                self.topMargin +
-                round((self.max_value - self.value_function(d) /
-                    self.span * self.dim.height)))
+                    self.topMargin +
+                    round((self.max_value - self.value_function(d) /
+                           self.span * self.dim.height)))
         except ValueError:
             return self.topMargin
 
@@ -391,7 +392,7 @@ class FrequencyChart(Chart):
             a0, do_zoom_x, do_zoom_y,
             math.copysign(1, a0.angleDelta().y()))
 
-    def _wheel_zomm(self, a0, do_zoom_x, do_zoom_y, sign: int=1):
+    def _wheel_zomm(self, a0, do_zoom_x, do_zoom_y, sign: int = 1):
         # Zoom in
         a0.accept()
         # Center of zoom = a0.x(), a0.y()
@@ -529,7 +530,7 @@ class FrequencyChart(Chart):
         self._set_start_stop()
 
         # Draw bands if required
-        if self.bands.enabled:
+        if Defaults.cfg.chart.show_bands:
             self.drawBands(qp, self.fstart, self.fstop)
 
         min_value, max_value = self.find_scaling()
@@ -687,8 +688,8 @@ class FrequencyChart(Chart):
 
     def isPlotable(self, x, y):
         return y is not None and x is not None and \
-            self.leftMargin <= x <= self.leftMargin + self.dim.width and \
-            self.topMargin <= y <= self.topMargin + self.dim.height
+               self.leftMargin <= x <= self.leftMargin + self.dim.width and \
+               self.topMargin <= y <= self.topMargin + self.dim.height
 
     def getPlotable(self, x, y, distantx, distanty):
         p1 = np.array([x, y])

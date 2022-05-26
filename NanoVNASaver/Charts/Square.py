@@ -55,7 +55,7 @@ class SquareChart(Chart):
         raise NotImplementedError()
 
     def draw_data(self, qp: QtGui.QPainter, color: QtGui.QColor,
-        data: List[Datapoint], fstart: int=0, fstop: int=0):
+                  data: List[Datapoint], fstart: int = 0, fstop: int = 0):
         if not data:
             return
         fstop = fstop or data[-1].freq
@@ -69,7 +69,7 @@ class SquareChart(Chart):
         prev_y = int(self.height() / 2 + data[0].im * -1 * self.dim.height / 2)
         for i, d in enumerate(data):
             x = self.getXPosition(d)
-            y = int(self.height()/2 + d.im * -1 * self.dim.height/2)
+            y = int(self.height() / 2 + d.im * -1 * self.dim.height / 2)
             if d.freq > fstart and d.freq < fstop:
                 qp.drawPoint(x, y)
                 if self.flag.draw_lines and i > 0:
@@ -91,13 +91,13 @@ class SquareChart(Chart):
             if m.location != -1 and m.location < len(self.data):
                 x = self.getXPosition(self.data[m.location])
                 y = self.height() / 2 + self.data[m.location].im * -1 * self.dim.height / 2
-                self.drawMarker(x, y, qp, m.color, self.markers.index(m)+1)
+                self.drawMarker(x, y, qp, m.color, self.markers.index(m) + 1)
 
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
         if not self.flag.is_popout:
             self.setFixedWidth(a0.size().height())
-            self.dim.width = a0.size().height()-40
-            self.dim.height = a0.size().height()-40
+            self.dim.width = a0.size().height() - 40
+            self.dim.height = a0.size().height() - 40
         else:
             min_dimension = min(a0.size().height(), a0.size().width())
             self.dim.width = self.dim.height = min_dimension - 40
@@ -128,8 +128,8 @@ class SquareChart(Chart):
 
         positions = [
             math.sqrt(
-                (x - (width_2 + d.re * dim_x_2))**2 +
-                (y - (height_2 - d.im * dim_y_2))**2)
+                (x - (width_2 + d.re * dim_x_2)) ** 2 +
+                (y - (height_2 - d.im * dim_y_2)) ** 2)
             for d in target
         ]
 
@@ -139,7 +139,7 @@ class SquareChart(Chart):
             m.frequencyInput.setText(str(round(target[minimum_position].freq)))
 
     def getXPosition(self, d: Datapoint) -> int:
-        return int(self.width()/2 + d.re * self.dim.width/2)
+        return int(self.width() / 2 + d.re * self.dim.width / 2)
 
     def getYPosition(self, d: Datapoint) -> int:
-        return int(self.height()/2 + d.im * -1 * self.dim.height/2)
+        return int(self.height() / 2 + d.im * -1 * self.dim.height / 2)

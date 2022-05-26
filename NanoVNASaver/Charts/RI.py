@@ -22,6 +22,7 @@ from typing import List
 
 from PyQt5 import QtWidgets, QtGui
 
+from NanoVNASaver import Defaults
 from NanoVNASaver.Formatting import format_frequency_chart
 from NanoVNASaver.Marker import Marker
 from NanoVNASaver.RFTools import Datapoint
@@ -40,8 +41,10 @@ class RealImaginaryChart(FrequencyChart):
         self.rightMargin = 45
         self.span_real = 0.01
         self.span_imag = 0.01
-        self.max_real = 0
-        self.max_imag = 0
+        self.min_real = 0.0
+        self.min_imag = 0.0
+        self.max_real = 0.0
+        self.max_imag = 0.0
 
         self.maxDisplayReal = 100
         self.maxDisplayImag = 100
@@ -135,12 +138,12 @@ class RealImaginaryChart(FrequencyChart):
         self._set_start_stop()
 
         # Draw bands if required
-        if self.bands.enabled:
+        if Defaults.cfg.chart.show_bands:
             self.drawBands(qp, self.fstart, self.fstop)
 
-        min_real, self.max_real, min_imag, self.max_imag = self.find_scaling()
-        self.span_real = clamp_value(self.max_real - min_real, 0.01, 1000.0)
-        self.span_imag = clamp_value(self.max_imag - min_imag, 0.01, 1000.0)
+        self.min_real, self.max_real, self.min_imag, self.max_imag = self.find_scaling()
+        self.span_real = clamp_value(self.max_real - self.min_real, 0.01, 1000.0)
+        self.span_imag = clamp_value(self.max_imag - self.min_imag, 0.01, 1000.0)
  
         # We want one horizontal tick per 50 pixels, at most
         horizontal_ticks = math.floor(self.dim.height/50)
@@ -307,7 +310,7 @@ class RealImaginaryChart(FrequencyChart):
         for data in self.data:
             val = data.impedance()
             re, im = val.real, val.imag
-            if math.isinf(re): # Avoid infinite scales
+            if math.isinf(re):  # Avoid infinite scales
                 continue
             min_real = min(min_real, re)
             max_real = max(max_real, re)
@@ -318,7 +321,7 @@ class RealImaginaryChart(FrequencyChart):
                 continue
             val = data.impedance()
             re, im = val.real, val.imag
-            if math.isinf(re): # Avoid infinite scales
+            if math.isinf(re):  # Avoid infinite scales
                 continue
             min_real = min(min_real, re)
             max_real = max(max_real, re)
@@ -339,7 +342,7 @@ class RealImaginaryChart(FrequencyChart):
         max_imag = clamp_value(max_imag, 0, 1000)
         min_imag = clamp_value(min_imag, -1000, 0)
 
-        if (max_imag - min_imag) > 8 and min_imag < 0 < max_imag:
+        if (max_imag - min_imag) > 8.0 and min_imag < 0.0 < max_imag:
             # We should show a "0" line for the reactive part
             span = max_imag - min_imag
             step_size = span / 8
@@ -355,7 +358,7 @@ class RealImaginaryChart(FrequencyChart):
                 num_max = 8 - num_min
                 max_imag = num_max * (min_imag / num_min) * -1
 
-        return(min_real, max_real, min_imag, max_imag)
+        return min_real, max_real, min_imag, max_imag
 
     def getImYPosition(self, d: Datapoint) -> int:
         im = d.impedance().imag
@@ -387,11 +390,9 @@ class RealImaginaryChart(FrequencyChart):
         freq1 = max(1, self.frequencyAtPosition(x1, limit=False))
         freq2 = max(1, self.frequencyAtPosition(x2, limit=False))
 
-        if freq1 > 0 and freq2 > 0 and freq1 != freq2:
-            self.minFrequency = min(freq1, freq2)
-            self.maxFrequency = max(freq1, freq2)
-            self.setFixedSpan(True)
-
+        self.minFrequency = min(freq1, freq2)
+        self.maxFrequency = max(freq1, freq2)
+        self.setFixedSpan(True)
         self.update()
 
     def getNearestMarker(self, x, y) -> Marker:

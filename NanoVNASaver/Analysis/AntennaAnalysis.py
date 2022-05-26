@@ -34,11 +34,11 @@ logger = logging.getLogger(__name__)
 
 
 class MagLoopAnalysis(VSWRAnalysis):
-    '''
+    """
     Find min vswr and change sweep to zoom.
     Useful for tuning magloop.
 
-    '''
+    """
     max_dips_shown = 1
 
     vswr_bandwith_value = 2.56  # -3 dB ?!?
@@ -115,10 +115,10 @@ class MagLoopAnalysis(VSWRAnalysis):
         QTimer.singleShot(2000, self._safe_sweep)
 
     def _safe_sweep(self):
-        '''
+        """
         sweep only if button enabled
         to prevent multiple/concurrent sweep
-        '''
+        """
 
         if self.app.sweep_control.btn_start.isEnabled():
             self.app.sweep_start()

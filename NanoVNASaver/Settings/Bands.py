@@ -17,11 +17,14 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import contextlib
+import imp
 import logging
 import typing
 
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import QModelIndex
+
+from NanoVNASaver import Defaults
 
 _DEFAULT_BANDS = (
     "2200 m;135700;137800",
@@ -62,7 +65,6 @@ class BandsModel(QtCore.QAbstractTableModel):
                                          "NanoVNASaver", "Bands")
         self.settings.setIniCodec("UTF-8")
 
-        self.enabled = self.settings.value("ShowBands", False, bool)
         self.bands = [
             band.split(";")
             for band in self.settings.value("bands", _DEFAULT_BANDS)

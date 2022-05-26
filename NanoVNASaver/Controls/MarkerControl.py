@@ -25,12 +25,11 @@ from NanoVNASaver import Defaults
 from NanoVNASaver.Marker import Marker
 from NanoVNASaver.Controls.Control import Control
 
-
 logger = logging.getLogger(__name__)
 
 
 class ShowButton(QtWidgets.QPushButton):
-    def setText(self, text: str=''):
+    def setText(self, text: str = ''):
         if not text:
             text = ("Show data"
                     if Defaults.cfg.gui.markers_hidden else "Hide data")
@@ -87,6 +86,7 @@ class MarkerControl(Control):
                 Defaults.cfg.gui.markers_hidden)
             self.showMarkerButton.setText()
             self.showMarkerButton.repaint()
+
         settings(self.app.marker_frame.isHidden())
 
     def toggle_delta(self):

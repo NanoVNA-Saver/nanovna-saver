@@ -29,7 +29,7 @@ class TConfig:
     my_str: str = "Hello World"
     my_bool: bool = True
     my_list: list = field(default_factory=lambda: [1, 2, 3])
-    my_bytearray: bytearray = field(default_factory=lambda: bytearray((1,2,3)))
+    my_bytearray: bytearray = field(default_factory=lambda: bytearray((1, 2, 3)))
 
 
 class TestCases(unittest.TestCase):
@@ -37,7 +37,7 @@ class TestCases(unittest.TestCase):
     def setUp(self) -> None:
         self.settings_1 = CFG.AppSettings(
             CFG.QSettings.IniFormat,
-            CFG.QSettings.UserScope, 
+            CFG.QSettings.UserScope,
             "NanoVNASaver", "Test_1")
         self.settings_2 = CFG.AppSettings(
             CFG.QSettings.IniFormat,

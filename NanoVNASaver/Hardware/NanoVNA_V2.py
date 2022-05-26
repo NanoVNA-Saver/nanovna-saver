@@ -66,6 +66,7 @@ _ADF4350_TXPOWER_DESC_MAP = {
 _ADF4350_TXPOWER_DESC_REV_MAP = {
     value: key for key, value in _ADF4350_TXPOWER_DESC_MAP.items()}
 
+
 class NanoVNA_V2(VNA):
     name = "NanoVNA-V2"
     valid_datapoints = (101, 11, 51, 201, 301, 501, 1023)
@@ -145,7 +146,7 @@ class NanoVNA_V2(VNA):
                 sleep(WRITE_SLEEP)
                 # clear sweepdata
                 self._sweepdata = [(complex(), complex())] * (
-                    self.datapoints + s21hack)
+                        self.datapoints + s21hack)
                 pointstodo = self.datapoints + s21hack
                 # we read at most 255 values at a time and the time required empirically is
                 # just over 3 seconds for 101 points or 7 seconds for 255 points
@@ -178,7 +179,7 @@ class NanoVNA_V2(VNA):
                     for i in range(pointstoread):
                         (fwd_real, fwd_imag, rev0_real, rev0_imag, rev1_real,
                          rev1_imag, freq_index) = unpack_from(
-                             "<iiiiiihxxxxxx", arr, i * 32)
+                            "<iiiiiihxxxxxx", arr, i * 32)
                         fwd = complex(fwd_real, fwd_imag)
                         refl = complex(rev0_real, rev0_imag)
                         thru = complex(rev1_real, rev1_imag)
@@ -236,7 +237,6 @@ class NanoVNA_V2(VNA):
         result = Version(f"{resp[0]}.0.{resp[1]}")
         logger.debug("read_board_revision: %s", result)
         return result
-
 
     def setSweep(self, start, stop):
         step = (stop - start) / (self.datapoints - 1)

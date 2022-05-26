@@ -35,10 +35,10 @@ class Options:
     # Fun fact: In Touchstone 1.1 spec all params are optional unordered.
     # Just the line has to start with "#"
     UNIT_TO_FACTOR = {
-        "ghz": 10**9,
-        "mhz": 10**6,
-        "khz": 10**3,
-        "hz": 10**0,
+        "ghz": 10 ** 9,
+        "mhz": 10 ** 6,
+        "khz": 10 ** 3,
+        "hz": 10 ** 0,
     }
     VALID_UNITS = UNIT_TO_FACTOR.keys()
     VALID_PARAMETERS = "syzgh"
@@ -98,7 +98,7 @@ class Options:
 class Touchstone:
     FIELD_ORDER = ("11", "21", "12", "22")
 
-    def __init__(self, filename: str=""):
+    def __init__(self, filename: str = ""):
         self.filename = filename
         self.sdata = [[], [], [], []]  # at max 4 data pairs
         self.comments = []

@@ -26,6 +26,7 @@ from NanoVNASaver.Controls.Control import Control
 
 logger = logging.getLogger(__name__)
 
+
 class SerialControl(Control):
 
     def __init__(self, app: QtWidgets.QWidget):

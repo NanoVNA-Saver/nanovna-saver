@@ -30,7 +30,7 @@ class Analysis:
 
     @classmethod
     def find_crossing_zero(cls, data):
-        '''
+        """
 
         Find values  crossing zero
         return list of tuples (before, crossing, after)
@@ -44,7 +44,7 @@ class Analysis:
 
         :param cls:
         :param data: list of values
-        '''
+        """
         my_data = np.array(data)
         zeroes = np.where(my_data == 0)[0]
 
@@ -65,7 +65,7 @@ class Analysis:
 
     @classmethod
     def find_minimums(cls, data, threshold):
-        '''
+        """
 
         Find values above threshold
         return list of tuples (start, lowest, end)
@@ -75,7 +75,7 @@ class Analysis:
         :param cls:
         :param data: list of values
         :param threshold:
-        '''
+        """
 
         minimums = []
         min_start = -1
@@ -100,7 +100,7 @@ class Analysis:
 
     @classmethod
     def find_maximums(cls, data, threshold=None):
-        '''
+        """
 
         Find peacs
 
@@ -108,7 +108,7 @@ class Analysis:
         :param cls:
         :param data: list of values
         :param threshold:
-        '''
+        """
         peaks, _ = signal.find_peaks(
             data, width=2, distance=3, prominence=1)
 

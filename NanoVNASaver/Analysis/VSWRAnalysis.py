@@ -220,10 +220,10 @@ class ResonanceAnalysis(Analysis):
         for _ in range(results_header, self.layout.rowCount()):
             self.layout.removeRow(self.layout.rowCount() - 1)
 
-#         if len(crossing) > max_dips_shown:
-#             self.layout.addRow(QtWidgets.QLabel("<b>More than " + str(max_dips_shown) +
-#                                                 " dips found. Lowest shown.</b>"))
-#         self.crossing = crossing[:max_dips_shown]
+        #         if len(crossing) > max_dips_shown:
+        #             self.layout.addRow(QtWidgets.QLabel("<b>More than " + str(max_dips_shown) +
+        #                                                 " dips found. Lowest shown.</b>"))
+        #         self.crossing = crossing[:max_dips_shown]
         if len(crossing) > 0:
             extended_data = []
             for m in crossing:
@@ -262,9 +262,9 @@ class ResonanceAnalysis(Analysis):
 
 
 class EFHWAnalysis(ResonanceAnalysis):
-    '''
+    """
     find only resonance when HI impedance
-    '''
+    """
     old_data = []
 
     def reset(self):
@@ -296,7 +296,7 @@ class EFHWAnalysis(ResonanceAnalysis):
 
         extended_data = OrderedDict()
 
-        #both = np.intersect1d([i[1] for i in crossing], maximums)
+        # both = np.intersect1d([i[1] for i in crossing], maximums)
         both = []
 
         tolerance = 2
@@ -320,7 +320,6 @@ class EFHWAnalysis(ResonanceAnalysis):
                 else:
                     extended_data[m] = my_data
             for i in range(min(len(both), len(self.app.markers))):
-
                 #                 self.app.markers[i].label = {}
                 #                 for l in TYPES:
                 #                     self.app.markers[i][l.label_id] = MarkerLabel(l.name)
@@ -366,7 +365,6 @@ class EFHWAnalysis(ResonanceAnalysis):
         self.old_data.append(extended_data)
 
         for i, index in enumerate(sorted(extended_data.keys())):
-
             self.layout.addRow(
                 f"{format_frequency_short(self.app.data.s11[index].freq)}",
                 QtWidgets.QLabel(f" ({diff[i]['freq']})"
@@ -389,7 +387,7 @@ class EFHWAnalysis(ResonanceAnalysis):
                     writer.writerow(row)
 
     def compare(self, old, new, fields=None):
-        '''
+        """
         Compare data to help changes
 
         NB
@@ -397,7 +395,7 @@ class EFHWAnalysis(ResonanceAnalysis):
         ( same index must be same frequence )
         :param old:
         :param new:
-        '''
+        """
         fields = fields or [("freq", str), ]
 
         def no_compare():

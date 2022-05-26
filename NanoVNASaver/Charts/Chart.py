@@ -40,13 +40,15 @@ class ChartDimensions:
     line: int = 1
     point: int = 2
 
+
 @dataclass
 class ChartDragBox:
-    pos: Tuple[int]  = (-1, -1)
+    pos: Tuple[int] = (-1, -1)
     pos_start: Tuple[int] = (0, 0)
     state: bool = False
     move_x: int = -1
     move_y: int = -1
+
 
 @dataclass
 class ChartFlags:
@@ -162,7 +164,7 @@ class Chart(QtWidgets.QWidget):
     def getNearestMarker(self, x, y) -> Marker:
         if len(self.data) == 0:
             return None
-        shortest = 10**6
+        shortest = 10 ** 6
         nearest = None
         for m in self.markers:
             mx, my = self.getPosition(self.data[m.location])
@@ -263,7 +265,7 @@ class Chart(QtWidgets.QWidget):
         if position is None:
             qf = QtGui.QFontMetricsF(self.font())
             width = qf.boundingRect(self.sweepTitle).width()
-            position = QtCore.QPointF(self.width()/2 - width/2, 15)
+            position = QtCore.QPointF(self.width() / 2 - width / 2, 15)
         qp.drawText(position, self.sweepTitle)
 
     def update(self):

@@ -21,6 +21,7 @@ import unittest
 # Import targets to be tested
 from NanoVNASaver.Version import Version
 
+
 class TestCases(unittest.TestCase):
 
     def test_version(self):
@@ -30,7 +31,7 @@ class TestCases(unittest.TestCase):
         self.assertFalse(ver > Version("1.2.4"))
         self.assertFalse(ver > Version("1.2.3-u"))
         self.assertTrue(Version("1.2.4") >= ver)
-        self.assertTrue(ver <  Version("1.2.4"))
+        self.assertTrue(ver < Version("1.2.4"))
         self.assertFalse(Version("0.0.0") == Version("0.0.0-rc"))
         self.assertEqual(ver.major, 1)
         self.assertEqual(ver.minor, 2)

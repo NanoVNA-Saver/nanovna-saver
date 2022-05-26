@@ -22,6 +22,7 @@ from typing import List
 
 from PyQt5 import QtGui
 
+from NanoVNASaver import Defaults
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Charts.Frequency import FrequencyChart
@@ -49,14 +50,14 @@ class SParameterChart(FrequencyChart):
 
     def drawChart(self, qp: QtGui.QPainter):
         qp.setPen(QtGui.QPen(Chart.color.text))
-        qp.drawText(int(round(self.dim.width / 2)) - 20, 15,self.name)
+        qp.drawText(int(round(self.dim.width / 2)) - 20, 15, self.name)
         qp.drawText(10, 15, "Real")
         qp.drawText(self.leftMargin + self.dim.width - 15, 15, "Imag")
         qp.setPen(QtGui.QPen(Chart.color.foreground))
         qp.drawLine(self.leftMargin, self.topMargin - 5,
-                    self.leftMargin, self.topMargin+self.dim.height+5)
-        qp.drawLine(self.leftMargin-5, self.topMargin+self.dim.height,
-                    self.leftMargin+self.dim.width, self.topMargin + self.dim.height)
+                    self.leftMargin, self.topMargin + self.dim.height + 5)
+        qp.drawLine(self.leftMargin - 5, self.topMargin + self.dim.height,
+                    self.leftMargin + self.dim.width, self.topMargin + self.dim.height)
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
@@ -65,7 +66,7 @@ class SParameterChart(FrequencyChart):
         self._set_start_stop()
 
         # Draw bands if required
-        if self.bands.enabled:
+        if Defaults.cfg.chart.show_bands:
             self.drawBands(qp, self.fstart, self.fstop)
 
         if self.fixedValues:
@@ -75,25 +76,25 @@ class SParameterChart(FrequencyChart):
             # Find scaling
             min_value = -1
             max_value = 1
-                # for d in self.data:
-                #     val = d.re
-                #     min_value = min(min_value, val)
-                #     max_value = max(max_value, val)
-                # for d in self.reference:  # Also check min/max for the reference sweep
-                #     if d.freq < self.fstart or d.freq > self.fstop:
-                #         continue
-                #     val = self.logMag(d)
-                #     min_value = min(min_value, val)
-                #     max_value = max(max_value, val)
-                # min_value = round_floor(min_value, -1)
-                # self.min_value = min_value
-                # max_value = round_ceil(max_value, -1)
-                # self.max_value = max_value
+            # for d in self.data:
+            #     val = d.re
+            #     min_value = min(min_value, val)
+            #     max_value = max(max_value, val)
+            # for d in self.reference:  # Also check min/max for the reference sweep
+            #     if d.freq < self.fstart or d.freq > self.fstop:
+            #         continue
+            #     val = self.logMag(d)
+            #     min_value = min(min_value, val)
+            #     max_value = max(max_value, val)
+            # min_value = round_floor(min_value, -1)
+            # self.min_value = min_value
+            # max_value = round_ceil(max_value, -1)
+            # self.max_value = max_value
 
         self.max_value = max_value
         self.min_value = min_value
 
-        span = max_value-min_value
+        span = max_value - min_value
         if span == 0:
             span = 0.01
         self.span = span
@@ -103,9 +104,9 @@ class SParameterChart(FrequencyChart):
 
         for i in range(tick_count):
             val = min_value + i * tick_step
-            y = self.topMargin + round((max_value - val)/span*self.dim.height)
+            y = self.topMargin + round((max_value - val) / span * self.dim.height)
             qp.setPen(QtGui.QPen(Chart.color.foreground))
-            qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.dim.width, y)
+            qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.dim.width, y)
             if val > min_value and val != max_value:
                 qp.setPen(QtGui.QPen(Chart.color.text))
                 qp.drawText(3, y + 4, str(round(val, 2)))
@@ -115,7 +116,7 @@ class SParameterChart(FrequencyChart):
                     self.leftMargin + self.dim.width, self.topMargin)
         qp.setPen(Chart.color.text)
         qp.drawText(3, self.topMargin + 4, str(max_value))
-        qp.drawText(3, self.dim.height+self.topMargin, str(min_value))
+        qp.drawText(3, self.dim.height + self.topMargin, str(min_value))
         self.drawFrequencyTicks(qp)
 
         self.drawData(qp, self.data, Chart.color.sweep, self.getReYPosition)

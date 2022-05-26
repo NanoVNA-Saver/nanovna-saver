@@ -34,13 +34,16 @@ def clamp_value(value: Real, rmin: Real, rmax: Real) -> Real:
         return rmax
     return value
 
-def round_ceil(value: Real, digits: int=0) -> Real:
+
+def round_ceil(value: Real, digits: int = 0) -> Real:
     factor = 10 ** -digits
     return factor * math.ceil(value / factor)
 
-def round_floor(value: Real, digits: int=0) -> Real:
+
+def round_floor(value: Real, digits: int = 0) -> Real:
     factor = 10 ** -digits
     return factor * math.floor(value / factor)
+
 
 class Format(NamedTuple):
     max_nr_digits: int = 6
@@ -105,8 +108,8 @@ class Value:
             formstr = ".0f"
         else:
             max_digits = fmt.max_nr_digits + (
-                (1 if not fmt.fix_decimals and abs(real) < 10 else 0) +
-                (1 if not fmt.fix_decimals and abs(real) < 100 else 0))
+                    (1 if not fmt.fix_decimals and abs(real) < 10 else 0) +
+                    (1 if not fmt.fix_decimals and abs(real) < 100 else 0))
             formstr = f".{max_digits - 3}f"
 
         if self.fmt.allways_signed:

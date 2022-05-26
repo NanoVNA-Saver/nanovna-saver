@@ -24,6 +24,7 @@ import unittest
 # Import targets to be tested
 from NanoVNASaver.Formatting import format_frequency_sweep
 
+
 class TestCases(unittest.TestCase):
 
     def test_basicIntegerValues(self):
@@ -47,7 +48,7 @@ class TestCases(unittest.TestCase):
     #     self.assertEqual(rft.formatSweepFrequency(10000), '10.00kHz')
     #     self.assertEqual(rft.formatSweepFrequency(100000), '100.00kHz')
     #     self.assertEqual(rft.formatSweepFrequency(1000000), '1.00MHz')
-  
+
     # def test_nonDefaultMinDigits(self):
     #     # simple integers with trailing zeros. setting mindigit value to something
     #     # other than default, where trailing zeros >= mindigits, the number of
@@ -69,4 +70,3 @@ class TestCases(unittest.TestCase):
     #     # TODO: Consider post-processing result for maxdigits based on SI unit.
     #     self.assertEqual(rft.formatSweepFrequency(1000, mindigits=5), '1.00000kHz')
     #     self.assertEqual(rft.formatSweepFrequency(1000, mindigits=10), '1.0000000000kHz')
-

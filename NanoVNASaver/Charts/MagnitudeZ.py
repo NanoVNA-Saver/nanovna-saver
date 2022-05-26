@@ -22,6 +22,7 @@ from typing import List
 
 from PyQt5 import QtGui
 
+from NanoVNASaver import Defaults
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.SITools import (
     Format, Value, round_ceil, round_floor)
@@ -51,7 +52,7 @@ class MagnitudeZChart(FrequencyChart):
         self._set_start_stop()
 
         # Draw bands if required
-        if self.bands.enabled:
+        if Defaults.cfg.chart.show_bands:
             self.drawBands(qp, self.fstart, self.fstop)
 
         if self.fixedValues:

@@ -170,7 +170,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         bands_layout = QtWidgets.QFormLayout(bands_box)
 
         self.show_bands = QtWidgets.QCheckBox("Show bands")
-        self.show_bands.setChecked(self.app.bands.enabled)
+        self.show_bands.setChecked(Defaults.cfg.chart.show_bands)
         self.show_bands.stateChanged.connect(lambda: self.setShowBands(self.show_bands.isChecked()))
         bands_layout.addRow(self.show_bands)
         bands_layout.addRow(
@@ -195,7 +195,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self.vswrMarkers = [] if self.vswrMarkers == 0.0 else [self.vswrMarkers]
 
         vswr_marker_layout.addRow(
-            "VSWR Markers",self.color_picker("VSWRColor", "swr"))
+            "VSWR Markers", self.color_picker("VSWRColor", "swr"))
 
         self.vswr_marker_dropdown = QtWidgets.QComboBox()
         self.vswr_marker_dropdown.setMinimumHeight(20)
@@ -265,8 +265,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             Defaults.cfg.chart.marker_label)
         self.filled_marker_option.setChecked(Defaults.cfg.chart.marker_filled)
 
-        if self.app.settings.value("UseCustomColors",
-                                   defaultValue=False, type=bool):
+        if Defaults.cfg.gui.custom_colors:
             self.dark_mode_option.setDisabled(True)
             self.dark_mode_option.setChecked(False)
             self.use_custom_colors.setChecked(True)
@@ -325,20 +324,20 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
     def trace_colors(self, layout: QtWidgets.QLayout):
         for setting, name, attr in (
-            ('SweepColor', 'Sweep color', 'sweep'),
-            ('SecondarySweepColor', 'Second sweep color', 'sweep_secondary'),
-            ('ReferenceColor', 'Reference color', 'reference'),
-            ('SecondaryReferenceColor',
-             'Second reference color', 'reference_secondary'),
+                ('SweepColor', 'Sweep color', 'sweep'),
+                ('SecondarySweepColor', 'Second sweep color', 'sweep_secondary'),
+                ('ReferenceColor', 'Reference color', 'reference'),
+                ('SecondaryReferenceColor',
+                 'Second reference color', 'reference_secondary'),
         ):
             cp = self.color_picker(setting, attr)
             layout.addRow(name, cp)
 
     def custom_colors(self, layout: QtWidgets.QLayout):
         for setting, name, attr in (
-            ('BackgroundColor', 'Chart background', 'background'),
-            ('ForegroundColor', 'Chart foreground', 'foreground'),
-            ('TextColor', 'Chart text', 'text'),
+                ('BackgroundColor', 'Chart background', 'background'),
+                ('ForegroundColor', 'Chart foreground', 'foreground'),
+                ('TextColor', 'Chart text', 'text'),
         ):
             cp = self.color_picker(setting, attr)
             layout.addRow(name, cp)
@@ -443,10 +442,8 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         sender.setPalette(palette)
         self.changeSetting(setting, color)
 
-    def setShowBands(self, show_bands):
-        self.app.bands.enabled = show_bands
-        self.app.bands.settings.setValue("ShowBands", show_bands)
-        self.app.bands.settings.sync()
+    def setShowBands(self, show_bands: bool) -> None:
+        Defaults.cfg.chart.show_bands = show_bands
         for c in self.app.subscribing_charts:
             c.update()
 
@@ -494,7 +491,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         last_marker.updated.disconnect(self.app.markerUpdated)
         self.app.marker_data_layout.removeWidget(last_marker.get_data_layout())
-        self.app.marker_control.layout.removeRow(Marker.count()-1)
+        self.app.marker_control.layout.removeRow(Marker.count() - 1)
         self.app.marker_frame.adjustSize()
 
         last_marker.get_data_layout().hide()

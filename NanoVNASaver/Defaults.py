@@ -27,6 +27,7 @@ from PyQt5.QtGui import QColor
 
 logger = logging.getLogger(__name__)
 
+
 # pylint: disable=too-few-public-methods
 # pylint: disable=too-many-instance-attributes
 @DC.dataclass
@@ -34,6 +35,7 @@ class GUI:
     window_height: int = 950
     window_width: int = 1433
     font_size: int = 8
+    custom_colors: bool = False
     dark_mode: bool = False
     splitter_sizes: QByteArray = DC.field(default_factory=QByteArray)
     markers_hidden: bool = False
@@ -60,6 +62,7 @@ class Chart:
     marker_at_tip: bool = False
     marker_size: int = 8
     returnloss_is_positive: bool = False
+    show_bands: bool = False
 
 
 @DC.dataclass
@@ -68,7 +71,7 @@ class ChartColors:  # pylint: disable=too-many-instance-attributes
     foreground: QColor = QColor(QtCore.Qt.lightGray)
     reference: QColor = QColor(0, 0, 255, 64)
     reference_secondary: QColor = QColor(0, 0, 192, 48)
-    sweep: QColor =  QColor(QtCore.Qt.darkYellow)
+    sweep: QColor = QColor(QtCore.Qt.darkYellow)
     sweep_secondary: QColor = QColor(QtCore.Qt.darkMagenta)
     swr: QColor = QColor(255, 0, 0, 128)
     text: QColor = QColor(QtCore.Qt.black)
@@ -82,7 +85,9 @@ class CFG:
     chart: object = Chart()
     chart_colors: object = ChartColors()
 
+
 cfg = CFG()
+
 
 def restore(settings: 'AppSettings') -> CFG:
     result = CFG()
@@ -94,12 +99,12 @@ def restore(settings: 'AppSettings') -> CFG:
     return result
 
 
-def store(settings: 'AppSettings', data: CFG=None) -> None:
+def store(settings: 'AppSettings', data: CFG = None) -> None:
     data = data or cfg
     logger.debug("storing\n(\n%s\n)", data)
     assert isinstance(data, CFG)
     for field in DC.fields(data):
-        data_class  = getattr(data, field.name)
+        data_class = getattr(data, field.name)
         assert DC.is_dataclass(data_class)
         settings.store_dataclass(field.name.upper(), data_class)
 
@@ -113,6 +118,7 @@ def from_type(data) -> str:
     if type(data) in type_map:
         return str(type_map[type(data)](data))
     return str(data)
+
 
 def to_type(data: object, data_type: type) -> object:
     type_map = {

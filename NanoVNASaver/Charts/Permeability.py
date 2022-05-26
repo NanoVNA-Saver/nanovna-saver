@@ -22,6 +22,7 @@ from typing import List
 
 from PyQt5 import QtGui
 
+from NanoVNASaver import Defaults
 from NanoVNASaver.Marker import Marker
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.SITools import Format, Value
@@ -54,7 +55,7 @@ class PermeabilityChart(FrequencyChart):
         qp.setPen(QtGui.QPen(Chart.color.foreground))
         qp.drawLine(self.leftMargin, self.topMargin - 5,
                     self.leftMargin, self.topMargin + self.dim.height + 5)
-        qp.drawLine(self.leftMargin-5, self.topMargin + self.dim.height,
+        qp.drawLine(self.leftMargin - 5, self.topMargin + self.dim.height,
                     self.leftMargin + self.dim.width + 5, self.topMargin + self.dim.height)
         self.drawTitle(qp)
 
@@ -69,11 +70,11 @@ class PermeabilityChart(FrequencyChart):
         self._set_start_stop()
 
         # Draw bands if required
-        if self.bands.enabled:
+        if Defaults.cfg.chart.show_bands:
             self.drawBands(qp, self.fstart, self.fstop)
 
         min_val, max_val = self.find_scaling()
-        
+
         if self.logarithmicY:
             min_val = max(0.01, min_val)
 
@@ -85,7 +86,7 @@ class PermeabilityChart(FrequencyChart):
         self.span = span
 
         # We want one horizontal tick per 50 pixels, at most
-        horizontal_ticks = math.floor(self.dim.height/50)
+        horizontal_ticks = math.floor(self.dim.height / 50)
         fmt = Format(max_nr_digits=4)
         for i in range(horizontal_ticks):
             y = self.topMargin + round(i * self.dim.height / horizontal_ticks)
@@ -135,8 +136,8 @@ class PermeabilityChart(FrequencyChart):
                 qp.drawPoint(x, y_im)
             if self.flag.draw_lines and i > 0:
                 prev_x = self.getXPosition(self.data[i - 1])
-                prev_y_re = self.getReYPosition(self.data[i-1])
-                prev_y_im = self.getImYPosition(self.data[i-1])
+                prev_y_re = self.getReYPosition(self.data[i - 1])
+                prev_y_im = self.getImYPosition(self.data[i - 1])
 
                 # Real part first
                 line_pen.setColor(Chart.color.sweep)
@@ -195,8 +196,8 @@ class PermeabilityChart(FrequencyChart):
                 qp.drawPoint(x, y_im)
             if self.flag.draw_lines and i > 0:
                 prev_x = self.getXPosition(self.reference[i - 1])
-                prev_y_re = self.getReYPosition(self.reference[i-1])
-                prev_y_im = self.getImYPosition(self.reference[i-1])
+                prev_y_re = self.getReYPosition(self.reference[i - 1])
+                prev_y_im = self.getImYPosition(self.reference[i - 1])
 
                 line_pen.setColor(Chart.color.reference)
                 qp.setPen(line_pen)
@@ -229,12 +230,12 @@ class PermeabilityChart(FrequencyChart):
                 y_re = self.getReYPosition(self.data[m.location])
                 y_im = self.getImYPosition(self.data[m.location])
 
-                self.drawMarker(x, y_re, qp, m.color, self.markers.index(m)+1)
-                self.drawMarker(x, y_im, qp, m.color, self.markers.index(m)+1)
+                self.drawMarker(x, y_re, qp, m.color, self.markers.index(m) + 1)
+                self.drawMarker(x, y_im, qp, m.color, self.markers.index(m) + 1)
 
     def find_scaling(self) -> tuple[float, float]:
         if self.fixedValues:
-            return(self.minDisplayValue, self.maxDisplayValue)
+            return (self.minDisplayValue, self.maxDisplayValue)
         min_val = 1000
         max_val = -1000
         for data in self.data:
@@ -257,7 +258,7 @@ class PermeabilityChart(FrequencyChart):
             max_val = max(max_val, re)
             min_val = min(min_val, im)
             max_val = max(max_val, im)
-        return(min_val, max_val)
+        return (min_val, max_val)
 
     def getImYPosition(self, d: Datapoint) -> int:
         im = d.impedance().imag
@@ -306,15 +307,15 @@ class PermeabilityChart(FrequencyChart):
     def getNearestMarker(self, x, y) -> Marker:
         if len(self.data) == 0:
             return None
-        shortest = 10**6
+        shortest = 10 ** 6
         nearest = None
         for m in self.markers:
             mx, _ = self.getPosition(self.data[m.location])
             myr = self.getReYPosition(self.data[m.location])
             myi = self.getImYPosition(self.data[m.location])
             dx = abs(x - mx)
-            dy = min(abs(y - myr), abs(y-myi))
-            distance = math.sqrt(dx**2 + dy**2)
+            dy = min(abs(y - myr), abs(y - myi))
+            distance = math.sqrt(dx ** 2 + dy ** 2)
             if distance < shortest:
                 shortest = distance
                 nearest = m

@@ -24,6 +24,7 @@ import numpy as np
 
 from PyQt5 import QtWidgets, QtGui
 
+from NanoVNASaver import Defaults
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Charts.Frequency import FrequencyChart
@@ -127,7 +128,7 @@ class PhaseChart(FrequencyChart):
         self._set_start_stop()
 
         # Draw bands if required
-        if self.bands.enabled:
+        if Defaults.cfg.chart.show_bands:
             self.drawBands(qp, self.fstart, self.fstop)
 
         self.drawFrequencyTicks(qp)

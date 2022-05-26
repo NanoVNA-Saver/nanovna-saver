@@ -67,6 +67,7 @@ def default_label_ids() -> list[str]:
 
 class Value():
     """Contains the data area to calculate marker values from"""
+
     def __init__(self, freq: int = 0,
                  s11: List[Datapoint] = None,
                  s21: List[Datapoint] = None):
@@ -88,6 +89,6 @@ class Value():
             if s21:
                 s21 += [s21[-1], ]
         self.freq = s11[1].freq
-        self.s11 = s11[index-1:index+2]
+        self.s11 = s11[index - 1:index + 2]
         if s21:
-            self.s21 = s21[index-1:index+2]
+            self.s21 = s21[index - 1:index + 2]

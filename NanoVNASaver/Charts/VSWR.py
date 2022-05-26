@@ -22,6 +22,7 @@ from typing import List
 
 from PyQt5 import QtGui
 
+from NanoVNASaver import Defaults
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Charts.Frequency import FrequencyChart
@@ -59,7 +60,7 @@ class VSWRChart(FrequencyChart):
         self.fstop = fstop
 
         # Draw bands if required
-        if self.bands.enabled:
+        if Defaults.cfg.chart.show_bands:
             self.drawBands(qp, fstart, fstop)
 
         # Find scaling

@@ -36,7 +36,6 @@ from NanoVNASaver.Hardware.TinySA import TinySA
 from NanoVNASaver.Hardware.Serial import drain_serial, Interface
 from NanoVNASaver.Hardware.VNA import VNA
 
-
 logger = logging.getLogger(__name__)
 
 USBDevice = namedtuple("Device", "vid pid name")
@@ -51,7 +50,7 @@ TIMEOUT = 0.2
 WAIT = 0.05
 
 NAME2DEVICE = {
-    "S-A-A-2" : NanoVNA_V2,
+    "S-A-A-2": NanoVNA_V2,
     "AVNA": AVNA,
     "H4": NanoVNA_H4,
     "H": NanoVNA_H,
@@ -61,6 +60,7 @@ NAME2DEVICE = {
     "tinySA": TinySA,
     "Unknown": NanoVNA,
 }
+
 
 # The USB Driver for NanoVNA V2 seems to deliver an
 # incompatible hardware info like:
@@ -101,6 +101,7 @@ def get_VNA(iface: Interface) -> 'VNA':
     # serial_port.timeout = TIMEOUT
     return NAME2DEVICE[iface.comment](iface)
 
+
 def get_comment(iface: Interface) -> str:
     logger.info("Finding correct VNA type...")
     with iface.lock:
@@ -112,18 +113,19 @@ def get_comment(iface: Interface) -> str:
     logger.info("Finding firmware variant...")
     info = get_info(iface)
     for search, name in (
-        ("AVNA + Teensy", "AVNA"),
-        ("NanoVNA-H 4", "H4"),
-        ("NanoVNA-H", "H"),
-        ("NanoVNA-F_V2", "F_V2"),
-        ("NanoVNA-F", "F"),
-        ("NanoVNA", "NanoVNA"),
-        ("tinySA", "tinySA"),
+            ("AVNA + Teensy", "AVNA"),
+            ("NanoVNA-H 4", "H4"),
+            ("NanoVNA-H", "H"),
+            ("NanoVNA-F_V2", "F_V2"),
+            ("NanoVNA-F", "F"),
+            ("NanoVNA", "NanoVNA"),
+            ("tinySA", "tinySA"),
     ):
         if info.find(search) >= 0:
-            return  name
+            return name
     logger.warning("Did not recognize NanoVNA type from firmware.")
     return "Unknown"
+
 
 def detect_version(serial_port: serial.Serial) -> str:
     data = ""

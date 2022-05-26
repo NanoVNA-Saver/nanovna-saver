@@ -24,6 +24,7 @@ import numpy as np
 
 from PyQt5 import QtGui
 
+from NanoVNASaver import Defaults
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.RFTools import Datapoint
 from .Frequency import FrequencyChart
@@ -142,7 +143,7 @@ class GroupDelayChart(FrequencyChart):
         self._set_start_stop()
 
         # Draw bands if required
-        if self.bands.enabled:
+        if Defaults.cfg.chart.show_bands:
             self.drawBands(qp, self.fstart, self.fstop)
 
         self.drawFrequencyTicks(qp)

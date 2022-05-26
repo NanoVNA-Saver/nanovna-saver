@@ -141,7 +141,7 @@ def format_wavelength(length: Number) -> str:
     return str(SITools.Value(length, "m", FMT_WAVELENGTH))
 
 
-def format_y_axis(val: float, unit: str="") -> str:
+def format_y_axis(val: float, unit: str = "") -> str:
     return str(SITools.Value(val, unit, FMT_SHORT))
 
 

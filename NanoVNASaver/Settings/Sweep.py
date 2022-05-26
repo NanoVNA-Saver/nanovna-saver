@@ -66,11 +66,11 @@ class Sweep():
             f" {self.properties})")
 
     def __eq__(self, other) -> bool:
-        return(self.start == other.start and
-               self.end == other.end and
-               self.points == other.points and
-               self.segments == other.segments and
-               self.properties == other.properties)
+        return (self.start == other.start and
+                self.end == other.end and
+                self.points == other.points and
+                self.segments == other.segments and
+                self.properties == other.properties)
 
     def copy(self) -> 'Sweep':
         return Sweep(self.start, self.end, self.points, self.segments,
@@ -82,15 +82,15 @@ class Sweep():
 
     @property
     def stepsize(self) -> int:
-        return round(self.span / (self.points  * self.segments - 1))
+        return round(self.span / (self.points * self.segments - 1))
 
     def check(self):
         if (
-            self.segments <= 0
-            or self.points <= 0
-            or self.start <= 0
-            or self.end <= 0
-            or self.stepsize < 1
+                self.segments <= 0
+                or self.points <= 0
+                or self.start <= 0
+                or self.end <= 0
+                or self.stepsize < 1
         ):
             raise ValueError(f"Illegal sweep settings: {self}")
 

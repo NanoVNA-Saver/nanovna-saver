@@ -145,7 +145,6 @@ class TestTSIToolsValue(unittest.TestCase):
         self.assertEqual(v.parse("\N{INFINITY}").value, inf)
         self.assertEqual(v.parse("-\N{INFINITY}").value, -inf)
 
-
     def test_format_attributes(self):
         v = Value("10.0", "Hz", fmt=F_DIGITS_4)
         self.assertEqual(v.value, 10.0)
@@ -157,12 +156,12 @@ class TestTSIToolsValue(unittest.TestCase):
         self.assertEqual(v.unit, "Hz")
 
     def test_rounding(self):
-        self.assertEqual(round_floor(123.456),123)
-        self.assertEqual(round_floor(123.456,1),123.4)
-        self.assertEqual(round_floor(123.456,-1),120)
-        self.assertEqual(round_ceil(123.456),124)
-        self.assertEqual(round_ceil(123.456,1),123.5)
-        self.assertEqual(round_ceil(123.456,-1),130)
+        self.assertEqual(round_floor(123.456), 123)
+        self.assertEqual(round_floor(123.456, 1), 123.4)
+        self.assertEqual(round_floor(123.456, -1), 120)
+        self.assertEqual(round_ceil(123.456), 124)
+        self.assertEqual(round_ceil(123.456, 1), 123.5)
+        self.assertEqual(round_ceil(123.456, -1), 130)
 
 # TODO: test F_DIGITS_31
 #            F_WITH_SPACE
