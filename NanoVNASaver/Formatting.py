@@ -42,6 +42,7 @@ FMT_PARSE = SITools.Format(parse_sloppy_unit=True, parse_sloppy_kilo=True,
                            parse_clamp_min=0)
 FMT_PARSE_VALUE = SITools.Format(
     parse_sloppy_unit=True, parse_sloppy_kilo=True)
+FMT_VSWR = SITools.Format(max_nr_digits=3)
 
 
 def format_frequency(freq: Number) -> str:

@@ -23,6 +23,9 @@ from typing import List
 from PyQt5 import QtGui
 
 from NanoVNASaver.RFTools import Datapoint
+from NanoVNASaver.SITools import Value, round_ceil, round_floor
+from NanoVNASaver.Formatting import FMT_VSWR
+
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Charts.Frequency import FrequencyChart
 logger = logging.getLogger(__name__)
@@ -53,53 +56,18 @@ class MagnitudeChart(FrequencyChart):
         if self.bands.enabled:
             self.drawBands(qp, self.fstart, self.fstop)
 
-        if self.fixedValues:
-            max_value = self.maxDisplayValue
-            min_value = self.minDisplayValue
-            self.max_value = max_value
-            self.min_value = min_value
-        else:
-            # Find scaling
-            min_value = 100
-            max_value = 0
-            for d in self.data:
-                mag = self.magnitude(d)
-                if mag > max_value:
-                    max_value = mag
-                if mag < min_value:
-                    min_value = mag
-            for d in self.reference:  # Also check min/max for the reference sweep
-                if d.freq < self.fstart or d.freq > self.fstop:
-                    continue
-                mag = self.magnitude(d)
-                if mag > max_value:
-                    max_value = mag
-                if mag < min_value:
-                    min_value = mag
+        self.min_value, self.max_value = self.find_scaling()
 
-            min_value = 10*math.floor(min_value/10)
-            self.min_value = min_value
-            max_value = 10*math.ceil(max_value/10)
-            self.max_value = max_value
-
-        span = max_value-min_value
-        if span == 0:
-            span = 0.01
-        self.span = span
+        self.span = self.max_value-self.min_value or 0.01
 
         target_ticks = math.floor(self.dim.height / 60)
 
         for i in range(target_ticks):
-            val = min_value + i / target_ticks * span
+            val = self.min_value + i / target_ticks * self.span
             y = self.topMargin + round((self.max_value - val) / self.span * self.dim.height)
             qp.setPen(Chart.color.text)
-            if val != min_value:
-                digits = max(0, min(2, math.floor(3 - math.log10(abs(val)))))
-                if digits == 0:
-                    vswrstr = str(round(val))
-                else:
-                    vswrstr = str(round(val, digits))
-                qp.drawText(3, y + 3, vswrstr)
+            if val != self.min_value:
+                qp.drawText(3, y + 3, Value(val, fmt=FMT_VSWR))
             qp.setPen(QtGui.QPen(Chart.color.foreground))
             qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.dim.width, y)
 
@@ -107,8 +75,8 @@ class MagnitudeChart(FrequencyChart):
         qp.drawLine(self.leftMargin - 5, self.topMargin,
                     self.leftMargin + self.dim.width, self.topMargin)
         qp.setPen(Chart.color.text)
-        qp.drawText(3, self.topMargin + 4, str(max_value))
-        qp.drawText(3, self.dim.height+self.topMargin, str(min_value))
+        qp.drawText(3, self.topMargin + 4, Value(self.max_value, fmt=FMT_VSWR))
+        qp.drawText(3, self.dim.height+self.topMargin, Value(self.min_value, fmt=FMT_VSWR))
         self.drawFrequencyTicks(qp)
 
         qp.setPen(Chart.color.swr)
@@ -118,11 +86,29 @@ class MagnitudeChart(FrequencyChart):
             mag = (vswr-1)/(vswr+1)
             y = self.topMargin + round((self.max_value - mag) / self.span * self.dim.height)
             qp.drawLine(self.leftMargin, y, self.leftMargin + self.dim.width, y)
-            qp.drawText(self.leftMargin + 3, y - 1, "VSWR: " + str(vswr))
+            qp.drawText(self.leftMargin + 3, y - 1, f"VSWR: {Value(vswr, fmt=FMT_VSWR)}")
 
         self.drawData(qp, self.data, Chart.color.sweep)
         self.drawData(qp, self.reference, Chart.color.reference)
         self.drawMarkers(qp)
+
+    def find_scaling(self) -> tuple[float, float]:
+        if self.fixedValues:
+            return(self.minDisplayValue, self.maxDisplayValue)
+        min_value = 100
+        max_value = 0
+        for data in self.data:
+            val = self.magnitude(data)
+            min_value = min(min_value, val)
+            max_value = max(max_value, val)
+        for data in self.reference:  # Also check min/max for the reference sweep
+            if data.freq < self.fstart or data.freq > self.fstop:
+                continue
+            val = self.magnitude(data)
+            min_value = min(min_value, val)
+            max_value = max(max_value, val)
+
+        return(round_floor(min_value, -1), round_ceil(max_value, -1))
 
     def getYPosition(self, d: Datapoint) -> int:
         mag = self.magnitude(d)
@@ -135,7 +121,7 @@ class MagnitudeChart(FrequencyChart):
 
     @staticmethod
     def magnitude(p: Datapoint) -> float:
-        return math.sqrt(p.re**2 + p.im**2)
+        return abs(p.z)
 
     def copy(self):
         new_chart = super().copy()
