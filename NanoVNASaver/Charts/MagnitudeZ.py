@@ -90,10 +90,10 @@ class MagnitudeZChart(FrequencyChart):
         fmt = Format(max_nr_digits=4)
         for i in range(horizontal_ticks):
             y = self.topMargin + round(i * self.dim.height / horizontal_ticks)
-            qp.setPen(QtGui.QPen(Chart.color.foreground))
+            qp.setPen(QtGui.QPen(Defaults.cfg.chart_colors.foreground))
             qp.drawLine(self.leftMargin - 5, y,
                         self.leftMargin + self.dim.width + 5, y)
-            qp.setPen(QtGui.QPen(Chart.color.text))
+            qp.setPen(QtGui.QPen(Defaults.cfg.chart_colors.text))
             val = Value(self.valueAtPosition(y)[0], fmt=fmt)
             qp.drawText(3, y + 4, str(val))
 
@@ -103,8 +103,8 @@ class MagnitudeZChart(FrequencyChart):
 
         self.drawFrequencyTicks(qp)
 
-        self.drawData(qp, self.data, Chart.color.sweep)
-        self.drawData(qp, self.reference, Chart.color.reference)
+        self.drawData(qp, self.data, Defaults.cfg.chart_colors.sweep)
+        self.drawData(qp, self.reference, Defaults.cfg.chart_colors.reference)
         self.drawMarkers(qp)
 
     def getYPosition(self, d: Datapoint) -> int:

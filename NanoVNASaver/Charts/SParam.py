@@ -49,11 +49,11 @@ class SParameterChart(FrequencyChart):
         self.isInverted = False
 
     def drawChart(self, qp: QtGui.QPainter):
-        qp.setPen(QtGui.QPen(Chart.color.text))
+        qp.setPen(QtGui.QPen(Defaults.cfg.chart_colors.text))
         qp.drawText(int(round(self.dim.width / 2)) - 20, 15, self.name)
         qp.drawText(10, 15, "Real")
         qp.drawText(self.leftMargin + self.dim.width - 15, 15, "Imag")
-        qp.setPen(QtGui.QPen(Chart.color.foreground))
+        qp.setPen(QtGui.QPen(Defaults.cfg.chart_colors.foreground))
         qp.drawLine(self.leftMargin, self.topMargin - 5,
                     self.leftMargin, self.topMargin + self.dim.height + 5)
         qp.drawLine(self.leftMargin - 5, self.topMargin + self.dim.height,
@@ -105,24 +105,24 @@ class SParameterChart(FrequencyChart):
         for i in range(tick_count):
             val = min_value + i * tick_step
             y = self.topMargin + round((max_value - val) / span * self.dim.height)
-            qp.setPen(QtGui.QPen(Chart.color.foreground))
+            qp.setPen(QtGui.QPen(Defaults.cfg.chart_colors.foreground))
             qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.dim.width, y)
             if val > min_value and val != max_value:
-                qp.setPen(QtGui.QPen(Chart.color.text))
+                qp.setPen(QtGui.QPen(Defaults.cfg.chart_colors.text))
                 qp.drawText(3, y + 4, str(round(val, 2)))
 
-        qp.setPen(QtGui.QPen(Chart.color.foreground))
+        qp.setPen(QtGui.QPen(Defaults.cfg.chart_colors.foreground))
         qp.drawLine(self.leftMargin - 5, self.topMargin,
                     self.leftMargin + self.dim.width, self.topMargin)
-        qp.setPen(Chart.color.text)
+        qp.setPen(Defaults.cfg.chart_colors.text)
         qp.drawText(3, self.topMargin + 4, str(max_value))
         qp.drawText(3, self.dim.height + self.topMargin, str(min_value))
         self.drawFrequencyTicks(qp)
 
-        self.drawData(qp, self.data, Chart.color.sweep, self.getReYPosition)
-        self.drawData(qp, self.reference, Chart.color.reference, self.getReYPosition)
-        self.drawData(qp, self.data, Chart.color.sweep_secondary, self.getImYPosition)
-        self.drawData(qp, self.reference, Chart.color.reference_secondary, self.getImYPosition)
+        self.drawData(qp, self.data, Defaults.cfg.chart_colors.sweep, self.getReYPosition)
+        self.drawData(qp, self.reference, Defaults.cfg.chart_colors.reference, self.getReYPosition)
+        self.drawData(qp, self.data, Defaults.cfg.chart_colors.sweep_secondary, self.getImYPosition)
+        self.drawData(qp, self.reference, Defaults.cfg.chart_colors.reference_secondary, self.getImYPosition)
         self.drawMarkers(qp, y_function=self.getReYPosition)
         self.drawMarkers(qp, y_function=self.getImYPosition)
 

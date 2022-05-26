@@ -19,6 +19,7 @@
 import logging
 from PyQt5 import QtGui, QtCore
 
+from NanoVNASaver import Defaults
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Charts.Square import SquareChart
 
@@ -34,9 +35,9 @@ class PolarChart(SquareChart):
         width_45 = width_2 * 0.7071
         height_45 = height_2 * 0.7071
 
-        qp.setPen(QtGui.QPen(Chart.color.text))
+        qp.setPen(QtGui.QPen(Defaults.cfg.chart_colors.text))
         qp.drawText(3, 15, self.name)
-        qp.setPen(QtGui.QPen(Chart.color.foreground))
+        qp.setPen(QtGui.QPen(Defaults.cfg.chart_colors.foreground))
 
         qp.drawEllipse(QtCore.QPoint(center_x, center_y), width_2, height_2)
         qp.drawEllipse(QtCore.QPoint(center_x, center_y),

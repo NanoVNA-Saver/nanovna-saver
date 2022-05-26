@@ -66,21 +66,21 @@ class MagnitudeChart(FrequencyChart):
         for i in range(target_ticks):
             val = self.min_value + i / target_ticks * self.span
             y = self.topMargin + round((self.max_value - val) / self.span * self.dim.height)
-            qp.setPen(Chart.color.text)
+            qp.setPen(Defaults.cfg.chart_colors.text)
             if val != self.min_value:
-                qp.drawText(3, y + 3, Value(val, fmt=FMT_VSWR))
-            qp.setPen(QtGui.QPen(Chart.color.foreground))
+                qp.drawText(3, y + 3, f"{Value(val, fmt=FMT_VSWR)}")
+            qp.setPen(QtGui.QPen(Defaults.cfg.chart_colors.foreground))
             qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.dim.width, y)
 
-        qp.setPen(QtGui.QPen(Chart.color.foreground))
+        qp.setPen(QtGui.QPen(Defaults.cfg.chart_colors.foreground))
         qp.drawLine(self.leftMargin - 5, self.topMargin,
                     self.leftMargin + self.dim.width, self.topMargin)
-        qp.setPen(Chart.color.text)
-        qp.drawText(3, self.topMargin + 4, Value(self.max_value, fmt=FMT_VSWR))
-        qp.drawText(3, self.dim.height+self.topMargin, Value(self.min_value, fmt=FMT_VSWR))
+        qp.setPen(Defaults.cfg.chart_colors.text)
+        qp.drawText(3, self.topMargin + 4, f"{Value(self.max_value, fmt=FMT_VSWR)}")
+        qp.drawText(3, self.dim.height+self.topMargin, f"{Value(self.min_value, fmt=FMT_VSWR)}")
         self.drawFrequencyTicks(qp)
 
-        qp.setPen(Chart.color.swr)
+        qp.setPen(Defaults.cfg.chart_colors.swr)
         for vswr in self.swrMarkers:
             if vswr <= 1:
                 continue
@@ -89,8 +89,8 @@ class MagnitudeChart(FrequencyChart):
             qp.drawLine(self.leftMargin, y, self.leftMargin + self.dim.width, y)
             qp.drawText(self.leftMargin + 3, y - 1, f"VSWR: {Value(vswr, fmt=FMT_VSWR)}")
 
-        self.drawData(qp, self.data, Chart.color.sweep)
-        self.drawData(qp, self.reference, Chart.color.reference)
+        self.drawData(qp, self.data, Defaults.cfg.chart_colors.sweep)
+        self.drawData(qp, self.reference, Defaults.cfg.chart_colors.reference)
         self.drawMarkers(qp)
 
     def find_scaling(self) -> tuple[float, float]:

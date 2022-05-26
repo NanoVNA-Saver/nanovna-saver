@@ -81,15 +81,15 @@ class LogMagChart(FrequencyChart):
         self.draw_grid(qp, max_value, min_value, span,
                        first_tick, tick_step, tick_count)
 
-        qp.setPen(QtGui.QPen(Chart.color.foreground))
+        qp.setPen(QtGui.QPen(Defaults.cfg.chart_colors.foreground))
         qp.drawLine(self.leftMargin - 5, self.topMargin,
                     self.leftMargin + self.dim.width, self.topMargin)
-        qp.setPen(Chart.color.text)
+        qp.setPen(Defaults.cfg.chart_colors.text)
         qp.drawText(3, self.topMargin + 4, str(max_value))
         qp.drawText(3, self.dim.height+self.topMargin, str(min_value))
         self.drawFrequencyTicks(qp)
 
-        qp.setPen(Chart.color.swr)
+        qp.setPen(Defaults.cfg.chart_colors.swr)
         for vswr in self.swrMarkers:
             if vswr <= 1:
                 continue
@@ -102,8 +102,8 @@ class LogMagChart(FrequencyChart):
                         self.leftMargin + self.dim.width, y)
             qp.drawText(self.leftMargin + 3, y - 1, f"VSWR: {vswr}")
 
-        self.drawData(qp, self.data, Chart.color.sweep)
-        self.drawData(qp, self.reference, Chart.color.reference)
+        self.drawData(qp, self.data, Defaults.cfg.chart_colors.sweep)
+        self.drawData(qp, self.reference, Defaults.cfg.chart_colors.reference)
         self.drawMarkers(qp)
 
     def find_scaling(self) -> tuple[float, float]:
@@ -131,11 +131,11 @@ class LogMagChart(FrequencyChart):
         for i in range(tick_count):
             db = first_tick + i * tick_step
             y = self.topMargin + round((max_value - db)/span*self.dim.height)
-            qp.setPen(QtGui.QPen(Chart.color.foreground))
+            qp.setPen(QtGui.QPen(Defaults.cfg.chart_colors.foreground))
             qp.drawLine(self.leftMargin-5, y,
                         self.leftMargin+self.dim.width, y)
             if db > min_value and db != max_value:
-                qp.setPen(QtGui.QPen(Chart.color.text))
+                qp.setPen(QtGui.QPen(Defaults.cfg.chart_colors.text))
                 dbstr = str(round(db, 1)) if tick_step < 1 else str(db)
                 qp.drawText(3, y + 4, dbstr)
 

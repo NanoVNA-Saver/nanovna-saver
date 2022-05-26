@@ -105,7 +105,7 @@ class PhaseChart(FrequencyChart):
             angle = minAngle + span * i / tickcount
             y = self.topMargin + round((self.maxAngle - angle) / self.span * self.dim.height)
             if angle != minAngle and angle != maxAngle:
-                qp.setPen(QtGui.QPen(Chart.color.text))
+                qp.setPen(QtGui.QPen(Defaults.cfg.chart_colors.text))
                 if angle != 0:
                     digits = max(0, min(2, math.floor(3 - math.log10(abs(angle)))))
                     if digits == 0:
@@ -115,13 +115,13 @@ class PhaseChart(FrequencyChart):
                 else:
                     anglestr = "0"
                 qp.drawText(3, y + 3, anglestr + "°")
-                qp.setPen(QtGui.QPen(Chart.color.foreground))
+                qp.setPen(QtGui.QPen(Defaults.cfg.chart_colors.foreground))
                 qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.dim.width, y)
         qp.drawLine(self.leftMargin - 5,
                     self.topMargin,
                     self.leftMargin + self.dim.width,
                     self.topMargin)
-        qp.setPen(Chart.color.text)
+        qp.setPen(Defaults.cfg.chart_colors.text)
         qp.drawText(3, self.topMargin + 5, str(maxAngle) + "°")
         qp.drawText(3, self.dim.height + self.topMargin, str(minAngle) + "°")
 
@@ -132,8 +132,8 @@ class PhaseChart(FrequencyChart):
             self.drawBands(qp, self.fstart, self.fstop)
 
         self.drawFrequencyTicks(qp)
-        self.drawData(qp, self.data, Chart.color.sweep)
-        self.drawData(qp, self.reference, Chart.color.reference)
+        self.drawData(qp, self.data, Defaults.cfg.chart_colors.sweep)
+        self.drawData(qp, self.reference, Defaults.cfg.chart_colors.reference)
         self.drawMarkers(qp)
 
     def getYPosition(self, d: Datapoint) -> int:

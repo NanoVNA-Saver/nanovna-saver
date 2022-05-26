@@ -86,7 +86,6 @@ class ChartMarker(QtWidgets.QWidget):
 class Chart(QtWidgets.QWidget):
     bands: ClassVar[Any] = None
     popoutRequested: ClassVar[Any] = pyqtSignal(object)
-    color: ClassVar[Defaults.ChartColors] = Defaults.cfg.chart_colors
 
     def __init__(self, name):
         super().__init__()
@@ -270,6 +269,6 @@ class Chart(QtWidgets.QWidget):
 
     def update(self):
         pal = self.palette()
-        pal.setColor(QtGui.QPalette.Background, Chart.color.background)
+        pal.setColor(QtGui.QPalette.Background, Defaults.cfg.chart_colors.background)
         self.setPalette(pal)
         super().update()

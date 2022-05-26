@@ -19,6 +19,7 @@
 import logging
 from PyQt5 import QtGui, QtCore
 
+from NanoVNASaver import Defaults
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Charts.Square import SquareChart
 
@@ -29,9 +30,9 @@ class SmithChart(SquareChart):
     def drawChart(self, qp: QtGui.QPainter) -> None:
         centerX = int(self.width()/2)
         centerY = int(self.height()/2)
-        qp.setPen(QtGui.QPen(Chart.color.text))
+        qp.setPen(QtGui.QPen(Defaults.cfg.chart_colors.text))
         qp.drawText(3, 15, self.name)
-        qp.setPen(QtGui.QPen(Chart.color.foreground))
+        qp.setPen(QtGui.QPen(Defaults.cfg.chart_colors.foreground))
         qp.drawEllipse(QtCore.QPoint(centerX, centerY),
                        int(self.dim.width / 2),
                        int(self.dim.height / 2))
@@ -84,7 +85,7 @@ class SmithChart(SquareChart):
 
         self.drawTitle(qp)
 
-        qp.setPen(Chart.color.swr)
+        qp.setPen(Defaults.cfg.chart_colors.swr)
         for swr in self.swrMarkers:
             if swr <= 1:
                 continue

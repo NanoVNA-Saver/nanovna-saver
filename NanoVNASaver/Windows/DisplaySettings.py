@@ -175,7 +175,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         bands_layout.addRow(self.show_bands)
         bands_layout.addRow(
             "Chart bands",
-            self.color_picker("BandsColor", "bands"))
+            self.color_picker("bands"))
 
         self.btn_manage_bands = QtWidgets.QPushButton("Manage bands")
         self.btn_manage_bands.setMinimumHeight(20)
@@ -195,7 +195,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self.vswrMarkers = [] if self.vswrMarkers == 0.0 else [self.vswrMarkers]
 
         vswr_marker_layout.addRow(
-            "VSWR Markers", self.color_picker("VSWRColor", "swr"))
+            "VSWR Markers", self.color_picker("swr"))
 
         self.vswr_marker_dropdown = QtWidgets.QComboBox()
         self.vswr_marker_dropdown.setMinimumHeight(20)
@@ -241,23 +241,6 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         marker_btn_layout.addWidget(btn_marker_settings)
 
         markers_layout.addRow(marker_btn_layout)
-
-        Chart.color.background = self.app.settings.value(
-            "BackgroundColor", defaultValue=ChartColors.background,
-            type=QtGui.QColor)
-        Chart.color.foreground = self.app.settings.value(
-            "ForegroundColor", defaultValue=ChartColors.foreground,
-            type=QtGui.QColor)
-        Chart.color.text = self.app.settings.value(
-            "TextColor", defaultValue=ChartColors.text,
-            type=QtGui.QColor)
-        self.bandsColor = self.app.settings.value(
-            "BandsColor", defaultValue=ChartColors.bands,
-            type=QtGui.QColor)
-        self.app.bands.color = Chart.color.bands
-        Chart.color.swr = self.app.settings.value(
-            "VSWRColor", defaultValue=ChartColors.swr,
-            type=QtGui.QColor)
 
         self.dark_mode_option.setChecked(Defaults.cfg.gui.dark_mode)
         self.show_lines_option.setChecked(Defaults.cfg.chart.show_lines)
@@ -323,37 +306,34 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
                 found.show()
 
     def trace_colors(self, layout: QtWidgets.QLayout):
-        for setting, name, attr in (
-                ('SweepColor', 'Sweep color', 'sweep'),
-                ('SecondarySweepColor', 'Second sweep color', 'sweep_secondary'),
-                ('ReferenceColor', 'Reference color', 'reference'),
-                ('SecondaryReferenceColor',
-                 'Second reference color', 'reference_secondary'),
+        for name, attr in (
+                ('Sweep color', 'sweep'),
+                ('Second sweep color', 'sweep_secondary'),
+                ('Reference color', 'reference'),
+                ('Second reference color', 'reference_secondary'),
         ):
-            cp = self.color_picker(setting, attr)
+            cp = self.color_picker(attr)
             layout.addRow(name, cp)
 
     def custom_colors(self, layout: QtWidgets.QLayout):
-        for setting, name, attr in (
-                ('BackgroundColor', 'Chart background', 'background'),
-                ('ForegroundColor', 'Chart foreground', 'foreground'),
-                ('TextColor', 'Chart text', 'text'),
+        for name, attr in (
+                ('Chart background', 'background'),
+                ('Chart foreground', 'foreground'),
+                ('Chart text', 'text'),
         ):
-            cp = self.color_picker(setting, attr)
+            cp = self.color_picker(attr)
             layout.addRow(name, cp)
 
-    def color_picker(self, setting: str, attr: str) -> QtWidgets.QPushButton:
+    def color_picker(self, attr: str) -> QtWidgets.QPushButton:
         cp = QtWidgets.QPushButton("█")
         cp.setFixedWidth(20)
         cp.setMinimumHeight(20)
-        default = getattr(Chart.color, attr)
-        color = self.app.settings.value(
-            setting, defaultValue=default, type=QtGui.QColor)
-        setattr(Chart.color, attr, color)
-        self.callback_params[cp] = (setting, attr)
+        color = getattr(Defaults.cfg.chart_colors, attr)
+        setattr(Defaults.cfg.chart_colors, attr, color)
+        self.callback_params[cp] = attr
         cp.clicked.connect(self.setColor)
         p = cp.palette()
-        p.setColor(QtGui.QPalette.ButtonText, getattr(Chart.color, attr))
+        p.setColor(QtGui.QPalette.ButtonText, getattr(Defaults.cfg.chart_colors, attr))
         cp.setPalette(p)
         return cp
 
@@ -407,29 +387,27 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
     def changeDarkMode(self):
         state = self.dark_mode_option.isChecked()
         Defaults.cfg.gui.dark_mode = bool(state)
-        Chart.color.foreground = QtGui.QColor(QtCore.Qt.lightGray)
+        Defaults.cfg.chart_colors.foreground = QtGui.QColor(QtCore.Qt.lightGray)
         if state:
-            Chart.color.background = QtGui.QColor(QtCore.Qt.black)
-            Chart.color.text = QtGui.QColor(QtCore.Qt.white)
+            Defaults.cfg.chart_colors.background = QtGui.QColor(QtCore.Qt.black)
+            Defaults.cfg.chart_colors.text = QtGui.QColor(QtCore.Qt.white)
         else:
-            Chart.color.background = QtGui.QColor(QtCore.Qt.white)
-            Chart.color.text = QtGui.QColor(QtCore.Qt.black)
-        Chart.color.swr = Chart.color.swr
+            Defaults.cfg.chart_colors.background = QtGui.QColor(QtCore.Qt.white)
+            Defaults.cfg.chart_colors.text = QtGui.QColor(QtCore.Qt.black)
         self.updateCharts()
 
-    def changeSetting(self, setting: str, value: str):
-        logger.debug("Setting %s: %s", setting, value)
-        self.app.settings.setValue(setting, value)
-        self.app.settings.sync()
+    def changeSetting(self, attr: str, value: str):
+        logger.debug("Color attr %s: %s", attr, value)
+        setattr(Defaults.cfg.chart_colors, attr, value)
         self.updateCharts()
 
     def setColor(self):
         sender = self.sender()
         logger.debug("Sender %s", sender)
-        setting, attr = self.callback_params[sender]
-        logger.debug("Setting: %s Attribute: %s", setting, attr)
+        attr = self.callback_params[sender]
+        logger.debug("Color Attribute: %s", attr)
 
-        color = getattr(Chart.color, attr)
+        color = getattr(Defaults.cfg.chart_colors, attr)
         color = QtWidgets.QColorDialog.getColor(
             color, options=QtWidgets.QColorDialog.ShowAlphaChannel)
 
@@ -440,7 +418,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         palette = sender.palette()
         palette.setColor(QtGui.QPalette.ButtonText, color)
         sender.setPalette(palette)
-        self.changeSetting(setting, color)
+        self.changeSetting(attr, color)
 
     def setShowBands(self, show_bands: bool) -> None:
         Defaults.cfg.chart.show_bands = show_bands

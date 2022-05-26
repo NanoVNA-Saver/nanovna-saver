@@ -64,11 +64,11 @@ class CombinedLogMagChart(LogMagChart):
         self.update()
 
     def drawChart(self, qp: QtGui.QPainter):
-        qp.setPen(QtGui.QPen(Chart.color.text))
+        qp.setPen(QtGui.QPen(Defaults.cfg.chart_colors.text))
         qp.drawText(int(round(self.dim.width / 2)) - 20, 15, f"{self.name} (dB)")
         qp.drawText(10, 15, "S11")
         qp.drawText(self.leftMargin + self.dim.width - 8, 15, "S21")
-        qp.setPen(QtGui.QPen(Chart.color.foreground))
+        qp.setPen(QtGui.QPen(Defaults.cfg.chart_colors.foreground))
         qp.drawLine(self.leftMargin, self.topMargin - 5,
                     self.leftMargin, self.topMargin+self.dim.height+5)
         qp.drawLine(self.leftMargin-5, self.topMargin+self.dim.height,
@@ -77,9 +77,9 @@ class CombinedLogMagChart(LogMagChart):
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data11) == 0 and len(self.reference11) == 0:
             return
-        pen = QtGui.QPen(Chart.color.sweep)
+        pen = QtGui.QPen(Defaults.cfg.chart_colors.sweep)
         pen.setWidth(self.dim.point)
-        line_pen = QtGui.QPen(Chart.color.sweep)
+        line_pen = QtGui.QPen(Defaults.cfg.chart_colors.sweep)
         line_pen.setWidth(self.dim.line)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(1)
@@ -109,15 +109,15 @@ class CombinedLogMagChart(LogMagChart):
         first_tick, tick_step, tick_count = get_ticks(span, min_value)
         self.draw_grid(qp, max_value, min_value, span, first_tick, tick_step, tick_count)
 
-        qp.setPen(QtGui.QPen(Chart.color.foreground))
+        qp.setPen(QtGui.QPen(Defaults.cfg.chart_colors.foreground))
         qp.drawLine(self.leftMargin - 5, self.topMargin,
                     self.leftMargin + self.dim.width, self.topMargin)
-        qp.setPen(Chart.color.text)
+        qp.setPen(Defaults.cfg.chart_colors.text)
         qp.drawText(3, self.topMargin + 4, str(max_value))
         qp.drawText(3, self.dim.height+self.topMargin, str(min_value))
         self.drawFrequencyTicks(qp)
 
-        qp.setPen(Chart.color.swr)
+        qp.setPen(Defaults.cfg.chart_colors.swr)
         for vswr in self.swrMarkers:
             if vswr <= 1:
                 continue
@@ -131,13 +131,13 @@ class CombinedLogMagChart(LogMagChart):
             qp.drawText(self.leftMargin + 3, y - 1, f"VSWR: {vswr}")
 
         if len(self.data11) > 0:
-            c = QtGui.QColor(Chart.color.sweep)
+            c = QtGui.QColor(Defaults.cfg.chart_colors.sweep)
             c.setAlpha(255)
             pen = QtGui.QPen(c)
             pen.setWidth(2)
             qp.setPen(pen)
             qp.drawLine(33, 9, 38, 9)
-            c = QtGui.QColor(Chart.color.sweep_secondary)
+            c = QtGui.QColor(Defaults.cfg.chart_colors.sweep_secondary)
             c.setAlpha(255)
             pen = QtGui.QPen(c)
             pen.setWidth(2)
@@ -146,13 +146,13 @@ class CombinedLogMagChart(LogMagChart):
                         self.leftMargin + self.dim.width - 15, 9)
 
         if len(self.reference11) > 0:
-            c = QtGui.QColor(Chart.color.reference)
+            c = QtGui.QColor(Defaults.cfg.chart_colors.reference)
             c.setAlpha(255)
             pen = QtGui.QPen(c)
             pen.setWidth(2)
             qp.setPen(pen)
             qp.drawLine(33, 14, 38, 14)
-            c = QtGui.QColor(Chart.color.reference_secondary)
+            c = QtGui.QColor(Defaults.cfg.chart_colors.reference_secondary)
             c.setAlpha(255)
             pen = QtGui.QPen(c)
             pen.setWidth(2)
@@ -160,10 +160,10 @@ class CombinedLogMagChart(LogMagChart):
             qp.drawLine(self.leftMargin + self.dim.width - 20, 14,
                         self.leftMargin + self.dim.width - 15, 14)
 
-        self.drawData(qp, self.data11, Chart.color.sweep)
-        self.drawData(qp, self.data21, Chart.color.sweep_secondary)
-        self.drawData(qp, self.reference11, Chart.color.reference)
-        self.drawData(qp, self.reference21, Chart.color.reference_secondary)
+        self.drawData(qp, self.data11, Defaults.cfg.chart_colors.sweep)
+        self.drawData(qp, self.data21, Defaults.cfg.chart_colors.sweep_secondary)
+        self.drawData(qp, self.reference11, Defaults.cfg.chart_colors.reference)
+        self.drawData(qp, self.reference21, Defaults.cfg.chart_colors.reference_secondary)
         self.drawMarkers(qp, data=self.data11)
         self.drawMarkers(qp, data=self.data21)
 

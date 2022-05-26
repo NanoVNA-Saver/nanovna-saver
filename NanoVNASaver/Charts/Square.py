@@ -23,6 +23,7 @@ from typing import List
 from PyQt5 import QtGui, QtCore
 from PyQt5 import QtWidgets, QtGui
 
+from NanoVNASaver import Defaults
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.RFTools import Datapoint
 
@@ -41,7 +42,7 @@ class SquareChart(Chart):
         self.setMinimumSize(self.dim.width + 40, self.dim.height + 40)
 
         pal = QtGui.QPalette()
-        pal.setColor(QtGui.QPalette.Background, Chart.color.background)
+        pal.setColor(QtGui.QPalette.Background, Defaults.cfg.chart_colors.background)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
@@ -81,11 +82,11 @@ class SquareChart(Chart):
     def drawValues(self, qp: QtGui.QPainter):
         if not (self.data or self.reference):
             return
-        self.draw_data(qp, Chart.color.sweep, self.data)
+        self.draw_data(qp, Defaults.cfg.chart_colors.sweep, self.data)
 
         fstart = self.data[0].freq if self.data else 0
         fstop = self.data[-1].freq if self.data else 0
-        self.draw_data(qp, Chart.color.reference, self.reference, fstart, fstop)
+        self.draw_data(qp, Defaults.cfg.chart_colors.reference, self.reference, fstart, fstop)
 
         for m in self.markers:
             if m.location != -1 and m.location < len(self.data):

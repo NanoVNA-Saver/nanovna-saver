@@ -177,7 +177,7 @@ class FrequencyChart(Chart):
             QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
                                   QtWidgets.QSizePolicy.MinimumExpanding))
         pal = QtGui.QPalette()
-        pal.setColor(QtGui.QPalette.Background, Chart.color.background)
+        pal.setColor(QtGui.QPalette.Background, Defaults.cfg.chart_colors.background)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
@@ -487,14 +487,14 @@ class FrequencyChart(Chart):
                  self.reference[len(self.reference) - 1].freq < self.fstart)):
             # Data outside frequency range
             qp.setBackgroundMode(QtCore.Qt.OpaqueMode)
-            qp.setBackground(Chart.color.background)
-            qp.setPen(Chart.color.text)
+            qp.setBackground(Defaults.cfg.chart_colors.background)
+            qp.setPen(Defaults.cfg.chart_colors.text)
             qp.drawText(self.leftMargin + self.dim.width / 2 - 70,
                         self.topMargin + self.dim.height / 2 - 20,
                         "Data outside frequency span")
 
     def drawDragbog(self, qp: QtGui.QPainter):
-        dashed_pen = QtGui.QPen(Chart.color.foreground, 1, QtCore.Qt.DashLine)
+        dashed_pen = QtGui.QPen(Defaults.cfg.chart_colors.foreground, 1, QtCore.Qt.DashLine)
         qp.setPen(dashed_pen)
         top_left = QtCore.QPoint(
             self.dragbox.pos_start[0], self.dragbox.pos_start[1])
@@ -503,12 +503,12 @@ class FrequencyChart(Chart):
         qp.drawRect(rect)
 
     def drawChart(self, qp: QtGui.QPainter):
-        qp.setPen(QtGui.QPen(Chart.color.text))
+        qp.setPen(QtGui.QPen(Defaults.cfg.chart_colors.text))
         headline = self.name
         if self.name_unit:
             headline += f" ({self.name_unit})"
         qp.drawText(3, 15, headline)
-        qp.setPen(QtGui.QPen(Chart.color.foreground))
+        qp.setPen(QtGui.QPen(Defaults.cfg.chart_colors.foreground))
         qp.drawLine(self.leftMargin, 20,
                     self.leftMargin, self.topMargin + self.dim.height + 5)
         qp.drawLine(self.leftMargin - 5, self.topMargin + self.dim.height,
@@ -518,9 +518,9 @@ class FrequencyChart(Chart):
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
-        pen = QtGui.QPen(Chart.color.sweep)
+        pen = QtGui.QPen(Defaults.cfg.chart_colors.sweep)
         pen.setWidth(self.dim.point)
-        line_pen = QtGui.QPen(Chart.color.sweep)
+        line_pen = QtGui.QPen(Defaults.cfg.chart_colors.sweep)
         line_pen.setWidth(self.dim.line)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(1)
@@ -546,25 +546,25 @@ class FrequencyChart(Chart):
             val = min_value + (i / target_ticks) * span
             y = self.topMargin + \
                 round((self.max_value - val) / self.span * self.dim.height)
-            qp.setPen(Chart.color.text)
+            qp.setPen(Defaults.cfg.chart_colors.text)
             if val != min_value:
                 valstr = str(Value(val, fmt=fmt))
                 qp.drawText(3, y + 3, valstr)
-            qp.setPen(QtGui.QPen(Chart.color.foreground))
+            qp.setPen(QtGui.QPen(Defaults.cfg.chart_colors.foreground))
             qp.drawLine(self.leftMargin - 5, y,
                         self.leftMargin + self.dim.width, y)
 
-        qp.setPen(QtGui.QPen(Chart.color.foreground))
+        qp.setPen(QtGui.QPen(Defaults.cfg.chart_colors.foreground))
         qp.drawLine(self.leftMargin - 5, self.topMargin,
                     self.leftMargin + self.dim.width, self.topMargin)
-        qp.setPen(Chart.color.text)
+        qp.setPen(Defaults.cfg.chart_colors.text)
         qp.drawText(3, self.topMargin + 4, str(Value(max_value, fmt=fmt)))
         qp.drawText(3, self.dim.height + self.topMargin,
                     str(Value(min_value, fmt=fmt)))
         self.drawFrequencyTicks(qp)
 
-        self.drawData(qp, self.data, Chart.color.sweep)
-        self.drawData(qp, self.reference, Chart.color.reference)
+        self.drawData(qp, self.data, Defaults.cfg.chart_colors.sweep)
+        self.drawData(qp, self.reference, Defaults.cfg.chart_colors.reference)
         self.drawMarkers(qp)
 
     def find_scaling(self) -> Tuple[float, float]:
@@ -586,7 +586,7 @@ class FrequencyChart(Chart):
 
     def drawFrequencyTicks(self, qp):
         fspan = self.fstop - self.fstart
-        qp.setPen(Chart.color.text)
+        qp.setPen(Defaults.cfg.chart_colors.text)
         # Number of ticks does not include the origin
         ticks = math.floor(self.dim.width / 100)
 
@@ -608,10 +608,10 @@ class FrequencyChart(Chart):
                     math.exp(((i + 1) * fspan / ticks) + math.log(self.fstart)))
             else:
                 freq = round(fspan / ticks * (i + 1) + self.fstart)
-            qp.setPen(QtGui.QPen(Chart.color.foreground))
+            qp.setPen(QtGui.QPen(Defaults.cfg.chart_colors.foreground))
             qp.drawLine(x, self.topMargin, x,
                         self.topMargin + self.dim.height + 5)
-            qp.setPen(Chart.color.text)
+            qp.setPen(Defaults.cfg.chart_colors.text)
             qp.drawText(x - 20,
                         self.topMargin + self.dim.height + 15,
                         my_format_frequency(freq))

@@ -96,9 +96,9 @@ class GroupDelayChart(FrequencyChart):
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
-        pen = QtGui.QPen(Chart.color.sweep)
+        pen = QtGui.QPen(Defaults.cfg.chart_colors.sweep)
         pen.setWidth(self.dim.point)
-        line_pen = QtGui.QPen(Chart.color.sweep)
+        line_pen = QtGui.QPen(Defaults.cfg.chart_colors.sweep)
         line_pen.setWidth(self.dim.line)
 
         min_delay = self.minDisplayValue
@@ -122,20 +122,20 @@ class GroupDelayChart(FrequencyChart):
             delay = min_delay + span * i / tickcount
             y = self.topMargin + round((self.maxDelay - delay) / self.span * self.dim.height)
             if delay not in {min_delay, max_delay}:
-                qp.setPen(QtGui.QPen(Chart.color.text))
+                qp.setPen(QtGui.QPen(Defaults.cfg.chart_colors.text))
                 # TODO use format class
                 digits = 0 if delay == 0 else max(
                     0, min(2, math.floor(3 - math.log10(abs(delay)))))
                 delaystr = str(round(delay, digits if digits != 0 else None))
                 qp.drawText(3, y + 3, delaystr)
-                qp.setPen(QtGui.QPen(Chart.color.foreground))
+                qp.setPen(QtGui.QPen(Defaults.cfg.chart_colors.foreground))
                 qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.dim.width, y)
 
         qp.drawLine(self.leftMargin - 5,
                     self.topMargin,
                     self.leftMargin + self.dim.width,
                     self.topMargin)
-        qp.setPen(Chart.color.text)
+        qp.setPen(Defaults.cfg.chart_colors.text)
         qp.drawText(3, self.topMargin + 5, str(max_delay))
         qp.drawText(3, self.dim.height + self.topMargin, str(min_delay))
 
@@ -147,9 +147,9 @@ class GroupDelayChart(FrequencyChart):
 
         self.drawFrequencyTicks(qp)
 
-        self.draw_data(qp, Chart.color.sweep,
+        self.draw_data(qp, Defaults.cfg.chart_colors.sweep,
                        self.data, self.groupDelay)
-        self.draw_data(qp, Chart.color.reference,
+        self.draw_data(qp, Defaults.cfg.chart_colors.reference,
                        self.reference, self.groupDelayReference)
 
         self.drawMarkers(qp)

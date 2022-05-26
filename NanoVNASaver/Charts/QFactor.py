@@ -79,14 +79,14 @@ class QualityFactorChart(FrequencyChart):
                 q = round(q, 1)
             else:
                 q = round(q)
-            qp.setPen(QtGui.QPen(Chart.color.text))
+            qp.setPen(QtGui.QPen(Defaults.cfg.chart_colors.text))
             qp.drawText(3, y+3, str(q))
-            qp.setPen(QtGui.QPen(Chart.color.foreground))
+            qp.setPen(QtGui.QPen(Defaults.cfg.chart_colors.foreground))
             qp.drawLine(self.leftMargin-5, y, self.leftMargin + self.dim.width, y)
         qp.drawLine(self.leftMargin - 5,
                     self.topMargin,
                     self.leftMargin + self.dim.width, self.topMargin)
-        qp.setPen(Chart.color.text)
+        qp.setPen(Defaults.cfg.chart_colors.text)
         if maxQ < 10:
             qstr = str(round(maxQ, 2))
         elif maxQ < 20:
@@ -100,9 +100,9 @@ class QualityFactorChart(FrequencyChart):
             return
         if self.span == 0:
             return
-        pen = QtGui.QPen(Chart.color.sweep)
+        pen = QtGui.QPen(Defaults.cfg.chart_colors.sweep)
         pen.setWidth(self.dim.point)
-        line_pen = QtGui.QPen(Chart.color.sweep)
+        line_pen = QtGui.QPen(Defaults.cfg.chart_colors.sweep)
         line_pen.setWidth(self.dim.line)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
         highlighter.setWidth(1)
@@ -114,8 +114,8 @@ class QualityFactorChart(FrequencyChart):
             self.drawBands(qp, self.fstart, self.fstop)
 
         self.drawFrequencyTicks(qp)
-        self.drawData(qp, self.data, Chart.color.sweep)
-        self.drawData(qp, self.reference, Chart.color.reference)
+        self.drawData(qp, self.data, Defaults.cfg.chart_colors.sweep)
+        self.drawData(qp, self.reference, Defaults.cfg.chart_colors.reference)
         self.drawMarkers(qp)
 
     def getYPosition(self, d: Datapoint) -> int:
