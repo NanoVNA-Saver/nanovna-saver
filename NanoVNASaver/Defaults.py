@@ -20,6 +20,7 @@
 import dataclasses as DC
 import logging
 from ast import literal_eval
+from re import T
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import QSettings, QByteArray
@@ -79,11 +80,29 @@ class ChartColors:  # pylint: disable=too-many-instance-attributes
 
 
 @DC.dataclass
+class Markers:
+    active_labels: list = DC.field(default_factory=lambda: [
+        "actualfreq", "impedance", "serr", "serl", "serc", "parr", "parlc",
+        "vswr", "returnloss", "s11q", "s11phase", "s21gain", "s21phase",
+    ])
+    colored_names: bool = True
+    color_0: QColor = QColor(QtCore.Qt.darkGray)
+    color_1: QColor = QColor(255, 0, 0)
+    color_2: QColor = QColor(0, 255, 0)
+    color_3: QColor = QColor(0, 0, 255)
+    color_4: QColor = QColor(0, 255, 255)
+    color_5: QColor = QColor(255, 0, 255)
+    color_6: QColor = QColor(255, 255, 0)
+    color_7: QColor = QColor(QtCore.Qt.lightGray)
+
+
+@DC.dataclass
 class CFG:
     gui: object = GUI()
     charts_selected: object = ChartsSelected()
     chart: object = Chart()
     chart_colors: object = ChartColors()
+    markers: object = Markers()
 
 
 cfg = CFG()

@@ -20,6 +20,7 @@ import logging
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 
+from NanoVNASaver import Defaults
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.Marker import Marker
 from NanoVNASaver.Marker.Values import TYPES, default_label_ids
@@ -51,18 +52,17 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
 
         settings_group_box = QtWidgets.QGroupBox("Settings")
         settings_group_box_layout = QtWidgets.QFormLayout(settings_group_box)
-        self.checkboxColouredMarker = QtWidgets.QCheckBox("Colored marker name")
+        self.checkboxColouredMarker = QtWidgets.QCheckBox(
+            "Colored marker name")
         self.checkboxColouredMarker.setChecked(
-            self.app.settings.value("ColoredMarkerNames", True, bool))
+            Defaults.cfg.markers.colored_names)
         self.checkboxColouredMarker.stateChanged.connect(self.updateMarker)
         settings_group_box_layout.addRow(self.checkboxColouredMarker)
 
         fields_group_box = QtWidgets.QGroupBox("Displayed data")
         fields_group_box_layout = QtWidgets.QFormLayout(fields_group_box)
 
-        self.savedFieldSelection = self.app.settings.value(
-            "MarkerFields", defaultValue=default_label_ids()
-        )
+        self.savedFieldSelection = Defaults.cfg.markers.active_labels
 
         if self.savedFieldSelection == "":
             self.savedFieldSelection = []
@@ -123,9 +123,8 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
 
     def applyButtonClick(self):
         self.savedFieldSelection = self.currentFieldSelection[:]
-        self.app.settings.setValue("MarkerFields", self.savedFieldSelection)
-        self.app.settings.setValue(
-            "ColoredMarkerNames", self.checkboxColouredMarker.isChecked())
+        Defaults.cfg.markers.active_labels = self.savedFieldSelection
+        Defaults.cfg.markers.colored_names = self.checkboxColouredMarker.isChecked()
         for m in self.app.markers + [self.app.delta_marker, ]:
             m.setFieldSelection(self.savedFieldSelection)
             m.setColoredText(self.checkboxColouredMarker.isChecked())

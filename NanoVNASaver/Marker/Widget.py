@@ -16,12 +16,15 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+import contextlib
 import math
+from this import d
 from typing import List
 
 from PyQt5 import QtGui, QtWidgets, QtCore
 from PyQt5.QtCore import pyqtSignal
 
+from NanoVNASaver import Defaults
 from NanoVNASaver import RFTools
 from NanoVNASaver.Formatting import (
     format_capacitance,
@@ -41,16 +44,6 @@ from NanoVNASaver.Formatting import (
 )
 from NanoVNASaver.Inputs import MarkerFrequencyInputWidget as FrequencyInput
 from NanoVNASaver.Marker.Values import TYPES, Value, default_label_ids
-
-COLORS = (
-    QtGui.QColor(QtCore.Qt.darkGray),
-    QtGui.QColor(255, 0, 0),
-    QtGui.QColor(0, 255, 0),
-    QtGui.QColor(0, 0, 255),
-    QtGui.QColor(0, 255, 255),
-    QtGui.QColor(255, 0, 255),
-    QtGui.QColor(255, 255, 0),
-)
 
 
 class MarkerLabel(QtWidgets.QLabel):
@@ -80,8 +73,7 @@ class Marker(QtCore.QObject, Value):
 
         if self.qsettings:
             Marker._instances += 1
-            Marker.active_labels = self.qsettings.value(
-                "MarkerFields", defaultValue=default_label_ids())
+            Marker.active_labels = Defaults.cfg.markers.active_labels
             self.index = Marker._instances
 
         if not self.name:
@@ -132,12 +124,11 @@ class Marker(QtCore.QObject, Value):
 
         try:
             self.setColor(
-                self.qsettings.value(
-                    f"Marker{self.count()}Color", COLORS[self.count()]))
+                getattr(Defaults.cfg.markers, f"color_{self.count()}"))
         except AttributeError:  # happens when qsettings == None
-            self.setColor(COLORS[1])
+            self.setColor(Defaults.cfg.markers.color_1)
         except IndexError:
-            self.setColor(COLORS[0])
+            self.setColor(Defaults.cfg.markers.color_0)
 
         line = QtWidgets.QFrame()
         line.setFrameShape(QtWidgets.QFrame.VLine)
@@ -167,7 +158,8 @@ class Marker(QtCore.QObject, Value):
         return str(self.group_box.font().pointSize())
 
     def update_settings(self):
-        self.qsettings.setValue(f"Marker{self.index}Color", self.color)
+        with contextlib.suppress(AttributeError):
+            setattr(Defaults.cfg.markers, f"color_{self.index}", self.color)
 
     def setScale(self, scale):
         self.group_box.setMaximumWidth(int(340 * scale))

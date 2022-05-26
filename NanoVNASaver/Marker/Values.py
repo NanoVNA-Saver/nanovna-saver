@@ -62,7 +62,7 @@ TYPES = (
 
 
 def default_label_ids() -> list[str]:
-    return [l.label_id for l in TYPES if l.default_active]
+    return [label.label_id for label in TYPES if label.default_active]
 
 
 class Value():
