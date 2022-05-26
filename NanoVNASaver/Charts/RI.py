@@ -361,11 +361,11 @@ class RealImaginaryChart(FrequencyChart):
         return min_real, max_real, min_imag, max_imag
 
     def getImYPosition(self, d: Datapoint) -> int:
-        im = d.impedance().imag
+        im = self.impedance(d).imag
         return self.topMargin + round((self.max_imag - im) / self.span_imag * self.dim.height)
 
     def getReYPosition(self, d: Datapoint) -> int:
-        re = d.impedance().real
+        re = self.impedance(d).real
         if math.isfinite(re):
             return self.topMargin + round((self.max_real - re) / self.span_real * self.dim.height)
         return self.topMargin
@@ -484,3 +484,6 @@ class RealImaginaryChart(FrequencyChart):
         self.action_set_fixed_maximum_imag.setText(
             f"Maximum jX ({self.maxDisplayImag})")
         self.menu.exec_(event.globalPos())
+
+    def impedance(self, p: Datapoint) -> complex:
+        return p.impedance()
