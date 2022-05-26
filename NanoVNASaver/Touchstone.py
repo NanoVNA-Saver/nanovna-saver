@@ -244,7 +244,6 @@ class Touchstone:
                 if data_len % 2 != 0:
                     raise TypeError("Data values aren't pairs: " + line)
 
-
                 # consistency checks
                 if freq <= prev_freq:
                     logger.warning("Frequency not ascending: %s", line)

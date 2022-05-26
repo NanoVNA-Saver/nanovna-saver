@@ -153,7 +153,7 @@ def parse_frequency(freq: str) -> int:
 
 
 def parse_value(val: str, unit: str = "",
-                fmt: SITools.Format = FMT_PARSE_VALUE) -> int:
+                fmt: SITools.Format = FMT_PARSE_VALUE) -> float:
     try:
         val.replace(',', '.')
         return float(SITools.Value(val, unit, fmt))
