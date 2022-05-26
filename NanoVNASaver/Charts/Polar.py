@@ -20,7 +20,6 @@ import logging
 from PyQt5 import QtGui, QtCore
 
 from NanoVNASaver import Defaults
-from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Charts.Square import SquareChart
 
 logger = logging.getLogger(__name__)

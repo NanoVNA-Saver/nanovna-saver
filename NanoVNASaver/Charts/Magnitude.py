@@ -27,7 +27,6 @@ from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.SITools import Value, round_ceil, round_floor
 from NanoVNASaver.Formatting import FMT_VSWR
 
-from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Charts.Frequency import FrequencyChart
 logger = logging.getLogger(__name__)
 

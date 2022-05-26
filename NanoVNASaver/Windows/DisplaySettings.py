@@ -22,8 +22,6 @@ from typing import List
 from PyQt5 import QtWidgets, QtCore, QtGui
 
 from NanoVNASaver import Defaults
-from NanoVNASaver.Charts.Chart import Chart
-from NanoVNASaver.Defaults import ChartColors
 from NanoVNASaver.Windows.Bands import BandsWindow
 from NanoVNASaver.Windows.MarkerSettings import MarkerSettingsWindow
 from NanoVNASaver.Marker import Marker
@@ -188,7 +186,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         vswr_marker_box = QtWidgets.QGroupBox("VSWR Markers")
         vswr_marker_layout = QtWidgets.QFormLayout(vswr_marker_box)
 
-        self.vswrMarkers: List[float] = self.app.settings.value("VSWRMarkers", [], float)
+        self.vswrMarkers: List[float] = Defaults.cfg.chart.vswr_lines
 
         if isinstance(self.vswrMarkers, float):
             # Single values from the .ini become floats rather than lists. Convert them.
@@ -488,7 +486,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self.vswr_marker_dropdown.setCurrentText(str(value))
             for c in self.app.s11charts:
                 c.addSWRMarker(value)
-            self.app.settings.setValue("VSWRMarkers", self.vswrMarkers)
+            Defaults.cfg.chart.vswr_lines = self.vswrMarkers
 
     def removeVSWRMarker(self):
         value_str = self.vswr_marker_dropdown.currentText()
@@ -498,9 +496,8 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self.vswr_marker_dropdown.removeItem(self.vswr_marker_dropdown.currentIndex())
             if self.vswr_marker_dropdown.count() == 0:
                 self.vswr_marker_dropdown.addItem("None")
-                self.app.settings.remove("VSWRMarkers")
             else:
-                self.app.settings.setValue("VSWRMarkers", self.vswrMarkers)
+                Defaults.cfg.chart.vswr_lines = self.vswrMarkers
             for c in self.app.s11charts:
                 c.removeSWRMarker(value)
 

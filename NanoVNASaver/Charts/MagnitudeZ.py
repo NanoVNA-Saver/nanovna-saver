@@ -26,7 +26,6 @@ from NanoVNASaver import Defaults
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.SITools import (
     Format, Value, round_ceil, round_floor)
-from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Charts.Frequency import FrequencyChart
 from NanoVNASaver.Charts.LogMag import LogMagChart
 

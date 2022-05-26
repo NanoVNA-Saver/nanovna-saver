@@ -20,7 +20,6 @@
 import dataclasses as DC
 import logging
 from ast import literal_eval
-from re import T
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import QSettings, QByteArray
@@ -64,7 +63,7 @@ class Chart:
     marker_size: int = 8
     returnloss_is_positive: bool = False
     show_bands: bool = False
-
+    vswr_lines: list = DC.field(default_factory=lambda: [])
 
 @DC.dataclass
 class ChartColors:  # pylint: disable=too-many-instance-attributes

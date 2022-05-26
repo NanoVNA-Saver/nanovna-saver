@@ -26,7 +26,6 @@ from PyQt5 import QtWidgets, QtGui
 
 from NanoVNASaver import Defaults
 from NanoVNASaver.RFTools import Datapoint
-from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Charts.Frequency import FrequencyChart
 
 logger = logging.getLogger(__name__)

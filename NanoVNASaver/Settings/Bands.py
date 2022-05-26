@@ -23,7 +23,6 @@ import typing
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import QModelIndex
 
-from NanoVNASaver import Defaults
 
 _DEFAULT_BANDS = (
     "2200 m;135700;137800",

@@ -25,7 +25,6 @@ from PyQt5 import QtGui
 from NanoVNASaver import Defaults
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.SITools import round_ceil, round_floor
-from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Charts.LogMag import LogMagChart, get_ticks
 
 logger = logging.getLogger(__name__)
