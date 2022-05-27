@@ -71,7 +71,7 @@ class SquareChart(Chart):
         for i, d in enumerate(data):
             x = self.getXPosition(d)
             y = int(self.height() / 2 + d.im * -1 * self.dim.height / 2)
-            if d.freq > fstart and d.freq < fstop:
+            if fstart < d.freq < fstop:
                 qp.drawPoint(x, y)
                 if self.flag.draw_lines and i > 0:
                     qp.setPen(line_pen)

@@ -94,7 +94,7 @@ class MagnitudeChart(FrequencyChart):
 
     def find_scaling(self) -> tuple[float, float]:
         if self.fixedValues:
-            return(self.minDisplayValue, self.maxDisplayValue)
+            return self.minDisplayValue, self.maxDisplayValue
         min_value = 100
         max_value = 0
         for data in self.data:
@@ -108,7 +108,7 @@ class MagnitudeChart(FrequencyChart):
             min_value = min(min_value, val)
             max_value = max(max_value, val)
 
-        return(round_floor(min_value, -1), round_ceil(max_value, -1))
+        return round_floor(min_value, -1), round_ceil(max_value, -1)
 
     def getYPosition(self, d: Datapoint) -> int:
         mag = self.magnitude(d)

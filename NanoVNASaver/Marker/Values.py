@@ -61,7 +61,7 @@ TYPES = (
 )
 
 
-class Value():
+class Value(object):
     """Contains the data area to calculate marker values from"""
 
     def __init__(self, freq: int = 0,

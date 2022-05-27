@@ -234,7 +234,7 @@ class PermeabilityChart(FrequencyChart):
 
     def find_scaling(self) -> tuple[float, float]:
         if self.fixedValues:
-            return (self.minDisplayValue, self.maxDisplayValue)
+            return self.minDisplayValue, self.maxDisplayValue
         min_val = 1000
         max_val = -1000
         for data in self.data:
@@ -257,7 +257,7 @@ class PermeabilityChart(FrequencyChart):
             max_val = max(max_val, re)
             min_val = min(min_val, im)
             max_val = max(max_val, im)
-        return (min_val, max_val)
+        return min_val, max_val
 
     def getImYPosition(self, d: Datapoint) -> int:
         im = d.impedance().imag

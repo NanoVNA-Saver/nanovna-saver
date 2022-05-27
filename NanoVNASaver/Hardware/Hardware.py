@@ -25,6 +25,7 @@ from typing import List
 import serial
 from serial.tools import list_ports
 
+from NanoVNASaver.Hardware.VNA import VNA
 from NanoVNASaver.Hardware.AVNA import AVNA
 from NanoVNASaver.Hardware.NanoVNA import NanoVNA
 from NanoVNASaver.Hardware.NanoVNA_F import NanoVNA_F
@@ -96,7 +97,7 @@ def get_interfaces() -> List[Interface]:
     return interfaces
 
 
-def get_VNA(iface: Interface) -> 'VNA':
+def get_VNA(iface: Interface) -> VNA:
     # serial_port.timeout = TIMEOUT
     return NAME2DEVICE[iface.comment](iface)
 

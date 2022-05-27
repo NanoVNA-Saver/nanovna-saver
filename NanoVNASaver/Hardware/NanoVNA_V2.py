@@ -271,6 +271,7 @@ class NanoVNA_V2(VNA):
         self._set_register(0x42, _ADF4350_TXPOWER_DESC_REV_MAP[power_desc], 1)
 
     def _set_register(self, addr, value, size):
+        packet = b''
         if size == 1:
             packet = pack("<BBB", _CMD_WRITE, addr, value)
         elif size == 2:

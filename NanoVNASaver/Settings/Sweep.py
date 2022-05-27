@@ -31,7 +31,7 @@ class SweepMode(Enum):
     AVERAGE = 2
 
 
-class Properties():
+class Properties:
     def __init__(self, name: str = "",
                  mode: 'SweepMode' = SweepMode.SINGLE,
                  averages: Tuple[int, int] = (3, 0),
@@ -47,7 +47,7 @@ class Properties():
             f" {self.logarithmic})")
 
 
-class Sweep():
+class Sweep:
     def __init__(self, start: int = 3600000, end: int = 30000000,
                  points: int = 101, segments: int = 1,
                  properties: 'Properties' = Properties()):
@@ -105,7 +105,7 @@ class Sweep():
             start = round(self.start + self.span * self._exp_factor(index))
             end = round(self.start + self.span * self._exp_factor(index + 1))
         logger.debug("get_index_range(%s) -> (%s, %s)", index, start, end)
-        return (start, end)
+        return start, end
 
     def get_frequencies(self) -> Iterator[int]:
         for i in range(self.segments):

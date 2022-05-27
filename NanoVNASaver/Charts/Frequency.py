@@ -571,7 +571,7 @@ class FrequencyChart(Chart):
         min_value = self.minDisplayValue / 10e11
         max_value = self.maxDisplayValue / 10e11
         if self.fixedValues:
-            return (min_value, max_value)
+            return min_value, max_value
         for d in self.data:
             val = self.value_function(d)
             min_value = min(min_value, val)
@@ -582,7 +582,7 @@ class FrequencyChart(Chart):
             val = self.value_function(d)
             min_value = min(min_value, val)
             max_value = max(max_value, val)
-        return (min_value, max_value)
+        return min_value, max_value
 
     def drawFrequencyTicks(self, qp):
         fspan = self.fstop - self.fstart

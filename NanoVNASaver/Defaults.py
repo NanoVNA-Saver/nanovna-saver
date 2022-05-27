@@ -152,6 +152,7 @@ def to_type(data: object, data_type: type) -> object:
     return data_type(data)
 
 
+# noinspection PyDataclass
 class AppSettings(QSettings):
     def store_dataclass(self, name: str, data: object) -> None:
         assert DC.is_dataclass(data)

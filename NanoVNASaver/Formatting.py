@@ -18,6 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
 from numbers import Number
+from typing import Union
 
 from NanoVNASaver import SITools
 
@@ -49,7 +50,7 @@ def format_frequency(freq: Number) -> str:
     return str(SITools.Value(freq, "Hz", FMT_FREQ))
 
 
-def format_frequency_inputs(freq: float) -> str:
+def format_frequency_inputs(freq: Union[Number, str]) -> str:
     return str(SITools.Value(freq, "Hz", FMT_FREQ_INPUTS))
 
 

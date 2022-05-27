@@ -42,7 +42,7 @@ def get_ticks(span: float, min_value: float) -> tuple[float, float, float]:
                 first_tick += step
             tick_count = math.floor(span/step)
             break
-    return(first_tick, step, tick_count)
+    return first_tick, step, tick_count
 
 
 class LogMagChart(FrequencyChart):
@@ -107,7 +107,7 @@ class LogMagChart(FrequencyChart):
 
     def find_scaling(self) -> tuple[float, float]:
         if self.fixedValues:
-            return(self.minDisplayValue, self.maxDisplayValue)
+            return self.minDisplayValue, self.maxDisplayValue
         min_value = 100
         max_value = -100
         for d in self.data:
@@ -124,7 +124,7 @@ class LogMagChart(FrequencyChart):
                 continue
             min_value = min(min_value, val)
             max_value = max(max_value, val)
-        return(round_floor(min_value, -1), round_ceil(max_value, -1))
+        return round_floor(min_value, -1), round_ceil(max_value, -1)
 
     def draw_grid(self, qp, max_value, min_value, span, first_tick, tick_step, tick_count):
         for i in range(tick_count):
