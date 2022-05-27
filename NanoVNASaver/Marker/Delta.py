@@ -37,6 +37,7 @@ from NanoVNASaver.Formatting import (
 
 from .Widget import Marker
 
+
 class DeltaMarker(Marker):
     def __init__(self, name: str = "", qsettings: QtCore.QSettings = None):
         super().__init__(name, qsettings)
@@ -71,10 +72,10 @@ class DeltaMarker(Marker):
         imp_p = imp_p_b - imp_p_a
 
         cap_p_str = format_capacitance(
-            RFTools.impedance_to_capacitance(imp_p_b, s11_b.freq)-
+            RFTools.impedance_to_capacitance(imp_p_b, s11_b.freq) -
             RFTools.impedance_to_capacitance(imp_p_a, s11_a.freq))
         ind_p_str = format_inductance(
-            RFTools.impedance_to_inductance(imp_p_b, s11_b.freq)-
+            RFTools.impedance_to_inductance(imp_p_b, s11_b.freq) -
             RFTools.impedance_to_inductance(imp_p_a, s11_a.freq))
 
         x_str = cap_str if imp.imag < 0 else ind_str
@@ -126,5 +127,5 @@ class DeltaMarker(Marker):
             self.label['s21phase'].setText(format_phase(
                 s21_b.phase - s21_a.phase))
             self.label['s21polar'].setText(
-                f"{round(abs(s21_b.z) - abs(s21_a.z) , 2)}∠"
+                f"{round(abs(s21_b.z) - abs(s21_a.z), 2)}∠"
                 f"{format_phase(s21_b.phase - s21_a.phase)}")

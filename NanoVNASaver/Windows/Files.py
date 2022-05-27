@@ -24,6 +24,7 @@ from NanoVNASaver.RFTools import Datapoint
 
 logger = logging.getLogger(__name__)
 
+
 class FilesWindow(QtWidgets.QWidget):
     def __init__(self, app: QtWidgets.QWidget):
         super().__init__()

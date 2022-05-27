@@ -22,6 +22,7 @@ import unittest
 # Import targets to be tested
 from NanoVNASaver.Formatting import parse_frequency
 
+
 # TODO: should be tested against SITools.Value
 # RFTools.parseFrequency will hopefully go away in future
 # and be specialised by input field and device, like
@@ -149,4 +150,3 @@ class TestCases(unittest.TestCase):
         self.assertEqual(parse_frequency('123...Hz'), -1)
         self.assertEqual(parse_frequency('123....Hz'), -1)
         self.assertEqual(parse_frequency('1.23.Hz'), -1)
-

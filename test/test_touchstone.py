@@ -24,6 +24,7 @@ import os
 from NanoVNASaver.Touchstone import Options, Touchstone
 from NanoVNASaver.RFTools import Datapoint
 
+
 class TestTouchstoneOptions(unittest.TestCase):
     def setUp(self):
         self.opts = Options()
@@ -113,7 +114,7 @@ class TestTouchstoneTouchstone(unittest.TestCase):
         s11, s21, s12, s22 = ts.sdata
         ts.swap()
         s11_, s21_, s12_, s22_ = ts.sdata
-        self.assertEqual([s11_, s21_, s12_, s22_] ,[s22, s12, s21, s11])
+        self.assertEqual([s11_, s21_, s12_, s22_], [s22, s12, s21, s11])
 
     def test_db_conversation(self):
         ts_db = Touchstone("./test/data/attenuator-0643_DB.s2p")
@@ -143,7 +144,7 @@ class TestTouchstoneTouchstone(unittest.TestCase):
             ' 15000000.0 0.849810063 -0.4147357 -0.000306106 0.0041482'
             ' 0.0 0.0 0.0 0.0',
             'WARNING:NanoVNASaver.Touchstone:Reordering data',
-            ])
+        ])
         self.assertEqual(str(ts.opts), "# HZ S RI R 50")
         self.assertEqual(len(ts.s11), 101)
         self.assertIn("!freq ReS11 ImS11 ReS21 ImS21 ReS12 ImS12 ReS22 ImS22",
@@ -164,7 +165,6 @@ class TestTouchstoneTouchstone(unittest.TestCase):
         self.assertEqual(ts.max_freq(), 3)
         ts.gen_interpolation()
         self.assertEqual(ts.s_freq("11", 2), Datapoint(2, 0.5, 0.5))
-
 
     def test_save(self):
         ts = Touchstone("./test/data/valid.s2p")

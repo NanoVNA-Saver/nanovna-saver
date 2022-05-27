@@ -226,6 +226,7 @@ class SweepWorker(QtCore.QRunnable):
             logger.debug("Reading average no %d / %d", i + 1, averages)
             retry = 0
             tmp11 = []
+            tmp21 = []
             while not tmp11 and retry < 5:
                 sleep(0.5 * retry)
                 retry += 1

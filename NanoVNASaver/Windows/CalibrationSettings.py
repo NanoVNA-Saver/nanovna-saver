@@ -187,7 +187,7 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.load_inductance.setMinimumHeight(20)
         self.load_capacitance = QtWidgets.QLineEdit("0")
         self.load_capacitance.setMinimumHeight(20)
-        #self.load_capacitance.setDisabled(True)  # Not yet implemented
+        # self.load_capacitance.setDisabled(True)  # Not yet implemented
         self.load_length = QtWidgets.QLineEdit("0")
         self.load_length.setMinimumHeight(20)
         cal_load_form.addRow("Resistance (\N{OHM SIGN})", self.load_resistance)
@@ -493,15 +493,15 @@ class CalibrationWindow(QtWidgets.QWidget):
             # We are using custom calibration standards
             try:
                 self.app.calibration.shortL0 = self.getFloatValue(
-                    self.short_l0_input.text())/10**12
+                    self.short_l0_input.text()) / 10 ** 12
                 self.app.calibration.shortL1 = self.getFloatValue(
-                    self.short_l1_input.text())/10**24
+                    self.short_l1_input.text()) / 10 ** 24
                 self.app.calibration.shortL2 = self.getFloatValue(
-                    self.short_l2_input.text())/10**33
+                    self.short_l2_input.text()) / 10 ** 33
                 self.app.calibration.shortL3 = self.getFloatValue(
-                    self.short_l3_input.text())/10**42
+                    self.short_l3_input.text()) / 10 ** 42
                 self.app.calibration.shortLength = self.getFloatValue(
-                    self.short_length.text())/10**12
+                    self.short_length.text()) / 10 ** 12
                 self.app.calibration.useIdealShort = False
             except ValueError:
                 self.app.calibration.useIdealShort = True
@@ -510,15 +510,15 @@ class CalibrationWindow(QtWidgets.QWidget):
 
             try:
                 self.app.calibration.openC0 = self.getFloatValue(
-                    self.open_c0_input.text())/10**15
+                    self.open_c0_input.text()) / 10 ** 15
                 self.app.calibration.openC1 = self.getFloatValue(
-                    self.open_c1_input.text())/10**27
+                    self.open_c1_input.text()) / 10 ** 27
                 self.app.calibration.openC2 = self.getFloatValue(
-                    self.open_c2_input.text())/10**36
+                    self.open_c2_input.text()) / 10 ** 36
                 self.app.calibration.openC3 = self.getFloatValue(
-                    self.open_c3_input.text())/10**45
+                    self.open_c3_input.text()) / 10 ** 45
                 self.app.calibration.openLength = self.getFloatValue(
-                    self.open_length.text())/10**12
+                    self.open_length.text()) / 10 ** 12
                 self.app.calibration.useIdealOpen = False
             except ValueError:
                 self.app.calibration.useIdealOpen = True
@@ -529,11 +529,11 @@ class CalibrationWindow(QtWidgets.QWidget):
                 self.app.calibration.loadR = self.getFloatValue(
                     self.load_resistance.text())
                 self.app.calibration.loadL = self.getFloatValue(
-                    self.load_inductance.text()) / 10**12
+                    self.load_inductance.text()) / 10 ** 12
                 self.app.calibration.loadC = self.getFloatValue(
                     self.load_capacitance.text()) / 10 ** 15
                 self.app.calibration.loadLength = self.getFloatValue(
-                    self.load_length.text())/10**12
+                    self.load_length.text()) / 10 ** 12
                 self.app.calibration.useIdealLoad = False
             except ValueError:
                 self.app.calibration.useIdealLoad = True
@@ -542,7 +542,7 @@ class CalibrationWindow(QtWidgets.QWidget):
                     ' Using ideal values.')
             try:
                 self.app.calibration.throughLength = self.getFloatValue(
-                    self.through_length.text())/10**12
+                    self.through_length.text()) / 10 ** 12
                 self.app.calibration.useIdealThrough = False
             except ValueError:
                 self.app.calibration.useIdealThrough = True
