@@ -1,6 +1,15 @@
 Changelog
 =========
 
+0.5.0 pre
+---------
+
+ - Fix crash on open in use serial device
+ - Use a Defaults module for all settings -
+   ignores old .ini settings
+ - Refactoring and unifying Chart classes
+ - No more automatic update checks (more privacy)
+
 0.4.0
 -----
 

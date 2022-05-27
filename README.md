@@ -17,6 +17,14 @@ points, and generally display and analyze the resulting data.
 Latest Changes
 --------------
 
+### Changes in 0.5.0 pre
+
+ - Fix crash on open in use serial device
+ - Use a Defaults module for all settings -
+   ignores old .ini settings
+ - Refactoring and unifying Chart classes
+ - No more automatic update checks (more privacy)
+
 ### Changes in 0.4.0
 
  - PA0JOZ Enhanced Response Correction
@@ -36,12 +44,6 @@ Latest Changes
 - Reference plane applied after calibration
 - Calibration fixes by DiSlord
 
-### Changes in v0.3.9
-
-- TX Power on V2
-- New analysis
-- Magnitude Z Chart
-- VSWR Chart improvements
 
 Introduction
 ------------
