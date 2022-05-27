@@ -21,6 +21,7 @@ import unittest
 # Import targets to be tested
 from NanoVNASaver.Settings.Sweep import Sweep, Properties
 
+
 class TestCases(unittest.TestCase):
 
     def test_sweep(self):

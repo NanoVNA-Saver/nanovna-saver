@@ -22,6 +22,7 @@ from PyQt5 import QtWidgets, QtCore
 
 logger = logging.getLogger(__name__)
 
+
 class Control(QtWidgets.QGroupBox):
     updated = QtCore.pyqtSignal(object)
 

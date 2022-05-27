@@ -17,6 +17,7 @@
 
 from contextlib import suppress
 
+# noinspection PyUnresolvedReferences
 with suppress(ImportError):
     # pylint: disable=no-name-in-module,import-error,unused-import
     # pyright: reportMissingImports=false

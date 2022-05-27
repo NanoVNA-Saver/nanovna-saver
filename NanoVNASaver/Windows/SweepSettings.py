@@ -102,7 +102,7 @@ class SweepSettingsWindow(QtWidgets.QWidget):
             " amount of datapoints and many segments. Step display in"
             " SweepControl cannot reflect this currently.")
         label.setWordWrap(True)
-        label.setMinimumSize(600,70)
+        label.setMinimumSize(600, 70)
         layout.addRow(label)
         checkbox = QtWidgets.QCheckBox("Logarithmic sweep")
         checkbox.setMinimumHeight(20)

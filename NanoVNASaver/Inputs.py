@@ -28,7 +28,6 @@ class FrequencyInputWidget(QtWidgets.QLineEdit):
         self.previousFrequency = -1
 
     def setText(self, text: str) -> None:
-        # TODO: Fix wrong type here
         super().setText(format_frequency_inputs(text))
 
 

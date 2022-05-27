@@ -45,16 +45,12 @@ class Datapoint(NamedTuple):
     @property
     def gain(self) -> float:
         mag = abs(self.z)
-        if mag > 0:
-            return 20 * math.log10(mag)
-        return -math.inf
+        return 20 * math.log10(mag) if mag > 0 else -math.inf
 
     @property
     def vswr(self) -> float:
         mag = abs(self.z)
-        if mag >= 1:
-            return math.inf
-        return (1 + mag) / (1 - mag)
+        return (1 + mag) / (1 - mag) if mag < 1 else math.inf
 
     @property
     def wavelength(self) -> float:
@@ -77,9 +73,7 @@ class Datapoint(NamedTuple):
 
     def qFactor(self, ref_impedance: float = 50) -> float:
         imp = self.impedance(ref_impedance)
-        if imp.real == 0.0:
-            return -1
-        return abs(imp.imag / imp.real)
+        return -1 if imp.real == 0.0 else abs(imp.imag / imp.real)
 
     def capacitiveEquivalent(self, ref_impedance: float = 50) -> float:
         return impedance_to_capacitance(self.impedance(ref_impedance), self.freq)
@@ -101,9 +95,7 @@ def groupDelay(data: List[Datapoint], index: int) -> float:
     idx1 = clamp_value(index + 1, 0, len(data) - 1)
     delta_angle = data[idx1].phase - data[idx0].phase
     delta_freq = data[idx1].freq - data[idx0].freq
-    if delta_freq == 0:
-        return 0
-    return -delta_angle / math.tau / delta_freq
+    return 0 if delta_freq == 0 else -delta_angle / math.tau / delta_freq
 
 
 def impedance_to_capacitance(z: complex, freq: float) -> float:
@@ -117,9 +109,7 @@ def impedance_to_capacitance(z: complex, freq: float) -> float:
 
 def impedance_to_inductance(z: complex, freq: float) -> float:
     """Calculate inductive equivalent for reactance"""
-    if freq == 0:
-        return 0
-    return z.imag * 1 / (freq * 2 * math.pi)
+    return 0 if freq == 0 else z.imag * 1 / (freq * 2 * math.pi)
 
 
 def impedance_to_norm(z: complex, ref_impedance: float = 50) -> complex:
@@ -134,8 +124,7 @@ def norm_to_impedance(z: complex, ref_impedance: float = 50) -> complex:
 
 def parallel_to_serial(z: complex) -> complex:
     """Convert parallel impedance to serial impedance equivalent"""
-    z_sq_sum = z.real ** 2 + z.imag ** 2
-    # TODO: Fix divide by zero
+    z_sq_sum = z.real ** 2 + z.imag ** 2 or 10.0e-30
     return complex(z.real * z.imag ** 2 / z_sq_sum,
                    z.real ** 2 * z.imag / z_sq_sum)
 
@@ -150,9 +139,6 @@ def serial_to_parallel(z: complex) -> complex:
     z_sq_sum = z.real ** 2 + z.imag ** 2
     if z.real == 0 and z.imag == 0:
         return complex(math.inf, math.inf)
-    # only possible if real and imag == 0, therefor commented out
-    # if z_sq_sum == 0:
-    #     return complex(0, 0)
     if z.imag == 0:
         return complex(z_sq_sum / z.real, math.copysign(math.inf, z_sq_sum))
     if z.real == 0:

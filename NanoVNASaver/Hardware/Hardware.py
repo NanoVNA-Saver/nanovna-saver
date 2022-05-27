@@ -25,6 +25,7 @@ from typing import List
 import serial
 from serial.tools import list_ports
 
+from NanoVNASaver.Hardware.VNA import VNA
 from NanoVNASaver.Hardware.AVNA import AVNA
 from NanoVNASaver.Hardware.NanoVNA import NanoVNA
 from NanoVNASaver.Hardware.NanoVNA_F import NanoVNA_F
@@ -34,8 +35,6 @@ from NanoVNASaver.Hardware.NanoVNA_H4 import NanoVNA_H4
 from NanoVNASaver.Hardware.NanoVNA_V2 import NanoVNA_V2
 from NanoVNASaver.Hardware.TinySA import TinySA
 from NanoVNASaver.Hardware.Serial import drain_serial, Interface
-from NanoVNASaver.Hardware.VNA import VNA
-
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +50,7 @@ TIMEOUT = 0.2
 WAIT = 0.05
 
 NAME2DEVICE = {
-    "S-A-A-2" : NanoVNA_V2,
+    "S-A-A-2": NanoVNA_V2,
     "AVNA": AVNA,
     "H4": NanoVNA_H4,
     "H": NanoVNA_H,
@@ -61,6 +60,7 @@ NAME2DEVICE = {
     "tinySA": TinySA,
     "Unknown": NanoVNA,
 }
+
 
 # The USB Driver for NanoVNA V2 seems to deliver an
 # incompatible hardware info like:
@@ -88,11 +88,7 @@ def get_interfaces() -> List[Interface]:
                          t.name, d.vid, d.pid, d.device)
             iface = Interface('serial', t.name)
             iface.port = d.device
-            try:
-                iface.open()
-            except serial.SerialException:
-                logger.warning("Could not open serial port %s", d.device)
-                continue
+            iface.open()
             iface.comment = get_comment(iface)
             iface.close()
             interfaces.append(iface)
@@ -101,9 +97,10 @@ def get_interfaces() -> List[Interface]:
     return interfaces
 
 
-def get_VNA(iface: Interface) -> 'VNA':
+def get_VNA(iface: Interface) -> VNA:
     # serial_port.timeout = TIMEOUT
     return NAME2DEVICE[iface.comment](iface)
+
 
 def get_comment(iface: Interface) -> str:
     logger.info("Finding correct VNA type...")
@@ -116,18 +113,19 @@ def get_comment(iface: Interface) -> str:
     logger.info("Finding firmware variant...")
     info = get_info(iface)
     for search, name in (
-        ("AVNA + Teensy", "AVNA"),
-        ("NanoVNA-H 4", "H4"),
-        ("NanoVNA-H", "H"),
-        ("NanoVNA-F_V2", "F_V2"),
-        ("NanoVNA-F", "F"),
-        ("NanoVNA", "NanoVNA"),
-        ("tinySA", "tinySA"),
+            ("AVNA + Teensy", "AVNA"),
+            ("NanoVNA-H 4", "H4"),
+            ("NanoVNA-H", "H"),
+            ("NanoVNA-F_V2", "F_V2"),
+            ("NanoVNA-F", "F"),
+            ("NanoVNA", "NanoVNA"),
+            ("tinySA", "tinySA"),
     ):
         if info.find(search) >= 0:
-            return  name
+            return name
     logger.warning("Did not recognize NanoVNA type from firmware.")
     return "Unknown"
+
 
 def detect_version(serial_port: serial.Serial) -> str:
     data = ""

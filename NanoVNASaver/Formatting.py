@@ -18,6 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
 from numbers import Number
+from typing import Union
 
 from NanoVNASaver import SITools
 
@@ -42,13 +43,14 @@ FMT_PARSE = SITools.Format(parse_sloppy_unit=True, parse_sloppy_kilo=True,
                            parse_clamp_min=0)
 FMT_PARSE_VALUE = SITools.Format(
     parse_sloppy_unit=True, parse_sloppy_kilo=True)
+FMT_VSWR = SITools.Format(max_nr_digits=3)
 
 
 def format_frequency(freq: Number) -> str:
     return str(SITools.Value(freq, "Hz", FMT_FREQ))
 
 
-def format_frequency_inputs(freq: float) -> str:
+def format_frequency_inputs(freq: Union[Number, str]) -> str:
     return str(SITools.Value(freq, "Hz", FMT_FREQ_INPUTS))
 
 
@@ -140,7 +142,7 @@ def format_wavelength(length: Number) -> str:
     return str(SITools.Value(length, "m", FMT_WAVELENGTH))
 
 
-def format_y_axis(val: float, unit: str="") -> str:
+def format_y_axis(val: float, unit: str = "") -> str:
     return str(SITools.Value(val, unit, FMT_SHORT))
 
 
@@ -152,7 +154,7 @@ def parse_frequency(freq: str) -> int:
 
 
 def parse_value(val: str, unit: str = "",
-                fmt: SITools.Format = FMT_PARSE_VALUE) -> int:
+                fmt: SITools.Format = FMT_PARSE_VALUE) -> float:
     try:
         val.replace(',', '.')
         return float(SITools.Value(val, unit, fmt))
