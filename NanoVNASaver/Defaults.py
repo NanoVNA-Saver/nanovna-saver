@@ -140,12 +140,12 @@ def from_type(data) -> str:
 
 def to_type(data: object, data_type: type) -> object:
     type_map = {
-        bool: literal_eval,
+        bool: lambda x: x.lower() == 'true',
         bytearray: bytearray.fromhex,
         list: literal_eval,
         tuple: literal_eval,
         QColor: lambda x: QColor.fromRgb(*literal_eval(x)),
-        QByteArray: lambda x: QByteArray.fromHex(*literal_eval(x)),
+        QByteArray: lambda x: QByteArray.fromHex(literal_eval(x)),
     }
     if data_type in type_map:
         return type_map[data_type](data)
