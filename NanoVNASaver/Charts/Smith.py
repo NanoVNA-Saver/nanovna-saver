@@ -94,6 +94,3 @@ class SmithChart(SquareChart):
             qp.drawText(
                 QtCore.QRect(centerX - 50, centerY - 4 + r, 100, 20),
                 QtCore.Qt.AlignCenter, str(swr))
-
-    def zoomTo(self, x1, y1, x2, y2):
-        raise NotImplementedError()

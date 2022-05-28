@@ -41,10 +41,10 @@ class TDRChart(Chart):
     def __init__(self, name):
         super().__init__(name)
         self.tdrWindow = None
-        self.leftMargin = 30
-        self.rightMargin = 20
+
         self.bottomMargin = 25
         self.topMargin = 20
+
         self.setMinimumSize(300, 300)
         self.setSizePolicy(
             QtWidgets.QSizePolicy(

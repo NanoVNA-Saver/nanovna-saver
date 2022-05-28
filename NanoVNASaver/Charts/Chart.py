@@ -103,6 +103,11 @@ class Chart(QtWidgets.QWidget):
         self.name = name
         self.sweepTitle = ''
 
+        self.leftMargin = 30
+        self.rightMargin = 20
+        self.bottomMargin = 20
+        self.topMargin = 30
+
         self.dim = ChartDimensions()
         self.dragbox = ChartDragBox()
         self.flag = ChartFlags()

@@ -138,8 +138,12 @@ class SquareChart(Chart):
             m.setFrequency(str(round(target[minimum_position].freq)))
             m.frequencyInput.setText(str(round(target[minimum_position].freq)))
 
+
     def getXPosition(self, d: Datapoint) -> int:
         return int(self.width()/2 + d.re * self.dim.width/2)
 
     def getYPosition(self, d: Datapoint) -> int:
         return int(self.height()/2 + d.im * -1 * self.dim.height/2)
+
+    def zoomTo(self, x1, y1, x2, y2):
+        pass

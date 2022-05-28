@@ -52,6 +52,3 @@ class PolarChart(SquareChart):
                     center_x - width_45, center_y + height_45)
 
         self.drawTitle(qp)
-
-    def zoomTo(self, x1, y1, x2, y2):
-        raise NotImplementedError()
