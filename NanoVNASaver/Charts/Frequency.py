@@ -237,7 +237,8 @@ class FrequencyChart(Chart):
         self.logarithmicY = logarithmic and self.logarithmicYAllowed()
         self.update()
 
-    def logarithmicYAllowed(self) -> bool:
+    @staticmethod
+    def logarithmicYAllowed() -> bool:
         return False
 
     def setMinimumFrequency(self):
@@ -380,38 +381,6 @@ class FrequencyChart(Chart):
         val = -1 * ((absy / self.dim.height * self.span) - self.maxValue)
         return [val * 10e11]
 
-    def wheelEvent(self, a0: QtGui.QWheelEvent) -> None:
-        if ((len(self.data) == 0 and len(self.reference) == 0) or
-                a0.angleDelta().y() == 0):
-            a0.ignore()
-            return
-        do_zoom_x = do_zoom_y = True
-        if a0.modifiers() == QtCore.Qt.ShiftModifier:
-            do_zoom_x = False
-        if a0.modifiers() == QtCore.Qt.ControlModifier:
-            do_zoom_y = False
-        self._wheel_zomm(
-            a0, do_zoom_x, do_zoom_y,
-            math.copysign(1, a0.angleDelta().y()))
-
-    def _wheel_zomm(self, a0, do_zoom_x, do_zoom_y, sign: int=1):
-        # Zoom in
-        a0.accept()
-        # Center of zoom = a0.x(), a0.y()
-        # We zoom in by 1/10 of the width/height.
-        rate = sign * a0.angleDelta().y() / 120
-        zoomx = rate * self.dim.width / 10 if do_zoom_x else 0
-        zoomy = rate * self.dim.height / 10 if do_zoom_y else 0
-        absx = max(0, a0.x() - self.leftMargin)
-        absy = max(0, a0.y() - self.topMargin)
-        ratiox = absx / self.dim.width
-        ratioy = absy / self.dim.height
-        p1x = int(self.leftMargin + ratiox * zoomx)
-        p1y = int(self.topMargin + ratioy * zoomy)
-        p2x = int(self.leftMargin + self.dim.width - (1 - ratiox) * zoomx)
-        p2y = int(self.topMargin + self.dim.height - (1 - ratioy) * zoomy)
-        self.zoomTo(p1x, p1y, p2x, p2y)
-
     def zoomTo(self, x1, y1, x2, y2):
         val1 = self.valueAtPosition(y1)
         val2 = self.valueAtPosition(y2)
@@ -481,14 +450,12 @@ class FrequencyChart(Chart):
             self.drawDragbog(qp)
         qp.end()
 
+    def _data_oob(self, data: list[Datapoint]) -> bool:
+        return (data[0].freq > self.fstop or self.data[-1].freq < self.fstart)
+
     def _check_frequency_boundaries(self, qp: QtGui.QPainter):
-        if (len(self.data) > 0 and
-                (self.data[0].freq > self.fstop or
-                 self.data[len(self.data) - 1].freq < self.fstart)
-                and
-                (len(self.reference) == 0 or
-                 self.reference[0].freq > self.fstop or
-                 self.reference[len(self.reference) - 1].freq < self.fstart)):
+        if (self.data and self._data_oob(self.data) and
+            (not self.reference or self._data_oob(self.reference))):
             # Data outside frequency range
             qp.setBackgroundMode(QtCore.Qt.OpaqueMode)
             qp.setBackground(Chart.color.background)
@@ -707,16 +674,16 @@ class FrequencyChart(Chart):
                            self.topMargin + self.dim.height])
         else:
             return x, y
+
         da = p2 - p1
         db = p4 - p3
         dp = p1 - p3
         dap = np.array([-da[1], da[0]])
         denom = np.dot(dap, db)
-        if denom != 0:
-            num = np.dot(dap, dp)
-            result = (num / denom.astype(float)) * db + p3
-            return result[0], result[1]
-        return x, y
+
+        return (((np.dot(dap, dp) / denom.astype(float)) * db + p3)[:2]
+                if denom
+                else (x, y))
 
     def copy(self):
         new_chart = super().copy()

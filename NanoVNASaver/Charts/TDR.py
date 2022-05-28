@@ -290,7 +290,7 @@ class TDRChart(Chart):
         ticks = math.floor((self.width() - self.leftMargin) / 100)
         self.drawTitle(qp)
 
-        if len(self.tdrWindow.td) > 0:
+        if self.tdrWindow.td:
             if self.fixedSpan:
                 max_length = max(0.1, self.maxDisplayLength)
                 max_index = np.searchsorted(self.tdrWindow.distance_axis, max_length * 2)
@@ -405,10 +405,12 @@ class TDRChart(Chart):
         if self.dragbox.state and self.dragbox.pos[0] != -1:
             dashed_pen = QtGui.QPen(Chart.color.foreground, 1, QtCore.Qt.DashLine)
             qp.setPen(dashed_pen)
-            top_left = QtCore.QPoint(self.dragbox.pos_start[0], self.dragbox.stateStart[1])
-            bottom_right = QtCore.QPoint(self.dragbox.pos[0], self.dragbox.stateCurrent[1])
-            rect = QtCore.QRect(top_left, bottom_right)
-            qp.drawRect(rect)
+            qp.drawRect(
+                QtCore.QRect(
+                    QtCore.QPoint(*self.dragbox.pos_start),
+                    QtCore.QPoint(*self.dragbox.pos)
+                )
+            )
 
         qp.end()
 
@@ -431,24 +433,24 @@ class TDRChart(Chart):
         return 0
 
     def lengthAtPosition(self, x, limit=True):
-        if len(self.tdrWindow.td) > 0:
-            width = self.width() - self.leftMargin - self.rightMargin
-            absx = x - self.leftMargin
-            if self.fixedSpan:
-                max_length = self.maxDisplayLength
-                min_length = self.minDisplayLength
-                x_step = (max_length - min_length) / width
-            else:
-                min_length = 0
-                max_length = self.tdrWindow.distance_axis[
-                    math.ceil(len(self.tdrWindow.distance_axis) / 2)] / 2
-                x_step = max_length / width
-            if limit and absx < 0:
-                return min_length
-            if limit and absx > width:
-                return max_length
-            return absx * x_step + min_length
-        return 0
+        if not self.tdrWindow.td:
+            return 0
+        width = self.width() - self.leftMargin - self.rightMargin
+        absx = x - self.leftMargin
+        if self.fixedSpan:
+            max_length = self.maxDisplayLength
+            min_length = self.minDisplayLength
+            x_step = (max_length - min_length) / width
+        else:
+            min_length = 0
+            max_length = self.tdrWindow.distance_axis[
+                math.ceil(len(self.tdrWindow.distance_axis) / 2)] / 2
+            x_step = max_length / width
+        if limit and absx < 0:
+            return min_length
+        if limit and absx > width:
+            return max_length
+        return absx * x_step + min_length
 
     def zoomTo(self, x1, y1, x2, y2):
         logger.debug("Zoom to (x,y) by (x,y): (%d, %d) by (%d, %d)", x1, y1, x2, y2)
@@ -469,68 +471,6 @@ class TDRChart(Chart):
             self.setFixedSpan(True)
 
         self.update()
-
-    def wheelEvent(self, a0: QtGui.QWheelEvent) -> None:
-        if len(self.tdrWindow.td) == 0:
-            a0.ignore()
-            return
-        chart_height = self.dim.height
-        chart_width = self.dim.width
-        do_zoom_x = do_zoom_y = True
-        if a0.modifiers() == QtCore.Qt.ShiftModifier:
-            do_zoom_x = False
-        if a0.modifiers() == QtCore.Qt.ControlModifier:
-            do_zoom_y = False
-        if a0.angleDelta().y() > 0:
-            # Zoom in
-            a0.accept()
-            # Center of zoom = a0.x(), a0.y()
-            # We zoom in by 1/10 of the width/height.
-            rate = a0.angleDelta().y() / 120
-            if do_zoom_x:
-                zoomx = rate * chart_width / 10
-            else:
-                zoomx = 0
-            if do_zoom_y:
-                zoomy = rate * chart_height / 10
-            else:
-                zoomy = 0
-            absx = max(0, a0.x() - self.leftMargin)
-            absy = max(0, a0.y() - self.topMargin)
-            ratiox = absx/chart_width
-            ratioy = absy/chart_height
-            # TODO: Change zoom to center on the mouse if possible,
-            #       or extend box to the side that has room if not.
-            p1x = int(self.leftMargin + ratiox * zoomx)
-            p1y = int(self.topMargin + ratioy * zoomy)
-            p2x = int(self.leftMargin + chart_width - (1 - ratiox) * zoomx)
-            p2y = int(self.topMargin + chart_height - (1 - ratioy) * zoomy)
-            self.zoomTo(p1x, p1y, p2x, p2y)
-        elif a0.angleDelta().y() < 0:
-            # Zoom out
-            a0.accept()
-            # Center of zoom = a0.x(), a0.y()
-            # We zoom out by 1/9 of the width/height, to match zoom in.
-            rate = -a0.angleDelta().y() / 120
-            if do_zoom_x:
-                zoomx = rate * chart_width / 9
-            else:
-                zoomx = 0
-            if do_zoom_y:
-                zoomy = rate * chart_height / 9
-            else:
-                zoomy = 0
-            absx = max(0, a0.x() - self.leftMargin)
-            absy = max(0, a0.y() - self.topMargin)
-            ratiox = absx/chart_width
-            ratioy = absy/chart_height
-            p1x = int(self.leftMargin - ratiox * zoomx)
-            p1y = int(self.topMargin - ratioy * zoomy)
-            p2x = int(self.leftMargin + chart_width + (1 - ratiox) * zoomx)
-            p2y = int(self.topMargin + chart_height + (1 - ratioy) * zoomy)
-            self.zoomTo(p1x, p1y, p2x, p2y)
-        else:
-            a0.ignore()
 
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
         super().resizeEvent(a0)

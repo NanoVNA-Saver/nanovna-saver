@@ -219,6 +219,37 @@ class Chart(QtWidgets.QWidget):
             self.dragbox.pos_start = (0, 0)
             self.update()
 
+
+    def wheelEvent(self, a0: QtGui.QWheelEvent) -> None:
+        delta = a0.angleDelta().y()
+        if not delta or (not self.data and not self.reference):
+            a0.ignore()
+            return
+        modifiers = a0.modifiers()
+
+        zoom_x = modifiers != QtCore.Qt.ShiftModifier
+        zoom_y = modifiers != QtCore.Qt.ControlModifier
+        rate = -delta / 120
+        # zooming in 10% increments and 9% complementary
+        divisor = 10 if delta > 0 else 9
+
+        factor_x = rate * self.dim.width / divisor if zoom_x else 0
+        factor_y = rate * self.dim.height / divisor if zoom_y else 0
+
+        abs_x = max(0, a0.x() - self.leftMargin)
+        abs_y = max(0, a0.y() - self.topMargin)
+
+        ratio_x = abs_x / self.dim.width
+        ratio_y = abs_y / self.dim.height
+
+        self.zoomTo(
+            int(self.leftMargin + ratio_x * factor_x),
+            int(self.topMargin + ratio_y * factor_y),
+            int(self.leftMargin + self.dim.width - (1 - ratio_x) * factor_x),
+            int(self.topMargin + self.dim.height - (1 - ratio_y) * factor_y)
+        )
+        a0.accept()
+
     def zoomTo(self, x1, y1, x2, y2):
         raise NotImplementedError()
 
@@ -266,9 +297,12 @@ class Chart(QtWidgets.QWidget):
         self.swrMarkers.clear()
         self.update()
 
-    def drawMarker(self, x, y, qp: QtGui.QPainter, color: QtGui.QColor, number=0):
+    @staticmethod
+    def drawMarker(x: int, y: int,
+                   qp: QtGui.QPainter, color: QtGui.QColor,
+                   number: int=0):
         cmarker = ChartMarker(qp)
-        cmarker.draw(x, y, color, str(number))
+        cmarker.draw(x, y, color, f"{number}")
 
     def drawTitle(self, qp: QtGui.QPainter, position: QtCore.QPoint = None):
         qp.setPen(Chart.color.text)
