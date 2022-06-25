@@ -1,5 +1,5 @@
 pyserial==3.5
-PyQt5==5.15.6
-numpy==1.21.5
-scipy==1.7.3
-Cython==0.29.26
+PyQt5==5.15.7
+numpy==1.23.0
+scipy==1.8.1
+Cython==0.29.30
