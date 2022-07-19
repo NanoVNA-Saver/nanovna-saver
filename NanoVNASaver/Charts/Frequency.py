@@ -681,9 +681,10 @@ class FrequencyChart(Chart):
         dap = np.array([-da[1], da[0]])
         denom = np.dot(dap, db)
 
-        return (((np.dot(dap, dp) / denom.astype(float)) * db + p3)[:2]
-                if denom
-                else (x, y))
+        if denom:
+            x, y = ((np.dot(dap, dp) / denom.astype(float)) * db + p3)[:2]
+
+        return int(x), int(y)
 
     def copy(self):
         new_chart = super().copy()
