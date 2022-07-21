@@ -17,11 +17,20 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
+from collections import OrderedDict
 
 from NanoVNASaver.Hardware.NanoVNA import NanoVNA
 from NanoVNASaver.Hardware.Serial import Interface
 
 logger = logging.getLogger(__name__)
+
+DISLORD_BW = OrderedDict((
+    (10, 99),
+    (33, 29),
+    (100, 9),
+    (333, 2),
+    (1000, 0),
+))
 
 
 class NanoVNA_F(NanoVNA):
@@ -31,4 +40,5 @@ class NanoVNA_F(NanoVNA):
 
     def __init__(self, iface: Interface):
         super().__init__(iface)
+        self.bandwidth = 333
         self.sweep_max_freq_Hz = 1500e6
