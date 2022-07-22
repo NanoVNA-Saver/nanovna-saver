@@ -26,13 +26,13 @@ from NanoVNASaver.Hardware.Serial import Interface
 logger = logging.getLogger(__name__)
 valid_bandwidths = [10, 33, 100, 333, 1000]
 
-BANDWIDTHS = OrderedDict(
+BANDWIDTHS = OrderedDict((
     (10, 99),
     (33, 29),
     (100, 9),
     (333, 2),
     (1000, 0),
-)
+))
 
 
 class NanoVNA_F(VNA):
@@ -47,7 +47,7 @@ class NanoVNA_F(VNA):
         self.sweep_max_freq_Hz = 1500e6
 
     def get_bandwidths(self) -> List[int]:
-        return BANDWIDTHS.keys()
+        return list(BANDWIDTHS.keys())
 
     def set_bandwidth(self, bandwidth: int):
         self.exec_command(f"bandwidth {BANDWIDTHS[bandwidth]}")
