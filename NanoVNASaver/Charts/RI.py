@@ -183,8 +183,8 @@ class RealImaginaryChart(FrequencyChart):
                     min_imag = im
 
             # Always have at least 8 numbered horizontal lines
-            max_real = max(8, math.ceil(max_real))
-            min_real = max(0, math.floor(min_real))  # Negative real resistance? No.
+            max_real = math.ceil(max_real)
+            min_real = math.floor(min_real)
             max_imag = math.ceil(max_imag)
             min_imag = math.floor(min_imag)
 
