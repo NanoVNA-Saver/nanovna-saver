@@ -104,7 +104,7 @@ class NanoVNA_V2(VNA):
         self.features.add("Customizable data points")
         # TODO: more than one dp per freq
         self.features.add("Multi data points")
-        self.board_revision = self.read_board_revision()
+        self.board_revision = self.readVersion()
         if self.board_revision >= Version("2.0.4"):
             self.sweep_max_freq_Hz = 4400e6
         else:
@@ -121,7 +121,7 @@ class NanoVNA_V2(VNA):
             ]
 
     def readFirmware(self) -> str:
-        result = f"HW: {self.read_board_revision()}\nFW: {self.version}"
+        result = f"HW: {self.readVersion()}\nFW: {self.version}"
         logger.debug("readFirmware: %s", result)
         return result
 
@@ -221,21 +221,6 @@ class NanoVNA_V2(VNA):
             raise IOError("Timeout reading version registers")
         result = Version(f"{resp[0]}.0.{resp[1]}")
         logger.debug("readVersion: %s", result)
-        return result
-
-    def read_board_revision(self) -> 'Version':
-        cmd = pack("<BBBB",
-                   _CMD_READ, _ADDR_DEVICE_VARIANT,
-                   _CMD_READ, _ADDR_HARDWARE_REVISION)
-        with self.serial.lock:
-            self.serial.write(cmd)
-            sleep(WRITE_SLEEP)
-            resp = self.serial.read(2)
-        if len(resp) != 2:
-            logger.error("Timeout reading version registers")
-            return None
-        result = Version(f"{resp[0]}.0.{resp[1]}")
-        logger.debug("read_board_revision: %s", result)
         return result
 
     def setSweep(self, start, stop):
