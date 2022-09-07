@@ -34,7 +34,7 @@ class TDRWindow(QtWidgets.QWidget):
         super().__init__()
         self.app = app
 
-        self.td = []
+        self.td = None
         self.distance_axis = []
         self.step_response = []
         self.step_response_Z = []
