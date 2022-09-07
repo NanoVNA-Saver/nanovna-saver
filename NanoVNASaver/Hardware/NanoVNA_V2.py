@@ -128,7 +128,8 @@ class NanoVNA_V2(VNA):
     def readFrequencies(self) -> List[int]:
         return [
             int(self.sweepStartHz + i * self.sweepStepHz)
-            for i in range(self.datapoints)]
+            for i in range(self.datapoints)
+        ]
 
     def _read_pointstoread(self, pointstoread, arr) -> None:
         freq_index = -1
@@ -150,7 +151,7 @@ class NanoVNA_V2(VNA):
         # Actually grab the data only when requesting channel 0.
         # The hardware will return all channels which we will store.
         if value == "data 0":
-            s21hack = "S21 hack" in self.features
+            s21hack = 1 if "S21 hack" in self.features else 0
             # reset protocol to known state
             timeout = self.serial.timeout
             with self.serial.lock:
@@ -199,16 +200,11 @@ class NanoVNA_V2(VNA):
             if s21hack:
                 self._sweepdata = self._sweepdata[1:]
 
-            ret = [x[0] for x in self._sweepdata]
-            ret = [f'{str(x.real)} {str(x.imag)}' for x in ret]
-            return ret
-
-        if value == "data 1":
-            ret = [x[1] for x in self._sweepdata]
-            ret = [f'{str(x.real)} {str(x.imag)}' for x in ret]
-            return ret
-
-        return []
+        idx = 1 if value == "data 1" else 0
+        return [
+            f'{str(x[idx].real)} {str(x[idx].imag)}'
+            for x in self._sweepdata
+        ]
 
     def resetSweep(self, start: int, stop: int):
         self.setSweep(start, stop)
