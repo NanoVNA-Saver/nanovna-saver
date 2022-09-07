@@ -19,7 +19,7 @@
 import logging
 from collections import OrderedDict
 from time import sleep
-from typing import List, Iterator
+from typing import List, Iterator, Set
 
 from PyQt5 import QtGui
 
@@ -156,7 +156,7 @@ class VNA:
 
     def _get_running_frequencies(self):
         """
-        If possible, read frequencies already runnung
+        If possible, read frequencies already running
         if not return default values
         Overwrite in specific HW
         """
@@ -165,7 +165,7 @@ class VNA:
     def connected(self) -> bool:
         return self.serial.is_open
 
-    def getFeatures(self) -> List[str]:
+    def getFeatures(self) -> Set[str]:
         return self.features
 
     def getCalibration(self) -> str:
