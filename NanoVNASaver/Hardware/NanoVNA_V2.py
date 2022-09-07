@@ -213,10 +213,8 @@ class NanoVNA_V2(VNA):
     def resetSweep(self, start: int, stop: int):
         self.setSweep(start, stop)
 
-    def readVersion(self) -> 'Version':
-        cmd = pack("<BBBB",
-                   _CMD_READ, _ADDR_FW_MAJOR,
-                   _CMD_READ, _ADDR_FW_MINOR)
+    def _read_version(self, cmd_0: int, cmd_1: int):
+        cmd = pack("<BBBB", _CMD_READ, cmd_0, _CMD_READ, cmd_1)
         with self.serial.lock:
             self.serial.write(cmd)
             sleep(WRITE_SLEEP)
@@ -224,22 +222,17 @@ class NanoVNA_V2(VNA):
         if len(resp) != 2:
             logger.error("Timeout reading version registers. Got: %s", resp)
             raise IOError("Timeout reading version registers")
-        result = Version(f"{resp[0]}.0.{resp[1]}")
+        return Version(f"{resp[0]}.0.{resp[1]}")
+
+    def readVersion(self) -> 'Version':
+        result = self._read_version(_ADDR_FW_MAJOR,
+                                    _ADDR_FW_MINOR)
         logger.debug("readVersion: %s", result)
         return result
 
     def read_board_revision(self) -> 'Version':
-        cmd = pack("<BBBB",
-                   _CMD_READ, _ADDR_DEVICE_VARIANT,
-                   _CMD_READ, _ADDR_HARDWARE_REVISION)
-        with self.serial.lock:
-            self.serial.write(cmd)
-            sleep(WRITE_SLEEP)
-            resp = self.serial.read(2)
-        if len(resp) != 2:
-            logger.error("Timeout reading version registers")
-            return None
-        result = Version(f"{resp[0]}.0.{resp[1]}")
+        result = self._read_version(_ADDR_DEVICE_VARIANT,
+                                    _ADDR_HARDWARE_REVISION)
         logger.debug("read_board_revision: %s", result)
         return result
 
