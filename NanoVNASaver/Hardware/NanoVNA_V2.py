@@ -130,6 +130,22 @@ class NanoVNA_V2(VNA):
             int(self.sweepStartHz + i * self.sweepStepHz)
             for i in range(self.datapoints)]
 
+    def _read_pointstoread(self, pointstoread, arr) -> None:
+        freq_index = -1
+
+        for i in range(pointstoread):
+            (fwd_real, fwd_imag, rev0_real, rev0_imag, rev1_real,
+             rev1_imag, freq_index) = unpack_from(
+                "<iiiiiihxxxxxx", arr, i * 32)
+            fwd = complex(fwd_real, fwd_imag)
+            refl = complex(rev0_real, rev0_imag)
+            thru = complex(rev1_real, rev1_imag)
+            if i == 0:
+                logger.debug("Freq index from: %i", freq_index)
+            self._sweepdata[freq_index] = (refl / fwd, thru / fwd)
+
+        logger.debug("Freq index to: %i", freq_index)
+
     def readValues(self, value) -> List[str]:
         # Actually grab the data only when requesting channel 0.
         # The hardware will return all channels which we will store.
@@ -146,7 +162,7 @@ class NanoVNA_V2(VNA):
                 sleep(WRITE_SLEEP)
                 # clear sweepdata
                 self._sweepdata = [(complex(), complex())] * (
-                        self.datapoints + s21hack)
+                    self.datapoints + s21hack)
                 pointstodo = self.datapoints + s21hack
                 # we read at most 255 values at a time and the time required empirically is
                 # just over 3 seconds for 101 points or 7 seconds for 255 points
@@ -175,18 +191,7 @@ class NanoVNA_V2(VNA):
                     if nBytes != len(arr):
                         return []
 
-                    freq_index = -1
-                    for i in range(pointstoread):
-                        (fwd_real, fwd_imag, rev0_real, rev0_imag, rev1_real,
-                         rev1_imag, freq_index) = unpack_from(
-                            "<iiiiiihxxxxxx", arr, i * 32)
-                        fwd = complex(fwd_real, fwd_imag)
-                        refl = complex(rev0_real, rev0_imag)
-                        thru = complex(rev1_real, rev1_imag)
-                        if i == 0:
-                            logger.debug("Freq index from: %i", freq_index)
-                        self._sweepdata[freq_index] = (refl / fwd, thru / fwd)
-                    logger.debug("Freq index to: %i", freq_index)
+                    self._read_pointstoread(pointstoread, arr)
 
                     pointstodo = pointstodo - pointstoread
             self.serial.timeout = timeout
@@ -195,12 +200,12 @@ class NanoVNA_V2(VNA):
                 self._sweepdata = self._sweepdata[1:]
 
             ret = [x[0] for x in self._sweepdata]
-            ret = [str(x.real) + ' ' + str(x.imag) for x in ret]
+            ret = [f'{str(x.real)} {str(x.imag)}' for x in ret]
             return ret
 
         if value == "data 1":
             ret = [x[1] for x in self._sweepdata]
-            ret = [str(x.real) + ' ' + str(x.imag) for x in ret]
+            ret = [f'{str(x.real)} {str(x.imag)}' for x in ret]
             return ret
 
         return []
