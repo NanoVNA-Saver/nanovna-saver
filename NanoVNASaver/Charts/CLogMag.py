@@ -24,30 +24,20 @@ from PyQt5 import QtGui
 
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.Charts.Chart import Chart
-from NanoVNASaver.Charts.Frequency import FrequencyChart
 from NanoVNASaver.Charts.LogMag import LogMagChart
 
 logger = logging.getLogger(__name__)
 
 
-class CombinedLogMagChart(FrequencyChart):
+class CombinedLogMagChart(LogMagChart):
     def __init__(self, name=""):
         super().__init__(name)
-
-        self.minDisplayValue = -80
-        self.maxDisplayValue = 10
 
         self.data11: List[Datapoint] = []
         self.data21: List[Datapoint] = []
 
         self.reference11: List[Datapoint] = []
         self.reference21: List[Datapoint] = []
-
-        self.minValue = 0
-        self.maxValue = 1
-        self.span = 1
-
-        self.isInverted = False
 
     def setCombinedData(self, data11, data21):
         self.data11 = data11
@@ -71,14 +61,19 @@ class CombinedLogMagChart(FrequencyChart):
 
     def drawChart(self, qp: QtGui.QPainter):
         qp.setPen(QtGui.QPen(Chart.color.text))
-        qp.drawText(int(round(self.dim.width / 2)) - 20, 15, self.name + " (dB)")
+        qp.drawText(int(round(self.dim.width / 2)) - 20, 15,
+                    f"{self.name} {self.name_unit}")
         qp.drawText(10, 15, "S11")
         qp.drawText(self.leftMargin + self.dim.width - 8, 15, "S21")
         qp.setPen(QtGui.QPen(Chart.color.foreground))
-        qp.drawLine(self.leftMargin, self.topMargin - 5,
-                    self.leftMargin, self.topMargin+self.dim.height+5)
-        qp.drawLine(self.leftMargin-5, self.topMargin+self.dim.height,
-                    self.leftMargin+self.dim.width, self.topMargin + self.dim.height)
+        qp.drawLine(self.leftMargin,
+                    self.topMargin - 5,
+                    self.leftMargin,
+                    self.topMargin + self.dim.height + 5)
+        qp.drawLine(self.leftMargin - 5,
+                    self.topMargin + self.dim.height,
+                    self.leftMargin + self.dim.width,
+                    self.topMargin + self.dim.height)
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data11) == 0 and len(self.reference11) == 0:
@@ -92,7 +87,7 @@ class CombinedLogMagChart(FrequencyChart):
         if not self.fixedSpan:
             if len(self.data11) > 0:
                 fstart = self.data11[0].freq
-                fstop = self.data11[len(self.data11)-1].freq
+                fstop = self.data11[len(self.data11) - 1].freq
             else:
                 fstart = self.reference11[0].freq
                 fstop = self.reference11[len(self.reference11) - 1].freq
@@ -106,141 +101,10 @@ class CombinedLogMagChart(FrequencyChart):
         if self.bands.enabled:
             self.drawBands(qp, fstart, fstop)
 
-        if self.fixedValues:
-            maxValue = self.maxDisplayValue
-            minValue = self.minDisplayValue
-            self.maxValue = maxValue
-            self.minValue = minValue
-        else:
-            # Find scaling
-            minValue = 100
-            maxValue = 0
-            for d in self.data11:
-                logmag = self.logMag(d)
-                if math.isinf(logmag):
-                    continue
-                if logmag > maxValue:
-                    maxValue = logmag
-                if logmag < minValue:
-                    minValue = logmag
-            for d in self.data21:
-                logmag = self.logMag(d)
-                if math.isinf(logmag):
-                    continue
-                if logmag > maxValue:
-                    maxValue = logmag
-                if logmag < minValue:
-                    minValue = logmag
+        self.calc_scaling()
+        self.draw_grid(qp)
 
-            for d in self.reference11:
-                if d.freq < self.fstart or d.freq > self.fstop:
-                    continue
-                logmag = self.logMag(d)
-                if math.isinf(logmag):
-                    continue
-                if logmag > maxValue:
-                    maxValue = logmag
-                if logmag < minValue:
-                    minValue = logmag
-            for d in self.reference21:
-                if d.freq < self.fstart or d.freq > self.fstop:
-                    continue
-                logmag = self.logMag(d)
-                if math.isinf(logmag):
-                    continue
-                if logmag > maxValue:
-                    maxValue = logmag
-                if logmag < minValue:
-                    minValue = logmag
-
-            minValue = 10*math.floor(minValue/10)
-            self.minValue = minValue
-            maxValue = 10*math.ceil(maxValue/10)
-            self.maxValue = maxValue
-
-        span = maxValue-minValue
-        if span == 0:
-            span = 0.01
-        self.span = span
-
-        if self.span >= 50:
-            # Ticks per 10dB step
-            tick_count = math.floor(self.span/10)
-            first_tick = math.ceil(self.minValue/10) * 10
-            tick_step = 10
-            if first_tick == minValue:
-                first_tick += 10
-        elif self.span >= 20:
-            # 5 dB ticks
-            tick_count = math.floor(self.span/5)
-            first_tick = math.ceil(self.minValue/5) * 5
-            tick_step = 5
-            if first_tick == minValue:
-                first_tick += 5
-        elif self.span >= 10:
-            # 2 dB ticks
-            tick_count = math.floor(self.span/2)
-            first_tick = math.ceil(self.minValue/2) * 2
-            tick_step = 2
-            if first_tick == minValue:
-                first_tick += 2
-        elif self.span >= 5:
-            # 1dB ticks
-            tick_count = math.floor(self.span)
-            first_tick = math.ceil(minValue)
-            tick_step = 1
-            if first_tick == minValue:
-                first_tick += 1
-        elif self.span >= 2:
-            # .5 dB ticks
-            tick_count = math.floor(self.span*2)
-            first_tick = math.ceil(minValue*2) / 2
-            tick_step = .5
-            if first_tick == minValue:
-                first_tick += .5
-        else:
-            # .1 dB ticks
-            tick_count = math.floor(self.span*10)
-            first_tick = math.ceil(minValue*10) / 10
-            tick_step = .1
-            if first_tick == minValue:
-                first_tick += .1
-
-        for i in range(tick_count):
-            db = first_tick + i * tick_step
-            y = self.topMargin + round((maxValue - db)/span*self.dim.height)
-            qp.setPen(QtGui.QPen(Chart.color.foreground))
-            qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.dim.width, y)
-            if db > minValue and db != maxValue:
-                qp.setPen(QtGui.QPen(Chart.color.text))
-                if tick_step < 1:
-                    dbstr = str(round(db, 1))
-                else:
-                    dbstr = str(db)
-                qp.drawText(3, y + 4, dbstr)
-
-        qp.setPen(QtGui.QPen(Chart.color.foreground))
-        qp.drawLine(self.leftMargin - 5, self.topMargin,
-                    self.leftMargin + self.dim.width, self.topMargin)
-        qp.setPen(Chart.color.text)
-        qp.drawText(3, self.topMargin + 4, str(maxValue))
-        qp.drawText(3, self.dim.height+self.topMargin, str(minValue))
-        self.drawFrequencyTicks(qp)
-
-        qp.setPen(Chart.color.swr)
-        for vswr in self.swrMarkers:
-            if vswr <= 1:
-                continue
-            logMag = 20 * math.log10((vswr-1)/(vswr+1))
-            if self.isInverted:
-                logMag = logMag * -1
-            y = self.topMargin + round((self.maxValue - logMag) /
-                                       self.span * self.dim.height)
-            qp.drawLine(self.leftMargin, y,
-                        self.leftMargin + self.dim.width, y)
-            qp.drawText(self.leftMargin + 3, y - 1, "VSWR: " + str(vswr))
-
-        if len(self.data11) > 0:
+        if self.data11:
             c = QtGui.QColor(Chart.color.sweep)
             c.setAlpha(255)
             pen = QtGui.QPen(c)
@@ -255,7 +119,7 @@ class CombinedLogMagChart(FrequencyChart):
             qp.drawLine(self.leftMargin + self.dim.width - 20, 9,
                         self.leftMargin + self.dim.width - 15, 9)
 
-        if len(self.reference11) > 0:
+        if self.reference11:
             c = QtGui.QColor(Chart.color.reference)
             c.setAlpha(255)
             pen = QtGui.QPen(c)
@@ -277,21 +141,35 @@ class CombinedLogMagChart(FrequencyChart):
         self.drawMarkers(qp, data=self.data11)
         self.drawMarkers(qp, data=self.data21)
 
-    def getYPosition(self, d: Datapoint) -> int:
-        logMag = self.logMag(d)
-        if math.isinf(logMag):
-            return None
-        return self.topMargin + round((self.maxValue - logMag) / self.span * self.dim.height)
+    def calc_scaling(self) -> None:
+        if self.fixedValues:
+            maxValue = self.maxDisplayValue
+            minValue = self.minDisplayValue
+        else:
+            # Find scaling
+            minValue = 100
+            maxValue = -100
+            for d in self.data11 + self.data21:
+                logmag = self.logMag(d)
+                if math.isinf(logmag):
+                    continue
+                maxValue = max(maxValue, logmag)
+                minValue = min(minValue, logmag)
 
-    def valueAtPosition(self, y) -> List[float]:
-        absy = y - self.topMargin
-        val = -1 * ((absy / self.dim.height * self.span) - self.maxValue)
-        return [val]
+            for d in self.reference11 + self.reference21:
+                if d.freq < self.fstart or d.freq > self.fstop:
+                    continue
+                logmag = self.logMag(d)
+                if math.isinf(logmag):
+                    continue
+                maxValue = max(maxValue, logmag)
+                minValue = min(minValue, logmag)
 
-    def logMag(self, p: Datapoint) -> float:
-        if self.isInverted:
-            return -p.gain
-        return p.gain
+            minValue = 10 * math.floor(minValue / 10)
+            maxValue = 10 * math.ceil(maxValue / 10)
+
+        self.minValue = minValue
+        self.maxValue = maxValue
 
     def copy(self):
         new_chart: LogMagChart = super().copy()
