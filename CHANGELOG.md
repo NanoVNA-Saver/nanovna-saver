@@ -1,14 +1,15 @@
 Changelog
 =========
 
-0.5.0 pre
----------
+0.5.0
+-----
 
  - Fix crash on open in use serial device
  - Use a Defaults module for all settings -
    ignores old .ini settings
  - Refactoring and unifying Chart classes
  - No more automatic update checks (more privacy)
+ - Corrected error handling in NanaVNA\_V2 code 
 
 0.4.0
 -----
