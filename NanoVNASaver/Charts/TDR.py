@@ -109,11 +109,13 @@ class TDRChart(Chart):
 
         self.y_action_set_fixed_maximum = QtWidgets.QAction(
             f"Maximum ({self.maxImpedance})")
-        self.y_action_set_fixed_maximum.triggered.connect(self.setMaximumImpedance)
+        self.y_action_set_fixed_maximum.triggered.connect(
+            self.setMaximumImpedance)
 
         self.y_action_set_fixed_minimum = QtWidgets.QAction(
             f"Minimum ({self.minImpedance})")
-        self.y_action_set_fixed_minimum.triggered.connect(self.setMinimumImpedance)
+        self.y_action_set_fixed_minimum.triggered.connect(
+            self.setMinimumImpedance)
 
         self.y_menu.addAction(self.y_action_set_fixed_maximum)
         self.y_menu.addAction(self.y_action_set_fixed_minimum)
@@ -143,7 +145,7 @@ class TDRChart(Chart):
 
     def isPlotable(self, x, y):
         return self.leftMargin <= x <= self.width() - self.rightMargin and \
-               self.topMargin <= y <= self.height() - self.bottomMargin
+            self.topMargin <= y <= self.height() - self.bottomMargin
 
     def resetDisplayLimits(self):
         self.fixedSpan = False
@@ -256,10 +258,12 @@ class TDRChart(Chart):
             return
         a0.accept()
         width = self.width() - self.leftMargin - self.rightMargin
-        if len(self.tdrWindow.td) > 0:
+        if self.tdrWindow.td.size:
             if self.fixedSpan:
-                max_index = np.searchsorted(self.tdrWindow.distance_axis, self.maxDisplayLength * 2)
-                min_index = np.searchsorted(self.tdrWindow.distance_axis, self.minDisplayLength * 2)
+                max_index = np.searchsorted(
+                    self.tdrWindow.distance_axis, self.maxDisplayLength * 2)
+                min_index = np.searchsorted(
+                    self.tdrWindow.distance_axis, self.minDisplayLength * 2)
                 x_step = (max_index - min_index) / width
             else:
                 max_index = math.ceil(len(self.tdrWindow.distance_axis) / 2)
@@ -290,11 +294,13 @@ class TDRChart(Chart):
         ticks = math.floor((self.width() - self.leftMargin) / 100)
         self.drawTitle(qp)
 
-        if self.tdrWindow.td:
+        if self.tdrWindow.td.size:
             if self.fixedSpan:
                 max_length = max(0.1, self.maxDisplayLength)
-                max_index = np.searchsorted(self.tdrWindow.distance_axis, max_length * 2)
-                min_index = np.searchsorted(self.tdrWindow.distance_axis, self.minDisplayLength * 2)
+                max_index = np.searchsorted(
+                    self.tdrWindow.distance_axis, max_length * 2)
+                min_index = np.searchsorted(
+                    self.tdrWindow.distance_axis, self.minDisplayLength * 2)
                 if max_index == min_index:
                     if max_index < len(self.tdrWindow.distance_axis) - 1:
                         max_index += 1
@@ -343,7 +349,7 @@ class TDRChart(Chart):
                           1)) + "m")
 
             y_ticks = math.floor(height / 60)
-            y_tick_step = height/y_ticks
+            y_tick_step = height / y_ticks
 
             for i in range(y_ticks):
                 y = self.bottomMargin + int(i * y_tick_step)
@@ -353,7 +359,8 @@ class TDRChart(Chart):
                 qp.setPen(Chart.color.text)
                 qp.drawText(3, y + 3, str(round(y_val, 1)))
 
-            qp.drawText(3, self.topMargin + height + 3, str(round(min_impedance, 1)))
+            qp.drawText(3, self.topMargin + height + 3,
+                        str(round(min_impedance, 1)))
 
             pen = QtGui.QPen(Chart.color.sweep)
             pen.setWidth(self.dim.point)
@@ -363,15 +370,17 @@ class TDRChart(Chart):
                     continue
 
                 x = self.leftMargin + int((i - min_index) / x_step)
-                y = (self.topMargin + height) - int(self.tdrWindow.td[i] / y_step)
+                y = (self.topMargin + height) - \
+                    int(self.tdrWindow.td[i] / y_step)
                 if self.isPlotable(x, y):
                     pen.setColor(Chart.color.sweep)
                     qp.setPen(pen)
                     qp.drawPoint(x, y)
 
                 x = self.leftMargin + int((i - min_index) / x_step)
-                y = (self.topMargin + height) -\
-                    int((self.tdrWindow.step_response_Z[i]-min_impedance) / y_impedance_step)
+                y = (self.topMargin + height) - int(
+                    (self.tdrWindow.step_response_Z[i] - min_impedance) /
+                    y_impedance_step)
                 if self.isPlotable(x, y):
                     pen.setColor(Chart.color.sweep_secondary)
                     qp.setPen(pen)
@@ -403,7 +412,8 @@ class TDRChart(Chart):
                               2)) + "m")
 
         if self.dragbox.state and self.dragbox.pos[0] != -1:
-            dashed_pen = QtGui.QPen(Chart.color.foreground, 1, QtCore.Qt.DashLine)
+            dashed_pen = QtGui.QPen(
+                Chart.color.foreground, 1, QtCore.Qt.DashLine)
             qp.setPen(dashed_pen)
             qp.drawRect(
                 QtCore.QRect(
@@ -415,7 +425,7 @@ class TDRChart(Chart):
         qp.end()
 
     def valueAtPosition(self, y):
-        if len(self.tdrWindow.td) > 0:
+        if self.tdrWindow.td.size:
             height = self.height() - self.topMargin - self.bottomMargin
             absy = (self.height() - y) - self.bottomMargin
             if self.fixedValues:
@@ -433,27 +443,24 @@ class TDRChart(Chart):
         return 0
 
     def lengthAtPosition(self, x, limit=True):
-        if not self.tdrWindow.td:
+        if not self.tdrWindow.td.size:
             return 0
         width = self.width() - self.leftMargin - self.rightMargin
         absx = x - self.leftMargin
-        if self.fixedSpan:
-            max_length = self.maxDisplayLength
-            min_length = self.minDisplayLength
-            x_step = (max_length - min_length) / width
-        else:
-            min_length = 0
-            max_length = self.tdrWindow.distance_axis[
-                math.ceil(len(self.tdrWindow.distance_axis) / 2)] / 2
-            x_step = max_length / width
+        min_length = self.minDisplayLength if self.fixedSpan else 0
+        max_length = self.maxDisplayLength if self.fixedSpan else (
+            self.tdrWindow.distance_axis[
+                math.ceil(len(self.tdrWindow.distance_axis) / 2)
+            ] / 2)
+
+        x_step = (max_length - min_length) / width
         if limit and absx < 0:
             return min_length
-        if limit and absx > width:
-            return max_length
-        return absx * x_step + min_length
+        return max_length if limit and absx > width else absx * x_step + min_length
 
     def zoomTo(self, x1, y1, x2, y2):
-        logger.debug("Zoom to (x,y) by (x,y): (%d, %d) by (%d, %d)", x1, y1, x2, y2)
+        logger.debug(
+            "Zoom to (x,y) by (x,y): (%d, %d) by (%d, %d)", x1, y1, x2, y2)
         val1 = self.valueAtPosition(y1)
         val2 = self.valueAtPosition(y2)
 

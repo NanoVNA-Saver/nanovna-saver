@@ -128,13 +128,30 @@ class NanoVNA_V2(VNA):
     def readFrequencies(self) -> List[int]:
         return [
             int(self.sweepStartHz + i * self.sweepStepHz)
-            for i in range(self.datapoints)]
+            for i in range(self.datapoints)
+        ]
+
+    def _read_pointstoread(self, pointstoread, arr) -> None:
+        freq_index = -1
+
+        for i in range(pointstoread):
+            (fwd_real, fwd_imag, rev0_real, rev0_imag, rev1_real,
+             rev1_imag, freq_index) = unpack_from(
+                "<iiiiiihxxxxxx", arr, i * 32)
+            fwd = complex(fwd_real, fwd_imag)
+            refl = complex(rev0_real, rev0_imag)
+            thru = complex(rev1_real, rev1_imag)
+            if i == 0:
+                logger.debug("Freq index from: %i", freq_index)
+            self._sweepdata[freq_index] = (refl / fwd, thru / fwd)
+
+        logger.debug("Freq index to: %i", freq_index)
 
     def readValues(self, value) -> List[str]:
         # Actually grab the data only when requesting channel 0.
         # The hardware will return all channels which we will store.
         if value == "data 0":
-            s21hack = "S21 hack" in self.features
+            s21hack = 1 if "S21 hack" in self.features else 0
             # reset protocol to known state
             timeout = self.serial.timeout
             with self.serial.lock:
@@ -146,7 +163,7 @@ class NanoVNA_V2(VNA):
                 sleep(WRITE_SLEEP)
                 # clear sweepdata
                 self._sweepdata = [(complex(), complex())] * (
-                        self.datapoints + s21hack)
+                    self.datapoints + s21hack)
                 pointstodo = self.datapoints + s21hack
                 # we read at most 255 values at a time and the time required empirically is
                 # just over 3 seconds for 101 points or 7 seconds for 255 points
@@ -175,18 +192,7 @@ class NanoVNA_V2(VNA):
                     if nBytes != len(arr):
                         return []
 
-                    freq_index = -1
-                    for i in range(pointstoread):
-                        (fwd_real, fwd_imag, rev0_real, rev0_imag, rev1_real,
-                         rev1_imag, freq_index) = unpack_from(
-                            "<iiiiiihxxxxxx", arr, i * 32)
-                        fwd = complex(fwd_real, fwd_imag)
-                        refl = complex(rev0_real, rev0_imag)
-                        thru = complex(rev1_real, rev1_imag)
-                        if i == 0:
-                            logger.debug("Freq index from: %i", freq_index)
-                        self._sweepdata[freq_index] = (refl / fwd, thru / fwd)
-                    logger.debug("Freq index to: %i", freq_index)
+                    self._read_pointstoread(pointstoread, arr)
 
                     pointstodo = pointstodo - pointstoread
             self.serial.timeout = timeout
@@ -194,24 +200,17 @@ class NanoVNA_V2(VNA):
             if s21hack:
                 self._sweepdata = self._sweepdata[1:]
 
-            ret = [x[0] for x in self._sweepdata]
-            ret = [str(x.real) + ' ' + str(x.imag) for x in ret]
-            return ret
-
-        if value == "data 1":
-            ret = [x[1] for x in self._sweepdata]
-            ret = [str(x.real) + ' ' + str(x.imag) for x in ret]
-            return ret
-
-        return []
+        idx = 1 if value == "data 1" else 0
+        return [
+            f'{str(x[idx].real)} {str(x[idx].imag)}'
+            for x in self._sweepdata
+        ]
 
     def resetSweep(self, start: int, stop: int):
         self.setSweep(start, stop)
 
-    def readVersion(self) -> 'Version':
-        cmd = pack("<BBBB",
-                   _CMD_READ, _ADDR_FW_MAJOR,
-                   _CMD_READ, _ADDR_FW_MINOR)
+    def _read_version(self, cmd_0: int, cmd_1: int):
+        cmd = pack("<BBBB", _CMD_READ, cmd_0, _CMD_READ, cmd_1)
         with self.serial.lock:
             self.serial.write(cmd)
             sleep(WRITE_SLEEP)
@@ -219,22 +218,17 @@ class NanoVNA_V2(VNA):
         if len(resp) != 2:
             logger.error("Timeout reading version registers. Got: %s", resp)
             raise IOError("Timeout reading version registers")
-        result = Version(f"{resp[0]}.0.{resp[1]}")
+        return Version(f"{resp[0]}.0.{resp[1]}")
+
+    def readVersion(self) -> 'Version':
+        result = self._read_version(_ADDR_FW_MAJOR,
+                                    _ADDR_FW_MINOR)
         logger.debug("readVersion: %s", result)
         return result
 
     def read_board_revision(self) -> 'Version':
-        cmd = pack("<BBBB",
-                   _CMD_READ, _ADDR_DEVICE_VARIANT,
-                   _CMD_READ, _ADDR_HARDWARE_REVISION)
-        with self.serial.lock:
-            self.serial.write(cmd)
-            sleep(WRITE_SLEEP)
-            resp = self.serial.read(2)
-        if len(resp) != 2:
-            logger.error("Timeout reading version registers")
-            return None
-        result = Version(f"{resp[0]}.0.{resp[1]}")
+        result = self._read_version(_ADDR_DEVICE_VARIANT,
+                                    _ADDR_HARDWARE_REVISION)
         logger.debug("read_board_revision: %s", result)
         return result
 
