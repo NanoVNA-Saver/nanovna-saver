@@ -17,7 +17,7 @@ points, and generally display and analyze the resulting data.
 Latest Changes
 --------------
 
-### Changes in 0.5.0 pre
+### Changes in 0.5.0
 
  - Fix crash on open in use serial device
  - Use a Defaults module for all settings -
