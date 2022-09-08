@@ -24,6 +24,7 @@ Latest Changes
    ignores old .ini settings
  - Refactoring and unifying Chart classes
  - No more automatic update checks (more privacy)
+ - Corrected error handling in NanaVNA\_V2 code 
 
 ### Changes in 0.4.0
 
@@ -32,18 +33,6 @@ Latest Changes
    be use.
  - Fix linux binary build
  - Many bugfixes
-
-### Changes in v0.3.10
-
-- Default Band ranges for 5 and 9cm
-- Layout should fit on smaller screens
-- Fixed fixed axis settings
-- Show VNA type in port selector
-- Recognise tinySA (screenshot only)
-- Some more cables in TDR
-- Reference plane applied after calibration
-- Calibration fixes by DiSlord
-
 
 Introduction
 ------------
@@ -83,7 +72,7 @@ Running the application
 
 The software was written in Python on Windows, using Pycharm, and the modules
 PyQT5, numpy, scipy and pyserial.
-Main development is currently done on Linux (Mint 20.3 Cinnamon)
+Main development is currently done on Linux (Mint 21 "Vanessa" Cinnamon)
 
 ### Binary releases
 
