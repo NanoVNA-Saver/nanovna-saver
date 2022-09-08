@@ -27,12 +27,12 @@ logger = logging.getLogger(__name__)
 
 class PolarChart(SquareChart):
     def drawChart(self, qp: QtGui.QPainter):
-        center_x = int(self.width()/2)
-        center_y = int(self.height()/2)
-        width_2 = int(self.dim.width / 2)
-        height_2 = int(self.dim.height / 2)         
-        width_45 = width_2 * 0.7071
-        height_45 = height_2 * 0.7071
+        center_x = self.width() // 2
+        center_y = self.height() // 2
+        width_2 = self.dim.width // 2
+        height_2 = self.dim.height // 2
+        width_45 = round(self.dim.width * 0.35355)
+        height_45 = round(self.dim.height * 0.35355)
 
         qp.setPen(QtGui.QPen(Chart.color.text))
         qp.drawText(3, 15, self.name)
@@ -42,10 +42,10 @@ class PolarChart(SquareChart):
         qp.drawEllipse(QtCore.QPoint(center_x, center_y),
                        width_2 // 2, height_2 // 2)
 
-        qp.drawLine(center_x - width_2, center_y, center_x + width_2, center_y)
+        qp.drawLine(center_x - width_2, center_y,
+                    center_x + width_2, center_y)
         qp.drawLine(center_x, center_y - height_2,
                     center_x, center_y + height_2)
-
         qp.drawLine(center_x + width_45, center_y + height_45,
                     center_x - width_45, center_y - height_45)
         qp.drawLine(center_x + width_45, center_y - height_45,
