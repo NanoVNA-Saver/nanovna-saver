@@ -1,6 +1,20 @@
 Changelog
 =========
 
+0.5.3-pre
+-----
+
+0.5.2
+-----
+
+ - Using more integer divisions to get right type for QPainter
+   points
+
+0.5.1
+-----
+
+ - fixed crashing polar charts on python3.10  #528 (#539)
+
 0.5.0
 -----
 

@@ -17,7 +17,7 @@ points, and generally display and analyze the resulting data.
 Latest Changes
 --------------
 
-### Changes in 0.5.0
+### Changes in 0.5.2
 
  - Fix crash on open in use serial device
  - Use a Defaults module for all settings -
@@ -25,6 +25,9 @@ Latest Changes
  - Refactoring and unifying Chart classes
  - No more automatic update checks (more privacy)
  - Corrected error handling in NanaVNA\_V2 code 
+ - fixed crashing polar charts on python3.10
+ - Using more integer divisions to get right type for QPainter
+   points
 
 ### Changes in 0.4.0
 
