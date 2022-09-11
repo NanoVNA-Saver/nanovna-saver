@@ -27,59 +27,65 @@ logger = logging.getLogger(__name__)
 
 class SmithChart(SquareChart):
     def drawChart(self, qp: QtGui.QPainter) -> None:
-        centerX = int(self.width()/2)
-        centerY = int(self.height()/2)
+        center_x = self.width() // 2
+        center_y = self.height() // 2
+        width_2 = self.dim.width // 2
+        height_2 = self.dim.height // 2
         qp.setPen(QtGui.QPen(Chart.color.text))
         qp.drawText(3, 15, self.name)
         qp.setPen(QtGui.QPen(Chart.color.foreground))
-        qp.drawEllipse(QtCore.QPoint(centerX, centerY),
-                       int(self.dim.width / 2),
-                       int(self.dim.height / 2))
-        qp.drawLine(
-            centerX - int(self.dim.width / 2),
-            centerY,
-            centerX + int(self.dim.width / 2),
-            centerY)
+        qp.drawEllipse(QtCore.QPoint(center_x, center_y), width_2, height_2)
+        qp.drawLine(center_x - width_2, center_y,
+                    center_x + width_2, center_y)
 
-        qp.drawEllipse(QtCore.QPoint(centerX + int(self.dim.width/4), centerY),
-                       int(self.dim.width/4), int(self.dim.height/4))  # Re(Z) = 1
-        qp.drawEllipse(QtCore.QPoint(centerX + int(2/3*self.dim.width/2), centerY),
-                       int(self.dim.width/6), int(self.dim.height/6))  # Re(Z) = 2
-        qp.drawEllipse(QtCore.QPoint(centerX + int(3 / 4 * self.dim.width / 2), centerY),
-                       int(self.dim.width / 8), int(self.dim.height / 8))  # Re(Z) = 3
-        qp.drawEllipse(QtCore.QPoint(centerX + int(5 / 6 * self.dim.width / 2), centerY),
-                       int(self.dim.width / 12), int(self.dim.height / 12))  # Re(Z) = 5
+        qp.drawEllipse(
+            QtCore.QPoint(center_x + int(self.dim.width/4), center_y),
+            self.dim.width // 4, self.dim.height // 4)  # Re(Z) = 1
+        qp.drawEllipse(
+            QtCore.QPoint(center_x + self.dim.width // 3, center_y),
+            self.dim.width // 6, self.dim.height // 6)  # Re(Z) = 2
+        qp.drawEllipse(
+            QtCore.QPoint(center_x + 3 * self.dim.width // 8, center_y),
+            self.dim.width // 8, self.dim.height // 8)  # Re(Z) = 3
+        qp.drawEllipse(
+            QtCore.QPoint(center_x + 5 * self.dim.width // 12, center_y),
+            self.dim.width // 12, self.dim.height // 12)  # Re(Z) = 5
+        qp.drawEllipse(
+            QtCore.QPoint(center_x + self.dim.width // 6, center_y),
+            self.dim.width // 3, self.dim.height // 3)  # Re(Z) = 0.5
+        qp.drawEllipse(
+            QtCore.QPoint(center_x + self.dim.width // 12, center_y),
+            5 * self.dim.width // 12, 5 * self.dim.height // 12)  # Re(Z) = 0.2
 
-        qp.drawEllipse(QtCore.QPoint(centerX + int(1 / 3 * self.dim.width / 2), centerY),
-                       int(self.dim.width / 3), int(self.dim.height / 3))  # Re(Z) = 0.5
-        qp.drawEllipse(QtCore.QPoint(centerX + int(1 / 6 * self.dim.width / 2), centerY),
-                       int(self.dim.width / 2.4), int(self.dim.height / 2.4))  # Re(Z) = 0.2
-
-        qp.drawArc(centerX + int(3/8*self.dim.width), centerY, int(self.dim.width/4),
-                   int(self.dim.width/4), 90*16, 152*16)  # Im(Z) = -5
-        qp.drawArc(centerX + int(3/8*self.dim.width), centerY, int(self.dim.width/4),
-                   -int(self.dim.width/4), -90 * 16, -152 * 16)  # Im(Z) = 5
-        qp.drawArc(centerX + int(self.dim.width/4), centerY, int(self.dim.width/2),
-                   int(self.dim.height/2), 90*16, 127*16)  # Im(Z) = -2
-        qp.drawArc(centerX + int(self.dim.width/4), centerY, int(self.dim.width/2),
-                   -int(self.dim.height/2), -90*16, -127*16)  # Im(Z) = 2
-        qp.drawArc(centerX, centerY,
+        qp.drawArc(center_x + 3 * self.dim.width // 8, center_y,
+                   self.dim.width // 4, self.dim.width // 4,
+                   90 * 16, 152 * 16)  # Im(Z) = -5
+        qp.drawArc(center_x + 3 * self.dim.width // 8, center_y,
+                   self.dim.width // 4, -self.dim.width // 4,
+                   -90 * 16, -152 * 16)  # Im(Z) = 5
+        qp.drawArc(center_x + self.dim.width // 4, center_y,
+                   width_2, height_2,
+                   90 * 16, 127 * 16)  # Im(Z) = -2
+        qp.drawArc(center_x + self.dim.width // 4, center_y,
+                   width_2, -height_2,
+                   -90 * 16, -127 * 16)  # Im(Z) = 2
+        qp.drawArc(center_x, center_y,
                    self.dim.width, self.dim.height,
                    90*16, 90*16)  # Im(Z) = -1
-        qp.drawArc(centerX, centerY,
-                   self.dim.width, -self.dim.height,
+        qp.drawArc(center_x, center_y,
+                   self.dim.width, - self.dim.height,
                    -90 * 16, -90 * 16)  # Im(Z) = 1
-        qp.drawArc(centerX - int(self.dim.width / 2), centerY,
+        qp.drawArc(center_x - width_2, center_y,
                    self.dim.width * 2, self.dim.height * 2,
                    int(99.5*16), int(43.5*16))  # Im(Z) = -0.5
-        qp.drawArc(centerX - int(self.dim.width / 2), centerY,
+        qp.drawArc(center_x - width_2, center_y,
                    self.dim.width * 2, -self.dim.height * 2,
                    int(-99.5 * 16), int(-43.5 * 16))  # Im(Z) = 0.5
-        qp.drawArc(centerX - self.dim.width * 2, centerY,
+        qp.drawArc(center_x - self.dim.width * 2, center_y,
                    self.dim.width * 5, self.dim.height * 5,
                    int(93.85 * 16), int(18.85 * 16))  # Im(Z) = -0.2
-        qp.drawArc(centerX - self.dim.width*2, centerY,
-                   self.dim.width*5, -self.dim.height*5,
+        qp.drawArc(center_x - self.dim.width * 2, center_y,
+                   self.dim.width * 5, -self.dim.height * 5,
                    int(-93.85 * 16), int(-18.85 * 16))  # Im(Z) = 0.2
 
         self.drawTitle(qp)
@@ -89,8 +95,8 @@ class SmithChart(SquareChart):
             if swr <= 1:
                 continue
             gamma = (swr - 1)/(swr + 1)
-            r = round(gamma * self.dim.width/2)
-            qp.drawEllipse(QtCore.QPoint(centerX, centerY), r, r)
+            r = gamma * self.dim.width // 2
+            qp.drawEllipse(QtCore.QPoint(center_x, center_y), r, r)
             qp.drawText(
-                QtCore.QRect(centerX - 50, centerY - 4 + r, 100, 20),
-                QtCore.Qt.AlignCenter, str(swr))
+                QtCore.QRect(center_x - 50, center_y - 4 + r, 100, 20),
+                QtCore.Qt.AlignCenter, f"{swr}")

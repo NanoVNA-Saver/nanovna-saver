@@ -156,32 +156,23 @@ class RealImaginaryChart(FrequencyChart):
             for d in self.data:
                 imp = self.impedance(d)
                 re, im = imp.real, imp.imag
-                if math.isinf(re): # Avoid infinite scales
+                if math.isinf(re):  # Avoid infinite scales
                     continue
-                if re > max_real:
-                    max_real = re
-                if re < min_real:
-                    min_real = re
-                if im > max_imag:
-                    max_imag = im
-                if im < min_imag:
-                    min_imag = im
+                max_real = max(max_real, re)
+                min_real = min(min_real, re)
+                max_imag = max(max_imag, im)
+                min_imag = min(min_imag, im)
             for d in self.reference:  # Also check min/max for the reference sweep
                 if d.freq < self.fstart or d.freq > self.fstop:
                     continue
                 imp = self.impedance(d)
                 re, im = imp.real, imp.imag
-                if math.isinf(re): # Avoid infinite scales
+                if math.isinf(re):  # Avoid infinite scales
                     continue
-                if re > max_real:
-                    max_real = re
-                if re < min_real:
-                    min_real = re
-                if im > max_imag:
-                    max_imag = im
-                if im < min_imag:
-                    min_imag = im
-
+                max_real = max(max_real, re)
+                min_real = min(min_real, re)
+                max_imag = max(max_imag, im)
+                min_imag = min(min_imag, im)
             # Always have at least 8 numbered horizontal lines
             max_real = math.ceil(max_real)
             min_real = math.floor(min_real)
@@ -190,8 +181,8 @@ class RealImaginaryChart(FrequencyChart):
 
             if max_imag - min_imag < 8:
                 missing = 8 - (max_imag - min_imag)
-                max_imag += math.ceil(missing/2)
-                min_imag -= math.floor(missing/2)
+                max_imag += math.ceil(missing / 2)
+                min_imag -= math.floor(missing / 2)
 
             if 0 > max_imag > -2:
                 max_imag = 0
@@ -217,31 +208,29 @@ class RealImaginaryChart(FrequencyChart):
         self.max_real = max_real
         self.max_imag = max_imag
 
-        span_real = max_real - min_real
-        if span_real == 0:
-            span_real = 0.01
-        self.span_real = span_real
-
-        span_imag = max_imag - min_imag
-        if span_imag == 0:
-            span_imag = 0.01
-        self.span_imag = span_imag
+        self.span_real = (max_real - min_real) or 0.01
+        self.span_imag = (max_imag - min_imag) or 0.01
 
         # We want one horizontal tick per 50 pixels, at most
-        horizontal_ticks = math.floor(self.dim.height/50)
+        horizontal_ticks = self.dim.height // 50
 
         fmt = Format(max_nr_digits=3)
         for i in range(horizontal_ticks):
-            y = self.topMargin + round(i * self.dim.height / horizontal_ticks)
+            y = self.topMargin + i * self.dim.height // horizontal_ticks
             qp.setPen(QtGui.QPen(Chart.color.foreground))
-            qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.dim.width + 5, y)
+            qp.drawLine(self.leftMargin - 5, y,
+                        self.leftMargin + self.dim.width + 5, y)
             qp.setPen(QtGui.QPen(Chart.color.text))
-            re = max_real - i * span_real / horizontal_ticks
-            im = max_imag - i * span_imag / horizontal_ticks
-            qp.drawText(3, y + 4, str(Value(re, fmt=fmt)))
-            qp.drawText(self.leftMargin + self.dim.width + 8, y + 4, str(Value(im, fmt=fmt)))
+            re = max_real - i * self.span_real / horizontal_ticks
+            im = max_imag - i * self.span_imag / horizontal_ticks
+            qp.drawText(3, y + 4, f"{Value(re, fmt=fmt)}")
+            qp.drawText(
+                self.leftMargin + self.dim.width + 8,
+                y + 4,
+                f"{Value(im, fmt=fmt)}")
 
-        qp.drawText(3, self.dim.height + self.topMargin, str(Value(min_real, fmt=fmt)))
+        qp.drawText(3, self.dim.height + self.topMargin,
+                    str(Value(min_real, fmt=fmt)))
         qp.drawText(self.leftMargin + self.dim.width + 8,
                     self.dim.height + self.topMargin,
                     str(Value(min_imag, fmt=fmt)))
@@ -379,18 +368,20 @@ class RealImaginaryChart(FrequencyChart):
 
     def getImYPosition(self, d: Datapoint) -> int:
         im = self.impedance(d).imag
-        return self.topMargin + round((self.max_imag - im) / self.span_imag * self.dim.height)
+        return (self.topMargin + int(self.max_imag - im) // self.span_imag
+                * self.dim.height)
 
     def getReYPosition(self, d: Datapoint) -> int:
         re = self.impedance(d).real
-        if math.isfinite(re):
-            return self.topMargin + round((self.max_real - re) / self.span_real * self.dim.height)
-        return self.topMargin
+        return (self.topMargin + int(self.max_real - re) // self.span_real
+                * self.dim.height if math.isfinite(re) else self.topMargin)
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
-        valRe = -1 * ((absy / self.dim.height * self.span_real) - self.max_real)
-        valIm = -1 * ((absy / self.dim.height * self.span_imag) - self.max_imag)
+        valRe = -1 * ((absy / self.dim.height *
+                       self.span_real) - self.max_real)
+        valIm = -1 * ((absy / self.dim.height *
+                       self.span_imag) - self.max_imag)
         return [valRe, valIm]
 
     def zoomTo(self, x1, y1, x2, y2):
