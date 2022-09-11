@@ -36,7 +36,6 @@ logger = logging.getLogger(__name__)
 
 class FrequencyChart(Chart):
 
-
     def __init__(self, name):
         super().__init__(name)
         self.maxFrequency = 100000000
@@ -335,7 +334,7 @@ class FrequencyChart(Chart):
             return (
                 self.topMargin +
                 round((self.maxValue - self.value_function(d) /
-                    self.span * self.dim.height)))
+                       self.span * self.dim.height)))
         except ValueError:
             return self.topMargin
 
@@ -455,13 +454,13 @@ class FrequencyChart(Chart):
 
     def _check_frequency_boundaries(self, qp: QtGui.QPainter):
         if (self.data and self._data_oob(self.data) and
-            (not self.reference or self._data_oob(self.reference))):
+                (not self.reference or self._data_oob(self.reference))):
             # Data outside frequency range
             qp.setBackgroundMode(QtCore.Qt.OpaqueMode)
             qp.setBackground(Chart.color.background)
             qp.setPen(Chart.color.text)
-            qp.drawText(self.leftMargin + self.dim.width / 2 - 70,
-                        self.topMargin + self.dim.height / 2 - 20,
+            qp.drawText(self.leftMargin + self.dim.width // 2 - 70,
+                        self.topMargin + self.dim.height // 2 - 20,
                         "Data outside frequency span")
 
     def drawDragbog(self, qp: QtGui.QPainter):

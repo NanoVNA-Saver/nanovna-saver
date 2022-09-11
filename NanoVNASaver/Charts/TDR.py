@@ -291,7 +291,7 @@ class TDRChart(Chart):
                     self.leftMargin,
                     self.height() - self.bottomMargin + 5)
         # Number of ticks does not include the origin
-        ticks = math.floor((self.width() - self.leftMargin) / 100)
+        ticks = (self.width() - self.leftMargin) // 100
         self.drawTitle(qp)
 
         if self.tdrWindow.td.size:
