@@ -46,15 +46,15 @@ class PermeabilityChart(FrequencyChart):
         self.minDisplayValue = -100
 
     def logarithmicYAllowed(self) -> bool:
-        return True;
+        return True
 
     def copy(self):
-        new_chart: PermeabilityChart = super().copy()
-        return new_chart
+        return super().copy()
 
     def drawChart(self, qp: QtGui.QPainter):
         qp.setPen(QtGui.QPen(Chart.color.text))
-        qp.drawText(self.leftMargin + 5, 15, self.name + " (\N{MICRO SIGN}\N{OHM SIGN} / Hz)")
+        qp.drawText(self.leftMargin + 5, 15, self.name +
+                    " (\N{MICRO SIGN}\N{OHM SIGN} / Hz)")
         qp.drawText(10, 15, "R")
         qp.drawText(self.leftMargin + self.dim.width + 10, 15, "X")
         qp.setPen(QtGui.QPen(Chart.color.foreground))
@@ -281,11 +281,11 @@ class PermeabilityChart(FrequencyChart):
                 span = math.log(self.max) - math.log(min_val)
             else:
                 return -1
-            return self.topMargin + round(
-                (math.log(self.max) - math.log(im)) /
+            return int(
+                self.topMargin + (math.log(self.max) - math.log(im)) /
                 span * self.dim.height)
-        return self.topMargin + round(
-            (self.max - im) / self.span * self.dim.height)
+        return int(self.topMargin + (self.max - im) /
+                   self.span * self.dim.height)
 
     def getReYPosition(self, d: Datapoint) -> int:
         re = d.impedance().real
@@ -296,11 +296,11 @@ class PermeabilityChart(FrequencyChart):
                 span = math.log(self.max) - math.log(min_val)
             else:
                 return -1
-            return self.topMargin + round(
-                (math.log(self.max) - math.log(re)) /
+            return int(
+                self.topMargin + (math.log(self.max) - math.log(re)) /
                 span * self.dim.height)
-        return self.topMargin + round(
-            (self.max - re) / self.span * self.dim.height)
+        return int(
+            self.topMargin + (self.max - re) / self.span * self.dim.height)
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin

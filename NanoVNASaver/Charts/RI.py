@@ -368,13 +368,13 @@ class RealImaginaryChart(FrequencyChart):
 
     def getImYPosition(self, d: Datapoint) -> int:
         im = self.impedance(d).imag
-        return (self.topMargin + int(self.max_imag - im) // self.span_imag
-                * self.dim.height)
+        return int(self.topMargin + (self.max_imag - im) / self.span_imag
+                   * self.dim.height)
 
     def getReYPosition(self, d: Datapoint) -> int:
         re = self.impedance(d).real
-        return (self.topMargin + int(self.max_real - re) // self.span_real
-                * self.dim.height if math.isfinite(re) else self.topMargin)
+        return int(self.topMargin + (self.max_real - re) / self.span_real
+                   * self.dim.height if math.isfinite(re) else self.topMargin)
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin

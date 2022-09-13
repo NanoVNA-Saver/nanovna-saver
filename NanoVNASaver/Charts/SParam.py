@@ -107,13 +107,19 @@ class SParameterChart(FrequencyChart):
         self.drawMarkers(qp, y_function=self.getImYPosition)
 
     def getYPosition(self, d: Datapoint) -> int:
-        return self.topMargin + (self.maxValue - d.re) // self.span * self.dim.height
+        return int(
+            self.topMargin + (self.maxValue - d.re) / self.span *
+            self.dim.height)
 
     def getReYPosition(self, d: Datapoint) -> int:
-        return self.topMargin + (self.maxValue - d.re) // self.span * self.dim.height
+        return int(
+            self.topMargin + (self.maxValue - d.re) / self.span *
+            self.dim.height)
 
     def getImYPosition(self, d: Datapoint) -> int:
-        return self.topMargin + (self.maxValue - d.im) // self.span * self.dim.height
+        return int(
+            self.topMargin + (self.maxValue - d.im) / self.span *
+            self.dim.height)
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
