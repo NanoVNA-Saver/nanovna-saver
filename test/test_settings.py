@@ -61,8 +61,8 @@ class TestCases(unittest.TestCase):
             self.settings_1.store_dataclass("SectionX", illegal_config)
 
     def test_restore_dataclass(self):
-        tc_1 = self.settings_1.restore_dataclass("Section1", TConfig())
-        tc_2 = self.settings_1.restore_dataclass("Section2", TConfig())
+        tc_1 = self.settings_1.restore_dataclass("Section1", self.config_1)
+        tc_2 = self.settings_1.restore_dataclass("Section2", self.config_2)
         self.assertNotEqual(tc_1, tc_2)
         self.assertEqual(tc_1, self.config_1)
         self.assertEqual(tc_2, self.config_2)
