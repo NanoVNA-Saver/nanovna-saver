@@ -18,8 +18,8 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from __future__ import annotations
 import math
-import decimal
-from typing import NamedTuple, Union
+from decimal import Context, Decimal, InvalidOperation
+from typing import NamedTuple
 from numbers import Number, Real
 
 PREFIXES = ("y", "z", "a", "f", "p", "n", "µ", "m",
@@ -28,11 +28,7 @@ PREFIXES = ("y", "z", "a", "f", "p", "n", "µ", "m",
 
 def clamp_value(value: Real, rmin: Real, rmax: Real) -> Real:
     assert rmin <= rmax
-    if value < rmin:
-        return rmin
-    if value > rmax:
-        return rmax
-    return value
+    return rmin if value < rmin else min(value, rmax)
 
 
 def round_ceil(value: Real, digits: int = 0) -> Real:
@@ -65,12 +61,9 @@ class Format(NamedTuple):
 
 
 class Value:
-    CTX = decimal.Context(prec=60, Emin=-27, Emax=27)
+    CTX = Context(prec=60, Emin=-27, Emax=27)
 
-    def __init__(self,
-                 value: Union[Number, str] = 0,
-                 unit: str = "",
-                 fmt=Format()):
+    def __init__(self, value: Real, unit: str = "", fmt=Format()):
         assert 1 <= fmt.max_nr_digits <= 30
         assert -8 <= fmt.min_offset <= fmt.max_offset <= 8
         assert fmt.parse_clamp_min < fmt.parse_clamp_max
@@ -78,10 +71,10 @@ class Value:
         self._unit = unit
         self.fmt = fmt
         if isinstance(value, str):
-            self._value = math.nan
+            self._value = Decimal(math.nan)
             self.parse(value)
         else:
-            self._value = decimal.Decimal(value, context=Value.CTX)
+            self._value = Decimal(value, context=Value.CTX)
 
     def __repr__(self) -> str:
         return (f"{self.__class__.__name__}("
@@ -89,18 +82,18 @@ class Value:
 
     def __str__(self) -> str:
         fmt = self.fmt
-        if fmt.assume_infinity and abs(self._value) >= 10 ** ((fmt.max_offset + 1) * 3):
-            return ("-" if self._value < 0 else "") + "\N{INFINITY}" + fmt.space_str + self._unit
+        if (fmt.assume_infinity and
+                abs(self._value) >= 10 ** ((fmt.max_offset + 1) * 3)):
+            return (("-" if self._value < 0 else "") +
+                    "\N{INFINITY}" + fmt.space_str + self._unit)
         if self._value < fmt.printable_min:
             return fmt.unprintable_under + self._unit
         if self._value > fmt.printable_max:
             return fmt.unprintable_over + self._unit
 
-        if self._value == 0:
-            offset = 0
-        else:
-            offset = clamp_value(
-                int(math.log10(abs(self._value)) // 3), fmt.min_offset, fmt.max_offset)
+        offset = clamp_value(
+            int(math.log10(abs(self._value)) // 3),
+            fmt.min_offset, fmt.max_offset) if self._value else 0
 
         real = float(self._value) / (10 ** (offset * 3))
 
@@ -108,8 +101,8 @@ class Value:
             formstr = ".0f"
         else:
             max_digits = fmt.max_nr_digits + (
-                    (1 if not fmt.fix_decimals and abs(real) < 10 else 0) +
-                    (1 if not fmt.fix_decimals and abs(real) < 100 else 0))
+                (1 if not fmt.fix_decimals and abs(real) < 10 else 0) +
+                (1 if not fmt.fix_decimals and abs(real) < 100 else 0))
             formstr = f".{max_digits - 3}f"
 
         if self.fmt.allways_signed:
@@ -136,7 +129,7 @@ class Value:
 
     @value.setter
     def value(self, value: Number):
-        self._value = decimal.Decimal(value, context=Value.CTX)
+        self._value = Decimal(value, context=Value.CTX)
 
     def parse(self, value: str) -> "Value":
         if isinstance(value, Number):
@@ -166,12 +159,13 @@ class Value:
             self._value = -math.inf
         else:
             try:
-                self._value = (decimal.Decimal(value, context=Value.CTX)
-                               * decimal.Decimal(factor, context=Value.CTX))
-            except decimal.InvalidOperation as exc:
+                self._value = (Decimal(value, context=Value.CTX)
+                               * Decimal(factor, context=Value.CTX))
+            except InvalidOperation as exc:
                 raise ValueError() from exc
-            self._value = clamp_value(
-                self._value, self.fmt.parse_clamp_min, self.fmt.parse_clamp_max)
+            self._value = clamp_value(self._value,
+                                      self.fmt.parse_clamp_min,
+                                      self.fmt.parse_clamp_max)
         return self
 
     @property
