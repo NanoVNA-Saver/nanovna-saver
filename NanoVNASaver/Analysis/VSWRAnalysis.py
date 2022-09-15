@@ -18,6 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import os
 import csv
+import itertools
 import logging
 
 import numpy as np
@@ -107,18 +108,22 @@ class VSWRAnalysis(Analysis):
                 start, lowest, end = m
                 if start != end:
                     logger.debug(
-                        "Section from %d to %d, lowest at %d", start, end, lowest)
+                        "Section from %d to %d, lowest at %d",
+                        start, end, lowest)
                     self.layout.addRow("Start", QtWidgets.QLabel(
                         format_frequency(self.app.data.s11[start].freq)))
 
                     self.layout.addRow("Minimum", QtWidgets.QLabel(
-                        f"{format_frequency(self.app.data.s11[lowest].freq)} ({round(data[lowest], 2)})"))
+                        f"{format_frequency(self.app.data.s11[lowest].freq)}"
+                        f" ({round(data[lowest], 2)})"))
 
                     self.layout.addRow("End", QtWidgets.QLabel(
                         format_frequency(self.app.data.s11[end].freq)))
 
-                    self.layout.addRow("Span", QtWidgets.QLabel(format_frequency(
-                        (self.app.data.s11[end].freq - self.app.data.s11[start].freq))))
+                    self.layout.addRow(
+                        "Span", QtWidgets.QLabel(format_frequency(
+                            (self.app.data.s11[end].freq -
+                             self.app.data.s11[start].freq))))
 
                 else:
                     self.layout.addRow("Low spot", QtWidgets.QLabel(
@@ -204,25 +209,26 @@ class ResonanceAnalysis(Analysis):
             self.layout.removeRow(self.layout.rowCount() - 1)
 
         #         if len(crossing) > max_dips_shown:
-        #             self.layout.addRow(QtWidgets.QLabel("<b>More than " + str(max_dips_shown) +
-        #                                                 " dips found. Lowest shown.</b>"))
+        #             self.layout.addRow(QtWidgets.QLabel(
+        #                "<b>More than " + str(max_dips_shown) +
+        #                " dips found. Lowest shown.</b>"))
         #         self.crossing = crossing[:max_dips_shown]
-        if len(crossing) > 0:
+        if crossing:
             extended_data = []
             for m in crossing:
                 start, lowest, end = m
                 my_data = self._get_data(lowest)
-
+                s11_low = self.app.data.s11[lowest]
                 extended_data.append(my_data)
                 if start != end:
                     logger.debug(
-                        "Section from %d to %d, lowest at %d", start, end, lowest)
-
+                        "Section from %d to %d, lowest at %d",
+                        start, end, lowest)
                     self.layout.addRow(
                         "Resonance",
                         QtWidgets.QLabel(
-                            f"{format_frequency(self.app.data.s11[lowest].freq)}"
-                            f" ({format_complex_imp(self.app.data.s11[lowest].impedance())})"))
+                            f"{format_frequency(s11_low.freq)}"
+                            f" ({format_complex_imp(s11_low.impedance())})"))
                 else:
                     self.layout.addRow("Resonance", QtWidgets.QLabel(
                         format_frequency(self.app.data.s11[lowest].freq)))
@@ -230,7 +236,6 @@ class ResonanceAnalysis(Analysis):
             # Remove the final separator line
             self.layout.removeRow(self.layout.rowCount() - 1)
             if filename and extended_data:
-
                 with open(filename, 'w', newline='') as csvfile:
                     fieldnames = extended_data[0].keys()
                     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -271,13 +276,12 @@ class EFHWAnalysis(ResonanceAnalysis):
         extended_data = {}
         both = []
         tolerance = 2
-        for i in maximums:
-            for low, _, high in crossing:
-                if low - tolerance <= i <= high + tolerance:
-                    both.append(i)
-                    continue
-                if low > i:
-                    continue
+        for i, (low, _, high) in itertools.product(maximums, crossing):
+            if low - tolerance <= i <= high + tolerance:
+                both.append(i)
+                continue
+            if low > i:
+                continue
         if both:
             logger.info("%i crossing HW", len(both))
             logger.info(crossing)
@@ -321,8 +325,13 @@ class EFHWAnalysis(ResonanceAnalysis):
             diff = self.compare({}, extended_data, fields=fields)
         self.old_data.append(extended_data)
         for i, index in enumerate(sorted(extended_data.keys())):
-            self.layout.addRow(f"{format_frequency_short(self.app.data.s11[index].freq)}", QtWidgets.QLabel(
-                f" ({diff[i]['freq']}) {format_complex_imp(self.app.data.s11[index].impedance())} ({diff[i]['r']}) {diff[i]['lambda']} m"))
+            s11_idx = self.app.data.s11[index]
+            self.layout.addRow(
+                f"{format_frequency_short(s11_idx.freq)}",
+                QtWidgets.QLabel(
+                    f" ({diff[i]['freq']})"
+                    f" {format_complex_imp(s11_idx.impedance())}"
+                    f" ({diff[i]['r']}) {diff[i]['lambda']} m"))
 
         if filename and extended_data:
             with open(filename, 'w', newline='') as csvfile:
@@ -389,7 +398,9 @@ class EFHWAnalysis(ResonanceAnalysis):
 
                     logger.debug("possible missing band, ")
                     if len(old_idx) > (i + split + 1):
-                        if abs(new[k]["freq"] - old[old_idx[i + split + 1]]["freq"]) < max_delta_f:
+                        if (abs(new[k]["freq"] -
+                                old[old_idx[i + split + 1]]["freq"]) <
+                                max_delta_f):
                             logger.debug("new is missing band, compare next ")
                             split += 1
                         # FIXME: manage 2 or more band missing ?!?

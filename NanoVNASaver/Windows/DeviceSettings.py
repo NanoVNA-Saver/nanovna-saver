@@ -63,8 +63,10 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         settings_box = QtWidgets.QGroupBox("Settings")
         settings_layout = QtWidgets.QFormLayout(settings_box)
 
-        self.chkValidateInputData = QtWidgets.QCheckBox("Validate received data")
-        validate_input = self.app.settings.value("SerialInputValidation", False, bool)
+        self.chkValidateInputData = QtWidgets.QCheckBox(
+            "Validate received data")
+        validate_input = self.app.settings.value(
+            "SerialInputValidation", False, bool)
         self.chkValidateInputData.setChecked(validate_input)
         self.chkValidateInputData.stateChanged.connect(self.updateValidation)
         settings_layout.addRow("Validation", self.chkValidateInputData)

@@ -37,7 +37,8 @@ class HighPassAnalysis(Analysis):
         self._widget.setLayout(layout)
         layout.addRow(QtWidgets.QLabel("High pass filter analysis"))
         layout.addRow(QtWidgets.QLabel(
-            f"Please place {self.app.markers[0].name} in the filter passband."))
+            f"Please place {self.app.markers[0].name}"
+            f" in the filter passband."))
         self.result_label = QtWidgets.QLabel()
         self.cutoff_label = QtWidgets.QLabel()
         self.six_db_label = QtWidgets.QLabel()
@@ -91,21 +92,27 @@ class HighPassAnalysis(Analysis):
             self.result_label.setText("Cutoff location not found.")
             return
 
-        initial_cutoff_frequency = self.app.data.s21[initial_cutoff_location].freq
+        initial_cutoff_frequency = (
+            self.app.data.s21[initial_cutoff_location].freq)
 
-        logger.debug("Found initial cutoff frequency at %d", initial_cutoff_frequency)
+        logger.debug("Found initial cutoff frequency at %d",
+                     initial_cutoff_frequency)
 
         peak_location = -1
         peak_db = self.app.data.s21[initial_cutoff_location].gain
-        for i in range(len(self.app.data.s21) - 1, initial_cutoff_location - 1, -1):
+        for i in range(len(self.app.data.s21) - 1,
+                       initial_cutoff_location - 1, -1):
             if self.app.data.s21[i].gain > peak_db:
                 peak_db = db
                 peak_location = i
 
-        logger.debug("Found peak of %f at %d", peak_db, self.app.data.s11[peak_location].freq)
+        logger.debug("Found peak of %f at %d", peak_db,
+                     self.app.data.s11[peak_location].freq)
 
-        self.app.markers[0].setFrequency(str(self.app.data.s21[peak_location].freq))
-        self.app.markers[0].frequencyInput.setText(str(self.app.data.s21[peak_location].freq))
+        self.app.markers[0].setFrequency(
+            str(self.app.data.s21[peak_location].freq))
+        self.app.markers[0].frequencyInput.setText(
+            str(self.app.data.s21[peak_location].freq))
 
         cutoff_location = -1
         pass_band_db = peak_db
@@ -166,25 +173,32 @@ class HighPassAnalysis(Analysis):
 
         if sixty_db_location > 0:
             if sixty_db_location > 0:
-                sixty_db_cutoff_frequency = self.app.data.s21[sixty_db_location].freq
+                sixty_db_cutoff_frequency = (
+                    self.app.data.s21[sixty_db_location].freq)
                 self.sixty_db_label.setText(
                     format_frequency(sixty_db_cutoff_frequency))
             elif ten_db_location != -1 and twenty_db_location != -1:
                 ten = self.app.data.s21[ten_db_location].freq
                 twenty = self.app.data.s21[twenty_db_location].freq
-                sixty_db_frequency = ten * 10 ** (5 * (math.log10(twenty) - math.log10(ten)))
+                sixty_db_frequency = ten * \
+                    10 ** (5 * (math.log10(twenty) - math.log10(ten)))
                 self.sixty_db_label.setText(
                     f"{format_frequency(sixty_db_frequency)} (derived)")
             else:
                 self.sixty_db_label.setText("Not calculated")
 
-        if ten_db_location > 0 and twenty_db_location > 0 and ten_db_location != twenty_db_location:
+        if (ten_db_location > 0 and
+            twenty_db_location > 0 and
+                ten_db_location != twenty_db_location):
             octave_attenuation, decade_attenuation = self.calculateRolloff(
                 ten_db_location, twenty_db_location)
-            self.db_per_octave_label.setText(str(round(octave_attenuation, 3)) + " dB / octave")
-            self.db_per_decade_label.setText(str(round(decade_attenuation, 3)) + " dB / decade")
+            self.db_per_octave_label.setText(
+                str(round(octave_attenuation, 3)) + " dB / octave")
+            self.db_per_decade_label.setText(
+                str(round(decade_attenuation, 3)) + " dB / decade")
         else:
             self.db_per_octave_label.setText("Not calculated")
             self.db_per_decade_label.setText("Not calculated")
 
-        self.result_label.setText(f"Analysis complete ({len(self.app.data.s11)}) points)")
+        self.result_label.setText(
+            f"Analysis complete ({len(self.app.data.s11)}) points)")

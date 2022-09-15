@@ -164,7 +164,8 @@ class TDRWindow(QtWidgets.QWidget):
         time_axis = np.linspace(0, 1 / step_size, FFT_POINTS)
         self.distance_axis = time_axis * v * c
         # peak = np.max(td)
-        #  We should check that this is an actual *peak*, and not just a vague maximum
+        # We should check that this is an actual *peak*, and not just
+        # a vague maximum
         index_peak = np.argmax(self.td)
 
         cable_len = round(self.distance_axis[index_peak] / 2, 3)

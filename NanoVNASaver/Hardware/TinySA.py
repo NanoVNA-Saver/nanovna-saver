@@ -113,5 +113,6 @@ class TinySA(VNA):
     def readValues(self, value) -> List[str]:
         logger.debug("Read: %s", value)
         if value == "data 0":
-            self._sweepdata = [f"0 {line.strip()}" for line in self.exec_command("data")]
+            self._sweepdata = [f"0 {line.strip()}"
+                               for line in self.exec_command("data")]
         return self._sweepdata

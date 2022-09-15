@@ -120,7 +120,8 @@ class SimplePeakSearchAnalysis(Analysis):
             format_frequency(self.app.data.s11[idx_peak].freq))
         self.peak_value.setText(str(round(data[idx_peak], 3)) + suffix)
 
-        if self.checkbox_move_marker.isChecked() and len(self.app.markers) >= 1:
-            self.app.markers[0].setFrequency(str(self.app.data.s11[idx_peak].freq))
+        if self.checkbox_move_marker.isChecked() and self.app.markers:
+            self.app.markers[0].setFrequency(
+                str(self.app.data.s11[idx_peak].freq))
             self.app.markers[0].frequencyInput.setText(
                 format_frequency(self.app.data.s11[idx_peak].freq))

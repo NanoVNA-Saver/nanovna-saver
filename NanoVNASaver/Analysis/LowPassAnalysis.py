@@ -94,9 +94,11 @@ class LowPassAnalysis(Analysis):
             self.result_label.setText("Cutoff location not found.")
             return
 
-        initial_cutoff_frequency = self.app.data.s21[initial_cutoff_location].freq
+        initial_cutoff_frequency = (
+            self.app.data.s21[initial_cutoff_location].freq)
 
-        logger.debug("Found initial cutoff frequency at %d", initial_cutoff_frequency)
+        logger.debug("Found initial cutoff frequency at %d",
+                     initial_cutoff_frequency)
 
         peak_location = -1
         peak_db = self.app.data.s21[initial_cutoff_location].gain
@@ -106,10 +108,13 @@ class LowPassAnalysis(Analysis):
                 peak_db = db
                 peak_location = i
 
-        logger.debug("Found peak of %f at %d", peak_db, self.app.data.s11[peak_location].freq)
+        logger.debug("Found peak of %f at %d", peak_db,
+                     self.app.data.s11[peak_location].freq)
 
-        self.app.markers[0].setFrequency(str(self.app.data.s21[peak_location].freq))
-        self.app.markers[0].frequencyInput.setText(str(self.app.data.s21[peak_location].freq))
+        self.app.markers[0].setFrequency(
+            str(self.app.data.s21[peak_location].freq))
+        self.app.markers[0].frequencyInput.setText(
+            str(self.app.data.s21[peak_location].freq))
 
         cutoff_location = -1
         pass_band_db = peak_db
@@ -175,7 +180,8 @@ class LowPassAnalysis(Analysis):
                 break
 
         if sixty_db_location > 0:
-            sixty_db_cutoff_frequency = self.app.data.s21[sixty_db_location].freq
+            sixty_db_cutoff_frequency = (
+                self.app.data.s21[sixty_db_location].freq)
             self.sixty_db_label.setText(
                 format_frequency(sixty_db_cutoff_frequency))
         elif ten_db_location != -1 and twenty_db_location != -1:

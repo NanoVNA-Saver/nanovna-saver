@@ -203,8 +203,10 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             "VSWRMarkers", [], float)
 
         if isinstance(self.vswrMarkers, float):
-            # Single values from the .ini become floats rather than lists. Convert them.
-            self.vswrMarkers = [] if self.vswrMarkers == 0.0 else [self.vswrMarkers]
+            # Single values from the .ini become floats rather than lists.
+            # Convert them.
+            self.vswrMarkers = ([] if self.vswrMarkers == 0.0 else
+                                [self.vswrMarkers])
 
         vswr_marker_layout.addRow(
             "VSWR Markers", self.color_picker("VSWRColor", "swr"))

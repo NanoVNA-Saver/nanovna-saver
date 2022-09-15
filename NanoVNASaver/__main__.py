@@ -46,9 +46,11 @@ def main():
     parser.add_argument("-D", "--debug-file",
                         help="File to write debug logging output to")
     parser.add_argument("-f", "--file",
-                        help="Touchstone file to load as sweep for off device usage")
+                        help="Touchstone file to load as sweep for off"
+                        " device usage")
     parser.add_argument("-r", "--ref-file",
-                        help="Touchstone file to load as reference for off device usage")
+                        help="Touchstone file to load as reference for off"
+                        " device usage")
     parser.add_argument("--version", action="version",
                         version=f"NanoVNASaver {VERSION}")
     args = parser.parse_args()

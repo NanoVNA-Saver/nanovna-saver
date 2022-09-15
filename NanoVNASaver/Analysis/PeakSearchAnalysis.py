@@ -150,7 +150,8 @@ class PeakSearchAnalysis(Analysis):
             logger.debug("Frequency %d", self.app.data.s11[peaks[i]].freq)
             logger.debug("Value %f", sign * data[peaks[i]])
             self.layout.addRow(
-                f"Freq {format_frequency_short(self.app.data.s11[peaks[i]].freq)}",
+                f"Freq"
+                f" {format_frequency_short(self.app.data.s11[peaks[i]].freq)}",
                 QtWidgets.QLabel(f" value {fn(sign * data[peaks[i]])}"
                                  ))
 

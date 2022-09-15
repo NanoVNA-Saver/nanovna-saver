@@ -76,10 +76,12 @@ class Datapoint(NamedTuple):
         return -1 if imp.real == 0.0 else abs(imp.imag / imp.real)
 
     def capacitiveEquivalent(self, ref_impedance: float = 50) -> float:
-        return impedance_to_capacitance(self.impedance(ref_impedance), self.freq)
+        return impedance_to_capacitance(
+            self.impedance(ref_impedance), self.freq)
 
     def inductiveEquivalent(self, ref_impedance: float = 50) -> float:
-        return impedance_to_inductance(self.impedance(ref_impedance), self.freq)
+        return impedance_to_inductance(
+            self.impedance(ref_impedance), self.freq)
 
 
 def gamma_to_impedance(gamma: complex, ref_impedance: float = 50) -> complex:
@@ -102,9 +104,7 @@ def impedance_to_capacitance(z: complex, freq: float) -> float:
     """Calculate capacitive equivalent for reactance"""
     if freq == 0:
         return -math.inf
-    if z.imag == 0:
-        return math.inf
-    return -(1 / (freq * 2 * math.pi * z.imag))
+    return math.inf if z.imag == 0 else -(1 / (freq * 2 * math.pi * z.imag))
 
 
 def impedance_to_inductance(z: complex, freq: float) -> float:

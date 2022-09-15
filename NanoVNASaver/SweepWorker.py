@@ -185,7 +185,6 @@ class SweepWorker(QtCore.QRunnable):
                          raw_data11: List[Datapoint],
                          raw_data21: List[Datapoint]
                          ) -> Tuple[List[Datapoint], List[Datapoint]]:
-
         data11: List[Datapoint] = []
         data21: List[Datapoint] = []
 
@@ -193,7 +192,8 @@ class SweepWorker(QtCore.QRunnable):
             data11 = raw_data11.copy()
             data21 = raw_data21.copy()
         elif self.app.calibration.isValid1Port():
-            data11.extend(self.app.calibration.correct11(dp) for dp in raw_data11)
+            data11.extend(self.app.calibration.correct11(dp)
+                          for dp in raw_data11)
         else:
             data11 = raw_data11.copy()
 
@@ -205,7 +205,8 @@ class SweepWorker(QtCore.QRunnable):
             data21 = raw_data21
 
         if self.offsetDelay != 0:
-            data11 = [correct_delay(dp, self.offsetDelay, reflect=True) for dp in data11]
+            data11 = [correct_delay(dp, self.offsetDelay, reflect=True)
+                      for dp in data11]
             data21 = [correct_delay(dp, self.offsetDelay) for dp in data21]
 
         return data11, data21
