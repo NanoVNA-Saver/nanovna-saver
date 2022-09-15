@@ -91,8 +91,8 @@ class SquareChart(Chart):
         for m in self.markers:
             if m.location != -1 and m.location < len(self.data):
                 x = self.getXPosition(self.data[m.location])
-                y = self.height() / 2 + \
-                    self.data[m.location].im * -1 * self.dim.height / 2
+                y = int(self.height() // 2 -
+                        self.data[m.location].im * self.dim.height // 2)
                 self.drawMarker(x, y, qp, m.color, self.markers.index(m) + 1)
 
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
