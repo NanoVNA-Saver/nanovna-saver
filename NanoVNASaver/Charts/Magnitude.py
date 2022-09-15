@@ -61,7 +61,8 @@ class MagnitudeChart(FrequencyChart):
                 mag = self.magnitude(d)
                 max_value = max(max_value, mag)
                 min_value = min(min_value, mag)
-            for d in self.reference:  # Also check min/max for the reference sweep
+            # Also check min/max for the reference sweep
+            for d in self.reference:
                 if d.freq < self.fstart or d.freq > self.fstop:
                     continue
                 max_value = max(max_value, mag)
@@ -114,7 +115,8 @@ class MagnitudeChart(FrequencyChart):
 
     def getYPosition(self, d: Datapoint) -> int:
         mag = self.magnitude(d)
-        return self.topMargin + round((self.maxValue - mag) / self.span * self.dim.height)
+        return self.topMargin + int(
+            (self.maxValue - mag) / self.span * self.dim.height)
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin

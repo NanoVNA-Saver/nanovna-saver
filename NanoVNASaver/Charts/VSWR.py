@@ -147,10 +147,12 @@ class VSWRChart(FrequencyChart):
             else:
                 return -1
             return (
-                self.topMargin +
-                round((math.log(self.maxVSWR) - math.log(vswr)) / span * self.dim.height))
+                self.topMargin + int(
+                    (math.log(self.maxVSWR) - math.log(vswr)) /
+                    span * self.dim.height))
         try:
-            return self.topMargin + round((self.maxVSWR - vswr) / self.span * self.dim.height)
+            return self.topMargin + int(
+                (self.maxVSWR - vswr) / self.span * self.dim.height)
         except OverflowError:
             return self.topMargin
 

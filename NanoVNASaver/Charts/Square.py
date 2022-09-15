@@ -114,8 +114,11 @@ class SquareChart(Chart):
         y = a0.y()
         absx = x - (self.width() - self.dim.width) / 2
         absy = y - (self.height() - self.dim.height) / 2
-        if absx < 0 or absx > self.dim.width or absy < 0 or absy > self.dim.height \
-                or len(self.data) == len(self.reference) == 0:
+        if (absx < 0 or
+            absx > self.dim.width or
+            absy < 0 or
+            absy > self.dim.height or
+                (not self.data and not self.reference)):
             a0.ignore()
             return
         a0.accept()

@@ -69,7 +69,8 @@ class MagnitudeZChart(FrequencyChart):
                     continue
                 self.maxValue = max(self.maxValue, mag)
                 self.minValue = min(self.minValue, mag)
-            for d in self.reference:  # Also check min/max for the reference sweep
+            # Also check min/max for the reference sweep
+            for d in self.reference:
                 if d.freq < self.fstart or d.freq > self.fstop:
                     continue
                 mag = self.magnitude(d)
@@ -114,9 +115,11 @@ class MagnitudeZChart(FrequencyChart):
         if math.isfinite(mag):
             if self.logarithmicY:
                 span = math.log(self.maxValue) - math.log(self.minValue)
-                return self.topMargin + round(
-                    (math.log(self.maxValue) - math.log(mag)) / span * self.dim.height)
-            return self.topMargin + round((self.maxValue - mag) / self.span * self.dim.height)
+                return self.topMargin + int(
+                    (math.log(self.maxValue) - math.log(mag)) /
+                    span * self.dim.height)
+            return self.topMargin + int(
+                (self.maxValue - mag) / self.span * self.dim.height)
         return self.topMargin
 
     def valueAtPosition(self, y) -> List[float]:

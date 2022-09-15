@@ -162,7 +162,8 @@ class RealImaginaryChart(FrequencyChart):
                 min_real = min(min_real, re)
                 max_imag = max(max_imag, im)
                 min_imag = min(min_imag, im)
-            for d in self.reference:  # Also check min/max for the reference sweep
+            # Also check min/max for the reference sweep
+            for d in self.reference:
                 if d.freq < self.fstart or d.freq > self.fstop:
                     continue
                 imp = self.impedance(d)
@@ -194,10 +195,12 @@ class RealImaginaryChart(FrequencyChart):
                 span = max_imag - min_imag
                 step_size = span / 8
                 if max_imag < step_size:
-                    # The 0 line is the first step after the top. Scale accordingly.
+                    # The 0 line is the first step after the top.
+                    # Scale accordingly.
                     max_imag = -min_imag / 7
                 elif -min_imag < step_size:
-                    # The 0 line is the last step before the bottom. Scale accordingly.
+                    # The 0 line is the last step before the bottom.
+                    # Scale accordingly.
                     min_imag = -max_imag / 7
                 else:
                     # Scale max_imag to be a whole factor of min_imag
@@ -275,24 +278,28 @@ class RealImaginaryChart(FrequencyChart):
                 # Real part first
                 line_pen.setColor(Chart.color.sweep)
                 qp.setPen(line_pen)
-                if self.isPlotable(x, y_re) and self.isPlotable(prev_x, prev_y_re):
-                    qp.drawLine(x, y_re, prev_x, prev_y_re)
-                elif self.isPlotable(x, y_re) and not self.isPlotable(prev_x, prev_y_re):
-                    new_x, new_y = self.getPlotable(x, y_re, prev_x, prev_y_re)
-                    qp.drawLine(x, y_re, new_x, new_y)
-                elif not self.isPlotable(x, y_re) and self.isPlotable(prev_x, prev_y_re):
+                if self.isPlotable(x, y_re):
+                    if self.isPlotable(prev_x, prev_y_re):
+                        qp.drawLine(x, y_re, prev_x, prev_y_re)
+                    else:
+                        new_x, new_y = self.getPlotable(
+                            x, y_re, prev_x, prev_y_re)
+                        qp.drawLine(x, y_re, new_x, new_y)
+                elif self.isPlotable(prev_x, prev_y_re):
                     new_x, new_y = self.getPlotable(prev_x, prev_y_re, x, y_re)
                     qp.drawLine(prev_x, prev_y_re, new_x, new_y)
 
                 # Imag part second
                 line_pen.setColor(Chart.color.sweep_secondary)
                 qp.setPen(line_pen)
-                if self.isPlotable(x, y_im) and self.isPlotable(prev_x, prev_y_im):
-                    qp.drawLine(x, y_im, prev_x, prev_y_im)
-                elif self.isPlotable(x, y_im) and not self.isPlotable(prev_x, prev_y_im):
-                    new_x, new_y = self.getPlotable(x, y_im, prev_x, prev_y_im)
-                    qp.drawLine(x, y_im, new_x, new_y)
-                elif not self.isPlotable(x, y_im) and self.isPlotable(prev_x, prev_y_im):
+                if self.isPlotable(x, y_im):
+                    if self.isPlotable(prev_x, prev_y_im):
+                        qp.drawLine(x, y_im, prev_x, prev_y_im)
+                    else:
+                        new_x, new_y = self.getPlotable(
+                            x, y_im, prev_x, prev_y_im)
+                        qp.drawLine(x, y_im, new_x, new_y)
+                elif self.isPlotable(prev_x, prev_y_im):
                     new_x, new_y = self.getPlotable(prev_x, prev_y_im, x, y_im)
                     qp.drawLine(prev_x, prev_y_im, new_x, new_y)
 
@@ -335,24 +342,28 @@ class RealImaginaryChart(FrequencyChart):
                 line_pen.setColor(Chart.color.reference)
                 qp.setPen(line_pen)
                 # Real part first
-                if self.isPlotable(x, y_re) and self.isPlotable(prev_x, prev_y_re):
-                    qp.drawLine(x, y_re, prev_x, prev_y_re)
-                elif self.isPlotable(x, y_re) and not self.isPlotable(prev_x, prev_y_re):
-                    new_x, new_y = self.getPlotable(x, y_re, prev_x, prev_y_re)
-                    qp.drawLine(x, y_re, new_x, new_y)
-                elif not self.isPlotable(x, y_re) and self.isPlotable(prev_x, prev_y_re):
+                if self.isPlotable(x, y_re):
+                    if self.isPlotable(prev_x, prev_y_re):
+                        qp.drawLine(x, y_re, prev_x, prev_y_re)
+                    else:
+                        new_x, new_y = self.getPlotable(
+                            x, y_re, prev_x, prev_y_re)
+                        qp.drawLine(x, y_re, new_x, new_y)
+                elif self.isPlotable(prev_x, prev_y_re):
                     new_x, new_y = self.getPlotable(prev_x, prev_y_re, x, y_re)
                     qp.drawLine(prev_x, prev_y_re, new_x, new_y)
 
                 line_pen.setColor(Chart.color.reference_secondary)
                 qp.setPen(line_pen)
                 # Imag part second
-                if self.isPlotable(x, y_im) and self.isPlotable(prev_x, prev_y_im):
-                    qp.drawLine(x, y_im, prev_x, prev_y_im)
-                elif self.isPlotable(x, y_im) and not self.isPlotable(prev_x, prev_y_im):
-                    new_x, new_y = self.getPlotable(x, y_im, prev_x, prev_y_im)
-                    qp.drawLine(x, y_im, new_x, new_y)
-                elif not self.isPlotable(x, y_im) and self.isPlotable(prev_x, prev_y_im):
+                if self.isPlotable(x, y_im):
+                    if self.isPlotable(prev_x, prev_y_im):
+                        qp.drawLine(x, y_im, prev_x, prev_y_im)
+                    else:
+                        new_x, new_y = self.getPlotable(
+                            x, y_im, prev_x, prev_y_im)
+                        qp.drawLine(x, y_im, new_x, new_y)
+                elif self.isPlotable(prev_x, prev_y_im):
                     new_x, new_y = self.getPlotable(prev_x, prev_y_im, x, y_im)
                     qp.drawLine(prev_x, prev_y_im, new_x, new_y)
 

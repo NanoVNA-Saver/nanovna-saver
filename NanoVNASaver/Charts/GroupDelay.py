@@ -176,12 +176,13 @@ class GroupDelayChart(FrequencyChart):
                 prevx = self.getXPosition(data[i - 1])
                 prevy = self.getYPositionFromDelay(delay[i - 1])
                 qp.setPen(line_pen)
-                if self.isPlotable(x, y) and self.isPlotable(prevx, prevy):
-                    qp.drawLine(x, y, prevx, prevy)
-                elif self.isPlotable(x, y) and not self.isPlotable(prevx, prevy):
-                    new_x, new_y = self.getPlotable(x, y, prevx, prevy)
-                    qp.drawLine(x, y, new_x, new_y)
-                elif not self.isPlotable(x, y) and self.isPlotable(prevx, prevy):
+                if self.isPlotable(x, y):
+                    if self.isPlotable(prevx, prevy):
+                        qp.drawLine(x, y, prevx, prevy)
+                    else:
+                        new_x, new_y = self.getPlotable(x, y, prevx, prevy)
+                        qp.drawLine(x, y, new_x, new_y)
+                elif self.isPlotable(prevx, prevy):
                     new_x, new_y = self.getPlotable(prevx, prevy, x, y)
                     qp.drawLine(prevx, prevy, new_x, new_y)
                 qp.setPen(pen)
@@ -197,8 +198,9 @@ class GroupDelayChart(FrequencyChart):
                 delay = 0
         return self.getYPositionFromDelay(delay)
 
-    def getYPositionFromDelay(self, delay: float):
-        return self.topMargin + round((self.maxDelay - delay) / self.span * self.dim.height)
+    def getYPositionFromDelay(self, delay: float) -> int:
+        return self.topMargin + int(
+            (self.maxDelay - delay) / self.span * self.dim.height)
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin

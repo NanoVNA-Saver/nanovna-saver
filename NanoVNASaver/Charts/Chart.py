@@ -224,7 +224,9 @@ class Chart(QtWidgets.QWidget):
         self.draggedMarker = None
         if self.dragbox.state:
             self.zoomTo(
-                self.dragbox.pos_start[0], self.dragbox.pos_start[1], a0.x(), a0.y())
+                self.dragbox.pos_start[0],
+                self.dragbox.pos_start[1],
+                a0.x(), a0.y())
             self.dragbox.state = False
             self.dragbox.pos = (-1, -1)
             self.dragbox.pos_start = (0, 0)

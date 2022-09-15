@@ -52,10 +52,14 @@ class SParameterChart(FrequencyChart):
         qp.drawText(10, 15, "Real")
         qp.drawText(self.leftMargin + self.dim.width - 15, 15, "Imag")
         qp.setPen(QtGui.QPen(Chart.color.foreground))
-        qp.drawLine(self.leftMargin, self.topMargin - 5,
-                    self.leftMargin, self.topMargin + self.dim.height + 5)
-        qp.drawLine(self.leftMargin - 5, self.topMargin + self.dim.height,
-                    self.leftMargin + self.dim.width, self.topMargin + self.dim.height)
+        qp.drawLine(self.leftMargin,
+                    self.topMargin - 5,
+                    self.leftMargin,
+                    self.topMargin + self.dim.height + 5)
+        qp.drawLine(self.leftMargin - 5,
+                    self.topMargin + self.dim.height,
+                    self.leftMargin + self.dim.width,
+                    self.topMargin + self.dim.height)
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:

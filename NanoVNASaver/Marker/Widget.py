@@ -363,6 +363,8 @@ class Marker(QtCore.QObject, Value):
             self.label['s21magseries'].setText(
                 format_magnitude(abs(_s21.seriesImpedance())))
             self.label['s21realimagshunt'].setText(
-                format_complex_imp(_s21.shuntImpedance(), allow_negative=True))
+                format_complex_imp(
+                    _s21.shuntImpedance(), allow_negative=True))
             self.label['s21realimagseries'].setText(
-                format_complex_imp(_s21.seriesImpedance(), allow_negative=True))
+                format_complex_imp(
+                    _s21.seriesImpedance(), allow_negative=True))
