@@ -370,8 +370,8 @@ class TDRChart(Chart):
                     continue
 
                 x = self.leftMargin + int((i - min_index) / x_step)
-                y = (self.topMargin + height) - \
-                    int(self.tdrWindow.td[i] / y_step)
+                y = (self.topMargin + height) - int(
+                    self.tdrWindow.td[i] / y_step)
                 if self.isPlotable(x, y):
                     pen.setColor(Chart.color.sweep)
                     qp.setPen(pen)

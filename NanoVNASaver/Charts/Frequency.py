@@ -458,8 +458,8 @@ class FrequencyChart(Chart):
             qp.setBackgroundMode(QtCore.Qt.OpaqueMode)
             qp.setBackground(Chart.color.background)
             qp.setPen(Chart.color.text)
-            qp.drawText(self.leftMargin + self.dim.width // 2 - 70,
-                        self.topMargin + self.dim.height // 2 - 20,
+            qp.drawText(self.leftMargin + int(self.dim.width // 2) - 70,
+                        self.topMargin + int(self.dim.height // 2) - 20,
                         "Data outside frequency span")
 
     def drawDragbog(self, qp: QtGui.QPainter):

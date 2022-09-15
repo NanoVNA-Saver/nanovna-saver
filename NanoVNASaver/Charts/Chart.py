@@ -75,7 +75,7 @@ class ChartMarker(QtWidgets.QWidget):
         self.qp = qp
 
     def draw(self, x: int, y: int, color: QtGui.QColor, text: str = ""):
-        offset = Defaults.cfg.chart.marker_size // 2
+        offset = int(Defaults.cfg.chart.marker_size // 2)
         if Defaults.cfg.chart.marker_at_tip:
             y -= offset
         pen = QtGui.QPen(color)
@@ -93,7 +93,8 @@ class ChartMarker(QtWidgets.QWidget):
 
         if text and Defaults.cfg.chart.marker_label:
             text_width = self.qp.fontMetrics().horizontalAdvance(text)
-            self.qp.drawText(x - text_width // 2, y - 3 - offset, text)
+            self.qp.drawText(x - int(text_width // 2),
+                             y - 3 - offset, text)
 
 
 class Chart(QtWidgets.QWidget):

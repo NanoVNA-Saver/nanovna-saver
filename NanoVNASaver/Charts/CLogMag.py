@@ -61,7 +61,8 @@ class CombinedLogMagChart(LogMagChart):
 
     def drawChart(self, qp: QtGui.QPainter):
         qp.setPen(QtGui.QPen(Chart.color.text))
-        qp.drawText(int(round(self.dim.width / 2)) - 20, 15,
+        qp.drawText(int(self.dim.width // 2) - 20,
+                    15,
                     f"{self.name} {self.name_unit}")
         qp.drawText(10, 15, "S11")
         qp.drawText(self.leftMargin + self.dim.width - 8, 15, "S21")
