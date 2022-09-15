@@ -19,7 +19,6 @@
 import os
 import csv
 import logging
-from collections import OrderedDict
 
 import numpy as np
 from PyQt5 import QtWidgets
@@ -74,39 +73,27 @@ class VSWRAnalysis(Analysis):
 
     def runAnalysis(self):
         max_dips_shown = self.max_dips_shown
-
         data = [d.vswr for d in self.app.data.s11]
-
-        # min_idx = np.argmin(data)
-        #
-        # logger.debug("Minimum at %d", min_idx)
-        # logger.debug("Value at minimum: %f", data[min_idx])
-        # logger.debug("Frequency: %d", self.app.data.s11[min_idx].freq)
-        #
-        # if self.checkbox_move_marker.isChecked():
-        #     self.app.markers[0].setFrequency(str(self.app.data.s11[min_idx].freq))
-        #     self.app.markers[0].frequencyInput.setText(str(self.app.data.s11[min_idx].freq))
-
         threshold = self.input_vswr_limit.value()
         minimums = self.find_minimums(data, threshold)
-
         logger.debug("Found %d sections under %f threshold",
                      len(minimums), threshold)
-
         results_header = self.layout.indexOf(self.results_label)
         logger.debug("Results start at %d, out of %d",
                      results_header, self.layout.rowCount())
+
         for _ in range(results_header, self.layout.rowCount()):
             self.layout.removeRow(self.layout.rowCount() - 1)
-
         if len(minimums) > max_dips_shown:
-            self.layout.addRow(QtWidgets.QLabel("<b>More than " + str(max_dips_shown) +
-                                                " dips found. Lowest shown.</b>"))
+            self.layout.addRow(
+                QtWidgets.QLabel(
+                    f"<b>More than {str(max_dips_shown)} dips found."
+                    " Lowest shown.</b>"))
+
             dips = []
             for m in minimums:
                 start, lowest, end = m
                 dips.append(data[lowest])
-
             best_dips = []
             for _ in range(max_dips_shown):
                 min_idx = np.argmin(dips)
@@ -123,27 +110,26 @@ class VSWRAnalysis(Analysis):
                         "Section from %d to %d, lowest at %d", start, end, lowest)
                     self.layout.addRow("Start", QtWidgets.QLabel(
                         format_frequency(self.app.data.s11[start].freq)))
-                    self.layout.addRow(
-                        "Minimum",
-                        QtWidgets.QLabel(
-                            f"{format_frequency(self.app.data.s11[lowest].freq)}"
-                            f" ({round(data[lowest], 2)})"))
+
+                    self.layout.addRow("Minimum", QtWidgets.QLabel(
+                        f"{format_frequency(self.app.data.s11[lowest].freq)} ({round(data[lowest], 2)})"))
+
                     self.layout.addRow("End", QtWidgets.QLabel(
                         format_frequency(self.app.data.s11[end].freq)))
-                    self.layout.addRow(
-                        "Span",
-                        QtWidgets.QLabel(
-                            format_frequency(self.app.data.s11[end].freq -
-                                             self.app.data.s11[start].freq)))
+
+                    self.layout.addRow("Span", QtWidgets.QLabel(format_frequency(
+                        (self.app.data.s11[end].freq - self.app.data.s11[start].freq))))
+
                 else:
                     self.layout.addRow("Low spot", QtWidgets.QLabel(
                         format_frequency(self.app.data.s11[lowest].freq)))
+
                 self.layout.addWidget(PeakSearchAnalysis.QHLine())
-            # Remove the final separator line
             self.layout.removeRow(self.layout.rowCount() - 1)
         else:
-            self.layout.addRow(QtWidgets.QLabel(
-                "No areas found with VSWR below " + str(round(threshold, 2)) + "."))
+            self.layout.addRow(
+                QtWidgets.QLabel(
+                    f"No areas found with VSWR below {round(threshold, 2)}."))
 
 
 class ResonanceAnalysis(Analysis):
@@ -153,9 +139,7 @@ class ResonanceAnalysis(Analysis):
     def vswr_transformed(cls, z, ratio=49) -> float:
         refl = reflection_coefficient(z / ratio)
         mag = abs(refl)
-        if mag == 1:
-            return 1
-        return (1 + mag) / (1 - mag)
+        return 1 if mag == 1 else (1 + mag) / (1 - mag)
 
     class QHLine(QtWidgets.QFrame):
         def __init__(self):
@@ -203,11 +187,10 @@ class ResonanceAnalysis(Analysis):
         self.reset()
         # self.results_label = QtWidgets.QLabel("<b>Results</b>")
         # max_dips_shown = self.max_dips_shown
-        description = self.input_description.text()
-        if description:
-            filename = os.path.join("/tmp/", "{}.csv".format(description))
-        else:
-            filename = None
+        filename = (
+            os.path.join("/tmp/", f"{self.input_description.text()}.csv")
+            if self.input_description.text()
+            else None)
 
         crossing = self._get_crossing()
 
@@ -272,42 +255,29 @@ class EFHWAnalysis(ResonanceAnalysis):
 
     def runAnalysis(self):
         self.reset()
-        # self.results_label = QtWidgets.QLabel("<b>Results</b>")
-        # max_dips_shown = self.max_dips_shown
-        description = self.input_description.text()
-        if description:
-            filename = os.path.join("/tmp/", "{}.csv".format(description))
+        if description := self.input_description.text():
+            filename = os.path.join("/tmp/", f"{description}.csv")
         else:
             filename = None
-
         crossing = self._get_crossing()
-
-        data = []
-        for d in self.app.data.s11:
-            data.append(d.impedance().real)
-
+        data = [d.impedance().real for d in self.app.data.s11]
         maximums = sorted(self.find_maximums(data, threshold=500))
-
         results_header = self.layout.indexOf(self.results_label)
         logger.debug("Results start at %d, out of %d",
                      results_header, self.layout.rowCount())
-        for i in range(results_header, self.layout.rowCount()):
+
+        for _ in range(results_header, self.layout.rowCount()):
             self.layout.removeRow(self.layout.rowCount() - 1)
-
-        extended_data = OrderedDict()
-
-        # both = np.intersect1d([i[1] for i in crossing], maximums)
+        extended_data = {}
         both = []
-
         tolerance = 2
         for i in maximums:
-            for l, _, h in crossing:
-                if l - tolerance <= i <= h + tolerance:
+            for low, _, high in crossing:
+                if low - tolerance <= i <= high + tolerance:
                     both.append(i)
                     continue
-                if l > i:
+                if low > i:
                     continue
-
         if both:
             logger.info("%i crossing HW", len(both))
             logger.info(crossing)
@@ -320,67 +290,45 @@ class EFHWAnalysis(ResonanceAnalysis):
                 else:
                     extended_data[m] = my_data
             for i in range(min(len(both), len(self.app.markers))):
-                #                 self.app.markers[i].label = {}
-                #                 for l in TYPES:
-                #                     self.app.markers[i][l.label_id] = MarkerLabel(l.name)
-                #                     self.app.markers[i].label['actualfreq'].setMinimumWidth(
-                #                         100)
-                #                     self.app.markers[i].label['returnloss'].setMinimumWidth(80)
-
                 self.app.markers[i].setFrequency(
                     str(self.app.data.s11[both[i]].freq))
                 self.app.markers[i].frequencyInput.setText(
                     str(self.app.data.s11[both[i]].freq))
+
         else:
             logger.info("TO DO: find near data")
             for _, lowest, _ in crossing:
                 my_data = self._get_data(lowest)
-
                 if lowest in extended_data:
                     extended_data[lowest].update(my_data)
                 else:
                     extended_data[lowest] = my_data
-
             logger.debug("maximumx %s of type %s", maximums, type(maximums))
             for m in maximums:
                 logger.debug("m %s of type %s", m, type(m))
-
                 my_data = self._get_data(m)
                 if m in extended_data:
                     extended_data[m].update(my_data)
                 else:
                     extended_data[m] = my_data
-
-        # saving and comparing
-
         fields = [("freq", format_frequency_short),
-                  ("r", format_resistence_neg),
-                  ("lambda", round_2),
-                  ]
+                  ("r", format_resistence_neg), ("lambda", round_2)]
+
         if self.old_data:
             diff = self.compare(
                 self.old_data[-1], extended_data, fields=fields)
         else:
             diff = self.compare({}, extended_data, fields=fields)
         self.old_data.append(extended_data)
-
         for i, index in enumerate(sorted(extended_data.keys())):
-            self.layout.addRow(
-                f"{format_frequency_short(self.app.data.s11[index].freq)}",
-                QtWidgets.QLabel(f" ({diff[i]['freq']})"
-                                 f" {format_complex_imp(self.app.data.s11[index].impedance())}"
-                                 f" ({diff[i]['r']})"
-                                 f" {diff[i]['lambda']} m"))
+            self.layout.addRow(f"{format_frequency_short(self.app.data.s11[index].freq)}", QtWidgets.QLabel(
+                f" ({diff[i]['freq']}) {format_complex_imp(self.app.data.s11[index].impedance())} ({diff[i]['r']}) {diff[i]['lambda']} m"))
 
-        # Remove the final separator line
-        # self.layout.removeRow(self.layout.rowCount() - 1)
         if filename and extended_data:
-
             with open(filename, 'w', newline='') as csvfile:
                 fieldnames = extended_data[sorted(
                     extended_data.keys())[0]].keys()
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-
                 writer.writeheader()
                 for index in sorted(extended_data.keys()):
                     row = extended_data[index]

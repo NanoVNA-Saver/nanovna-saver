@@ -120,7 +120,8 @@ class CalDataSet:
 
     def complete2port(self) -> bool:
         for val in self.data.values():
-            for name in ("short", "open", "load", "through", "thrurefl", "isolation"):
+            for name in ("short", "open", "load", "through", "thrurefl",
+                         "isolation"):
                 if val[name] is None:
                     return False
         return any(self.data)
@@ -218,9 +219,9 @@ class Calibration:
         cal["e30"] = cal["isolation"].z
         cal["e10e01"] = cal["e00"] * cal["e11"] - cal["delta_e"]
         cal["e22"] = gm7 / (
-                gm7 * cal["e11"] * gt ** 2 + cal["e10e01"] * gt ** 2)
+            gm7 * cal["e11"] * gt ** 2 + cal["e10e01"] * gt ** 2)
         cal["e10e32"] = (gm4 - gm6) * (
-                1 - cal["e11"] * cal["e22"] * gt ** 2) / gt
+            1 - cal["e11"] * cal["e22"] * gt ** 2) / gt
 
     def calc_corrections(self):
         if not self.isValid1Port():
@@ -254,8 +255,8 @@ class Calibration:
         if not self.useIdealShort:
             logger.debug("Using short calibration set values.")
             Zsp = complex(0, 2 * math.pi * freq * (
-                    self.shortL0 + self.shortL1 * freq +
-                    self.shortL2 * freq ** 2 + self.shortL3 * freq ** 3))
+                self.shortL0 + self.shortL1 * freq +
+                self.shortL2 * freq ** 2 + self.shortL3 * freq ** 3))
             # Referencing https://arxiv.org/pdf/1606.02446.pdf (18) - (21)
             g = (Zsp / 50 - 1) / (Zsp / 50 + 1) * cmath.exp(
                 complex(0, 2 * math.pi * 2 * freq * self.shortLength * -1))
@@ -266,8 +267,8 @@ class Calibration:
         if not self.useIdealOpen:
             logger.debug("Using open calibration set values.")
             Zop = complex(0, 2 * math.pi * freq * (
-                    self.openC0 + self.openC1 * freq +
-                    self.openC2 * freq ** 2 + self.openC3 * freq ** 3))
+                self.openC0 + self.openC1 * freq +
+                self.openC2 * freq ** 2 + self.openC3 * freq ** 3))
             g = ((1 - 50 * Zop) / (1 + 50 * Zop)) * cmath.exp(
                 complex(0, 2 * math.pi * 2 * freq * self.openLength * -1))
         return g
@@ -278,7 +279,8 @@ class Calibration:
             logger.debug("Using load calibration set values.")
             Zl = complex(self.loadR, 0)
             if self.loadC > 0:
-                Zl = self.loadR / complex(1, 2 * self.loadR * math.pi * freq * self.loadC)
+                Zl = self.loadR / \
+                    complex(1, 2 * self.loadR * math.pi * freq * self.loadC)
             if self.loadL > 0:
                 Zl = Zl + complex(0, 2 * math.pi * freq * self.loadL)
             g = (Zl / 50 - 1) / (Zl / 50 + 1) * cmath.exp(
@@ -340,13 +342,14 @@ class Calibration:
     def correct11(self, dp: Datapoint):
         i = self.interp
         s11 = (dp.z - i["e00"](dp.freq)) / (
-                (dp.z * i["e11"](dp.freq)) - i["delta_e"](dp.freq))
+            (dp.z * i["e11"](dp.freq)) - i["delta_e"](dp.freq))
         return Datapoint(dp.freq, s11.real, s11.imag)
 
     def correct21(self, dp: Datapoint, dp11: Datapoint):
         i = self.interp
         s21 = (dp.z - i["e30"](dp.freq)) / i["e10e32"](dp.freq)
-        s21 = s21 * (i["e10e01"](dp.freq) / (i["e11"](dp.freq) * dp11.z - i["delta_e"](dp.freq)))
+        s21 = s21 * (i["e10e01"](dp.freq) / (i["e11"](dp.freq)
+                     * dp11.z - i["delta_e"](dp.freq)))
         return Datapoint(dp.freq, s21.real, s21.imag)
 
     # TODO: implement tests
@@ -360,7 +363,8 @@ class Calibration:
                 calfile.write(f"! {note}\n")
             calfile.write(
                 "# Hz ShortR ShortI OpenR OpenI LoadR LoadI"
-                " ThroughR ThroughI ThrureflR ThrureflI IsolationR IsolationI\n")
+                " ThroughR ThroughI ThrureflR ThrureflI"
+                " IsolationR IsolationI\n")
             for freq in self.dataset.frequencies():
                 calfile.write(f"{self.dataset.get(freq)}\n")
 
@@ -382,7 +386,8 @@ class Calibration:
                 if line.startswith("#"):
                     if not parsed_header and line == (
                             "# Hz ShortR ShortI OpenR OpenI LoadR LoadI"
-                            " ThroughR ThroughI ThrureflR ThrureflI IsolationR IsolationI"):
+                            " ThroughR ThroughI ThrureflR ThrureflI"
+                            " IsolationR IsolationI"):
                         parsed_header = True
                     continue
                 if not parsed_header:

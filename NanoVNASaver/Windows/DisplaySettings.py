@@ -58,7 +58,8 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.returnloss_group.addButton(self.returnloss_is_positive)
         self.returnloss_group.addButton(self.returnloss_is_negative)
 
-        display_options_layout.addRow("Return loss is:", self.returnloss_is_negative)
+        display_options_layout.addRow(
+            "Return loss is:", self.returnloss_is_negative)
         display_options_layout.addRow("", self.returnloss_is_positive)
 
         self.returnloss_is_positive.setChecked(
@@ -70,7 +71,8 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.changeReturnLoss()
 
         self.show_lines_option = QtWidgets.QCheckBox("Show lines")
-        show_lines_label = QtWidgets.QLabel("Displays a thin line between data points")
+        show_lines_label = QtWidgets.QLabel(
+            "Displays a thin line between data points")
         self.show_lines_option.stateChanged.connect(self.changeShowLines)
         display_options_layout.addRow(self.show_lines_option, show_lines_label)
 
@@ -103,7 +105,8 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.lineThicknessInput.setSuffix(" px")
         self.lineThicknessInput.setAlignment(QtCore.Qt.AlignRight)
         self.lineThicknessInput.valueChanged.connect(self.changeLineThickness)
-        display_options_layout.addRow("Line thickness", self.lineThicknessInput)
+        display_options_layout.addRow(
+            "Line thickness", self.lineThicknessInput)
 
         self.markerSizeInput = QtWidgets.QSpinBox()
         self.markerSizeInput.setMinimumHeight(20)
@@ -117,18 +120,26 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.markerSizeInput.valueChanged.connect(self.changeMarkerSize)
         display_options_layout.addRow("Marker size", self.markerSizeInput)
 
-        self.show_marker_number_option = QtWidgets.QCheckBox("Show marker numbers")
-        show_marker_number_label = QtWidgets.QLabel("Displays the marker number next to the marker")
-        self.show_marker_number_option.stateChanged.connect(self.changeShowMarkerNumber)
-        display_options_layout.addRow(self.show_marker_number_option, show_marker_number_label)
+        self.show_marker_number_option = QtWidgets.QCheckBox(
+            "Show marker numbers")
+        show_marker_number_label = QtWidgets.QLabel(
+            "Displays the marker number next to the marker")
+        self.show_marker_number_option.stateChanged.connect(
+            self.changeShowMarkerNumber)
+        display_options_layout.addRow(
+            self.show_marker_number_option, show_marker_number_label)
 
         self.filled_marker_option = QtWidgets.QCheckBox("Filled markers")
-        filled_marker_label = QtWidgets.QLabel("Shows the marker as a filled triangle")
-        self.filled_marker_option.stateChanged.connect(self.changeFilledMarkers)
-        display_options_layout.addRow(self.filled_marker_option, filled_marker_label)
+        filled_marker_label = QtWidgets.QLabel(
+            "Shows the marker as a filled triangle")
+        self.filled_marker_option.stateChanged.connect(
+            self.changeFilledMarkers)
+        display_options_layout.addRow(
+            self.filled_marker_option, filled_marker_label)
 
         self.marker_tip_group = QtWidgets.QButtonGroup()
-        self.marker_at_center = QtWidgets.QRadioButton("At the center of the marker")
+        self.marker_at_center = QtWidgets.QRadioButton(
+            "At the center of the marker")
         self.marker_at_tip = QtWidgets.QRadioButton("At the tip of the marker")
         self.marker_tip_group.addButton(self.marker_at_center)
         self.marker_tip_group.addButton(self.marker_at_tip)
@@ -170,7 +181,8 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         self.show_bands = QtWidgets.QCheckBox("Show bands")
         self.show_bands.setChecked(self.app.bands.enabled)
-        self.show_bands.stateChanged.connect(lambda: self.setShowBands(self.show_bands.isChecked()))
+        self.show_bands.stateChanged.connect(
+            lambda: self.setShowBands(self.show_bands.isChecked()))
         bands_layout.addRow(self.show_bands)
         bands_layout.addRow(
             "Chart bands",
@@ -187,14 +199,15 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         vswr_marker_box = QtWidgets.QGroupBox("VSWR Markers")
         vswr_marker_layout = QtWidgets.QFormLayout(vswr_marker_box)
 
-        self.vswrMarkers: List[float] = self.app.settings.value("VSWRMarkers", [], float)
+        self.vswrMarkers: List[float] = self.app.settings.value(
+            "VSWRMarkers", [], float)
 
         if isinstance(self.vswrMarkers, float):
             # Single values from the .ini become floats rather than lists. Convert them.
             self.vswrMarkers = [] if self.vswrMarkers == 0.0 else [self.vswrMarkers]
 
         vswr_marker_layout.addRow(
-            "VSWR Markers",self.color_picker("VSWRColor", "swr"))
+            "VSWR Markers", self.color_picker("VSWRColor", "swr"))
 
         self.vswr_marker_dropdown = QtWidgets.QComboBox()
         self.vswr_marker_dropdown.setMinimumHeight(20)
@@ -416,9 +429,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         for c in self.app.selectable_charts:
             if c.name == chart:
                 found = c
-
-        self.app.settings.setValue("Chart" + str(x) + str(y), chart)
-
+        self.app.settings.setValue(f"Chart{x}{y}", chart)
         old_widget = self.app.charts_layout.itemAtPosition(x, y)
         if old_widget is not None:
             w = old_widget.widget()
@@ -428,7 +439,6 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             if self.app.charts_layout.indexOf(found) > -1:
                 logger.debug("%s is already shown, duplicating.", found.name)
                 found = self.app.copyChart(found)
-
             self.app.charts_layout.addWidget(found, x, y)
             if found.isHidden():
                 found.show()
@@ -471,7 +481,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             c.setPointSize(size)
 
     def changeLineThickness(self, size: int):
-        Defaults.cfg.chart.line_thickness = int(size)
+        Defaults.cfg.chart.line_thickness = size
         for c in self.app.subscribing_charts:
             c.setLineThickness(size)
 
@@ -551,7 +561,8 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         new_marker.updated.connect(self.app.markerUpdated)
         label, layout = new_marker.getRow()
-        self.app.marker_control.layout.insertRow(Marker.count() - 1, label, layout)
+        self.app.marker_control.layout.insertRow(
+            Marker.count() - 1, label, layout)
         self.btn_remove_marker.setDisabled(False)
 
         if Marker.count() >= 2:
@@ -569,7 +580,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         last_marker.updated.disconnect(self.app.markerUpdated)
         self.app.marker_data_layout.removeWidget(last_marker.get_data_layout())
-        self.app.marker_control.layout.removeRow(Marker.count()-1)
+        self.app.marker_control.layout.removeRow(Marker.count() - 1)
         self.app.marker_frame.adjustSize()
 
         last_marker.get_data_layout().hide()
@@ -579,7 +590,8 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
     def addVSWRMarker(self):
         value, selected = QtWidgets.QInputDialog.getDouble(
-            self, "Add VSWR Marker", "VSWR value to show:", min=1.001, decimals=3)
+            self, "Add VSWR Marker", "VSWR value to show:",
+            min=1.001, decimals=3)
         if selected:
             self.vswrMarkers.append(value)
             if self.vswr_marker_dropdown.itemText(0) == "None":
@@ -595,7 +607,8 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         if value_str != "None":
             value = float(value_str)
             self.vswrMarkers.remove(value)
-            self.vswr_marker_dropdown.removeItem(self.vswr_marker_dropdown.currentIndex())
+            self.vswr_marker_dropdown.removeItem(
+                self.vswr_marker_dropdown.currentIndex())
             if self.vswr_marker_dropdown.count() == 0:
                 self.vswr_marker_dropdown.addItem("None")
                 self.app.settings.remove("VSWRMarkers")
