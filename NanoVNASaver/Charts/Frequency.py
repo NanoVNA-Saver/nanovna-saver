@@ -236,8 +236,7 @@ class FrequencyChart(Chart):
         self.logarithmicY = logarithmic and self.logarithmicYAllowed()
         self.update()
 
-    @staticmethod
-    def logarithmicYAllowed() -> bool:
+    def logarithmicYAllowed(self) -> bool:
         return False
 
     def setMinimumFrequency(self):

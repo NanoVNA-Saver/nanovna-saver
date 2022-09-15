@@ -19,7 +19,7 @@
 import logging
 
 from dataclasses import dataclass, replace
-from typing import List, Set, Tuple, ClassVar, Any
+from typing import List, Set, Tuple, ClassVar, Any, Optional
 
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSignal
@@ -37,11 +37,12 @@ class ChartColors:  # pylint: disable=too-many-instance-attributes
     foreground: QtGui.QColor = QtGui.QColor(QtCore.Qt.lightGray)
     reference: QtGui.QColor = QtGui.QColor(0, 0, 255, 64)
     reference_secondary: QtGui.QColor = QtGui.QColor(0, 0, 192, 48)
-    sweep: QtGui.QColor =  QtGui.QColor(QtCore.Qt.darkYellow)
+    sweep: QtGui.QColor = QtGui.QColor(QtCore.Qt.darkYellow)
     sweep_secondary: QtGui.QColor = QtGui.QColor(QtCore.Qt.darkMagenta)
     swr: QtGui.QColor = QtGui.QColor(255, 0, 0, 128)
     text: QtGui.QColor = QtGui.QColor(QtCore.Qt.black)
     bands: QtGui.QColor = QtGui.QColor(128, 128, 128, 48)
+
 
 @dataclass
 class ChartDimensions:
@@ -52,13 +53,15 @@ class ChartDimensions:
     line: int = 1
     point: int = 2
 
+
 @dataclass
 class ChartDragBox:
-    pos: Tuple[int]  = (-1, -1)
+    pos: Tuple[int] = (-1, -1)
     pos_start: Tuple[int] = (0, 0)
     state: bool = False
     move_x: int = -1
     move_y: int = -1
+
 
 @dataclass
 class ChartFlags:
@@ -121,7 +124,8 @@ class Chart(QtWidgets.QWidget):
         self.swrMarkers: Set[float] = set()
 
         self.action_popout = QtWidgets.QAction("Popout chart")
-        self.action_popout.triggered.connect(lambda: self.popoutRequested.emit(self))
+        self.action_popout.triggered.connect(
+            lambda: self.popoutRequested.emit(self))
         self.addAction(self.action_popout)
 
         self.action_save_screenshot = QtWidgets.QAction("Save image")
@@ -176,8 +180,8 @@ class Chart(QtWidgets.QWidget):
             None,
         )
 
-    def getNearestMarker(self, x, y) -> Marker:
-        if len(self.data) == 0:
+    def getNearestMarker(self, x, y) -> Optional[Marker]:
+        if not self.data:
             return None
         shortest = 10**6
         nearest = None
@@ -218,12 +222,12 @@ class Chart(QtWidgets.QWidget):
     def mouseReleaseEvent(self, a0: QtGui.QMouseEvent):
         self.draggedMarker = None
         if self.dragbox.state:
-            self.zoomTo(self.dragbox.pos_start[0], self.dragbox.pos_start[1], a0.x(), a0.y())
+            self.zoomTo(
+                self.dragbox.pos_start[0], self.dragbox.pos_start[1], a0.x(), a0.y())
             self.dragbox.state = False
             self.dragbox.pos = (-1, -1)
             self.dragbox.pos_start = (0, 0)
             self.update()
-
 
     def wheelEvent(self, a0: QtGui.QWheelEvent) -> None:
         delta = a0.angleDelta().y()
@@ -305,7 +309,7 @@ class Chart(QtWidgets.QWidget):
     @staticmethod
     def drawMarker(x: int, y: int,
                    qp: QtGui.QPainter, color: QtGui.QColor,
-                   number: int=0):
+                   number: int = 0):
         cmarker = ChartMarker(qp)
         cmarker.draw(x, y, color, f"{number}")
 
@@ -314,7 +318,7 @@ class Chart(QtWidgets.QWidget):
         if position is None:
             qf = QtGui.QFontMetricsF(self.font())
             width = qf.boundingRect(self.sweepTitle).width()
-            position = QtCore.QPointF(self.width()/2 - width/2, 15)
+            position = QtCore.QPointF(self.width() / 2 - width / 2, 15)
         qp.drawText(position, self.sweepTitle)
 
     def update(self):

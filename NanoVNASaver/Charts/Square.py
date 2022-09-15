@@ -20,8 +20,7 @@ import logging
 import math
 from typing import List
 
-from PyQt5 import QtGui, QtCore
-from PyQt5 import QtWidgets, QtGui
+from PyQt5 import QtGui, QtCore, QtWidgets
 
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.RFTools import Datapoint
@@ -55,7 +54,7 @@ class SquareChart(Chart):
         raise NotImplementedError()
 
     def draw_data(self, qp: QtGui.QPainter, color: QtGui.QColor,
-        data: List[Datapoint], fstart: int=0, fstop: int=0):
+                  data: List[Datapoint], fstart: int = 0, fstop: int = 0):
         if not data:
             return
         fstop = fstop or data[-1].freq
@@ -66,10 +65,11 @@ class SquareChart(Chart):
 
         qp.setPen(pen)
         prev_x = self.getXPosition(data[0])
-        prev_y = int(self.height() / 2 + data[0].im * -1 * self.dim.height / 2)
+        prev_y = int(self.height() / 2 + data[0].im * -1 *
+                     self.dim.height / 2)
         for i, d in enumerate(data):
             x = self.getXPosition(d)
-            y = int(self.height()/2 + d.im * -1 * self.dim.height/2)
+            y = int(self.height() / 2 + d.im * -1 * self.dim.height / 2)
             if d.freq > fstart and d.freq < fstop:
                 qp.drawPoint(x, y)
                 if self.flag.draw_lines and i > 0:
@@ -85,19 +85,21 @@ class SquareChart(Chart):
 
         fstart = self.data[0].freq if self.data else 0
         fstop = self.data[-1].freq if self.data else 0
-        self.draw_data(qp, Chart.color.reference, self.reference, fstart, fstop)
+        self.draw_data(qp, Chart.color.reference,
+                       self.reference, fstart, fstop)
 
         for m in self.markers:
             if m.location != -1 and m.location < len(self.data):
                 x = self.getXPosition(self.data[m.location])
-                y = self.height() / 2 + self.data[m.location].im * -1 * self.dim.height / 2
-                self.drawMarker(x, y, qp, m.color, self.markers.index(m)+1)
+                y = self.height() / 2 + \
+                    self.data[m.location].im * -1 * self.dim.height / 2
+                self.drawMarker(x, y, qp, m.color, self.markers.index(m) + 1)
 
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
         if not self.flag.is_popout:
             self.setFixedWidth(a0.size().height())
-            self.dim.width = a0.size().height()-40
-            self.dim.height = a0.size().height()-40
+            self.dim.width = a0.size().height() - 40
+            self.dim.height = a0.size().height() - 40
         else:
             min_dimension = min(a0.size().height(), a0.size().width())
             self.dim.width = self.dim.height = min_dimension - 40
@@ -138,12 +140,11 @@ class SquareChart(Chart):
             m.setFrequency(str(round(target[minimum_position].freq)))
             m.frequencyInput.setText(str(round(target[minimum_position].freq)))
 
-
     def getXPosition(self, d: Datapoint) -> int:
-        return int(self.width()/2 + d.re * self.dim.width/2)
+        return int(self.width() / 2 + d.re * self.dim.width / 2)
 
     def getYPosition(self, d: Datapoint) -> int:
-        return int(self.height()/2 + d.im * -1 * self.dim.height/2)
+        return int(self.height() / 2 + d.im * -1 * self.dim.height / 2)
 
     def zoomTo(self, x1, y1, x2, y2):
         pass

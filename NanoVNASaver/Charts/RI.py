@@ -18,7 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
 import logging
-from typing import List
+from typing import List, Optional
 
 from PyQt5 import QtWidgets, QtGui
 
@@ -120,7 +120,7 @@ class RealImaginaryChart(FrequencyChart):
                     self.topMargin - 5,
                     self.leftMargin,
                     self.topMargin + self.dim.height + 5)
-        qp.drawLine(self.leftMargin-5,
+        qp.drawLine(self.leftMargin - 5,
                     self.topMargin + self.dim.height,
                     self.leftMargin + self.dim.width + 5,
                     self.topMargin + self.dim.height)
@@ -195,13 +195,13 @@ class RealImaginaryChart(FrequencyChart):
                 step_size = span / 8
                 if max_imag < step_size:
                     # The 0 line is the first step after the top. Scale accordingly.
-                    max_imag = -min_imag/7
+                    max_imag = -min_imag / 7
                 elif -min_imag < step_size:
                     # The 0 line is the last step before the bottom. Scale accordingly.
-                    min_imag = -max_imag/7
+                    min_imag = -max_imag / 7
                 else:
                     # Scale max_imag to be a whole factor of min_imag
-                    num_min = math.floor(min_imag/step_size * -1)
+                    num_min = math.floor(min_imag / step_size * -1)
                     num_max = 8 - num_min
                     max_imag = num_max * (min_imag / num_min) * -1
 
@@ -257,10 +257,10 @@ class RealImaginaryChart(FrequencyChart):
         secondary_pen.setWidth(self.dim.point)
         line_pen.setWidth(self.dim.line)
 
-        for i in range(len(self.data)):
-            x = self.getXPosition(self.data[i])
-            y_re = self.getReYPosition(self.data[i])
-            y_im = self.getImYPosition(self.data[i])
+        for i, data in enumerate(self.data):
+            x = self.getXPosition(data)
+            y_re = self.getReYPosition(data)
+            y_im = self.getImYPosition(data)
             qp.setPen(primary_pen)
             if self.isPlotable(x, y_re):
                 qp.drawPoint(x, y_re)
@@ -269,8 +269,8 @@ class RealImaginaryChart(FrequencyChart):
                 qp.drawPoint(x, y_im)
             if self.flag.draw_lines and i > 0:
                 prev_x = self.getXPosition(self.data[i - 1])
-                prev_y_re = self.getReYPosition(self.data[i-1])
-                prev_y_im = self.getImYPosition(self.data[i-1])
+                prev_y_re = self.getReYPosition(self.data[i - 1])
+                prev_y_im = self.getImYPosition(self.data[i - 1])
 
                 # Real part first
                 line_pen.setColor(Chart.color.sweep)
@@ -315,12 +315,12 @@ class RealImaginaryChart(FrequencyChart):
             qp.drawLine(self.leftMargin + self.dim.width, 14,
                         self.leftMargin + self.dim.width + 5, 14)
 
-        for i in range(len(self.reference)):
-            if self.reference[i].freq < self.fstart or self.reference[i].freq > self.fstop:
+        for i, reference in enumerate(self.reference):
+            if reference.freq < self.fstart or reference.freq > self.fstop:
                 continue
-            x = self.getXPosition(self.reference[i])
-            y_re = self.getReYPosition(self.reference[i])
-            y_im = self.getImYPosition(self.reference[i])
+            x = self.getXPosition(reference)
+            y_re = self.getReYPosition(reference)
+            y_im = self.getImYPosition(reference)
             qp.setPen(primary_pen)
             if self.isPlotable(x, y_re):
                 qp.drawPoint(x, y_re)
@@ -329,8 +329,8 @@ class RealImaginaryChart(FrequencyChart):
                 qp.drawPoint(x, y_im)
             if self.flag.draw_lines and i > 0:
                 prev_x = self.getXPosition(self.reference[i - 1])
-                prev_y_re = self.getReYPosition(self.reference[i-1])
-                prev_y_im = self.getImYPosition(self.reference[i-1])
+                prev_y_re = self.getReYPosition(self.reference[i - 1])
+                prev_y_im = self.getImYPosition(self.reference[i - 1])
 
                 line_pen.setColor(Chart.color.reference)
                 qp.setPen(line_pen)
@@ -363,8 +363,10 @@ class RealImaginaryChart(FrequencyChart):
                 y_re = self.getReYPosition(self.data[m.location])
                 y_im = self.getImYPosition(self.data[m.location])
 
-                self.drawMarker(x, y_re, qp, m.color, self.markers.index(m)+1)
-                self.drawMarker(x, y_im, qp, m.color, self.markers.index(m)+1)
+                self.drawMarker(x, y_re, qp, m.color,
+                                self.markers.index(m) + 1)
+                self.drawMarker(x, y_im, qp, m.color,
+                                self.markers.index(m) + 1)
 
     def getImYPosition(self, d: Datapoint) -> int:
         im = self.impedance(d).imag
@@ -405,17 +407,17 @@ class RealImaginaryChart(FrequencyChart):
 
         self.update()
 
-    def getNearestMarker(self, x, y) -> Marker:
-        if len(self.data) == 0:
+    def getNearestMarker(self, x, y) -> Optional[Marker]:
+        if not self.data:
             return None
-        shortest = 10**6
+        shortest = 10e6
         nearest = None
         for m in self.markers:
             mx, _ = self.getPosition(self.data[m.location])
             myr = self.getReYPosition(self.data[m.location])
             myi = self.getImYPosition(self.data[m.location])
             dx = abs(x - mx)
-            dy = min(abs(y - myr), abs(y-myi))
+            dy = min(abs(y - myr), abs(y - myi))
             distance = math.sqrt(dx**2 + dy**2)
             if distance < shortest:
                 shortest = distance

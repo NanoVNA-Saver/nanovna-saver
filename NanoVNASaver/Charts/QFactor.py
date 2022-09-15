@@ -49,19 +49,17 @@ class QualityFactorChart(FrequencyChart):
         # Make up some sensible scaling here
         if self.fixedValues:
             maxQ = self.maxDisplayValue
-            minQ = self.minDisplayValue
         else:
-            minQ = 0
             maxQ = 0
             for d in self.data:
                 Q = d.qFactor()
-                if Q > maxQ:
-                    maxQ = Q
+                maxQ = max(maxQ, Q)
             scale = 0
             if maxQ > 0:
                 scale = max(scale, math.floor(math.log10(maxQ)))
                 maxQ = math.ceil(maxQ / 10 ** scale) * 10 ** scale
-        self.minQ = minQ
+
+        self.minQ = self.minDisplayValue
         self.maxQ = maxQ
         self.span = self.maxQ - self.minQ
         if self.span == 0:
@@ -71,28 +69,30 @@ class QualityFactorChart(FrequencyChart):
 
         for i in range(tickcount):
             q = self.minQ + i * self.span / tickcount
-            y = self.topMargin + round((self.maxQ - q) / self.span * self.dim.height)
+            y = self.topMargin + int((self.maxQ - q) / self.span *
+                                     self.dim.height)
+            q = round(q)
             if q < 10:
                 q = round(q, 2)
-            elif q < 20:
+            if q < 20:
                 q = round(q, 1)
-            else:
-                q = round(q)
             qp.setPen(QtGui.QPen(Chart.color.text))
-            qp.drawText(3, y+3, str(q))
+            qp.drawText(3, y + 3, str(q))
             qp.setPen(QtGui.QPen(Chart.color.foreground))
-            qp.drawLine(self.leftMargin-5, y, self.leftMargin + self.dim.width, y)
+            qp.drawLine(self.leftMargin - 5, y,
+                        self.leftMargin + self.dim.width, y)
         qp.drawLine(self.leftMargin - 5,
                     self.topMargin,
-                    self.leftMargin + self.dim.width, self.topMargin)
+                    self.leftMargin + self.dim.width,
+                    self.topMargin)
         qp.setPen(Chart.color.text)
+
+        max_q = round(maxQ)
         if maxQ < 10:
-            qstr = str(round(maxQ, 2))
+            max_q = round(maxQ, 2)
         elif maxQ < 20:
-            qstr = str(round(maxQ, 1))
-        else:
-            qstr = str(round(maxQ))
-        qp.drawText(3, 35, qstr)
+            max_q = round(maxQ, 1)
+        qp.drawText(3, 35, f"{max_q}")
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
@@ -119,7 +119,8 @@ class QualityFactorChart(FrequencyChart):
 
     def getYPosition(self, d: Datapoint) -> int:
         Q = d.qFactor()
-        return self.topMargin + round((self.maxQ - Q) / self.span * self.dim.height)
+        return self.topMargin + int((self.maxQ - Q) / self.span *
+                                    self.dim.height)
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
