@@ -63,7 +63,7 @@ class Format(NamedTuple):
 class Value:
     CTX = Context(prec=60, Emin=-27, Emax=27)
 
-    def __init__(self, value: Real, unit: str = "", fmt=Format()):
+    def __init__(self, value: Real = Decimal(0), unit: str = "", fmt=Format()):
         assert 1 <= fmt.max_nr_digits <= 30
         assert -8 <= fmt.min_offset <= fmt.max_offset <= 8
         assert fmt.parse_clamp_min < fmt.parse_clamp_max
