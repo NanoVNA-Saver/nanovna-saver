@@ -192,12 +192,14 @@ class Touchstone:
         vals = iter(data)
         for v in vals:
             if self.opts.format == "ri":
-                next(data_list).append(Datapoint(freq, float(v), float(next(vals))))
+                next(data_list).append(Datapoint(freq, float(v),
+                                                 float(next(vals))))
             if self.opts.format == "ma":
                 z = cmath.rect(float(v), math.radians(float(next(vals))))
                 next(data_list).append(Datapoint(freq, z.real, z.imag))
             if self.opts.format == "db":
-                z = cmath.rect(10 ** (float(v) / 20), math.radians(float(next(vals))))
+                z = cmath.rect(10 ** (float(v) / 20),
+                               math.radians(float(next(vals))))
                 next(data_list).append(Datapoint(freq, z.real, z.imag))
 
     def load(self):

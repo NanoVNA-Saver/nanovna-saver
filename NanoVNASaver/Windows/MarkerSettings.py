@@ -50,7 +50,8 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
 
         settings_group_box = QtWidgets.QGroupBox("Settings")
         settings_group_box_layout = QtWidgets.QFormLayout(settings_group_box)
-        self.checkboxColouredMarker = QtWidgets.QCheckBox("Colored marker name")
+        self.checkboxColouredMarker = QtWidgets.QCheckBox(
+            "Colored marker name")
         self.checkboxColouredMarker.setChecked(
             self.app.settings.value("ColoredMarkerNames", True, bool))
         self.checkboxColouredMarker.stateChanged.connect(self.updateMarker)
@@ -101,7 +102,8 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
 
     def updateMarker(self):
         self.exampleMarker.setFrequency(123456000)
-        self.exampleMarker.setColoredText(self.checkboxColouredMarker.isChecked())
+        self.exampleMarker.setColoredText(
+            self.checkboxColouredMarker.isChecked())
         self.exampleMarker.setFieldSelection(self.currentFieldSelection)
         self.exampleMarker.findLocation(self.exampleData11)
         self.exampleMarker.resetLabels()

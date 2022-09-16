@@ -19,7 +19,6 @@
 import logging
 import sys
 import threading
-from collections import OrderedDict
 from time import strftime, localtime
 
 from PyQt5 import QtWidgets, QtCore, QtGui
@@ -40,7 +39,8 @@ from .Charts import (
     CapacitanceChart,
     CombinedLogMagChart, GroupDelayChart, InductanceChart,
     LogMagChart, PhaseChart,
-    MagnitudeChart, MagnitudeZChart, MagnitudeZShuntChart, MagnitudeZSeriesChart,
+    MagnitudeChart, MagnitudeZChart, MagnitudeZShuntChart,
+    MagnitudeZSeriesChart,
     QualityFactorChart, VSWRChart, PermeabilityChart, PolarChart,
     RealImaginaryChart, RealImaginaryShuntChart, RealImaginarySeriesChart,
     SmithChart, SParameterChart, TDRChart,
@@ -70,9 +70,11 @@ class NanoVNASaver(QtWidgets.QWidget):
         else:
             self.icon = QtGui.QIcon("icon_48x48.png")
         self.setWindowIcon(self.icon)
-        self.settings = Defaults.AppSettings(QtCore.QSettings.IniFormat,
-                                         QtCore.QSettings.UserScope,
-                                         "NanoVNASaver", "NanoVNASaver")
+        self.settings = Defaults.AppSettings(
+            QtCore.QSettings.IniFormat,
+            QtCore.QSettings.UserScope,
+            "NanoVNASaver",
+            "NanoVNASaver")
         logger.info("Settings from: %s", self.settings.fileName())
         Defaults.cfg = Defaults.restore(self.settings)
         self.threadpool = QtCore.QThreadPool()
@@ -126,7 +128,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.resize(Defaults.cfg.gui.window_width,
                     Defaults.cfg.gui.window_height)
         scrollarea.setSizePolicy(
-            QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.MinimumExpanding)
+            QtWidgets.QSizePolicy.MinimumExpanding,
+            QtWidgets.QSizePolicy.MinimumExpanding)
         self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
                            QtWidgets.QSizePolicy.MinimumExpanding)
         widget = QtWidgets.QWidget()
@@ -134,39 +137,40 @@ class NanoVNASaver(QtWidgets.QWidget):
         scrollarea.setWidget(widget)
 
         self.charts = {
-            "s11": OrderedDict((
-                ("capacitance", CapacitanceChart("S11 Serial C")),
-                ("group_delay", GroupDelayChart("S11 Group Delay")),
-                ("inductance", InductanceChart("S11 Serial L")),
-                ("log_mag", LogMagChart("S11 Return Loss")),
-                ("magnitude", MagnitudeChart("|S11|")),
-                ("magnitude_z", MagnitudeZChart("S11 |Z|")),
-                ("permeability", PermeabilityChart(
+            "s11": {
+                "capacitance": CapacitanceChart("S11 Serial C"),
+                "group_delay": GroupDelayChart("S11 Group Delay"),
+                "inductance": InductanceChart("S11 Serial L"),
+                "log_mag": LogMagChart("S11 Return Loss"),
+                "magnitude": MagnitudeChart("|S11|"),
+                "magnitude_z": MagnitudeZChart("S11 |Z|"),
+                "permeability": PermeabilityChart(
                     "S11 R/\N{GREEK SMALL LETTER OMEGA} &"
-                    " X/\N{GREEK SMALL LETTER OMEGA}")),
-                ("phase", PhaseChart("S11 Phase")),
-                ("q_factor", QualityFactorChart("S11 Quality Factor")),
-                ("real_imag", RealImaginaryChart("S11 R+jX")),
-                ("smith", SmithChart("S11 Smith Chart")),
-                ("s_parameter", SParameterChart("S11 Real/Imaginary")),
-                ("vswr", VSWRChart("S11 VSWR")),
-            )),
-            "s21": OrderedDict((
-                ("group_delay", GroupDelayChart("S21 Group Delay",
-                                                reflective=False)),
-                ("log_mag", LogMagChart("S21 Gain")),
-                ("magnitude", MagnitudeChart("|S21|")),
-                ("magnitude_z_shunt", MagnitudeZShuntChart("S21 |Z| shunt")),
-                ("magnitude_z_series", MagnitudeZSeriesChart("S21 |Z| series")),
-                ("real_imag_shunt", RealImaginaryShuntChart("S21 R+jX shunt")),
-                ("real_imag_series", RealImaginarySeriesChart("S21 R+jX series")),
-                ("phase", PhaseChart("S21 Phase")),
-                ("polar", PolarChart("S21 Polar Plot")),
-                ("s_parameter", SParameterChart("S21 Real/Imaginary")),
-            )),
-            "combined": OrderedDict((
-                ("log_mag", CombinedLogMagChart("S11 & S21 LogMag")),
-            )),
+                    " X/\N{GREEK SMALL LETTER OMEGA}"),
+                "phase": PhaseChart("S11 Phase"),
+                "q_factor": QualityFactorChart("S11 Quality Factor"),
+                "real_imag": RealImaginaryChart("S11 R+jX"),
+                "smith": SmithChart("S11 Smith Chart"),
+                "s_parameter": SParameterChart("S11 Real/Imaginary"),
+                "vswr": VSWRChart("S11 VSWR"),
+            },
+            "s21": {
+                "group_delay": GroupDelayChart("S21 Group Delay",
+                                               reflective=False),
+                "log_mag": LogMagChart("S21 Gain"),
+                "magnitude": MagnitudeChart("|S21|"),
+                "magnitude_z_shunt": MagnitudeZShuntChart("S21 |Z| shunt"),
+                "magnitude_z_series": MagnitudeZSeriesChart("S21 |Z| series"),
+                "real_imag_shunt": RealImaginaryShuntChart("S21 R+jX shunt"),
+                "real_imag_series": RealImaginarySeriesChart(
+                    "S21 R+jX series"),
+                "phase": PhaseChart("S21 Phase"),
+                "polar": PolarChart("S21 Polar Plot"),
+                "s_parameter": SParameterChart("S21 Real/Imaginary"),
+            },
+            "combined": {
+                "log_mag": CombinedLogMagChart("S11 & S21 LogMag"),
+            },
         }
         self.tdr_chart = TDRChart("TDR")
         self.tdr_mainwindow_chart = TDRChart("TDR")
@@ -515,7 +519,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         if s11:
             min_vswr = min(s11, key=lambda data: data.vswr)
             self.s11_min_swr_label.setText(
-                f"{format_vswr(min_vswr.vswr)} @ {format_frequency(min_vswr.freq)}")
+                f"{format_vswr(min_vswr.vswr)} @"
+                f" {format_frequency(min_vswr.freq)}")
             self.s11_min_rl_label.setText(format_gain(min_vswr.gain))
         else:
             self.s11_min_swr_label.setText("")

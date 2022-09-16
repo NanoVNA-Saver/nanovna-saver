@@ -20,9 +20,10 @@ import logging
 
 from PyQt5 import QtWidgets, QtCore
 
-from NanoVNASaver.Analysis import Analysis, LowPassAnalysis, HighPassAnalysis, \
-    BandPassAnalysis, BandStopAnalysis, VSWRAnalysis, \
-    SimplePeakSearchAnalysis, MagLoopAnalysis
+from NanoVNASaver.Analysis import (
+    Analysis, LowPassAnalysis, HighPassAnalysis, BandPassAnalysis,
+    BandStopAnalysis, VSWRAnalysis, SimplePeakSearchAnalysis,
+    MagLoopAnalysis)
 from NanoVNASaver.Analysis.VSWRAnalysis import ResonanceAnalysis
 from NanoVNASaver.Analysis.VSWRAnalysis import EFHWAnalysis
 from NanoVNASaver.Analysis import PeakSearchAnalysis

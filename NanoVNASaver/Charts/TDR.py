@@ -370,8 +370,8 @@ class TDRChart(Chart):
                     continue
 
                 x = self.leftMargin + int((i - min_index) / x_step)
-                y = (self.topMargin + height) - \
-                    int(self.tdrWindow.td[i] / y_step)
+                y = (self.topMargin + height) - int(
+                    self.tdrWindow.td[i] / y_step)
                 if self.isPlotable(x, y):
                     pen.setColor(Chart.color.sweep)
                     qp.setPen(pen)
@@ -389,7 +389,8 @@ class TDRChart(Chart):
             id_max = np.argmax(self.tdrWindow.td)
             max_point = QtCore.QPoint(
                 self.leftMargin + int((id_max - min_index) / x_step),
-                (self.topMargin + height) - int(self.tdrWindow.td[id_max] / y_step))
+                (self.topMargin + height) - int(
+                    self.tdrWindow.td[id_max] / y_step))
             qp.setPen(self.markers[0].color)
             qp.drawEllipse(max_point, 2, 2)
             qp.setPen(Chart.color.text)
@@ -408,8 +409,9 @@ class TDRChart(Chart):
                 qp.drawText(
                     marker_point.x() - 10,
                     marker_point.y() - 5,
-                    str(round(self.tdrWindow.distance_axis[self.markerLocation] / 2,
-                              2)) + "m")
+                    str(round(
+                        self.tdrWindow.distance_axis[self.markerLocation] / 2,
+                        2)) + "m")
 
         if self.dragbox.state and self.dragbox.pos[0] != -1:
             dashed_pen = QtGui.QPen(
@@ -456,7 +458,8 @@ class TDRChart(Chart):
         x_step = (max_length - min_length) / width
         if limit and absx < 0:
             return min_length
-        return max_length if limit and absx > width else absx * x_step + min_length
+        return (max_length if limit and absx > width else
+                absx * x_step + min_length)
 
     def zoomTo(self, x1, y1, x2, y2):
         logger.debug(

@@ -114,7 +114,8 @@ class BandStopAnalysis(Analysis):
                 peak_db = db
                 peak_location = i
 
-        logger.debug("Found peak of %f at %d", peak_db, self.app.data.s11[peak_location].freq)
+        logger.debug("Found peak of %f at %d",
+                     peak_db, self.app.data.s11[peak_location].freq)
 
         lower_cutoff_location = -1
         pass_band_db = peak_db
@@ -125,14 +126,16 @@ class BandStopAnalysis(Analysis):
                 break
 
         lower_cutoff_frequency = self.app.data.s21[lower_cutoff_location].freq
-        lower_cutoff_gain = self.app.data.s21[lower_cutoff_location].gain - pass_band_db
+        lower_cutoff_gain = (
+            self.app.data.s21[lower_cutoff_location].gain - pass_band_db)
 
         if lower_cutoff_gain < -4:
             logger.debug("Lower cutoff frequency found at %f dB"
                          " - insufficient data points for true -3 dB point.",
                          lower_cutoff_gain)
 
-        logger.debug("Found true lower cutoff frequency at %d", lower_cutoff_frequency)
+        logger.debug("Found true lower cutoff frequency at %d",
+                     lower_cutoff_frequency)
 
         self.lower_cutoff_label.setText(
             f"{format_frequency(lower_cutoff_frequency)}"
@@ -148,14 +151,17 @@ class BandStopAnalysis(Analysis):
                 upper_cutoff_location = i
                 break
 
-        upper_cutoff_frequency = self.app.data.s21[upper_cutoff_location].freq
-        upper_cutoff_gain = self.app.data.s21[upper_cutoff_location].gain - pass_band_db
+        upper_cutoff_frequency = (
+            self.app.data.s21[upper_cutoff_location].freq)
+        upper_cutoff_gain = (
+            self.app.data.s21[upper_cutoff_location].gain - pass_band_db)
         if upper_cutoff_gain < -4:
             logger.debug("Upper cutoff frequency found at %f dB"
                          " - insufficient data points for true -3 dB point.",
                          upper_cutoff_gain)
 
-        logger.debug("Found true upper cutoff frequency at %d", upper_cutoff_frequency)
+        logger.debug("Found true upper cutoff frequency at %d",
+                     upper_cutoff_frequency)
 
         self.upper_cutoff_label.setText(
             f"{format_frequency(upper_cutoff_frequency)}"
@@ -164,7 +170,8 @@ class BandStopAnalysis(Analysis):
         self.app.markers[2].frequencyInput.setText(str(upper_cutoff_frequency))
 
         span = upper_cutoff_frequency - lower_cutoff_frequency
-        center_frequency = math.sqrt(lower_cutoff_frequency * upper_cutoff_frequency)
+        center_frequency = math.sqrt(
+            lower_cutoff_frequency * upper_cutoff_frequency)
         q = center_frequency / span
 
         self.span_label.setText(format_frequency(span))
@@ -173,7 +180,8 @@ class BandStopAnalysis(Analysis):
         self.quality_label.setText(str(round(q, 2)))
 
         self.app.markers[0].setFrequency(str(round(center_frequency)))
-        self.app.markers[0].frequencyInput.setText(str(round(center_frequency)))
+        self.app.markers[0].frequencyInput.setText(
+            str(round(center_frequency)))
 
         # Lower roll-off
 
@@ -187,7 +195,8 @@ class BandStopAnalysis(Analysis):
         if lower_six_db_location < 0:
             self.result_label.setText("Lower 6 dB location not found.")
             return
-        lower_six_db_cutoff_frequency = self.app.data.s21[lower_six_db_location].freq
+        lower_six_db_cutoff_frequency = (
+            self.app.data.s21[lower_six_db_location].freq)
         self.lower_six_db_label.setText(
             format_frequency(lower_six_db_cutoff_frequency))
 
@@ -213,13 +222,15 @@ class BandStopAnalysis(Analysis):
                 break
 
         if sixty_db_location > 0:
-            sixty_db_cutoff_frequency = self.app.data.s21[sixty_db_location].freq
+            sixty_db_cutoff_frequency = (
+                self.app.data.s21[sixty_db_location].freq)
             self.lower_sixty_db_label.setText(
                 format_frequency(sixty_db_cutoff_frequency))
         elif ten_db_location != -1 and twenty_db_location != -1:
             ten = self.app.data.s21[ten_db_location].freq
             twenty = self.app.data.s21[twenty_db_location].freq
-            sixty_db_frequency = ten * 10 ** (5 * (math.log10(twenty) - math.log10(ten)))
+            sixty_db_frequency = ten * \
+                10 ** (5 * (math.log10(twenty) - math.log10(ten)))
             self.lower_sixty_db_label.setText(
                 f"{format_frequency(sixty_db_frequency)} (derived)")
         else:
@@ -250,11 +261,13 @@ class BandStopAnalysis(Analysis):
         if upper_six_db_location < 0:
             self.result_label.setText("Upper 6 dB location not found.")
             return
-        upper_six_db_cutoff_frequency = self.app.data.s21[upper_six_db_location].freq
+        upper_six_db_cutoff_frequency = (
+            self.app.data.s21[upper_six_db_location].freq)
         self.upper_six_db_label.setText(
             format_frequency(upper_six_db_cutoff_frequency))
 
-        six_db_span = upper_six_db_cutoff_frequency - lower_six_db_cutoff_frequency
+        six_db_span = (
+            upper_six_db_cutoff_frequency - lower_six_db_cutoff_frequency)
 
         self.six_db_span_label.setText(
             format_frequency(six_db_span))
@@ -281,7 +294,8 @@ class BandStopAnalysis(Analysis):
                 break
 
         if sixty_db_location > 0:
-            sixty_db_cutoff_frequency = self.app.data.s21[sixty_db_location].freq
+            sixty_db_cutoff_frequency = (
+                self.app.data.s21[sixty_db_location].freq)
             self.upper_sixty_db_label.setText(
                 format_frequency(sixty_db_cutoff_frequency))
         elif ten_db_location != -1 and twenty_db_location != -1:

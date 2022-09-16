@@ -88,8 +88,8 @@ class GroupDelayChart(FrequencyChart):
                 phase_change = unwrapped[-1] - unwrapped[-2]
                 freq_change = d.freq - data[-2].freq
             else:
-                phase_change = unwrapped[i+1] - unwrapped[i-1]
-                freq_change = data[i+1].freq - data[i-1].freq
+                phase_change = unwrapped[i + 1] - unwrapped[i - 1]
+                freq_change = data[i + 1].freq - data[i - 1].freq
             delay = (-phase_change / (freq_change * 360)) * 10e8
             if not self.reflective:
                 delay /= 2
@@ -124,7 +124,8 @@ class GroupDelayChart(FrequencyChart):
         tickcount = math.floor(self.dim.height / 60)
         for i in range(tickcount):
             delay = min_delay + span * i / tickcount
-            y = self.topMargin + round((self.maxDelay - delay) / self.span * self.dim.height)
+            y = self.topMargin + \
+                round((self.maxDelay - delay) / self.span * self.dim.height)
             if delay not in {min_delay, max_delay}:
                 qp.setPen(QtGui.QPen(Chart.color.text))
                 # TODO use format class
@@ -133,7 +134,8 @@ class GroupDelayChart(FrequencyChart):
                 delaystr = str(round(delay, digits if digits != 0 else None))
                 qp.drawText(3, y + 3, delaystr)
                 qp.setPen(QtGui.QPen(Chart.color.foreground))
-                qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.dim.width, y)
+                qp.drawLine(self.leftMargin - 5, y,
+                            self.leftMargin + self.dim.width, y)
 
         qp.drawLine(self.leftMargin - 5,
                     self.topMargin,
@@ -174,12 +176,13 @@ class GroupDelayChart(FrequencyChart):
                 prevx = self.getXPosition(data[i - 1])
                 prevy = self.getYPositionFromDelay(delay[i - 1])
                 qp.setPen(line_pen)
-                if self.isPlotable(x, y) and self.isPlotable(prevx, prevy):
-                    qp.drawLine(x, y, prevx, prevy)
-                elif self.isPlotable(x, y) and not self.isPlotable(prevx, prevy):
-                    new_x, new_y = self.getPlotable(x, y, prevx, prevy)
-                    qp.drawLine(x, y, new_x, new_y)
-                elif not self.isPlotable(x, y) and self.isPlotable(prevx, prevy):
+                if self.isPlotable(x, y):
+                    if self.isPlotable(prevx, prevy):
+                        qp.drawLine(x, y, prevx, prevy)
+                    else:
+                        new_x, new_y = self.getPlotable(x, y, prevx, prevy)
+                        qp.drawLine(x, y, new_x, new_y)
+                elif self.isPlotable(prevx, prevy):
                     new_x, new_y = self.getPlotable(prevx, prevy, x, y)
                     qp.drawLine(prevx, prevy, new_x, new_y)
                 qp.setPen(pen)
@@ -195,8 +198,9 @@ class GroupDelayChart(FrequencyChart):
                 delay = 0
         return self.getYPositionFromDelay(delay)
 
-    def getYPositionFromDelay(self, delay: float):
-        return self.topMargin + round((self.maxDelay - delay) / self.span * self.dim.height)
+    def getYPositionFromDelay(self, delay: float) -> int:
+        return self.topMargin + int(
+            (self.maxDelay - delay) / self.span * self.dim.height)
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin

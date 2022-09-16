@@ -65,6 +65,7 @@ class Chart:
     show_bands: bool = False
     vswr_lines: list = DC.field(default_factory=lambda: [])
 
+
 @DC.dataclass
 class ChartColors:  # pylint: disable=too-many-instance-attributes
     background: QColor = QColor(QtCore.Qt.white)
@@ -131,11 +132,11 @@ def from_type(data) -> str:
     type_map = {
         bytearray: lambda x: x.hex(),
         QColor: lambda x: x.getRgb(),
-        QByteArray: lambda x: x.toHex(),
+        QByteArray: lambda x: x.toHex()
     }
-    if type(data) in type_map:
-        return str(type_map[type(data)](data))
-    return str(data)
+    return (f"{type_map[type(data)](data)}" if
+            type(data) in type_map else
+            f"{data}")
 
 
 def to_type(data: object, data_type: type) -> object:
@@ -145,11 +146,11 @@ def to_type(data: object, data_type: type) -> object:
         list: literal_eval,
         tuple: literal_eval,
         QColor: lambda x: QColor.fromRgb(*literal_eval(x)),
-        QByteArray: lambda x: QByteArray.fromHex(literal_eval(x)),
+        QByteArray: lambda x: QByteArray.fromHex(literal_eval(x))
     }
-    if data_type in type_map:
-        return type_map[data_type](data)
-    return data_type(data)
+    return (type_map[data_type](data) if
+            data_type in type_map else
+            data_type(data))
 
 
 # noinspection PyDataclass

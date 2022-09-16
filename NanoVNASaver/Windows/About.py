@@ -56,7 +56,7 @@ class AboutWindow(QtWidgets.QWidget):
         layout.addWidget(QtWidgets.QLabel(
             "\N{COPYRIGHT SIGN} Copyright 2019, 2020 Rune B. Broberg\n"
             "\N{COPYRIGHT SIGN} Copyright 2020ff NanoVNA-Saver Authors"
-            ))
+        ))
         layout.addWidget(QtWidgets.QLabel(
             "This program comes with ABSOLUTELY NO WARRANTY"))
         layout.addWidget(QtWidgets.QLabel(
@@ -118,15 +118,18 @@ class AboutWindow(QtWidgets.QWidget):
                 if line.startswith("RELEASE_URL ="):
                     latest_url = line[13:].strip(" \"'")
         except error.HTTPError as e:
-            logger.exception("Checking for updates produced an HTTP exception: %s", e)
+            logger.exception(
+                "Checking for updates produced an HTTP exception: %s", e)
             self.updateLabel.setText("Connection error.")
             return
         except TypeError as e:
-            logger.exception("Checking for updates provided an unparseable file: %s", e)
+            logger.exception(
+                "Checking for updates provided an unparseable file: %s", e)
             self.updateLabel.setText("Data error reading versions.")
             return
         except error.URLError as e:
-            logger.exception("Checking for updates produced a URL exception: %s", e)
+            logger.exception(
+                "Checking for updates produced a URL exception: %s", e)
             self.updateLabel.setText("Connection error.")
             return
 

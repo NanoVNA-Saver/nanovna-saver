@@ -114,7 +114,8 @@ class SerialControl(Control):
         else:
             self.app.sweep_control.set_end(
                 frequencies[0] +
-                self.app.vna.datapoints * self.app.sweep_control.get_segments())
+                self.app.vna.datapoints *
+                self.app.sweep_control.get_segments())
 
         self.app.sweep_control.set_segments(1)  # speed up things
         self.app.sweep_control.update_center_span()

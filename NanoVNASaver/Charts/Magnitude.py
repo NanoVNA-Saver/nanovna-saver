@@ -33,18 +33,15 @@ class MagnitudeChart(FrequencyChart):
         super().__init__(name)
 
         self.minDisplayValue = 0
-        self.maxDisplayValue = 1
 
         self.fixedValues = True
         self.y_action_fixed_span.setChecked(True)
         self.y_action_automatic.setChecked(False)
 
         self.minValue = 0
-        self.maxValue = 1
-        self.span = 1
 
     def drawValues(self, qp: QtGui.QPainter):
-        if len(self.data) == 0 and len(self.reference) == 0:
+        if not self.data and not self.reference:
             return
 
         self._set_start_stop()
@@ -54,71 +51,63 @@ class MagnitudeChart(FrequencyChart):
             self.drawBands(qp, self.fstart, self.fstop)
 
         if self.fixedValues:
-            maxValue = self.maxDisplayValue
-            minValue = self.minDisplayValue
-            self.maxValue = maxValue
-            self.minValue = minValue
+            max_value = self.maxDisplayValue
+            min_value = self.minDisplayValue
         else:
             # Find scaling
-            minValue = 100
-            maxValue = 0
+            min_value = 100
+            max_value = 0
             for d in self.data:
                 mag = self.magnitude(d)
-                if mag > maxValue:
-                    maxValue = mag
-                if mag < minValue:
-                    minValue = mag
-            for d in self.reference:  # Also check min/max for the reference sweep
+                max_value = max(max_value, mag)
+                min_value = min(min_value, mag)
+            # Also check min/max for the reference sweep
+            for d in self.reference:
                 if d.freq < self.fstart or d.freq > self.fstop:
                     continue
-                mag = self.magnitude(d)
-                if mag > maxValue:
-                    maxValue = mag
-                if mag < minValue:
-                    minValue = mag
+                max_value = max(max_value, mag)
+                min_value = min(min_value, mag)
+            min_value = 10 * math.floor(min_value / 10)
+            max_value = 10 * math.ceil(max_value / 10)
 
-            minValue = 10*math.floor(minValue/10)
-            self.minValue = minValue
-            maxValue = 10*math.ceil(maxValue/10)
-            self.maxValue = maxValue
+        self.maxValue = max_value
+        self.minValue = min_value
 
-        span = maxValue-minValue
-        if span == 0:
-            span = 0.01
-        self.span = span
+        self.span = (max_value - min_value) or 0.01
 
-        target_ticks = math.floor(self.dim.height / 60)
-
+        target_ticks = int(self.dim.height // 60)
         for i in range(target_ticks):
-            val = minValue + i / target_ticks * span
-            y = self.topMargin + round((self.maxValue - val) / self.span * self.dim.height)
+            val = min_value + i / target_ticks * self.span
+            y = self.topMargin + int((self.maxValue - val) / self.span
+                                     * self.dim.height)
             qp.setPen(Chart.color.text)
-            if val != minValue:
+            if val != min_value:
                 digits = max(0, min(2, math.floor(3 - math.log10(abs(val)))))
-                if digits == 0:
-                    vswrstr = str(round(val))
-                else:
-                    vswrstr = str(round(val, digits))
+                vswrstr = (str(round(val)) if digits == 0 else
+                           str(round(val, digits)))
                 qp.drawText(3, y + 3, vswrstr)
             qp.setPen(QtGui.QPen(Chart.color.foreground))
-            qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.dim.width, y)
+            qp.drawLine(self.leftMargin - 5, y,
+                        self.leftMargin + self.dim.width, y)
 
         qp.setPen(QtGui.QPen(Chart.color.foreground))
         qp.drawLine(self.leftMargin - 5, self.topMargin,
                     self.leftMargin + self.dim.width, self.topMargin)
         qp.setPen(Chart.color.text)
-        qp.drawText(3, self.topMargin + 4, str(maxValue))
-        qp.drawText(3, self.dim.height+self.topMargin, str(minValue))
+        qp.drawText(3, self.topMargin + 4, str(max_value))
+        qp.drawText(3, self.dim.height + self.topMargin, str(min_value))
         self.drawFrequencyTicks(qp)
 
         qp.setPen(Chart.color.swr)
         for vswr in self.swrMarkers:
             if vswr <= 1:
                 continue
-            mag = (vswr-1)/(vswr+1)
-            y = self.topMargin + round((self.maxValue - mag) / self.span * self.dim.height)
-            qp.drawLine(self.leftMargin, y, self.leftMargin + self.dim.width, y)
-            qp.drawText(self.leftMargin + 3, y - 1, "VSWR: " + str(vswr))
+            mag = (vswr - 1) / (vswr + 1)
+            y = self.topMargin + int((self.maxValue - mag) / self.span
+                                     * self.dim.height)
+            qp.drawLine(self.leftMargin, y,
+                        self.leftMargin + self.dim.width, y)
+            qp.drawText(self.leftMargin + 3, y - 1, f"VSWR: {vswr}")
 
         self.drawData(qp, self.data, Chart.color.sweep)
         self.drawData(qp, self.reference, Chart.color.reference)
@@ -126,7 +115,8 @@ class MagnitudeChart(FrequencyChart):
 
     def getYPosition(self, d: Datapoint) -> int:
         mag = self.magnitude(d)
-        return self.topMargin + round((self.maxValue - mag) / self.span * self.dim.height)
+        return self.topMargin + int(
+            (self.maxValue - mag) / self.span * self.dim.height)
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin

@@ -93,10 +93,12 @@ class BandsModel(QtCore.QAbstractTableModel):
         if role == QtCore.Qt.TextAlignmentRole:
             if index.column() == 0:
                 return QtCore.QVariant(QtCore.Qt.AlignCenter)
-            return QtCore.QVariant(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+            return QtCore.QVariant(
+                QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         return QtCore.QVariant()
 
-    def setData(self, index: QModelIndex, value: typing.Any, role: int = ...) -> bool:
+    def setData(self, index: QModelIndex,
+                value: typing.Any, role: int = ...) -> bool:
         if role == QtCore.Qt.EditRole and index.isValid():
             t = self.bands[index.row()]
             name = t[0]
@@ -114,7 +116,8 @@ class BandsModel(QtCore.QAbstractTableModel):
             return True
         return False
 
-    def index(self, row: int, column: int, _: QModelIndex = ...) -> QModelIndex:
+    def index(self, row: int,
+              column: int, _: QModelIndex = ...) -> QModelIndex:
         return self.createIndex(row, column)
 
     def addRow(self):

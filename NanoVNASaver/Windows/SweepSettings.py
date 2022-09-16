@@ -160,7 +160,8 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         layout.addRow("Select band", self.band_list)
 
         sweep_pad_layout.addWidget(QtWidgets.QLabel("Pad band limits:"))
-        for btn_label, value in (("None", 0), ("10%", 10), ("25%", 25), ("100%", 100),):
+        for btn_label, value in (
+                ("None", 0), ("10%", 10), ("25%", 25), ("100%", 100),):
             radio_button = QtWidgets.QRadioButton(btn_label)
             radio_button.setMinimumHeight(20)
             radio_button.setChecked(self.padding == value)
@@ -190,10 +191,14 @@ class SweepSettingsWindow(QtWidgets.QWidget):
 
     def update_band(self, apply: bool = False):
         logger.debug("update_band(%s)", apply)
-        index_start = self.band_list.model().index(self.band_list.currentIndex(), 1)
-        index_stop = self.band_list.model().index(self.band_list.currentIndex(), 2)
-        start = int(self.band_list.model().data(index_start, QtCore.Qt.ItemDataRole).value())
-        stop = int(self.band_list.model().data(index_stop, QtCore.Qt.ItemDataRole).value())
+        index_start = self.band_list.model().index(
+            self.band_list.currentIndex(), 1)
+        index_stop = self.band_list.model().index(
+            self.band_list.currentIndex(), 2)
+        start = int(self.band_list.model().data(
+            index_start, QtCore.Qt.ItemDataRole).value())
+        stop = int(self.band_list.model().data(
+            index_stop, QtCore.Qt.ItemDataRole).value())
 
         if self.padding > 0:
             span = stop - start

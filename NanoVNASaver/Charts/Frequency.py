@@ -172,8 +172,9 @@ class FrequencyChart(Chart):
         self.menu.addAction(self.action_popout)
         self.setFocusPolicy(QtCore.Qt.ClickFocus)
 
-        self.setMinimumSize(self.dim.width + self.rightMargin + self.leftMargin,
-                            self.dim.height + self.topMargin + self.bottomMargin)
+        self.setMinimumSize(
+            self.dim.width + self.rightMargin + self.leftMargin,
+            self.dim.height + self.topMargin + self.bottomMargin)
         self.setSizePolicy(
             QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
                                   QtWidgets.QSizePolicy.MinimumExpanding))
@@ -236,8 +237,7 @@ class FrequencyChart(Chart):
         self.logarithmicY = logarithmic and self.logarithmicYAllowed()
         self.update()
 
-    @staticmethod
-    def logarithmicYAllowed() -> bool:
+    def logarithmicYAllowed(self) -> bool:
         return False
 
     def setMinimumFrequency(self):
@@ -436,8 +436,10 @@ class FrequencyChart(Chart):
             m.frequencyInput.setText(str(f))
 
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
-        self.dim.width = a0.size().width() - self.rightMargin - self.leftMargin
-        self.dim.height = a0.size().height() - self.bottomMargin - self.topMargin
+        self.dim.width = (
+            a0.size().width() - self.rightMargin - self.leftMargin)
+        self.dim.height = (
+            a0.size().height() - self.bottomMargin - self.topMargin)
         self.update()
 
     def paintEvent(self, _: QtGui.QPaintEvent) -> None:
@@ -459,8 +461,8 @@ class FrequencyChart(Chart):
             qp.setBackgroundMode(QtCore.Qt.OpaqueMode)
             qp.setBackground(Chart.color.background)
             qp.setPen(Chart.color.text)
-            qp.drawText(self.leftMargin + self.dim.width // 2 - 70,
-                        self.topMargin + self.dim.height // 2 - 20,
+            qp.drawText(self.leftMargin + int(self.dim.width // 2) - 70,
+                        self.topMargin + int(self.dim.height // 2) - 20,
                         "Data outside frequency span")
 
     def drawDragbog(self, qp: QtGui.QPainter):
@@ -479,10 +481,14 @@ class FrequencyChart(Chart):
             headline += f" ({self.name_unit})"
         qp.drawText(3, 15, headline)
         qp.setPen(QtGui.QPen(Chart.color.foreground))
-        qp.drawLine(self.leftMargin, 20,
-                    self.leftMargin, self.topMargin + self.dim.height + 5)
-        qp.drawLine(self.leftMargin - 5, self.topMargin + self.dim.height,
-                    self.leftMargin + self.dim.width, self.topMargin + self.dim.height)
+        qp.drawLine(self.leftMargin,
+                    20,
+                    self.leftMargin,
+                    self.topMargin + self.dim.height + 5)
+        qp.drawLine(self.leftMargin - 5,
+                    self.topMargin + self.dim.height,
+                    self.leftMargin + self.dim.width,
+                    self.topMargin + self.dim.height)
         self.drawTitle(qp)
 
     def drawValues(self, qp: QtGui.QPainter):
@@ -507,7 +513,8 @@ class FrequencyChart(Chart):
         span = max_value - min_value
         if span == 0:
             logger.info(
-                "Span is zero for %s-Chart, setting to a small value.", self.name)
+                "Span is zero for %s-Chart, setting to a small value.",
+                self.name)
             span = 1e-15
         self.span = span
 
@@ -576,7 +583,9 @@ class FrequencyChart(Chart):
             if self.logarithmicX:
                 fspan = math.log(self.fstop) - math.log(self.fstart)
                 freq = round(
-                    math.exp(((i + 1) * fspan / ticks) + math.log(self.fstart)))
+                    math.exp(
+                        ((i + 1) * fspan / ticks) +
+                        math.log(self.fstart)))
             else:
                 freq = round(fspan / ticks * (i + 1) + self.fstart)
             qp.setPen(QtGui.QPen(Chart.color.foreground))
@@ -630,12 +639,14 @@ class FrequencyChart(Chart):
                 if prevy is None:
                     continue
                 qp.setPen(line_pen)
-                if self.isPlotable(x, y) and self.isPlotable(prevx, prevy):
-                    qp.drawLine(x, y, prevx, prevy)
-                elif self.isPlotable(x, y) and not self.isPlotable(prevx, prevy):
-                    new_x, new_y = self.getPlotable(x, y, prevx, prevy)
-                    qp.drawLine(x, y, new_x, new_y)
-                elif not self.isPlotable(x, y) and self.isPlotable(prevx, prevy):
+                if self.isPlotable(x, y):
+                    if self.isPlotable(prevx, prevy):
+                        qp.drawLine(x, y, prevx, prevy)
+                    else:
+                        new_x, new_y = self.getPlotable(
+                            x, y, prevx, prevy)
+                        qp.drawLine(x, y, new_x, new_y)
+                elif self.isPlotable(prevx, prevy):
                     new_x, new_y = self.getPlotable(prevx, prevy, x, y)
                     qp.drawLine(prevx, prevy, new_x, new_y)
                 qp.setPen(pen)

@@ -90,7 +90,8 @@ class MagLoopAnalysis(VSWRAnalysis):
                     self.vswr_bandwith_value, self.vswr_limit_value - 1)
                 self.input_vswr_limit.setValue(self.vswr_limit_value)
                 logger.debug(
-                    "found higher minimum, lowering vswr search to %s", self.vswr_limit_value)
+                    "found higher minimum, lowering vswr search to %s",
+                    self.vswr_limit_value)
         else:
             new_start = new_start - 5 * self.bandwith
             new_end = new_end + 5 * self.bandwith
@@ -101,7 +102,8 @@ class MagLoopAnalysis(VSWRAnalysis):
                 self.vswr_limit_value += 2
                 self.input_vswr_limit.setValue(self.vswr_limit_value)
                 logger.debug(
-                    "no minimum found, looking for higher value %s", self.vswr_limit_value)
+                    "no minimum found, looking for higher value %s",
+                    self.vswr_limit_value)
         new_start = max(self.min_freq, new_start)
         new_end = min(self.max_freq, new_end)
         logger.debug("next search will be %s - %s for vswr %s",

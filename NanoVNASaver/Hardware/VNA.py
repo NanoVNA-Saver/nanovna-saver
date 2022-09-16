@@ -17,7 +17,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-from collections import OrderedDict
 from time import sleep
 from typing import List, Iterator, Set
 
@@ -28,19 +27,19 @@ from NanoVNASaver.Hardware.Serial import Interface, drain_serial
 
 logger = logging.getLogger(__name__)
 
-DISLORD_BW = OrderedDict((
-    (10, 363),
-    (33, 117),
-    (50, 78),
-    (100, 39),
-    (200, 19),
-    (250, 15),
-    (333, 11),
-    (500, 7),
-    (1000, 3),
-    (2000, 1),
-    (4000, 0),
-))
+DISLORD_BW = {
+    10: 363,
+    33: 117,
+    50: 78,
+    100: 39,
+    200: 19,
+    250: 15,
+    333: 11,
+    500: 7,
+    1000: 3,
+    2000: 1,
+    4000: 0,
+}
 WAIT = 0.05
 
 

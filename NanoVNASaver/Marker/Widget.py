@@ -98,9 +98,9 @@ class Marker(QtCore.QObject, Value):
         # Data display labels
         ###############################################################
 
-        self.label = {}
-        for l in TYPES:
-            self.label[l.label_id] = MarkerLabel(l.name)
+        self.label = {
+            label.label_id: MarkerLabel(label.name) for label in TYPES
+        }
         self.label['actualfreq'].setMinimumWidth(100)
         self.label['returnloss'].setMinimumWidth(80)
 
@@ -201,7 +201,7 @@ class Marker(QtCore.QObject, Value):
             for label_id in self.active_labels:
                 self._add_active_labels(label_id, self.left_form)
         else:
-            left_half = math.ceil(len(self.active_labels)/2)
+            left_half = math.ceil(len(self.active_labels) / 2)
             right_half = len(self.active_labels)
             for i in range(left_half):
                 label_id = self.active_labels[i]
@@ -258,8 +258,8 @@ class Marker(QtCore.QObject, Value):
         upper_stepsize = data[-1].freq - data[-2].freq
 
         # We are outside the bounds of the data, so we can't put in a marker
-        if (self.freq + lower_stepsize/2 < min_freq or
-                self.freq - upper_stepsize/2 > max_freq):
+        if (self.freq + lower_stepsize / 2 < min_freq or
+                self.freq - upper_stepsize / 2 > max_freq):
             return
 
         min_distance = max_freq
@@ -268,11 +268,11 @@ class Marker(QtCore.QObject, Value):
                 min_distance = abs(item.freq - self.freq)
             else:
                 # We have now started moving away from the nearest point
-                self.location = i-1
+                self.location = i - 1
                 if i < datasize:
                     self.frequencyInput.nextFrequency = item.freq
                 if i >= 2:
-                    self.frequencyInput.previousFrequency = data[i-2].freq
+                    self.frequencyInput.previousFrequency = data[i - 2].freq
                 return
         # If we still didn't find a best spot, it was the last value
         self.location = datasize - 1
@@ -292,7 +292,8 @@ class Marker(QtCore.QObject, Value):
             return
         if self.location == -1:  # initial position
             try:
-                location = (self.index -1) / (self._instances - 1) * (len(s11) - 1)
+                location = (self.index - 1) / (
+                    (self._instances - 1) * (len(s11) - 1))
                 self.location = int(location)
             except ZeroDivisionError:
                 self.location = 0
@@ -362,6 +363,8 @@ class Marker(QtCore.QObject, Value):
             self.label['s21magseries'].setText(
                 format_magnitude(abs(_s21.seriesImpedance())))
             self.label['s21realimagshunt'].setText(
-                format_complex_imp(_s21.shuntImpedance(), allow_negative=True))
+                format_complex_imp(
+                    _s21.shuntImpedance(), allow_negative=True))
             self.label['s21realimagseries'].setText(
-                format_complex_imp(_s21.seriesImpedance(), allow_negative=True))
+                format_complex_imp(
+                    _s21.seriesImpedance(), allow_negative=True))

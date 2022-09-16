@@ -39,7 +39,7 @@ class SmithChart(SquareChart):
                     center_x + width_2, center_y)
 
         qp.drawEllipse(
-            QtCore.QPoint(center_x + int(self.dim.width/4), center_y),
+            QtCore.QPoint(center_x + int(self.dim.width / 4), center_y),
             self.dim.width // 4, self.dim.height // 4)  # Re(Z) = 1
         qp.drawEllipse(
             QtCore.QPoint(center_x + self.dim.width // 3, center_y),
@@ -71,13 +71,13 @@ class SmithChart(SquareChart):
                    -90 * 16, -127 * 16)  # Im(Z) = 2
         qp.drawArc(center_x, center_y,
                    self.dim.width, self.dim.height,
-                   90*16, 90*16)  # Im(Z) = -1
+                   90 * 16, 90 * 16)  # Im(Z) = -1
         qp.drawArc(center_x, center_y,
                    self.dim.width, - self.dim.height,
                    -90 * 16, -90 * 16)  # Im(Z) = 1
         qp.drawArc(center_x - width_2, center_y,
                    self.dim.width * 2, self.dim.height * 2,
-                   int(99.5*16), int(43.5*16))  # Im(Z) = -0.5
+                   int(99.5 * 16), int(43.5 * 16))  # Im(Z) = -0.5
         qp.drawArc(center_x - width_2, center_y,
                    self.dim.width * 2, -self.dim.height * 2,
                    int(-99.5 * 16), int(-43.5 * 16))  # Im(Z) = 0.5
@@ -94,8 +94,8 @@ class SmithChart(SquareChart):
         for swr in self.swrMarkers:
             if swr <= 1:
                 continue
-            gamma = (swr - 1)/(swr + 1)
-            r = gamma * self.dim.width // 2
+            gamma = (swr - 1) / (swr + 1)
+            r = int(gamma * self.dim.width / 2)
             qp.drawEllipse(QtCore.QPoint(center_x, center_y), r, r)
             qp.drawText(
                 QtCore.QRect(center_x - 50, center_y - 4 + r, 100, 20),

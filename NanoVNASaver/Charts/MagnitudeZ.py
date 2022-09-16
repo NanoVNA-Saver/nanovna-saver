@@ -45,7 +45,7 @@ class MagnitudeZChart(FrequencyChart):
         self.span = 1
 
     def drawValues(self, qp: QtGui.QPainter):
-        if len(self.data) == 0 and len(self.reference) == 0:
+        if not self.data and not self.reference:
             return
 
         self._set_start_stop()
@@ -56,8 +56,9 @@ class MagnitudeZChart(FrequencyChart):
 
         if self.fixedValues:
             self.maxValue = self.maxDisplayValue
-            self.minValue = max(
-                self.minDisplayValue, 0.01) if self.logarithmicY else self.minDisplayValue
+            self.minValue = (
+                max(self.minDisplayValue, 0.01) if self.logarithmicY else
+                self.minDisplayValue)
         else:
             # Find scaling
             self.minValue = 100
@@ -68,7 +69,8 @@ class MagnitudeZChart(FrequencyChart):
                     continue
                 self.maxValue = max(self.maxValue, mag)
                 self.minValue = min(self.minValue, mag)
-            for d in self.reference:  # Also check min/max for the reference sweep
+            # Also check min/max for the reference sweep
+            for d in self.reference:
                 if d.freq < self.fstart or d.freq > self.fstop:
                     continue
                 mag = self.magnitude(d)
@@ -85,7 +87,7 @@ class MagnitudeZChart(FrequencyChart):
         self.span = (self.maxValue - self.minValue) or 0.01
 
         # We want one horizontal tick per 50 pixels, at most
-        horizontal_ticks = math.floor(self.dim.height/50)
+        horizontal_ticks = int(self.dim.height / 50)
         fmt = Format(max_nr_digits=4)
         for i in range(horizontal_ticks):
             y = self.topMargin + round(i * self.dim.height / horizontal_ticks)
@@ -113,16 +115,19 @@ class MagnitudeZChart(FrequencyChart):
         if math.isfinite(mag):
             if self.logarithmicY:
                 span = math.log(self.maxValue) - math.log(self.minValue)
-                return self.topMargin + round(
-                    (math.log(self.maxValue) - math.log(mag)) / span * self.dim.height)
-            return self.topMargin + round((self.maxValue - mag) / self.span * self.dim.height)
+                return self.topMargin + int(
+                    (math.log(self.maxValue) - math.log(mag)) /
+                    span * self.dim.height)
+            return self.topMargin + int(
+                (self.maxValue - mag) / self.span * self.dim.height)
         return self.topMargin
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
         if self.logarithmicY:
             span = math.log(self.maxValue) - math.log(self.minValue)
-            val = math.exp(math.log(self.maxValue) - absy * span / self.dim.height)
+            val = math.exp(math.log(self.maxValue) -
+                           absy * span / self.dim.height)
         else:
             val = self.maxValue - (absy / self.dim.height * self.span)
         return [val]

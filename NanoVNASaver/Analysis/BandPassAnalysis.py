@@ -39,7 +39,8 @@ class BandPassAnalysis(Analysis):
         layout.addRow(QtWidgets.QLabel("Band pass filter analysis"))
         layout.addRow(
             QtWidgets.QLabel(
-                f"Please place {self.app.markers[0].name} in the filter passband."))
+                f"Please place {self.app.markers[0].name}"
+                f" in the filter passband."))
         self.result_label = QtWidgets.QLabel()
         self.lower_cutoff_label = QtWidgets.QLabel()
         self.lower_six_db_label = QtWidgets.QLabel()
@@ -134,9 +135,11 @@ class BandPassAnalysis(Analysis):
             self.result_label.setText("Lower cutoff location not found.")
             return
 
-        initial_lower_cutoff_frequency = self.app.data.s21[initial_lower_cutoff_location].freq
+        initial_lower_cutoff_frequency = (
+            self.app.data.s21[initial_lower_cutoff_location].freq)
 
-        logger.debug("Found initial lower cutoff frequency at %d", initial_lower_cutoff_frequency)
+        logger.debug("Found initial lower cutoff frequency at %d",
+                     initial_lower_cutoff_frequency)
 
         initial_upper_cutoff_location = -1
         for i in range(pass_band_location, len(self.app.data.s21), 1):
@@ -149,19 +152,23 @@ class BandPassAnalysis(Analysis):
             self.result_label.setText("Upper cutoff location not found.")
             return
 
-        initial_upper_cutoff_frequency = self.app.data.s21[initial_upper_cutoff_location].freq
+        initial_upper_cutoff_frequency = (
+            self.app.data.s21[initial_upper_cutoff_location].freq)
 
-        logger.debug("Found initial upper cutoff frequency at %d", initial_upper_cutoff_frequency)
+        logger.debug("Found initial upper cutoff frequency at %d",
+                     initial_upper_cutoff_frequency)
 
         peak_location = -1
         peak_db = self.app.data.s21[initial_lower_cutoff_location].gain
-        for i in range(initial_lower_cutoff_location, initial_upper_cutoff_location, 1):
+        for i in range(initial_lower_cutoff_location,
+                       initial_upper_cutoff_location, 1):
             db = self.app.data.s21[i].gain
             if db > peak_db:
                 peak_db = db
                 peak_location = i
 
-        logger.debug("Found peak of %f at %d", peak_db, self.app.data.s11[peak_location].freq)
+        logger.debug("Found peak of %f at %d", peak_db,
+                     self.app.data.s11[peak_location].freq)
 
         lower_cutoff_location = -1
         pass_band_db = peak_db
@@ -171,14 +178,17 @@ class BandPassAnalysis(Analysis):
                 lower_cutoff_location = i
                 break
 
-        lower_cutoff_frequency = self.app.data.s21[lower_cutoff_location].freq
-        lower_cutoff_gain = self.app.data.s21[lower_cutoff_location].gain - pass_band_db
+        lower_cutoff_frequency = (
+            self.app.data.s21[lower_cutoff_location].freq)
+        lower_cutoff_gain = (
+            self.app.data.s21[lower_cutoff_location].gain - pass_band_db)
 
         if lower_cutoff_gain < -4:
             logger.debug("Lower cutoff frequency found at %f dB"
                          " - insufficient data points for true -3 dB point.",
                          lower_cutoff_gain)
-        logger.debug("Found true lower cutoff frequency at %d", lower_cutoff_frequency)
+        logger.debug("Found true lower cutoff frequency at %d",
+                     lower_cutoff_frequency)
 
         self.lower_cutoff_label.setText(
             f"{format_frequency(lower_cutoff_frequency)}"
@@ -196,13 +206,15 @@ class BandPassAnalysis(Analysis):
                 break
 
         upper_cutoff_frequency = self.app.data.s21[upper_cutoff_location].freq
-        upper_cutoff_gain = self.app.data.s21[upper_cutoff_location].gain - pass_band_db
+        upper_cutoff_gain = (
+            self.app.data.s21[upper_cutoff_location].gain - pass_band_db)
         if upper_cutoff_gain < -4:
             logger.debug("Upper cutoff frequency found at %f dB"
                          " - insufficient data points for true -3 dB point.",
                          upper_cutoff_gain)
 
-        logger.debug("Found true upper cutoff frequency at %d", upper_cutoff_frequency)
+        logger.debug("Found true upper cutoff frequency at %d",
+                     upper_cutoff_frequency)
 
         self.upper_cutoff_label.setText(
             f"{format_frequency(upper_cutoff_frequency)}"
@@ -221,7 +233,8 @@ class BandPassAnalysis(Analysis):
         self.quality_label.setText(str(round(q, 2)))
 
         self.app.markers[0].setFrequency(str(round(center_frequency)))
-        self.app.markers[0].frequencyInput.setText(str(round(center_frequency)))
+        self.app.markers[0].frequencyInput.setText(
+            str(round(center_frequency)))
 
         # Lower roll-off
 
@@ -235,7 +248,8 @@ class BandPassAnalysis(Analysis):
         if lower_six_db_location < 0:
             self.result_label.setText("Lower 6 dB location not found.")
             return
-        lower_six_db_cutoff_frequency = self.app.data.s21[lower_six_db_location].freq
+        lower_six_db_cutoff_frequency = (
+            self.app.data.s21[lower_six_db_location].freq)
         self.lower_six_db_label.setText(
             format_frequency(lower_six_db_cutoff_frequency))
 
@@ -262,7 +276,8 @@ class BandPassAnalysis(Analysis):
 
         if sixty_db_location > 0:
             if sixty_db_location > 0:
-                sixty_db_cutoff_frequency = self.app.data.s21[sixty_db_location].freq
+                sixty_db_cutoff_frequency = (
+                    self.app.data.s21[sixty_db_location].freq)
                 self.lower_sixty_db_label.setText(
                     format_frequency(sixty_db_cutoff_frequency))
             elif ten_db_location != -1 and twenty_db_location != -1:
@@ -275,7 +290,9 @@ class BandPassAnalysis(Analysis):
             else:
                 self.lower_sixty_db_label.setText("Not calculated")
 
-        if ten_db_location > 0 and twenty_db_location > 0 and ten_db_location != twenty_db_location:
+        if (ten_db_location > 0 and
+            twenty_db_location > 0 and
+                ten_db_location != twenty_db_location):
             octave_attenuation, decade_attenuation = self.calculateRolloff(
                 ten_db_location, twenty_db_location)
             self.lower_db_per_octave_label.setText(
@@ -298,11 +315,13 @@ class BandPassAnalysis(Analysis):
         if upper_six_db_location < 0:
             self.result_label.setText("Upper 6 dB location not found.")
             return
-        upper_six_db_cutoff_frequency = self.app.data.s21[upper_six_db_location].freq
+        upper_six_db_cutoff_frequency = (
+            self.app.data.s21[upper_six_db_location].freq)
         self.upper_six_db_label.setText(
             format_frequency(upper_six_db_cutoff_frequency))
 
-        six_db_span = upper_six_db_cutoff_frequency - lower_six_db_cutoff_frequency
+        six_db_span = (
+            upper_six_db_cutoff_frequency - lower_six_db_cutoff_frequency)
 
         self.six_db_span_label.setText(
             format_frequency(six_db_span))
@@ -329,7 +348,8 @@ class BandPassAnalysis(Analysis):
                 break
 
         if sixty_db_location > 0:
-            sixty_db_cutoff_frequency = self.app.data.s21[sixty_db_location].freq
+            sixty_db_cutoff_frequency = (
+                self.app.data.s21[sixty_db_location].freq)
             self.upper_sixty_db_label.setText(
                 format_frequency(sixty_db_cutoff_frequency))
         elif ten_db_location != -1 and twenty_db_location != -1:
@@ -342,7 +362,9 @@ class BandPassAnalysis(Analysis):
         else:
             self.upper_sixty_db_label.setText("Not calculated")
 
-        if ten_db_location > 0 and twenty_db_location > 0 and ten_db_location != twenty_db_location:
+        if (ten_db_location > 0 and
+            twenty_db_location > 0 and
+                ten_db_location != twenty_db_location):
             octave_attenuation, decade_attenuation = self.calculateRolloff(
                 ten_db_location, twenty_db_location)
             self.upper_db_per_octave_label.setText(

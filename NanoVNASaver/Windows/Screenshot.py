@@ -97,5 +97,6 @@ class ScreenshotWindow(QtWidgets.QLabel):
                     QtCore.Qt.FastTransformation))
 
     def setScale(self, scale):
-        width, height = self.pix.size().width() * scale, self.pix.size().height() * scale
+        width, height = (self.pix.size().width() * scale,
+                         self.pix.size().height() * scale)
         self.resize(width, height)

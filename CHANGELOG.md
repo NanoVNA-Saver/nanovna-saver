@@ -1,8 +1,11 @@
 Changelog
 =========
 
-0.5.3-pre
+0.5.3
 -----
+
+ - Int casts due to python 3.10 extension interface changes
+ - Pycodestyle changes
 
 0.5.2
 -----

@@ -97,21 +97,16 @@ class PeakSearchAnalysis(Analysis):
         count = self.input_number_of_peaks.value()
         if self.rbtn_data_vswr.isChecked():
             fn = format_vswr
-            for d in self.app.data.s11:
-                data.append(d.vswr)
+            data.extend(d.vswr for d in self.app.data.s11)
         elif self.rbtn_data_s21_gain.isChecked():
             fn = format_gain
-            for d in self.app.data.s21:
-                data.append(d.gain)
+            data.extend(d.gain for d in self.app.data.s21)
         elif self.rbtn_data_resistance.isChecked():
             fn = format_resistance
-            for d in self.app.data.s11:
-                data.append(d.impedance().real)
+            data.extend(d.impedance().real for d in self.app.data.s11)
         elif self.rbtn_data_reactance.isChecked():
             fn = str
-            for d in self.app.data.s11:
-                data.append(d.impedance().imag)
-
+            data.extend(d.impedance().imag for d in self.app.data.s11)
         else:
             logger.warning("Searching for peaks on unknown data")
             return
@@ -125,8 +120,10 @@ class PeakSearchAnalysis(Analysis):
             peaks, _ = signal.find_peaks(
                 data, width=3, distance=3, prominence=1)
         # elif self.rbtn_peak_both.isChecked():
-        #     peaks_max, _ = signal.find_peaks(data, width=3, distance=3, prominence=1)
-        #     peaks_min, _ = signal.find_peaks(np.array(data)*-1, width=3, distance=3, prominence=1)
+        #     peaks_max, _ = signal.find_peaks(
+        #         data, width=3, distance=3, prominence=1)
+        #     peaks_min, _ = signal.find_peaks(
+        #         np.array(data)*-1, width=3, distance=3, prominence=1)
         #     peaks = np.concatenate((peaks_max, peaks_min))
         else:
             # Both is not yet in
@@ -153,7 +150,8 @@ class PeakSearchAnalysis(Analysis):
             logger.debug("Frequency %d", self.app.data.s11[peaks[i]].freq)
             logger.debug("Value %f", sign * data[peaks[i]])
             self.layout.addRow(
-                f"Freq {format_frequency_short(self.app.data.s11[peaks[i]].freq)}",
+                f"Freq"
+                f" {format_frequency_short(self.app.data.s11[peaks[i]].freq)}",
                 QtWidgets.QLabel(f" value {fn(sign * data[peaks[i]])}"
                                  ))
 

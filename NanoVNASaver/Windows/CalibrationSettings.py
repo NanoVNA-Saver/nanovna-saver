@@ -58,13 +58,16 @@ class CalibrationWindow(QtWidgets.QWidget):
         calibration_status_layout = QtWidgets.QFormLayout()
         self.calibration_status_label = QtWidgets.QLabel("Device calibration")
         self.calibration_source_label = QtWidgets.QLabel("NanoVNA")
-        calibration_status_layout.addRow("Calibration:", self.calibration_status_label)
-        calibration_status_layout.addRow("Source:", self.calibration_source_label)
+        calibration_status_layout.addRow("Calibration:",
+                                         self.calibration_status_label)
+        calibration_status_layout.addRow("Source:",
+                                         self.calibration_source_label)
         calibration_status_group.setLayout(calibration_status_layout)
         left_layout.addWidget(calibration_status_group)
 
         calibration_control_group = QtWidgets.QGroupBox("Calibrate")
-        calibration_control_layout = QtWidgets.QFormLayout(calibration_control_group)
+        calibration_control_layout = QtWidgets.QFormLayout(
+            calibration_control_group)
         cal_btn = {}
         self.cal_label = {}
         for label_name in Calibration.CAL_NAMES:
@@ -72,7 +75,8 @@ class CalibrationWindow(QtWidgets.QWidget):
             cal_btn[label_name] = QtWidgets.QPushButton(
                 label_name.capitalize())
             cal_btn[label_name].setMinimumHeight(20)
-            cal_btn[label_name].clicked.connect(partial(self.manual_save, label_name))
+            cal_btn[label_name].clicked.connect(
+                partial(self.manual_save, label_name))
             calibration_control_layout.addRow(
                 cal_btn[label_name], self.cal_label[label_name])
 
@@ -85,7 +89,8 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.input_offset_delay.setRange(-10e6, 10e6)
 
         calibration_control_layout.addRow(QtWidgets.QLabel(""))
-        calibration_control_layout.addRow("Offset delay", self.input_offset_delay)
+        calibration_control_layout.addRow(
+            "Offset delay", self.input_offset_delay)
 
         self.btn_automatic = QtWidgets.QPushButton("Calibration assistant")
         self.btn_automatic.setMinimumHeight(20)
@@ -110,7 +115,8 @@ class CalibrationWindow(QtWidgets.QWidget):
         left_layout.addWidget(calibration_control_group)
 
         calibration_notes_group = QtWidgets.QGroupBox("Notes")
-        calibration_notes_layout = QtWidgets.QVBoxLayout(calibration_notes_group)
+        calibration_notes_layout = QtWidgets.QVBoxLayout(
+            calibration_notes_group)
         self.notes_textedit = QtWidgets.QPlainTextEdit()
         calibration_notes_layout.addWidget(self.notes_textedit)
 
@@ -208,7 +214,8 @@ class CalibrationWindow(QtWidgets.QWidget):
         cal_standard_layout.addWidget(self.cal_through_box)
 
         self.cal_standard_save_box = QtWidgets.QGroupBox("Saved settings")
-        cal_standard_save_layout = QtWidgets.QVBoxLayout(self.cal_standard_save_box)
+        cal_standard_save_layout = QtWidgets.QVBoxLayout(
+            self.cal_standard_save_box)
         self.cal_standard_save_box.setDisabled(True)
 
         self.cal_standard_save_selector = QtWidgets.QComboBox()
@@ -237,15 +244,18 @@ class CalibrationWindow(QtWidgets.QWidget):
         if not self.app.settings.value("ExpertCalibrationUser", False, bool):
             response = QtWidgets.QMessageBox.question(
                 self, "Are you sure?",
-                "Use of the manual calibration buttons " +
-                "is non-intuitive, and primarily suited for users with very " +
-                "specialized needs. The buttons do not sweep for you, nor do " +
-                "they interact with the NanoVNA calibration.\n\n" +
-                "If you are trying to do a calibration of the NanoVNA, do so " +
-                "on the device itself instead. If you are trying to do a " +
-                "calibration with NanoVNA-Saver, use the Calibration Assistant " +
-                "if possible.\n\n" +
-                "If you are certain you know what you are doing, click Yes.",
+                (
+                    "Use of the manual calibration buttons is non-intuitive,"
+                    " and primarily suited for users with very specialized"
+                    " needs. The buttons do not sweep for you, nor do"
+                    " they interact with the NanoVNA calibration.\n\n"
+                    "If you are trying to do a calibration of the NanoVNA, do"
+                    "so on the device itself instead. If you are trying to do"
+                    "a calibration with NanoVNA-Saver, use the Calibration"
+                    "Assistant if possible.\n\n"
+                    "If you are certain you know what you are doing, click"
+                    " Yes."
+                ),
                 QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Cancel,
                 QtWidgets.QMessageBox.Cancel)
 
@@ -256,7 +266,7 @@ class CalibrationWindow(QtWidgets.QWidget):
         return True
 
     def cal_save(self, name: str):
-        if name in ("through", "isolation"):
+        if name in {"through", "isolation"}:
             self.app.calibration.insert(name, self.app.data.s21)
         else:
             self.app.calibration.insert(name, self.app.data.s11)
@@ -269,7 +279,8 @@ class CalibrationWindow(QtWidgets.QWidget):
 
     def listCalibrationStandards(self):
         self.cal_standard_save_selector.clear()
-        num_standards = self.app.settings.beginReadArray("CalibrationStandards")
+        num_standards = self.app.settings.beginReadArray(
+            "CalibrationStandards")
         for i in range(num_standards):
             self.app.settings.setArrayIndex(i)
             name = self.app.settings.value("Name", defaultValue="INVALID NAME")
@@ -279,7 +290,8 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.cal_standard_save_selector.setCurrentText("New")
 
     def saveCalibrationStandard(self):
-        num_standards = self.app.settings.beginReadArray("CalibrationStandards")
+        num_standards = self.app.settings.beginReadArray(
+            "CalibrationStandards")
         self.app.settings.endArray()
 
         if self.cal_standard_save_selector.currentData() == -1:
@@ -295,7 +307,8 @@ class CalibrationWindow(QtWidgets.QWidget):
             write_num = self.cal_standard_save_selector.currentData()
             name = self.cal_standard_save_selector.currentText()
 
-        self.app.settings.beginWriteArray("CalibrationStandards", num_standards)
+        self.app.settings.beginWriteArray(
+            "CalibrationStandards", num_standards)
         self.app.settings.setArrayIndex(write_num)
         self.app.settings.setValue("Name", name)
 
@@ -338,7 +351,8 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.short_l1_input.setText(str(self.app.settings.value("ShortL1", 0)))
         self.short_l2_input.setText(str(self.app.settings.value("ShortL2", 0)))
         self.short_l3_input.setText(str(self.app.settings.value("ShortL3", 0)))
-        self.short_length.setText(str(self.app.settings.value("ShortDelay", 0)))
+        self.short_length.setText(
+            str(self.app.settings.value("ShortDelay", 0)))
 
         self.open_c0_input.setText(str(self.app.settings.value("OpenC0", 50)))
         self.open_c1_input.setText(str(self.app.settings.value("OpenC1", 0)))
@@ -351,7 +365,8 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.load_capacitance.setText(str(self.app.settings.value("LoadC", 0)))
         self.load_length.setText(str(self.app.settings.value("LoadDelay", 0)))
 
-        self.through_length.setText(str(self.app.settings.value("ThroughDelay", 0)))
+        self.through_length.setText(
+            str(self.app.settings.value("ThroughDelay", 0)))
 
         self.app.settings.endArray()
 
@@ -360,7 +375,8 @@ class CalibrationWindow(QtWidgets.QWidget):
             return
         delete_num = self.cal_standard_save_selector.currentData()
         logger.debug("Deleting calibration no %d", delete_num)
-        num_standards = self.app.settings.beginReadArray("CalibrationStandards")
+        num_standards = self.app.settings.beginReadArray(
+            "CalibrationStandards")
         self.app.settings.endArray()
 
         logger.debug("Number of standards known: %d", num_standards)
@@ -422,7 +438,8 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.app.settings.remove("")
             self.app.settings.endArray()
 
-            self.app.settings.beginWriteArray("CalibrationStandards", len(names))
+            self.app.settings.beginWriteArray(
+                "CalibrationStandards", len(names))
             for i, name in enumerate(names):
                 self.app.settings.setArrayIndex(i)
                 self.app.settings.setValue("Name", name)
@@ -475,14 +492,21 @@ class CalibrationWindow(QtWidgets.QWidget):
                 self.app.worker.applyCalibration(
                     self.app.worker.rawData11, self.app.worker.rawData21)
             logger.debug("Saving and displaying corrected data.")
-            self.app.saveData(self.app.worker.data11, self.app.worker.data21, self.app.sweepSource)
+            self.app.saveData(self.app.worker.data11,
+                              self.app.worker.data21, self.app.sweepSource)
             self.app.worker.signals.updated.emit()
 
     def calculate(self):
+        def _warn_ideal(cal_type: str) -> str:
+            return (
+                'Invalid data for "{cal_type}" calibration standard.'
+                ' Using ideal values.')
+
         if self.app.sweep_control.btn_stop.isEnabled():
             # Currently sweeping
-            self.app.showError("Unable to apply calibration while a sweep is running. " +
-                               "Please stop the sweep and try again.")
+            self.app.showError(
+                "Unable to apply calibration while a sweep is running."
+                " Please stop the sweep and try again.")
             return
         if self.use_ideal_values.isChecked():
             self.app.calibration.useIdealShort = True
@@ -505,8 +529,7 @@ class CalibrationWindow(QtWidgets.QWidget):
                 self.app.calibration.useIdealShort = False
             except ValueError:
                 self.app.calibration.useIdealShort = True
-                logger.warning(
-                    'Invalid data for "short" calibration standard. Using ideal values.')
+                logger.warning(_warn_ideal("short"))
 
             try:
                 self.app.calibration.openC0 = self.getFloatValue(
@@ -522,8 +545,7 @@ class CalibrationWindow(QtWidgets.QWidget):
                 self.app.calibration.useIdealOpen = False
             except ValueError:
                 self.app.calibration.useIdealOpen = True
-                logger.warning(
-                    'Invalid data for "open" calibration standard. Using ideal values.')
+                logger.warning(_warn_ideal("open"))
 
             try:
                 self.app.calibration.loadR = self.getFloatValue(
@@ -537,18 +559,15 @@ class CalibrationWindow(QtWidgets.QWidget):
                 self.app.calibration.useIdealLoad = False
             except ValueError:
                 self.app.calibration.useIdealLoad = True
-                logger.warning(
-                    'Invalid data for "load" calibration standard.'
-                    ' Using ideal values.')
+                logger.warning(_warn_ideal("load"))
+
             try:
                 self.app.calibration.throughLength = self.getFloatValue(
                     self.through_length.text()) / 10 ** 12
                 self.app.calibration.useIdealThrough = False
             except ValueError:
                 self.app.calibration.useIdealThrough = True
-                logger.warning(
-                    'Invalid data for "through" calibration standard.'
-                    ' Using ideal values.')
+                logger.warning(_warn_ideal("through"))
 
         logger.debug("Attempting calibration calculation.")
         try:
@@ -557,32 +576,35 @@ class CalibrationWindow(QtWidgets.QWidget):
                 _format_cal_label(self.app.calibration.size(),
                                   "Application calibration"))
             if self.use_ideal_values.isChecked():
-                self.calibration_source_label.setText(self.app.calibration.source)
+                self.calibration_source_label.setText(
+                    self.app.calibration.source)
             else:
                 self.calibration_source_label.setText(
-                    self.app.calibration.source + " (Standards: Custom)")
+                    f"{self.app.calibration.source} (Standards: Custom)")
 
-            if len(self.app.worker.rawData11) > 0:
+            if self.app.worker.rawData11:
                 # There's raw data, so we can get corrected data
                 logger.debug("Applying calibration to existing sweep data.")
-                self.app.worker.data11, self.app.worker.data21 = self.app.worker.applyCalibration(
-                    self.app.worker.rawData11, self.app.worker.rawData21)
+                self.app.worker.data11, self.app.worker.data21 = (
+                    self.app.worker.applyCalibration(
+                        self.app.worker.rawData11,
+                        self.app.worker.rawData21))
                 logger.debug("Saving and displaying corrected data.")
                 self.app.saveData(self.app.worker.data11,
                                   self.app.worker.data21, self.app.sweepSource)
                 self.app.worker.signals.updated.emit()
         except ValueError as e:
-            # showError here hides the calibration window, so we need to pop up our own
-            QtWidgets.QMessageBox.warning(self, "Error applying calibration", str(e))
-            self.calibration_status_label.setText("Applying calibration failed.")
+            # showError here hides the calibration window,
+            # so we need to pop up our own
+            QtWidgets.QMessageBox.warning(
+                self, "Error applying calibration", str(e))
+            self.calibration_status_label.setText(
+                "Applying calibration failed.")
             self.calibration_source_label.setText(self.app.calibration.source)
 
     @staticmethod
     def getFloatValue(text: str) -> float:
-        if text == "":
-            # Default value is float
-            return 0
-        return float(text)
+        return float(text) if text else 0.0
 
     def loadCalibration(self):
         filename, _ = QtWidgets.QFileDialog.getOpenFileName(
@@ -594,7 +616,8 @@ class CalibrationWindow(QtWidgets.QWidget):
         for i, name in enumerate(
                 ("short", "open", "load", "through", "isolation", "thrurefl")):
             self.cal_label[name].setText(
-                _format_cal_label(self.app.calibration.data_size(name), "Loaded"))
+                _format_cal_label(self.app.calibration.data_size(name),
+                                  "Loaded"))
             if i == 2 and not self.app.calibration.isValid2Port():
                 break
         self.calculate()
@@ -612,15 +635,15 @@ class CalibrationWindow(QtWidgets.QWidget):
         filedialog.setDefaultSuffix("cal")
         filedialog.setNameFilter("Calibration Files (*.cal);;All files (*.*)")
         filedialog.setAcceptMode(QtWidgets.QFileDialog.AcceptSave)
-        selected = filedialog.exec()
-        if selected:
+        if filedialog.exec():
             filename = filedialog.selectedFiles()[0]
         else:
             return
-        if filename == "":
+        if not filename:
             logger.debug("No file name selected.")
             return
-        self.app.calibration.notes = self.notes_textedit.toPlainText().splitlines()
+        self.app.calibration.notes = self.notes_textedit.toPlainText(
+        ).splitlines()
         try:
             self.app.calibration.save(filename)
             self.app.settings.setValue("CalibrationFile", filename)
@@ -633,25 +656,28 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.cal_open_box.setDisabled(self.use_ideal_values.isChecked())
         self.cal_load_box.setDisabled(self.use_ideal_values.isChecked())
         self.cal_through_box.setDisabled(self.use_ideal_values.isChecked())
-        self.cal_standard_save_box.setDisabled(self.use_ideal_values.isChecked())
+        self.cal_standard_save_box.setDisabled(
+            self.use_ideal_values.isChecked())
 
     def automaticCalibration(self):
         self.btn_automatic.setDisabled(True)
         introduction = QtWidgets.QMessageBox(
             QtWidgets.QMessageBox.Information,
             "Calibration assistant",
-            "This calibration assistant will help you create a calibration in the "
-            "NanoVNASaver application.  It will sweep the standards for you, and "
-            "guide you through the process.<br><br>"
-            "Before starting, ensure you have Open, Short and Load standards "
-            "available, and the cables you wish to have calibrated with the device "
-            "connected.<br><br>"
-            "If you want a 2-port calibration, also have a \"through\" connector "
-            "to hand.<br><br>"
-            "<b>The best results are achieved by having the NanoVNA calibrated "
-            "on-device for the full span of interest and saved to save slot 0 "
-            "before starting.</b><br><br>"
-            "Once you are ready to proceed, press Ok",
+            (
+                "This calibration assistant will help you create a calibration"
+                " in the NanoVNASaver application.  It will sweep the"
+                "standards for you, and guide you through the process.<br><br>"
+                "Before starting, ensure you have Open, Short and Load"
+                " standards available, and the cables you wish to have"
+                " calibrated with the device connected.<br><br>"
+                "If you want a 2-port calibration, also have a \"through\""
+                " connector to hand.<br><br>"
+                "<b>The best results are achieved by having the NanoVNA"
+                " calibrated on-device for the full span of interest and saved"
+                " to save slot 0 before starting.</b><br><br>"
+                "Once you are ready to proceed, press Ok."
+            ),
             QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
         response = introduction.exec()
         if response != QtWidgets.QMessageBox.Ok:
@@ -662,7 +688,8 @@ class CalibrationWindow(QtWidgets.QWidget):
             QtWidgets.QMessageBox(
                 QtWidgets.QMessageBox.Information,
                 "NanoVNA not connected",
-                "Please ensure the NanoVNA is connected before attempting calibration."
+                ("Please ensure the NanoVNA is connected before attempting"
+                 " calibration.")
             ).exec()
             self.btn_automatic.setDisabled(False)
             return
@@ -671,7 +698,8 @@ class CalibrationWindow(QtWidgets.QWidget):
             QtWidgets.QMessageBox(
                 QtWidgets.QMessageBox.Information,
                 "Continuous sweep enabled",
-                "Please disable continuous sweeping before attempting calibration."
+                ("Please disable continuous sweeping before attempting"
+                    " calibration.")
             ).exec()
             self.btn_automatic.setDisabled(False)
             return
@@ -679,8 +707,11 @@ class CalibrationWindow(QtWidgets.QWidget):
         short_step = QtWidgets.QMessageBox(
             QtWidgets.QMessageBox.Information,
             "Calibrate short",
-            "Please connect the \"short\" standard to port 0 of the NanoVNA.\n\n"
-            "Press Ok when you are ready to continue.",
+            (
+                "Please connect the \"short\" standard to port 0 of the"
+                " NanoVNA.\n\n"
+                "Press Ok when you are ready to continue."
+            ),
             QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
 
         response = short_step.exec()
@@ -696,7 +727,8 @@ class CalibrationWindow(QtWidgets.QWidget):
 
     def automaticCalibrationStep(self):
         if self.nextStep == -1:
-            self.app.worker.signals.finished.disconnect(self.automaticCalibrationStep)
+            self.app.worker.signals.finished.disconnect(
+                self.automaticCalibrationStep)
             return
 
         if self.nextStep == 0:
@@ -707,10 +739,13 @@ class CalibrationWindow(QtWidgets.QWidget):
             open_step = QtWidgets.QMessageBox(
                 QtWidgets.QMessageBox.Information,
                 "Calibrate open",
-                "Please connect the \"open\" standard to port 0 of the NanoVNA.\n\n"
-                "Either use a supplied open, or leave the end of the cable unconnected "
-                "if desired.\n\n"
-                "Press Ok when you are ready to continue.",
+                (
+                    "Please connect the \"open\" standard to port 0 of the"
+                    " NanoVNA.\n\n"
+                    "Either use a supplied open, or leave the end of the"
+                    " cable unconnected if desired.\n\n"
+                    "Press Ok when you are ready to continue."
+                ),
                 QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
 
             response = open_step.exec()
@@ -730,8 +765,11 @@ class CalibrationWindow(QtWidgets.QWidget):
             load_step = QtWidgets.QMessageBox(
                 QtWidgets.QMessageBox.Information,
                 "Calibrate load",
-                "Please connect the \"load\" standard to port 0 of the NanoVNA.\n\n"
-                "Press Ok when you are ready to continue.",
+                (
+                    "Please connect the \"load\" standard to port 0 of the"
+                    " NanoVNA.\n\n"
+                    "Press Ok when you are ready to continue."
+                ),
                 QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
 
             response = load_step.exec()
@@ -751,9 +789,13 @@ class CalibrationWindow(QtWidgets.QWidget):
             continue_step = QtWidgets.QMessageBox(
                 QtWidgets.QMessageBox.Information,
                 "1-port calibration complete",
-                "The required steps for a 1-port calibration are now complete.\n\n"
-                "If you wish to continue and perform a 2-port calibration, press "
-                "\"Yes\".  To apply the 1-port calibration and stop, press \"Apply\"",
+                (
+                    "The required steps for a 1-port calibration are now"
+                    " complete.\n\n"
+                    "If you wish to continue and perform a 2-port calibration,"
+                    " press \"Yes\". To apply the 1-port calibration and stop,"
+                    " press \"Apply\""
+                ),
                 QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Apply |
                 QtWidgets.QMessageBox.Cancel)
 
@@ -761,21 +803,27 @@ class CalibrationWindow(QtWidgets.QWidget):
             if response == QtWidgets.QMessageBox.Apply:
                 self.calculate()
                 self.nextStep = -1
-                self.app.worker.signals.finished.disconnect(self.automaticCalibrationStep)
+                self.app.worker.signals.finished.disconnect(
+                    self.automaticCalibrationStep)
                 self.btn_automatic.setDisabled(False)
                 return
             if response != QtWidgets.QMessageBox.Yes:
                 self.btn_automatic.setDisabled(False)
                 self.nextStep = -1
-                self.app.worker.signals.finished.disconnect(self.automaticCalibrationStep)
+                self.app.worker.signals.finished.disconnect(
+                    self.automaticCalibrationStep)
                 return
 
             isolation_step = QtWidgets.QMessageBox(
                 QtWidgets.QMessageBox.Information,
                 "Calibrate isolation",
-                "Please connect the \"load\" standard to port 1 of the NanoVNA.\n\n"
-                "If available, also connect a load standard to port 0.\n\n"
-                "Press Ok when you are ready to continue.",
+                (
+                    "Please connect the \"load\" standard to port 1 of the"
+                    " NanoVNA.\n\n"
+                    "If available, also connect a load standard to"
+                    " port 0.\n\n"
+                    "Press Ok when you are ready to continue."
+                ),
                 QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
 
             response = isolation_step.exec()
@@ -795,9 +843,11 @@ class CalibrationWindow(QtWidgets.QWidget):
             through_step = QtWidgets.QMessageBox(
                 QtWidgets.QMessageBox.Information,
                 "Calibrate through",
-                "Please connect the \"through\" standard between port 0 and port 1 "
-                "of the NanoVNA.\n\n"
-                "Press Ok when you are ready to continue.",
+                (
+                    "Please connect the \"through\" standard between"
+                    " port 0 and port 1 of the NanoVNA.\n\n"
+                    "Press Ok when you are ready to continue."
+                ),
                 QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel)
 
             response = through_step.exec()
@@ -817,8 +867,10 @@ class CalibrationWindow(QtWidgets.QWidget):
             apply_step = QtWidgets.QMessageBox(
                 QtWidgets.QMessageBox.Information,
                 "Calibrate complete",
-                "The calibration process is now complete.  Press \"Apply\" to apply "
-                "the calibration parameters.",
+                (
+                    "The calibration process is now complete.  Press"
+                    " \"Apply\" to apply the calibration parameters."
+                ),
                 QtWidgets.QMessageBox.Apply | QtWidgets.QMessageBox.Cancel)
 
             response = apply_step.exec()

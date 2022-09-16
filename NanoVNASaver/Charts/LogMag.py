@@ -160,8 +160,8 @@ class LogMagChart(FrequencyChart):
     def getYPosition(self, d: Datapoint) -> int:
         logMag = self.logMag(d)
         if math.isinf(logMag):
-            return None
-        return self.topMargin + round(
+            return self.topMargin
+        return self.topMargin + int(
             (self.maxValue - logMag) / self.span * self.dim.height)
 
     def valueAtPosition(self, y) -> List[float]:

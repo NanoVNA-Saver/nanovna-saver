@@ -49,7 +49,8 @@ class PhaseChart(FrequencyChart):
         self.y_menu.addSeparator()
         self.action_unwrap = QtWidgets.QAction("Unwrap")
         self.action_unwrap.setCheckable(True)
-        self.action_unwrap.triggered.connect(lambda: self.setUnwrap(self.action_unwrap.isChecked()))
+        self.action_unwrap.triggered.connect(
+            lambda: self.setUnwrap(self.action_unwrap.isChecked()))
         self.y_menu.addAction(self.action_unwrap)
 
     def copy(self):
@@ -67,14 +68,8 @@ class PhaseChart(FrequencyChart):
             return
 
         if self.unwrap:
-            rawData = []
-            for d in self.data:
-                rawData.append(d.phase)
-
-            rawReference = []
-            for d in self.reference:
-                rawReference.append(d.phase)
-
+            rawData = [d.phase for d in self.data]
+            rawReference = [d.phase for d in self.reference]
             self.unwrappedData = np.degrees(np.unwrap(rawData))
             self.unwrappedReference = np.degrees(np.unwrap(rawReference))
 
@@ -102,27 +97,28 @@ class PhaseChart(FrequencyChart):
 
         for i in range(tickcount):
             angle = minAngle + span * i / tickcount
-            y = self.topMargin + round((self.maxAngle - angle) / self.span * self.dim.height)
-            if angle != minAngle and angle != maxAngle:
+            y = self.topMargin + int(
+                (self.maxAngle - angle) / self.span * self.dim.height)
+            if angle not in [minAngle, maxAngle]:
                 qp.setPen(QtGui.QPen(Chart.color.text))
                 if angle != 0:
-                    digits = max(0, min(2, math.floor(3 - math.log10(abs(angle)))))
-                    if digits == 0:
-                        anglestr = str(round(angle))
-                    else:
-                        anglestr = str(round(angle, digits))
+                    digits = max(
+                        0, min(2, math.floor(3 - math.log10(abs(angle)))))
+                    anglestr = str(round(angle)) if digits == 0 else str(
+                        round(angle, digits))
                 else:
                     anglestr = "0"
-                qp.drawText(3, y + 3, anglestr + "°")
+                qp.drawText(3, y + 3, f"{anglestr}°")
                 qp.setPen(QtGui.QPen(Chart.color.foreground))
-                qp.drawLine(self.leftMargin - 5, y, self.leftMargin + self.dim.width, y)
+                qp.drawLine(self.leftMargin - 5, y,
+                            self.leftMargin + self.dim.width, y)
         qp.drawLine(self.leftMargin - 5,
                     self.topMargin,
                     self.leftMargin + self.dim.width,
                     self.topMargin)
         qp.setPen(Chart.color.text)
-        qp.drawText(3, self.topMargin + 5, str(maxAngle) + "°")
-        qp.drawText(3, self.dim.height + self.topMargin, str(minAngle) + "°")
+        qp.drawText(3, self.topMargin + 5, f"{maxAngle}°")
+        qp.drawText(3, self.dim.height + self.topMargin, f"{minAngle}°")
 
         self._set_start_stop()
 
@@ -136,16 +132,14 @@ class PhaseChart(FrequencyChart):
         self.drawMarkers(qp)
 
     def getYPosition(self, d: Datapoint) -> int:
-        if self.unwrap:
-            if d in self.data:
-                angle = self.unwrappedData[self.data.index(d)]
-            elif d in self.reference:
-                angle = self.unwrappedReference[self.reference.index(d)]
-            else:
-                angle = math.degrees(d.phase)
+        if self.unwrap and d in self.data:
+            angle = self.unwrappedData[self.data.index(d)]
+        elif self.unwrap and d in self.reference:
+            angle = self.unwrappedReference[self.reference.index(d)]
         else:
             angle = math.degrees(d.phase)
-        return self.topMargin + round((self.maxAngle - angle) / self.span * self.dim.height)
+        return self.topMargin + int(
+            (self.maxAngle - angle) / self.span * self.dim.height)
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin

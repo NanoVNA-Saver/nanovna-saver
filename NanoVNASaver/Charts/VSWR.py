@@ -44,14 +44,15 @@ class VSWRChart(FrequencyChart):
         return True
 
     def drawValues(self, qp: QtGui.QPainter):
-        if len(self.data) == 0 and len(self.reference) == 0:
+        if not self.data and not self.reference:
             return
+
         if self.fixedSpan:
             fstart = self.minFrequency
             fstop = self.maxFrequency
         elif len(self.data) > 0:
             fstart = self.data[0].freq
-            fstop = self.data[len(self.data)-1].freq
+            fstop = self.data[len(self.data) - 1].freq
         else:
             fstart = self.reference[0].freq
             fstop = self.reference[len(self.reference) - 1].freq
@@ -78,10 +79,7 @@ class VSWRChart(FrequencyChart):
             except OverflowError:
                 maxVSWR = self.maxDisplayValue
         self.maxVSWR = maxVSWR
-        span = maxVSWR-minVSWR
-        if span == 0:
-            span = 0.01
-        self.span = span
+        self.span = (maxVSWR - minVSWR) or 0.01
 
         target_ticks = math.floor(self.dim.height / 60)
 
@@ -91,53 +89,49 @@ class VSWRChart(FrequencyChart):
                 vswr = self.valueAtPosition(y)[0]
                 qp.setPen(Chart.color.text)
                 if vswr != 0:
-                    digits = max(0, min(2, math.floor(3 - math.log10(abs(vswr)))))
-                    if digits == 0:
-                        vswrstr = str(round(vswr))
-                    else:
-                        vswrstr = str(round(vswr, digits))
-                    qp.drawText(3, y+3, vswrstr)
+                    digits = max(
+                        0, min(2, math.floor(3 - math.log10(abs(vswr)))))
+                    v_text = f"{round(vswr, digits)}" if digits else "0"
+                    qp.drawText(3, y + 3, v_text)
                 qp.setPen(QtGui.QPen(Chart.color.foreground))
-                qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.dim.width, y)
-            qp.drawLine(self.leftMargin - 5, self.topMargin + self.dim.height,
-                        self.leftMargin + self.dim.width, self.topMargin + self.dim.height)
+                qp.drawLine(self.leftMargin - 5, y,
+                            self.leftMargin + self.dim.width, y)
+            qp.drawLine(self.leftMargin - 5,
+                        self.topMargin + self.dim.height,
+                        self.leftMargin + self.dim.width,
+                        self.topMargin + self.dim.height)
             qp.setPen(Chart.color.text)
-            digits = max(0, min(2, math.floor(3 - math.log10(abs(minVSWR)))))
-            if digits == 0:
-                vswrstr = str(round(minVSWR))
-            else:
-                vswrstr = str(round(minVSWR, digits))
-            qp.drawText(3, self.topMargin + self.dim.height, vswrstr)
+            digits = max(
+                0, min(2, math.floor(3 - math.log10(abs(minVSWR)))))
+            v_text = f"{round(minVSWR, digits)}" if digits else "0"
+            qp.drawText(3, self.topMargin + self.dim.height, v_text)
         else:
             for i in range(target_ticks):
-                vswr = minVSWR + i * self.span/target_ticks
+                vswr = minVSWR + i * self.span / target_ticks
                 y = self.getYPositionFromValue(vswr)
                 qp.setPen(Chart.color.text)
                 if vswr != 0:
-                    digits = max(0, min(2, math.floor(3 - math.log10(abs(vswr)))))
-                    if digits == 0:
-                        vswrstr = str(round(vswr))
-                    else:
-                        vswrstr = str(round(vswr, digits))
-                    qp.drawText(3, y+3, vswrstr)
+                    digits = max(
+                        0, min(2, math.floor(3 - math.log10(abs(vswr)))))
+                    vswrstr = f"{round(vswr, digits)}" if digits else "0"
+                    qp.drawText(3, y + 3, vswrstr)
                 qp.setPen(QtGui.QPen(Chart.color.foreground))
-                qp.drawLine(self.leftMargin-5, y, self.leftMargin+self.dim.width, y)
+                qp.drawLine(self.leftMargin - 5, y,
+                            self.leftMargin + self.dim.width, y)
             qp.drawLine(self.leftMargin - 5,
                         self.topMargin,
                         self.leftMargin + self.dim.width,
                         self.topMargin)
             qp.setPen(Chart.color.text)
             digits = max(0, min(2, math.floor(3 - math.log10(abs(maxVSWR)))))
-            if digits == 0:
-                vswrstr = str(round(maxVSWR))
-            else:
-                vswrstr = str(round(maxVSWR, digits))
-            qp.drawText(3, 35, vswrstr)
+            v_text = f"{round(maxVSWR, digits)}" if digits else "0"
+            qp.drawText(3, 35, v_text)
 
         qp.setPen(Chart.color.swr)
         for vswr in self.swrMarkers:
             y = self.getYPositionFromValue(vswr)
-            qp.drawLine(self.leftMargin, y, self.leftMargin + self.dim.width, y)
+            qp.drawLine(self.leftMargin, y,
+                        self.leftMargin + self.dim.width, y)
             qp.drawText(self.leftMargin + 3, y - 1, str(vswr))
 
         self.drawFrequencyTicks(qp)
@@ -153,10 +147,12 @@ class VSWRChart(FrequencyChart):
             else:
                 return -1
             return (
-                self.topMargin +
-                round((math.log(self.maxVSWR) - math.log(vswr)) / span * self.dim.height))
+                self.topMargin + int(
+                    (math.log(self.maxVSWR) - math.log(vswr)) /
+                    span * self.dim.height))
         try:
-            return self.topMargin + round((self.maxVSWR - vswr) / self.span * self.dim.height)
+            return self.topMargin + int(
+                (self.maxVSWR - vswr) / self.span * self.dim.height)
         except OverflowError:
             return self.topMargin
 
