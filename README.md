@@ -17,6 +17,8 @@ points, and generally display and analyze the resulting data.
 Latest Changes
 --------------
 
+### Changes in 0.5.4-pre
+
 ### Changes in 0.5.3
 
  - Python 3.10 compatability fixes
