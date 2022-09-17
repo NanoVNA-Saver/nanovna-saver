@@ -25,6 +25,12 @@ from scipy import signal
 logger = logging.getLogger(__name__)
 
 
+class QHLine(QtWidgets.QFrame):
+    def __init__(self):
+        super().__init__()
+        self.setFrameShape(QtWidgets.QFrame.HLine)
+
+
 class Analysis:
     _widget = None
 

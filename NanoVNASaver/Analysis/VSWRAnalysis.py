@@ -21,20 +21,16 @@ import csv
 import itertools
 import logging
 
-import numpy as np
 from PyQt5 import QtWidgets
 
-from NanoVNASaver.Analysis import Analysis, PeakSearchAnalysis
+import NanoVNASaver.AnalyticTools as at
+from NanoVNASaver.Analysis import Analysis, QHLine
 from NanoVNASaver.Formatting import (
     format_frequency, format_complex_imp,
     format_frequency_short, format_resistance)
 from NanoVNASaver.RFTools import reflection_coefficient
 
 logger = logging.getLogger(__name__)
-
-
-def round_2(x):
-    return round(x, 2)
 
 
 def format_resistence_neg(x):
@@ -45,11 +41,6 @@ class VSWRAnalysis(Analysis):
     max_dips_shown = 3
     vswr_limit_value = 1.5
 
-    class QHLine(QtWidgets.QFrame):
-        def __init__(self):
-            super().__init__()
-            self.setFrameShape(QtWidgets.QFrame.HLine)
-
     def __init__(self, app):
         super().__init__(app)
 
@@ -58,7 +49,7 @@ class VSWRAnalysis(Analysis):
         self._widget.setLayout(self.layout)
 
         self.input_vswr_limit = QtWidgets.QDoubleSpinBox()
-        self.input_vswr_limit.setValue(self.vswr_limit_value)
+        self.input_vswr_limit.setValue(VSWRAnalysis.vswr_limit_value)
         self.input_vswr_limit.setSingleStep(0.1)
         self.input_vswr_limit.setMinimum(1)
         self.input_vswr_limit.setMaximum(25)
@@ -67,89 +58,59 @@ class VSWRAnalysis(Analysis):
         self.checkbox_move_marker = QtWidgets.QCheckBox()
         self.layout.addRow(QtWidgets.QLabel("<b>Settings</b>"))
         self.layout.addRow("VSWR limit", self.input_vswr_limit)
-        self.layout.addRow(VSWRAnalysis.QHLine())
+        self.layout.addRow(QHLine())
 
         self.results_label = QtWidgets.QLabel("<b>Results</b>")
         self.layout.addRow(self.results_label)
 
     def runAnalysis(self):
-        max_dips_shown = self.max_dips_shown
-        data = [d.vswr for d in self.app.data.s11]
+        if not self.app.data.s11:
+            return
+        s11 = self.app.data.s11
+
+        data = [d.vswr for d in s11]
         threshold = self.input_vswr_limit.value()
-        minimums = self.find_minimums(data, threshold)
-        logger.debug("Found %d sections under %f threshold",
-                     len(minimums), threshold)
+
+        minima = sorted(at.minima(data, threshold),
+                        key=lambda i: data[i])[:VSWRAnalysis.max_dips_shown]
+
         results_header = self.layout.indexOf(self.results_label)
         logger.debug("Results start at %d, out of %d",
                      results_header, self.layout.rowCount())
-
         for _ in range(results_header, self.layout.rowCount()):
             self.layout.removeRow(self.layout.rowCount() - 1)
-        if len(minimums) > max_dips_shown:
-            self.layout.addRow(
-                QtWidgets.QLabel(
-                    f"<b>More than {str(max_dips_shown)} dips found."
-                    " Lowest shown.</b>"))
 
-            dips = []
-            for m in minimums:
-                start, lowest, end = m
-                dips.append(data[lowest])
-            best_dips = []
-            for _ in range(max_dips_shown):
-                min_idx = np.argmin(dips)
-                best_dips.append(minimums[min_idx])
-                dips.remove(dips[min_idx])
-                minimums.remove(minimums[min_idx])
-            minimums = best_dips
-        self.minimums = minimums
-        if len(minimums) > 0:
-            for m in minimums:
-                start, lowest, end = m
-                if start != end:
-                    logger.debug(
-                        "Section from %d to %d, lowest at %d",
-                        start, end, lowest)
-                    self.layout.addRow("Start", QtWidgets.QLabel(
-                        format_frequency(self.app.data.s11[start].freq)))
-
-                    self.layout.addRow("Minimum", QtWidgets.QLabel(
-                        f"{format_frequency(self.app.data.s11[lowest].freq)}"
-                        f" ({round(data[lowest], 2)})"))
-
-                    self.layout.addRow("End", QtWidgets.QLabel(
-                        format_frequency(self.app.data.s11[end].freq)))
-
-                    self.layout.addRow(
-                        "Span", QtWidgets.QLabel(format_frequency(
-                            (self.app.data.s11[end].freq -
-                             self.app.data.s11[start].freq))))
-
-                else:
-                    self.layout.addRow("Low spot", QtWidgets.QLabel(
-                        format_frequency(self.app.data.s11[lowest].freq)))
-
-                self.layout.addWidget(PeakSearchAnalysis.QHLine())
-            self.layout.removeRow(self.layout.rowCount() - 1)
-        else:
+        if not minima:
             self.layout.addRow(
                 QtWidgets.QLabel(
                     f"No areas found with VSWR below {round(threshold, 2)}."))
+            return
+
+        for idx in minima:
+            rng = at.take_from_center(data, idx, lambda i: i[1] < threshold)
+            begin, end = rng[0], rng[-1]
+            self.layout.addRow("Start", QtWidgets.QLabel(
+                format_frequency(s11[begin].freq)))
+            self.layout.addRow("Minimum", QtWidgets.QLabel(
+                f"{format_frequency(s11[idx].freq)}"
+                f" ({round(s11[idx].vswr, 2)})"))
+            self.layout.addRow("End", QtWidgets.QLabel(
+                format_frequency(s11[end].freq)))
+            self.layout.addRow(
+                "Span", QtWidgets.QLabel(format_frequency(
+                    (s11[end].freq - s11[begin].freq))))
+            self.layout.addWidget(QHLine())
+
+        self.layout.removeRow(self.layout.rowCount() - 1)
 
 
 class ResonanceAnalysis(Analysis):
-    # max_dips_shown = 3
 
-    @classmethod
-    def vswr_transformed(cls, z, ratio=49) -> float:
+    @staticmethod
+    def vswr_transformed(z, ratio=49) -> float:
         refl = reflection_coefficient(z / ratio)
         mag = abs(refl)
         return 1 if mag == 1 else (1 + mag) / (1 - mag)
-
-    class QHLine(QtWidgets.QFrame):
-        def __init__(self):
-            super().__init__()
-            self.setFrameShape(QtWidgets.QFrame.HLine)
 
     def __init__(self, app):
         super().__init__(app)
@@ -161,9 +122,9 @@ class ResonanceAnalysis(Analysis):
         self.checkbox_move_marker = QtWidgets.QCheckBox()
         self.layout.addRow(QtWidgets.QLabel("<b>Settings</b>"))
         self.layout.addRow("Description", self.input_description)
-        self.layout.addRow(VSWRAnalysis.QHLine())
+        self.layout.addRow(QHLine())
 
-        self.layout.addRow(VSWRAnalysis.QHLine())
+        self.layout.addRow(QHLine())
 
         self.results_label = QtWidgets.QLabel("<b>Results</b>")
         self.layout.addRow(self.results_label)
@@ -190,8 +151,6 @@ class ResonanceAnalysis(Analysis):
 
     def runAnalysis(self):
         self.reset()
-        # self.results_label = QtWidgets.QLabel("<b>Results</b>")
-        # max_dips_shown = self.max_dips_shown
         filename = (
             os.path.join("/tmp/", f"{self.input_description.text()}.csv")
             if self.input_description.text()
@@ -208,11 +167,6 @@ class ResonanceAnalysis(Analysis):
         for _ in range(results_header, self.layout.rowCount()):
             self.layout.removeRow(self.layout.rowCount() - 1)
 
-        #         if len(crossing) > max_dips_shown:
-        #             self.layout.addRow(QtWidgets.QLabel(
-        #                "<b>More than " + str(max_dips_shown) +
-        #                " dips found. Lowest shown.</b>"))
-        #         self.crossing = crossing[:max_dips_shown]
         if crossing:
             extended_data = []
             for m in crossing:
@@ -232,7 +186,7 @@ class ResonanceAnalysis(Analysis):
                 else:
                     self.layout.addRow("Resonance", QtWidgets.QLabel(
                         format_frequency(self.app.data.s11[lowest].freq)))
-                    self.layout.addWidget(PeakSearchAnalysis.QHLine())
+                    self.layout.addWidget(QHLine())
             # Remove the final separator line
             self.layout.removeRow(self.layout.rowCount() - 1)
             if filename and extended_data:
@@ -316,7 +270,7 @@ class EFHWAnalysis(ResonanceAnalysis):
                 else:
                     extended_data[m] = my_data
         fields = [("freq", format_frequency_short),
-                  ("r", format_resistence_neg), ("lambda", round_2)]
+                  ("r", format_resistence_neg), ("lambda", lambda x: round(x, 2))]
 
         if self.old_data:
             diff = self.compare(

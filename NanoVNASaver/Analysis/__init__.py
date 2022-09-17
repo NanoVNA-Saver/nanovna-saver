@@ -1,4 +1,4 @@
-from .Analysis import Analysis
+from .Analysis import Analysis, QHLine
 from .BandPassAnalysis import BandPassAnalysis
 from .BandStopAnalysis import BandStopAnalysis
 from .HighPassAnalysis import HighPassAnalysis
