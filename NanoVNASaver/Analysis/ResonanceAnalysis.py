@@ -1,8 +1,8 @@
 #  NanoVNASaver
 #
 #  A python program to view and export Touchstone data from a NanoVNA
-#  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
+#  Copyright (C) 2019, 2020 Rune B. Broberg
+#  Copyright (C) 2020ff NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -23,8 +23,7 @@ import logging
 
 from PyQt5 import QtWidgets
 
-import NanoVNASaver.AnalyticTools as at
-from NanoVNASaver.Analysis import Analysis, QHLine
+from NanoVNASaver.Analysis.Base import Analysis, QHLine
 from NanoVNASaver.Formatting import (
     format_frequency, format_complex_imp,
     format_frequency_short, format_resistance)
@@ -37,80 +36,13 @@ def format_resistence_neg(x):
     return format_resistance(x, allow_negative=True)
 
 
-class VSWRAnalysis(Analysis):
-    max_dips_shown = 3
-    vswr_limit_value = 1.5
-
-    def __init__(self, app):
-        super().__init__(app)
-
-        self._widget = QtWidgets.QWidget()
-        self.layout = QtWidgets.QFormLayout()
-        self._widget.setLayout(self.layout)
-
-        self.input_vswr_limit = QtWidgets.QDoubleSpinBox()
-        self.input_vswr_limit.setValue(VSWRAnalysis.vswr_limit_value)
-        self.input_vswr_limit.setSingleStep(0.1)
-        self.input_vswr_limit.setMinimum(1)
-        self.input_vswr_limit.setMaximum(25)
-        self.input_vswr_limit.setDecimals(2)
-
-        self.checkbox_move_marker = QtWidgets.QCheckBox()
-        self.layout.addRow(QtWidgets.QLabel("<b>Settings</b>"))
-        self.layout.addRow("VSWR limit", self.input_vswr_limit)
-        self.layout.addRow(QHLine())
-
-        self.results_label = QtWidgets.QLabel("<b>Results</b>")
-        self.layout.addRow(self.results_label)
-
-    def runAnalysis(self):
-        if not self.app.data.s11:
-            return
-        s11 = self.app.data.s11
-
-        data = [d.vswr for d in s11]
-        threshold = self.input_vswr_limit.value()
-
-        minima = sorted(at.minima(data, threshold),
-                        key=lambda i: data[i])[:VSWRAnalysis.max_dips_shown]
-
-        results_header = self.layout.indexOf(self.results_label)
-        logger.debug("Results start at %d, out of %d",
-                     results_header, self.layout.rowCount())
-        for _ in range(results_header, self.layout.rowCount()):
-            self.layout.removeRow(self.layout.rowCount() - 1)
-
-        if not minima:
-            self.layout.addRow(
-                QtWidgets.QLabel(
-                    f"No areas found with VSWR below {round(threshold, 2)}."))
-            return
-
-        for idx in minima:
-            rng = at.take_from_center(data, idx, lambda i: i[1] < threshold)
-            begin, end = rng[0], rng[-1]
-            self.layout.addRow("Start", QtWidgets.QLabel(
-                format_frequency(s11[begin].freq)))
-            self.layout.addRow("Minimum", QtWidgets.QLabel(
-                f"{format_frequency(s11[idx].freq)}"
-                f" ({round(s11[idx].vswr, 2)})"))
-            self.layout.addRow("End", QtWidgets.QLabel(
-                format_frequency(s11[end].freq)))
-            self.layout.addRow(
-                "Span", QtWidgets.QLabel(format_frequency(
-                    (s11[end].freq - s11[begin].freq))))
-            self.layout.addWidget(QHLine())
-
-        self.layout.removeRow(self.layout.rowCount() - 1)
+def vswr_transformed(z, ratio=49) -> float:
+    refl = reflection_coefficient(z / ratio)
+    mag = abs(refl)
+    return 1 if mag == 1 else (1 + mag) / (1 - mag)
 
 
 class ResonanceAnalysis(Analysis):
-
-    @staticmethod
-    def vswr_transformed(z, ratio=49) -> float:
-        refl = reflection_coefficient(z / ratio)
-        mag = abs(refl)
-        return 1 if mag == 1 else (1 + mag) / (1 - mag)
 
     def __init__(self, app):
         super().__init__(app)
@@ -136,9 +68,9 @@ class ResonanceAnalysis(Analysis):
                    "impedance": self.app.data.s11[index].impedance(),
                    "vswr": self.app.data.s11[index].vswr,
                    }
-        my_data["vswr_49"] = self.vswr_transformed(
+        my_data["vswr_49"] = vswr_transformed(
             my_data["impedance"], 49)
-        my_data["vswr_4"] = self.vswr_transformed(
+        my_data["vswr_4"] = vswr_transformed(
             my_data["impedance"], 4)
         my_data["r"] = my_data["impedance"].real
         my_data["x"] = my_data["impedance"].imag
@@ -190,7 +122,7 @@ class ResonanceAnalysis(Analysis):
             # Remove the final separator line
             self.layout.removeRow(self.layout.rowCount() - 1)
             if filename and extended_data:
-                with open(filename, 'w', newline='') as csvfile:
+                with open(filename, 'w', encoding='utf-8', newline='') as csvfile:
                     fieldnames = extended_data[0].keys()
                     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 

@@ -16,11 +16,13 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-from typing import Callable, List
+from typing import Callable, List, Tuple
 import itertools as it
 
 import numpy as np
 import scipy
+
+from NanoVNASaver.RFTools import Datapoint
 
 
 def zero_crossings(data: List[float]) -> List[int]:

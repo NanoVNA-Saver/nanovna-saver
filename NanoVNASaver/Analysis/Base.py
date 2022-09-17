@@ -18,9 +18,11 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 import math
+
 import numpy as np
+import scipy
 from PyQt5 import QtWidgets
-from scipy import signal
+
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +117,7 @@ class Analysis:
         :param data: list of values
         :param threshold:
         """
-        peaks, _ = signal.find_peaks(
+        peaks, _ = scipy.signal.find_peaks(
             data, width=2, distance=3, prominence=1)
 
 #         my_data = np.array(data)
