@@ -80,7 +80,7 @@ class VSWRAnalysis(Analysis):
             return
 
         for idx in minima:
-            rng = at.take_from_center(data, idx, lambda i: i[1] < threshold)
+            rng = at.take_from_idx(data, idx, lambda i: i[1] < threshold)
             begin, end = rng[0], rng[-1]
             self.layout.addRow("Start", QtWidgets.QLabel(
                 format_frequency(s11[begin].freq)))

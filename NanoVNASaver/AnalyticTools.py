@@ -82,25 +82,60 @@ def minima(data: List[float], threshold: float = 0.0) -> List[int]:
     ] if threshold else bottoms
 
 
-def take_from_center(data: List[float],
-                     center: int,
-                     predicate: Callable) -> List[int]:
+def take_from_idx(data: List[float],
+                  idx: int,
+                  predicate: Callable) -> List[int]:
     """take_from_center
 
     Args:
         data (List[float]): data list to execute
-        center (int): index of a center position
+        idx (int): index of a start position
         predicate (Callable): predicate on which elements to take
             from center. (e.g. lambda i: i[1] < threshold)
 
     Returns:
         List[int]: indices of element matching predicate left
-                   and right from center
+                   and right from index
     """
     lower = list(reversed(
         [i for i, _ in
          it.takewhile(predicate,
-                      reversed(list(enumerate(data[:center]))))]))
+                      reversed(list(enumerate(data[:idx]))))]))
     upper = [i for i, _ in
-             it.takewhile(predicate, enumerate(data[center:], center))]
+             it.takewhile(predicate,
+                          enumerate(data[idx:], idx))]
     return lower + upper
+
+
+def center_from_idx(gains: List[float],
+                    idx: int, delta: float = 3.0) -> int:
+    """find maximum from index postion of gains in a attn dB gain span
+
+    Args:
+        gains (List[float]): gain values
+        idx (int): start position to search from
+        delta (float=3.0): max gain delta from start
+
+    Returns:
+        int: position of highest gain from start in range (-1 if no data)
+    """
+    peak_db = gains[idx]
+    rng = take_from_idx(gains, idx,
+                        lambda i: abs(peak_db - i[1]) < delta)
+    return max(rng, key=lambda i: gains[i]) if rng else -1
+
+
+def cut_off_left(gains: List[float], idx: int,
+                 peak_gain: float, attn: float = 3.0) -> int:
+    return next(
+        (i for i in range(idx, -1, -1) if
+            (peak_gain - gains[i]) > attn),
+        -1)
+
+
+def cut_off_right(gains: List[float], idx: int,
+                  peak_gain: float, attn: float = 3.0) -> int:
+    return next(
+        (i for i in range(idx, len(gains)) if
+            (peak_gain - gains[i]) > attn),
+        -1)
