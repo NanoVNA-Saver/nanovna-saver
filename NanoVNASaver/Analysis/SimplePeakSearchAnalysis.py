@@ -21,7 +21,7 @@ import logging
 from PyQt5 import QtWidgets
 import numpy as np
 
-from NanoVNASaver.Analysis import Analysis, PeakSearchAnalysis
+from NanoVNASaver.Analysis.Base import Analysis, QHLine
 from NanoVNASaver.Formatting import format_frequency
 
 
@@ -62,12 +62,12 @@ class SimplePeakSearchAnalysis(Analysis):
         outer_layout.addRow("", self.rbtn_data_resistance)
         outer_layout.addRow("", self.rbtn_data_reactance)
         outer_layout.addRow("", self.rbtn_data_s21_gain)
-        outer_layout.addRow(PeakSearchAnalysis.QHLine())
+        outer_layout.addRow(QHLine())
         outer_layout.addRow("Peak type", self.rbtn_peak_positive)
         outer_layout.addRow("", self.rbtn_peak_negative)
-        outer_layout.addRow(PeakSearchAnalysis.QHLine())
+        outer_layout.addRow(QHLine())
         outer_layout.addRow("Move marker to peak", self.checkbox_move_marker)
-        outer_layout.addRow(PeakSearchAnalysis.QHLine())
+        outer_layout.addRow(QHLine())
 
         outer_layout.addRow(QtWidgets.QLabel("<b>Results</b>"))
 
@@ -78,26 +78,23 @@ class SimplePeakSearchAnalysis(Analysis):
         outer_layout.addRow("Peak value:", self.peak_value)
 
     def runAnalysis(self):
+        if not self.app.data.s11:
+            return
+        s11 = self.app.data.s11
+        s21 = self.app.data.s21
+
         if self.rbtn_data_vswr.isChecked():
             suffix = ""
-            data = []
-            for d in self.app.data.s11:
-                data.append(d.vswr)
+            data = [d.vswr for d in s11]
         elif self.rbtn_data_resistance.isChecked():
             suffix = " \N{OHM SIGN}"
-            data = []
-            for d in self.app.data.s11:
-                data.append(d.impedance().real)
+            data = [d.impedance().real for d in s11]
         elif self.rbtn_data_reactance.isChecked():
             suffix = " \N{OHM SIGN}"
-            data = []
-            for d in self.app.data.s11:
-                data.append(d.impedance().imag)
+            data = [d.impedance().imag for d in s11]
         elif self.rbtn_data_s21_gain.isChecked():
             suffix = " dB"
-            data = []
-            for d in self.app.data.s21:
-                data.append(d.gain)
+            data = [d.gain for d in s21]
         else:
             logger.warning("Searching for peaks on unknown data")
             return

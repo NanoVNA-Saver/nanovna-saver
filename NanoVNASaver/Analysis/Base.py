@@ -18,11 +18,20 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 import math
+from typing import Tuple
+
 import numpy as np
+import scipy
 from PyQt5 import QtWidgets
-from scipy import signal
+
 
 logger = logging.getLogger(__name__)
+
+
+class QHLine(QtWidgets.QFrame):
+    def __init__(self):
+        super().__init__()
+        self.setFrameShape(QtWidgets.QFrame.HLine)
 
 
 class Analysis:
@@ -109,7 +118,7 @@ class Analysis:
         :param data: list of values
         :param threshold:
         """
-        peaks, _ = signal.find_peaks(
+        peaks, _ = scipy.signal.find_peaks(
             data, width=2, distance=3, prominence=1)
 
 #         my_data = np.array(data)
@@ -130,21 +139,18 @@ class Analysis:
     def reset(self):
         pass
 
-    def calculateRolloff(self, location1, location2):
-        if location1 == location2:
-            return 0, 0
-        frequency1 = self.app.data.s21[location1].freq
-        frequency2 = self.app.data.s21[location2].freq
-        gain1 = self.app.data.s21[location1].gain
-        gain2 = self.app.data.s21[location2].gain
-        frequency_factor = frequency2 / frequency1
-        if frequency_factor < 1:
-            frequency_factor = 1 / frequency_factor
-        attenuation = abs(gain1 - gain2)
-        logger.debug("Measured points: %d Hz and %d Hz",
-                     frequency1, frequency2)
-        logger.debug("%f dB over %f factor", attenuation, frequency_factor)
-        octave_attenuation = attenuation / \
-            (math.log10(frequency_factor) / math.log10(2))
-        decade_attenuation = attenuation / math.log10(frequency_factor)
-        return octave_attenuation, decade_attenuation
+    def calculateRolloff(self, idx_1: int, idx_2: int) -> Tuple[float, float]:
+        if idx_1 == idx_2:
+            return (math.nan, math.nan)
+        s21 = self.app.data.s21
+        freq_1 = s21[idx_1].freq
+        freq_2 = s21[idx_2].freq
+        gain1 = s21[idx_1].gain
+        gain2 = s21[idx_2].gain
+        factor = freq_1 / freq_2 if freq_1 > freq_2 else freq_2 / freq_1
+        attn = abs(gain1 - gain2)
+        logger.debug("Measured points: %d Hz and %d Hz\n%fdB over %f factor",
+                     freq_1, freq_2, attn, factor)
+        octave_attn = attn / (math.log10(factor) / math.log10(2))
+        decade_attn = attn / math.log10(factor)
+        return (octave_attn, decade_attn)

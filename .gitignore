@@ -1,6 +1,7 @@
 /venv/
 /env/
 .idea/
+.tox/
 .vscode/
 /build/
 /dist/

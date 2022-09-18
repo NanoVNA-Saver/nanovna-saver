@@ -1,0 +1,141 @@
+#  NanoVNASaver
+#
+#  A python program to view and export Touchstone data from a NanoVNA
+#  Copyright (C) 2019, 2020 Rune B. Broberg
+#  Copyright (C) 2020ff NanoVNA-Saver Authors
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+from typing import Callable, List, Tuple
+import itertools as it
+
+import numpy as np
+import scipy
+
+from NanoVNASaver.RFTools import Datapoint
+
+
+def zero_crossings(data: List[float]) -> List[int]:
+    """find zero crossings
+
+    Args:
+        data (List[float]): data list execute
+
+    Returns:
+        List[int]: sorted indices of zero crossing points
+    """
+    if not data:
+        return []
+
+    np_data = np.array(data)
+
+    # start with real zeros (ignore first and last element)
+    real_zeros = [n for n in np.where(np_data == 0.0)[0] if
+                  n not in {0, np_data.size - 1}]
+    # now multipy elements to find change in signess
+    crossings = [
+        n if abs(np_data[n]) < abs(np_data[n + 1]) else n + 1
+        for n in np.where((np_data[:-1] * np_data[1:]) < 0.0)[0]
+    ]
+    return sorted(real_zeros + crossings)
+
+
+def maxima(data: List[float], threshold: float = 0.0) -> List[int]:
+    """maxima
+
+    Args:
+        data (List[float]): data list to execute
+
+    Returns:
+        List[int]: indices of maxima
+    """
+    peaks, _ = scipy.signal.find_peaks(
+        data, width=2, distance=3, prominence=1)
+    return [
+        i for i in peaks if data[i] > threshold
+    ] if threshold else peaks
+
+
+def minima(data: List[float], threshold: float = 0.0) -> List[int]:
+    """minima
+
+    Args:
+        data (List[float]): data list to execute
+
+    Returns:
+        List[int]: indices of minima
+    """
+    bottoms, _ = scipy.signal.find_peaks(
+        -np.array(data), width=2, distance=3, prominence=1)
+    return [
+        i for i in bottoms if data[i] < threshold
+    ] if threshold else bottoms
+
+
+def take_from_idx(data: List[float],
+                  idx: int,
+                  predicate: Callable) -> List[int]:
+    """take_from_center
+
+    Args:
+        data (List[float]): data list to execute
+        idx (int): index of a start position
+        predicate (Callable): predicate on which elements to take
+            from center. (e.g. lambda i: i[1] < threshold)
+
+    Returns:
+        List[int]: indices of element matching predicate left
+                   and right from index
+    """
+    lower = list(reversed(
+        [i for i, _ in
+         it.takewhile(predicate,
+                      reversed(list(enumerate(data[:idx]))))]))
+    upper = [i for i, _ in
+             it.takewhile(predicate,
+                          enumerate(data[idx:], idx))]
+    return lower + upper
+
+
+def center_from_idx(gains: List[float],
+                    idx: int, delta: float = 3.0) -> int:
+    """find maximum from index postion of gains in a attn dB gain span
+
+    Args:
+        gains (List[float]): gain values
+        idx (int): start position to search from
+        delta (float=3.0): max gain delta from start
+
+    Returns:
+        int: position of highest gain from start in range (-1 if no data)
+    """
+    peak_db = gains[idx]
+    rng = take_from_idx(gains, idx,
+                        lambda i: abs(peak_db - i[1]) < delta)
+    return max(rng, key=lambda i: gains[i]) if rng else -1
+
+
+def cut_off_left(gains: List[float], idx: int,
+                 peak_gain: float, attn: float = 3.0) -> int:
+    return next(
+        (i for i in range(idx, -1, -1) if
+            (peak_gain - gains[i]) > attn),
+        -1)
+
+
+def cut_off_right(gains: List[float], idx: int,
+                  peak_gain: float, attn: float = 3.0) -> int:
+    return next(
+        (i for i in range(idx, len(gains)) if
+            (peak_gain - gains[i]) > attn),
+        -1)

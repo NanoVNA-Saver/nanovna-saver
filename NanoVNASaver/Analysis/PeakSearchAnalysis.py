@@ -19,10 +19,10 @@
 import logging
 
 from PyQt5 import QtWidgets
-from scipy import signal
+import scipy
 import numpy as np
 
-from NanoVNASaver.Analysis import Analysis
+from NanoVNASaver.Analysis.Base import Analysis
 from NanoVNASaver.Formatting import format_vswr
 from NanoVNASaver.Formatting import format_gain
 from NanoVNASaver.Formatting import format_resistance
@@ -112,17 +112,17 @@ class PeakSearchAnalysis(Analysis):
             return
 
         if self.rbtn_peak_positive.isChecked():
-            peaks, _ = signal.find_peaks(
+            peaks, _ = scipy.signal.find_peaks(
                 data, width=3, distance=3, prominence=1)
         elif self.rbtn_peak_negative.isChecked():
             sign = -1
             data = [x * sign for x in data]
-            peaks, _ = signal.find_peaks(
+            peaks, _ = scipy.signal.find_peaks(
                 data, width=3, distance=3, prominence=1)
         # elif self.rbtn_peak_both.isChecked():
-        #     peaks_max, _ = signal.find_peaks(
+        #     peaks_max, _ = scipy.signal.find_peaks(
         #         data, width=3, distance=3, prominence=1)
-        #     peaks_min, _ = signal.find_peaks(
+        #     peaks_min, _ = scipy.signal.find_peaks(
         #         np.array(data)*-1, width=3, distance=3, prominence=1)
         #     peaks = np.concatenate((peaks_max, peaks_min))
         else:
@@ -136,7 +136,7 @@ class PeakSearchAnalysis(Analysis):
 
         for i, p in np.ndenumerate(peaks):
             logger.debug("Peak %i at %d", i, p)
-        prominences = signal.peak_prominences(data, peaks)[0]
+        prominences = scipy.signal.peak_prominences(data, peaks)[0]
         logger.debug("%d prominences", len(prominences))
 
         # Find the peaks with the most extreme values
