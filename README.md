@@ -19,6 +19,8 @@ Latest Changes
 
 ### Changes in 0.5.4-pre
 
+ - Refactoring of Analysis modules
+
 ### Changes in 0.5.3
 
  - Python 3.10 compatability fixes

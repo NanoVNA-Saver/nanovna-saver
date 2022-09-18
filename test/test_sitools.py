@@ -17,7 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import unittest
-from math import inf
+from math import inf, nan
 from decimal import Decimal  # Needed for test_representation()
 
 # Import targets to be tested
@@ -81,6 +81,7 @@ class TestTSIToolsValue(unittest.TestCase):
         self.assertEqual(str(Value(1e24)), "1.00000Y")
         self.assertEqual(str(Value(1e27)), "\N{INFINITY}")
         self.assertEqual(str(Value(-1e27)), "-\N{INFINITY}")
+        self.assertEqual(str(Value(nan)), "NaN")
         self.assertEqual(float(Value(1e27)), 1e27)
         self.assertEqual(
             str(Value(11, fmt=Format(printable_max=10))), '')
