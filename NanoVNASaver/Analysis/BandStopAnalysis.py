@@ -21,13 +21,13 @@ import math
 
 from PyQt5 import QtWidgets
 
-from NanoVNASaver.Analysis.Base import Analysis
+from NanoVNASaver.Analysis.BandPassAnalysis import BandPassAnalysis
 from NanoVNASaver.Formatting import format_frequency
 
 logger = logging.getLogger(__name__)
 
 
-class BandStopAnalysis(Analysis):
+class BandStopAnalysis(BandPassAnalysis):
     def __init__(self, app):
         super().__init__(app)
 
@@ -99,25 +99,21 @@ class BandStopAnalysis(Analysis):
         self.lower_db_per_decade_label.clear()
 
     def runAnalysis(self):
-        self.reset()
         if not self.app.data.s21:
             logger.debug("No data to analyse")
             self.result_label.setText("No data to analyse.")
             return
 
+        self.reset()
         s21 = self.app.data.s21
+        gains = [d.gain for d in s21]
 
-        peak_location, peak = max(enumerate(s21), key=lambda i: i[1].gain)
+        peak_location, pass_band_db = max(enumerate(gains), key=lambda i: i[1])
         logger.debug("Found peak of %f at %d",
-                     peak.gain, peak.freq)
-        pass_band_db = peak.gain
+                     pass_band_db, s21[peak_location].freq)
 
-        lower_cutoff_location = -1
-        for i in range(len(s21)):
-            if (pass_band_db - s21[i].gain) > 3:
-                # We found the cutoff location
-                lower_cutoff_location = i
-                break
+        lower_cutoff_location = next(
+            (i for i in range(len(s21)) if (pass_band_db - s21[i].gain) > 3), -1)
 
         lower_cutoff_frequency = s21[lower_cutoff_location].freq
         lower_cutoff_gain = (
@@ -138,12 +134,8 @@ class BandStopAnalysis(Analysis):
         self.app.markers[1].setFrequency(str(lower_cutoff_frequency))
         self.app.markers[1].frequencyInput.setText(str(lower_cutoff_frequency))
 
-        upper_cutoff_location = -1
-        for i in range(len(s21)-1, -1, -1):
-            if (pass_band_db - s21[i].gain) > 3:
-                # We found the cutoff location
-                upper_cutoff_location = i
-                break
+        upper_cutoff_location = next((i for i in range(
+            len(s21) - 1, -1, -1) if (pass_band_db - s21[i].gain) > 3), -1)
 
         upper_cutoff_frequency = (
             s21[upper_cutoff_location].freq)
@@ -177,14 +169,8 @@ class BandStopAnalysis(Analysis):
         self.app.markers[0].frequencyInput.setText(
             str(round(center_frequency)))
 
-        # Lower roll-off
-
-        lower_six_db_location = -1
-        for i in range(lower_cutoff_location, len(s21)):
-            if (pass_band_db - s21[i].gain) > 6:
-                # We found 6dB location
-                lower_six_db_location = i
-                break
+        lower_six_db_location = next((i for i in range(
+            lower_cutoff_location, len(s21)) if (pass_band_db - s21[i].gain) > 6), -1)
 
         if lower_six_db_location < 0:
             self.result_label.setText("Lower 6 dB location not found.")
@@ -194,26 +180,14 @@ class BandStopAnalysis(Analysis):
         self.lower_six_db_label.setText(
             format_frequency(lower_six_db_cutoff_frequency))
 
-        ten_db_location = -1
-        for i in range(lower_cutoff_location, len(s21)):
-            if (pass_band_db - s21[i].gain) > 10:
-                # We found 6dB location
-                ten_db_location = i
-                break
+        ten_db_location = next((i for i in range(lower_cutoff_location, len(
+            s21)) if (pass_band_db - s21[i].gain) > 10), -1)
 
-        twenty_db_location = -1
-        for i in range(lower_cutoff_location, len(s21)):
-            if (pass_band_db - s21[i].gain) > 20:
-                # We found 6dB location
-                twenty_db_location = i
-                break
+        twenty_db_location = next((i for i in range(
+            lower_cutoff_location, len(s21)) if (pass_band_db - s21[i].gain) > 20), -1)
 
-        sixty_db_location = -1
-        for i in range(lower_six_db_location, len(s21)):
-            if (pass_band_db - s21[i].gain) > 60:
-                # We found 60dB location! Wow.
-                sixty_db_location = i
-                break
+        sixty_db_location = next((i for i in range(
+            lower_six_db_location, len(s21)) if (pass_band_db - s21[i].gain) > 60), -1)
 
         if sixty_db_location > 0:
             sixty_db_cutoff_frequency = (
@@ -243,14 +217,8 @@ class BandStopAnalysis(Analysis):
             self.lower_db_per_octave_label.setText("Not calculated")
             self.lower_db_per_decade_label.setText("Not calculated")
 
-        # Upper roll-off
-
-        upper_six_db_location = -1
-        for i in range(upper_cutoff_location, -1, -1):
-            if (pass_band_db - s21[i].gain) > 6:
-                # We found 6dB location
-                upper_six_db_location = i
-                break
+        upper_six_db_location = next((i for i in range(
+            upper_cutoff_location, -1, -1) if (pass_band_db - s21[i].gain) > 6), -1)
 
         if upper_six_db_location < 0:
             self.result_label.setText("Upper 6 dB location not found.")
@@ -266,26 +234,14 @@ class BandStopAnalysis(Analysis):
         self.six_db_span_label.setText(
             format_frequency(six_db_span))
 
-        ten_db_location = -1
-        for i in range(upper_cutoff_location, -1, -1):
-            if (pass_band_db - s21[i].gain) > 10:
-                # We found 6dB location
-                ten_db_location = i
-                break
+        ten_db_location = next((i for i in range(
+            upper_cutoff_location, -1, -1) if (pass_band_db - s21[i].gain) > 10), -1)
 
-        twenty_db_location = -1
-        for i in range(upper_cutoff_location, -1, -1):
-            if (pass_band_db - s21[i].gain) > 20:
-                # We found 6dB location
-                twenty_db_location = i
-                break
+        twenty_db_location = next((i for i in range(
+            upper_cutoff_location, -1, -1) if (pass_band_db - s21[i].gain) > 20), -1)
 
-        sixty_db_location = -1
-        for i in range(upper_six_db_location, -1, -1):
-            if (pass_band_db - s21[i].gain) > 60:
-                # We found 60dB location! Wow.
-                sixty_db_location = i
-                break
+        sixty_db_location = next((i for i in range(
+            upper_six_db_location, -1, -1) if (pass_band_db - s21[i].gain) > 60), -1)
 
         if sixty_db_location > 0:
             sixty_db_cutoff_frequency = (
@@ -319,6 +275,6 @@ class BandStopAnalysis(Analysis):
             self.result_label.setText(
                 f"Analysis complete ({len(self.app.data.s11)} points)\n"
                 f"Insufficient data for analysis. Increase segment count.")
-        else:
-            self.result_label.setText(
-                f"Analysis complete ({len(self.app.data.s11)} points)")
+            return
+        self.result_label.setText(
+            f"Analysis complete ({len(self.app.data.s11)} points)")
