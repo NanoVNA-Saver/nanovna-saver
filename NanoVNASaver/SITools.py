@@ -72,7 +72,8 @@ class Value:
         self.fmt = fmt
         if isinstance(value, str):
             self._value = Decimal(math.nan)
-            self.parse(value)
+            if value.lower() != 'nan':
+                self.parse(value)
         else:
             self._value = Decimal(value, context=Value.CTX)
 
@@ -83,7 +84,7 @@ class Value:
     def __str__(self) -> str:
         fmt = self.fmt
         if math.isnan(self._value):
-            return (f"NaN{fmt.space_str}{self._unit}")
+            return (f"-{fmt.space_str}{self._unit}")
         if (fmt.assume_infinity and
                 abs(self._value) >= 10 ** ((fmt.max_offset + 1) * 3)):
             return (("-" if self._value < 0 else "") +

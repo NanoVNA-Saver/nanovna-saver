@@ -18,7 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 import math
-from typing import Dict
+from typing import Dict, List, Tuple
 
 from PyQt5 import QtWidgets
 
@@ -37,22 +37,22 @@ class BandPassAnalysis(Analysis):
 
         self._widget = QtWidgets.QWidget()
 
-        layout = QtWidgets.QFormLayout()
-        self._widget.setLayout(layout)
-        layout.addRow(QtWidgets.QLabel("Band pass filter analysis"))
-        layout.addRow(
-            QtWidgets.QLabel(
-                f"Please place {self.app.markers[0].name}"
-                f" in the filter passband."))
         self.label = {
             label: QtWidgets.QLabel() for label in
-            ('result', 'octave_l', 'octave_r', 'decade_l', 'decade_r',
+            ('titel', 'result', 'octave_l', 'octave_r', 'decade_l', 'decade_r',
              'freq_center', 'span_3.0dB', 'span_6.0dB', 'q_factor')
         }
         for attn in CUTOFF_VALS:
             self.label[f"{attn:.1f}dB_l"] = QtWidgets.QLabel()
             self.label[f"{attn:.1f}dB_r"] = QtWidgets.QLabel()
 
+        layout = QtWidgets.QFormLayout()
+        self._widget.setLayout(layout)
+        layout.addRow(self.label['titel'])
+        layout.addRow(
+            QtWidgets.QLabel(
+                f"Please place {self.app.markers[0].name}"
+                f" in the filter passband."))
         layout.addRow("Result:", self.label['result'])
         layout.addRow(QtWidgets.QLabel(""))
 
@@ -77,6 +77,11 @@ class BandPassAnalysis(Analysis):
         layout.addRow("Roll-off:", self.label['octave_r'])
         layout.addRow("Roll-off:", self.label['decade_r'])
 
+        self.set_titel("Band pass filter analysis")
+
+    def set_titel(self, name):
+        self.label['titel'].setText(name)
+
     def reset(self):
         for label in self.label.values():
             label.clear()
@@ -91,28 +96,13 @@ class BandPassAnalysis(Analysis):
         s21 = self.app.data.s21
         gains = [d.gain for d in s21]
 
-        marker = self.app.markers[0]
-        if marker.location <= 0 or marker.location >= len(s21) - 1:
-            logger.debug("No valid location for %s (%s)",
-                         marker.name, marker.location)
-            self.label['result'].setText(
-                f"Please place {marker.name} in the passband.")
-            return
-
-        # find center of passband based on marker pos
-        if (peak := at.center_from_idx(gains, marker.location)) < 0:
-            self.label['result'].setText("Bandpass center not found")
+        if (peak := self.find_center(gains)) < 0:
             return
         peak_db = gains[peak]
-        logger.debug("Bandpass center pos: %d(%fdB)", peak, peak_db)
+        logger.debug("Filter center pos: %d(%fdB)", peak, peak_db)
 
         # find passband bounderies
-        cutoff_pos = {}
-        for attn in CUTOFF_VALS:
-            cutoff_pos[f"{attn:.1f}dB_l"] = at.cut_off_left(
-                gains, peak, peak_db, attn)
-            cutoff_pos[f"{attn:.1f}dB_r"] = at.cut_off_right(
-                gains, peak, peak_db, attn)
+        cutoff_pos = self.find_bounderies(gains, peak, peak_db)
         cutoff_freq = {
             att: s21[val].freq if val >= 0 else math.nan
             for att, val in cutoff_pos.items()
@@ -129,8 +119,8 @@ class BandPassAnalysis(Analysis):
         result = {
             'span_3.0dB': cutoff_freq['3.0dB_r'] - cutoff_freq['3.0dB_l'],
             'span_6.0dB': cutoff_freq['6.0dB_r'] - cutoff_freq['6.0dB_l'],
-            'freq_center': int(
-                math.sqrt(cutoff_freq['3.0dB_l'] * cutoff_freq['3.0dB_r'])),
+            'freq_center':
+                math.sqrt(cutoff_freq['3.0dB_l'] * cutoff_freq['3.0dB_r']),
         }
         result['q_factor'] = result['freq_center'] / result['span_3.0dB']
 
@@ -190,3 +180,29 @@ class BandPassAnalysis(Analysis):
                 10 ** (5 * (math.log10(cutoff_pos['20.0dB_r']) -
                             math.log10(cutoff_pos['10.0dB_r'])
                             )))
+
+    def find_center(self, gains: List[float]) -> int:
+        marker = self.app.markers[0]
+        if marker.location <= 0 or marker.location >= len(gains) - 1:
+            logger.debug("No valid location for %s (%s)",
+                         marker.name, marker.location)
+            self.label['result'].setText(
+                f"Please place {marker.name} in the passband.")
+            return -1
+
+        # find center of passband based on marker pos
+        if (peak := at.center_from_idx(gains, marker.location)) < 0:
+            self.label['result'].setText("Bandpass center not found")
+            return -1
+        return peak
+
+    def find_bounderies(self,
+                        gains: List[float],
+                        peak: int, peak_db: float) -> Dict[str, int]:
+        cutoff_pos = {}
+        for attn in CUTOFF_VALS:
+            cutoff_pos[f"{attn:.1f}dB_l"] = at.cut_off_left(
+                gains, peak, peak_db, attn)
+            cutoff_pos[f"{attn:.1f}dB_r"] = at.cut_off_right(
+                gains, peak, peak_db, attn)
+        return cutoff_pos

@@ -81,7 +81,7 @@ class TestTSIToolsValue(unittest.TestCase):
         self.assertEqual(str(Value(1e24)), "1.00000Y")
         self.assertEqual(str(Value(1e27)), "\N{INFINITY}")
         self.assertEqual(str(Value(-1e27)), "-\N{INFINITY}")
-        self.assertEqual(str(Value(nan)), "NaN")
+        self.assertEqual(str(Value(nan)), "-")
         self.assertEqual(float(Value(1e27)), 1e27)
         self.assertEqual(
             str(Value(11, fmt=Format(printable_max=10))), '')

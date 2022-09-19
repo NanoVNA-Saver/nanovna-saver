@@ -127,8 +127,9 @@ class RealImaginaryChart(FrequencyChart):
         self.drawTitle(qp)
 
     def drawValues(self, qp: QtGui.QPainter):
-        if len(self.data) == 0 and len(self.reference) == 0:
+        if not self.data and not self.reference:
             return
+
         pen = QtGui.QPen(Chart.color.sweep)
         pen.setWidth(self.dim.point)
         line_pen = QtGui.QPen(Chart.color.sweep)
@@ -142,71 +143,7 @@ class RealImaginaryChart(FrequencyChart):
         if self.bands.enabled:
             self.drawBands(qp, self.fstart, self.fstop)
 
-        # Find scaling
-        if self.fixedValues:
-            min_real = self.minDisplayReal
-            max_real = self.maxDisplayReal
-            min_imag = self.minDisplayImag
-            max_imag = self.maxDisplayImag
-        else:
-            min_real = 1000
-            min_imag = 1000
-            max_real = 0
-            max_imag = -1000
-            for d in self.data:
-                imp = self.impedance(d)
-                re, im = imp.real, imp.imag
-                if math.isinf(re):  # Avoid infinite scales
-                    continue
-                max_real = max(max_real, re)
-                min_real = min(min_real, re)
-                max_imag = max(max_imag, im)
-                min_imag = min(min_imag, im)
-            # Also check min/max for the reference sweep
-            for d in self.reference:
-                if d.freq < self.fstart or d.freq > self.fstop:
-                    continue
-                imp = self.impedance(d)
-                re, im = imp.real, imp.imag
-                if math.isinf(re):  # Avoid infinite scales
-                    continue
-                max_real = max(max_real, re)
-                min_real = min(min_real, re)
-                max_imag = max(max_imag, im)
-                min_imag = min(min_imag, im)
-            # Always have at least 8 numbered horizontal lines
-            max_real = math.ceil(max_real)
-            min_real = math.floor(min_real)
-            max_imag = math.ceil(max_imag)
-            min_imag = math.floor(min_imag)
-
-            if max_imag - min_imag < 8:
-                missing = 8 - (max_imag - min_imag)
-                max_imag += math.ceil(missing / 2)
-                min_imag -= math.floor(missing / 2)
-
-            if 0 > max_imag > -2:
-                max_imag = 0
-            if 0 < min_imag < 2:
-                min_imag = 0
-
-            if (max_imag - min_imag) > 8 and min_imag < 0 < max_imag:
-                # We should show a "0" line for the reactive part
-                span = max_imag - min_imag
-                step_size = span / 8
-                if max_imag < step_size:
-                    # The 0 line is the first step after the top.
-                    # Scale accordingly.
-                    max_imag = -min_imag / 7
-                elif -min_imag < step_size:
-                    # The 0 line is the last step before the bottom.
-                    # Scale accordingly.
-                    min_imag = -max_imag / 7
-                else:
-                    # Scale max_imag to be a whole factor of min_imag
-                    num_min = math.floor(min_imag / step_size * -1)
-                    num_max = 8 - num_min
-                    max_imag = num_max * (min_imag / num_min) * -1
+        min_real, max_real, min_imag, max_imag = self.find_scaling()
 
         self.max_real = max_real
         self.max_imag = max_imag
@@ -214,24 +151,9 @@ class RealImaginaryChart(FrequencyChart):
         self.span_real = (max_real - min_real) or 0.01
         self.span_imag = (max_imag - min_imag) or 0.01
 
-        # We want one horizontal tick per 50 pixels, at most
-        horizontal_ticks = self.dim.height // 50
+        self.drawHorizontalTicks(qp)
 
         fmt = Format(max_nr_digits=3)
-        for i in range(horizontal_ticks):
-            y = self.topMargin + i * self.dim.height // horizontal_ticks
-            qp.setPen(QtGui.QPen(Chart.color.foreground))
-            qp.drawLine(self.leftMargin - 5, y,
-                        self.leftMargin + self.dim.width + 5, y)
-            qp.setPen(QtGui.QPen(Chart.color.text))
-            re = max_real - i * self.span_real / horizontal_ticks
-            im = max_imag - i * self.span_imag / horizontal_ticks
-            qp.drawText(3, y + 4, f"{Value(re, fmt=fmt)}")
-            qp.drawText(
-                self.leftMargin + self.dim.width + 8,
-                y + 4,
-                f"{Value(im, fmt=fmt)}")
-
         qp.drawText(3, self.dim.height + self.topMargin,
                     str(Value(min_real, fmt=fmt)))
         qp.drawText(self.leftMargin + self.dim.width + 8,
@@ -242,7 +164,7 @@ class RealImaginaryChart(FrequencyChart):
 
         primary_pen = pen
         secondary_pen = QtGui.QPen(Chart.color.sweep_secondary)
-        if len(self.data) > 0:
+        if self.data:
             c = QtGui.QColor(Chart.color.sweep)
             c.setAlpha(255)
             pen = QtGui.QPen(c)
@@ -307,7 +229,7 @@ class RealImaginaryChart(FrequencyChart):
         line_pen.setColor(Chart.color.reference)
         secondary_pen.setColor(Chart.color.reference_secondary)
         qp.setPen(primary_pen)
-        if len(self.reference) > 0:
+        if self.reference:
             c = QtGui.QColor(Chart.color.reference)
             c.setAlpha(255)
             pen = QtGui.QPen(c)
@@ -378,6 +300,97 @@ class RealImaginaryChart(FrequencyChart):
                                 self.markers.index(m) + 1)
                 self.drawMarker(x, y_im, qp, m.color,
                                 self.markers.index(m) + 1)
+
+    def drawHorizontalTicks(self, qp):
+        # We want one horizontal tick per 50 pixels, at most
+        fmt = Format(max_nr_digits=3)
+        horizontal_ticks = self.dim.height // 50
+        for i in range(horizontal_ticks):
+            y = self.topMargin + i * self.dim.height // horizontal_ticks
+            qp.setPen(QtGui.QPen(Chart.color.foreground))
+            qp.drawLine(self.leftMargin - 5, y,
+                        self.leftMargin + self.dim.width + 5, y)
+            qp.setPen(QtGui.QPen(Chart.color.text))
+            re = self.max_real - i * self.span_real / horizontal_ticks
+            im = self.max_imag - i * self.span_imag / horizontal_ticks
+            qp.drawText(3, y + 4, f"{Value(re, fmt=fmt)}")
+            qp.drawText(
+                self.leftMargin + self.dim.width + 8,
+                y + 4,
+                f"{Value(im, fmt=fmt)}")
+
+    def find_scaling(self):
+        # Find scaling
+        if self.fixedValues:
+            min_real = self.minDisplayReal
+            max_real = self.maxDisplayReal
+            min_imag = self.minDisplayImag
+            max_imag = self.maxDisplayImag
+            return min_real, max_real, min_imag, max_imag
+
+        min_real = 1000
+        min_imag = 1000
+        max_real = 0
+        max_imag = -1000
+        for d in self.data:
+            imp = self.impedance(d)
+            re, im = imp.real, imp.imag
+            if math.isinf(re):  # Avoid infinite scales
+                continue
+            max_real = max(max_real, re)
+            min_real = min(min_real, re)
+            max_imag = max(max_imag, im)
+            min_imag = min(min_imag, im)
+        # Also check min/max for the reference sweep
+        for d in self.reference:
+            if d.freq < self.fstart or d.freq > self.fstop:
+                continue
+            imp = self.impedance(d)
+            re, im = imp.real, imp.imag
+            if math.isinf(re):  # Avoid infinite scales
+                continue
+            max_real = max(max_real, re)
+            min_real = min(min_real, re)
+            max_imag = max(max_imag, im)
+            min_imag = min(min_imag, im)
+        # Always have at least 8 numbered horizontal lines
+        max_real = math.ceil(max_real)
+        min_real = math.floor(min_real)
+        max_imag = math.ceil(max_imag)
+        min_imag = math.floor(min_imag)
+
+        min_imag, max_imag = self.imag_scaling_constraints(min_imag, max_imag)
+        return min_real, max_real, min_imag, max_imag
+
+    def imag_scaling_constraints(self, min_imag, max_imag):
+        if max_imag - min_imag < 8:
+            missing = 8 - (max_imag - min_imag)
+            max_imag += math.ceil(missing / 2)
+            min_imag -= math.floor(missing / 2)
+
+        if 0 > max_imag > -2:
+            max_imag = 0
+        if 0 < min_imag < 2:
+            min_imag = 0
+
+        if (max_imag - min_imag) > 8 and min_imag < 0 < max_imag:
+            # We should show a "0" line for the reactive part
+            span = max_imag - min_imag
+            step_size = span / 8
+            if max_imag < step_size:
+                # The 0 line is the first step after the top.
+                # Scale accordingly.
+                max_imag = -min_imag / 7
+            elif -min_imag < step_size:
+                # The 0 line is the last step before the bottom.
+                # Scale accordingly.
+                min_imag = -max_imag / 7
+            else:
+                # Scale max_imag to be a whole factor of min_imag
+                num_min = math.floor(min_imag / step_size * -1)
+                num_max = 8 - num_min
+                max_imag = num_max * (min_imag / num_min) * -1
+        return min_imag, max_imag
 
     def getImYPosition(self, d: Datapoint) -> int:
         im = self.impedance(d).imag

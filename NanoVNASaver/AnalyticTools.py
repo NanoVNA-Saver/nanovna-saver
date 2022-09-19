@@ -16,13 +16,14 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-from typing import Callable, List, Tuple
 import itertools as it
+import math
+from typing import Callable, List, Tuple
 
 import numpy as np
 import scipy
 
-from NanoVNASaver.RFTools import Datapoint
+import NanoVNASaver.AnalyticTools as at
 
 
 def zero_crossings(data: List[float]) -> List[int]:
@@ -59,8 +60,8 @@ def maxima(data: List[float], threshold: float = 0.0) -> List[int]:
     Returns:
         List[int]: indices of maxima
     """
-    peaks, _ = scipy.signal.find_peaks(
-        data, width=2, distance=3, prominence=1)
+    peaks = scipy.signal.find_peaks(
+        data, width=2, distance=3, prominence=1)[0].tolist()
     return [
         i for i in peaks if data[i] > threshold
     ] if threshold else peaks
@@ -75,8 +76,8 @@ def minima(data: List[float], threshold: float = 0.0) -> List[int]:
     Returns:
         List[int]: indices of minima
     """
-    bottoms, _ = scipy.signal.find_peaks(
-        -np.array(data), width=2, distance=3, prominence=1)
+    bottoms = scipy.signal.find_peaks(
+        -np.array(data), width=2, distance=3, prominence=1)[0].tolist()
     return [
         i for i in bottoms if data[i] < threshold
     ] if threshold else bottoms
@@ -139,3 +140,9 @@ def cut_off_right(gains: List[float], idx: int,
         (i for i in range(idx, len(gains)) if
             (peak_gain - gains[i]) > attn),
         -1)
+
+
+def dip_cut_offs(gains: List[float], peak_gain: float,
+                 attn: float = 3.0) -> Tuple[int, int]:
+    rng = np.where(np.array(gains) < (peak_gain - attn))[0].tolist()
+    return (rng[0], rng[-1]) if rng else (math.nan, math.nan)
