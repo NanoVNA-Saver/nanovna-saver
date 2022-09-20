@@ -1,7 +1,8 @@
 #  NanoVNASaver
 #
 #  A python program to view and export Touchstone data from a NanoVNA
-#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
+#  Copyright (C) 2019, 2020 Rune B. Broberg
+#  Copyright (C) 2020ff NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -16,14 +17,9 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from PyQt5.Qt import QTimer
 
-'''
-Created on May 30th 2020
-
-@author: mauro
-'''
 import logging
+from time import sleep
 
 from PyQt5 import QtWidgets
 
@@ -67,6 +63,7 @@ class MagLoopAnalysis(VSWRAnalysis):
             self.layout.addRow("", QtWidgets.QLabel(
                 "Multiple minimums, not magloop or try to lower VSWR limit"))
             return
+
         if len(self.minimums) == 1:
             m = self.minimums[0]
             start, lowest, end = m
@@ -104,6 +101,7 @@ class MagLoopAnalysis(VSWRAnalysis):
                 logger.debug(
                     "no minimum found, looking for higher value %s",
                     self.vswr_limit_value)
+
         new_start = max(self.min_freq, new_start)
         new_end = min(self.max_freq, new_end)
         logger.debug("next search will be %s - %s for vswr %s",
@@ -113,16 +111,9 @@ class MagLoopAnalysis(VSWRAnalysis):
 
         self.app.sweep_control.set_start(new_start)
         self.app.sweep_control.set_end(new_end)
-        # set timer to let finish all stuff before new sweep
-        QTimer.singleShot(2000, self._safe_sweep)
 
-    def _safe_sweep(self):
-        """
-        sweep only if button enabled
-        to prevent multiple/concurrent sweep
-        """
-
+        # TODO: get info if sweep is running instead of just sleeping
+        #       a guessed time
+        sleep(2.0)
         if self.app.sweep_control.btn_start.isEnabled():
             self.app.sweep_start()
-        else:
-            logger.error("sweep alredy running")

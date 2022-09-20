@@ -1,8 +1,8 @@
 #  NanoVNASaver
 #
 #  A python program to view and export Touchstone data from a NanoVNA
-#  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
+#  Copyright (C) 2019, 2020 Rune B. Broberg
+#  Copyright (C) 2020ff NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -18,36 +18,29 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 import math
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 from PyQt5 import QtWidgets
 
 import NanoVNASaver.AnalyticTools as at
-from NanoVNASaver.Analysis.Base import Analysis
+from NanoVNASaver.Analysis.Base import Analysis, CUTOFF_VALS
 from NanoVNASaver.Formatting import format_frequency
 
 logger = logging.getLogger(__name__)
-
-CUTOFF_VALS = (3.0, 6.0, 10.0, 20.0, 60.0)
 
 
 class BandPassAnalysis(Analysis):
     def __init__(self, app):
         super().__init__(app)
 
-        self._widget = QtWidgets.QWidget()
-
-        self.label = {
-            label: QtWidgets.QLabel() for label in
-            ('titel', 'result', 'octave_l', 'octave_r', 'decade_l', 'decade_r',
-             'freq_center', 'span_3.0dB', 'span_6.0dB', 'q_factor')
-        }
+        for label in ('octave_l', 'octave_r', 'decade_l', 'decade_r',
+                      'freq_center', 'span_3.0dB', 'span_6.0dB', 'q_factor'):
+            self.label[label] = QtWidgets.QLabel()
         for attn in CUTOFF_VALS:
             self.label[f"{attn:.1f}dB_l"] = QtWidgets.QLabel()
             self.label[f"{attn:.1f}dB_r"] = QtWidgets.QLabel()
 
-        layout = QtWidgets.QFormLayout()
-        self._widget.setLayout(layout)
+        layout = self.layout
         layout.addRow(self.label['titel'])
         layout.addRow(
             QtWidgets.QLabel(
@@ -79,17 +72,10 @@ class BandPassAnalysis(Analysis):
 
         self.set_titel("Band pass filter analysis")
 
-    def set_titel(self, name):
-        self.label['titel'].setText(name)
-
-    def reset(self):
-        for label in self.label.values():
-            label.clear()
-
     def runAnalysis(self):
         if not self.app.data.s21:
             logger.debug("No data to analyse")
-            self.label['result'].setText("No data to analyse.")
+            self.set_result("No data to analyse.")
             return
 
         self.reset()
@@ -124,10 +110,10 @@ class BandPassAnalysis(Analysis):
         }
         result['q_factor'] = result['freq_center'] / result['span_3.0dB']
 
-        result['octave_l'], result['decade_l'] = self.calculateRolloff(
-            cutoff_pos["10.0dB_l"], cutoff_pos["20.0dB_l"])
-        result['octave_r'], result['decade_r'] = self.calculateRolloff(
-            cutoff_pos["10.0dB_r"], cutoff_pos["20.0dB_r"])
+        result['octave_l'], result['decade_l'] = at.calculate_rolloff(
+            s21, cutoff_pos["10.0dB_l"], cutoff_pos["20.0dB_l"])
+        result['octave_r'], result['decade_r'] = at.calculate_rolloff(
+            s21, cutoff_pos["10.0dB_r"], cutoff_pos["20.0dB_r"])
 
         for label, val in cutoff_freq.items():
             self.label[label].setText(
@@ -141,22 +127,18 @@ class BandPassAnalysis(Analysis):
             self.label[label].setText(f"{result[label]:.3f}dB/{label[:-2]}")
 
         self.app.markers[0].setFrequency(f"{result['freq_center']}")
-        self.app.markers[0].frequencyInput.setText(f"{result['freq_center']}")
         self.app.markers[1].setFrequency(f"{cutoff_freq['3.0dB_l']}")
-        self.app.markers[1].frequencyInput.setText(f"{cutoff_freq['3.0dB_l']}")
         self.app.markers[2].setFrequency(f"{cutoff_freq['3.0dB_r']}")
-        self.app.markers[2].frequencyInput.setText(f"{cutoff_freq['3.0dB_r']}")
 
         if cutoff_gain['3.0dB_l'] < -4 or cutoff_gain['3.0dB_r'] < -4:
             logger.warning(
                 "Data points insufficient for true -3 dB points."
                 "Cutoff gains: %fdB, %fdB", cutoff_gain['3.0dB_l'], cutoff_gain['3.0dB_r'])
-            self.label['result'].setText(
+            self.set_result(
                 f"Analysis complete ({len(s21)} points)\n"
                 f"Insufficient data for analysis. Increase segment count.")
             return
-        self.label['result'].setText(
-            f"Analysis complete ({len(s21)} points)")
+        self.set_result(f"Analysis complete ({len(s21)} points)")
 
     def derive_60dB(self,
                     cutoff_pos: Dict[str, int],
@@ -186,13 +168,12 @@ class BandPassAnalysis(Analysis):
         if marker.location <= 0 or marker.location >= len(gains) - 1:
             logger.debug("No valid location for %s (%s)",
                          marker.name, marker.location)
-            self.label['result'].setText(
-                f"Please place {marker.name} in the passband.")
+            self.set_result(f"Please place {marker.name} in the passband.")
             return -1
 
         # find center of passband based on marker pos
         if (peak := at.center_from_idx(gains, marker.location)) < 0:
-            self.label['result'].setText("Bandpass center not found")
+            self.set_result("Bandpass center not found")
             return -1
         return peak
 

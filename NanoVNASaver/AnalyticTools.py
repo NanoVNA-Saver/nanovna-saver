@@ -23,7 +23,7 @@ from typing import Callable, List, Tuple
 import numpy as np
 import scipy
 
-import NanoVNASaver.AnalyticTools as at
+from NanoVNASaver.RFTools import Datapoint
 
 
 def zero_crossings(data: List[float]) -> List[int]:
@@ -146,3 +146,18 @@ def dip_cut_offs(gains: List[float], peak_gain: float,
                  attn: float = 3.0) -> Tuple[int, int]:
     rng = np.where(np.array(gains) < (peak_gain - attn))[0].tolist()
     return (rng[0], rng[-1]) if rng else (math.nan, math.nan)
+
+
+def calculate_rolloff(s21: List[Datapoint],
+                      idx_1: int, idx_2: int) -> Tuple[float, float]:
+    if idx_1 == idx_2:
+        return (math.nan, math.nan)
+    freq_1 = s21[idx_1].freq
+    freq_2 = s21[idx_2].freq
+    gain1 = s21[idx_1].gain
+    gain2 = s21[idx_2].gain
+    factor = freq_1 / freq_2 if freq_1 > freq_2 else freq_2 / freq_1
+    attn = abs(gain1 - gain2)
+    octave_attn = attn / (math.log10(factor) / math.log10(2))
+    decade_attn = attn / math.log10(factor)
+    return (octave_attn, decade_attn)

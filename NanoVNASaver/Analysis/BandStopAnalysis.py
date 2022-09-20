@@ -20,8 +20,8 @@ import logging
 from typing import Dict, List
 
 import NanoVNASaver.AnalyticTools as at
-from NanoVNASaver.Analysis.BandPassAnalysis import (
-    BandPassAnalysis, CUTOFF_VALS)
+from NanoVNASaver.Analysis.Base import CUTOFF_VALS
+from NanoVNASaver.Analysis.BandPassAnalysis import BandPassAnalysis
 
 logger = logging.getLogger(__name__)
 

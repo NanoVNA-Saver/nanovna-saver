@@ -141,7 +141,6 @@ class SquareChart(Chart):
         minimum_position = positions.index(min(positions))
         if m := self.getActiveMarker():
             m.setFrequency(str(round(target[minimum_position].freq)))
-            m.frequencyInput.setText(str(round(target[minimum_position].freq)))
 
     def getXPosition(self, d: Datapoint) -> int:
         return int(self.width() / 2 + d.re * self.dim.width / 2)

@@ -18,11 +18,11 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import os
 import csv
-import itertools
 import logging
 
 from PyQt5 import QtWidgets
 
+import NanoVNASaver.AnalyticTools as at
 from NanoVNASaver.Analysis.Base import Analysis, QHLine
 from NanoVNASaver.Formatting import (
     format_frequency, format_complex_imp,
@@ -62,12 +62,14 @@ class ResonanceAnalysis(Analysis):
         self.layout.addRow(self.results_label)
 
     def _get_data(self, index):
-        my_data = {"freq": self.app.data.s11[index].freq,
-                   "s11": self.app.data.s11[index].z,
-                   "lambda": self.app.data.s11[index].wavelength,
-                   "impedance": self.app.data.s11[index].impedance(),
-                   "vswr": self.app.data.s11[index].vswr,
-                   }
+        s11 = self.app.data.s11
+        my_data = {
+            "freq": s11[index].freq,
+            "s11": s11[index].z,
+            "lambda": s11[index].wavelength,
+            "impedance": s11[index].impedance(),
+            "vswr": s11[index].vswr,
+        }
         my_data["vswr_49"] = vswr_transformed(
             my_data["impedance"], 49)
         my_data["vswr_4"] = vswr_transformed(
@@ -79,7 +81,7 @@ class ResonanceAnalysis(Analysis):
 
     def _get_crossing(self):
         data = [d.phase for d in self.app.data.s11]
-        return sorted(self.find_crossing_zero(data))
+        return at.zero_crossings(data)
 
     def runAnalysis(self):
         self.reset()
@@ -99,40 +101,39 @@ class ResonanceAnalysis(Analysis):
         for _ in range(results_header, self.layout.rowCount()):
             self.layout.removeRow(self.layout.rowCount() - 1)
 
-        if crossing:
-            extended_data = []
-            for m in crossing:
-                start, lowest, end = m
-                my_data = self._get_data(lowest)
-                s11_low = self.app.data.s11[lowest]
-                extended_data.append(my_data)
-                if start != end:
-                    logger.debug(
-                        "Section from %d to %d, lowest at %d",
-                        start, end, lowest)
-                    self.layout.addRow(
-                        "Resonance",
-                        QtWidgets.QLabel(
-                            f"{format_frequency(s11_low.freq)}"
-                            f" ({format_complex_imp(s11_low.impedance())})"))
-                else:
-                    self.layout.addRow("Resonance", QtWidgets.QLabel(
-                        format_frequency(self.app.data.s11[lowest].freq)))
-                    self.layout.addWidget(QHLine())
-            # Remove the final separator line
-            self.layout.removeRow(self.layout.rowCount() - 1)
-            if filename and extended_data:
-                with open(filename, 'w', encoding='utf-8', newline='') as csvfile:
-                    fieldnames = extended_data[0].keys()
-                    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-
-                    writer.writeheader()
-                    for row in extended_data:
-                        writer.writerow(row)
-
-        else:
+        if not crossing:
             self.layout.addRow(QtWidgets.QLabel(
                 "No resonance found"))
+
+        extended_data = []
+        for m in crossing:
+            start, lowest, end = m
+            my_data = self._get_data(lowest)
+            s11_low = self.app.data.s11[lowest]
+            extended_data.append(my_data)
+            if start != end:
+                logger.debug(
+                    "Section from %d to %d, lowest at %d",
+                    start, end, lowest)
+                self.layout.addRow(
+                    "Resonance",
+                    QtWidgets.QLabel(
+                        f"{format_frequency(s11_low.freq)}"
+                        f" ({format_complex_imp(s11_low.impedance())})"))
+            else:
+                self.layout.addRow("Resonance", QtWidgets.QLabel(
+                    format_frequency(self.app.data.s11[lowest].freq)))
+                self.layout.addWidget(QHLine())
+        # Remove the final separator line
+        self.layout.removeRow(self.layout.rowCount() - 1)
+        if filename and extended_data:
+            with open(filename, 'w', encoding='utf-8', newline='') as csvfile:
+                fieldnames = extended_data[0].keys()
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+                writer.writeheader()
+                for row in extended_data:
+                    writer.writerow(row)
 
 
 class EFHWAnalysis(ResonanceAnalysis):
@@ -152,7 +153,7 @@ class EFHWAnalysis(ResonanceAnalysis):
             filename = None
         crossing = self._get_crossing()
         data = [d.impedance().real for d in self.app.data.s11]
-        maximums = sorted(self.find_maximums(data, threshold=500))
+        maximums = sorted(at.maxima(data, threshold=500))
         results_header = self.layout.indexOf(self.results_label)
         logger.debug("Results start at %d, out of %d",
                      results_header, self.layout.rowCount())
@@ -160,47 +161,22 @@ class EFHWAnalysis(ResonanceAnalysis):
         for _ in range(results_header, self.layout.rowCount()):
             self.layout.removeRow(self.layout.rowCount() - 1)
         extended_data = {}
-        both = []
-        tolerance = 2
-        for i, (low, _, high) in itertools.product(maximums, crossing):
-            if low - tolerance <= i <= high + tolerance:
-                both.append(i)
-                continue
-            if low > i:
-                continue
-        if both:
-            logger.info("%i crossing HW", len(both))
-            logger.info(crossing)
-            logger.info(maximums)
-            logger.info(both)
-            for m in both:
-                my_data = self._get_data(m)
-                if m in extended_data:
-                    extended_data[m].update(my_data)
-                else:
-                    extended_data[m] = my_data
-            for i in range(min(len(both), len(self.app.markers))):
-                self.app.markers[i].setFrequency(
-                    str(self.app.data.s11[both[i]].freq))
-                self.app.markers[i].frequencyInput.setText(
-                    str(self.app.data.s11[both[i]].freq))
 
-        else:
-            logger.info("TO DO: find near data")
-            for _, lowest, _ in crossing:
-                my_data = self._get_data(lowest)
-                if lowest in extended_data:
-                    extended_data[lowest].update(my_data)
-                else:
-                    extended_data[lowest] = my_data
-            logger.debug("maximumx %s of type %s", maximums, type(maximums))
-            for m in maximums:
-                logger.debug("m %s of type %s", m, type(m))
-                my_data = self._get_data(m)
-                if m in extended_data:
-                    extended_data[m].update(my_data)
-                else:
-                    extended_data[m] = my_data
+        logger.info("TO DO: find near data")
+        for lowest in crossing:
+            my_data = self._get_data(lowest)
+            if lowest in extended_data:
+                extended_data[lowest].update(my_data)
+            else:
+                extended_data[lowest] = my_data
+        logger.debug("maximumx %s of type %s", maximums, type(maximums))
+        for m in maximums:
+            logger.debug("m %s of type %s", m, type(m))
+            my_data = self._get_data(m)
+            if m in extended_data:
+                extended_data[m].update(my_data)
+            else:
+                extended_data[m] = my_data
         fields = [("freq", format_frequency_short),
                   ("r", format_resistence_neg), ("lambda", lambda x: round(x, 2))]
 

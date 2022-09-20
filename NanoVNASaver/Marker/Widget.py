@@ -212,6 +212,7 @@ class Marker(QtCore.QObject, Value):
 
     def setFrequency(self, frequency):
         self.freq = parse_frequency(frequency)
+        self.frequencyInput.setText(frequency)
         self.updated.emit(self)
 
     def setFieldSelection(self, fields):

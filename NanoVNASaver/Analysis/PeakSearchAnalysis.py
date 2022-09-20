@@ -22,7 +22,10 @@ from PyQt5 import QtWidgets
 import scipy
 import numpy as np
 
-from NanoVNASaver.Analysis.Base import Analysis
+from NanoVNASaver.Analysis.Base import QHLine
+from NanoVNASaver.Analysis.SimplePeakSearchAnalysis import (
+    SimplePeakSearchAnalysis)
+
 from NanoVNASaver.Formatting import format_vswr
 from NanoVNASaver.Formatting import format_gain
 from NanoVNASaver.Formatting import format_resistance
@@ -32,99 +35,64 @@ from NanoVNASaver.Formatting import format_frequency_short
 logger = logging.getLogger(__name__)
 
 
-class PeakSearchAnalysis(Analysis):
-    class QHLine(QtWidgets.QFrame):
-        def __init__(self):
-            super().__init__()
-            self.setFrameShape(QtWidgets.QFrame.HLine)
+class PeakSearchAnalysis(SimplePeakSearchAnalysis):
 
     def __init__(self, app):
         super().__init__(app)
 
-        self._widget = QtWidgets.QWidget()
-        self.layout = QtWidgets.QFormLayout()
-        self._widget.setLayout(self.layout)
+        self.peak_cnt = QtWidgets.QSpinBox()
+        self.peak_cnt.setValue(1)
+        self.peak_cnt.setMinimum(1)
+        self.peak_cnt.setMaximum(10)
 
-        self.rbtn_data_group = QtWidgets.QButtonGroup()
-        self.rbtn_data_vswr = QtWidgets.QRadioButton("VSWR")
-        self.rbtn_data_resistance = QtWidgets.QRadioButton("Resistance")
-        self.rbtn_data_reactance = QtWidgets.QRadioButton("Reactance")
-        self.rbtn_data_s21_gain = QtWidgets.QRadioButton("S21 Gain")
-        self.rbtn_data_group.addButton(self.rbtn_data_vswr)
-        self.rbtn_data_group.addButton(self.rbtn_data_resistance)
-        self.rbtn_data_group.addButton(self.rbtn_data_reactance)
-        self.rbtn_data_group.addButton(self.rbtn_data_s21_gain)
-
-        self.rbtn_data_vswr.setChecked(True)
-
-        self.rbtn_peak_group = QtWidgets.QButtonGroup()
-        self.rbtn_peak_positive = QtWidgets.QRadioButton("Positive")
-        self.rbtn_peak_negative = QtWidgets.QRadioButton("Negative")
-        self.rbtn_peak_both = QtWidgets.QRadioButton("Both")
-        self.rbtn_peak_group.addButton(self.rbtn_peak_positive)
-        self.rbtn_peak_group.addButton(self.rbtn_peak_negative)
-        self.rbtn_peak_group.addButton(self.rbtn_peak_both)
-
-        self.rbtn_peak_positive.setChecked(True)
-
-        self.input_number_of_peaks = QtWidgets.QSpinBox()
-        self.input_number_of_peaks.setValue(1)
-        self.input_number_of_peaks.setMinimum(1)
-        self.input_number_of_peaks.setMaximum(10)
-
-        self.checkbox_move_markers = QtWidgets.QCheckBox()
-
-        self.layout.addRow(QtWidgets.QLabel("<b>Settings</b>"))
-        self.layout.addRow("Data source", self.rbtn_data_vswr)
-        self.layout.addRow("", self.rbtn_data_resistance)
-        self.layout.addRow("", self.rbtn_data_reactance)
-        self.layout.addRow("", self.rbtn_data_s21_gain)
-        self.layout.addRow(PeakSearchAnalysis.QHLine())
-        self.layout.addRow("Peak type", self.rbtn_peak_positive)
-        self.layout.addRow("", self.rbtn_peak_negative)
-        # outer_layout.addRow("", self.rbtn_peak_both)
-        self.layout.addRow(PeakSearchAnalysis.QHLine())
-        self.layout.addRow("Max number of peaks", self.input_number_of_peaks)
-        self.layout.addRow("Move markers", self.checkbox_move_markers)
-        self.layout.addRow(PeakSearchAnalysis.QHLine())
+        self.layout.addRow("Max number of peaks", self.peak_cnt)
+        self.layout.addRow(QHLine())
         self.layout.addRow(QtWidgets.QLabel("<b>Results</b>"))
         self.results_header = self.layout.rowCount()
 
+        self.set_titel('Peak search')
+
     def runAnalysis(self):
+        if not self.app.data.s11:
+            return
         self.reset()
-        data = []
-        sign = 1
-        count = self.input_number_of_peaks.value()
-        if self.rbtn_data_vswr.isChecked():
+
+        s11 = self.app.data.s11
+        s21 = self.app.data.s21
+
+        if not s21:
+            self.button['gain'].setEnabled(False)
+            if self.button['gain'].isChecked():
+                self.button['vswr'].setChecked(True)
+        else:
+            self.button['gain'].setEnabled(True)
+
+        count = self.peak_cnt.value()
+        if self.button['vswr'].isChecked():
             fn = format_vswr
-            data.extend(d.vswr for d in self.app.data.s11)
-        elif self.rbtn_data_s21_gain.isChecked():
+            data = [d.vswr for d in s11]
+        elif self.button['gain'].isChecked():
             fn = format_gain
-            data.extend(d.gain for d in self.app.data.s21)
-        elif self.rbtn_data_resistance.isChecked():
+            data = [d.gain for d in s21]
+        elif self.button['resistance'].isChecked():
             fn = format_resistance
-            data.extend(d.impedance().real for d in self.app.data.s11)
-        elif self.rbtn_data_reactance.isChecked():
-            fn = str
-            data.extend(d.impedance().imag for d in self.app.data.s11)
+            data = [d.impedance().real for d in s11]
+        elif self.button['reactance'].isChecked():
+            fn = format_resistance
+            data = [d.impedance().imag for d in s11]
         else:
             logger.warning("Searching for peaks on unknown data")
             return
 
-        if self.rbtn_peak_positive.isChecked():
+        sign = 1
+        if self.button['peak_h'].isChecked():
             peaks, _ = scipy.signal.find_peaks(
                 data, width=3, distance=3, prominence=1)
-        elif self.rbtn_peak_negative.isChecked():
+        elif self.button['peak_l'].isChecked():
             sign = -1
             data = [x * sign for x in data]
             peaks, _ = scipy.signal.find_peaks(
                 data, width=3, distance=3, prominence=1)
-        # elif self.rbtn_peak_both.isChecked():
-        #     peaks_max, _ = scipy.signal.find_peaks(
-        #         data, width=3, distance=3, prominence=1)
-        #     peaks_min, _ = scipy.signal.find_peaks(
-        #         np.array(data)*-1, width=3, distance=3, prominence=1)
-        #     peaks = np.concatenate((peaks_max, peaks_min))
         else:
             # Both is not yet in
             logger.warning(
@@ -147,22 +115,20 @@ class PeakSearchAnalysis(Analysis):
             logger.debug("Index %d", i)
             logger.debug("Prominence %f", prominences[i])
             logger.debug("Index in sweep %d", peaks[i])
-            logger.debug("Frequency %d", self.app.data.s11[peaks[i]].freq)
+            logger.debug("Frequency %d", s11[peaks[i]].freq)
             logger.debug("Value %f", sign * data[peaks[i]])
             self.layout.addRow(
                 f"Freq"
-                f" {format_frequency_short(self.app.data.s11[peaks[i]].freq)}",
+                f" {format_frequency_short(s11[peaks[i]].freq)}",
                 QtWidgets.QLabel(f" value {fn(sign * data[peaks[i]])}"
                                  ))
 
-        if self.checkbox_move_markers.isChecked():
+        if self.button['move_marker'].isChecked():
             if count > len(self.app.markers):
                 logger.warning("More peaks found than there are markers")
             for i in range(min(count, len(self.app.markers))):
                 self.app.markers[i].setFrequency(
-                    str(self.app.data.s11[peaks[indices[i]]].freq))
-                self.app.markers[i].frequencyInput.setText(
-                    str(self.app.data.s11[peaks[indices[i]]].freq))
+                    str(s11[peaks[indices[i]]].freq))
 
         max_val = -10**10
         max_idx = -1

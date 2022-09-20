@@ -433,7 +433,6 @@ class FrequencyChart(Chart):
         m = self.getActiveMarker()
         if m is not None:
             m.setFrequency(str(f))
-            m.frequencyInput.setText(str(f))
 
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
         self.dim.width = (
