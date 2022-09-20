@@ -56,7 +56,7 @@ class HighPassAnalysis(Analysis):
     def runAnalysis(self):
         if not self.app.data.s21:
             logger.debug("No data to analyse")
-            self.result_label.setText("No data to analyse.")
+            self.set_result("No data to analyse.")
             return
 
         self.reset()
