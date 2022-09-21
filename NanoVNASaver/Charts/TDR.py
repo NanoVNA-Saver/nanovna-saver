@@ -266,7 +266,8 @@ class TDRChart(Chart):
                     self.tdrWindow.distance_axis, self.minDisplayLength * 2)
                 x_step = (max_index - min_index) / width
             else:
-                max_index = math.ceil(len(self.tdrWindow.distance_axis) / 2)
+                max_index = math.ceil(
+                    len(self.tdrWindow.distance_axis) / 2)
                 x_step = max_index / width
 
             self.markerLocation = int(round(absx * x_step))
@@ -309,7 +310,8 @@ class TDRChart(Chart):
                 x_step = (max_index - min_index) / width
             else:
                 min_index = 0
-                max_index = math.ceil(len(self.tdrWindow.distance_axis) / 2)
+                max_index = math.ceil(
+                    len(self.tdrWindow.distance_axis) / 2)
                 x_step = max_index / width
 
             if self.fixedValues:

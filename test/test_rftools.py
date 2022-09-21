@@ -143,7 +143,8 @@ class TestRFToolsDatapoint(unittest.TestCase):
         self.dp50 = Datapoint(100000, 1, 0)
         self.dp75 = Datapoint(100000, 0.2, 0)
         self.dp_im50 = Datapoint(100000, 0, 1)
-        self.dp_ill = Datapoint(100000, 1.1, 0) 
+        self.dp_ill = Datapoint(100000, 1.1, 0)
+        self.dp_div0 = Datapoint(100000, 0.0, 1.0)
 
     def test_properties(self):
         self.assertEqual(self.dp.z, complex(0.1091, 0.3118))
@@ -166,3 +167,10 @@ class TestRFToolsDatapoint(unittest.TestCase):
         self.assertAlmostEqual(self.dp.qFactor(), 0.6999837)
         self.assertAlmostEqual(self.dp.capacitiveEquivalent(), -4.54761539e-08)
         self.assertAlmostEqual(self.dp.inductiveEquivalent(), 5.57001e-05)
+        self.assertAlmostEqual(self.dp.shuntImpedance(),
+                               complex(-6.18740998e-04, 8.749362528))
+        self.assertAlmostEqual(self.dp.seriesImpedance(),
+                               complex(-2.02067318e-2, -285.7351012))
+        self.assertAlmostEqual(self.dp0.shuntImpedance(), 0)
+        self.assertAlmostEqual(self.dp0.seriesImpedance(), math.inf)
+        self.assertAlmostEqual(self.dp50.shuntImpedance(), math.inf)

@@ -18,10 +18,12 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 import math
+from typing import Dict, List
 
 from PyQt5 import QtWidgets
 
-from NanoVNASaver.Analysis.Base import Analysis
+import NanoVNASaver.AnalyticTools as at
+from NanoVNASaver.Analysis.Base import Analysis, CUTOFF_VALS
 from NanoVNASaver.Formatting import format_frequency
 
 logger = logging.getLogger(__name__)
@@ -31,174 +33,89 @@ class HighPassAnalysis(Analysis):
     def __init__(self, app):
         super().__init__(app)
 
-        self._widget = QtWidgets.QWidget()
+        self.label["octave"] = QtWidgets.QLabel()
+        self.label["decade"] = QtWidgets.QLabel()
+        for attn in CUTOFF_VALS:
+            self.label[f"{attn:.1f}dB"] = QtWidgets.QLabel()
+            self.label[f"{attn:.1f}dB"] = QtWidgets.QLabel()
 
-        layout = QtWidgets.QFormLayout()
-        self._widget.setLayout(layout)
-        layout.addRow(QtWidgets.QLabel("High pass filter analysis"))
+        layout = self.layout
+        layout.addRow(self.label["titel"])
         layout.addRow(QtWidgets.QLabel(
             f"Please place {self.app.markers[0].name}"
             f" in the filter passband."))
-        self.result_label = QtWidgets.QLabel()
-        self.cutoff_label = QtWidgets.QLabel()
-        self.six_db_label = QtWidgets.QLabel()
-        self.sixty_db_label = QtWidgets.QLabel()
-        self.db_per_octave_label = QtWidgets.QLabel()
-        self.db_per_decade_label = QtWidgets.QLabel()
-        layout.addRow("Result:", self.result_label)
-        layout.addRow("Cutoff frequency:", self.cutoff_label)
-        layout.addRow("-6 dB point:", self.six_db_label)
-        layout.addRow("-60 dB point:", self.sixty_db_label)
-        layout.addRow("Roll-off:", self.db_per_octave_label)
-        layout.addRow("Roll-off:", self.db_per_decade_label)
+        layout.addRow("Result:", self.label["result"])
+        layout.addRow("Cutoff frequency:", self.label["3.0dB"])
+        layout.addRow("-6 dB point:", self.label["6.0dB"])
+        layout.addRow("-60 dB point:", self.label["60.0dB"])
+        layout.addRow("Roll-off:", self.label["octave"])
+        layout.addRow("Roll-off:", self.label["decade"])
 
-    def reset(self):
-        self.result_label.clear()
-        self.cutoff_label.clear()
-        self.six_db_label.clear()
-        self.sixty_db_label.clear()
-        self.db_per_octave_label.clear()
-        self.db_per_decade_label.clear()
+        self.set_titel('Highpass analysis')
 
     def runAnalysis(self):
-        self.reset()
-        pass_band_location = self.app.markers[0].location
-        logger.debug("Pass band location: %d", pass_band_location)
-
-        if len(self.app.data.s21) == 0:
+        if not self.app.data.s21:
             logger.debug("No data to analyse")
-            self.result_label.setText("No data to analyse.")
+            self.set_result("No data to analyse.")
             return
 
-        if pass_band_location < 0:
-            logger.debug("No location for %s", self.app.markers[0].name)
-            self.result_label.setText(
-                f"Please place {self.app.markers[0].name } in the passband.")
+        self.reset()
+        s21 = self.app.data.s21
+        gains = [d.gain for d in s21]
+
+        if (peak := self.find_level(gains)) < 0:
             return
+        peak_db = gains[peak]
+        logger.debug("Passband position: %d(%fdB)", peak, peak_db)
 
-        pass_band_db = self.app.data.s21[pass_band_location].gain
+        cutoff_pos = self.find_cutoffs(gains, peak, peak_db)
+        cutoff_freq = {
+            att: s21[val].freq if val >= 0 else math.nan
+            for att, val in cutoff_pos.items()
+        }
+        cutoff_gain = {
+            att: gains[val] if val >= 0 else math.nan
+            for att, val in cutoff_pos.items()
+        }
+        logger.debug("Cuttoff frequencies: %s", cutoff_freq)
+        logger.debug("Cuttoff gains: %s", cutoff_gain)
 
-        logger.debug("Initial passband gain: %d", pass_band_db)
+        octave, decade = at.calculate_rolloff(
+            s21, cutoff_pos["10.0dB"], cutoff_pos["20.0dB"])
 
-        initial_cutoff_location = -1
-        for i in range(pass_band_location, -1, -1):
-            db = self.app.data.s21[i].gain
-            if (pass_band_db - db) > 3:
-                # We found a cutoff location
-                initial_cutoff_location = i
-                break
-
-        if initial_cutoff_location < 0:
-            self.result_label.setText("Cutoff location not found.")
-            return
-
-        initial_cutoff_frequency = (
-            self.app.data.s21[initial_cutoff_location].freq)
-
-        logger.debug("Found initial cutoff frequency at %d",
-                     initial_cutoff_frequency)
-
-        peak_location = -1
-        peak_db = self.app.data.s21[initial_cutoff_location].gain
-        for i in range(len(self.app.data.s21) - 1,
-                       initial_cutoff_location - 1, -1):
-            if self.app.data.s21[i].gain > peak_db:
-                peak_db = db
-                peak_location = i
-
-        logger.debug("Found peak of %f at %d", peak_db,
-                     self.app.data.s11[peak_location].freq)
-
-        self.app.markers[0].setFrequency(
-            str(self.app.data.s21[peak_location].freq))
-        self.app.markers[0].frequencyInput.setText(
-            str(self.app.data.s21[peak_location].freq))
-
-        cutoff_location = -1
-        pass_band_db = peak_db
-        for i in range(peak_location, -1, -1):
-            if (pass_band_db - self.app.data.s21[i].gain) > 3:
-                # We found the cutoff location
-                cutoff_location = i
-                break
-
-        cutoff_frequency = self.app.data.s21[cutoff_location].freq
-        cutoff_gain = self.app.data.s21[cutoff_location].gain - pass_band_db
-        if cutoff_gain < -4:
+        if cutoff_gain['3.0dB'] < -4:
             logger.debug("Cutoff frequency found at %f dB"
                          " - insufficient data points for true -3 dB point.",
                          cutoff_gain)
-        logger.debug("Found true cutoff frequency at %d", cutoff_frequency)
+        logger.debug("Found true cutoff frequency at %d", cutoff_freq['3.0dB'])
 
-        self.cutoff_label.setText(
-            f"{format_frequency(cutoff_frequency)}"
-            f" {round(cutoff_gain, 1)} dB)")
-        self.app.markers[1].setFrequency(str(cutoff_frequency))
-        self.app.markers[1].frequencyInput.setText(str(cutoff_frequency))
+        for label, val in cutoff_freq.items():
+            self.label[label].setText(
+                f"{format_frequency(val)}"
+                f" ({cutoff_gain[label]:.1f} dB)")
 
-        six_db_location = -1
-        for i in range(cutoff_location, -1, -1):
-            if (pass_band_db - self.app.data.s21[i].gain) > 6:
-                # We found 6dB location
-                six_db_location = i
-                break
+        self.label['octave'].setText(f'{octave:.3f}dB/octave')
+        self.label['decade'].setText(f'{decade:.3f}dB/decade')
 
-        if six_db_location < 0:
-            self.result_label.setText("6 dB location not found.")
-            return
-        six_db_cutoff_frequency = self.app.data.s21[six_db_location].freq
-        self.six_db_label.setText(
-            format_frequency(six_db_cutoff_frequency))
+        self.app.markers[0].setFrequency(str(s21[peak].freq))
+        self.app.markers[1].setFrequency(str(cutoff_freq['3.0dB']))
+        self.app.markers[2].setFrequency(str(cutoff_freq['6.0dB']))
 
-        ten_db_location = -1
-        for i in range(cutoff_location, -1, -1):
-            if (pass_band_db - self.app.data.s21[i].gain) > 10:
-                # We found 6dB location
-                ten_db_location = i
-                break
+        self.set_result(f"Analysis complete ({len(s21)}) points)")
 
-        twenty_db_location = -1
-        for i in range(cutoff_location, -1, -1):
-            if (pass_band_db - self.app.data.s21[i].gain) > 20:
-                # We found 6dB location
-                twenty_db_location = i
-                break
+    def find_level(self, gains: List[float]) -> int:
+        marker = self.app.markers[0]
+        logger.debug("Pass band location: %d", marker.location)
+        if marker.location < 0:
+            self.set_result(f"Please place {marker.name} in the passband.")
+            return -1
+        return at.center_from_idx(gains, marker.location)
 
-        sixty_db_location = -1
-        for i in range(six_db_location, -1, -1):
-            if (pass_band_db - self.app.data.s21[i].gain) > 60:
-                # We found 60dB location! Wow.
-                sixty_db_location = i
-                break
-
-        if sixty_db_location > 0:
-            if sixty_db_location > 0:
-                sixty_db_cutoff_frequency = (
-                    self.app.data.s21[sixty_db_location].freq)
-                self.sixty_db_label.setText(
-                    format_frequency(sixty_db_cutoff_frequency))
-            elif ten_db_location != -1 and twenty_db_location != -1:
-                ten = self.app.data.s21[ten_db_location].freq
-                twenty = self.app.data.s21[twenty_db_location].freq
-                sixty_db_frequency = ten * \
-                    10 ** (5 * (math.log10(twenty) - math.log10(ten)))
-                self.sixty_db_label.setText(
-                    f"{format_frequency(sixty_db_frequency)} (derived)")
-            else:
-                self.sixty_db_label.setText("Not calculated")
-
-        if (ten_db_location > 0 and
-            twenty_db_location > 0 and
-                ten_db_location != twenty_db_location):
-            octave_attenuation, decade_attenuation = self.calculateRolloff(
-                ten_db_location, twenty_db_location)
-            self.db_per_octave_label.setText(
-                str(round(octave_attenuation, 3)) + " dB / octave")
-            self.db_per_decade_label.setText(
-                str(round(decade_attenuation, 3)) + " dB / decade")
-        else:
-            self.db_per_octave_label.setText("Not calculated")
-            self.db_per_decade_label.setText("Not calculated")
-
-        self.result_label.setText(
-            f"Analysis complete ({len(self.app.data.s11)}) points)")
+    def find_cutoffs(self,
+                     gains: List[float],
+                     peak: int, peak_db: float) -> Dict[str, int]:
+        return {
+            f"{attn:.1f}dB": at.cut_off_left(
+                gains, peak, peak_db, attn)
+            for attn in CUTOFF_VALS
+        }

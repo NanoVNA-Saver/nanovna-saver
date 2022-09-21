@@ -20,11 +20,50 @@ import logging
 import math
 
 import numpy as np
-from scipy import signal
+import scipy
+from scipy.constants import speed_of_light
 
 from PyQt5 import QtWidgets, QtCore
 
 logger = logging.getLogger(__name__)
+
+CABLE_PARAMETERS = (
+    ("Jelly filled (0.64)", 0.64),
+    ("Polyethylene (0.66)", 0.66),
+    ("PTFE (Teflon) (0.70)", 0.70),
+    ("Pulp Insulation (0.72)", 0.72),
+    ("Foam or Cellular PE (0.78)", 0.78),
+    ("Semi-solid PE (SSPE) (0.84)", 0.84),
+    ("Air (Helical spacers) (0.94)", 0.94),
+    # Lots of cable types added by Larry Goga, AE5CZ
+    ("RG-6/U PE 75\N{OHM SIGN} (Belden 8215) (0.66)", 0.66),
+    ("RG-6/U Foam 75\N{OHM SIGN} (Belden 9290) (0.81)", 0.81),
+    ("RG-8/U PE 50\N{OHM SIGN} (Belden 8237) (0.66)", 0.66),
+    ("RG-8/U Foam (Belden 8214) (0.78)", 0.78),
+    ("RG-8/U (Belden 9913) (0.84)", 0.84),
+    # Next one added by EKZ, KC3KZ, from measurement of actual cable
+    ("RG-8/U (Shireen RFC®400 Low Loss) (0.86)", 0.86),
+    ("RG-8X (Belden 9258) (0.82)", 0.82),
+    # Next three added by EKZ, KC3KZ, from measurement of actual cable
+    ("RG-8X (Wireman \"Super 8\" CQ106) (0.81)", 0.81),
+    ("RG-8X (Wireman \"MINI-8 Lo-Loss\" CQ118) (0.82)", 0.82),
+    ("RG-58 (Wireman \"CQ 58 Lo-Loss Flex\" CQ129FF) (0.79)", 0.79),
+    ("RG-11/U 75\N{OHM SIGN} Foam HDPE (Belden 9292) (0.84)", 0.84),
+    ("RG-58/U 52\N{OHM SIGN} PE (Belden 9201) (0.66)", 0.66),
+    ("RG-58A/U 54\N{OHM SIGN} Foam (Belden 8219) (0.73)", 0.73),
+    ("RG-59A/U PE 75\N{OHM SIGN} (Belden 8241) (0.66)", 0.66),
+    ("RG-59A/U Foam 75\N{OHM SIGN} (Belden 8241F) (0.78)", 0.78),
+    ("RG-174 PE (Belden 8216)(0.66)", 0.66),
+    ("RG-174 Foam (Belden 7805R) (0.735)", 0.735),
+    ("RG-213/U PE (Belden 8267) (0.66)", 0.66),
+    ("RG316 (0.695)", 0.695),
+    ("RG402 (0.695)", 0.695),
+    ("LMR-240 (0.84)", 0.84),
+    ("LMR-240UF (0.80)", 0.80),
+    ("LMR-400 (0.85)", 0.85),
+    ("LMR400UF (0.83)", 0.83),
+    ("Davis Bury-FLEX (0.82)", 0.82),
+)
 
 
 class TDRWindow(QtWidgets.QWidget):
@@ -36,7 +75,6 @@ class TDRWindow(QtWidgets.QWidget):
 
         self.td = np.array([])
         self.distance_axis = []
-        self.step_response = []
         self.step_response_Z = []
 
         self.setWindowTitle("TDR")
@@ -48,75 +86,19 @@ class TDRWindow(QtWidgets.QWidget):
         self.setLayout(layout)
 
         self.tdr_velocity_dropdown = QtWidgets.QComboBox()
-        self.tdr_velocity_dropdown.addItem("Jelly filled (0.64)", 0.64)
-        self.tdr_velocity_dropdown.addItem("Polyethylene (0.66)", 0.66)
-        self.tdr_velocity_dropdown.addItem("PTFE (Teflon) (0.70)", 0.70)
-        self.tdr_velocity_dropdown.addItem("Pulp Insulation (0.72)", 0.72)
-        self.tdr_velocity_dropdown.addItem("Foam or Cellular PE (0.78)", 0.78)
-        self.tdr_velocity_dropdown.addItem("Semi-solid PE (SSPE) (0.84)", 0.84)
-        self.tdr_velocity_dropdown.addItem(
-            "Air (Helical spacers) (0.94)", 0.94)
-        self.tdr_velocity_dropdown.insertSeparator(
-            self.tdr_velocity_dropdown.count())
-        # Lots of cable types added by Larry Goga, AE5CZ
-        self.tdr_velocity_dropdown.addItem(
-            "RG-6/U PE 75\N{OHM SIGN} (Belden 8215) (0.66)", 0.66)
-        self.tdr_velocity_dropdown.addItem(
-            "RG-6/U Foam 75\N{OHM SIGN} (Belden 9290) (0.81)", 0.81)
-        self.tdr_velocity_dropdown.addItem(
-            "RG-8/U PE 50\N{OHM SIGN} (Belden 8237) (0.66)", 0.66)
-        self.tdr_velocity_dropdown.addItem(
-            "RG-8/U Foam (Belden 8214) (0.78)", 0.78)
-        self.tdr_velocity_dropdown.addItem("RG-8/U (Belden 9913) (0.84)", 0.84)
-        # Next one added by EKZ, KC3KZ, from measurement of actual cable
-        self.tdr_velocity_dropdown.addItem(
-            "RG-8/U (Shireen RFC®400 Low Loss) (0.86)", 0.86)
-        self.tdr_velocity_dropdown.addItem("RG-8X (Belden 9258) (0.82)", 0.82)
-        # Next three added by EKZ, KC3KZ, from measurement of actual cable
-        self.tdr_velocity_dropdown.addItem(
-            "RG-8X (Wireman \"Super 8\" CQ106) (0.81)", 0.81)
-        self.tdr_velocity_dropdown.addItem(
-            "RG-8X (Wireman \"MINI-8 Lo-Loss\" CQ118) (0.82)", 0.82)
-        self.tdr_velocity_dropdown.addItem(
-            "RG-58 (Wireman \"CQ 58 Lo-Loss Flex\" CQ129FF) (0.79)", 0.79)
-        self.tdr_velocity_dropdown.addItem(
-            "RG-11/U 75\N{OHM SIGN} Foam HDPE (Belden 9292) (0.84)", 0.84)
-        self.tdr_velocity_dropdown.addItem(
-            "RG-58/U 52\N{OHM SIGN} PE (Belden 9201) (0.66)", 0.66)
-        self.tdr_velocity_dropdown.addItem(
-            "RG-58A/U 54\N{OHM SIGN} Foam (Belden 8219) (0.73)", 0.73)
-        self.tdr_velocity_dropdown.addItem(
-            "RG-59A/U PE 75\N{OHM SIGN} (Belden 8241) (0.66)", 0.66)
-        self.tdr_velocity_dropdown.addItem(
-            "RG-59A/U Foam 75\N{OHM SIGN} (Belden 8241F) (0.78)", 0.78)
-        self.tdr_velocity_dropdown.addItem(
-            "RG-174 PE (Belden 8216)(0.66)", 0.66)
-        self.tdr_velocity_dropdown.addItem(
-            "RG-174 Foam (Belden 7805R) (0.735)", 0.735)
-        self.tdr_velocity_dropdown.addItem(
-            "RG-213/U PE (Belden 8267) (0.66)", 0.66)
-        self.tdr_velocity_dropdown.addItem("RG316 (0.695)", 0.695)
-        self.tdr_velocity_dropdown.addItem("RG402 (0.695)", 0.695)
-        self.tdr_velocity_dropdown.addItem("LMR-240 (0.84)", 0.84)
-        self.tdr_velocity_dropdown.addItem("LMR-240UF (0.80)", 0.80)
-        self.tdr_velocity_dropdown.addItem("LMR-400 (0.85)", 0.85)
-        self.tdr_velocity_dropdown.addItem("LMR400UF (0.83)", 0.83)
-        self.tdr_velocity_dropdown.addItem("Davis Bury-FLEX (0.82)", 0.82)
+        for cable_name, velocity in CABLE_PARAMETERS:
+            self.tdr_velocity_dropdown.addItem(cable_name, velocity)
         self.tdr_velocity_dropdown.insertSeparator(
             self.tdr_velocity_dropdown.count())
         self.tdr_velocity_dropdown.addItem("Custom", -1)
-
         self.tdr_velocity_dropdown.setCurrentIndex(1)  # Default to PE (0.66)
-
         self.tdr_velocity_dropdown.currentIndexChanged.connect(self.updateTDR)
-
         layout.addRow(self.tdr_velocity_dropdown)
 
         self.tdr_velocity_input = QtWidgets.QLineEdit()
         self.tdr_velocity_input.setDisabled(True)
         self.tdr_velocity_input.setText("0.66")
         self.tdr_velocity_input.textChanged.connect(self.app.dataUpdated)
-
         layout.addRow("Velocity factor", self.tdr_velocity_input)
 
         self.tdr_result_label = QtWidgets.QLabel()
@@ -125,7 +107,6 @@ class TDRWindow(QtWidgets.QWidget):
         layout.addRow(self.app.tdr_chart)
 
     def updateTDR(self):
-        c = 299792458
         # TODO: Let the user select whether to use high or low resolution TDR?
         FFT_POINTS = 2**14
 
@@ -156,13 +137,13 @@ class TDRWindow(QtWidgets.QWidget):
         windowed_s11 = window * s11
         self.td = np.abs(np.fft.ifft(windowed_s11, FFT_POINTS))
         step = np.ones(FFT_POINTS)
-        self.step_response = signal.convolve(self.td, step)
+        step_response = scipy.signal.convolve(self.td, step)
 
         self.step_response_Z = 50 * (
-            1 + self.step_response) / (1 - self.step_response)
+            1 + step_response) / (1 - step_response)
 
         time_axis = np.linspace(0, 1 / step_size, FFT_POINTS)
-        self.distance_axis = time_axis * v * c
+        self.distance_axis = time_axis * v * speed_of_light
         # peak = np.max(td)
         # We should check that this is an actual *peak*, and not just
         # a vague maximum

@@ -1,8 +1,10 @@
 Changelog
 =========
 
-0.5.4
------
+0.5.4-pre
+---------
+
+ - Refectoring of Analysis modules
 
 0.5.3
 -----

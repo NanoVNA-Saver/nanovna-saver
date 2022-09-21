@@ -16,8 +16,9 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-from typing import Callable, List, Tuple
 import itertools as it
+import math
+from typing import Callable, List, Tuple
 
 import numpy as np
 import scipy
@@ -59,8 +60,8 @@ def maxima(data: List[float], threshold: float = 0.0) -> List[int]:
     Returns:
         List[int]: indices of maxima
     """
-    peaks, _ = scipy.signal.find_peaks(
-        data, width=2, distance=3, prominence=1)
+    peaks = scipy.signal.find_peaks(
+        data, width=2, distance=3, prominence=1)[0].tolist()
     return [
         i for i in peaks if data[i] > threshold
     ] if threshold else peaks
@@ -75,8 +76,8 @@ def minima(data: List[float], threshold: float = 0.0) -> List[int]:
     Returns:
         List[int]: indices of minima
     """
-    bottoms, _ = scipy.signal.find_peaks(
-        -np.array(data), width=2, distance=3, prominence=1)
+    bottoms = scipy.signal.find_peaks(
+        -np.array(data), width=2, distance=3, prominence=1)[0].tolist()
     return [
         i for i in bottoms if data[i] < threshold
     ] if threshold else bottoms
@@ -114,7 +115,7 @@ def center_from_idx(gains: List[float],
     Args:
         gains (List[float]): gain values
         idx (int): start position to search from
-        delta (float=3.0): max gain delta from start
+        delta (float, optional): max gain delta from start. Defaults to 3.0.
 
     Returns:
         int: position of highest gain from start in range (-1 if no data)
@@ -127,6 +128,19 @@ def center_from_idx(gains: List[float],
 
 def cut_off_left(gains: List[float], idx: int,
                  peak_gain: float, attn: float = 3.0) -> int:
+    """find first position in list where gain in attn lower then peak
+    left from index
+
+    Args:
+        gains (List[float]): gain values
+        idx (int): start position to search from
+        peak_gain (float): reference gain value
+        attn (float, optional): attenuation to search position for.
+                                Defaults to 3.0.
+
+    Returns:
+        int: position of attenuation point. (-1 if no data)
+    """
     return next(
         (i for i in range(idx, -1, -1) if
             (peak_gain - gains[i]) > attn),
@@ -135,7 +149,40 @@ def cut_off_left(gains: List[float], idx: int,
 
 def cut_off_right(gains: List[float], idx: int,
                   peak_gain: float, attn: float = 3.0) -> int:
+    """find first position in list where gain in attn lower then peak
+    right from index
+
+    Args:
+        gains (List[float]): gain values
+        idx (int): start position to search from
+        peak_gain (float): reference gain value
+        attn (float, optional): attenuation to search position for.
+                                Defaults to 3.0.
+
+    Returns:
+        int: position of attenuation point. (-1 if no data)
+    """
+
     return next(
         (i for i in range(idx, len(gains)) if
             (peak_gain - gains[i]) > attn),
         -1)
+
+
+def dip_cut_offs(gains: List[float], peak_gain: float,
+                 attn: float = 3.0) -> Tuple[int, int]:
+    rng = np.where(np.array(gains) < (peak_gain - attn))[0].tolist()
+    return (rng[0], rng[-1]) if rng else (math.nan, math.nan)
+
+
+def calculate_rolloff(s21: List[Datapoint],
+                      idx_1: int, idx_2: int) -> Tuple[float, float]:
+    if idx_1 == idx_2:
+        return (math.nan, math.nan)
+    freq_1, freq_2 = s21[idx_1].freq, s21[idx_2].freq
+    gain_1, gain_2 = s21[idx_1].gain, s21[idx_2].gain
+    factor = freq_1 / freq_2 if freq_1 > freq_2 else freq_2 / freq_1
+    attn = abs(gain_1 - gain_2)
+    decade_attn = attn / math.log10(factor)
+    octave_attn = decade_attn * math.log10(2)
+    return (octave_attn, decade_attn)
