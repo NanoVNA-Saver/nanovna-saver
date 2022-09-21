@@ -17,13 +17,14 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
+from typing import Callable, List, Tuple
 
 from PyQt5 import QtWidgets
 import numpy as np
 
 from NanoVNASaver.Analysis.Base import Analysis, QHLine
-from NanoVNASaver.Formatting import format_frequency
-
+from NanoVNASaver.Formatting import (
+    format_frequency, format_gain, format_resistance, format_vswr)
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +84,22 @@ class SimplePeakSearchAnalysis(Analysis):
             return
 
         s11 = self.app.data.s11
+        data, fmt_fnc = self.data_and_format()
+
+        if self.button['peak_l'].isChecked():
+            idx_peak = np.argmin(data)
+        else:
+            self.button['peak_h'].setChecked(True)
+            idx_peak = np.argmax(data)
+
+        self.label['peak_freq'].setText(format_frequency(s11[idx_peak].freq))
+        self.label['peak_db'].setText(fmt_fnc(data[idx_peak]))
+
+        if self.button['move_marker'].isChecked() and self.app.markers:
+            self.app.markers[0].setFrequency(f"{s11[idx_peak].freq}")
+
+    def data_and_format(self) -> Tuple[List[float], Callable]:
+        s11 = self.app.data.s11
         s21 = self.app.data.s21
 
         if not s21:
@@ -92,36 +109,11 @@ class SimplePeakSearchAnalysis(Analysis):
         else:
             self.button['gain'].setEnabled(True)
 
-        if self.button['vswr'].isChecked():
-            suffix = ""
-            data = [d.vswr for d in s11]
-        elif self.button['resistance'].isChecked():
-            suffix = " \N{OHM SIGN}"
-            data = [d.impedance().real for d in s11]
-        elif self.button['reactance'].isChecked():
-            suffix = " \N{OHM SIGN}"
-            data = [d.impedance().imag for d in s11]
-        elif self.button['gain'].isChecked():
-            suffix = " dB"
-            data = [d.gain for d in s21]
-        else:
-            logger.warning("Searching for peaks on unknown data")
-            return
-
-        if self.button['peak_h'].isChecked():
-            idx_peak = np.argmax(data)
-        elif self.button['peak_l'].isChecked():
-            idx_peak = np.argmin(data)
-        else:
-            # Both is not yet in
-            logger.warning(
-                "Searching for peaks,"
-                " but neither looking at positive nor negative?")
-            return
-
-        self.label['peak_freq'].setText(
-            format_frequency(s11[idx_peak].freq))
-        self.label['peak_db'].setText(f"{round(data[idx_peak], 3)}{suffix}")
-
-        if self.button['move_marker'].isChecked() and self.app.markers:
-            self.app.markers[0].setFrequency(f"{s11[idx_peak].freq}")
+        if self.button['gain'].isChecked():
+            return ([d.gain for d in s21], format_gain)
+        if self.button['resistance'].isChecked():
+            return ([d.impedance().real for d in s11], format_resistance)
+        if self.button['reactance'].isChecked():
+            return ([d.impedance().imag for d in s11], format_resistance)
+        # default
+        return ([d.vswr for d in s11], format_vswr)

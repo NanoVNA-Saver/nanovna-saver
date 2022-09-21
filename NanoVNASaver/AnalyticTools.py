@@ -115,7 +115,7 @@ def center_from_idx(gains: List[float],
     Args:
         gains (List[float]): gain values
         idx (int): start position to search from
-        delta (float=3.0): max gain delta from start
+        delta (float, optional): max gain delta from start. Defaults to 3.0.
 
     Returns:
         int: position of highest gain from start in range (-1 if no data)
@@ -128,6 +128,19 @@ def center_from_idx(gains: List[float],
 
 def cut_off_left(gains: List[float], idx: int,
                  peak_gain: float, attn: float = 3.0) -> int:
+    """find first position in list where gain in attn lower then peak
+    left from index
+
+    Args:
+        gains (List[float]): gain values
+        idx (int): start position to search from
+        peak_gain (float): reference gain value
+        attn (float, optional): attenuation to search position for.
+                                Defaults to 3.0.
+
+    Returns:
+        int: position of attenuation point. (-1 if no data)
+    """
     return next(
         (i for i in range(idx, -1, -1) if
             (peak_gain - gains[i]) > attn),
@@ -136,6 +149,20 @@ def cut_off_left(gains: List[float], idx: int,
 
 def cut_off_right(gains: List[float], idx: int,
                   peak_gain: float, attn: float = 3.0) -> int:
+    """find first position in list where gain in attn lower then peak
+    right from index
+
+    Args:
+        gains (List[float]): gain values
+        idx (int): start position to search from
+        peak_gain (float): reference gain value
+        attn (float, optional): attenuation to search position for.
+                                Defaults to 3.0.
+
+    Returns:
+        int: position of attenuation point. (-1 if no data)
+    """
+
     return next(
         (i for i in range(idx, len(gains)) if
             (peak_gain - gains[i]) > attn),
@@ -152,12 +179,10 @@ def calculate_rolloff(s21: List[Datapoint],
                       idx_1: int, idx_2: int) -> Tuple[float, float]:
     if idx_1 == idx_2:
         return (math.nan, math.nan)
-    freq_1 = s21[idx_1].freq
-    freq_2 = s21[idx_2].freq
-    gain1 = s21[idx_1].gain
-    gain2 = s21[idx_2].gain
+    freq_1, freq_2 = s21[idx_1].freq, s21[idx_2].freq
+    gain_1, gain_2 = s21[idx_1].gain, s21[idx_2].gain
     factor = freq_1 / freq_2 if freq_1 > freq_2 else freq_2 / freq_1
-    attn = abs(gain1 - gain2)
-    octave_attn = attn / (math.log10(factor) / math.log10(2))
+    attn = abs(gain_1 - gain_2)
     decade_attn = attn / math.log10(factor)
+    octave_attn = decade_attn * math.log10(2)
     return (octave_attn, decade_attn)

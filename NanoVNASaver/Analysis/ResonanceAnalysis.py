@@ -196,7 +196,7 @@ class EFHWAnalysis(ResonanceAnalysis):
                     f" ({diff[i]['r']}) {diff[i]['lambda']} m"))
 
         if filename and extended_data:
-            with open(filename, 'w', newline='') as csvfile:
+            with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
                 fieldnames = extended_data[sorted(
                     extended_data.keys())[0]].keys()
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)

@@ -26,9 +26,6 @@ from NanoVNASaver.Analysis.Base import QHLine
 from NanoVNASaver.Analysis.SimplePeakSearchAnalysis import (
     SimplePeakSearchAnalysis)
 
-from NanoVNASaver.Formatting import format_vswr
-from NanoVNASaver.Formatting import format_gain
-from NanoVNASaver.Formatting import format_resistance
 from NanoVNASaver.Formatting import format_frequency_short
 
 
@@ -58,50 +55,19 @@ class PeakSearchAnalysis(SimplePeakSearchAnalysis):
         self.reset()
 
         s11 = self.app.data.s11
-        s21 = self.app.data.s21
+        data, fmt_fnc = self.data_and_format()
 
-        if not s21:
-            self.button['gain'].setEnabled(False)
-            if self.button['gain'].isChecked():
-                self.button['vswr'].setChecked(True)
+        inverted = False
+        if self.button['peak_l'].isChecked():
+            inverted = True
+            peaks, _ = scipy.signal.find_peaks(
+                -np.array(data), width=3, distance=3, prominence=1)
         else:
-            self.button['gain'].setEnabled(True)
-
-        count = self.peak_cnt.value()
-        if self.button['vswr'].isChecked():
-            fn = format_vswr
-            data = [d.vswr for d in s11]
-        elif self.button['gain'].isChecked():
-            fn = format_gain
-            data = [d.gain for d in s21]
-        elif self.button['resistance'].isChecked():
-            fn = format_resistance
-            data = [d.impedance().real for d in s11]
-        elif self.button['reactance'].isChecked():
-            fn = format_resistance
-            data = [d.impedance().imag for d in s11]
-        else:
-            logger.warning("Searching for peaks on unknown data")
-            return
-
-        sign = 1
-        if self.button['peak_h'].isChecked():
+            self.button['peak_h'].setChecked(True)
             peaks, _ = scipy.signal.find_peaks(
                 data, width=3, distance=3, prominence=1)
-        elif self.button['peak_l'].isChecked():
-            sign = -1
-            data = [x * sign for x in data]
-            peaks, _ = scipy.signal.find_peaks(
-                data, width=3, distance=3, prominence=1)
-        else:
-            # Both is not yet in
-            logger.warning(
-                "Searching for peaks,"
-                " but neither looking at positive nor negative?")
-            return
 
         # Having found the peaks, get the prominence data
-
         for i, p in np.ndenumerate(peaks):
             logger.debug("Peak %i at %d", i, p)
         prominences = scipy.signal.peak_prominences(data, peaks)[0]
@@ -109,19 +75,20 @@ class PeakSearchAnalysis(SimplePeakSearchAnalysis):
 
         # Find the peaks with the most extreme values
         # Alternately, allow the user to select "most prominent"?
+        count = self.peak_cnt.value()
+        if count > len(prominences):
+            count = len(prominences)
+            self.peak_cnt.setValue(count)
+
         indices = np.argpartition(prominences, -count)[-count:]
         logger.debug("%d indices", len(indices))
         for i in indices:
-            logger.debug("Index %d", i)
-            logger.debug("Prominence %f", prominences[i])
-            logger.debug("Index in sweep %d", peaks[i])
-            logger.debug("Frequency %d", s11[peaks[i]].freq)
-            logger.debug("Value %f", sign * data[peaks[i]])
+            pos = peaks[i]
             self.layout.addRow(
-                f"Freq"
-                f" {format_frequency_short(s11[peaks[i]].freq)}",
-                QtWidgets.QLabel(f" value {fn(sign * data[peaks[i]])}"
-                                 ))
+                f"Freq: {format_frequency_short(s11[pos].freq)}",
+                QtWidgets.QLabel(
+                    f" Value: {fmt_fnc(-data[pos] if inverted else data[pos])}"
+                ))
 
         if self.button['move_marker'].isChecked():
             if count > len(self.app.markers):
@@ -130,18 +97,8 @@ class PeakSearchAnalysis(SimplePeakSearchAnalysis):
                 self.app.markers[i].setFrequency(
                     str(s11[peaks[indices[i]]].freq))
 
-        max_val = -10**10
-        max_idx = -1
-        for p in peaks:
-            if data[p] > max_val:
-                max_val = data[p]
-                max_idx = p
-
-        logger.debug("Max peak at %d, value %f", max_idx, max_val)
-
     def reset(self):
-        logger.debug("Reset analysis")
-
+        super().reset()
         logger.debug("Results start at %d, out of %d",
                      self.results_header, self.layout.rowCount())
         for _ in range(self.results_header, self.layout.rowCount()):
