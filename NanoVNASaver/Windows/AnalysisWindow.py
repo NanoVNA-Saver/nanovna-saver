@@ -20,16 +20,17 @@ import logging
 
 from PyQt5 import QtWidgets, QtCore
 
-from NanoVNASaver.Analysis.Base import Analysis
 from NanoVNASaver.Analysis.AntennaAnalysis import MagLoopAnalysis
-from NanoVNASaver.Analysis.ResonanceAnalysis import EFHWAnalysis, ResonanceAnalysis
-from NanoVNASaver.Analysis.LowPassAnalysis import LowPassAnalysis
-from NanoVNASaver.Analysis.HighPassAnalysis import HighPassAnalysis
 from NanoVNASaver.Analysis.BandPassAnalysis import BandPassAnalysis
 from NanoVNASaver.Analysis.BandStopAnalysis import BandStopAnalysis
+from NanoVNASaver.Analysis.Base import Analysis
+from NanoVNASaver.Analysis.EFHWAnalysis import EFHWAnalysis
+from NanoVNASaver.Analysis.HighPassAnalysis import HighPassAnalysis
+from NanoVNASaver.Analysis.LowPassAnalysis import LowPassAnalysis
+from NanoVNASaver.Analysis.PeakSearchAnalysis import PeakSearchAnalysis
+from NanoVNASaver.Analysis.ResonanceAnalysis import ResonanceAnalysis
 from NanoVNASaver.Analysis.SimplePeakSearchAnalysis import SimplePeakSearchAnalysis
 from NanoVNASaver.Analysis.VSWRAnalysis import VSWRAnalysis
-from NanoVNASaver.Analysis.PeakSearchAnalysis import PeakSearchAnalysis
 
 logger = logging.getLogger(__name__)
 
