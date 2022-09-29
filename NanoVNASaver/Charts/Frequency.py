@@ -450,7 +450,7 @@ class FrequencyChart(Chart):
             self.drawDragbog(qp)
         qp.end()
 
-    def _data_oob(self, data: list[Datapoint]) -> bool:
+    def _data_oob(self, data: List[Datapoint]) -> bool:
         return (data[0].freq > self.fstop or self.data[-1].freq < self.fstart)
 
     def _check_frequency_boundaries(self, qp: QtGui.QPainter):
