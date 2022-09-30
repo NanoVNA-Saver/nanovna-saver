@@ -16,6 +16,7 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+import contextlib
 import logging
 import sys
 import threading
@@ -490,10 +491,8 @@ class NanoVNASaver(QtWidgets.QWidget):
             else:
                 self.delta_marker.set_markers(m1, m2)
                 self.delta_marker.resetLabels()
-                try:
+                with contextlib.suppress(IndexError):
                     self.delta_marker.updateLabels()
-                except IndexError:
-                    pass
 
     def dataUpdated(self):
         with self.dataLock:
@@ -571,11 +570,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.btnResetReference.setDisabled(False)
 
-        if source is not None:
-            # Save the reference source info
-            self.referenceSource = source
-        else:
-            self.referenceSource = self.sweepSource
+        self.referenceSource = source or self.sweepSource
         self.updateTitle()
 
     def updateTitle(self):
@@ -589,7 +584,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                 f"Reference: {self.referenceSource} @"
                 f" {len(self.ref_data.s11)} points")
         insert += ")"
-        title = f"{self.baseTitle} {insert if insert else ''}"
+        title = f"{self.baseTitle} {insert or ''}"
         self.setWindowTitle(title)
 
     def resetReference(self):
@@ -612,11 +607,9 @@ class NanoVNASaver(QtWidgets.QWidget):
 
     def showSweepError(self):
         self.showError(self.worker.error_message)
-        try:
+        with contextlib.suppress(IOError):
             self.vna.flushSerialBuffers()  # Remove any left-over data
             self.vna.reconnect()  # try reconnection
-        except IOError:
-            pass
         self.sweepFinished()
 
     def popoutChart(self, chart: Chart):
