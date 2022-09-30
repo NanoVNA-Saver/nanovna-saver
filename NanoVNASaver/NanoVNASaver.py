@@ -101,10 +101,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.bands = BandsModel()
 
         self.interface = Interface("serial", "None")
-        try:
-            self.vna = VNA(self.interface)
-        except IOError as exc:
-            self.showError(f"{exc}\n\nPlease try reconnect")
+        self.vna = VNA(self.interface)
 
         self.dataLock = threading.Lock()
         self.data = Touchstone()
@@ -609,7 +606,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.showError(self.worker.error_message)
         with contextlib.suppress(IOError):
             self.vna.flushSerialBuffers()  # Remove any left-over data
-            self.vna.reconnect()  # try reconnection
+            self.vna.reconnect()           # try reconnection
         self.sweepFinished()
 
     def popoutChart(self, chart: Chart):
