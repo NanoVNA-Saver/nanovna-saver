@@ -22,6 +22,7 @@ import math
 import os
 import re
 from collections import defaultdict, UserDict
+from dataclasses import dataclass
 from typing import List
 
 from scipy.interpolate import interp1d
@@ -49,51 +50,49 @@ def correct_delay(d: Datapoint, delay: float, reflect: bool = False):
     return Datapoint(d.freq, corr_data.real, corr_data.imag)
 
 
-class CalData(UserDict):
-    def __init__(self):
-        data = {
-            "short": None,
-            "open": None,
-            "load": None,
-            "through": None,
-            "thrurefl": None,
-            "isolation": None,
-            # the frequence
-            "freq": 0,
-            # 1 Port
-            "e00": 0.0,  # Directivity
-            "e11": 0.0,  # Port1 match
-            "delta_e": 0.0,  # Tracking
-            "e10e01": 0.0,  # Forward Reflection Tracking
-            # 2 port
-            "e30": 0.0,  # Forward isolation
-            "e22": 0.0,  # Port2 match
-            "e10e32": 0.0,  # Forward transmission
-        }
-        super().__init__(data)
+@dataclass
+class CalData:
+    short: complex = complex(0.0, 0.0)
+    open: complex = complex(0.0, 0.0)
+    load: complex = complex(0.0, 0.0)
+    through: complex = complex(0.0, 0.0)
+    thrurefl: complex = complex(0.0, 0.0)
+    isolation: complex = complex(0.0, 0.0)
+    freq: int = 0
+    e00: float = 0.0  # Directivity
+    e11: float = 0.0  # Port1 match
+    delta_e: float = 0.0  # Tracking
+    e10e01: float = 0.0  # Forward Reflection Tracking
+    # 2 port
+    e30: float = 0.0  # Forward isolation
+    e22: float = 0.0  # Port2 match
+    e10e32: float = 0.0  # Forward transmission
 
     def __str__(self):
-        d = self.data
-        s = (f'{d["freq"]}'
-             f' {d["short"].re} {d["short"].im}'
-             f' {d["open"].re} {d["open"].im}'
-             f' {d["load"].re} {d["load"].im}')
-        if d["through"] is not None:
-            s += (f' {d["through"].re} {d["through"].im}'
-                  f' {d["thrurefl"].re} {d["thrurefl"].im}'
-                  f' {d["isolation"].re} {d["isolation"].im}')
-        return s
+        return (
+            f'{self.freq}'
+            f' {self.short.real} {self.short.imag}'
+            f' {self.open.real} {self.open.imag}'
+            f' {self.load.real} {self.load.imag}' + (
+                f' {self.through.real} {self.through.imag}'
+                f' {self.thrurefl.real} {self.thrurefl.imag}'
+                f' {self.isolation.real} {self.isolation.imag}'
+                if self.through else ''
+            )
+        )
 
 
-class CalDataSet:
+class CalDataSet(UserDict):
     def __init__(self):
-        self.data = defaultdict(CalData)
+        self.data: defaultdict[int, CalData] = defaultdict(CalData)
 
     def insert(self, name: str, dp: Datapoint):
-        if name not in self.data[dp.freq]:
+        if name not in {'short', 'open', 'load',
+                        'through', 'thrurefl', 'isolation'}:
             raise KeyError(name)
-        self.data[dp.freq]["freq"] = dp.freq
-        self.data[dp.freq][name] = dp
+        freq = dp.freq
+        setattr(self.data[freq], name, (dp.z))
+        self.data[freq].freq = freq
 
     def frequencies(self) -> List[int]:
         return sorted(self.data.keys())
@@ -109,21 +108,22 @@ class CalDataSet:
             yield self.get(freq)
 
     def size_of(self, name: str) -> int:
-        return len([v for v in self.data.values() if v[name] is not None])
+        return len(
+            [True for val in self.data.values() if getattr(val, name)]
+        )
 
     def complete1port(self) -> bool:
         for val in self.data.values():
-            for name in ("short", "open", "load"):
-                if val[name] is None:
-                    return False
+            if not all((val.short, val.open, val.load)):
+                return False
         return any(self.data)
 
     def complete2port(self) -> bool:
+        if not self.complete1port():
+            return False
         for val in self.data.values():
-            for name in ("short", "open", "load", "through", "thrurefl",
-                         "isolation"):
-                if val[name] is None:
-                    return False
+            if not all((val.through, val.thrurefl, val.isolation)):
+                return False
         return any(self.data)
 
 
@@ -191,37 +191,37 @@ class Calibration:
         g2 = self.gamma_open(freq)
         g3 = self.gamma_load(freq)
 
-        gm1 = cal["short"].z
-        gm2 = cal["open"].z
-        gm3 = cal["load"].z
+        gm1 = cal.short
+        gm2 = cal.open
+        gm3 = cal.load
 
         denominator = (g1 * (g2 - g3) * gm1 +
                        g2 * g3 * gm2 - g2 * g3 * gm3 -
                        (g2 * gm2 - g3 * gm3) * g1)
-        cal["e00"] = - ((g2 * gm3 - g3 * gm3) * g1 * gm2 -
-                        (g2 * g3 * gm2 - g2 * g3 * gm3 -
+        cal.e00 = - ((g2 * gm3 - g3 * gm3) * g1 * gm2 -
+                     (g2 * g3 * gm2 - g2 * g3 * gm3 -
                          (g3 * gm2 - g2 * gm3) * g1) * gm1
-                        ) / denominator
-        cal["e11"] = ((g2 - g3) * gm1 - g1 * (gm2 - gm3) +
-                      g3 * gm2 - g2 * gm3) / denominator
-        cal["delta_e"] = - ((g1 * (gm2 - gm3) - g2 * gm2 + g3 *
-                             gm3) * gm1 + (g2 * gm3 - g3 * gm3) *
-                            gm2) / denominator
+                     ) / denominator
+        cal.e11 = ((g2 - g3) * gm1 - g1 * (gm2 - gm3) +
+                   g3 * gm2 - g2 * gm3) / denominator
+        cal.delta_e = - ((g1 * (gm2 - gm3) - g2 * gm2 + g3 *
+                          gm3) * gm1 + (g2 * gm3 - g3 * gm3) *
+                         gm2) / denominator
 
     def _calc_port_2(self, freq: int, cal: CalData):
         gt = self.gamma_through(freq)
 
-        gm4 = cal["through"].z
-        gm5 = cal["thrurefl"].z
-        gm6 = cal["isolation"].z
-        gm7 = gm5 - cal["e00"]
+        gm4 = cal.through
+        gm5 = cal.thrurefl
+        gm6 = cal.isolation
+        gm7 = gm5 - cal.e00
 
-        cal["e30"] = cal["isolation"].z
-        cal["e10e01"] = cal["e00"] * cal["e11"] - cal["delta_e"]
-        cal["e22"] = gm7 / (
-            gm7 * cal["e11"] * gt ** 2 + cal["e10e01"] * gt ** 2)
-        cal["e10e32"] = (gm4 - gm6) * (
-            1 - cal["e11"] * cal["e22"] * gt ** 2) / gt
+        cal.e30 = cal.isolation
+        cal.e10e01 = cal.e00 * cal.e11 - cal.delta_e
+        cal.e22 = gm7 / (
+            gm7 * cal.e11 * gt ** 2 + cal.e10e01 * gt ** 2)
+        cal.e10e32 = (gm4 - gm6) * (
+            1 - cal.e11 * cal.e22 * gt ** 2) / gt
 
     def calc_corrections(self):
         if not self.isValid1Port():
@@ -306,14 +306,14 @@ class Calibration:
         e10e32 = []
 
         for caldata in self.dataset.values():
-            freq.append(caldata["freq"])
-            e00.append(caldata["e00"])
-            e11.append(caldata["e11"])
-            delta_e.append(caldata["delta_e"])
-            e10e01.append(caldata["e10e01"])
-            e30.append(caldata["e30"])
-            e22.append(caldata["e22"])
-            e10e32.append(caldata["e10e32"])
+            freq.append(caldata.freq)
+            e00.append(caldata.e00)
+            e11.append(caldata.e11)
+            delta_e.append(caldata.delta_e)
+            e10e01.append(caldata.e10e01)
+            e30.append(caldata.e30)
+            e22.append(caldata.e22)
+            e10e32.append(caldata.e10e32)
 
         self.interp = {
             "e00": interp1d(freq, e00,
@@ -349,7 +349,7 @@ class Calibration:
         i = self.interp
         s21 = (dp.z - i["e30"](dp.freq)) / i["e10e32"](dp.freq)
         s21 = s21 * (i["e10e01"](dp.freq) / (i["e11"](dp.freq)
-                     * dp11.z - i["delta_e"](dp.freq)))
+                                             * dp11.z - i["delta_e"](dp.freq)))
         return Datapoint(dp.freq, s21.real, s21.imag)
 
     # TODO: implement tests
