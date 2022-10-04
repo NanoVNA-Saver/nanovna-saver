@@ -70,7 +70,8 @@ class CalibrationWindow(QtWidgets.QWidget):
             calibration_control_group)
         cal_btn = {}
         self.cal_label = {}
-        for label_name in Calibration.CAL_NAMES:
+        for label_name in ("short", "open", "load",
+                           "through", "thrurefl", "isolation"):
             self.cal_label[label_name] = QtWidgets.QLabel("Uncalibrated")
             cal_btn[label_name] = QtWidgets.QPushButton(
                 label_name.capitalize())
@@ -497,77 +498,60 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.app.worker.signals.updated.emit()
 
     def calculate(self):
-        def _warn_ideal(cal_type: str) -> str:
-            return (
-                'Invalid data for "{cal_type}" calibration standard.'
-                ' Using ideal values.')
-
+        cal_element = self.app.calibration.cal_element
         if self.app.sweep_control.btn_stop.isEnabled():
-            # Currently sweeping
             self.app.showError(
                 "Unable to apply calibration while a sweep is running."
                 " Please stop the sweep and try again.")
             return
-        if self.use_ideal_values.isChecked():
-            self.app.calibration.useIdealShort = True
-            self.app.calibration.useIdealOpen = True
-            self.app.calibration.useIdealLoad = True
-            self.app.calibration.useIdealThrough = True
-        else:
+
+        cal_element.short_is_ideal = True
+        cal_element.open_is_ideal = True
+        cal_element.load_is_ideal = True
+        cal_element.throuh_is_ideal = True
+
+        # TODO: all ideal or not?
+        if not self.use_ideal_values.isChecked():
+            cal_element.short_is_ideal = False
+            cal_element.open_is_ideal = False
+            cal_element.load_is_ideal = False
+            cal_element.throuh_is_ideal = False
+
             # We are using custom calibration standards
-            try:
-                self.app.calibration.shortL0 = self.getFloatValue(
-                    self.short_l0_input.text()) / 10 ** 12
-                self.app.calibration.shortL1 = self.getFloatValue(
-                    self.short_l1_input.text()) / 10 ** 24
-                self.app.calibration.shortL2 = self.getFloatValue(
-                    self.short_l2_input.text()) / 10 ** 33
-                self.app.calibration.shortL3 = self.getFloatValue(
-                    self.short_l3_input.text()) / 10 ** 42
-                self.app.calibration.shortLength = self.getFloatValue(
-                    self.short_length.text()) / 10 ** 12
-                self.app.calibration.useIdealShort = False
-            except ValueError:
-                self.app.calibration.useIdealShort = True
-                logger.warning(_warn_ideal("short"))
 
-            try:
-                self.app.calibration.openC0 = self.getFloatValue(
-                    self.open_c0_input.text()) / 10 ** 15
-                self.app.calibration.openC1 = self.getFloatValue(
-                    self.open_c1_input.text()) / 10 ** 27
-                self.app.calibration.openC2 = self.getFloatValue(
-                    self.open_c2_input.text()) / 10 ** 36
-                self.app.calibration.openC3 = self.getFloatValue(
-                    self.open_c3_input.text()) / 10 ** 45
-                self.app.calibration.openLength = self.getFloatValue(
-                    self.open_length.text()) / 10 ** 12
-                self.app.calibration.useIdealOpen = False
-            except ValueError:
-                self.app.calibration.useIdealOpen = True
-                logger.warning(_warn_ideal("open"))
+            cal_element.short_l0 = self.getFloatValue(
+                self.short_l0_input.text()) / 1.0e12
+            cal_element.short_l1 = self.getFloatValue(
+                self.short_l1_input.text()) / 1.0e24
+            cal_element.short_l2 = self.getFloatValue(
+                self.short_l2_input.text()) / 1.0e33
+            cal_element.short_l3 = self.getFloatValue(
+                self.short_l3_input.text()) / 1.0e42
+            cal_element.short_length = self.getFloatValue(
+                self.short_length.text()) / 1.0e12
 
-            try:
-                self.app.calibration.loadR = self.getFloatValue(
-                    self.load_resistance.text())
-                self.app.calibration.loadL = self.getFloatValue(
-                    self.load_inductance.text()) / 10 ** 12
-                self.app.calibration.loadC = self.getFloatValue(
-                    self.load_capacitance.text()) / 10 ** 15
-                self.app.calibration.loadLength = self.getFloatValue(
-                    self.load_length.text()) / 10 ** 12
-                self.app.calibration.useIdealLoad = False
-            except ValueError:
-                self.app.calibration.useIdealLoad = True
-                logger.warning(_warn_ideal("load"))
+            cal_element.open_c0 = self.getFloatValue(
+                self.open_c0_input.text()) / 1.e15
+            cal_element.open_c1 = self.getFloatValue(
+                self.open_c1_input.text()) / 1.e27
+            cal_element.open_c2 = self.getFloatValue(
+                self.open_c2_input.text()) / 1.0e36
+            cal_element.open_c3 = self.getFloatValue(
+                self.open_c3_input.text()) / 1.0e45
+            cal_element.openLength = self.getFloatValue(
+                self.open_length.text()) / 1.0e12
 
-            try:
-                self.app.calibration.throughLength = self.getFloatValue(
-                    self.through_length.text()) / 10 ** 12
-                self.app.calibration.useIdealThrough = False
-            except ValueError:
-                self.app.calibration.useIdealThrough = True
-                logger.warning(_warn_ideal("through"))
+            cal_element.load_r = self.getFloatValue(
+                self.load_resistance.text())
+            cal_element.load_l = self.getFloatValue(
+                self.load_inductance.text()) / 1.0e12
+            cal_element.load_c = self.getFloatValue(
+                self.load_capacitance.text()) / 1.0e15
+            cal_element.load_length = self.getFloatValue(
+                self.load_length.text()) / 1.0e12
+
+            cal_element.through_length = self.getFloatValue(
+                self.through_length.text()) / 1.0e12
 
         logger.debug("Attempting calibration calculation.")
         try:
@@ -604,7 +588,10 @@ class CalibrationWindow(QtWidgets.QWidget):
 
     @staticmethod
     def getFloatValue(text: str) -> float:
-        return float(text) if text else 0.0
+        try:
+            return float(text)
+        except (TypeError, ValueError):
+            return 0.0
 
     def loadCalibration(self):
         filename, _ = QtWidgets.QFileDialog.getOpenFileName(

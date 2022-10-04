@@ -29,6 +29,12 @@ from scipy.interpolate import interp1d
 
 from NanoVNASaver.RFTools import Datapoint
 
+
+IDEAL_SHORT = complex(-1, 0)
+IDEAL_OPEN = complex(1, 0)
+IDEAL_LOAD = complex(0, 0)
+IDEAL_THROUGH = complex(1, 0)
+
 RXP_CAL_LINE = re.compile(r"""^\s*
     (?P<freq>\d+) \s+
     (?P<shortr>[-0-9Ee.]+) \s+ (?P<shorti>[-0-9Ee.]+) \s+
@@ -52,6 +58,7 @@ def correct_delay(d: Datapoint, delay: float, reflect: bool = False):
 
 @dataclass
 class CalData:
+    # pylint: disable=too-many-instance-attributes
     short: complex = complex(0.0, 0.0)
     open: complex = complex(0.0, 0.0)
     load: complex = complex(0.0, 0.0)
@@ -82,8 +89,36 @@ class CalData:
         )
 
 
+@dataclass
+class CalElement:
+    # pylint: disable=too-many-instance-attributes
+    short_is_ideal: bool = True
+    short_l0: float = 5.7e-12
+    short_l1: float = -8.96e-20
+    short_l2: float = -1.1e-29
+    short_l3: float = -4.12e-37
+    short_length: float = -34.2  # ps
+
+    open_is_ideal: bool = True
+    open_c0: float = 2.1e-14
+    open_c1: float = 5.67e-23
+    open_c2: float = -2.39e-31
+    open_c3: float = 2.0e-40
+    open_length: float = 0.0
+
+    load_is_ideal: bool = True
+    load_r: float = 50.0
+    load_l: float = 0.0
+    load_c: float = 0.0
+    load_length: float = 0.0
+
+    through_is_ideal: bool = True
+    through_length: float = 0.0
+
+
 class CalDataSet(UserDict):
     def __init__(self):
+        super().__init__()
         self.data: defaultdict[int, CalData] = defaultdict(CalData)
 
     def insert(self, name: str, dp: Datapoint):
@@ -97,8 +132,8 @@ class CalDataSet(UserDict):
     def frequencies(self) -> List[int]:
         return sorted(self.data.keys())
 
-    def get(self, freq: int) -> CalData:
-        return self.data[freq]
+    def get(self, key: int, default: CalData = None) -> CalData:
+        return self.data.get(key, default)
 
     def items(self):
         yield from self.data.items()
@@ -128,44 +163,12 @@ class CalDataSet(UserDict):
 
 
 class Calibration:
-    CAL_NAMES = ("short", "open", "load", "through", "thrurefl", "isolation",)
-    IDEAL_SHORT = complex(-1, 0)
-    IDEAL_OPEN = complex(1, 0)
-    IDEAL_LOAD = complex(0, 0)
-
     def __init__(self):
 
         self.notes = []
         self.dataset = CalDataSet()
+        self.cal_element = CalElement()
         self.interp = {}
-
-        self.useIdealShort = True
-        self.shortL0 = 5.7 * 10E-12
-        self.shortL1 = -8960 * 10E-24
-        self.shortL2 = -1100 * 10E-33
-        self.shortL3 = -41200 * 10E-42
-        self.shortLength = -34.2  # Picoseconfrequenciesds
-        # These numbers look very large, considering what Keysight
-        # suggests their numbers are.
-
-        self.useIdealOpen = True
-        # Subtract 50fF for the nanoVNA calibration if nanoVNA is
-        # calibrated?
-        self.openC0 = 2.1 * 10E-14
-        self.openC1 = 5.67 * 10E-23
-        self.openC2 = -2.39 * 10E-31
-        self.openC3 = 2.0 * 10E-40
-        self.openLength = 0
-
-        self.useIdealLoad = True
-        self.loadR = 25
-        self.loadL = 0
-        self.loadC = 0
-        self.loadLength = 0
-
-        self.useIdealThrough = True
-        self.throughLength = 0
-
         self.isCalculated = False
 
         self.source = "Manual"
@@ -251,69 +254,57 @@ class Calibration:
         logger.debug("Calibration correctly calculated.")
 
     def gamma_short(self, freq: int) -> complex:
-        g = Calibration.IDEAL_SHORT
-        if not self.useIdealShort:
-            logger.debug("Using short calibration set values.")
-            Zsp = complex(0, 2 * math.pi * freq * (
-                self.shortL0 + self.shortL1 * freq +
-                self.shortL2 * freq ** 2 + self.shortL3 * freq ** 3))
-            # Referencing https://arxiv.org/pdf/1606.02446.pdf (18) - (21)
-            g = (Zsp / 50 - 1) / (Zsp / 50 + 1) * cmath.exp(
-                complex(0, 2 * math.pi * 2 * freq * self.shortLength * -1))
-        return g
+        if self.cal_element.short_is_ideal:
+            return IDEAL_SHORT
+        logger.debug("Using short calibration set values.")
+        cal_element = self.cal_element
+        Zsp = complex(0.0, 2.0 * math.pi * freq * (
+            cal_element.short_l0 + cal_element.short_l1 * freq +
+            cal_element.short_l2 * freq**2 + cal_element.short_l3 * freq**3))
+        # Referencing https://arxiv.org/pdf/1606.02446.pdf (18) - (21)
+        return (Zsp / 50.0 - 1.0) / (Zsp / 50.0 + 1.0) * cmath.exp(
+            complex(0.0,
+                    -4.0 * math.pi * freq * cal_element.short_length))
 
     def gamma_open(self, freq: int) -> complex:
-        g = Calibration.IDEAL_OPEN
-        if not self.useIdealOpen:
-            logger.debug("Using open calibration set values.")
-            Zop = complex(0, 2 * math.pi * freq * (
-                self.openC0 + self.openC1 * freq +
-                self.openC2 * freq ** 2 + self.openC3 * freq ** 3))
-            g = ((1 - 50 * Zop) / (1 + 50 * Zop)) * cmath.exp(
-                complex(0, 2 * math.pi * 2 * freq * self.openLength * -1))
-        return g
+        if self.cal_element.open_is_ideal:
+            return IDEAL_OPEN
+        logger.debug("Using open calibration set values.")
+        cal_element = self.cal_element
+        Zop = complex(0.0, 2.0 * math.pi * freq * (
+            cal_element.open_c0 + cal_element.open_c1 * freq +
+            cal_element.open_c2 * freq**2 + cal_element.open_c3 * freq**3))
+        return ((1.0 - 50.0 * Zop) / (1.0 + 50.0 * Zop)) * cmath.exp(
+            complex(0.0,
+                    -4.0 * math.pi * freq * cal_element.open_length))
 
     def gamma_load(self, freq: int) -> complex:
-        g = Calibration.IDEAL_LOAD
-        if not self.useIdealLoad:
-            logger.debug("Using load calibration set values.")
-            Zl = complex(self.loadR, 0)
-            if self.loadC > 0:
-                Zl = self.loadR / \
-                    complex(1, 2 * self.loadR * math.pi * freq * self.loadC)
-            if self.loadL > 0:
-                Zl = Zl + complex(0, 2 * math.pi * freq * self.loadL)
-            g = (Zl / 50 - 1) / (Zl / 50 + 1) * cmath.exp(
-                complex(0, 2 * math.pi * 2 * freq * self.loadLength * -1))
-        return g
+        if self.cal_element.load_is_ideal:
+            return IDEAL_LOAD
+        logger.debug("Using load calibration set values.")
+        cal_element = self.cal_element
+        Zl = complex(cal_element.load_r, 0.0)
+        if cal_element.load_c > 0.0:
+            Zl = cal_element.load_r / complex(
+                1.0,
+                2.0 * cal_element.load_r * math.pi * freq * cal_element.load_c)
+        if cal_element.load_l > 0.0:
+            Zl = Zl + complex(0.0, 2 * math.pi * freq * cal_element.load_l)
+        return (Zl / 50.0 - 1.0) / (Zl / 50.0 + 1.0) * cmath.exp(
+            complex(0.0, -4 * math.pi * freq * cal_element.load_length))
 
     def gamma_through(self, freq: int) -> complex:
-        g = complex(1, 0)
-        if not self.useIdealThrough:
-            logger.debug("Using through calibration set values.")
-            g = cmath.exp(complex(0, 1) * 2 * math.pi *
-                          self.throughLength * freq * -1)
-        return g
+        if self.cal_element.through_is_ideal:
+            return IDEAL_THROUGH
+        logger.debug("Using through calibration set values.")
+        cal_element = self.cal_element
+        return cmath.exp(
+            complex(0.0, -2.0 * math.pi * cal_element.through_length * freq))
 
     def gen_interpolation(self):
-        freq = []
-        e00 = []
-        e11 = []
-        delta_e = []
-        e10e01 = []
-        e30 = []
-        e22 = []
-        e10e32 = []
-
-        for caldata in self.dataset.values():
-            freq.append(caldata.freq)
-            e00.append(caldata.e00)
-            e11.append(caldata.e11)
-            delta_e.append(caldata.delta_e)
-            e10e01.append(caldata.e10e01)
-            e30.append(caldata.e30)
-            e22.append(caldata.e22)
-            e10e32.append(caldata.e10e32)
+        (freq, e00, e11, delta_e, e10e01, e30, e22, e10e32) = [
+            (c.freq, c.e00, c.delta_e, c.e10e01, c.e30, c.e22, c.e10e32)
+            for c in self.dataset.values()]
 
         self.interp = {
             "e00": interp1d(freq, e00,
@@ -356,7 +347,7 @@ class Calibration:
     def save(self, filename: str):
         # Save the calibration data to file
         if not self.isValid1Port():
-            raise ValueError("Not a valid 1-Port calibration")
+            raise ValueError("Not a valid calibration")
         with open(filename, mode="w", encoding='utf-8') as calfile:
             calfile.write("# Calibration data for NanoVNA-Saver\n")
             for note in self.notes:
@@ -369,7 +360,6 @@ class Calibration:
                 calfile.write(f"{self.dataset.get(freq)}\n")
 
     # TODO: implement tests
-    # TODO: Exception should be catched by caller
     def load(self, filename):
         self.source = os.path.basename(filename)
         self.dataset = CalDataSet()
@@ -401,8 +391,8 @@ class Calibration:
                     logger.warning("Illegal data in cal file. Line %i", i)
                 cal = m.groupdict()
 
-                nr_cals = 6 if cal["throughr"] else 3
-                for name in Calibration.CAL_NAMES[:nr_cals]:
+                for name in ("short", "open", "load",
+                             "through", "thrurefl", "isolation"):
                     self.dataset.insert(
                         name,
                         Datapoint(int(cal["freq"]),
