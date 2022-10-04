@@ -22,7 +22,7 @@ from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QCheckBox
 
 from NanoVNASaver import Defaults
-from NanoVNASaver.Marker import Marker
+from NanoVNASaver.Marker.Widget import Marker
 from NanoVNASaver.Controls.Control import Control
 
 logger = logging.getLogger(__name__)

@@ -23,7 +23,7 @@ from typing import List, Optional
 from PyQt5 import QtWidgets, QtGui
 
 from NanoVNASaver.Formatting import format_frequency_chart
-from NanoVNASaver.Marker import Marker
+from NanoVNASaver.Marker.Widget import Marker
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.SITools import Format, Value
 

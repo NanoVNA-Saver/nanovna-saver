@@ -47,9 +47,11 @@ from .Charts import (
     SmithChart, SParameterChart, TDRChart,
 )
 from .Calibration import Calibration
-from .Marker import Marker, DeltaMarker
+from .Marker.Widget import Marker
+from .Marker.Delta import DeltaMarker
 from .SweepWorker import SweepWorker
-from .Settings import BandsModel, Sweep
+from .Settings.Bands import BandsModel
+from .Settings.Sweep import Sweep
 from .Touchstone import Touchstone
 from .About import VERSION
 
