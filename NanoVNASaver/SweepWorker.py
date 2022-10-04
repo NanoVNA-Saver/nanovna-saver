@@ -97,14 +97,30 @@ class SweepWorker(QtCore.QRunnable):
         with self.app.sweep.lock:
             sweep = self.app.sweep.copy()
 
-        averages = 1
-        if sweep.properties.mode == SweepMode.AVERAGE:
-            averages = sweep.properties.averages[0]
-            logger.info("%d averages", averages)
-
         if sweep != self.sweep:  # parameters changed
             self.sweep = sweep
             self.init_data()
+
+        self._run_loop()
+
+        if sweep.segments > 1:
+            start = sweep.start
+            end = sweep.end
+            logger.debug("Resetting NanoVNA sweep to full range: %d to %d",
+                         start, end)
+            self.app.vna.resetSweep(start, end)
+
+        self.percentage = 100
+        logger.debug('Sending "finished" signal')
+        self.signals.finished.emit()
+        self.running = False
+
+    def _run_loop(self):
+        sweep = self.sweep
+        averages = (sweep.properties.averages[0]
+                    if sweep.properties.mode == SweepMode.AVERAGE
+                    else 1)
+        logger.info("%d averages", averages)
 
         while True:
             for i in range(sweep.segments):
@@ -125,18 +141,6 @@ class SweepWorker(QtCore.QRunnable):
                 if sweep.properties.mode == SweepMode.CONTINOUS:
                     continue
             break
-
-        if sweep.segments > 1:
-            start = sweep.start
-            end = sweep.end
-            logger.debug("Resetting NanoVNA sweep to full range: %d to %d",
-                         start, end)
-            self.app.vna.resetSweep(start, end)
-
-        self.percentage = 100
-        logger.debug('Sending "finished" signal')
-        self.signals.finished.emit()
-        self.running = False
 
     def init_data(self):
         self.data11 = []
