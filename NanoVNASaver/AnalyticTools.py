@@ -21,7 +21,7 @@ import math
 from typing import Callable, List, Tuple
 
 import numpy as np
-import scipy
+from scipy.signal import find_peaks
 
 from NanoVNASaver.RFTools import Datapoint
 
@@ -60,7 +60,7 @@ def maxima(data: List[float], threshold: float = 0.0) -> List[int]:
     Returns:
         List[int]: indices of maxima
     """
-    peaks = scipy.signal.find_peaks(
+    peaks = find_peaks(
         data, width=2, distance=3, prominence=1)[0].tolist()
     return [
         i for i in peaks if data[i] > threshold
@@ -76,7 +76,7 @@ def minima(data: List[float], threshold: float = 0.0) -> List[int]:
     Returns:
         List[int]: indices of minima
     """
-    bottoms = scipy.signal.find_peaks(
+    bottoms = find_peaks(
         -np.array(data), width=2, distance=3, prominence=1)[0].tolist()
     return [
         i for i in bottoms if data[i] < threshold
