@@ -35,15 +35,38 @@ IDEAL_OPEN = complex(1, 0)
 IDEAL_LOAD = complex(0, 0)
 IDEAL_THROUGH = complex(1, 0)
 
-RXP_CAL_LINE = re.compile(r"""^\s*
-    (?P<freq>\d+) \s+
-    (?P<shortr>[-0-9Ee.]+) \s+ (?P<shorti>[-0-9Ee.]+) \s+
-    (?P<openr>[-0-9Ee.]+) \s+ (?P<openi>[-0-9Ee.]+) \s+
-    (?P<loadr>[-0-9Ee.]+) \s+ (?P<loadi>[-0-9Ee.]+)(?: \s
-    (?P<throughr>[-0-9Ee.]+) \s+ (?P<throughi>[-0-9Ee.]+) \s+
-    (?P<thrureflr>[-0-9Ee.]+) \s+ (?P<thrurefli>[-0-9Ee.]+) \s+
-    (?P<isolationr>[-0-9Ee.]+) \s+ (?P<isolationi>[-0-9Ee.]+)
-    )?
+RXP_CAL_LINE = {
+    "short": re.compile(r"""
+        ^ \s*
+        (?P<freq>\d+) \s+
+        (?P<shortr>[-0-9Ee.]+) \s+ (?P<shorti>[-0-9Ee.]+) \s+
+        (?P<openr>[-0-9Ee.]+) \s+ (?P<openi>[-0-9Ee.]+) \s+
+        (?P<loadr>[-0-9Ee.]+) \s+ (?P<loadi>[-0-9Ee.]+)
+        ( \s+  # optional for backword compatibility
+            (?P<throughr>[-0-9Ee.]+) \s+ (?P<throughi>[-0-9Ee.]+) \s+
+            (?P<isolationr>[-0-9Ee.]+) \s+ (?P<isolationi>[-0-9Ee.]+)
+        )? \s* $
+        """, re.VERBOSE),
+    "long": re.compile(r"""
+        ^ \s*
+        (?P<freq>\d+) \s+
+        (?P<shortr>[-0-9Ee.]+) \s+ (?P<shorti>[-0-9Ee.]+) \s+
+        (?P<openr>[-0-9Ee.]+) \s+ (?P<openi>[-0-9Ee.]+) \s+
+        (?P<loadr>[-0-9Ee.]+) \s+ (?P<loadi>[-0-9Ee.]+) \s+
+        (?P<throughr>[-0-9Ee.]+) \s+ (?P<throughi>[-0-9Ee.]+) \s+
+        (?P<thrureflr>[-0-9Ee.]+) \s+ (?P<thrurefli>[-0-9Ee.]+) \s+
+        (?P<isolationr>[-0-9Ee.]+) \s+ (?P<isolationi>[-0-9Ee.]+)
+        \s* $
+        """, re.VERBOSE),
+}
+
+
+RXP_CAL_HEADER = re.compile(r"""
+    ^ \# \s+ Hz \s+
+    ShortR \s+ ShortI \s+ OpenR \s+ OpenI \s+
+    LoadR \s+ LoadI \s+ ThroughR \s+ ThroughI \s+
+    (?P<t_refl>ThrureflR \s+ ThrureflI \s+)? IsolationR \s+ IsolationI \s*
+    $
 """, re.VERBOSE)
 
 logger = logging.getLogger(__name__)
@@ -302,9 +325,9 @@ class Calibration:
             complex(0.0, -2.0 * math.pi * cal_element.through_length * freq))
 
     def gen_interpolation(self):
-        (freq, e00, e11, delta_e, e10e01, e30, e22, e10e32) = [
-            (c.freq, c.e00, c.delta_e, c.e10e01, c.e30, c.e22, c.e10e32)
-            for c in self.dataset.values()]
+        (freq, e00, e11, delta_e, e10e01, e30, e22, e10e32) = zip(*[
+            (c.freq, c.e00, c.e11, c.delta_e, c.e10e01, c.e30, c.e22, c.e10e32)
+            for c in self.dataset.values()])
 
         self.interp = {
             "e00": interp1d(freq, e00,
@@ -365,7 +388,16 @@ class Calibration:
         self.dataset = CalDataSet()
         self.notes = []
 
-        parsed_header = False
+        header = ""
+        cols = {
+            "": (),
+            "sol": ("short", "open", "load"),
+            "short": ("short", "open", "load",
+                      "through", "isolation"),
+            "long": ("short", "open", "load",
+                     "through", "thrurefl", "isolation"),
+
+        }
         with open(filename, encoding='utf-8') as calfile:
             for i, line in enumerate(calfile):
                 line = line.strip()
@@ -373,26 +405,29 @@ class Calibration:
                     note = line[2:]
                     self.notes.append(note)
                     continue
-                if line.startswith("#"):
-                    if not parsed_header and line == (
-                            "# Hz ShortR ShortI OpenR OpenI LoadR LoadI"
-                            " ThroughR ThroughI ThrureflR ThrureflI"
-                            " IsolationR IsolationI"):
-                        parsed_header = True
+                if m := RXP_CAL_HEADER.search(line):
+                    header = "long" if m.group(1) else "short"
+                    columns = cols[header]
+                    logger.debug("found %s header type", header)
                     continue
-                if not parsed_header:
+                if line.startswith("#"):
+                    continue
+                if not header:
                     logger.warning(
                         "Warning: Read line without having read header: %s",
                         line)
                     continue
-
-                m = RXP_CAL_LINE.search(line)
+                m = RXP_CAL_LINE[header].search(line)
                 if not m:
-                    logger.warning("Illegal data in cal file. Line %i", i)
+                    logger.warning("Illegal data in cal file. Line %i", i + 1)
+                    continue
+                if (header == "short" and not m.group(8) and
+                        columns != cols["sol"]):
+                    logger.debug("only SOL cal data")
+                    columns = cols["sol"]
                 cal = m.groupdict()
 
-                for name in ("short", "open", "load",
-                             "through", "thrurefl", "isolation"):
+                for name in columns:
                     self.dataset.insert(
                         name,
                         Datapoint(int(cal["freq"]),

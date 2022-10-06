@@ -578,6 +578,8 @@ class CalibrationWindow(QtWidgets.QWidget):
                                   self.app.worker.data21, self.app.sweepSource)
                 self.app.worker.signals.updated.emit()
         except ValueError as e:
+            if logger.isEnabledFor(logging.DEBUG):
+                raise
             # showError here hides the calibration window,
             # so we need to pop up our own
             QtWidgets.QMessageBox.warning(

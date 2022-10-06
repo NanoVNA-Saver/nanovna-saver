@@ -74,25 +74,25 @@ class SweepWorker(QtCore.QRunnable):
         self.offsetDelay = 0
 
     @pyqtSlot()
-    def run(self):
+    def run(self) -> None:
         try:
             self._run()
         except BaseException as exc:  # pylint: disable=broad-except
             logger.exception("%s", exc)
             self.gui_error(f"ERROR during sweep\n\nStopped\n\n{exc}")
-            return
-            # raise exc
+            if logger.isEnabledFor(logging.DEBUG):
+                raise exc
 
-    def _run(self):
+    def _run(self) -> None:
         logger.info("Initializing SweepWorker")
-        self.running = True
-        self.percentage = 0
-
         if not self.app.vna.connected():
             logger.debug(
                 "Attempted to run without being connected to the NanoVNA")
             self.running = False
             return
+
+        self.running = True
+        self.percentage = 0
 
         with self.app.sweep.lock:
             sweep = self.app.sweep.copy()
@@ -115,7 +115,7 @@ class SweepWorker(QtCore.QRunnable):
         self.signals.finished.emit()
         self.running = False
 
-    def _run_loop(self):
+    def _run_loop(self) -> None:
         sweep = self.sweep
         averages = (sweep.properties.averages[0]
                     if sweep.properties.mode == SweepMode.AVERAGE
@@ -130,17 +130,12 @@ class SweepWorker(QtCore.QRunnable):
                     break
                 start, stop = sweep.get_index_range(i)
 
-                try:
-                    freq, values11, values21 = self.readAveragedSegment(
-                        start, stop, averages)
-                    self.percentage = (i + 1) * 100 / sweep.segments
-                    self.updateData(freq, values11, values21, i)
-                except ValueError as e:
-                    self.gui_error(str(e))
-            else:
-                if sweep.properties.mode == SweepMode.CONTINOUS:
-                    continue
-            break
+                freq, values11, values21 = self.readAveragedSegment(
+                    start, stop, averages)
+                self.percentage = (i + 1) * 100 / sweep.segments
+                self.updateData(freq, values11, values21, i)
+            if sweep.properties.mode != SweepMode.CONTINOUS:
+                break
 
     def init_data(self):
         self.data11 = []
@@ -160,16 +155,11 @@ class SweepWorker(QtCore.QRunnable):
             "Calculating data and inserting in existing data at index %d",
             index)
         offset = self.sweep.points * index
-        v11 = values11[:]
-        v21 = values21[:]
-        raw_data11 = []
-        raw_data21 = []
 
-        for freq in frequencies:
-            real11, imag11 = v11.pop(0)
-            real21, imag21 = v21.pop(0)
-            raw_data11.append(Datapoint(freq, real11, imag11))
-            raw_data21.append(Datapoint(freq, real21, imag21))
+        raw_data11 = [Datapoint(freq, values11[i][0], values11[i][1])
+                      for i, freq in enumerate(frequencies)]
+        raw_data21 = [Datapoint(freq, values21[i][0], values21[i][1])
+                      for i, freq in enumerate(frequencies)]
 
         data11, data21 = self.applyCalibration(raw_data11, raw_data21)
         logger.debug("update Freqs: %s, Offset: %s", len(frequencies), offset)
