@@ -26,7 +26,7 @@ from NanoVNASaver.Charts.Chart import (
     Chart, ChartColors)
 from NanoVNASaver.Windows.Bands import BandsWindow
 from NanoVNASaver.Windows.MarkerSettings import MarkerSettingsWindow
-from NanoVNASaver.Marker import Marker
+from NanoVNASaver.Marker.Widget import Marker
 
 logger = logging.getLogger(__name__)
 

@@ -21,7 +21,7 @@ import logging
 from PyQt5 import QtWidgets, QtCore, QtGui
 
 from NanoVNASaver.RFTools import Datapoint
-from NanoVNASaver.Marker import Marker
+from NanoVNASaver.Marker.Widget import Marker
 from NanoVNASaver.Marker.Values import TYPES, default_label_ids
 
 logger = logging.getLogger(__name__)

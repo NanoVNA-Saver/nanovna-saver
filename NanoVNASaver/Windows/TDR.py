@@ -20,7 +20,7 @@ import logging
 import math
 
 import numpy as np
-import scipy
+from scipy.signal import convolve
 from scipy.constants import speed_of_light
 
 from PyQt5 import QtWidgets, QtCore
@@ -137,7 +137,7 @@ class TDRWindow(QtWidgets.QWidget):
         windowed_s11 = window * s11
         self.td = np.abs(np.fft.ifft(windowed_s11, FFT_POINTS))
         step = np.ones(FFT_POINTS)
-        step_response = scipy.signal.convolve(self.td, step)
+        step_response = convolve(self.td, step)
 
         self.step_response_Z = 50 * (
             1 + step_response) / (1 - step_response)

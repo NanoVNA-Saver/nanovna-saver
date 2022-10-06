@@ -35,7 +35,7 @@ from NanoVNASaver.Formatting import (
     format_wavelength,
 )
 
-from .Widget import Marker
+from NanoVNASaver.Marker.Widget import Marker
 
 
 class DeltaMarker(Marker):

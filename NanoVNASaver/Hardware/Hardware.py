@@ -24,6 +24,7 @@ from typing import List
 
 import serial
 from serial.tools import list_ports
+from serial.tools.list_ports_common import ListPortInfo
 
 from NanoVNASaver.Hardware.VNA import VNA
 from NanoVNASaver.Hardware.AVNA import AVNA
@@ -74,27 +75,48 @@ def _fix_v2_hwinfo(dev):
     return dev
 
 
+def usb_typename(device: ListPortInfo) -> str:
+    return next((t.name for t in USBDEVICETYPES if
+                 device.vid == t.vid and device.pid == t.pid),
+                "")
+
 # Get list of interfaces with VNAs connected
+
+
 def get_interfaces() -> List[Interface]:
     interfaces = []
     # serial like usb interfaces
     for d in list_ports.comports():
         if platform.system() == 'Windows' and d.vid is None:
             d = _fix_v2_hwinfo(d)
-        for t in USBDEVICETYPES:
-            if d.vid != t.vid or d.pid != t.pid:
-                continue
-            logger.debug("Found %s USB:(%04x:%04x) on port %s",
-                         t.name, d.vid, d.pid, d.device)
-            iface = Interface('serial', t.name)
-            iface.port = d.device
-            iface.open()
-            iface.comment = get_comment(iface)
-            iface.close()
-            interfaces.append(iface)
+        if not (typename := usb_typename(d)):
+            continue
+        logger.debug("Found %s USB:(%04x:%04x) on port %s",
+                     typename, d.vid, d.pid, d.device)
+        iface = Interface('serial', typename)
+        iface.port = d.device
+        iface.open()
+        iface.comment = get_comment(iface)
+        iface.close()
+        interfaces.append(iface)
 
     logger.debug("Interfaces: %s", interfaces)
     return interfaces
+
+
+def get_portinfos() -> List[str]:
+    portinfos = []
+    # serial like usb interfaces
+    for d in list_ports.comports():
+        logger.debug("Found USB:(%04x:%04x) on port %s",
+                     d.vid, d.pid, d.device)
+        iface = Interface('serial', "DEBUG")
+        iface.port = d.device
+        iface.open()
+        version = detect_version(iface)
+        iface.close()
+        portinfos.append(version)
+    return portinfos
 
 
 def get_VNA(iface: Interface) -> VNA:

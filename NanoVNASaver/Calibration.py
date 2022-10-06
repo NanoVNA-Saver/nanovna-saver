@@ -22,21 +22,51 @@ import math
 import os
 import re
 from collections import defaultdict, UserDict
+from dataclasses import dataclass
 from typing import List
 
 from scipy.interpolate import interp1d
 
 from NanoVNASaver.RFTools import Datapoint
 
-RXP_CAL_LINE = re.compile(r"""^\s*
-    (?P<freq>\d+) \s+
-    (?P<shortr>[-0-9Ee.]+) \s+ (?P<shorti>[-0-9Ee.]+) \s+
-    (?P<openr>[-0-9Ee.]+) \s+ (?P<openi>[-0-9Ee.]+) \s+
-    (?P<loadr>[-0-9Ee.]+) \s+ (?P<loadi>[-0-9Ee.]+)(?: \s
-    (?P<throughr>[-0-9Ee.]+) \s+ (?P<throughi>[-0-9Ee.]+) \s+
-    (?P<thrureflr>[-0-9Ee.]+) \s+ (?P<thrurefli>[-0-9Ee.]+) \s+
-    (?P<isolationr>[-0-9Ee.]+) \s+ (?P<isolationi>[-0-9Ee.]+)
-    )?
+
+IDEAL_SHORT = complex(-1, 0)
+IDEAL_OPEN = complex(1, 0)
+IDEAL_LOAD = complex(0, 0)
+IDEAL_THROUGH = complex(1, 0)
+
+RXP_CAL_LINE = {
+    "short": re.compile(r"""
+        ^ \s*
+        (?P<freq>\d+) \s+
+        (?P<shortr>[-0-9Ee.]+) \s+ (?P<shorti>[-0-9Ee.]+) \s+
+        (?P<openr>[-0-9Ee.]+) \s+ (?P<openi>[-0-9Ee.]+) \s+
+        (?P<loadr>[-0-9Ee.]+) \s+ (?P<loadi>[-0-9Ee.]+)
+        ( \s+  # optional for backword compatibility
+            (?P<throughr>[-0-9Ee.]+) \s+ (?P<throughi>[-0-9Ee.]+) \s+
+            (?P<isolationr>[-0-9Ee.]+) \s+ (?P<isolationi>[-0-9Ee.]+)
+        )? \s* $
+        """, re.VERBOSE),
+    "long": re.compile(r"""
+        ^ \s*
+        (?P<freq>\d+) \s+
+        (?P<shortr>[-0-9Ee.]+) \s+ (?P<shorti>[-0-9Ee.]+) \s+
+        (?P<openr>[-0-9Ee.]+) \s+ (?P<openi>[-0-9Ee.]+) \s+
+        (?P<loadr>[-0-9Ee.]+) \s+ (?P<loadi>[-0-9Ee.]+) \s+
+        (?P<throughr>[-0-9Ee.]+) \s+ (?P<throughi>[-0-9Ee.]+) \s+
+        (?P<thrureflr>[-0-9Ee.]+) \s+ (?P<thrurefli>[-0-9Ee.]+) \s+
+        (?P<isolationr>[-0-9Ee.]+) \s+ (?P<isolationi>[-0-9Ee.]+)
+        \s* $
+        """, re.VERBOSE),
+}
+
+
+RXP_CAL_HEADER = re.compile(r"""
+    ^ \# \s+ Hz \s+
+    ShortR \s+ ShortI \s+ OpenR \s+ OpenI \s+
+    LoadR \s+ LoadI \s+ ThroughR \s+ ThroughI \s+
+    (?P<t_refl>ThrureflR \s+ ThrureflI \s+)? IsolationR \s+ IsolationI \s*
+    $
 """, re.VERBOSE)
 
 logger = logging.getLogger(__name__)
@@ -49,57 +79,84 @@ def correct_delay(d: Datapoint, delay: float, reflect: bool = False):
     return Datapoint(d.freq, corr_data.real, corr_data.imag)
 
 
-class CalData(UserDict):
-    def __init__(self):
-        data = {
-            "short": None,
-            "open": None,
-            "load": None,
-            "through": None,
-            "thrurefl": None,
-            "isolation": None,
-            # the frequence
-            "freq": 0,
-            # 1 Port
-            "e00": 0.0,  # Directivity
-            "e11": 0.0,  # Port1 match
-            "delta_e": 0.0,  # Tracking
-            "e10e01": 0.0,  # Forward Reflection Tracking
-            # 2 port
-            "e30": 0.0,  # Forward isolation
-            "e22": 0.0,  # Port2 match
-            "e10e32": 0.0,  # Forward transmission
-        }
-        super().__init__(data)
+@dataclass
+class CalData:
+    # pylint: disable=too-many-instance-attributes
+    short: complex = complex(0.0, 0.0)
+    open: complex = complex(0.0, 0.0)
+    load: complex = complex(0.0, 0.0)
+    through: complex = complex(0.0, 0.0)
+    thrurefl: complex = complex(0.0, 0.0)
+    isolation: complex = complex(0.0, 0.0)
+    freq: int = 0
+    e00: float = 0.0  # Directivity
+    e11: float = 0.0  # Port1 match
+    delta_e: float = 0.0  # Tracking
+    e10e01: float = 0.0  # Forward Reflection Tracking
+    # 2 port
+    e30: float = 0.0  # Forward isolation
+    e22: float = 0.0  # Port2 match
+    e10e32: float = 0.0  # Forward transmission
 
     def __str__(self):
-        d = self.data
-        s = (f'{d["freq"]}'
-             f' {d["short"].re} {d["short"].im}'
-             f' {d["open"].re} {d["open"].im}'
-             f' {d["load"].re} {d["load"].im}')
-        if d["through"] is not None:
-            s += (f' {d["through"].re} {d["through"].im}'
-                  f' {d["thrurefl"].re} {d["thrurefl"].im}'
-                  f' {d["isolation"].re} {d["isolation"].im}')
-        return s
+        return (
+            f'{self.freq}'
+            f' {self.short.real} {self.short.imag}'
+            f' {self.open.real} {self.open.imag}'
+            f' {self.load.real} {self.load.imag}' + (
+                f' {self.through.real} {self.through.imag}'
+                f' {self.thrurefl.real} {self.thrurefl.imag}'
+                f' {self.isolation.real} {self.isolation.imag}'
+                if self.through else ''
+            )
+        )
 
 
-class CalDataSet:
+@dataclass
+class CalElement:
+    # pylint: disable=too-many-instance-attributes
+    short_is_ideal: bool = True
+    short_l0: float = 5.7e-12
+    short_l1: float = -8.96e-20
+    short_l2: float = -1.1e-29
+    short_l3: float = -4.12e-37
+    short_length: float = -34.2  # ps
+
+    open_is_ideal: bool = True
+    open_c0: float = 2.1e-14
+    open_c1: float = 5.67e-23
+    open_c2: float = -2.39e-31
+    open_c3: float = 2.0e-40
+    open_length: float = 0.0
+
+    load_is_ideal: bool = True
+    load_r: float = 50.0
+    load_l: float = 0.0
+    load_c: float = 0.0
+    load_length: float = 0.0
+
+    through_is_ideal: bool = True
+    through_length: float = 0.0
+
+
+class CalDataSet(UserDict):
     def __init__(self):
-        self.data = defaultdict(CalData)
+        super().__init__()
+        self.data: defaultdict[int, CalData] = defaultdict(CalData)
 
     def insert(self, name: str, dp: Datapoint):
-        if name not in self.data[dp.freq]:
+        if name not in {'short', 'open', 'load',
+                        'through', 'thrurefl', 'isolation'}:
             raise KeyError(name)
-        self.data[dp.freq]["freq"] = dp.freq
-        self.data[dp.freq][name] = dp
+        freq = dp.freq
+        setattr(self.data[freq], name, (dp.z))
+        self.data[freq].freq = freq
 
     def frequencies(self) -> List[int]:
         return sorted(self.data.keys())
 
-    def get(self, freq: int) -> CalData:
-        return self.data[freq]
+    def get(self, key: int, default: CalData = None) -> CalData:
+        return self.data.get(key, default)
 
     def items(self):
         yield from self.data.items()
@@ -109,63 +166,32 @@ class CalDataSet:
             yield self.get(freq)
 
     def size_of(self, name: str) -> int:
-        return len([v for v in self.data.values() if v[name] is not None])
+        return len(
+            [True for val in self.data.values() if getattr(val, name)]
+        )
 
     def complete1port(self) -> bool:
         for val in self.data.values():
-            for name in ("short", "open", "load"):
-                if val[name] is None:
-                    return False
+            if not all((val.short, val.open, val.load)):
+                return False
         return any(self.data)
 
     def complete2port(self) -> bool:
+        if not self.complete1port():
+            return False
         for val in self.data.values():
-            for name in ("short", "open", "load", "through", "thrurefl",
-                         "isolation"):
-                if val[name] is None:
-                    return False
+            if not all((val.through, val.thrurefl, val.isolation)):
+                return False
         return any(self.data)
 
 
 class Calibration:
-    CAL_NAMES = ("short", "open", "load", "through", "thrurefl", "isolation",)
-    IDEAL_SHORT = complex(-1, 0)
-    IDEAL_OPEN = complex(1, 0)
-    IDEAL_LOAD = complex(0, 0)
-
     def __init__(self):
 
         self.notes = []
         self.dataset = CalDataSet()
+        self.cal_element = CalElement()
         self.interp = {}
-
-        self.useIdealShort = True
-        self.shortL0 = 5.7 * 10E-12
-        self.shortL1 = -8960 * 10E-24
-        self.shortL2 = -1100 * 10E-33
-        self.shortL3 = -41200 * 10E-42
-        self.shortLength = -34.2  # Picoseconfrequenciesds
-        # These numbers look very large, considering what Keysight
-        # suggests their numbers are.
-
-        self.useIdealOpen = True
-        # Subtract 50fF for the nanoVNA calibration if nanoVNA is
-        # calibrated?
-        self.openC0 = 2.1 * 10E-14
-        self.openC1 = 5.67 * 10E-23
-        self.openC2 = -2.39 * 10E-31
-        self.openC3 = 2.0 * 10E-40
-        self.openLength = 0
-
-        self.useIdealLoad = True
-        self.loadR = 25
-        self.loadL = 0
-        self.loadC = 0
-        self.loadLength = 0
-
-        self.useIdealThrough = True
-        self.throughLength = 0
-
         self.isCalculated = False
 
         self.source = "Manual"
@@ -191,37 +217,37 @@ class Calibration:
         g2 = self.gamma_open(freq)
         g3 = self.gamma_load(freq)
 
-        gm1 = cal["short"].z
-        gm2 = cal["open"].z
-        gm3 = cal["load"].z
+        gm1 = cal.short
+        gm2 = cal.open
+        gm3 = cal.load
 
         denominator = (g1 * (g2 - g3) * gm1 +
                        g2 * g3 * gm2 - g2 * g3 * gm3 -
                        (g2 * gm2 - g3 * gm3) * g1)
-        cal["e00"] = - ((g2 * gm3 - g3 * gm3) * g1 * gm2 -
-                        (g2 * g3 * gm2 - g2 * g3 * gm3 -
+        cal.e00 = - ((g2 * gm3 - g3 * gm3) * g1 * gm2 -
+                     (g2 * g3 * gm2 - g2 * g3 * gm3 -
                          (g3 * gm2 - g2 * gm3) * g1) * gm1
-                        ) / denominator
-        cal["e11"] = ((g2 - g3) * gm1 - g1 * (gm2 - gm3) +
-                      g3 * gm2 - g2 * gm3) / denominator
-        cal["delta_e"] = - ((g1 * (gm2 - gm3) - g2 * gm2 + g3 *
-                             gm3) * gm1 + (g2 * gm3 - g3 * gm3) *
-                            gm2) / denominator
+                     ) / denominator
+        cal.e11 = ((g2 - g3) * gm1 - g1 * (gm2 - gm3) +
+                   g3 * gm2 - g2 * gm3) / denominator
+        cal.delta_e = - ((g1 * (gm2 - gm3) - g2 * gm2 + g3 *
+                          gm3) * gm1 + (g2 * gm3 - g3 * gm3) *
+                         gm2) / denominator
 
     def _calc_port_2(self, freq: int, cal: CalData):
         gt = self.gamma_through(freq)
 
-        gm4 = cal["through"].z
-        gm5 = cal["thrurefl"].z
-        gm6 = cal["isolation"].z
-        gm7 = gm5 - cal["e00"]
+        gm4 = cal.through
+        gm5 = cal.thrurefl
+        gm6 = cal.isolation
+        gm7 = gm5 - cal.e00
 
-        cal["e30"] = cal["isolation"].z
-        cal["e10e01"] = cal["e00"] * cal["e11"] - cal["delta_e"]
-        cal["e22"] = gm7 / (
-            gm7 * cal["e11"] * gt ** 2 + cal["e10e01"] * gt ** 2)
-        cal["e10e32"] = (gm4 - gm6) * (
-            1 - cal["e11"] * cal["e22"] * gt ** 2) / gt
+        cal.e30 = cal.isolation
+        cal.e10e01 = cal.e00 * cal.e11 - cal.delta_e
+        cal.e22 = gm7 / (
+            gm7 * cal.e11 * gt ** 2 + cal.e10e01 * gt ** 2)
+        cal.e10e32 = (gm4 - gm6) * (
+            1 - cal.e11 * cal.e22 * gt ** 2) / gt
 
     def calc_corrections(self):
         if not self.isValid1Port():
@@ -251,69 +277,57 @@ class Calibration:
         logger.debug("Calibration correctly calculated.")
 
     def gamma_short(self, freq: int) -> complex:
-        g = Calibration.IDEAL_SHORT
-        if not self.useIdealShort:
-            logger.debug("Using short calibration set values.")
-            Zsp = complex(0, 2 * math.pi * freq * (
-                self.shortL0 + self.shortL1 * freq +
-                self.shortL2 * freq ** 2 + self.shortL3 * freq ** 3))
-            # Referencing https://arxiv.org/pdf/1606.02446.pdf (18) - (21)
-            g = (Zsp / 50 - 1) / (Zsp / 50 + 1) * cmath.exp(
-                complex(0, 2 * math.pi * 2 * freq * self.shortLength * -1))
-        return g
+        if self.cal_element.short_is_ideal:
+            return IDEAL_SHORT
+        logger.debug("Using short calibration set values.")
+        cal_element = self.cal_element
+        Zsp = complex(0.0, 2.0 * math.pi * freq * (
+            cal_element.short_l0 + cal_element.short_l1 * freq +
+            cal_element.short_l2 * freq**2 + cal_element.short_l3 * freq**3))
+        # Referencing https://arxiv.org/pdf/1606.02446.pdf (18) - (21)
+        return (Zsp / 50.0 - 1.0) / (Zsp / 50.0 + 1.0) * cmath.exp(
+            complex(0.0,
+                    -4.0 * math.pi * freq * cal_element.short_length))
 
     def gamma_open(self, freq: int) -> complex:
-        g = Calibration.IDEAL_OPEN
-        if not self.useIdealOpen:
-            logger.debug("Using open calibration set values.")
-            Zop = complex(0, 2 * math.pi * freq * (
-                self.openC0 + self.openC1 * freq +
-                self.openC2 * freq ** 2 + self.openC3 * freq ** 3))
-            g = ((1 - 50 * Zop) / (1 + 50 * Zop)) * cmath.exp(
-                complex(0, 2 * math.pi * 2 * freq * self.openLength * -1))
-        return g
+        if self.cal_element.open_is_ideal:
+            return IDEAL_OPEN
+        logger.debug("Using open calibration set values.")
+        cal_element = self.cal_element
+        Zop = complex(0.0, 2.0 * math.pi * freq * (
+            cal_element.open_c0 + cal_element.open_c1 * freq +
+            cal_element.open_c2 * freq**2 + cal_element.open_c3 * freq**3))
+        return ((1.0 - 50.0 * Zop) / (1.0 + 50.0 * Zop)) * cmath.exp(
+            complex(0.0,
+                    -4.0 * math.pi * freq * cal_element.open_length))
 
     def gamma_load(self, freq: int) -> complex:
-        g = Calibration.IDEAL_LOAD
-        if not self.useIdealLoad:
-            logger.debug("Using load calibration set values.")
-            Zl = complex(self.loadR, 0)
-            if self.loadC > 0:
-                Zl = self.loadR / \
-                    complex(1, 2 * self.loadR * math.pi * freq * self.loadC)
-            if self.loadL > 0:
-                Zl = Zl + complex(0, 2 * math.pi * freq * self.loadL)
-            g = (Zl / 50 - 1) / (Zl / 50 + 1) * cmath.exp(
-                complex(0, 2 * math.pi * 2 * freq * self.loadLength * -1))
-        return g
+        if self.cal_element.load_is_ideal:
+            return IDEAL_LOAD
+        logger.debug("Using load calibration set values.")
+        cal_element = self.cal_element
+        Zl = complex(cal_element.load_r, 0.0)
+        if cal_element.load_c > 0.0:
+            Zl = cal_element.load_r / complex(
+                1.0,
+                2.0 * cal_element.load_r * math.pi * freq * cal_element.load_c)
+        if cal_element.load_l > 0.0:
+            Zl = Zl + complex(0.0, 2 * math.pi * freq * cal_element.load_l)
+        return (Zl / 50.0 - 1.0) / (Zl / 50.0 + 1.0) * cmath.exp(
+            complex(0.0, -4 * math.pi * freq * cal_element.load_length))
 
     def gamma_through(self, freq: int) -> complex:
-        g = complex(1, 0)
-        if not self.useIdealThrough:
-            logger.debug("Using through calibration set values.")
-            g = cmath.exp(complex(0, 1) * 2 * math.pi *
-                          self.throughLength * freq * -1)
-        return g
+        if self.cal_element.through_is_ideal:
+            return IDEAL_THROUGH
+        logger.debug("Using through calibration set values.")
+        cal_element = self.cal_element
+        return cmath.exp(
+            complex(0.0, -2.0 * math.pi * cal_element.through_length * freq))
 
     def gen_interpolation(self):
-        freq = []
-        e00 = []
-        e11 = []
-        delta_e = []
-        e10e01 = []
-        e30 = []
-        e22 = []
-        e10e32 = []
-
-        for caldata in self.dataset.values():
-            freq.append(caldata["freq"])
-            e00.append(caldata["e00"])
-            e11.append(caldata["e11"])
-            delta_e.append(caldata["delta_e"])
-            e10e01.append(caldata["e10e01"])
-            e30.append(caldata["e30"])
-            e22.append(caldata["e22"])
-            e10e32.append(caldata["e10e32"])
+        (freq, e00, e11, delta_e, e10e01, e30, e22, e10e32) = zip(*[
+            (c.freq, c.e00, c.e11, c.delta_e, c.e10e01, c.e30, c.e22, c.e10e32)
+            for c in self.dataset.values()])
 
         self.interp = {
             "e00": interp1d(freq, e00,
@@ -349,14 +363,14 @@ class Calibration:
         i = self.interp
         s21 = (dp.z - i["e30"](dp.freq)) / i["e10e32"](dp.freq)
         s21 = s21 * (i["e10e01"](dp.freq) / (i["e11"](dp.freq)
-                     * dp11.z - i["delta_e"](dp.freq)))
+                                             * dp11.z - i["delta_e"](dp.freq)))
         return Datapoint(dp.freq, s21.real, s21.imag)
 
     # TODO: implement tests
     def save(self, filename: str):
         # Save the calibration data to file
         if not self.isValid1Port():
-            raise ValueError("Not a valid 1-Port calibration")
+            raise ValueError("Not a valid calibration")
         with open(filename, mode="w", encoding='utf-8') as calfile:
             calfile.write("# Calibration data for NanoVNA-Saver\n")
             for note in self.notes:
@@ -369,13 +383,21 @@ class Calibration:
                 calfile.write(f"{self.dataset.get(freq)}\n")
 
     # TODO: implement tests
-    # TODO: Exception should be catched by caller
     def load(self, filename):
         self.source = os.path.basename(filename)
         self.dataset = CalDataSet()
         self.notes = []
 
-        parsed_header = False
+        header = ""
+        cols = {
+            "": (),
+            "sol": ("short", "open", "load"),
+            "short": ("short", "open", "load",
+                      "through", "isolation"),
+            "long": ("short", "open", "load",
+                     "through", "thrurefl", "isolation"),
+
+        }
         with open(filename, encoding='utf-8') as calfile:
             for i, line in enumerate(calfile):
                 line = line.strip()
@@ -383,26 +405,29 @@ class Calibration:
                     note = line[2:]
                     self.notes.append(note)
                     continue
-                if line.startswith("#"):
-                    if not parsed_header and line == (
-                            "# Hz ShortR ShortI OpenR OpenI LoadR LoadI"
-                            " ThroughR ThroughI ThrureflR ThrureflI"
-                            " IsolationR IsolationI"):
-                        parsed_header = True
+                if m := RXP_CAL_HEADER.search(line):
+                    header = "long" if m.group(1) else "short"
+                    columns = cols[header]
+                    logger.debug("found %s header type", header)
                     continue
-                if not parsed_header:
+                if line.startswith("#"):
+                    continue
+                if not header:
                     logger.warning(
                         "Warning: Read line without having read header: %s",
                         line)
                     continue
-
-                m = RXP_CAL_LINE.search(line)
+                m = RXP_CAL_LINE[header].search(line)
                 if not m:
-                    logger.warning("Illegal data in cal file. Line %i", i)
+                    logger.warning("Illegal data in cal file. Line %i", i + 1)
+                    continue
+                if (header == "short" and not m.group(8) and
+                        columns != cols["sol"]):
+                    logger.debug("only SOL cal data")
+                    columns = cols["sol"]
                 cal = m.groupdict()
 
-                nr_cals = 6 if cal["throughr"] else 3
-                for name in Calibration.CAL_NAMES[:nr_cals]:
+                for name in columns:
                     self.dataset.insert(
                         name,
                         Datapoint(int(cal["freq"]),

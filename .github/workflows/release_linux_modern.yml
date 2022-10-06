@@ -1,4 +1,4 @@
-name: Linux Release
+name: Modern Linux Release
 
 on:
   push:
@@ -33,5 +33,5 @@ jobs:
     - name: Archive production artifacts
       uses: actions/upload-artifact@v1
       with:
-        name: NanoVNASaver.linux
+        name: NanoVNASaver.linux_modern
         path: dist/nanovna-saver

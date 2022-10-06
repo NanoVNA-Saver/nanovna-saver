@@ -19,8 +19,8 @@
 import logging
 
 from PyQt5 import QtWidgets
-import scipy
 import numpy as np
+from scipy.signal import find_peaks, peak_prominences
 
 from NanoVNASaver.Analysis.Base import QHLine
 from NanoVNASaver.Analysis.SimplePeakSearchAnalysis import (
@@ -60,17 +60,17 @@ class PeakSearchAnalysis(SimplePeakSearchAnalysis):
         inverted = False
         if self.button['peak_l'].isChecked():
             inverted = True
-            peaks, _ = scipy.signal.find_peaks(
+            peaks, _ = find_peaks(
                 -np.array(data), width=3, distance=3, prominence=1)
         else:
             self.button['peak_h'].setChecked(True)
-            peaks, _ = scipy.signal.find_peaks(
+            peaks, _ = find_peaks(
                 data, width=3, distance=3, prominence=1)
 
         # Having found the peaks, get the prominence data
         for i, p in np.ndenumerate(peaks):
             logger.debug("Peak %i at %d", i, p)
-        prominences = scipy.signal.peak_prominences(data, peaks)[0]
+        prominences = peak_prominences(data, peaks)[0]
         logger.debug("%d prominences", len(prominences))
 
         # Find the peaks with the most extreme values
