@@ -41,6 +41,16 @@ def round_floor(value: Real, digits: int = 0) -> Real:
     return factor * math.floor(value / factor)
 
 
+def log_floor_125(x: float) -> float:
+    log_base = 10**(math.floor(math.log10(x)))
+    log_factor = x / log_base
+    if log_factor >= 5:
+        return 5 * log_base
+    if log_factor >= 2:
+        return 2 * log_base
+    return log_base
+
+
 class Format(NamedTuple):
     max_nr_digits: int = 6
     fix_decimals: bool = False
