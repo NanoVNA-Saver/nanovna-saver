@@ -21,7 +21,9 @@ from math import inf, nan
 from decimal import Decimal  # Needed for test_representation()
 
 # Import targets to be tested
-from NanoVNASaver.SITools import Format, Value, round_floor, round_ceil
+from NanoVNASaver.SITools import (
+    Format, Value, round_floor, round_ceil, log_floor_125
+)
 
 F_DEFAULT = Format()
 
@@ -43,7 +45,7 @@ F_WITH_SPACE = Format(space_str=" ")
 F_WITH_UNDERSCORE = Format(space_str="_")
 
 
-class TestTSIToolsValue(unittest.TestCase):
+class TestSIToolsValue(unittest.TestCase):
 
     def test_format_assertions(self):
         self.assertRaises(AssertionError, Value, fmt=F_ASSERT_DIGITS_0)
@@ -167,3 +169,20 @@ class TestTSIToolsValue(unittest.TestCase):
 # TODO: test F_DIGITS_31
 #            F_WITH_SPACE
 #            F_WITH_UNDERSCORE
+
+
+class TestSIToolsFunctions(unittest.TestCase):
+
+    def test_log_floor_125(self):
+        self.assertEqual(log_floor_125(1), 1)
+        self.assertEqual(log_floor_125(2), 2)
+        self.assertEqual(log_floor_125(5), 5)
+        self.assertEqual(log_floor_125(1000), 1000)
+        self.assertEqual(log_floor_125(2000), 2000)
+        self.assertEqual(log_floor_125(5000), 5000)
+        self.assertEqual(log_floor_125(.01), .01)
+        self.assertEqual(log_floor_125(.02), .02)
+        self.assertEqual(log_floor_125(.05), .05)
+        self.assertEqual(log_floor_125(1.9), 1)
+        self.assertEqual(log_floor_125(4.5), 2)
+        self.assertEqual(log_floor_125(9.9), 5)

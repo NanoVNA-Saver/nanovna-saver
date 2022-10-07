@@ -23,35 +23,29 @@ from typing import List
 
 from PyQt5 import QtGui
 
-from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Charts.Frequency import FrequencyChart
+from NanoVNASaver.RFTools import Datapoint
+from NanoVNASaver.SITools import log_floor_125
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
 class TickVal:
-    count: int
-    first: float
-    step: float
+    count: int = 0
+    first: float = 0.0
+    step: float = 0.0
 
 
 def span2ticks(span: float, min_val: float) -> TickVal:
-    for spn, dbs in ((50.0, 10.0),
-                     (20.0, 5.0),
-                     (10.0, 2.0),
-                     (5.0, 1.0),
-                     (2.0, 0.5),
-                     (1.0, 0.2),
-                     (0.0, 0.1)):
-        if span >= spn:
-            count = math.floor(span / dbs)
-            first = math.ceil(min_val / dbs) * dbs
-            step = dbs
-            if first == min_val:
-                first += dbs
-            break
+    logger.debug("span2ticks(%s, %s)", span, min_val)
+    span = abs(span)
+    step = log_floor_125(span / 5)
+    count = math.floor(span / step)
+    first = math.ceil(min_val / step) * step
+    if first == min_val:
+        first += step
     return TickVal(count, first, step)
 
 
