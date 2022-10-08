@@ -21,6 +21,7 @@ import math
 from typing import Callable, List, Tuple
 
 import numpy as np
+# pylint: disable=import-error, no-name-in-module
 from scipy.signal import find_peaks
 
 from NanoVNASaver.RFTools import Datapoint
