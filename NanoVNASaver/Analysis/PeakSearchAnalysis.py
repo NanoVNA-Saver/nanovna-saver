@@ -20,6 +20,7 @@ import logging
 
 from PyQt5 import QtWidgets
 import numpy as np
+# pylint: disable=import-error, no-name-in-module
 from scipy.signal import find_peaks, peak_prominences
 
 from NanoVNASaver.Analysis.Base import QHLine
