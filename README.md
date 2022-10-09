@@ -14,35 +14,32 @@ points, and generally display and analyze the resulting data.
 - Copyright 2019, 2020 Rune B. Broberg
 - Copyright 2020ff NanoVNA-Saver Authors
 
-Latest Changes
---------------
+<a href="#built-with"></a>
+It's written in __Python 3__ using __PyQt5__ and __scipy__.
 
-### Changes in 0.5.4-pre
+<details open="open">
+<summary>Table of Contents</summary>
 
- - Refactoring of Analysis modules
+- [About](#nanovnasaver)
+  - [Built With](#built-with)
+- [Introduction](#introduction)
+  - [Current Features](#current-features)
+  - [Screenshot](#screenshot)
+  - [Binary Releases](#binary-releases)
+  - [Installation](#installation)
+    - [Detailed Installation Instructions](docs/INSTALLATION.md)
+- [Usage](#using-the-software)
+  - [Calibration](#calibration)
+  - [TDR](#tdr)
+- [Latest Changes](#latest-changes)
+- [Contributing](#contributing)
+  - [Contribution Guidlines](docs/CONTRIBUTING.md)
+- [License](#license)
+- [References](#references)
+- [Acknowledgements](#acknowledgements)
 
-### Changes in 0.5.3
+</details>
 
- - Python 3.10 compatability fixes
- - Fix crash on open in use serial device
- - Use a Defaults module for all settings -
-   ignores old .ini settings
- - Refactoring and unifying Chart classes
- - No more automatic update checks (more privacy)
- - Corrected error handling in NanaVNA\_V2 code 
- - Fixed man float related crashes with Qt and
-   Python 3.10
- - Using more integer divisions to get right type for QPainter
-   points
- - No more long lines in code (pycodestyle)
-
-### Changes in 0.4.0
-
- - PA0JOZ Enhanced Response Correction
-   This is the reason vor minor version increase as older callibration data shouldn't
-   be use.
- - Fix linux binary build
- - Many bugfixes
 
 Introduction
 ------------
@@ -50,7 +47,8 @@ Introduction
 This software connects to a NanoVNA and extracts the data for
 display on a computer and allows saving the sweep data to Touchstone files.
 
-Current features:
+<a href="#current-features"></a>
+### Current features:
 
 - Reading data from a NanoVNA -- Compatible devices: NanoVNA, NanoVNA-H,
   NanoVNA-H4, NanoVNA-F, AVNA via Teensy
@@ -74,7 +72,7 @@ Current features:
 - Customizable display options, including "dark mode"
 - Exporting images of plotted values
 
-0.1.4:
+### Screenshot
 ![Screenshot of version 0.1.4](https://i.imgur.com/ZoFsV2V.png)
 
 Running the application
@@ -86,8 +84,11 @@ Main development is currently done on Linux (Mint 21 "Vanessa" Cinnamon)
 
 ### Binary releases
 
-You can find 64bit binary releases for Windows, Linux and MacOS under
-<https://github.com/NanoVNA-Saver/nanovna-saver/releases/>
+You can find current binary releases for Windows, Linux and MacOS under
+<https://github.com/NanoVNA-Saver/nanovna-saver/releases/latest>
+
+The 32bit Windows binaries are somewhat smaller and seems to be a
+little bit more stable.
 
 Versions older than Windows 7 are not known to work.
 
@@ -97,96 +98,17 @@ It requires Service Pack 1 and [Microsoft VC++ Redistributable](
   https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads).
 For most users, this would already be installed.
 
-#### Windows 10
-
-The downloadable executable runs directly, and requires no installation.
-
 ### Installation and Use with pip
 
-1. Clone repo and cd into the directory
+Copy the link of the tgz from latest relaese and install it with pip install. e.g.:
 
-        git clone https://github.com/NanoVNA-Saver/nanovna-saver
-        cd nanovna-saver
+    pip3 install https://github.com/NanoVNA-Saver/nanovna-saver/archive/refs/tags/v0.5.3.tar.gz
 
-2. Run the pip installation
+Once completed run with the following command
 
-        pip3 install .
+    NanoVNASaver
 
-3. Once completed run with the following command
-
-        NanoVNASaver
-
-#### Ubuntu 20.04
-
-1. Install python3.8 and pip
-
-        sudo apt install python3.8 python3-pip
-        python3 -m venv ~/.venv_nano
-        . ~/.venv_nano/bin/activate
-        pip install -U pip
-
-2. Clone repo and cd into the directory
-
-        git clone https://github.com/NanoVNA-Saver/nanovna-saver
-        cd nanovna-saver
-
-3. Update pip and run the pip installation
-
-        python3 -m pip install .
-
-   (You may need to install the additional packages python3-distutils,
-   python3-setuptools and python3-wheel for this command to work on some
-   distributions.)
-
-4. Once completed run with the following command
-
-        . ~/.venv_nano/bin/activate
-        python3 nanovna-saver.py
-
-
-#### MacPorts
-
-Via a MacPorts distribution maintained by @ra1nb0w.
-
-1. Install MacPorts following the [install guide](https://www.macports.org/install.php)
-
-2. Install NanoVNASaver :
-
-        sudo port install NanoVNASaver
-
-3. Now you can run the software from shell `NanoVNASaver` or run as app
-   `/Applications/MacPorts/NanoVNASaver.app`
-
-#### Homebrew
-
-1. Install Homebrew from <https://brew.sh/> (This will ask for your password)
-
-        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
-
-
-2. Python :
-
-        brew install python
-
-3. Pip :<br/>
-    Download the get-pip.py file and run it to install pip
-
-        curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-        python3 get-pip.py
-
-4. NanoVNASaver Installation : <br/>
-    clone the source code to the nanovna-saver folder
-
-        git clone https://github.com/NanoVNA-Saver/nanovna-saver
-        cd nanovna-saver
-
-5. Install local pip packages
-
-        python3 -m pip install .
-
-6. Run nanovna-saver in the nanovna-saver folder by:
-
-        python3 nanovna-saver.py
+[Detailed installation instructions](docs/INSTALLATION.md)
 
 Using the software
 ------------------
@@ -251,13 +173,52 @@ calibration load would be attached.  Open the "Time Domain Reflectometry"
 window, and select the correct cable type, or manually enter a propagation
 factor.
 
-### Frequency bands
+Latest Changes
+--------------
 
-Open the "Display setup" window to configure the display of frequency bands. By
-clicking "show bands", predefined frequency bands will be shown on the
-frequency-based charts.  Click manage bands to change which bands are shown,
-and the frequency limits of each.  Bands default and reset to European amateur
-radio band frequencies.
+### Changes in 0.5.4-pre
+
+ - Bugfix for Python3.8 compatability
+ - Simplyfied sweep worker
+ - Fixed calibration data loading
+ - Explicit import of scipy functions - #555
+ - Refactoring of Analysis modules
+
+### Changes in 0.5.3
+
+ - Python 3.10 compatability fixes
+ - Fix crash on open in use serial device
+ - Use a Defaults module for all settings -
+   ignores old .ini settings
+ - Refactoring and unifying Chart classes
+ - No more automatic update checks (more privacy)
+ - Corrected error handling in NanaVNA\_V2 code 
+ - Fixed man float related crashes with Qt and
+   Python 3.10
+ - Using more integer divisions to get right type for QPainter
+   points
+ - No more long lines in code (pycodestyle)
+
+### Changes in 0.4.0
+
+ - PA0JOZ Enhanced Response Correction
+   This is the reason for minor version increase as older callibration data
+   shouldn't be use.
+ - Fix linux binary build
+ - Many bugfixes
+
+Contributing
+------------
+
+First off, thanks for taking the time to contribute! Contributions are what
+make the open-source community such an amazing place to learn, inspire, and
+create. Any contributions you make will benefit everybody else and are
+**greatly appreciated**.
+
+
+Please read [our contribution guidelines](docs/CONTRIBUTING.md), and thank you
+for being involved!
+
 
 License
 -------
@@ -268,8 +229,8 @@ comes with NO WARRANTY.
 You can use it, commercially as well. You may make changes to the code, but I
 (and the license) ask that you give these changes back to the community.
 
-Links
------
+References
+----------
 
 - Ohan Smit wrote an introduction to using the application:
   [https://zs1sci.com/blog/nanovnasaver/]
@@ -280,12 +241,12 @@ Links
   [http://www.gunthard-kraus.de/fertig_NanoVNA/English/]
   [http://www.gunthard-kraus.de/fertig_NanoVNA/Deutsch/]
 
-Credits
--------
+Acknowledgements
+----------------
 
 Original application by Rune B. Broberg (5Q5R)
 
-Contributions and changes by Holger Müller, David Hunt and others.
+Contributions and changes by Holger Müller (DG5DBH), David Hunt and others.
 
 TDR inspiration shamelessly stolen from the work of Salil (VU2CWA) at
 <https://nuclearrambo.com/wordpress/accurately-measuring-cable-length-with-nanovna/>

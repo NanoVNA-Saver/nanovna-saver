@@ -4,7 +4,11 @@ Changelog
 0.5.4-pre
 ---------
 
- - Refectoring of Analysis modules
+ - simplyfied sweep worker
+ - fixed calibration data loading
+ - explicit import of scipy functions - #555
+ - bugfix for python3.8 compatability
+ - refactoring of Analysis modules
 
 0.5.3
 -----
