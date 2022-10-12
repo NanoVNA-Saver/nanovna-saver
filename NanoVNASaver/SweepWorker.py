@@ -27,6 +27,7 @@ from PyQt5.QtCore import pyqtSlot, pyqtSignal
 from NanoVNASaver.Calibration import correct_delay
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.Settings.Sweep import Sweep, SweepMode
+from NanoVNASaver.Touchstone import Touchstone
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +73,7 @@ class SweepWorker(QtCore.QRunnable):
         self.running = False
         self.error_message = ""
         self.offsetDelay = 0
+        self.sdata = [[],[],[],[]]
 
     @pyqtSlot()
     def run(self) -> None:
@@ -93,6 +95,12 @@ class SweepWorker(QtCore.QRunnable):
 
         self.running = True
         self.percentage = 0
+
+        # open file to sweep continuously and write all result in the file
+        with open("s1p_continuous.s1p", "w") as fileConS1:
+                fileConS1.write("# HZ S RI R 50 \n")
+        with open("s2p_continuous.s2p", "w") as fileConS2:
+                fileConS2.write("# HZ S RI R 50 \n")
 
         with self.app.sweep.lock:
             sweep = self.app.sweep.copy()
@@ -123,18 +131,24 @@ class SweepWorker(QtCore.QRunnable):
         logger.info("%d averages", averages)
 
         while True:
+            j = 0  # define 0 for continuous count
             for i in range(sweep.segments):
                 logger.debug("Sweep segment no %d", i)
                 if self.stopped:
                     logger.debug("Stopping sweeping as signalled")
                     break
                 start, stop = sweep.get_index_range(i)
-
+                logger.debug("Single mode ...")
                 freq, values11, values21 = self.readAveragedSegment(
                     start, stop, averages)
                 self.percentage = (i + 1) * 100 / sweep.segments
                 self.updateData(freq, values11, values21, i)
             if sweep.properties.mode != SweepMode.CONTINOUS:
+                logger.debug("Continues mode ...")
+                freq, values11, values21 = self.readAveragedSegment(
+                    start, stop, averages)
+                self.percentage = j + 1
+                self.updateData(freq, values11, values21, j)
                 break
 
     def init_data(self):
@@ -173,6 +187,32 @@ class SweepWorker(QtCore.QRunnable):
                      len(self.data11), len(self.data21))
         self.app.saveData(self.data11, self.data21)
         logger.debug('Sending "updated" signal')
+        if self.app.sweep.properties.mode == SweepMode.CONTINOUS:
+            ts = Touchstone("s2p_continuous.s2p")
+            ts.sdata[0] = self.data11
+            nr_params = 4
+            if nr_params > 1:
+                ts.sdata[1] = self.data21
+                for dp in self.data11:
+                    ts.sdata[2].append(Datapoint(dp.freq, 0, 0))
+                    ts.sdata[3].append(Datapoint(dp.freq, 0, 0))
+            with open("s1p_continuous.s1p", "a") as fileConS1:
+                for i in range(len(self.data11)):
+                    freq, re, im = self.data11[i]
+                    line = str(freq) + " " + str(re) + " " + str(im)
+                    fileConS1.write(line)
+                    fileConS1.write("\n")
+            with open("s2p_continuous.s2p", "a") as fileConS2:
+                for i in range(len(self.data11)):
+                    freq, re, im = self.data11[i]
+                    line = str(freq) + " " + str(re) + " " + str(im)
+                    for j in range(1, nr_params):
+                        dp = ts.sdata[j][i]
+                        if dp.freq != self.data11[i][0]:
+                            raise LookupError("Frequencies of sdata not correlated")
+                        line += f" {dp.re} {dp.im}"
+                    line += "\n"
+                    fileConS2.write(line)
         self.signals.updated.emit()
 
     def applyCalibration(self,
@@ -236,7 +276,7 @@ class SweepWorker(QtCore.QRunnable):
             self.signals.updated.emit()
 
         if not values11:
-            raise IOError("Invalid data during swwep")
+            raise IOError("Invalid data during sweep")
 
         truncates = self.sweep.properties.averages[1]
         if truncates > 0 and averages > 1:
