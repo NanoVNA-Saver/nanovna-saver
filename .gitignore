@@ -14,3 +14,12 @@ settings.json
 .coverage
 .flatpak-builder
 /nanovna-saver.exe.spec
+/deb_dist/
+*.deb
+*.tar.gz
+*~
+.*~
+.bak
+.new
+.old
+.orig
