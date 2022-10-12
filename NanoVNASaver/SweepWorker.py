@@ -73,7 +73,7 @@ class SweepWorker(QtCore.QRunnable):
         self.running = False
         self.error_message = ""
         self.offsetDelay = 0
-        self.sdata = [[],[],[],[]]
+        self.sdata = [[], [], [], []]
 
     @pyqtSlot()
     def run(self) -> None:
