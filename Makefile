@@ -9,18 +9,22 @@ info:
 # build a new debian package and create a link in the current directory
 .PHONY: deb
 deb: distclean
-	DEB_BUILD_OPTIONS=nocheck python3 setup.py \
-	--command-packages=stdeb.command \
-	sdist_dsc --compat 12 --package3 nanovnasaver --section electronics bdist_deb
-	-rm nanovnasaver_*.deb
-	-ln `ls deb_dist/nanovnasaver_*.deb | tail -1` .
+	@# build the deb package
+	PYBUILD_DISABLE=test python3 setup.py \
+	  --command-packages=stdeb.command \
+	  sdist_dsc --compat 10 --package3 nanovnasaver --section electronics \
+	  bdist_deb
+	@# create a link in the main directory
+	-@ln `ls deb_dist/nanovnasaver_*.deb | tail -1` .
+	@# and show the result
+	@ls -l nanovnasaver_*.deb
 
 
 # remove all package build artifacts (keep the *.deb)
 .PHONY: clean
 clean:
 	python setup.py clean
-	-rm -rf deb_dist dist *.tar.gz *.egg*
+	-rm -rf build deb_dist dist *.tar.gz *.egg*
 
 
 # remove all package build artefacts

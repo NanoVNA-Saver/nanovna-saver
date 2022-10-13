@@ -19,7 +19,7 @@ settings.json
 *.tar.gz
 *~
 .*~
-.bak
-.new
-.old
-.orig
+*.bak
+*.new
+*.old
+*.orig
