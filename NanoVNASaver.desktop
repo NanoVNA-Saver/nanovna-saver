@@ -1,0 +1,21 @@
+[Desktop Entry]
+Categories=Electronics
+Comment[de_DE]=Programm das Daten vom NanoVNA liest, anzeigt und speichert
+Comment=Tool for reading, displaying and saving data from the NanoVNA
+Encoding=UTF-8
+Exec=NanoVNASaver
+GenericName[de_DE]=
+GenericName=
+Icon=NanoVNASaver_48x48.png
+MimeType=
+Name[de_DE]=NanoVNASaver
+Name=NanoVNASaver
+Path=
+StartupNotify=true
+Terminal=false
+TerminalOptions=
+Type=Application
+X-DBUS-ServiceName=
+X-DBUS-StartupType=
+X-KDE-SubstituteUID=false
+X-KDE-Username=
