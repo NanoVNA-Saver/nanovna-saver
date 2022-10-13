@@ -16,6 +16,27 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 from setuptools import setup
 
-setup()
+
+data_files=[
+    ( "share/doc/nanovnasaver/", [ "CHANGELOG.md", "LICENSE", "README.md" ] ),
+    ( "share/applications/", [ "NanoVNASaver.desktop" ] ),
+    ( "share/icons/hicolor/48x48/apps/", [ "NanoVNASaver_48x48.png" ] ),
+]
+
+
+setup(
+author="NanoVNA-Saver organization",
+author_email="NanoVNA-Saver@users.noreply.github.com",
+url="https://github.com/NanoVNA-Saver/nanovna-saver",
+description="GUI for the NanoVNA and derivates",
+long_description="""A multiplatform tool to save Touchstone files from the NanoVNA,
+sweep frequency spans in segments to gain more data points,
+and generally display and analyze the resulting data.
+""",
+license="GPLv3",
+platforms=[ "all" ],
+data_files=data_files,
+)
