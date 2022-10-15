@@ -42,5 +42,5 @@ debinstall: deb
 # uninstall this debian package
 .PHONY: debuninstall
 debuninstall:
-	sudo apt purge nanovnasaver_*.deb
+	sudo apt purge nanovnasaver
 
