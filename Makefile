@@ -30,7 +30,7 @@ clean:
 # remove all package build artefacts
 .PHONY: distclean
 distclean: clean
-	-rm *.deb
+	-rm -f *.deb
 
 
 # build and install a new debian package
