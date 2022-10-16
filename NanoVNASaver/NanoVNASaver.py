@@ -30,7 +30,9 @@ from .Windows import (
     DeviceSettingsWindow, DisplaySettingsWindow, SweepSettingsWindow,
     TDRWindow, FilesWindow
 )
-from .Controls import MarkerControl, SweepControl, SerialControl
+from .Controls.MarkerControl import MarkerControl
+from .Controls.SweepControl import SweepControl
+from .Controls.SerialControl import SerialControl
 from .Formatting import format_frequency, format_vswr, format_gain
 from .Hardware.Hardware import Interface
 from .Hardware.VNA import VNA

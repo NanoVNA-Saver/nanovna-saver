@@ -32,6 +32,13 @@ def _format_cal_label(size: int, prefix: str = "Set") -> str:
     return f"{prefix} ({size} points)"
 
 
+def getFloatValue(text: str) -> float:
+    try:
+        return float(text)
+    except (TypeError, ValueError):
+        return 0.0
+
+
 class CalibrationWindow(QtWidgets.QWidget):
     nextStep = -1
 
@@ -519,38 +526,38 @@ class CalibrationWindow(QtWidgets.QWidget):
 
             # We are using custom calibration standards
 
-            cal_element.short_l0 = self.getFloatValue(
+            cal_element.short_l0 = getFloatValue(
                 self.short_l0_input.text()) / 1.0e12
-            cal_element.short_l1 = self.getFloatValue(
+            cal_element.short_l1 = getFloatValue(
                 self.short_l1_input.text()) / 1.0e24
-            cal_element.short_l2 = self.getFloatValue(
+            cal_element.short_l2 = getFloatValue(
                 self.short_l2_input.text()) / 1.0e33
-            cal_element.short_l3 = self.getFloatValue(
+            cal_element.short_l3 = getFloatValue(
                 self.short_l3_input.text()) / 1.0e42
-            cal_element.short_length = self.getFloatValue(
+            cal_element.short_length = getFloatValue(
                 self.short_length.text()) / 1.0e12
 
-            cal_element.open_c0 = self.getFloatValue(
+            cal_element.open_c0 = getFloatValue(
                 self.open_c0_input.text()) / 1.e15
-            cal_element.open_c1 = self.getFloatValue(
+            cal_element.open_c1 = getFloatValue(
                 self.open_c1_input.text()) / 1.e27
-            cal_element.open_c2 = self.getFloatValue(
+            cal_element.open_c2 = getFloatValue(
                 self.open_c2_input.text()) / 1.0e36
-            cal_element.open_c3 = self.getFloatValue(
+            cal_element.open_c3 = getFloatValue(
                 self.open_c3_input.text()) / 1.0e45
-            cal_element.openLength = self.getFloatValue(
+            cal_element.openLength = getFloatValue(
                 self.open_length.text()) / 1.0e12
 
-            cal_element.load_r = self.getFloatValue(
+            cal_element.load_r = getFloatValue(
                 self.load_resistance.text())
-            cal_element.load_l = self.getFloatValue(
+            cal_element.load_l = getFloatValue(
                 self.load_inductance.text()) / 1.0e12
-            cal_element.load_c = self.getFloatValue(
+            cal_element.load_c = getFloatValue(
                 self.load_capacitance.text()) / 1.0e15
-            cal_element.load_length = self.getFloatValue(
+            cal_element.load_length = getFloatValue(
                 self.load_length.text()) / 1.0e12
 
-            cal_element.through_length = self.getFloatValue(
+            cal_element.through_length = getFloatValue(
                 self.through_length.text()) / 1.0e12
 
         logger.debug("Attempting calibration calculation.")
@@ -587,13 +594,6 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.calibration_status_label.setText(
                 "Applying calibration failed.")
             self.calibration_source_label.setText(self.app.calibration.source)
-
-    @staticmethod
-    def getFloatValue(text: str) -> float:
-        try:
-            return float(text)
-        except (TypeError, ValueError):
-            return 0.0
 
     def loadCalibration(self):
         filename, _ = QtWidgets.QFileDialog.getOpenFileName(
@@ -869,6 +869,7 @@ class CalibrationWindow(QtWidgets.QWidget):
                 self.app.worker.signals.finished.disconnect(
                     self.automaticCalibrationStep)
                 return
+
             self.calculate()
             self.btn_automatic.setDisabled(False)
             self.nextStep = -1
