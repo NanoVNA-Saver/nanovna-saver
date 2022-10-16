@@ -70,7 +70,8 @@ NAME2DEVICE = {
 
 
 def _fix_v2_hwinfo(dev):
-    if dev.hwid == r'PORTS\VID_04B4&PID_0008\DEMO':
+    # if dev.hwid == r'PORTS\VID_04B4&PID_0008\DEMO':
+    if r'PORTS\VID_04B4&PID_0008' in dev.hwid:
         dev.vid, dev.pid = 0x04b4, 0x0008
     return dev
 
