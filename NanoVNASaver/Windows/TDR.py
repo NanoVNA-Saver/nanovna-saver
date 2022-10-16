@@ -20,6 +20,7 @@ import logging
 import math
 
 import numpy as np
+# pylint: disable=import-error, no-name-in-module
 from scipy.signal import convolve
 from scipy.constants import speed_of_light
 

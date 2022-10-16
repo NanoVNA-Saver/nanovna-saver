@@ -39,7 +39,6 @@ class TickVal:
 
 
 def span2ticks(span: float, min_val: float) -> TickVal:
-    logger.debug("span2ticks(%s, %s)", span, min_val)
     span = abs(span)
     step = log_floor_125(span / 5)
     count = math.floor(span / step)

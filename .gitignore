@@ -16,6 +16,7 @@ settings.json
 /nanovna-saver.exe.spec
 /deb_dist/
 *.deb
+*.rpm
 *.tar.gz
 *~
 .*~
