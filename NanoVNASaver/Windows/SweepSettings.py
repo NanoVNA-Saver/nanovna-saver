@@ -77,12 +77,12 @@ class SweepSettingsWindow(QtWidgets.QWidget):
             lambda: self.update_mode(SweepMode.SINGLE))
         sweep_btn_layout.addWidget(radio_button)
 
-        radio_button = QtWidgets.QRadioButton("Continous sweep")
+        radio_button = QtWidgets.QRadioButton("Continuous sweep")
         radio_button.setMinimumHeight(20)
         radio_button.setChecked(
-            self.app.sweep.properties.mode == SweepMode.CONTINOUS)
+            self.app.sweep.properties.mode == SweepMode.CONTINUOUS)
         radio_button.clicked.connect(
-            lambda: self.update_mode(SweepMode.CONTINOUS))
+            lambda: self.update_mode(SweepMode.CONTINUOUS))
         sweep_btn_layout.addWidget(radio_button)
 
         radio_button = QtWidgets.QRadioButton("Averaged sweep")
@@ -92,6 +92,15 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         radio_button.clicked.connect(
             lambda: self.update_mode(SweepMode.AVERAGE))
         sweep_btn_layout.addWidget(radio_button)
+
+        radio_button = QtWidgets.QRadioButton("Continuous sweep infile")
+        radio_button.setMinimumHeight(20)
+        radio_button.setChecked(
+            self.app.sweep.properties.mode == SweepMode.CONTINUOUS_FILE)
+        radio_button.clicked.connect(
+            lambda: self.update_mode(SweepMode.CONTINUOUS_FILE))
+        sweep_btn_layout.addWidget(radio_button)
+
 
         layout.addRow(sweep_btn_layout)
 

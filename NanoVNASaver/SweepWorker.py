@@ -125,31 +125,48 @@ class SweepWorker(QtCore.QRunnable):
 
     def _run_loop(self) -> None:
         sweep = self.sweep
+        j = 0
         averages = (sweep.properties.averages[0]
                     if sweep.properties.mode == SweepMode.AVERAGE
                     else 1)
         logger.info("%d averages", averages)
-
         while True:
-            j = 0  # define 0 for continuous count
+            max_sweep = 0
             for i in range(sweep.segments):
                 logger.debug("Sweep segment no %d", i)
                 if self.stopped:
                     logger.debug("Stopping sweeping as signalled")
                     break
                 start, stop = sweep.get_index_range(i)
-                logger.debug("Single mode ...")
-                freq, values11, values21 = self.readAveragedSegment(
-                    start, stop, averages)
-                self.percentage = (i + 1) * 100 / sweep.segments
-                self.updateData(freq, values11, values21, i)
-            if sweep.properties.mode != SweepMode.CONTINOUS:
-                logger.debug("Continues mode ...")
-                freq, values11, values21 = self.readAveragedSegment(
-                    start, stop, averages)
-                self.percentage = j + 1
-                self.updateData(freq, values11, values21, j)
-                break
+                try:
+                    logger.debug("Single mode ...")
+                    freq, values11, values21 = self.readAveragedSegment(
+                        start, stop, averages)
+                    self.percentage = (i + 1) * 100 / sweep.segments
+                    self.updateData(freq, values11, values21, i)
+                except ValueError as e:
+                    self.gui_error(str(e))
+            else:
+                if sweep.properties.mode == SweepMode.CONTINUOUS_FILE:
+                    logger.debug("Continuous infile mode ...")
+                    try:
+                        if self.stopped:
+                            logger.debug("Stopping sweeping as signalled")
+                            break
+                        freq, values11, values21 = self.readAveragedSegment(
+                            start, stop, averages)
+                        max_sweep = max_sweep + 1
+                        self.percentage = j + 1 # (i + 1) * 100 / sweep.segments
+                        self.updateDataContinuouse(freq, values11, values21, j)
+                        if max_sweep >= 100:
+                            sweep.properties.mode = SweepMode.SINGLE
+                    except ValueError as e:
+                        self.gui_error(str(e))
+                    continue
+                if sweep.properties.mode == SweepMode.CONTINUOUS:
+                    logger.debug("Continuous mode ...")
+                    continue
+            break
 
     def init_data(self):
         self.data11 = []
@@ -187,7 +204,34 @@ class SweepWorker(QtCore.QRunnable):
                      len(self.data11), len(self.data21))
         self.app.saveData(self.data11, self.data21)
         logger.debug('Sending "updated" signal')
-        if self.app.sweep.properties.mode == SweepMode.CONTINOUS:
+        self.signals.updated.emit()
+
+
+    def updateDataContinuouse(self, frequencies, values11, values21, index):
+        # Update the data from (i*101) to (i+1)*101
+        logger.debug(
+            "Calculating data and inserting in existing data at index %d",
+            index)
+        offset = self.sweep.points * index
+
+        raw_data11 = [Datapoint(freq, values11[i][0], values11[i][1])
+                      for i, freq in enumerate(frequencies)]
+        raw_data21 = [Datapoint(freq, values21[i][0], values21[i][1])
+                      for i, freq in enumerate(frequencies)]
+
+        data11, data21 = self.applyCalibration(raw_data11, raw_data21)
+        logger.debug("update Freqs: %s, Offset: %s", len(frequencies), offset)
+        for i in range(len(frequencies)):
+            self.data11[offset + i] = data11[i]
+            self.data21[offset + i] = data21[i]
+            self.rawData11[offset + i] = raw_data11[i]
+            self.rawData21[offset + i] = raw_data21[i]
+
+        logger.debug("Saving data to application (%d and %d points)",
+                     len(self.data11), len(self.data21))
+        self.app.saveData(self.data11, self.data21)
+        logger.debug('Sending "updated" signal')
+        if self.app.sweep.properties.mode == SweepMode.CONTINUOUS_FILE:
             ts = Touchstone("s2p_continuous.s2p")
             ts.sdata[0] = self.data11
             nr_params = 4

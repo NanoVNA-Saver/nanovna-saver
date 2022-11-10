@@ -683,7 +683,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.btn_automatic.setDisabled(False)
             return
 
-        if self.app.sweep.properties.mode == SweepMode.CONTINOUS:
+        if self.app.sweep.properties.mode == SweepMode.CONTINUOUS:
             QtWidgets.QMessageBox(
                 QtWidgets.QMessageBox.Information,
                 "Continuous sweep enabled",

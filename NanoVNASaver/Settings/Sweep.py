@@ -27,8 +27,9 @@ logger = logging.getLogger(__name__)
 
 class SweepMode(Enum):
     SINGLE = 0
-    CONTINOUS = 1
+    CONTINUOUS = 1
     AVERAGE = 2
+    CONTINUOUS_FILE = 3
 
 
 class Properties:
