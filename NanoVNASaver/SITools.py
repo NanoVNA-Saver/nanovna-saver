@@ -22,8 +22,8 @@ from decimal import Context, Decimal, InvalidOperation
 from typing import NamedTuple
 from numbers import Number, Real
 
-PREFIXES = ("y", "z", "a", "f", "p", "n", "µ", "m",
-            "", "k", "M", "G", "T", "P", "E", "Z", "Y")
+PREFIXES = ("q", "r", "y", "z", "a", "f", "p", "n", "µ", "m",
+            "", "k", "M", "G", "T", "P", "E", "Z", "Y", "R", "Q")
 
 
 def clamp_value(value: Real, rmin: Real, rmax: Real) -> Real:
@@ -56,8 +56,8 @@ class Format(NamedTuple):
     fix_decimals: bool = False
     space_str: str = ""
     assume_infinity: bool = True
-    min_offset: int = -8
-    max_offset: int = 8
+    min_offset: int = -10
+    max_offset: int = 10
     allow_strip: bool = False
     allways_signed: bool = False
     printable_min: float = -math.inf
@@ -71,11 +71,11 @@ class Format(NamedTuple):
 
 
 class Value:
-    CTX = Context(prec=60, Emin=-27, Emax=27)
+    CTX = Context(prec=60, Emin=-33, Emax=33)
 
     def __init__(self, value: Real = Decimal(0), unit: str = "", fmt=Format()):
         assert 1 <= fmt.max_nr_digits <= 30
-        assert -8 <= fmt.min_offset <= fmt.max_offset <= 8
+        assert -10 <= fmt.min_offset <= fmt.max_offset <= 10
         assert fmt.parse_clamp_min < fmt.parse_clamp_max
         assert fmt.printable_min < fmt.printable_max
         self._unit = unit
@@ -128,7 +128,7 @@ class Value:
         if self.fmt.allow_strip and "." in result:
             result = result.rstrip("0").rstrip(".")
 
-        return result + fmt.space_str + PREFIXES[offset + 8] + self._unit
+        return result + fmt.space_str + PREFIXES[offset + 10] + self._unit
 
     def __int__(self):
         return round(self._value)
@@ -163,7 +163,7 @@ class Value:
         if self.fmt.parse_sloppy_kilo and value[-1] in ("K", "m", "g"):
             value = value[:-1] + value[-1].swapcase()
         if value[-1] in PREFIXES:
-            factor = 10 ** ((PREFIXES.index(value[-1]) - 8) * 3)
+            factor = 10 ** ((PREFIXES.index(value[-1]) - 10) * 3)
             value = value[:-1]
 
         if self.fmt.assume_infinity and value == "\N{INFINITY}":
