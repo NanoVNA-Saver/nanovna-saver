@@ -350,21 +350,22 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.changeChart(1, 1, chart11_selection.currentText())
         self.changeChart(1, 2, chart12_selection.currentText())
 
+        chart_colors = ChartColors()
         Chart.color.background = self.app.settings.value(
-            "BackgroundColor", defaultValue=ChartColors.background,
+            "BackgroundColor", defaultValue=chart_colors.background,
             type=QtGui.QColor)
         Chart.color.foreground = self.app.settings.value(
-            "ForegroundColor", defaultValue=ChartColors.foreground,
+            "ForegroundColor", defaultValue=chart_colors.foreground,
             type=QtGui.QColor)
         Chart.color.text = self.app.settings.value(
-            "TextColor", defaultValue=ChartColors.text,
+            "TextColor", defaultValue=chart_colors.text,
             type=QtGui.QColor)
         self.bandsColor = self.app.settings.value(
-            "BandsColor", defaultValue=ChartColors.bands,
+            "BandsColor", defaultValue=chart_colors.bands,
             type=QtGui.QColor)
         self.app.bands.color = Chart.color.bands
         Chart.color.swr = self.app.settings.value(
-            "VSWRColor", defaultValue=ChartColors.swr,
+            "VSWRColor", defaultValue=chart_colors.swr,
             type=QtGui.QColor)
 
         self.dark_mode_option.setChecked(Defaults.cfg.gui.dark_mode)
