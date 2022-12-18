@@ -18,11 +18,12 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from typing import List, Set, Tuple, ClassVar, Any, Optional
 
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtGui import QColor
 
 from NanoVNASaver import Defaults
 from NanoVNASaver.RFTools import Datapoint
@@ -33,15 +34,18 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class ChartColors:  # pylint: disable=too-many-instance-attributes
-    background: QtGui.QColor = QtGui.QColor(QtCore.Qt.white)
-    foreground: QtGui.QColor = QtGui.QColor(QtCore.Qt.lightGray)
-    reference: QtGui.QColor = QtGui.QColor(0, 0, 255, 64)
-    reference_secondary: QtGui.QColor = QtGui.QColor(0, 0, 192, 48)
-    sweep: QtGui.QColor = QtGui.QColor(QtCore.Qt.darkYellow)
-    sweep_secondary: QtGui.QColor = QtGui.QColor(QtCore.Qt.darkMagenta)
-    swr: QtGui.QColor = QtGui.QColor(255, 0, 0, 128)
-    text: QtGui.QColor = QtGui.QColor(QtCore.Qt.black)
-    bands: QtGui.QColor = QtGui.QColor(128, 128, 128, 48)
+    background: QColor = field(default_factory=lambda: QColor(QtCore.Qt.white))
+    foreground: QColor = field(
+            default_factory=lambda: QColor(QtCore.Qt.lightGray))
+    reference: QColor = field(default_factory=lambda: QColor(0, 0, 255, 64))
+    reference_secondary: QColor = field(
+        default_factory=lambda: QColor(0, 0, 192, 48))
+    sweep: QColor = field(default_factory=lambda: QColor(QtCore.Qt.darkYellow))
+    sweep_secondary: QColor = field(
+        default_factory=lambda: QColor(QtCore.Qt.darkMagenta))
+    swr: QColor = field(default_factory=lambda: QColor(255, 0, 0, 128))
+    text: QColor = field(default_factory=lambda: QColor(QtCore.Qt.black))
+    bands: QColor = field(default_factory=lambda: QColor(128, 128, 128, 48))
 
 
 @dataclass

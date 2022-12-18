@@ -68,15 +68,23 @@ class Chart:
 
 @DC.dataclass
 class ChartColors:  # pylint: disable=too-many-instance-attributes
-    background: QColor = QColor(QtCore.Qt.white)
-    foreground: QColor = QColor(QtCore.Qt.lightGray)
-    reference: QColor = QColor(0, 0, 255, 64)
-    reference_secondary: QColor = QColor(0, 0, 192, 48)
-    sweep: QColor = QColor(QtCore.Qt.darkYellow)
-    sweep_secondary: QColor = QColor(QtCore.Qt.darkMagenta)
-    swr: QColor = QColor(255, 0, 0, 128)
-    text: QColor = QColor(QtCore.Qt.black)
-    bands: QColor = QColor(128, 128, 128, 48)
+    background: QColor = DC.field(
+        default_factory=lambda: QColor(QtCore.Qt.white))
+    foreground: QColor = DC.field(
+        default_factory=lambda: QColor(QtCore.Qt.lightGray))
+    reference: QColor = DC.field(default_factory=lambda: QColor(0, 0, 255, 64))
+    reference_secondary: QColor = DC.field(
+        default_factory=lambda: QColor(0, 0, 192, 48))
+    sweep: QColor = DC.field(
+        default_factory=lambda: QColor(QtCore.Qt.darkYellow))
+    sweep_secondary: QColor = DC.field(
+        default_factory=lambda: QColor(QtCore.Qt.darkMagenta))
+    swr: QColor = DC.field(
+        default_factory=lambda: QColor(255, 0, 0, 128))
+    text: QColor = DC.field(
+        default_factory=lambda: QColor(QtCore.Qt.black))
+    bands: QColor = DC.field(
+        default_factory=lambda: QColor(128, 128, 128, 48))
 
 
 @DC.dataclass
@@ -86,23 +94,30 @@ class Markers:
         "vswr", "returnloss", "s11q", "s11phase", "s21gain", "s21phase",
     ])
     colored_names: bool = True
-    color_0: QColor = QColor(QtCore.Qt.darkGray)
-    color_1: QColor = QColor(255, 0, 0)
-    color_2: QColor = QColor(0, 255, 0)
-    color_3: QColor = QColor(0, 0, 255)
-    color_4: QColor = QColor(0, 255, 255)
-    color_5: QColor = QColor(255, 0, 255)
-    color_6: QColor = QColor(255, 255, 0)
-    color_7: QColor = QColor(QtCore.Qt.lightGray)
+    color_0: QColor = DC.field(
+        default_factory=lambda: QColor(QtCore.Qt.darkGray))
+    color_1: QColor = DC.field(default_factory=lambda: QColor(255, 0, 0))
+    color_2: QColor = DC.field(default_factory=lambda: QColor(0, 255, 0))
+    color_3: QColor = DC.field(default_factory=lambda: QColor(0, 0, 255))
+    color_4: QColor = DC.field(default_factory=lambda: QColor(0, 255, 255))
+    color_5: QColor = DC.field(default_factory=lambda: QColor(255, 0, 255))
+    color_6: QColor = DC.field(default_factory=lambda: QColor(255, 255, 0))
+    color_7: QColor = DC.field(
+        default_factory=lambda: QColor(QtCore.Qt.lightGray))
 
 
 @DC.dataclass
 class CFG:
-    gui: object = GUI()
-    charts_selected: object = ChartsSelected()
-    chart: object = Chart()
-    chart_colors: object = ChartColors()
-    markers: object = Markers()
+    gui: object = DC.field(
+        default_factory=lambda: GUI())
+    charts_selected: object = DC.field(
+        default_factory=lambda: ChartsSelected())
+    chart: object = DC.field(
+        default_factory=lambda: Chart())
+    chart_colors: object = DC.field(
+        default_factory=lambda: ChartColors())
+    markers: object = DC.field(
+        default_factory=lambda: Markers())
 
 
 cfg = CFG()
