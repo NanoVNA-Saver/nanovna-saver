@@ -102,7 +102,7 @@ For most users, this would already be installed.
 
 Copy the link of the tgz from latest relaese and install it with pip install. e.g.:
 
-    pip3 install https://github.com/NanoVNA-Saver/nanovna-saver/archive/refs/tags/v0.5.3.tar.gz
+    pip3 install https://github.com/NanoVNA-Saver/nanovna-saver/archive/refs/tags/v0.5.4.tar.gz
 
 Once completed run with the following command
 
@@ -176,9 +176,14 @@ factor.
 Latest Changes
 --------------
 
-### Changes in 0.5.4-pre
+### Changes in 0.5.4
 
+ - Bugfixes for Python3.11 compatability
  - Bugfix for Python3.8 compatability
+ - use math instead of table for log step calculation
+ - Support of NanoVNA V2 Plus5 on Windows
+ - New SI prefixes added - Ronna, Quetta
+ - addes a Makefile to build a packages
  - Simplyfied sweep worker
  - Fixed calibration data loading
  - Explicit import of scipy functions - #555
@@ -198,14 +203,6 @@ Latest Changes
  - Using more integer divisions to get right type for QPainter
    points
  - No more long lines in code (pycodestyle)
-
-### Changes in 0.4.0
-
- - PA0JOZ Enhanced Response Correction
-   This is the reason for minor version increase as older callibration data
-   shouldn't be use.
- - Fix linux binary build
- - Many bugfixes
 
 Contributing
 ------------
