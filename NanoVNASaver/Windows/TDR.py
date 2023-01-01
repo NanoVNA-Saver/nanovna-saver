@@ -132,7 +132,7 @@ class TDRWindow(QtWidgets.QWidget):
             logger.info("Cannot compute cable length at 0 span")
             return
 
-        s11 = [np.complex(d.re, d.im) for d in self.app.data.s11]
+        s11 = [complex(d.re, d.im) for d in self.app.data.s11]
         window = np.blackman(len(self.app.data.s11))
 
         windowed_s11 = window * s11
