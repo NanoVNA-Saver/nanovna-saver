@@ -15,17 +15,18 @@ jobs:
       uses: actions/checkout@v2
     - name: Install python
       run: |
+        sudo add-apt-repository ppa:deadsnakes/ppa
         sudo apt-get update
-        sudo apt install -y python3.10 python3-pip python3.10-venv \
-          python3.10-dev \
+        sudo apt install -y python3.11 python3-pip python3.11-venv \
+          python3.11-dev \
           python3-pyqt5
     - name: Install dependencies and pyinstall
       run: |
-        python3.10 -m venv build
+        python3.11 -m venv build
         . build/bin/activate
-        python -m pip install pip==22.2.2 setuptools==65.3.0
+        python -m pip install pip==22.3.2 setuptools==65.6.3
         pip install -r requirements.txt
-        pip install PyInstaller==5.4.1
+        pip install PyInstaller==5.7.0
     - name: Build binary
       run: |
         . build/bin/activate
