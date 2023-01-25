@@ -74,7 +74,7 @@ class TDRWindow(QtWidgets.QWidget):
         super().__init__()
         self.app = app
 
-        self.td = np.array([])
+        self.td = []
         self.distance_axis = []
         self.step_response_Z = []
 
@@ -136,9 +136,9 @@ class TDRWindow(QtWidgets.QWidget):
         window = np.blackman(len(self.app.data.s11))
 
         windowed_s11 = window * s11
-        self.td = np.abs(np.fft.ifft(windowed_s11, FFT_POINTS))
+        td = np.abs(np.fft.ifft(windowed_s11, FFT_POINTS))
         step = np.ones(FFT_POINTS)
-        step_response = convolve(self.td, step)
+        step_response = convolve(td, step)
 
         self.step_response_Z = 50 * (
             1 + step_response) / (1 - step_response)
@@ -148,7 +148,7 @@ class TDRWindow(QtWidgets.QWidget):
         # peak = np.max(td)
         # We should check that this is an actual *peak*, and not just
         # a vague maximum
-        index_peak = np.argmax(self.td)
+        index_peak = np.argmax(td)
 
         cable_len = round(self.distance_axis[index_peak] / 2, 3)
         feet = math.floor(cable_len / 0.3048)
@@ -156,4 +156,5 @@ class TDRWindow(QtWidgets.QWidget):
 
         self.tdr_result_label.setText(f"{cable_len}m ({feet}ft {inches}in)")
         self.app.tdr_result_label.setText(f"{cable_len}m")
+        self.td = list(td)
         self.updated.emit()
