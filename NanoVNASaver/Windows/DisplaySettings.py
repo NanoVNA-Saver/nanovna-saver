@@ -44,7 +44,16 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
         layout = QtWidgets.QHBoxLayout()
-        self.setLayout(layout)
+
+        scrollarea = QtWidgets.QScrollArea()
+        scrollarea.setWidgetResizable(True)
+        outer = QtWidgets.QVBoxLayout()
+        outer.addWidget(scrollarea)
+        widget = QtWidgets.QWidget()
+        widget.setLayout(layout)
+        scrollarea.setWidget(widget)
+        self.setLayout(outer)
+        self.resize( scrollarea.size() )
 
         left_layout = QtWidgets.QVBoxLayout()
         layout.addLayout(left_layout)
