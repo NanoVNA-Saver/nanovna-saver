@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 class ChartColors:  # pylint: disable=too-many-instance-attributes
     background: QColor = field(default_factory=lambda: QColor(QtCore.Qt.white))
     foreground: QColor = field(
-            default_factory=lambda: QColor(QtCore.Qt.lightGray))
+        default_factory=lambda: QColor(QtCore.Qt.lightGray))
     reference: QColor = field(default_factory=lambda: QColor(0, 0, 255, 64))
     reference_secondary: QColor = field(
         default_factory=lambda: QColor(0, 0, 192, 48))
