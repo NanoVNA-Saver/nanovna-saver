@@ -84,7 +84,16 @@ class TDRWindow(QtWidgets.QWidget):
         QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
         layout = QtWidgets.QFormLayout()
-        self.setLayout(layout)
+
+        scrollarea = QtWidgets.QScrollArea()
+        scrollarea.setWidgetResizable(True)
+        outer = QtWidgets.QVBoxLayout()
+        outer.addWidget(scrollarea)
+        widget = QtWidgets.QWidget()
+        widget.setLayout(layout)
+        scrollarea.setWidget(widget)
+        self.setLayout(outer)
+        self.resize( scrollarea.size() )
 
         self.tdr_velocity_dropdown = QtWidgets.QComboBox()
         for cable_name, velocity in CABLE_PARAMETERS:

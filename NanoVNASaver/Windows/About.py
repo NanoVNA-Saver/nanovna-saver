@@ -37,7 +37,17 @@ class AboutWindow(QtWidgets.QWidget):
         self.setWindowTitle("About NanoVNASaver")
         self.setWindowIcon(self.app.icon)
         top_layout = QtWidgets.QHBoxLayout()
-        self.setLayout(top_layout)
+
+        scrollarea = QtWidgets.QScrollArea()
+        scrollarea.setWidgetResizable(True)
+        outer = QtWidgets.QVBoxLayout()
+        outer.addWidget(scrollarea)
+        widget = QtWidgets.QWidget()
+        widget.setLayout(top_layout)
+        scrollarea.setWidget(widget)
+        self.setLayout(outer)
+        self.resize( scrollarea.size() )
+
         QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
         icon_layout = QtWidgets.QVBoxLayout()
