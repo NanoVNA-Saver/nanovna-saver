@@ -35,7 +35,16 @@ class FilesWindow(QtWidgets.QWidget):
         self.setMinimumWidth(200)
         QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
         file_window_layout = QtWidgets.QVBoxLayout()
-        self.setLayout(file_window_layout)
+
+        scrollarea = QtWidgets.QScrollArea()
+        scrollarea.setWidgetResizable(True)
+        outer = QtWidgets.QVBoxLayout()
+        outer.addWidget(scrollarea)
+        widget = QtWidgets.QWidget()
+        widget.setLayout(file_window_layout)
+        scrollarea.setWidget(widget)
+        self.setLayout(outer)
+        self.resize( scrollarea.size() )
 
         load_file_control_box = QtWidgets.QGroupBox("Import file")
         load_file_control_box.setMaximumWidth(300)

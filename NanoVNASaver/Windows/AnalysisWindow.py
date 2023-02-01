@@ -49,7 +49,16 @@ class AnalysisWindow(QtWidgets.QWidget):
         QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
         layout = QtWidgets.QVBoxLayout()
-        self.setLayout(layout)
+
+        scrollarea = QtWidgets.QScrollArea()
+        scrollarea.setWidgetResizable(True)
+        outer = QtWidgets.QVBoxLayout()
+        outer.addWidget(scrollarea)
+        widget = QtWidgets.QWidget()
+        widget.setLayout(layout)
+        scrollarea.setWidget(widget)
+        self.setLayout(outer)
+        self.resize( scrollarea.size() )
 
         select_analysis_box = QtWidgets.QGroupBox("Select analysis")
         select_analysis_layout = QtWidgets.QFormLayout(select_analysis_box)
