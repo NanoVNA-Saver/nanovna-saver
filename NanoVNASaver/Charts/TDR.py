@@ -258,7 +258,7 @@ class TDRChart(Chart):
             return
         a0.accept()
         width = self.width() - self.leftMargin - self.rightMargin
-        if self.tdrWindow.td.size:
+        if len(self.tdrWindow.td):
             if self.fixedSpan:
                 max_index = np.searchsorted(
                     self.tdrWindow.distance_axis, self.maxDisplayLength * 2)
@@ -436,7 +436,7 @@ class TDRChart(Chart):
         qp.end()
 
     def valueAtPosition(self, y):
-        if self.tdrWindow.td.size:
+        if len(self.tdrWindow.td):
             height = self.height() - self.topMargin - self.bottomMargin
             absy = (self.height() - y) - self.bottomMargin
             if self.fixedValues:
@@ -454,7 +454,7 @@ class TDRChart(Chart):
         return 0
 
     def lengthAtPosition(self, x, limit=True):
-        if not self.tdrWindow.td.size:
+        if len(self.tdrWindow.td) == 0:
             return 0
         width = self.width() - self.leftMargin - self.rightMargin
         absx = x - self.leftMargin
