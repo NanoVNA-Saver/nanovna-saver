@@ -23,7 +23,7 @@ import numpy as np
 # Import targets to be tested
 import NanoVNASaver.AnalyticTools as at
 
-SINEWAVE = [math.sin(x/45 * math.pi) for x in range(360)]
+SINEWAVE = [math.sin(x / 45 * math.pi) for x in range(360)]
 
 
 class AnalyticsTools(unittest.TestCase):

@@ -139,12 +139,24 @@ class TestCases(unittest.TestCase):
         self.assertEqual(fmt.format_phase(-3.1416), '-180.00°')
 
     def test_format_complex_imp(self):
-        self.assertEqual(fmt.format_complex_imp(complex(1, 0)), '1+j0 \N{OHM SIGN}')
-        self.assertEqual(fmt.format_complex_imp(complex(1234, 1234)), '1.23k+j1.23k \N{OHM SIGN}')
-        self.assertEqual(fmt.format_complex_imp(complex(1234, -1234)), '1.23k-j1.23k \N{OHM SIGN}')
-        self.assertEqual(fmt.format_complex_imp(complex(1.234, 1234)), '1.23+j1.23k \N{OHM SIGN}')
-        self.assertEqual(fmt.format_complex_imp(complex(-1, 1.23e-3)), '- +j1.23m \N{OHM SIGN}')
-        self.assertEqual(fmt.format_complex_imp(complex(-1, 1.23e-3), True), '-1+j1.23m \N{OHM SIGN}')
+        self.assertEqual(
+            fmt.format_complex_imp(complex(1, 0)),
+            '1+j0 \N{OHM SIGN}')
+        self.assertEqual(
+            fmt.format_complex_imp(complex(1234, 1234)),
+            '1.23k+j1.23k \N{OHM SIGN}')
+        self.assertEqual(
+            fmt.format_complex_imp(complex(1234, -1234)),
+            '1.23k-j1.23k \N{OHM SIGN}')
+        self.assertEqual(
+            fmt.format_complex_imp(complex(1.234, 1234)),
+            '1.23+j1.23k \N{OHM SIGN}')
+        self.assertEqual(
+            fmt.format_complex_imp(complex(-1, 1.23e-3)),
+            '- +j1.23m \N{OHM SIGN}')
+        self.assertEqual(
+            fmt.format_complex_imp(complex(-1, 1.23e-3), True),
+            '-1+j1.23m \N{OHM SIGN}')
 
     def test_format_wavelength(self):
         self.assertEqual(fmt.format_wavelength(12.3456), '12.35 m')
