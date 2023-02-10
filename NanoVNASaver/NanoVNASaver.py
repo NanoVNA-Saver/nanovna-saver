@@ -45,7 +45,9 @@ from .Charts import (
     MagnitudeChart, MagnitudeZChart, MagnitudeZShuntChart,
     MagnitudeZSeriesChart,
     QualityFactorChart, VSWRChart, PermeabilityChart, PolarChart,
-    RealImaginaryChart, RealImaginaryZChart, RealImaginaryZShuntChart, RealImaginaryZSeriesChart,
+    RealImaginaryChart, 
+    RealImaginaryMuChart,
+    RealImaginaryZChart, RealImaginaryZShuntChart, RealImaginaryZSeriesChart,
     SmithChart, SParameterChart, TDRChart,
 )
 from .Calibration import Calibration
@@ -152,6 +154,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                 "phase": PhaseChart("S11 Phase"),
                 "q_factor": QualityFactorChart("S11 Quality Factor"),
                 "real_imag": RealImaginaryZChart("S11 R+jX"),
+                "real_imag_mu": RealImaginaryMuChart("S11 \N{GREEK SMALL LETTER MU}"),
                 "smith": SmithChart("S11 Smith Chart"),
                 "s_parameter": SParameterChart("S11 Real/Imaginary"),
                 "vswr": VSWRChart("S11 VSWR"),
