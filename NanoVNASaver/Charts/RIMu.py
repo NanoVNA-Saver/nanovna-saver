@@ -71,27 +71,34 @@ class RealImaginaryMuChart(RealImaginaryChart):
         self.coreArea = 1.
         self.coreWindings = 1
 
-        self.y_menu.addSeparator()
+        self.menu.addSeparator()
         self.action_set_core_length = QtWidgets.QAction(
             "Core effective length")
         self.action_set_core_length.triggered.connect(
             self.setCoreLength)
 
-        self.y_menu.addSeparator()
         self.action_set_core_area = QtWidgets.QAction(
             "Core area")
         self.action_set_core_area.triggered.connect(
             self.setCoreArea)
 
-        self.y_menu.addSeparator()
         self.action_set_core_windings = QtWidgets.QAction(
             "Core number of windings")
         self.action_set_core_windings.triggered.connect(
             self.setCoreWindings)
 
-        self.y_menu.addAction(self.action_set_core_length)
-        self.y_menu.addAction(self.action_set_core_area)
-        self.y_menu.addAction(self.action_set_core_windings)
+        self.menu.addAction(self.action_set_core_length)
+        self.menu.addAction(self.action_set_core_area)
+        self.menu.addAction(self.action_set_core_windings)
+
+    def copy(self):
+        new_chart: RealImaginaryMuChart = super().copy()
+
+        new_chart.coreLength = self.coreLength
+        new_chart.coreArea = self.coreArea
+        new_chart.coreWindings = self.coreWindings
+
+        return new_chart
 
     def drawChart(self, qp: QtGui.QPainter):
         qp.setPen(QtGui.QPen(Chart.color.text))
