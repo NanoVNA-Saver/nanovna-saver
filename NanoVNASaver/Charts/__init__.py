@@ -15,6 +15,7 @@ from .Permeability import PermeabilityChart
 from .Phase import PhaseChart
 from .QFactor import QualityFactorChart
 from .RI import RealImaginaryChart
+from .RIMu import RealImaginaryMuChart
 from .RIZ import RealImaginaryZChart
 from .RIZShunt import RealImaginaryZShuntChart
 from .RIZSeries import RealImaginaryZSeriesChart
