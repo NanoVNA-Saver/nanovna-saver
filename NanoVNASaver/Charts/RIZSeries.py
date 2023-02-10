@@ -19,12 +19,12 @@
 import logging
 
 from NanoVNASaver.RFTools import Datapoint
-from .RI import RealImaginaryChart
+from .RIZ import RealImaginaryZChart
 
 logger = logging.getLogger(__name__)
 
 
-class RealImaginaryShuntChart(RealImaginaryChart):
+class RealImaginaryZSeriesChart(RealImaginaryZChart):
 
     def impedance(self, p: Datapoint) -> complex:
-        return p.shuntImpedance()
+        return p.seriesImpedance()

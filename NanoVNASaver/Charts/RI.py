@@ -72,33 +72,7 @@ class RealImaginaryChart(FrequencyChart):
         mode_group.addAction(self.y_action_fixed_span)
         self.y_menu.addAction(self.y_action_automatic)
         self.y_menu.addAction(self.y_action_fixed_span)
-        self.y_menu.addSeparator()
 
-        self.action_set_fixed_maximum_real = QtWidgets.QAction(
-            f"Maximum R ({self.maxDisplayReal})")
-        self.action_set_fixed_maximum_real.triggered.connect(
-            self.setMaximumRealValue)
-
-        self.action_set_fixed_minimum_real = QtWidgets.QAction(
-            f"Minimum R ({self.minDisplayReal})")
-        self.action_set_fixed_minimum_real.triggered.connect(
-            self.setMinimumRealValue)
-
-        self.action_set_fixed_maximum_imag = QtWidgets.QAction(
-            f"Maximum jX ({self.maxDisplayImag})")
-        self.action_set_fixed_maximum_imag.triggered.connect(
-            self.setMaximumImagValue)
-
-        self.action_set_fixed_minimum_imag = QtWidgets.QAction(
-            f"Minimum jX ({self.minDisplayImag})")
-        self.action_set_fixed_minimum_imag.triggered.connect(
-            self.setMinimumImagValue)
-
-        self.y_menu.addAction(self.action_set_fixed_maximum_real)
-        self.y_menu.addAction(self.action_set_fixed_minimum_real)
-        self.y_menu.addSeparator()
-        self.y_menu.addAction(self.action_set_fixed_maximum_imag)
-        self.y_menu.addAction(self.action_set_fixed_minimum_imag)
 
     def copy(self):
         new_chart: RealImaginaryChart = super().copy()
@@ -108,23 +82,6 @@ class RealImaginaryChart(FrequencyChart):
         new_chart.minDisplayReal = self.minDisplayReal
         new_chart.minDisplayImag = self.minDisplayImag
         return new_chart
-
-    def drawChart(self, qp: QtGui.QPainter):
-        qp.setPen(QtGui.QPen(Chart.color.text))
-        qp.drawText(self.leftMargin + 5, 15,
-                    f"{self.name} (\N{OHM SIGN})")
-        qp.drawText(10, 15, "R")
-        qp.drawText(self.leftMargin + self.dim.width + 10, 15, "X")
-        qp.setPen(QtGui.QPen(Chart.color.foreground))
-        qp.drawLine(self.leftMargin,
-                    self.topMargin - 5,
-                    self.leftMargin,
-                    self.topMargin + self.dim.height + 5)
-        qp.drawLine(self.leftMargin - 5,
-                    self.topMargin + self.dim.height,
-                    self.leftMargin + self.dim.width + 5,
-                    self.topMargin + self.dim.height)
-        self.drawTitle(qp)
 
     def drawValues(self, qp: QtGui.QPainter):
         if not self.data and not self.reference:
@@ -333,7 +290,7 @@ class RealImaginaryChart(FrequencyChart):
         max_real = 0
         max_imag = -1000
         for d in self.data:
-            imp = self.impedance(d)
+            imp = self.value(d)
             re, im = imp.real, imp.imag
             if math.isinf(re):  # Avoid infinite scales
                 continue
@@ -345,7 +302,7 @@ class RealImaginaryChart(FrequencyChart):
         for d in self.reference:
             if d.freq < self.fstart or d.freq > self.fstop:
                 continue
-            imp = self.impedance(d)
+            imp = self.value(d)
             re, im = imp.real, imp.imag
             if math.isinf(re):  # Avoid infinite scales
                 continue
@@ -393,12 +350,12 @@ class RealImaginaryChart(FrequencyChart):
         return min_imag, max_imag
 
     def getImYPosition(self, d: Datapoint) -> int:
-        im = self.impedance(d).imag
+        im = self.value(d).imag
         return int(self.topMargin + (self.max_imag - im) / self.span_imag
                    * self.dim.height)
 
     def getReYPosition(self, d: Datapoint) -> int:
-        re = self.impedance(d).real
+        re = self.value(d).real
         return int(self.topMargin + (self.max_real - re) / self.span_real
                    * self.dim.height if math.isfinite(re) else self.topMargin)
 
@@ -521,5 +478,5 @@ class RealImaginaryChart(FrequencyChart):
             f"Maximum jX ({self.maxDisplayImag})")
         self.menu.exec_(event.globalPos())
 
-    def impedance(self, p: Datapoint) -> complex:
-        return p.impedance()
+    def value(self, p: Datapoint) -> complex:
+        raise NotImplementedError()
