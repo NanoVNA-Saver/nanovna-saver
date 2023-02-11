@@ -171,7 +171,8 @@ class RealImaginaryMuChart(RealImaginaryChart):
         return self.mu_r(p)
 
     def mu_r(self, p: Datapoint) -> complex:
-        inductance = np.conj(-1j * p.impedance()/(2*math.pi*p.freq))
+        inductance = p.impedance()/(2j*math.pi*p.freq)
 
         # Core length and core area are in mm and mm2 respectively
-        return inductance * (self.coreLength/1e3) / (mu_0 * self.coreWindings**2 * (self.coreArea/1e6))
+        # note: mu_r = mu' - j * mu ''
+        return np.conj(inductance * (self.coreLength/1e3) / (mu_0 * self.coreWindings**2 * (self.coreArea/1e6)))
