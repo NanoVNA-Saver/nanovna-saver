@@ -134,7 +134,7 @@ class SweepWorker(QtCore.QRunnable):
                     start, stop, averages)
                 self.percentage = (i + 1) * 100 / sweep.segments
                 self.updateData(freq, values11, values21, i)
-            if sweep.properties.mode != SweepMode.CONTINOUS:
+            if sweep.properties.mode != SweepMode.CONTINOUS or self.stopped:
                 break
 
     def init_data(self):
