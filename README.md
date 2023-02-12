@@ -31,6 +31,7 @@ It's written in __Python 3__ using __PyQt5__ and __scipy__.
 - [Usage](#using-the-software)
   - [Calibration](#calibration)
   - [TDR](#tdr)
+  - [Measuring inductor core permeability](#measuring-inductor-core-permeability)
 - [Latest Changes](#latest-changes)
 - [Contributing](#contributing)
   - [Contribution Guidlines](docs/CONTRIBUTING.md)
@@ -172,6 +173,10 @@ be measured at the calibration plane - i.e. at the same position where the
 calibration load would be attached.  Open the "Time Domain Reflectometry"
 window, and select the correct cable type, or manually enter a propagation
 factor.
+
+### Measuring inductor core permeability
+
+The permeability (mu) of cores can be measured using a one-port measurement.  Put one or more windings on a core of known dimensions and use the "S11 mu" plot from the "Display Setup".  The core dimensions (cross section area in mm2, effective length in mm) and number of windings can be set in the context menu for the plot (right click on the plot).
 
 Latest Changes
 --------------
