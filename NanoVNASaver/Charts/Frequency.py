@@ -333,8 +333,8 @@ class FrequencyChart(Chart):
         try:
             return (
                 self.topMargin +
-                round((self.maxValue - self.value_function(d) /
-                       self.span * self.dim.height)))
+                round((self.maxValue - self.value_function(d)) /
+                       self.span * self.dim.height))
         except ValueError:
             return self.topMargin
 
