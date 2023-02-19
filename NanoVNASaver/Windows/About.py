@@ -46,7 +46,7 @@ class AboutWindow(QtWidgets.QWidget):
         widget.setLayout(top_layout)
         scrollarea.setWidget(widget)
         self.setLayout(outer)
-        self.resize( scrollarea.size() )
+        self.resize(scrollarea.size())
 
         QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 

@@ -55,7 +55,7 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         widget.setLayout(top_layout)
         scrollarea.setWidget(widget)
         self.setLayout(outer)
-        self.resize( scrollarea.size() )
+        self.resize(scrollarea.size())
 
         status_box = QtWidgets.QGroupBox("Status")
         status_layout = QtWidgets.QFormLayout(status_box)

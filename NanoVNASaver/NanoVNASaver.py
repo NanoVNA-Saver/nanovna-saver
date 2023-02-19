@@ -45,7 +45,7 @@ from .Charts import (
     MagnitudeChart, MagnitudeZChart, MagnitudeZShuntChart,
     MagnitudeZSeriesChart,
     QualityFactorChart, VSWRChart, PermeabilityChart, PolarChart,
-    RealImaginaryChart, 
+    RealImaginaryChart,
     RealImaginaryMuChart,
     RealImaginaryZChart, RealImaginaryZShuntChart, RealImaginaryZSeriesChart,
     SmithChart, SParameterChart, TDRChart,

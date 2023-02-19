@@ -26,15 +26,15 @@ from PyQt5 import QtWidgets, QtGui
 from NanoVNASaver.Formatting import format_frequency_chart
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.Charts.Chart import Chart
-
-from .RI import RealImaginaryChart
+from NanoVNASaver.Charts.RI import RealImaginaryChart
 
 logger = logging.getLogger(__name__)
 
 MU = "\N{GREEK SMALL LETTER MU}"
 
+
 class RealImaginaryMuChart(RealImaginaryChart):
-    
+
     def __init__(self, name=""):
         super().__init__(name)
         self.y_menu.addSeparator()
@@ -58,14 +58,14 @@ class RealImaginaryMuChart(RealImaginaryChart):
             f"Minimum {MU}'' ({self.minDisplayImag})")
         self.action_set_fixed_minimum_imag.triggered.connect(
             self.setMinimumImagValue)
-        
+
         self.y_menu.addAction(self.action_set_fixed_maximum_real)
         self.y_menu.addAction(self.action_set_fixed_minimum_real)
         self.y_menu.addSeparator()
         self.y_menu.addAction(self.action_set_fixed_maximum_imag)
         self.y_menu.addAction(self.action_set_fixed_minimum_imag)
 
-        # Manage core parameters 
+        # Manage core parameters
         # TODO pick some sane default values?
         self.coreLength = 1.
         self.coreArea = 1.
@@ -111,7 +111,7 @@ class RealImaginaryMuChart(RealImaginaryChart):
                     self.topMargin - 5,
                     self.leftMargin,
                     self.topMargin + self.dim.height + 5)
-        qp.drawLine(self.leftMargin-5,
+        qp.drawLine(self.leftMargin - 5,
                     self.topMargin + self.dim.height,
                     self.leftMargin + self.dim.width + 5,
                     self.topMargin + self.dim.height)
@@ -171,8 +171,11 @@ class RealImaginaryMuChart(RealImaginaryChart):
         return self.mu_r(p)
 
     def mu_r(self, p: Datapoint) -> complex:
-        inductance = p.impedance()/(2j*math.pi*p.freq)
+        inductance = p.impedance() / (2j * math.pi * p.freq)
 
         # Core length and core area are in mm and mm2 respectively
         # note: mu_r = mu' - j * mu ''
-        return np.conj(inductance * (self.coreLength/1e3) / (mu_0 * self.coreWindings**2 * (self.coreArea/1e6)))
+        return np.conj(
+            inductance * (self.coreLength / 1e3) /
+            (mu_0 * self.coreWindings**2 * (self.coreArea / 1e6))
+        )

@@ -44,7 +44,7 @@ class FilesWindow(QtWidgets.QWidget):
         widget.setLayout(file_window_layout)
         scrollarea.setWidget(widget)
         self.setLayout(outer)
-        self.resize( scrollarea.size() )
+        self.resize(scrollarea.size())
 
         load_file_control_box = QtWidgets.QGroupBox("Import file")
         load_file_control_box.setMaximumWidth(300)
