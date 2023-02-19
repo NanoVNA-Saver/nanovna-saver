@@ -45,7 +45,9 @@ from .Charts import (
     MagnitudeChart, MagnitudeZChart, MagnitudeZShuntChart,
     MagnitudeZSeriesChart,
     QualityFactorChart, VSWRChart, PermeabilityChart, PolarChart,
-    RealImaginaryChart, RealImaginaryShuntChart, RealImaginarySeriesChart,
+    RealImaginaryChart, 
+    RealImaginaryMuChart,
+    RealImaginaryZChart, RealImaginaryZShuntChart, RealImaginaryZSeriesChart,
     SmithChart, SParameterChart, TDRChart,
 )
 from .Calibration import Calibration
@@ -151,7 +153,8 @@ class NanoVNASaver(QtWidgets.QWidget):
                     " X/\N{GREEK SMALL LETTER OMEGA}"),
                 "phase": PhaseChart("S11 Phase"),
                 "q_factor": QualityFactorChart("S11 Quality Factor"),
-                "real_imag": RealImaginaryChart("S11 R+jX"),
+                "real_imag": RealImaginaryZChart("S11 R+jX"),
+                "real_imag_mu": RealImaginaryMuChart("S11 \N{GREEK SMALL LETTER MU}"),
                 "smith": SmithChart("S11 Smith Chart"),
                 "s_parameter": SParameterChart("S11 Real/Imaginary"),
                 "vswr": VSWRChart("S11 VSWR"),
@@ -163,8 +166,8 @@ class NanoVNASaver(QtWidgets.QWidget):
                 "magnitude": MagnitudeChart("|S21|"),
                 "magnitude_z_shunt": MagnitudeZShuntChart("S21 |Z| shunt"),
                 "magnitude_z_series": MagnitudeZSeriesChart("S21 |Z| series"),
-                "real_imag_shunt": RealImaginaryShuntChart("S21 R+jX shunt"),
-                "real_imag_series": RealImaginarySeriesChart(
+                "real_imag_shunt": RealImaginaryZShuntChart("S21 R+jX shunt"),
+                "real_imag_series": RealImaginaryZSeriesChart(
                     "S21 R+jX series"),
                 "phase": PhaseChart("S21 Phase"),
                 "polar": PolarChart("S21 Polar Plot"),
