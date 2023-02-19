@@ -53,7 +53,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         widget.setLayout(layout)
         scrollarea.setWidget(widget)
         self.setLayout(outer)
-        self.resize( scrollarea.size() )
+        self.resize(scrollarea.size())
 
         left_layout = QtWidgets.QVBoxLayout()
         layout.addLayout(left_layout)

@@ -58,7 +58,7 @@ class AnalysisWindow(QtWidgets.QWidget):
         widget.setLayout(layout)
         scrollarea.setWidget(widget)
         self.setLayout(outer)
-        self.resize( scrollarea.size() )
+        self.resize(scrollarea.size())
 
         select_analysis_box = QtWidgets.QGroupBox("Select analysis")
         select_analysis_layout = QtWidgets.QFormLayout(select_analysis_box)

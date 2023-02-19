@@ -68,8 +68,7 @@ class CalibrationWindow(QtWidgets.QWidget):
         widget.setLayout(top_layout)
         scrollarea.setWidget(widget)
         self.setLayout(outer)
-        self.resize( scrollarea.size() )
-
+        self.resize(scrollarea.size())
 
         calibration_status_group = QtWidgets.QGroupBox("Active calibration")
         calibration_status_layout = QtWidgets.QFormLayout()

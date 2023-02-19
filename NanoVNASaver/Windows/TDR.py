@@ -93,7 +93,7 @@ class TDRWindow(QtWidgets.QWidget):
         widget.setLayout(layout)
         scrollarea.setWidget(widget)
         self.setLayout(outer)
-        self.resize( scrollarea.size() )
+        self.resize(scrollarea.size())
 
         self.tdr_velocity_dropdown = QtWidgets.QComboBox()
         for cable_name, velocity in CABLE_PARAMETERS:

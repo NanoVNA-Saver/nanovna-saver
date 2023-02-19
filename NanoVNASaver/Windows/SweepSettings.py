@@ -49,7 +49,7 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         widget.setLayout(layout)
         scrollarea.setWidget(widget)
         self.setLayout(outer)
-        self.resize( scrollarea.size() )
+        self.resize(scrollarea.size())
 
         layout.addWidget(self.title_box())
         layout.addWidget(self.settings_box())

@@ -332,9 +332,10 @@ class FrequencyChart(Chart):
     def getYPosition(self, d: Datapoint) -> int:
         try:
             return (
-                self.topMargin +
-                round((self.maxValue - self.value_function(d)) /
-                       self.span * self.dim.height))
+                self.topMargin + round(
+                    (self.maxValue - self.value_function(d)) /
+                    self.span * self.dim.height)
+            )
         except ValueError:
             return self.topMargin
 

@@ -28,6 +28,7 @@ from .RI import RealImaginaryChart
 
 logger = logging.getLogger(__name__)
 
+
 class RealImaginaryZChart(RealImaginaryChart):
     def __init__(self, name=""):
         super().__init__(name)
@@ -52,7 +53,7 @@ class RealImaginaryZChart(RealImaginaryChart):
             f"Minimum jX ({self.minDisplayImag})")
         self.action_set_fixed_minimum_imag.triggered.connect(
             self.setMinimumImagValue)
-        
+
         self.y_menu.addAction(self.action_set_fixed_maximum_real)
         self.y_menu.addAction(self.action_set_fixed_minimum_real)
         self.y_menu.addSeparator()
@@ -70,7 +71,7 @@ class RealImaginaryZChart(RealImaginaryChart):
                     self.topMargin - 5,
                     self.leftMargin,
                     self.topMargin + self.dim.height + 5)
-        qp.drawLine(self.leftMargin-5,
+        qp.drawLine(self.leftMargin - 5,
                     self.topMargin + self.dim.height,
                     self.leftMargin + self.dim.width + 5,
                     self.topMargin + self.dim.height)

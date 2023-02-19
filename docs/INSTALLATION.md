@@ -3,10 +3,9 @@ Installation Instructions
 
 ## Ubuntu 20.04 / 22.04
 
+1. Install python3 and pip
 
-1. Install python3.8 and pip
-
-        sudo apt install python3.8 python3-pip
+        sudo apt install python3 python3-pip
         python3 -m venv ~/.venv_nano
         . ~/.venv_nano/bin/activate
         pip install -U pip
@@ -29,7 +28,6 @@ Installation Instructions
         . ~/.venv_nano/bin/activate
         python3 nanovna-saver.py
 
-
 ## MacPorts
 
 Via a MacPorts distribution maintained by @ra1nb0w.
@@ -48,7 +46,6 @@ Via a MacPorts distribution maintained by @ra1nb0w.
 1. Install Homebrew from <https://brew.sh/> (This will ask for your password)
 
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
-
 
 2. Python :
 
