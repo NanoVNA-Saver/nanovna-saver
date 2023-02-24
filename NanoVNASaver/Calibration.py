@@ -36,6 +36,14 @@ IDEAL_LOAD = complex(0, 0)
 IDEAL_THROUGH = complex(1, 0)
 
 RXP_CAL_LINE = {
+    "sol": re.compile(r"""
+        ^ \s*
+        (?P<freq>\d+) \s+
+        (?P<shortr>[-0-9Ee.]+) \s+ (?P<shorti>[-0-9Ee.]+) \s+
+        (?P<openr>[-0-9Ee.]+) \s+ (?P<openi>[-0-9Ee.]+) \s+
+        (?P<loadr>[-0-9Ee.]+) \s+ (?P<loadi>[-0-9Ee.]+)
+        \s* $
+        """, re.VERBOSE),
     "short": re.compile(r"""
         ^ \s*
         (?P<freq>\d+) \s+
@@ -64,9 +72,11 @@ RXP_CAL_LINE = {
 RXP_CAL_HEADER = re.compile(r"""
     ^ \# \s+ Hz \s+
     ShortR \s+ ShortI \s+ OpenR \s+ OpenI \s+
-    LoadR \s+ LoadI \s+ ThroughR \s+ ThroughI \s+
-    (?P<t_refl>ThrureflR \s+ ThrureflI \s+)? IsolationR \s+ IsolationI \s*
-    $
+    LoadR \s+ LoadI
+    (?P<trough> \s+ ThroughR \s+ ThroughI)?
+    (?P<thrurefl> \s+ ThrureflR \s+ ThrureflI)?
+    (?P<isolation> \s+ IsolationR \s+ IsolationI)?
+    \s* $
 """, re.VERBOSE)
 
 logger = logging.getLogger(__name__)
@@ -406,7 +416,10 @@ class Calibration:
                     self.notes.append(note)
                     continue
                 if m := RXP_CAL_HEADER.search(line):
-                    header = "long" if m.group(1) else "short"
+                    header = "sol"
+                    if "through" in m.groups():
+                        header = (
+                            "long" if "thrurefl" in m.groups() else "short")
                     columns = cols[header]
                     logger.debug("found %s header type", header)
                     continue
