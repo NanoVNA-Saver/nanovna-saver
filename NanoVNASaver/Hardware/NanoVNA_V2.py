@@ -216,7 +216,9 @@ class NanoVNA_V2(VNA):
         cmd = pack("<BBBB", _CMD_READ, cmd_0, _CMD_READ, cmd_1)
         with self.serial.lock:
             self.serial.write(cmd)
-            sleep(WRITE_SLEEP)
+            # sleep(WRITE_SLEEP)
+            sleep(2.0)  # could fix bug #585 but shoud be done
+            # in a more predictive way
             resp = self.serial.read(2)
         if len(resp) != 2:
             logger.error("Timeout reading version registers. Got: %s", resp)
