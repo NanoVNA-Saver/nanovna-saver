@@ -68,12 +68,11 @@ RXP_CAL_LINE = {
         """, re.VERBOSE),
 }
 
-
 RXP_CAL_HEADER = re.compile(r"""
     ^ \# \s+ Hz \s+
     ShortR \s+ ShortI \s+ OpenR \s+ OpenI \s+
     LoadR \s+ LoadI
-    (?P<trough> \s+ ThroughR \s+ ThroughI)?
+    (?P<through> \s+ ThroughR \s+ ThroughI)?
     (?P<thrurefl> \s+ ThrureflR \s+ ThrureflI)?
     (?P<isolation> \s+ IsolationR \s+ IsolationI)?
     \s* $
@@ -417,9 +416,9 @@ class Calibration:
                     continue
                 if m := RXP_CAL_HEADER.search(line):
                     header = "sol"
-                    if "through" in m.groups():
+                    if "through" in m.groupdict():
                         header = (
-                            "long" if "thrurefl" in m.groups() else "short")
+                            "long" if "thrurefl" in m.groupdict() else "short")
                     columns = cols[header]
                     logger.debug("found %s header type", header)
                     continue
