@@ -46,9 +46,7 @@ def log_floor_125(x: float) -> float:
     log_factor = x / log_base
     if log_factor >= 5:
         return 5 * log_base
-    if log_factor >= 2:
-        return 2 * log_base
-    return log_base
+    return 2 * log_base if log_factor >= 2 else log_base
 
 
 class Format(NamedTuple):
