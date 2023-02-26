@@ -151,7 +151,24 @@ class CalElement:
 class CalDataSet(UserDict):
     def __init__(self):
         super().__init__()
+        self.notes = ""
         self.data: defaultdict[int, CalData] = defaultdict(CalData)
+
+    def __str__(self):
+        return (
+            (
+                "# Calibration data for NanoVNA-Saver\n"
+                + "\n".join([f"! {note}" for note in self.notes.splitlines()])
+                + "\n" + "# Hz ShortR ShortI OpenR OpenI LoadR LoadI"
+                + (" ThroughR ThroughI ThrureflR"
+                   " ThrureflI IsolationR IsolationI\n"
+                   if self.complete2port() else "\n")
+                + "\n".join([
+                    f"{self.data.get(freq)}" for freq in self.frequencies()
+                ]) + "\n"
+            )
+            if self.complete1port() else ""
+        )
 
     def insert(self, name: str, dp: Datapoint):
         if name not in {'short', 'open', 'load',
@@ -235,7 +252,7 @@ class Calibration:
                        (g2 * gm2 - g3 * gm3) * g1)
         cal.e00 = - ((g2 * gm3 - g3 * gm3) * g1 * gm2 -
                      (g2 * g3 * gm2 - g2 * g3 * gm3 -
-                         (g3 * gm2 - g2 * gm3) * g1) * gm1
+                     (g3 * gm2 - g2 * gm3) * g1) * gm1
                      ) / denominator
         cal.e11 = ((g2 - g3) * gm1 - g1 * (gm2 - gm3) +
                    g3 * gm2 - g2 * gm3) / denominator
@@ -377,19 +394,11 @@ class Calibration:
 
     # TODO: implement tests
     def save(self, filename: str):
-        # Save the calibration data to file
+        self.dataset.notes = "\n".join(self.notes)
         if not self.isValid1Port():
             raise ValueError("Not a valid calibration")
         with open(filename, mode="w", encoding='utf-8') as calfile:
-            calfile.write("# Calibration data for NanoVNA-Saver\n")
-            for note in self.notes:
-                calfile.write(f"! {note}\n")
-            calfile.write(
-                "# Hz ShortR ShortI OpenR OpenI LoadR LoadI"
-                " ThroughR ThroughI ThrureflR ThrureflI"
-                " IsolationR IsolationI\n")
-            for freq in self.dataset.frequencies():
-                calfile.write(f"{self.dataset.get(freq)}\n")
+            calfile.write(str(self.dataset))
 
     # TODO: implement tests
     def load(self, filename):
@@ -416,9 +425,9 @@ class Calibration:
                     continue
                 if m := RXP_CAL_HEADER.search(line):
                     header = "sol"
-                    if "through" in m.groupdict():
+                    if m.group("through"):
                         header = (
-                            "long" if "thrurefl" in m.groupdict() else "short")
+                            "long" if m.group("thrurefl") else "short")
                     columns = cols[header]
                     logger.debug("found %s header type", header)
                     continue
@@ -431,7 +440,8 @@ class Calibration:
                     continue
                 m = RXP_CAL_LINE[header].search(line)
                 if not m:
-                    logger.warning("Illegal data in cal file. Line %i", i + 1)
+                    logger.warning("Illegal data in cal file. Line %i"
+                                   " (Fix line or header)", i + 1)
                     continue
                 if (header == "short" and not m.group(8) and
                         columns != cols["sol"]):
