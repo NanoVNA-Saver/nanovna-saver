@@ -20,6 +20,7 @@ import logging
 
 from PyQt5 import QtWidgets, QtCore
 
+from NanoVNASaver.Windows.Defaults import make_scrollable
 from NanoVNASaver.Windows.Screenshot import ScreenshotWindow
 
 logger = logging.getLogger(__name__)
@@ -46,16 +47,7 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         right_layout = QtWidgets.QVBoxLayout()
         top_layout.addLayout(left_layout)
         top_layout.addLayout(right_layout)
-
-        scrollarea = QtWidgets.QScrollArea()
-        scrollarea.setWidgetResizable(True)
-        outer = QtWidgets.QVBoxLayout()
-        outer.addWidget(scrollarea)
-        widget = QtWidgets.QWidget()
-        widget.setLayout(top_layout)
-        scrollarea.setWidget(widget)
-        self.setLayout(outer)
-        self.resize(scrollarea.size())
+        make_scrollable(self, top_layout)
 
         status_box = QtWidgets.QGroupBox("Status")
         status_layout = QtWidgets.QFormLayout(status_box)

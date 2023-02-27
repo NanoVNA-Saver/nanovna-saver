@@ -21,6 +21,7 @@ import logging
 from PyQt5 import QtWidgets, QtCore
 from NanoVNASaver.Touchstone import Touchstone
 from NanoVNASaver.RFTools import Datapoint
+from NanoVNASaver.Windows.Defaults import make_scrollable
 
 logger = logging.getLogger(__name__)
 
@@ -34,17 +35,9 @@ class FilesWindow(QtWidgets.QWidget):
         self.setWindowIcon(self.app.icon)
         self.setMinimumWidth(200)
         QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
-        file_window_layout = QtWidgets.QVBoxLayout()
 
-        scrollarea = QtWidgets.QScrollArea()
-        scrollarea.setWidgetResizable(True)
-        outer = QtWidgets.QVBoxLayout()
-        outer.addWidget(scrollarea)
-        widget = QtWidgets.QWidget()
-        widget.setLayout(file_window_layout)
-        scrollarea.setWidget(widget)
-        self.setLayout(outer)
-        self.resize(scrollarea.size())
+        file_window_layout = QtWidgets.QVBoxLayout()
+        make_scrollable(self, file_window_layout)
 
         load_file_control_box = QtWidgets.QGroupBox("Import file")
         load_file_control_box.setMaximumWidth(300)

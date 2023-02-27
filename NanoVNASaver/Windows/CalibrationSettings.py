@@ -24,6 +24,7 @@ from PyQt5 import QtWidgets, QtCore
 
 from NanoVNASaver.Calibration import Calibration
 from NanoVNASaver.Settings.Sweep import SweepMode
+from NanoVNASaver.Windows.Defaults import make_scrollable
 
 logger = logging.getLogger(__name__)
 
@@ -60,15 +61,7 @@ class CalibrationWindow(QtWidgets.QWidget):
         top_layout.addLayout(left_layout)
         top_layout.addLayout(right_layout)
 
-        scrollarea = QtWidgets.QScrollArea()
-        scrollarea.setWidgetResizable(True)
-        outer = QtWidgets.QVBoxLayout()
-        outer.addWidget(scrollarea)
-        widget = QtWidgets.QWidget()
-        widget.setLayout(top_layout)
-        scrollarea.setWidget(widget)
-        self.setLayout(outer)
-        self.resize(scrollarea.size())
+        make_scrollable(self, top_layout)
 
         calibration_status_group = QtWidgets.QGroupBox("Active calibration")
         calibration_status_layout = QtWidgets.QFormLayout()

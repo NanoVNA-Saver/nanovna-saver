@@ -24,6 +24,7 @@ from NanoVNASaver.Formatting import (
     format_frequency_short, format_frequency_sweep,
 )
 from NanoVNASaver.Settings.Sweep import SweepMode
+from NanoVNASaver.Windows.Defaults import make_scrollable
 
 logger = logging.getLogger(__name__)
 
@@ -40,16 +41,7 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
         layout = QtWidgets.QVBoxLayout()
-
-        scrollarea = QtWidgets.QScrollArea()
-        scrollarea.setWidgetResizable(True)
-        outer = QtWidgets.QVBoxLayout()
-        outer.addWidget(scrollarea)
-        widget = QtWidgets.QWidget()
-        widget.setLayout(layout)
-        scrollarea.setWidget(widget)
-        self.setLayout(outer)
-        self.resize(scrollarea.size())
+        make_scrollable(self, layout)
 
         layout.addWidget(self.title_box())
         layout.addWidget(self.settings_box())

@@ -26,6 +26,8 @@ from scipy.constants import speed_of_light
 
 from PyQt5 import QtWidgets, QtCore
 
+from NanoVNASaver.Windows.Defaults import make_scrollable
+
 logger = logging.getLogger(__name__)
 
 CABLE_PARAMETERS = (
@@ -84,16 +86,7 @@ class TDRWindow(QtWidgets.QWidget):
         QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
         layout = QtWidgets.QFormLayout()
-
-        scrollarea = QtWidgets.QScrollArea()
-        scrollarea.setWidgetResizable(True)
-        outer = QtWidgets.QVBoxLayout()
-        outer.addWidget(scrollarea)
-        widget = QtWidgets.QWidget()
-        widget.setLayout(layout)
-        scrollarea.setWidget(widget)
-        self.setLayout(outer)
-        self.resize(scrollarea.size())
+        make_scrollable(self, layout)
 
         self.tdr_velocity_dropdown = QtWidgets.QComboBox()
         for cable_name, velocity in CABLE_PARAMETERS:

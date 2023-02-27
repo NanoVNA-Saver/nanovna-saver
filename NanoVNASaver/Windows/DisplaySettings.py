@@ -25,6 +25,7 @@ from NanoVNASaver import Defaults
 from NanoVNASaver.Charts.Chart import (
     Chart, ChartColors)
 from NanoVNASaver.Windows.Bands import BandsWindow
+from NanoVNASaver.Windows.Defaults import make_scrollable
 from NanoVNASaver.Windows.MarkerSettings import MarkerSettingsWindow
 from NanoVNASaver.Marker.Widget import Marker
 
@@ -44,16 +45,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
         layout = QtWidgets.QHBoxLayout()
-
-        scrollarea = QtWidgets.QScrollArea()
-        scrollarea.setWidgetResizable(True)
-        outer = QtWidgets.QVBoxLayout()
-        outer.addWidget(scrollarea)
-        widget = QtWidgets.QWidget()
-        widget.setLayout(layout)
-        scrollarea.setWidget(widget)
-        self.setLayout(outer)
-        self.resize(scrollarea.size())
+        make_scrollable(self, layout)
 
         left_layout = QtWidgets.QVBoxLayout()
         layout.addLayout(left_layout)

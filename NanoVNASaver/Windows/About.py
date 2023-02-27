@@ -25,6 +25,7 @@ from PyQt5 import QtWidgets, QtCore
 
 from NanoVNASaver.About import VERSION_URL, INFO_URL
 from NanoVNASaver.Version import Version
+from NanoVNASaver.Windows.Defaults import make_scrollable
 
 logger = logging.getLogger(__name__)
 
@@ -36,17 +37,9 @@ class AboutWindow(QtWidgets.QWidget):
 
         self.setWindowTitle("About NanoVNASaver")
         self.setWindowIcon(self.app.icon)
-        top_layout = QtWidgets.QHBoxLayout()
 
-        scrollarea = QtWidgets.QScrollArea()
-        scrollarea.setWidgetResizable(True)
-        outer = QtWidgets.QVBoxLayout()
-        outer.addWidget(scrollarea)
-        widget = QtWidgets.QWidget()
-        widget.setLayout(top_layout)
-        scrollarea.setWidget(widget)
-        self.setLayout(outer)
-        self.resize(scrollarea.size())
+        top_layout = QtWidgets.QHBoxLayout()
+        make_scrollable(self, top_layout)
 
         QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 

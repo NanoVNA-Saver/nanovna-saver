@@ -31,6 +31,7 @@ from NanoVNASaver.Analysis.PeakSearchAnalysis import PeakSearchAnalysis
 from NanoVNASaver.Analysis.ResonanceAnalysis import ResonanceAnalysis
 from NanoVNASaver.Analysis.SimplePeakSearchAnalysis import SimplePeakSearchAnalysis
 from NanoVNASaver.Analysis.VSWRAnalysis import VSWRAnalysis
+from NanoVNASaver.Windows.Defaults import make_scrollable
 
 logger = logging.getLogger(__name__)
 
@@ -49,16 +50,7 @@ class AnalysisWindow(QtWidgets.QWidget):
         QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
 
         layout = QtWidgets.QVBoxLayout()
-
-        scrollarea = QtWidgets.QScrollArea()
-        scrollarea.setWidgetResizable(True)
-        outer = QtWidgets.QVBoxLayout()
-        outer.addWidget(scrollarea)
-        widget = QtWidgets.QWidget()
-        widget.setLayout(layout)
-        scrollarea.setWidget(widget)
-        self.setLayout(outer)
-        self.resize(scrollarea.size())
+        make_scrollable(self, layout)
 
         select_analysis_box = QtWidgets.QGroupBox("Select analysis")
         select_analysis_layout = QtWidgets.QFormLayout(select_analysis_box)
