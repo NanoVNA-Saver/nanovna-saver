@@ -17,9 +17,8 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-from typing import Tuple
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets
 
 logger = logging.getLogger(__name__)
 
