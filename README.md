@@ -4,8 +4,7 @@
 [![GitHub Releases](https://img.shields.io/github/downloads/NanoVNA-Saver/nanovna-saver/latest/total)](https://github.com/NanoVNA-Saver/nanovna-saver/releases/latest)
 [![Donate](https://img.shields.io/badge/paypal-donate-yellow.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=T8KTGVDQF5K6E&item_name=NanoVNASaver+Development&currency_code=EUR&source=url)
 
-NanoVNASaver
-============
+# NanoVNASaver
 
 A multiplatform tool to save Touchstone files from the NanoVNA,
 sweep frequency spans in segments to gain more than 101 data
@@ -41,15 +40,14 @@ It's written in __Python 3__ using __PyQt5__ and __scipy__.
 
 </details>
 
-
-Introduction
-------------
+## Introduction
 
 This software connects to a NanoVNA and extracts the data for
 display on a computer and allows saving the sweep data to Touchstone files.
 
 <a href="#current-features"></a>
-### Current features:
+
+### Current features
 
 - Reading data from a NanoVNA -- Compatible devices: NanoVNA, NanoVNA-H,
   NanoVNA-H4, NanoVNA-F, AVNA via Teensy
@@ -74,14 +72,16 @@ display on a computer and allows saving the sweep data to Touchstone files.
 - Exporting images of plotted values
 
 ### Screenshot
+
 ![Screenshot of version 0.1.4](https://i.imgur.com/ZoFsV2V.png)
 
-Running the application
------------------------
+## Running the application
 
 The software was written in Python on Windows, using Pycharm, and the modules
 PyQT5, numpy, scipy and pyserial.
 Main development is currently done on Linux (Mint 21 "Vanessa" Cinnamon)
+
+## Installation
 
 ### Binary releases
 
@@ -91,28 +91,9 @@ You can find current binary releases for Windows, Linux and MacOS under
 The 32bit Windows binaries are somewhat smaller and seems to be a
 little bit more stable.
 
-Versions older than Windows 7 are not known to work.
-
-#### Windows 7
-
-It requires Service Pack 1 and [Microsoft VC++ Redistributable](
-  https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads).
-For most users, this would already be installed.
-
-### Installation and Use with pip
-
-Copy the link of the tgz from latest relaese and install it with pip install. e.g.:
-
-    pip3 install https://github.com/NanoVNA-Saver/nanovna-saver/archive/refs/tags/v0.5.4.tar.gz
-
-Once completed run with the following command
-
-    NanoVNASaver
-
 [Detailed installation instructions](docs/INSTALLATION.md)
 
-Using the software
-------------------
+## Using the software
 
 Connect your NanoVNA to a serial port, and enter this serial port in the serial
 port box.  If the NanoVNA is connected before the application starts, it should
@@ -178,52 +159,34 @@ factor.
 
 The permeability (mu) of cores can be measured using a one-port measurement.  Put one or more windings on a core of known dimensions and use the "S11 mu" plot from the "Display Setup".  The core dimensions (cross section area in mm2, effective length in mm) and number of windings can be set in the context menu for the plot (right click on the plot).
 
-Latest Changes
---------------
+### Latest Changes
+
+### Changes in 0.5.5
 
 ### Changes in 0.5.4
 
- - Bugfixes for Python3.11 compatability
- - Bugfix for Python3.8 compatability
- - use math instead of table for log step calculation
- - Support of NanoVNA V2 Plus5 on Windows
- - New SI prefixes added - Ronna, Quetta
- - addes a Makefile to build a packages
- - Simplyfied sweep worker
- - Fixed calibration data loading
- - Explicit import of scipy functions - #555
- - Refactoring of Analysis modules
+- Bugfixes for Python3.11 compatability
+- Bugfix for Python3.8 compatability
+- use math instead of table for log step calculation
+- Support of NanoVNA V2 Plus5 on Windows
+- New SI prefixes added - Ronna, Quetta
+- addes a Makefile to build a packages
+- Simplyfied sweep worker
+- Fixed calibration data loading
+- Explicit import of scipy functions - #555
+- Refactoring of Analysis modules
 
-### Changes in 0.5.3
-
- - Python 3.10 compatability fixes
- - Fix crash on open in use serial device
- - Use a Defaults module for all settings -
-   ignores old .ini settings
- - Refactoring and unifying Chart classes
- - No more automatic update checks (more privacy)
- - Corrected error handling in NanaVNA\_V2 code 
- - Fixed man float related crashes with Qt and
-   Python 3.10
- - Using more integer divisions to get right type for QPainter
-   points
- - No more long lines in code (pycodestyle)
-
-Contributing
-------------
+## Contributing
 
 First off, thanks for taking the time to contribute! Contributions are what
 make the open-source community such an amazing place to learn, inspire, and
 create. Any contributions you make will benefit everybody else and are
-**greatly appreciated**.
-
+__greatly appreciated__.
 
 Please read [our contribution guidelines](docs/CONTRIBUTING.md), and thank you
 for being involved!
 
-
-License
--------
+## License
 
 This software is licensed under version 3 of the GNU General Public License. It
 comes with NO WARRANTY.
@@ -231,8 +194,7 @@ comes with NO WARRANTY.
 You can use it, commercially as well. You may make changes to the code, but I
 (and the license) ask that you give these changes back to the community.
 
-References
-----------
+## References
 
 - Ohan Smit wrote an introduction to using the application:
   [https://zs1sci.com/blog/nanovnasaver/]
@@ -243,8 +205,7 @@ References
   [http://www.gunthard-kraus.de/fertig_NanoVNA/English/]
   [http://www.gunthard-kraus.de/fertig_NanoVNA/Deutsch/]
 
-Acknowledgements
-----------------
+## Acknowledgements
 
 Original application by Rune B. Broberg (5Q5R)
 
@@ -261,7 +222,7 @@ Thanks to everyone who have tested, commented and inspired.  Particular thanks
 go to the alpha testing crew who suffer the early instability of new versions.
 
 This software is available free of charge. If you read all this way, and you
-*still* want to support it, you may donate to the developer using the button
+_still_ want to support it, you may donate to the developer using the button
 below:
 
 [![Paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=T8KTGVDQF5K6E&item_name=NanoVNASaver+Development&currency_code=EUR&source=url)
