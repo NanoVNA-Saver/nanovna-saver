@@ -163,6 +163,11 @@ The permeability (mu) of cores can be measured using a one-port measurement.  Pu
 
 ### Changes in 0.5.5
 
+- Measuring inductor core permeability
+- Bugfixes for calibration data loading and saving
+- Let V2 Devices more time for usb-serial setup
+- Make some windows scrollable
+
 ### Changes in 0.5.4
 
 - Bugfixes for Python3.11 compatability
