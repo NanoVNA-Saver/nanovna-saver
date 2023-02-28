@@ -82,7 +82,7 @@ class SParameterChart(FrequencyChart):
         tick_count = self.dim.height // 60
         tick_step = self.span / tick_count
         for i in range(tick_count):
-            val = minValue + i * tick_step
+            val = int(minValue + i * tick_step)
             y = self.topMargin + (maxValue - val) // span * self.dim.height
             qp.setPen(QtGui.QPen(Chart.color.foreground))
             qp.drawLine(self.leftMargin - 5, y,
