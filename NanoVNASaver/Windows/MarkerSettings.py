@@ -111,15 +111,14 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
 
     def updateField(self, field: QtGui.QStandardItem):
         if field.checkState() == QtCore.Qt.Checked:
-            if not field.data() in self.currentFieldSelection:
+            if field.data() not in self.currentFieldSelection:
                 self.currentFieldSelection = []
                 for i in range(self.model.rowCount()):
                     field = self.model.item(i, 0)
                     if field.checkState() == QtCore.Qt.Checked:
                         self.currentFieldSelection.append(field.data())
-        else:
-            if field.data() in self.currentFieldSelection:
-                self.currentFieldSelection.remove(field.data())
+        elif field.data() in self.currentFieldSelection:
+            self.currentFieldSelection.remove(field.data())
         self.updateMarker()
 
     def applyButtonClick(self):

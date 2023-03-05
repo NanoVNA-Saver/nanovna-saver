@@ -147,8 +147,8 @@ class RealImaginaryMuChart(RealImaginaryChart):
     def setCoreArea(self):
         val, selected = QtWidgets.QInputDialog.getDouble(
             self, "Core effective area",
-            "Set core cross section area length in mm\N{SUPERSCRIPT TWO}", value=self.coreArea,
-            decimals=2)
+            "Set core cross section area length in mm\N{SUPERSCRIPT TWO}",
+            value=self.coreArea, decimals=2)
         if not selected:
             return
         if not (self.fixedValues and val >= 0):

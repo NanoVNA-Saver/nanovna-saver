@@ -133,7 +133,8 @@ class BandPassAnalysis(Analysis):
         if cutoff_gain['3.0dB_l'] < -4 or cutoff_gain['3.0dB_r'] < -4:
             logger.warning(
                 "Data points insufficient for true -3 dB points."
-                "Cutoff gains: %fdB, %fdB", cutoff_gain['3.0dB_l'], cutoff_gain['3.0dB_r'])
+                "Cutoff gains: %fdB, %fdB", cutoff_gain['3.0dB_l'],
+                cutoff_gain['3.0dB_r'])
             self.set_result(
                 f"Analysis complete ({len(s21)} points)\n"
                 f"Insufficient data for analysis. Increase segment count.")
