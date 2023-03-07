@@ -47,7 +47,7 @@ class EFHWAnalysis(ResonanceAnalysis):
                       threshold=500))
         extended_data = {}
         logger.info("TO DO: find near data")
-        for lowest in self.crossing:
+        for lowest in self.crossings:
             my_data = self._get_data(lowest)
             if lowest in extended_data:
                 extended_data[lowest].update(my_data)

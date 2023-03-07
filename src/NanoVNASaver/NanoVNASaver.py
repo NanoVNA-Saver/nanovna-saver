@@ -425,16 +425,19 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         logger.debug("Finished building interface")
 
+    def _sweep_control(self, start: bool = True) -> None:
+        self.sweep_control.progress_bar.setValue(0 if start else 100)
+        self.sweep_control.btn_start.setDisabled(start)
+        self.sweep_control.btn_stop.setDisabled(not start)
+        self.sweep_control.toggle_settings(start)
+
     def sweep_start(self):
         # Run the device data update
         if not self.vna.connected():
             return
         self.worker.stopped = False
 
-        self.sweep_control.progress_bar.setValue(0)
-        self.sweep_control.btn_start.setDisabled(True)
-        self.sweep_control.btn_stop.setDisabled(False)
-        self.sweep_control.toggle_settings(True)
+        self._sweep_control(start=True)
 
         for m in self.markers:
             m.resetLabels()
@@ -545,10 +548,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.dataAvailable.emit()
 
     def sweepFinished(self):
-        self.sweep_control.progress_bar.setValue(100)
-        self.sweep_control.btn_start.setDisabled(False)
-        self.sweep_control.btn_stop.setDisabled(True)
-        self.sweep_control.toggle_settings(False)
+        self._sweep_control(start=False)
 
         for marker in self.markers:
             marker.frequencyInput.textEdited.emit(

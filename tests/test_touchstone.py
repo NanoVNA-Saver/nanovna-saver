@@ -61,14 +61,14 @@ class TestTouchstoneOptions(unittest.TestCase):
 class TestTouchstoneTouchstone(unittest.TestCase):
 
     def test_load(self):
-        ts = Touchstone("./test/data/valid.s1p")
+        ts = Touchstone("./tests/data/valid.s1p")
         ts.load()
         self.assertEqual(str(ts.opts), "# HZ S RI R 50")
         self.assertEqual(len(ts.s11), 1010)
         self.assertEqual(len(ts.s21), 0)
         self.assertEqual(ts.r, 50)
 
-        ts = Touchstone("./test/data/valid.s2p")
+        ts = Touchstone("./tests/data/valid.s2p")
         ts.load()
         ts.gen_interpolation()
         self.assertEqual(str(ts.opts), "# HZ S RI R 50")
@@ -85,31 +85,31 @@ class TestTouchstoneTouchstone(unittest.TestCase):
                          Datapoint(750000, -0.3331754099382822,
                                    0.00032433255669243524))
 
-        ts = Touchstone("./test/data/ma.s2p")
+        ts = Touchstone("./tests/data/ma.s2p")
         ts.load()
         self.assertEqual(str(ts.opts), "# MHZ S MA R 50")
 
-        ts = Touchstone("./test/data/db.s2p")
+        ts = Touchstone("./tests/data/db.s2p")
         ts.load()
         self.assertEqual(str(ts.opts), "# HZ S DB R 50")
 
-        ts = Touchstone("./test/data/broken_pair.s2p")
+        ts = Touchstone("./tests/data/broken_pair.s2p")
         with self.assertLogs(level=logging.ERROR) as cm:
             ts.load()
         self.assertRegex(cm.output[0], "Data values aren't pairs")
 
-        ts = Touchstone("./test/data/missing_pair.s2p")
+        ts = Touchstone("./tests/data/missing_pair.s2p")
         with self.assertLogs(level=logging.ERROR) as cm:
             ts.load()
         self.assertRegex(cm.output[0], "Inconsistent number")
 
-        ts = Touchstone("./test/data/nonexistent.s2p")
+        ts = Touchstone("./tests/data/nonexistent.s2p")
         with self.assertLogs(level=logging.ERROR) as cm:
             ts.load()
         self.assertRegex(cm.output[0], "No such file or directory")
 
     def test_swap(self):
-        ts = Touchstone("./test/data/valid.s2p")
+        ts = Touchstone("./tests/data/valid.s2p")
         ts.load()
         s11, s21, s12, s22 = ts.sdata
         ts.swap()
@@ -117,11 +117,11 @@ class TestTouchstoneTouchstone(unittest.TestCase):
         self.assertEqual([s11_, s21_, s12_, s22_], [s22, s12, s21, s11])
 
     def test_db_conversation(self):
-        ts_db = Touchstone("./test/data/attenuator-0643_DB.s2p")
+        ts_db = Touchstone("./tests/data/attenuator-0643_DB.s2p")
         ts_db.load()
-        ts_ri = Touchstone("./test/data/attenuator-0643_RI.s2p")
+        ts_ri = Touchstone("./tests/data/attenuator-0643_RI.s2p")
         ts_ri.load()
-        ts_ma = Touchstone("./test/data/attenuator-0643_MA.s2p")
+        ts_ma = Touchstone("./tests/data/attenuator-0643_MA.s2p")
         ts_ma.load()
         self.assertEqual(len(ts_db.s11), len(ts_ri.s11))
         for dps_db, dps_ri in zip(ts_db.s11, ts_ri.s11):
@@ -132,7 +132,7 @@ class TestTouchstoneTouchstone(unittest.TestCase):
             self.assertAlmostEqual(dps_db.z, dps_ma.z, places=5)
 
     def test_load_scikit(self):
-        ts = Touchstone("./test/data/scikit_unordered.s2p")
+        ts = Touchstone("./tests/data/scikit_unordered.s2p")
         with self.assertLogs(level=logging.WARNING) as cm:
             ts.load()
         self.assertEqual(cm.output, [
@@ -167,7 +167,7 @@ class TestTouchstoneTouchstone(unittest.TestCase):
         self.assertEqual(ts.s_freq("11", 2), Datapoint(2, 0.5, 0.5))
 
     def test_save(self):
-        ts = Touchstone("./test/data/valid.s2p")
+        ts = Touchstone("./tests/data/valid.s2p")
         self.assertEqual(ts.saves(), "# HZ S RI R 50\n")
         ts.load()
         lines = ts.saves().splitlines()
@@ -184,7 +184,7 @@ class TestTouchstoneTouchstone(unittest.TestCase):
         self.assertEqual(lines[-1],
                          '900000000 -0.127646 0.31969 0.596287 -0.503453'
                          ' 0.599076 -0.50197 -0.122713 0.326965')
-        ts.filename = "./test/data/output.s2p"
+        ts.filename = "./tests/data/output.s2p"
         ts.save(4)
         os.remove(ts.filename)
         ts.filename = ""

@@ -47,7 +47,7 @@ class ResonanceAnalysis(Analysis):
 
     def __init__(self, app):
         super().__init__(app)
-        self.crossing: List[int] = []
+        self.crossings: List[int] = []
         self.filename = ""
         self._widget = QtWidgets.QWidget()
         self.layout = QtWidgets.QFormLayout()
@@ -94,36 +94,26 @@ class ResonanceAnalysis(Analysis):
         for _ in range(results_header, self.layout.rowCount()):
             self.layout.removeRow(self.layout.rowCount() - 1)
 
-        self.crossing = at.zero_crossings([d.phase for d in self.app.data.s11])
+        self.crossings = sorted(
+            set(at.zero_crossings([d.phase for d in self.app.data.s11])))
         logger.debug("Found %d sections ",
-                     len(self.crossing))
-        if not self.crossing:
+                     len(self.crossings))
+        if not self.crossings:
             self.layout.addRow(QtWidgets.QLabel(
                 "No resonance found"))
             return
+
+        self
 
         self.do_resonance_analysis()
 
     def do_resonance_analysis(self):
         extended_data = []
-        for m in self.crossing:
-            start, lowest, end = m
-            my_data = self._get_data(lowest)
-            s11_low = self.app.data.s11[lowest]
-            extended_data.append(my_data)
-            if start != end:
-                logger.debug(
-                    "Section from %d to %d, lowest at %d",
-                    start, end, lowest)
-                self.layout.addRow(
-                    "Resonance",
-                    QtWidgets.QLabel(
-                        f"{format_frequency(s11_low.freq)}"
-                        f" ({format_complex_imp(s11_low.impedance())})"))
-            else:
-                self.layout.addRow("Resonance", QtWidgets.QLabel(
-                    format_frequency(self.app.data.s11[lowest].freq)))
-                self.layout.addWidget(QHLine())
+        for crossing in self.crossings:
+            extended_data.append(self._get_data(crossing))
+            self.layout.addRow("Resonance", QtWidgets.QLabel(
+                format_frequency(self.app.data.s11[crossing].freq)))
+            self.layout.addWidget(QHLine())
         # Remove the final separator line
         self.layout.removeRow(self.layout.rowCount() - 1)
         if self.filename and extended_data:

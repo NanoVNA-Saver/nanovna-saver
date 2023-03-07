@@ -47,11 +47,11 @@ class Version:
             logger.error("Unable to parse version: %s", vstring)
 
     def __gt__(self, other: "Version") -> bool:
-        l, r = self.data, other.data
+        left, right = self.data, other.data
         for name in ("major", "minor", "revision"):
-            if l[name] > r[name]:
+            if left[name] > right[name]:
                 return True
-            if l[name] < r[name]:
+            if left[name] < right[name]:
                 return False
         return False
 

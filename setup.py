@@ -1,27 +1,21 @@
-#  NanoVNASaver
-#
-#  A python program to view and export Touchstone data from a NanoVNA
-#  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
-#
-#  This program is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License
-#  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""
+    Setup file for nanovna-saver.
+    Use setup.cfg to configure your project.
+
+    This file was generated with PyScaffold 4.4.
+    PyScaffold helps you to put up the scaffold of your new Python project.
+    Learn more under: https://pyscaffold.org/
+"""
 from setuptools import setup
 
-setup(
-    data_files=[
-        ("share/doc/nanovnasaver/", ["LICENSE", "README.md", ]),
-        ("share/applications/", ["NanoVNASaver.desktop", ]),
-        ("share/icons/hicolor/48x48/apps/", ["NanoVNASaver_48x48.png", ]),
-    ]
-)
+if __name__ == "__main__":
+    try:
+        setup(use_scm_version={"version_scheme": "no-guess-dev"})
+    except:  # noqa
+        print(
+            "\n\nAn error occurred while building the project, "
+            "please ensure you have the most updated version of setuptools, "
+            "setuptools_scm and wheel with:\n"
+            "   pip install -U setuptools setuptools_scm wheel\n\n"
+        )
+        raise
