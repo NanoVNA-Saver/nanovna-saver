@@ -1,20 +1,9 @@
+# .coveragerc to control coverage.py
 [run]
-# ignore GUI code atm.
-omit =
-    NanoVNASaver/About.py
-    NanoVNASaver/Analysis/*.py
-    NanoVNASaver/Calibration.py
-    NanoVNASaver/Charts/*.py
-    NanoVNASaver/Controls/*.py
-    NanoVNASaver/Hardware/*.py
-    NanoVNASaver/Inputs.py
-    NanoVNASaver/Marker/*.py
-    NanoVNASaver/NanoVNASaver.py
-    NanoVNASaver/Settings/Bands.py
-    NanoVNASaver/SweepWorker.py
-    NanoVNASaver/Windows/*.py
-    **/__init__.py
-    NanoVNASaver/__main__.py
+branch = True
+source = tests
+#omit = src/
+
 [report]
 fail_under = 90.0
 show_missing = True
