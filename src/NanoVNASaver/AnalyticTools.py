@@ -21,6 +21,7 @@ import math
 from typing import Callable, List, Tuple
 
 import numpy as np
+
 # pylint: disable=import-error, no-name-in-module
 from scipy.signal import find_peaks
 
@@ -42,8 +43,9 @@ def zero_crossings(data: List[float]) -> List[int]:
     np_data = np.array(data)
 
     # start with real zeros (ignore first and last element)
-    real_zeros = [n for n in np.where(np_data == 0.0)[0] if
-                  n not in {0, np_data.size - 1}]
+    real_zeros = [
+        n for n in np.where(np_data == 0.0)[0] if n not in {0, np_data.size - 1}
+    ]
     # now multipy elements to find change in signess
     crossings = [
         n if abs(np_data[n]) < abs(np_data[n + 1]) else n + 1
@@ -61,11 +63,8 @@ def maxima(data: List[float], threshold: float = 0.0) -> List[int]:
     Returns:
         List[int]: indices of maxima
     """
-    peaks = find_peaks(
-        data, width=2, distance=3, prominence=1)[0].tolist()
-    return [
-        i for i in peaks if data[i] > threshold
-    ] if threshold else peaks
+    peaks = find_peaks(data, width=2, distance=3, prominence=1)[0].tolist()
+    return [i for i in peaks if data[i] > threshold] if threshold else peaks
 
 
 def minima(data: List[float], threshold: float = 0.0) -> List[int]:
@@ -77,16 +76,15 @@ def minima(data: List[float], threshold: float = 0.0) -> List[int]:
     Returns:
         List[int]: indices of minima
     """
-    bottoms = find_peaks(
-        -np.array(data), width=2, distance=3, prominence=1)[0].tolist()
-    return [
-        i for i in bottoms if data[i] < threshold
-    ] if threshold else bottoms
+    bottoms = find_peaks(-np.array(data), width=2, distance=3, prominence=1)[
+        0
+    ].tolist()
+    return [i for i in bottoms if data[i] < threshold] if threshold else bottoms
 
 
-def take_from_idx(data: List[float],
-                  idx: int,
-                  predicate: Callable) -> List[int]:
+def take_from_idx(
+    data: List[float], idx: int, predicate: Callable
+) -> List[int]:
     """take_from_center
 
     Args:
@@ -99,18 +97,21 @@ def take_from_idx(data: List[float],
         List[int]: indices of element matching predicate left
                    and right from index
     """
-    lower = list(reversed(
-        [i for i, _ in
-         it.takewhile(predicate,
-                      reversed(list(enumerate(data[:idx]))))]))
-    upper = [i for i, _ in
-             it.takewhile(predicate,
-                          enumerate(data[idx:], idx))]
+    lower = list(
+        reversed(
+            [
+                i
+                for i, _ in it.takewhile(
+                    predicate, reversed(list(enumerate(data[:idx])))
+                )
+            ]
+        )
+    )
+    upper = [i for i, _ in it.takewhile(predicate, enumerate(data[idx:], idx))]
     return lower + upper
 
 
-def center_from_idx(gains: List[float],
-                    idx: int, delta: float = 3.0) -> int:
+def center_from_idx(gains: List[float], idx: int, delta: float = 3.0) -> int:
     """find maximum from index postion of gains in a attn dB gain span
 
     Args:
@@ -122,13 +123,13 @@ def center_from_idx(gains: List[float],
         int: position of highest gain from start in range (-1 if no data)
     """
     peak_db = gains[idx]
-    rng = take_from_idx(gains, idx,
-                        lambda i: abs(peak_db - i[1]) < delta)
+    rng = take_from_idx(gains, idx, lambda i: abs(peak_db - i[1]) < delta)
     return max(rng, key=lambda i: gains[i]) if rng else -1
 
 
-def cut_off_left(gains: List[float], idx: int,
-                 peak_gain: float, attn: float = 3.0) -> int:
+def cut_off_left(
+    gains: List[float], idx: int, peak_gain: float, attn: float = 3.0
+) -> int:
     """find first position in list where gain in attn lower then peak
     left from index
 
@@ -143,13 +144,13 @@ def cut_off_left(gains: List[float], idx: int,
         int: position of attenuation point. (-1 if no data)
     """
     return next(
-        (i for i in range(idx, -1, -1) if
-            (peak_gain - gains[i]) > attn),
-        -1)
+        (i for i in range(idx, -1, -1) if (peak_gain - gains[i]) > attn), -1
+    )
 
 
-def cut_off_right(gains: List[float], idx: int,
-                  peak_gain: float, attn: float = 3.0) -> int:
+def cut_off_right(
+    gains: List[float], idx: int, peak_gain: float, attn: float = 3.0
+) -> int:
     """find first position in list where gain in attn lower then peak
     right from index
 
@@ -165,19 +166,20 @@ def cut_off_right(gains: List[float], idx: int,
     """
 
     return next(
-        (i for i in range(idx, len(gains)) if
-            (peak_gain - gains[i]) > attn),
-        -1)
+        (i for i in range(idx, len(gains)) if (peak_gain - gains[i]) > attn), -1
+    )
 
 
-def dip_cut_offs(gains: List[float], peak_gain: float,
-                 attn: float = 3.0) -> Tuple[int, int]:
+def dip_cut_offs(
+    gains: List[float], peak_gain: float, attn: float = 3.0
+) -> Tuple[int, int]:
     rng = np.where(np.array(gains) < (peak_gain - attn))[0].tolist()
     return (rng[0], rng[-1]) if rng else (math.nan, math.nan)
 
 
-def calculate_rolloff(s21: List[Datapoint],
-                      idx_1: int, idx_2: int) -> Tuple[float, float]:
+def calculate_rolloff(
+    s21: List[Datapoint], idx_1: int, idx_2: int
+) -> Tuple[float, float]:
     if idx_1 == idx_2:
         return (math.nan, math.nan)
     freq_1, freq_2 = s21[idx_1].freq, s21[idx_2].freq

@@ -35,58 +35,119 @@ class SmithChart(SquareChart):
         qp.drawText(3, 15, self.name)
         qp.setPen(QtGui.QPen(Chart.color.foreground))
         qp.drawEllipse(QtCore.QPoint(center_x, center_y), width_2, height_2)
-        qp.drawLine(center_x - width_2, center_y,
-                    center_x + width_2, center_y)
+        qp.drawLine(center_x - width_2, center_y, center_x + width_2, center_y)
 
         qp.drawEllipse(
             QtCore.QPoint(center_x + int(self.dim.width / 4), center_y),
-            self.dim.width // 4, self.dim.height // 4)  # Re(Z) = 1
+            self.dim.width // 4,
+            self.dim.height // 4,
+        )  # Re(Z) = 1
         qp.drawEllipse(
             QtCore.QPoint(center_x + self.dim.width // 3, center_y),
-            self.dim.width // 6, self.dim.height // 6)  # Re(Z) = 2
+            self.dim.width // 6,
+            self.dim.height // 6,
+        )  # Re(Z) = 2
         qp.drawEllipse(
             QtCore.QPoint(center_x + 3 * self.dim.width // 8, center_y),
-            self.dim.width // 8, self.dim.height // 8)  # Re(Z) = 3
+            self.dim.width // 8,
+            self.dim.height // 8,
+        )  # Re(Z) = 3
         qp.drawEllipse(
             QtCore.QPoint(center_x + 5 * self.dim.width // 12, center_y),
-            self.dim.width // 12, self.dim.height // 12)  # Re(Z) = 5
+            self.dim.width // 12,
+            self.dim.height // 12,
+        )  # Re(Z) = 5
         qp.drawEllipse(
             QtCore.QPoint(center_x + self.dim.width // 6, center_y),
-            self.dim.width // 3, self.dim.height // 3)  # Re(Z) = 0.5
+            self.dim.width // 3,
+            self.dim.height // 3,
+        )  # Re(Z) = 0.5
         qp.drawEllipse(
             QtCore.QPoint(center_x + self.dim.width // 12, center_y),
-            5 * self.dim.width // 12, 5 * self.dim.height // 12)  # Re(Z) = 0.2
+            5 * self.dim.width // 12,
+            5 * self.dim.height // 12,
+        )  # Re(Z) = 0.2
 
-        qp.drawArc(center_x + 3 * self.dim.width // 8, center_y,
-                   self.dim.width // 4, self.dim.width // 4,
-                   90 * 16, 152 * 16)  # Im(Z) = -5
-        qp.drawArc(center_x + 3 * self.dim.width // 8, center_y,
-                   self.dim.width // 4, -self.dim.width // 4,
-                   -90 * 16, -152 * 16)  # Im(Z) = 5
-        qp.drawArc(center_x + self.dim.width // 4, center_y,
-                   width_2, height_2,
-                   90 * 16, 127 * 16)  # Im(Z) = -2
-        qp.drawArc(center_x + self.dim.width // 4, center_y,
-                   width_2, -height_2,
-                   -90 * 16, -127 * 16)  # Im(Z) = 2
-        qp.drawArc(center_x, center_y,
-                   self.dim.width, self.dim.height,
-                   90 * 16, 90 * 16)  # Im(Z) = -1
-        qp.drawArc(center_x, center_y,
-                   self.dim.width, - self.dim.height,
-                   -90 * 16, -90 * 16)  # Im(Z) = 1
-        qp.drawArc(center_x - width_2, center_y,
-                   self.dim.width * 2, self.dim.height * 2,
-                   int(99.5 * 16), int(43.5 * 16))  # Im(Z) = -0.5
-        qp.drawArc(center_x - width_2, center_y,
-                   self.dim.width * 2, -self.dim.height * 2,
-                   int(-99.5 * 16), int(-43.5 * 16))  # Im(Z) = 0.5
-        qp.drawArc(center_x - self.dim.width * 2, center_y,
-                   self.dim.width * 5, self.dim.height * 5,
-                   int(93.85 * 16), int(18.85 * 16))  # Im(Z) = -0.2
-        qp.drawArc(center_x - self.dim.width * 2, center_y,
-                   self.dim.width * 5, -self.dim.height * 5,
-                   int(-93.85 * 16), int(-18.85 * 16))  # Im(Z) = 0.2
+        qp.drawArc(
+            center_x + 3 * self.dim.width // 8,
+            center_y,
+            self.dim.width // 4,
+            self.dim.width // 4,
+            90 * 16,
+            152 * 16,
+        )  # Im(Z) = -5
+        qp.drawArc(
+            center_x + 3 * self.dim.width // 8,
+            center_y,
+            self.dim.width // 4,
+            -self.dim.width // 4,
+            -90 * 16,
+            -152 * 16,
+        )  # Im(Z) = 5
+        qp.drawArc(
+            center_x + self.dim.width // 4,
+            center_y,
+            width_2,
+            height_2,
+            90 * 16,
+            127 * 16,
+        )  # Im(Z) = -2
+        qp.drawArc(
+            center_x + self.dim.width // 4,
+            center_y,
+            width_2,
+            -height_2,
+            -90 * 16,
+            -127 * 16,
+        )  # Im(Z) = 2
+        qp.drawArc(
+            center_x,
+            center_y,
+            self.dim.width,
+            self.dim.height,
+            90 * 16,
+            90 * 16,
+        )  # Im(Z) = -1
+        qp.drawArc(
+            center_x,
+            center_y,
+            self.dim.width,
+            -self.dim.height,
+            -90 * 16,
+            -90 * 16,
+        )  # Im(Z) = 1
+        qp.drawArc(
+            center_x - width_2,
+            center_y,
+            self.dim.width * 2,
+            self.dim.height * 2,
+            int(99.5 * 16),
+            int(43.5 * 16),
+        )  # Im(Z) = -0.5
+        qp.drawArc(
+            center_x - width_2,
+            center_y,
+            self.dim.width * 2,
+            -self.dim.height * 2,
+            int(-99.5 * 16),
+            int(-43.5 * 16),
+        )  # Im(Z) = 0.5
+        qp.drawArc(
+            center_x - self.dim.width * 2,
+            center_y,
+            self.dim.width * 5,
+            self.dim.height * 5,
+            int(93.85 * 16),
+            int(18.85 * 16),
+        )  # Im(Z) = -0.2
+        qp.drawArc(
+            center_x - self.dim.width * 2,
+            center_y,
+            self.dim.width * 5,
+            -self.dim.height * 5,
+            int(-93.85 * 16),
+            int(-18.85 * 16),
+        )  # Im(Z) = 0.2
 
         self.drawTitle(qp)
 
@@ -99,4 +160,6 @@ class SmithChart(SquareChart):
             qp.drawEllipse(QtCore.QPoint(center_x, center_y), r, r)
             qp.drawText(
                 QtCore.QRect(center_x - 50, center_y - 4 + r, 100, 20),
-                QtCore.Qt.AlignCenter, f"{swr}")
+                QtCore.Qt.AlignCenter,
+                f"{swr}",
+            )

@@ -46,7 +46,6 @@ class NanoVNA(VNA):
         self._sweepdata = []
 
     def _get_running_frequencies(self):
-
         logger.debug("Reading values: frequencies")
         try:
             frequencies = super().readValues("frequencies")
@@ -61,24 +60,27 @@ class NanoVNA(VNA):
         timeout = self.serial.timeout
         with self.serial.lock:
             drain_serial(self.serial)
-            self.serial.write("capture\r".encode('ascii'))
+            self.serial.write("capture\r".encode("ascii"))
             self.serial.readline()
             self.serial.timeout = 4
             image_data = self.serial.read(
-                self.screenwidth * self.screenheight * 2)
+                self.screenwidth * self.screenheight * 2
+            )
             self.serial.timeout = timeout
         self.serial.timeout = timeout
         return image_data
 
     def _convert_data(self, image_data: bytes) -> bytes:
         rgb_data = struct.unpack(
-            f">{self.screenwidth * self.screenheight}H",
-            image_data)
+            f">{self.screenwidth * self.screenheight}H", image_data
+        )
         rgb_array = np.array(rgb_data, dtype=np.uint32)
-        return (0xFF000000 +
-                ((rgb_array & 0xF800) << 8) +
-                ((rgb_array & 0x07E0) << 5) +
-                ((rgb_array & 0x001F) << 3))
+        return (
+            0xFF000000
+            + ((rgb_array & 0xF800) << 8)
+            + ((rgb_array & 0x07E0) << 5)
+            + ((rgb_array & 0x001F) << 3)
+        )
 
     def getScreenshot(self) -> QtGui.QPixmap:
         logger.debug("Capturing screenshot...")
@@ -90,12 +92,12 @@ class NanoVNA(VNA):
                 rgba_array,
                 self.screenwidth,
                 self.screenheight,
-                QtGui.QImage.Format_ARGB32)
+                QtGui.QImage.Format_ARGB32,
+            )
             logger.debug("Captured screenshot")
             return QtGui.QPixmap(image)
         except serial.SerialException as exc:
-            logger.exception(
-                "Exception while capturing screenshot: %s", exc)
+            logger.exception("Exception while capturing screenshot: %s", exc)
         return QtGui.QPixmap()
 
     def resetSweep(self, start: int, stop: int):
@@ -125,8 +127,12 @@ class NanoVNA(VNA):
         logger.debug("readFrequencies: %s", self.sweep_method)
         if self.sweep_method != "scan_mask":
             return super().readFrequencies()
-        return [int(line) for line in self.exec_command(
-            f"scan {self.start} {self.stop} {self.datapoints} 0b001")]
+        return [
+            int(line)
+            for line in self.exec_command(
+                f"scan {self.start} {self.stop} {self.datapoints} 0b001"
+            )
+        ]
 
     def readValues(self, value) -> List[str]:
         if self.sweep_method != "scan_mask":
@@ -137,11 +143,12 @@ class NanoVNA(VNA):
         if value == "data 0":
             self._sweepdata = []
             for line in self.exec_command(
-                    f"scan {self.start} {self.stop} {self.datapoints} 0b110"):
+                f"scan {self.start} {self.stop} {self.datapoints} 0b110"
+            ):
                 data = line.split()
-                self._sweepdata.append((
-                    f"{data[0]} {data[1]}",
-                    f"{data[2]} {data[3]}"))
+                self._sweepdata.append(
+                    (f"{data[0]} {data[1]}", f"{data[2]} {data[3]}")
+                )
         if value == "data 0":
             return [x[0] for x in self._sweepdata]
         if value == "data 1":

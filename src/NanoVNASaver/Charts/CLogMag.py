@@ -61,20 +61,24 @@ class CombinedLogMagChart(LogMagChart):
 
     def drawChart(self, qp: QtGui.QPainter):
         qp.setPen(QtGui.QPen(Chart.color.text))
-        qp.drawText(int(self.dim.width // 2) - 20,
-                    15,
-                    f"{self.name} {self.name_unit}")
+        qp.drawText(
+            int(self.dim.width // 2) - 20, 15, f"{self.name} {self.name_unit}"
+        )
         qp.drawText(10, 15, "S11")
         qp.drawText(self.leftMargin + self.dim.width - 8, 15, "S21")
         qp.setPen(QtGui.QPen(Chart.color.foreground))
-        qp.drawLine(self.leftMargin,
-                    self.topMargin - 5,
-                    self.leftMargin,
-                    self.topMargin + self.dim.height + 5)
-        qp.drawLine(self.leftMargin - 5,
-                    self.topMargin + self.dim.height,
-                    self.leftMargin + self.dim.width,
-                    self.topMargin + self.dim.height)
+        qp.drawLine(
+            self.leftMargin,
+            self.topMargin - 5,
+            self.leftMargin,
+            self.topMargin + self.dim.height + 5,
+        )
+        qp.drawLine(
+            self.leftMargin - 5,
+            self.topMargin + self.dim.height,
+            self.leftMargin + self.dim.width,
+            self.topMargin + self.dim.height,
+        )
 
     def drawValues(self, qp: QtGui.QPainter):
         if len(self.data11) == 0 and len(self.reference11) == 0:
@@ -117,8 +121,12 @@ class CombinedLogMagChart(LogMagChart):
             pen = QtGui.QPen(c)
             pen.setWidth(2)
             qp.setPen(pen)
-            qp.drawLine(self.leftMargin + self.dim.width - 20, 9,
-                        self.leftMargin + self.dim.width - 15, 9)
+            qp.drawLine(
+                self.leftMargin + self.dim.width - 20,
+                9,
+                self.leftMargin + self.dim.width - 15,
+                9,
+            )
 
         if self.reference11:
             c = QtGui.QColor(Chart.color.reference)
@@ -132,8 +140,12 @@ class CombinedLogMagChart(LogMagChart):
             pen = QtGui.QPen(c)
             pen.setWidth(2)
             qp.setPen(pen)
-            qp.drawLine(self.leftMargin + self.dim.width - 20, 14,
-                        self.leftMargin + self.dim.width - 15, 14)
+            qp.drawLine(
+                self.leftMargin + self.dim.width - 20,
+                14,
+                self.leftMargin + self.dim.width - 15,
+                14,
+            )
 
         self.drawData(qp, self.data11, Chart.color.sweep)
         self.drawData(qp, self.data21, Chart.color.sweep_secondary)

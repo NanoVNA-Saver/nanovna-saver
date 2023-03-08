@@ -115,8 +115,12 @@ class LogMagChart(FrequencyChart):
         self.draw_db_lines(qp, self.maxValue, self.minValue, ticks)
 
         qp.setPen(QtGui.QPen(Chart.color.foreground))
-        qp.drawLine(self.leftMargin - 5, self.topMargin,
-                    self.leftMargin + self.dim.width, self.topMargin)
+        qp.drawLine(
+            self.leftMargin - 5,
+            self.topMargin,
+            self.leftMargin + self.dim.width,
+            self.topMargin,
+        )
         qp.setPen(Chart.color.text)
         qp.drawText(3, self.topMargin + 4, f"{self.maxValue}")
         qp.drawText(3, self.dim.height + self.topMargin, f"{self.minValue}")
@@ -127,14 +131,17 @@ class LogMagChart(FrequencyChart):
         for i in range(ticks.count):
             db = ticks.first + i * ticks.step
             y = self.topMargin + round(
-                (maxValue - db) / self.span * self.dim.height)
+                (maxValue - db) / self.span * self.dim.height
+            )
             qp.setPen(QtGui.QPen(Chart.color.foreground))
-            qp.drawLine(self.leftMargin - 5, y,
-                        self.leftMargin + self.dim.width, y)
+            qp.drawLine(
+                self.leftMargin - 5, y, self.leftMargin + self.dim.width, y
+            )
             if db > minValue and db != maxValue:
                 qp.setPen(QtGui.QPen(Chart.color.text))
-                qp.drawText(3, y + 4,
-                            f"{round(db, 1)}" if ticks.step < 1 else f"{db}")
+                qp.drawText(
+                    3, y + 4, f"{round(db, 1)}" if ticks.step < 1 else f"{db}"
+                )
 
     def draw_swr_markers(self, qp) -> None:
         qp.setPen(Chart.color.swr)
@@ -145,9 +152,9 @@ class LogMagChart(FrequencyChart):
             if self.isInverted:
                 logMag = logMag * -1
             y = self.topMargin + round(
-                (self.maxValue - logMag) / self.span * self.dim.height)
-            qp.drawLine(self.leftMargin, y,
-                        self.leftMargin + self.dim.width, y)
+                (self.maxValue - logMag) / self.span * self.dim.height
+            )
+            qp.drawLine(self.leftMargin, y, self.leftMargin + self.dim.width, y)
             qp.drawText(self.leftMargin + 3, y - 1, f"VSWR: {vswr}")
 
     def getYPosition(self, d: Datapoint) -> int:
@@ -155,7 +162,8 @@ class LogMagChart(FrequencyChart):
         if math.isinf(logMag):
             return self.topMargin
         return self.topMargin + int(
-            (self.maxValue - logMag) / self.span * self.dim.height)
+            (self.maxValue - logMag) / self.span * self.dim.height
+        )
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin

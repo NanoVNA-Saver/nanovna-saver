@@ -50,7 +50,8 @@ class PhaseChart(FrequencyChart):
         self.action_unwrap = QtWidgets.QAction("Unwrap")
         self.action_unwrap.setCheckable(True)
         self.action_unwrap.triggered.connect(
-            lambda: self.setUnwrap(self.action_unwrap.isChecked()))
+            lambda: self.setUnwrap(self.action_unwrap.isChecked())
+        )
         self.y_menu.addAction(self.action_unwrap)
 
     def copy(self):
@@ -98,24 +99,32 @@ class PhaseChart(FrequencyChart):
         for i in range(tickcount):
             angle = minAngle + span * i / tickcount
             y = self.topMargin + int(
-                (self.maxAngle - angle) / self.span * self.dim.height)
+                (self.maxAngle - angle) / self.span * self.dim.height
+            )
             if angle not in [minAngle, maxAngle]:
                 qp.setPen(QtGui.QPen(Chart.color.text))
                 if angle != 0:
                     digits = max(
-                        0, min(2, math.floor(3 - math.log10(abs(angle)))))
-                    anglestr = str(round(angle)) if digits == 0 else str(
-                        round(angle, digits))
+                        0, min(2, math.floor(3 - math.log10(abs(angle))))
+                    )
+                    anglestr = (
+                        str(round(angle))
+                        if digits == 0
+                        else str(round(angle, digits))
+                    )
                 else:
                     anglestr = "0"
                 qp.drawText(3, y + 3, f"{anglestr}°")
                 qp.setPen(QtGui.QPen(Chart.color.foreground))
-                qp.drawLine(self.leftMargin - 5, y,
-                            self.leftMargin + self.dim.width, y)
-        qp.drawLine(self.leftMargin - 5,
-                    self.topMargin,
-                    self.leftMargin + self.dim.width,
-                    self.topMargin)
+                qp.drawLine(
+                    self.leftMargin - 5, y, self.leftMargin + self.dim.width, y
+                )
+        qp.drawLine(
+            self.leftMargin - 5,
+            self.topMargin,
+            self.leftMargin + self.dim.width,
+            self.topMargin,
+        )
         qp.setPen(Chart.color.text)
         qp.drawText(3, self.topMargin + 5, f"{maxAngle}°")
         qp.drawText(3, self.dim.height + self.topMargin, f"{minAngle}°")
@@ -139,7 +148,8 @@ class PhaseChart(FrequencyChart):
         else:
             angle = math.degrees(d.phase)
         return self.topMargin + int(
-            (self.maxAngle - angle) / self.span * self.dim.height)
+            (self.maxAngle - angle) / self.span * self.dim.height
+        )
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin

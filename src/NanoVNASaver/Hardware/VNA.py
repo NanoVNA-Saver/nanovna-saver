@@ -44,8 +44,11 @@ WAIT = 0.05
 
 
 def _max_retries(bandwidth: int, datapoints: int) -> int:
-    return round(20 + 20 * (datapoints / 101) +
-                 (1000 / bandwidth) ** 1.30 * (datapoints / 101))
+    return round(
+        20
+        + 20 * (datapoints / 101)
+        + (1000 / bandwidth) ** 1.30 * (datapoints / 101)
+    )
 
 
 class VNA:
@@ -94,7 +97,7 @@ class VNA:
         logger.debug("exec_command(%s)", command)
         with self.serial.lock:
             drain_serial(self.serial)
-            self.serial.write(f"{command}\r".encode('ascii'))
+            self.serial.write(f"{command}\r".encode("ascii"))
             sleep(wait)
             retries = 0
             max_retries = _max_retries(self.bandwidth, self.datapoints)
@@ -137,11 +140,14 @@ class VNA:
             result = result.split(" {")[1].strip("}")
             return sorted([int(i) for i in result.split("|")])
         except IndexError:
-            return [1000, ]
+            return [
+                1000,
+            ]
 
     def set_bandwidth(self, bandwidth: int):
-        bw_val = DISLORD_BW[bandwidth] \
-            if self.bw_method == "dislord" else bandwidth
+        bw_val = (
+            DISLORD_BW[bandwidth] if self.bw_method == "dislord" else bandwidth
+        )
         result = " ".join(self.exec_command(f"bandwidth {bw_val}"))
         if self.bw_method == "ttrftech" and result:
             raise IOError(f"set_bandwith({bandwidth}: {result}")
@@ -191,11 +197,10 @@ class VNA:
     def readValues(self, value) -> List[str]:
         logger.debug("VNA reading %s", value)
         result = list(self.exec_command(value))
-        logger.debug("VNA done reading %s (%d values)",
-                     value, len(result))
+        logger.debug("VNA done reading %s (%d values)", value, len(result))
         return result
 
-    def readVersion(self) -> 'Version':
+    def readVersion(self) -> "Version":
         result = list(self.exec_command("version"))
         logger.debug("result:\n%s", result)
         return Version(result[0])

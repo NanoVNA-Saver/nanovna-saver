@@ -41,9 +41,12 @@ class HighPassAnalysis(Analysis):
 
         layout = self.layout
         layout.addRow(self.label["titel"])
-        layout.addRow(QtWidgets.QLabel(
-            f"Please place {self.app.markers[0].name}"
-            f" in the filter passband."))
+        layout.addRow(
+            QtWidgets.QLabel(
+                f"Please place {self.app.markers[0].name}"
+                f" in the filter passband."
+            )
+        )
         layout.addRow("Result:", self.label["result"])
         layout.addRow("Cutoff frequency:", self.label["3.0dB"])
         layout.addRow("-6 dB point:", self.label["6.0dB"])
@@ -51,7 +54,7 @@ class HighPassAnalysis(Analysis):
         layout.addRow("Roll-off:", self.label["octave"])
         layout.addRow("Roll-off:", self.label["decade"])
 
-        self.set_titel('Highpass analysis')
+        self.set_titel("Highpass analysis")
 
     def runAnalysis(self):
         if not self.app.data.s21:
@@ -81,25 +84,28 @@ class HighPassAnalysis(Analysis):
         logger.debug("Cuttoff gains: %s", cutoff_gain)
 
         octave, decade = at.calculate_rolloff(
-            s21, cutoff_pos["10.0dB"], cutoff_pos["20.0dB"])
+            s21, cutoff_pos["10.0dB"], cutoff_pos["20.0dB"]
+        )
 
-        if cutoff_gain['3.0dB'] < -4:
-            logger.debug("Cutoff frequency found at %f dB"
-                         " - insufficient data points for true -3 dB point.",
-                         cutoff_gain)
-        logger.debug("Found true cutoff frequency at %d", cutoff_freq['3.0dB'])
+        if cutoff_gain["3.0dB"] < -4:
+            logger.debug(
+                "Cutoff frequency found at %f dB"
+                " - insufficient data points for true -3 dB point.",
+                cutoff_gain,
+            )
+        logger.debug("Found true cutoff frequency at %d", cutoff_freq["3.0dB"])
 
         for label, val in cutoff_freq.items():
             self.label[label].setText(
-                f"{format_frequency(val)}"
-                f" ({cutoff_gain[label]:.1f} dB)")
+                f"{format_frequency(val)}" f" ({cutoff_gain[label]:.1f} dB)"
+            )
 
-        self.label['octave'].setText(f'{octave:.3f}dB/octave')
-        self.label['decade'].setText(f'{decade:.3f}dB/decade')
+        self.label["octave"].setText(f"{octave:.3f}dB/octave")
+        self.label["decade"].setText(f"{decade:.3f}dB/decade")
 
         self.app.markers[0].setFrequency(str(s21[peak].freq))
-        self.app.markers[1].setFrequency(str(cutoff_freq['3.0dB']))
-        self.app.markers[2].setFrequency(str(cutoff_freq['6.0dB']))
+        self.app.markers[1].setFrequency(str(cutoff_freq["3.0dB"]))
+        self.app.markers[2].setFrequency(str(cutoff_freq["6.0dB"]))
 
         self.set_result(f"Analysis complete ({len(s21)}) points)")
 
@@ -111,11 +117,10 @@ class HighPassAnalysis(Analysis):
             return -1
         return at.center_from_idx(gains, marker.location)
 
-    def find_cutoffs(self,
-                     gains: List[float],
-                     peak: int, peak_db: float) -> Dict[str, int]:
+    def find_cutoffs(
+        self, gains: List[float], peak: int, peak_db: float
+    ) -> Dict[str, int]:
         return {
-            f"{attn:.1f}dB": at.cut_off_left(
-                gains, peak, peak_db, attn)
+            f"{attn:.1f}dB": at.cut_off_left(gains, peak, peak_db, attn)
             for attn in CUTOFF_VALS
         }

@@ -21,7 +21,8 @@ from functools import partial
 from PyQt5 import QtWidgets, QtCore
 
 from NanoVNASaver.Formatting import (
-    format_frequency_short, format_frequency_sweep,
+    format_frequency_short,
+    format_frequency_sweep,
 )
 from NanoVNASaver.Settings.Sweep import SweepMode
 from NanoVNASaver.Windows.Defaults import make_scrollable
@@ -59,11 +60,12 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         input_title = QtWidgets.QLineEdit(self.app.sweep.properties.name)
         input_title.setMinimumHeight(20)
         input_title.editingFinished.connect(
-            lambda: self.update_title(input_title.text()))
+            lambda: self.update_title(input_title.text())
+        )
         layout.addRow(input_title)
         return box
 
-    def settings_box(self) -> 'QtWidgets.QWidget':
+    def settings_box(self) -> "QtWidgets.QWidget":
         box = QtWidgets.QGroupBox("Settings")
         layout = QtWidgets.QFormLayout(box)
 
@@ -73,25 +75,29 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         radio_button = QtWidgets.QRadioButton("Single sweep")
         radio_button.setMinimumHeight(20)
         radio_button.setChecked(
-            self.app.sweep.properties.mode == SweepMode.SINGLE)
-        radio_button.clicked.connect(
-            lambda: self.update_mode(SweepMode.SINGLE))
+            self.app.sweep.properties.mode == SweepMode.SINGLE
+        )
+        radio_button.clicked.connect(lambda: self.update_mode(SweepMode.SINGLE))
         sweep_btn_layout.addWidget(radio_button)
 
         radio_button = QtWidgets.QRadioButton("Continous sweep")
         radio_button.setMinimumHeight(20)
         radio_button.setChecked(
-            self.app.sweep.properties.mode == SweepMode.CONTINOUS)
+            self.app.sweep.properties.mode == SweepMode.CONTINOUS
+        )
         radio_button.clicked.connect(
-            lambda: self.update_mode(SweepMode.CONTINOUS))
+            lambda: self.update_mode(SweepMode.CONTINOUS)
+        )
         sweep_btn_layout.addWidget(radio_button)
 
         radio_button = QtWidgets.QRadioButton("Averaged sweep")
         radio_button.setMinimumHeight(20)
         radio_button.setChecked(
-            self.app.sweep.properties.mode == SweepMode.AVERAGE)
+            self.app.sweep.properties.mode == SweepMode.AVERAGE
+        )
         radio_button.clicked.connect(
-            lambda: self.update_mode(SweepMode.AVERAGE))
+            lambda: self.update_mode(SweepMode.AVERAGE)
+        )
         sweep_btn_layout.addWidget(radio_button)
 
         layout.addRow(sweep_btn_layout)
@@ -101,7 +107,8 @@ class SweepSettingsWindow(QtWidgets.QWidget):
             "Logarithmic sweeping changes the step width in each segment"
             " in logarithmical manner. Useful in conjunction with small"
             " amount of datapoints and many segments. Step display in"
-            " SweepControl cannot reflect this currently.")
+            " SweepControl cannot reflect this currently."
+        )
         label.setWordWrap(True)
         label.setMinimumSize(600, 70)
         layout.addRow(label)
@@ -109,26 +116,32 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         checkbox.setMinimumHeight(20)
         checkbox.setCheckState(self.app.sweep.properties.logarithmic)
         checkbox.toggled.connect(
-            lambda: self.update_logarithmic(checkbox.isChecked()))
+            lambda: self.update_logarithmic(checkbox.isChecked())
+        )
         layout.addRow(checkbox)
 
         # Averaging
         label = QtWidgets.QLabel(
             "Averaging allows discarding outlying samples to get better"
-            " averages. Common values are 3/0, 5/2, 9/4 and 25/6.")
+            " averages. Common values are 3/0, 5/2, 9/4 and 25/6."
+        )
         label.setWordWrap(True)
         label.setMinimumHeight(50)
         layout.addRow(label)
         averages = QtWidgets.QLineEdit(
-            str(self.app.sweep.properties.averages[0]))
+            str(self.app.sweep.properties.averages[0])
+        )
         averages.setMinimumHeight(20)
         truncates = QtWidgets.QLineEdit(
-            str(self.app.sweep.properties.averages[1]))
+            str(self.app.sweep.properties.averages[1])
+        )
         truncates.setMinimumHeight(20)
         averages.editingFinished.connect(
-            lambda: self.update_averaging(averages, truncates))
+            lambda: self.update_averaging(averages, truncates)
+        )
         truncates.editingFinished.connect(
-            lambda: self.update_averaging(averages, truncates))
+            lambda: self.update_averaging(averages, truncates)
+        )
         layout.addRow("Number of measurements to average", averages)
         layout.addRow("Number to discard", truncates)
 
@@ -136,7 +149,8 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         label = QtWidgets.QLabel(
             "Some times when you measure amplifiers you need to use an"
             " attenuator in line with  the S21 input (CH1) here you can"
-            " specify it.")
+            " specify it."
+        )
         label.setWordWrap(True)
         label.setMinimumHeight(50)
         layout.addRow(label)
@@ -144,11 +158,12 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         input_att = QtWidgets.QLineEdit(str(self.app.s21att))
         input_att.setMinimumHeight(20)
         input_att.editingFinished.connect(
-            lambda: self.update_attenuator(input_att))
+            lambda: self.update_attenuator(input_att)
+        )
         layout.addRow("Attenuator in port CH1 (s21) in dB", input_att)
         return box
 
-    def sweep_box(self) -> 'QtWidgets.QWidget':
+    def sweep_box(self) -> "QtWidgets.QWidget":
         box = QtWidgets.QGroupBox("Sweep band")
         layout = QtWidgets.QFormLayout(box)
         sweep_pad_layout = QtWidgets.QHBoxLayout()
@@ -162,7 +177,11 @@ class SweepSettingsWindow(QtWidgets.QWidget):
 
         sweep_pad_layout.addWidget(QtWidgets.QLabel("Pad band limits:"))
         for btn_label, value in (
-                ("None", 0), ("10%", 10), ("25%", 25), ("100%", 100),):
+            ("None", 0),
+            ("10%", 10),
+            ("25%", 25),
+            ("100%", 100),
+        ):
             radio_button = QtWidgets.QRadioButton(btn_label)
             radio_button.setMinimumHeight(20)
             radio_button.setChecked(self.padding == value)
@@ -186,20 +205,33 @@ class SweepSettingsWindow(QtWidgets.QWidget):
             power_sel = QtWidgets.QComboBox()
             power_sel.addItems(power_descs)
             power_sel.currentTextChanged.connect(
-                partial(self.update_tx_power, freq_range))
-            self._power_layout.addRow("TX power {}..{}".format(
-                *map(format_frequency_short, freq_range)), power_sel)
+                partial(self.update_tx_power, freq_range)
+            )
+            self._power_layout.addRow(
+                "TX power {}..{}".format(
+                    *map(format_frequency_short, freq_range)
+                ),
+                power_sel,
+            )
 
     def update_band(self, apply: bool = False):
         logger.debug("update_band(%s)", apply)
         index_start = self.band_list.model().index(
-            self.band_list.currentIndex(), 1)
+            self.band_list.currentIndex(), 1
+        )
         index_stop = self.band_list.model().index(
-            self.band_list.currentIndex(), 2)
-        start = int(self.band_list.model().data(
-            index_start, QtCore.Qt.ItemDataRole).value())
-        stop = int(self.band_list.model().data(
-            index_stop, QtCore.Qt.ItemDataRole).value())
+            self.band_list.currentIndex(), 2
+        )
+        start = int(
+            self.band_list.model()
+            .data(index_start, QtCore.Qt.ItemDataRole)
+            .value()
+        )
+        stop = int(
+            self.band_list.model()
+            .data(index_stop, QtCore.Qt.ItemDataRole)
+            .value()
+        )
 
         if self.padding > 0:
             span = stop - start
@@ -209,33 +241,37 @@ class SweepSettingsWindow(QtWidgets.QWidget):
 
         self.band_label.setText(
             f"Sweep span: {format_frequency_short(start)}"
-            f" to {format_frequency_short(stop)}")
+            f" to {format_frequency_short(stop)}"
+        )
 
         if not apply:
             return
 
         self.app.sweep_control.input_start.setText(
-            format_frequency_sweep(start))
-        self.app.sweep_control.input_end.setText(
-            format_frequency_sweep(stop))
+            format_frequency_sweep(start)
+        )
+        self.app.sweep_control.input_end.setText(format_frequency_sweep(stop))
         self.app.sweep_control.input_end.textEdited.emit(
-            self.app.sweep_control.input_end.text())
+            self.app.sweep_control.input_end.text()
+        )
 
-    def update_attenuator(self, value: 'QtWidgets.QLineEdit'):
+    def update_attenuator(self, value: "QtWidgets.QLineEdit"):
         try:
             att = float(value.text())
             assert att >= 0
         except (ValueError, AssertionError):
-            logger.warning("Values for attenuator are absolute and with no"
-                           " minus sign, resetting.")
+            logger.warning(
+                "Values for attenuator are absolute and with no"
+                " minus sign, resetting."
+            )
             att = 0
         logger.debug("Attenuator %sdB inline with S21 input", att)
         value.setText(str(att))
         self.app.s21att = att
 
-    def update_averaging(self,
-                         averages: 'QtWidgets.QLineEdit',
-                         truncs: 'QtWidgets.QLineEdit'):
+    def update_averaging(
+        self, averages: "QtWidgets.QLineEdit", truncs: "QtWidgets.QLineEdit"
+    ):
         try:
             amount = int(averages.text())
             truncates = int(truncs.text())
@@ -257,7 +293,7 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         with self.app.sweep.lock:
             self.app.sweep.properties.logarithmic = logarithmic
 
-    def update_mode(self, mode: 'SweepMode'):
+    def update_mode(self, mode: "SweepMode"):
         logger.debug("update_mode(%s)", mode)
         with self.app.sweep.lock:
             self.app.sweep.properties.mode = mode

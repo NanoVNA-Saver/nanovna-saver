@@ -26,9 +26,14 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 
 from NanoVNASaver import Defaults
 from .Windows import (
-    AboutWindow, AnalysisWindow, CalibrationWindow,
-    DeviceSettingsWindow, DisplaySettingsWindow, SweepSettingsWindow,
-    TDRWindow, FilesWindow
+    AboutWindow,
+    AnalysisWindow,
+    CalibrationWindow,
+    DeviceSettingsWindow,
+    DisplaySettingsWindow,
+    SweepSettingsWindow,
+    TDRWindow,
+    FilesWindow,
 )
 from .Controls.MarkerControl import MarkerControl
 from .Controls.SweepControl import SweepControl
@@ -40,14 +45,26 @@ from .RFTools import corr_att_data
 from .Charts.Chart import Chart
 from .Charts import (
     CapacitanceChart,
-    CombinedLogMagChart, GroupDelayChart, InductanceChart,
-    LogMagChart, PhaseChart,
-    MagnitudeChart, MagnitudeZChart, MagnitudeZShuntChart,
+    CombinedLogMagChart,
+    GroupDelayChart,
+    InductanceChart,
+    LogMagChart,
+    PhaseChart,
+    MagnitudeChart,
+    MagnitudeZChart,
+    MagnitudeZShuntChart,
     MagnitudeZSeriesChart,
-    QualityFactorChart, VSWRChart, PermeabilityChart, PolarChart,
+    QualityFactorChart,
+    VSWRChart,
+    PermeabilityChart,
+    PolarChart,
     RealImaginaryMuChart,
-    RealImaginaryZChart, RealImaginaryZShuntChart, RealImaginaryZSeriesChart,
-    SmithChart, SParameterChart, TDRChart,
+    RealImaginaryZChart,
+    RealImaginaryZShuntChart,
+    RealImaginaryZSeriesChart,
+    SmithChart,
+    SParameterChart,
+    TDRChart,
 )
 from .Calibration import Calibration
 from .Marker.Widget import Marker
@@ -69,10 +86,11 @@ class NanoVNASaver(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
         self.s21att = 0.0
-        if getattr(sys, 'frozen', False):
+        if getattr(sys, "frozen", False):
             logger.debug("Running from pyinstaller bundle")
             self.icon = QtGui.QIcon(
-                f"{sys._MEIPASS}/icon_48x48.png")  # pylint: disable=no-member
+                f"{sys._MEIPASS}/icon_48x48.png"
+            )  # pylint: disable=no-member
         else:
             self.icon = QtGui.QIcon("icon_48x48.png")
         self.setWindowIcon(self.icon)
@@ -80,7 +98,8 @@ class NanoVNASaver(QtWidgets.QWidget):
             QtCore.QSettings.IniFormat,
             QtCore.QSettings.UserScope,
             "NanoVNASaver",
-            "NanoVNASaver")
+            "NanoVNASaver",
+        )
         logger.info("Settings from: %s", self.settings.fileName())
         Defaults.cfg = Defaults.restore(self.settings)
         self.threadpool = QtCore.QThreadPool()
@@ -128,13 +147,17 @@ class NanoVNASaver(QtWidgets.QWidget):
         outer.addWidget(scrollarea)
         self.setLayout(outer)
         scrollarea.setWidgetResizable(True)
-        self.resize(Defaults.cfg.gui.window_width,
-                    Defaults.cfg.gui.window_height)
+        self.resize(
+            Defaults.cfg.gui.window_width, Defaults.cfg.gui.window_height
+        )
         scrollarea.setSizePolicy(
             QtWidgets.QSizePolicy.MinimumExpanding,
-            QtWidgets.QSizePolicy.MinimumExpanding)
-        self.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
-                           QtWidgets.QSizePolicy.MinimumExpanding)
+            QtWidgets.QSizePolicy.MinimumExpanding,
+        )
+        self.setSizePolicy(
+            QtWidgets.QSizePolicy.MinimumExpanding,
+            QtWidgets.QSizePolicy.MinimumExpanding,
+        )
         widget = QtWidgets.QWidget()
         widget.setLayout(layout)
         scrollarea.setWidget(widget)
@@ -149,25 +172,30 @@ class NanoVNASaver(QtWidgets.QWidget):
                 "magnitude_z": MagnitudeZChart("S11 |Z|"),
                 "permeability": PermeabilityChart(
                     "S11 R/\N{GREEK SMALL LETTER OMEGA} &"
-                    " X/\N{GREEK SMALL LETTER OMEGA}"),
+                    " X/\N{GREEK SMALL LETTER OMEGA}"
+                ),
                 "phase": PhaseChart("S11 Phase"),
                 "q_factor": QualityFactorChart("S11 Quality Factor"),
                 "real_imag": RealImaginaryZChart("S11 R+jX"),
-                "real_imag_mu": RealImaginaryMuChart("S11 \N{GREEK SMALL LETTER MU}"),
+                "real_imag_mu": RealImaginaryMuChart(
+                    "S11 \N{GREEK SMALL LETTER MU}"
+                ),
                 "smith": SmithChart("S11 Smith Chart"),
                 "s_parameter": SParameterChart("S11 Real/Imaginary"),
                 "vswr": VSWRChart("S11 VSWR"),
             },
             "s21": {
-                "group_delay": GroupDelayChart("S21 Group Delay",
-                                               reflective=False),
+                "group_delay": GroupDelayChart(
+                    "S21 Group Delay", reflective=False
+                ),
                 "log_mag": LogMagChart("S21 Gain"),
                 "magnitude": MagnitudeChart("|S21|"),
                 "magnitude_z_shunt": MagnitudeZShuntChart("S21 |Z| shunt"),
                 "magnitude_z_series": MagnitudeZSeriesChart("S21 |Z| series"),
                 "real_imag_shunt": RealImaginaryZShuntChart("S21 R+jX shunt"),
                 "real_imag_series": RealImaginaryZSeriesChart(
-                    "S21 R+jX series"),
+                    "S21 R+jX series"
+                ),
                 "phase": PhaseChart("S21 Phase"),
                 "polar": PolarChart("S21 Polar Plot"),
                 "s_parameter": SParameterChart("S21 Real/Imaginary"),
@@ -190,8 +218,13 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         # List of all charts that can be selected for display
         self.selectable_charts = (
-            self.s11charts + self.s21charts +
-            self.combinedCharts + [self.tdr_mainwindow_chart, ])
+            self.s11charts
+            + self.s21charts
+            + self.combinedCharts
+            + [
+                self.tdr_mainwindow_chart,
+            ]
+        )
 
         # List of all charts that subscribe to updates (including duplicates!)
         self.subscribing_charts = []
@@ -314,7 +347,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         btn_show_analysis = QtWidgets.QPushButton("Analysis ...")
         btn_show_analysis.setMinimumHeight(20)
         btn_show_analysis.clicked.connect(
-            lambda: self.display_window("analysis"))
+            lambda: self.display_window("analysis")
+        )
         self.marker_column.addWidget(btn_show_analysis)
 
         ###############################################################
@@ -335,10 +369,10 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.tdr_result_label = QtWidgets.QLabel()
         self.tdr_result_label.setMinimumHeight(20)
         tdr_control_layout.addRow(
-            "Estimated cable length:", self.tdr_result_label)
+            "Estimated cable length:", self.tdr_result_label
+        )
 
-        self.tdr_button = QtWidgets.QPushButton(
-            "Time Domain Reflectometry ...")
+        self.tdr_button = QtWidgets.QPushButton("Time Domain Reflectometry ...")
         self.tdr_button.setMinimumHeight(20)
         self.tdr_button.clicked.connect(lambda: self.display_window("tdr"))
 
@@ -351,8 +385,13 @@ class NanoVNASaver(QtWidgets.QWidget):
         ###############################################################
 
         left_column.addSpacerItem(
-            QtWidgets.QSpacerItem(1, 1, QtWidgets.QSizePolicy.Fixed,
-                                  QtWidgets.QSizePolicy.Expanding))
+            QtWidgets.QSpacerItem(
+                1,
+                1,
+                QtWidgets.QSizePolicy.Fixed,
+                QtWidgets.QSizePolicy.Expanding,
+            )
+        )
 
         ###############################################################
         #  Reference control
@@ -390,7 +429,8 @@ class NanoVNASaver(QtWidgets.QWidget):
         btnOpenCalibrationWindow.setMinimumHeight(20)
         self.calibrationWindow = CalibrationWindow(self)
         btnOpenCalibrationWindow.clicked.connect(
-            lambda: self.display_window("calibration"))
+            lambda: self.display_window("calibration")
+        )
 
         ###############################################################
         #  Display setup
@@ -399,22 +439,21 @@ class NanoVNASaver(QtWidgets.QWidget):
         btn_display_setup = QtWidgets.QPushButton("Display setup ...")
         btn_display_setup.setMinimumHeight(20)
         btn_display_setup.setMaximumWidth(240)
-        btn_display_setup.clicked.connect(
-            lambda: self.display_window("setup"))
+        btn_display_setup.clicked.connect(lambda: self.display_window("setup"))
 
         btn_about = QtWidgets.QPushButton("About ...")
         btn_about.setMinimumHeight(20)
         btn_about.setMaximumWidth(240)
 
-        btn_about.clicked.connect(
-            lambda: self.display_window("about"))
+        btn_about.clicked.connect(lambda: self.display_window("about"))
 
         btn_open_file_window = QtWidgets.QPushButton("Files")
         btn_open_file_window.setMinimumHeight(20)
         btn_open_file_window.setMaximumWidth(240)
 
         btn_open_file_window.clicked.connect(
-            lambda: self.display_window("file"))
+            lambda: self.display_window("file")
+        )
 
         button_grid = QtWidgets.QGridLayout()
         button_grid.addWidget(btn_open_file_window, 0, 0)
@@ -484,8 +523,7 @@ class NanoVNASaver(QtWidgets.QWidget):
                     m2 = Marker("Reference")
                     m2.location = self.markers[0].location
                     m2.resetLabels()
-                    m2.updateLabels(self.ref_data.s11,
-                                    self.ref_data.s21)
+                    m2.updateLabels(self.ref_data.s11, self.ref_data.s21)
                 else:
                     logger.warning("No reference data for marker")
 
@@ -525,7 +563,8 @@ class NanoVNASaver(QtWidgets.QWidget):
             min_vswr = min(s11, key=lambda data: data.vswr)
             self.s11_min_swr_label.setText(
                 f"{format_vswr(min_vswr.vswr)} @"
-                f" {format_frequency(min_vswr.freq)}")
+                f" {format_frequency(min_vswr.freq)}"
+            )
             self.s11_min_rl_label.setText(format_gain(min_vswr.gain))
         else:
             self.s11_min_swr_label.setText("")
@@ -536,10 +575,12 @@ class NanoVNASaver(QtWidgets.QWidget):
             max_gain = max(s21, key=lambda data: data.gain)
             self.s21_min_gain_label.setText(
                 f"{format_gain(min_gain.gain)}"
-                f" @ {format_frequency(min_gain.freq)}")
+                f" @ {format_frequency(min_gain.freq)}"
+            )
             self.s21_max_gain_label.setText(
                 f"{format_gain(max_gain.gain)}"
-                f" @ {format_frequency(max_gain.freq)}")
+                f" @ {format_frequency(max_gain.freq)}"
+            )
         else:
             self.s21_min_gain_label.setText("")
             self.s21_max_gain_label.setText("")
@@ -551,8 +592,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self._sweep_control(start=False)
 
         for marker in self.markers:
-            marker.frequencyInput.textEdited.emit(
-                marker.frequencyInput.text())
+            marker.frequencyInput.textEdited.emit(marker.frequencyInput.text())
 
     def setReference(self, s11=None, s21=None, source=None):
         if not s11:
@@ -581,11 +621,13 @@ class NanoVNASaver(QtWidgets.QWidget):
         if self.sweepSource != "":
             insert += (
                 f"Sweep: {self.sweepSource} @ {len(self.data.s11)} points"
-                f"{', ' if self.referenceSource else ''}")
+                f"{', ' if self.referenceSource else ''}"
+            )
         if self.referenceSource != "":
             insert += (
                 f"Reference: {self.referenceSource} @"
-                f" {len(self.ref_data.s11)} points")
+                f" {len(self.ref_data.s11)} points"
+            )
         insert += ")"
         title = f"{self.baseTitle} {insert or ''}"
         self.setWindowTitle(title)
@@ -612,7 +654,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         self.showError(self.worker.error_message)
         with contextlib.suppress(IOError):
             self.vna.flushSerialBuffers()  # Remove any left-over data
-            self.vna.reconnect()           # try reconnection
+            self.vna.reconnect()  # try reconnection
         self.sweepFinished()
 
     def popoutChart(self, chart: Chart):
@@ -661,8 +703,12 @@ class NanoVNASaver(QtWidgets.QWidget):
         new_width = qf_new.horizontalAdvance(standard_string)
         old_width = qf_normal.horizontalAdvance(standard_string)
         self.scaleFactor = new_width / old_width
-        logger.debug("New font width: %f, normal font: %f, factor: %f",
-                     new_width, old_width, self.scaleFactor)
+        logger.debug(
+            "New font width: %f, normal font: %f, factor: %f",
+            new_width,
+            old_width,
+            self.scaleFactor,
+        )
         # TODO: Update all the fixed widths to account for the scaling
         for m in self.markers:
             m.get_data_layout().setFont(font)

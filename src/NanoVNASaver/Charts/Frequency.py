@@ -25,9 +25,12 @@ from PyQt5 import QtWidgets, QtGui, QtCore
 
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Formatting import (
-    parse_frequency, parse_value,
-    format_frequency_chart, format_frequency_chart_2,
-    format_y_axis)
+    parse_frequency,
+    parse_value,
+    format_frequency_chart,
+    format_frequency_chart_2,
+    format_y_axis,
+)
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.SITools import Format, Value
 
@@ -35,7 +38,6 @@ logger = logging.getLogger(__name__)
 
 
 class FrequencyChart(Chart):
-
     def __init__(self, name):
         super().__init__(name)
         self.maxFrequency = 100000000
@@ -79,11 +81,13 @@ class FrequencyChart(Chart):
         self.action_automatic.setCheckable(True)
         self.action_automatic.setChecked(True)
         self.action_automatic.changed.connect(
-            lambda: self.setFixedSpan(self.action_fixed_span.isChecked()))
+            lambda: self.setFixedSpan(self.action_fixed_span.isChecked())
+        )
         self.action_fixed_span = QtWidgets.QAction("Fixed span")
         self.action_fixed_span.setCheckable(True)
         self.action_fixed_span.changed.connect(
-            lambda: self.setFixedSpan(self.action_fixed_span.isChecked()))
+            lambda: self.setFixedSpan(self.action_fixed_span.isChecked())
+        )
         mode_group.addAction(self.action_automatic)
         mode_group.addAction(self.action_fixed_span)
         self.x_menu.addAction(self.action_automatic)
@@ -91,11 +95,13 @@ class FrequencyChart(Chart):
         self.x_menu.addSeparator()
 
         self.action_set_fixed_start = QtWidgets.QAction(
-            f"Start ({format_frequency_chart(self.minFrequency)})")
+            f"Start ({format_frequency_chart(self.minFrequency)})"
+        )
         self.action_set_fixed_start.triggered.connect(self.setMinimumFrequency)
 
         self.action_set_fixed_stop = QtWidgets.QAction(
-            f"Stop ({format_frequency_chart(self.maxFrequency)})")
+            f"Stop ({format_frequency_chart(self.maxFrequency)})"
+        )
         self.action_set_fixed_stop.triggered.connect(self.setMaximumFrequency)
 
         self.x_menu.addAction(self.action_set_fixed_start)
@@ -110,9 +116,11 @@ class FrequencyChart(Chart):
         frequency_mode_group.addAction(self.action_set_linear_x)
         frequency_mode_group.addAction(self.action_set_logarithmic_x)
         self.action_set_linear_x.triggered.connect(
-            lambda: self.setLogarithmicX(False))
+            lambda: self.setLogarithmicX(False)
+        )
         self.action_set_logarithmic_x.triggered.connect(
-            lambda: self.setLogarithmicX(True))
+            lambda: self.setLogarithmicX(True)
+        )
         self.action_set_linear_x.setChecked(True)
         self.x_menu.addAction(self.action_set_linear_x)
         self.x_menu.addAction(self.action_set_logarithmic_x)
@@ -122,11 +130,13 @@ class FrequencyChart(Chart):
         self.y_action_automatic.setCheckable(True)
         self.y_action_automatic.setChecked(True)
         self.y_action_automatic.changed.connect(
-            lambda: self.setFixedValues(self.y_action_fixed_span.isChecked()))
+            lambda: self.setFixedValues(self.y_action_fixed_span.isChecked())
+        )
         self.y_action_fixed_span = QtWidgets.QAction("Fixed span")
         self.y_action_fixed_span.setCheckable(True)
         self.y_action_fixed_span.changed.connect(
-            lambda: self.setFixedValues(self.y_action_fixed_span.isChecked()))
+            lambda: self.setFixedValues(self.y_action_fixed_span.isChecked())
+        )
         mode_group = QtWidgets.QActionGroup(self)
         mode_group.addAction(self.y_action_automatic)
         mode_group.addAction(self.y_action_fixed_span)
@@ -135,11 +145,13 @@ class FrequencyChart(Chart):
         self.y_menu.addSeparator()
 
         self.action_set_fixed_minimum = QtWidgets.QAction(
-            f"Minimum ({self.minDisplayValue})")
+            f"Minimum ({self.minDisplayValue})"
+        )
         self.action_set_fixed_minimum.triggered.connect(self.setMinimumValue)
 
         self.action_set_fixed_maximum = QtWidgets.QAction(
-            f"Maximum ({self.maxDisplayValue})")
+            f"Maximum ({self.maxDisplayValue})"
+        )
         self.action_set_fixed_maximum.triggered.connect(self.setMaximumValue)
 
         self.y_menu.addAction(self.action_set_fixed_maximum)
@@ -155,9 +167,11 @@ class FrequencyChart(Chart):
             vertical_mode_group.addAction(self.action_set_linear_y)
             vertical_mode_group.addAction(self.action_set_logarithmic_y)
             self.action_set_linear_y.triggered.connect(
-                lambda: self.setLogarithmicY(False))
+                lambda: self.setLogarithmicY(False)
+            )
             self.action_set_logarithmic_y.triggered.connect(
-                lambda: self.setLogarithmicY(True))
+                lambda: self.setLogarithmicY(True)
+            )
             self.action_set_linear_y.setChecked(True)
             self.y_menu.addAction(self.action_set_linear_y)
             self.y_menu.addAction(self.action_set_logarithmic_y)
@@ -168,16 +182,21 @@ class FrequencyChart(Chart):
         self.menu.addAction(self.action_save_screenshot)
         self.action_popout = QtWidgets.QAction("Popout chart")
         self.action_popout.triggered.connect(
-            lambda: self.popoutRequested.emit(self))
+            lambda: self.popoutRequested.emit(self)
+        )
         self.menu.addAction(self.action_popout)
         self.setFocusPolicy(QtCore.Qt.ClickFocus)
 
         self.setMinimumSize(
             self.dim.width + self.rightMargin + self.leftMargin,
-            self.dim.height + self.topMargin + self.bottomMargin)
+            self.dim.height + self.topMargin + self.bottomMargin,
+        )
         self.setSizePolicy(
-            QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,
-                                  QtWidgets.QSizePolicy.MinimumExpanding))
+            QtWidgets.QSizePolicy(
+                QtWidgets.QSizePolicy.MinimumExpanding,
+                QtWidgets.QSizePolicy.MinimumExpanding,
+            )
+        )
         pal = QtGui.QPalette()
         pal.setColor(QtGui.QPalette.Background, Chart.color.background)
         self.setPalette(pal)
@@ -197,13 +216,17 @@ class FrequencyChart(Chart):
 
     def contextMenuEvent(self, event):
         self.action_set_fixed_start.setText(
-            f"Start ({format_frequency_chart(self.minFrequency)})")
+            f"Start ({format_frequency_chart(self.minFrequency)})"
+        )
         self.action_set_fixed_stop.setText(
-            f"Stop ({format_frequency_chart(self.maxFrequency)})")
+            f"Stop ({format_frequency_chart(self.maxFrequency)})"
+        )
         self.action_set_fixed_minimum.setText(
-            f"Minimum ({self.minDisplayValue})")
+            f"Minimum ({self.minDisplayValue})"
+        )
         self.action_set_fixed_maximum.setText(
-            f"Maximum ({self.maxDisplayValue})")
+            f"Maximum ({self.maxDisplayValue})"
+        )
 
         if self.fixedSpan:
             self.action_fixed_span.setChecked(True)
@@ -242,8 +265,11 @@ class FrequencyChart(Chart):
 
     def setMinimumFrequency(self):
         min_freq_str, selected = QtWidgets.QInputDialog.getText(
-            self, "Start frequency",
-            "Set start frequency", text=str(self.minFrequency))
+            self,
+            "Start frequency",
+            "Set start frequency",
+            text=str(self.minFrequency),
+        )
         if not selected:
             return
         span = abs(self.maxFrequency - self.minFrequency)
@@ -258,8 +284,11 @@ class FrequencyChart(Chart):
 
     def setMaximumFrequency(self):
         max_freq_str, selected = QtWidgets.QInputDialog.getText(
-            self, "Stop frequency",
-            "Set stop frequency", text=str(self.maxFrequency))
+            self,
+            "Stop frequency",
+            "Set stop frequency",
+            text=str(self.maxFrequency),
+        )
         if not selected:
             return
         span = abs(self.maxFrequency - self.minFrequency)
@@ -274,9 +303,11 @@ class FrequencyChart(Chart):
 
     def setMinimumValue(self):
         text, selected = QtWidgets.QInputDialog.getText(
-            self, "Minimum value",
+            self,
+            "Minimum value",
             "Set minimum value",
-            text=format_y_axis(self.minDisplayValue, self.name_unit))
+            text=format_y_axis(self.minDisplayValue, self.name_unit),
+        )
         if not selected:
             return
         min_val = parse_value(text)
@@ -292,9 +323,11 @@ class FrequencyChart(Chart):
 
     def setMaximumValue(self):
         text, selected = QtWidgets.QInputDialog.getText(
-            self, "Maximum value",
+            self,
+            "Maximum value",
             "Set maximum value",
-            text=format_y_axis(self.maxDisplayValue, self.name_unit))
+            text=format_y_axis(self.maxDisplayValue, self.name_unit),
+        )
         if not selected:
             return
         max_val = parse_value(text)
@@ -323,18 +356,21 @@ class FrequencyChart(Chart):
             if self.logarithmicX:
                 span = math.log(self.fstop) - math.log(self.fstart)
                 return self.leftMargin + round(
-                    self.dim.width * (math.log(d.freq) -
-                                      math.log(self.fstart)) / span)
+                    self.dim.width
+                    * (math.log(d.freq) - math.log(self.fstart))
+                    / span
+                )
             return self.leftMargin + round(
-                self.dim.width * (d.freq - self.fstart) / span)
+                self.dim.width * (d.freq - self.fstart) / span
+            )
         return math.floor(self.width() / 2)
 
     def getYPosition(self, d: Datapoint) -> int:
         try:
-            return (
-                self.topMargin + round(
-                    (self.maxValue - self.value_function(d)) /
-                    self.span * self.dim.height)
+            return self.topMargin + round(
+                (self.maxValue - self.value_function(d))
+                / self.span
+                * self.dim.height
             )
         except ValueError:
             return self.topMargin
@@ -410,9 +446,12 @@ class FrequencyChart(Chart):
             if self.dragbox.move_x != -1 and self.dragbox.move_y != -1:
                 dx = self.dragbox.move_x - a0.x()
                 dy = self.dragbox.move_y - a0.y()
-                self.zoomTo(self.leftMargin + dx, self.topMargin + dy,
-                            self.leftMargin + self.dim.width + dx,
-                            self.topMargin + self.dim.height + dy)
+                self.zoomTo(
+                    self.leftMargin + dx,
+                    self.topMargin + dy,
+                    self.leftMargin + self.dim.width + dx,
+                    self.topMargin + self.dim.height + dy,
+                )
 
             self.dragbox.move_x = a0.x()
             self.dragbox.move_y = a0.y()
@@ -436,10 +475,10 @@ class FrequencyChart(Chart):
             m.setFrequency(str(f))
 
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
-        self.dim.width = (
-            a0.size().width() - self.rightMargin - self.leftMargin)
+        self.dim.width = a0.size().width() - self.rightMargin - self.leftMargin
         self.dim.height = (
-            a0.size().height() - self.bottomMargin - self.topMargin)
+            a0.size().height() - self.bottomMargin - self.topMargin
+        )
         self.update()
 
     def paintEvent(self, _: QtGui.QPaintEvent) -> None:
@@ -452,24 +491,30 @@ class FrequencyChart(Chart):
         qp.end()
 
     def _data_oob(self, data: List[Datapoint]) -> bool:
-        return (data[0].freq > self.fstop or self.data[-1].freq < self.fstart)
+        return data[0].freq > self.fstop or self.data[-1].freq < self.fstart
 
     def _check_frequency_boundaries(self, qp: QtGui.QPainter):
-        if (self.data and self._data_oob(self.data) and
-                (not self.reference or self._data_oob(self.reference))):
+        if (
+            self.data
+            and self._data_oob(self.data)
+            and (not self.reference or self._data_oob(self.reference))
+        ):
             # Data outside frequency range
             qp.setBackgroundMode(QtCore.Qt.OpaqueMode)
             qp.setBackground(Chart.color.background)
             qp.setPen(Chart.color.text)
-            qp.drawText(self.leftMargin + int(self.dim.width // 2) - 70,
-                        self.topMargin + int(self.dim.height // 2) - 20,
-                        "Data outside frequency span")
+            qp.drawText(
+                self.leftMargin + int(self.dim.width // 2) - 70,
+                self.topMargin + int(self.dim.height // 2) - 20,
+                "Data outside frequency span",
+            )
 
     def drawDragbog(self, qp: QtGui.QPainter):
         dashed_pen = QtGui.QPen(Chart.color.foreground, 1, QtCore.Qt.DashLine)
         qp.setPen(dashed_pen)
         top_left = QtCore.QPoint(
-            self.dragbox.pos_start[0], self.dragbox.pos_start[1])
+            self.dragbox.pos_start[0], self.dragbox.pos_start[1]
+        )
         bottom_right = QtCore.QPoint(self.dragbox.pos[0], self.dragbox.pos[1])
         rect = QtCore.QRect(top_left, bottom_right)
         qp.drawRect(rect)
@@ -481,14 +526,18 @@ class FrequencyChart(Chart):
             headline += f" ({self.name_unit})"
         qp.drawText(3, 15, headline)
         qp.setPen(QtGui.QPen(Chart.color.foreground))
-        qp.drawLine(self.leftMargin,
-                    20,
-                    self.leftMargin,
-                    self.topMargin + self.dim.height + 5)
-        qp.drawLine(self.leftMargin - 5,
-                    self.topMargin + self.dim.height,
-                    self.leftMargin + self.dim.width,
-                    self.topMargin + self.dim.height)
+        qp.drawLine(
+            self.leftMargin,
+            20,
+            self.leftMargin,
+            self.topMargin + self.dim.height + 5,
+        )
+        qp.drawLine(
+            self.leftMargin - 5,
+            self.topMargin + self.dim.height,
+            self.leftMargin + self.dim.width,
+            self.topMargin + self.dim.height,
+        )
         self.drawTitle(qp)
 
     def drawValues(self, qp: QtGui.QPainter):
@@ -514,7 +563,8 @@ class FrequencyChart(Chart):
         if span == 0:
             logger.info(
                 "Span is zero for %s-Chart, setting to a small value.",
-                self.name)
+                self.name,
+            )
             span = 1e-15
         self.span = span
 
@@ -522,23 +572,30 @@ class FrequencyChart(Chart):
         fmt = Format(max_nr_digits=1)
         for i in range(target_ticks):
             val = min_value + (i / target_ticks) * span
-            y = self.topMargin + \
-                round((self.maxValue - val) / self.span * self.dim.height)
+            y = self.topMargin + round(
+                (self.maxValue - val) / self.span * self.dim.height
+            )
             qp.setPen(Chart.color.text)
             if val != min_value:
                 valstr = str(Value(val, fmt=fmt))
                 qp.drawText(3, y + 3, valstr)
             qp.setPen(QtGui.QPen(Chart.color.foreground))
-            qp.drawLine(self.leftMargin - 5, y,
-                        self.leftMargin + self.dim.width, y)
+            qp.drawLine(
+                self.leftMargin - 5, y, self.leftMargin + self.dim.width, y
+            )
 
         qp.setPen(QtGui.QPen(Chart.color.foreground))
-        qp.drawLine(self.leftMargin - 5, self.topMargin,
-                    self.leftMargin + self.dim.width, self.topMargin)
+        qp.drawLine(
+            self.leftMargin - 5,
+            self.topMargin,
+            self.leftMargin + self.dim.width,
+            self.topMargin,
+        )
         qp.setPen(Chart.color.text)
         qp.drawText(3, self.topMargin + 4, str(Value(max_value, fmt=fmt)))
-        qp.drawText(3, self.dim.height + self.topMargin,
-                    str(Value(min_value, fmt=fmt)))
+        qp.drawText(
+            3, self.dim.height + self.topMargin, str(Value(min_value, fmt=fmt))
+        )
         self.drawFrequencyTicks(qp)
 
         self.drawData(qp, self.data, Chart.color.sweep)
@@ -574,27 +631,31 @@ class FrequencyChart(Chart):
         else:
             my_format_frequency = format_frequency_chart_2
 
-        qp.drawText(self.leftMargin - 20,
-                    self.topMargin + self.dim.height + 15,
-                    my_format_frequency(self.fstart))
+        qp.drawText(
+            self.leftMargin - 20,
+            self.topMargin + self.dim.height + 15,
+            my_format_frequency(self.fstart),
+        )
 
         for i in range(ticks):
             x = self.leftMargin + round((i + 1) * self.dim.width / ticks)
             if self.logarithmicX:
                 fspan = math.log(self.fstop) - math.log(self.fstart)
                 freq = round(
-                    math.exp(
-                        ((i + 1) * fspan / ticks) +
-                        math.log(self.fstart)))
+                    math.exp(((i + 1) * fspan / ticks) + math.log(self.fstart))
+                )
             else:
                 freq = round(fspan / ticks * (i + 1) + self.fstart)
             qp.setPen(QtGui.QPen(Chart.color.foreground))
-            qp.drawLine(x, self.topMargin, x,
-                        self.topMargin + self.dim.height + 5)
+            qp.drawLine(
+                x, self.topMargin, x, self.topMargin + self.dim.height + 5
+            )
             qp.setPen(Chart.color.text)
-            qp.drawText(x - 20,
-                        self.topMargin + self.dim.height + 15,
-                        my_format_frequency(freq))
+            qp.drawText(
+                x - 20,
+                self.topMargin + self.dim.height + 15,
+                my_format_frequency(freq),
+            )
 
     def drawBands(self, qp, fstart, fstop):
         qp.setBrush(self.bands.color)
@@ -608,17 +669,24 @@ class FrequencyChart(Chart):
             # don't draw if either band not in chart or completely in band
             if start < fstart < fstop < end or end < fstart or start > fstop:
                 continue
-            x_start = max(self.leftMargin + 1,
-                          self.getXPosition(Datapoint(start, 0, 0)))
-            x_stop = min(self.leftMargin + self.dim.width,
-                         self.getXPosition(Datapoint(end, 0, 0)))
-            qp.drawRect(x_start,
-                        self.topMargin,
-                        x_stop - x_start,
-                        self.dim.height)
+            x_start = max(
+                self.leftMargin + 1, self.getXPosition(Datapoint(start, 0, 0))
+            )
+            x_stop = min(
+                self.leftMargin + self.dim.width,
+                self.getXPosition(Datapoint(end, 0, 0)),
+            )
+            qp.drawRect(
+                x_start, self.topMargin, x_stop - x_start, self.dim.height
+            )
 
-    def drawData(self, qp: QtGui.QPainter, data: List[Datapoint],
-                 color: QtGui.QColor, y_function=None):
+    def drawData(
+        self,
+        qp: QtGui.QPainter,
+        data: List[Datapoint],
+        color: QtGui.QColor,
+        y_function=None,
+    ):
         if y_function is None:
             y_function = self.getYPosition
         pen = QtGui.QPen(color)
@@ -643,8 +711,7 @@ class FrequencyChart(Chart):
                     if self.isPlotable(prevx, prevy):
                         qp.drawLine(x, y, prevx, prevy)
                     else:
-                        new_x, new_y = self.getPlotable(
-                            x, y, prevx, prevy)
+                        new_x, new_y = self.getPlotable(x, y, prevx, prevy)
                         qp.drawLine(x, y, new_x, new_y)
                 elif self.isPlotable(prevx, prevy):
                     new_x, new_y = self.getPlotable(prevx, prevy, x, y)
@@ -663,13 +730,17 @@ class FrequencyChart(Chart):
                 x = self.getXPosition(data[m.location])
                 y = y_function(data[m.location])
                 if self.isPlotable(x, y):
-                    self.drawMarker(x, y, qp, m.color,
-                                    self.markers.index(m) + 1)
+                    self.drawMarker(
+                        x, y, qp, m.color, self.markers.index(m) + 1
+                    )
 
     def isPlotable(self, x, y):
-        return y is not None and x is not None and \
-            self.leftMargin <= x <= self.leftMargin + self.dim.width and \
-            self.topMargin <= y <= self.topMargin + self.dim.height
+        return (
+            y is not None
+            and x is not None
+            and self.leftMargin <= x <= self.leftMargin + self.dim.width
+            and self.topMargin <= y <= self.topMargin + self.dim.height
+        )
 
     def getPlotable(self, x, y, distantx, distanty):
         p1 = np.array([x, y])
@@ -680,8 +751,12 @@ class FrequencyChart(Chart):
             p4 = np.array([self.leftMargin + self.dim.width, self.topMargin])
         elif distanty > self.topMargin + self.dim.height:
             p3 = np.array([self.leftMargin, self.topMargin + self.dim.height])
-            p4 = np.array([self.leftMargin + self.dim.width,
-                           self.topMargin + self.dim.height])
+            p4 = np.array(
+                [
+                    self.leftMargin + self.dim.width,
+                    self.topMargin + self.dim.height,
+                ]
+            )
         else:
             return x, y
 
@@ -730,10 +805,14 @@ class FrequencyChart(Chart):
         m = self.getActiveMarker()
         if m is not None and a0.modifiers() == QtCore.Qt.NoModifier:
             if a0.key() in [QtCore.Qt.Key_Down, QtCore.Qt.Key_Left]:
-                m.frequencyInput.keyPressEvent(QtGui.QKeyEvent(
-                    a0.type(), QtCore.Qt.Key_Down, a0.modifiers()))
+                m.frequencyInput.keyPressEvent(
+                    QtGui.QKeyEvent(
+                        a0.type(), QtCore.Qt.Key_Down, a0.modifiers()
+                    )
+                )
             elif a0.key() in [QtCore.Qt.Key_Up, QtCore.Qt.Key_Right]:
-                m.frequencyInput.keyPressEvent(QtGui.QKeyEvent(
-                    a0.type(), QtCore.Qt.Key_Up, a0.modifiers()))
+                m.frequencyInput.keyPressEvent(
+                    QtGui.QKeyEvent(a0.type(), QtCore.Qt.Key_Up, a0.modifiers())
+                )
         else:
             super().keyPressEvent(a0)

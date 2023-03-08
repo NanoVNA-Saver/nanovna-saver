@@ -21,8 +21,10 @@ import logging
 from PyQt5 import QtWidgets, QtCore
 
 from NanoVNASaver.Formatting import (
-    format_frequency_sweep, format_frequency_short,
-    parse_frequency)
+    format_frequency_sweep,
+    format_frequency_short,
+    parse_frequency,
+)
 from NanoVNASaver.Inputs import FrequencyInputWidget
 from NanoVNASaver.Controls.Control import Control
 
@@ -30,7 +32,6 @@ logger = logging.getLogger(__name__)
 
 
 class SweepControl(Control):
-
     def __init__(self, app: QtWidgets.QWidget):
         super().__init__(app, "Sweep control")
 
@@ -66,8 +67,7 @@ class SweepControl(Control):
         self.input_center.setAlignment(QtCore.Qt.AlignRight)
         self.input_center.textEdited.connect(self.update_start_end)
 
-        input_right_layout.addRow(QtWidgets.QLabel(
-            "Center"), self.input_center)
+        input_right_layout.addRow(QtWidgets.QLabel("Center"), self.input_center)
 
         self.input_span = FrequencyInputWidget()
         self.input_span.setFixedHeight(20)
@@ -77,7 +77,8 @@ class SweepControl(Control):
         input_right_layout.addRow(QtWidgets.QLabel("Span"), self.input_span)
 
         self.input_segments = QtWidgets.QLineEdit(
-            self.app.settings.value("Segments", "1"))
+            self.app.settings.value("Segments", "1")
+        )
         self.input_segments.setAlignment(QtCore.Qt.AlignRight)
         self.input_segments.setFixedHeight(20)
         self.input_segments.setFixedWidth(60)
@@ -85,7 +86,8 @@ class SweepControl(Control):
 
         self.label_step = QtWidgets.QLabel("Hz/step")
         self.label_step.setAlignment(
-            QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+            QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+        )
 
         segment_layout = QtWidgets.QHBoxLayout()
         segment_layout.addWidget(self.input_segments)
@@ -95,7 +97,8 @@ class SweepControl(Control):
         btn_settings_window = QtWidgets.QPushButton("Sweep settings ...")
         btn_settings_window.setFixedHeight(20)
         btn_settings_window.clicked.connect(
-            lambda: self.app.display_window("sweep_settings"))
+            lambda: self.app.display_window("sweep_settings")
+        )
 
         self.layout.addRow(btn_settings_window)
 
@@ -206,8 +209,7 @@ class SweepControl(Control):
         segments = self.get_segments()
         if segments > 0:
             fstep = fspan / (segments * self.app.vna.datapoints - 1)
-            self.label_step.setText(
-                f"{format_frequency_short(fstep)}/step")
+            self.label_step.setText(f"{format_frequency_short(fstep)}/step")
         self.update_sweep()
 
     def update_sweep(self):

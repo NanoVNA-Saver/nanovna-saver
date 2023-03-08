@@ -34,18 +34,17 @@ class TinySA(VNA):
     name = "tinySA"
     screenwidth = 320
     screenheight = 240
-    valid_datapoints = (290, )
+    valid_datapoints = (290,)
 
     def __init__(self, iface: Interface):
         super().__init__(iface)
-        self.features = {'Screenshots'}
+        self.features = {"Screenshots"}
         logger.debug("Setting initial start,stop")
         self.start, self.stop = self._get_running_frequencies()
         self.sweep_max_freq_Hz = 950e6
         self._sweepdata = []
 
     def _get_running_frequencies(self):
-
         logger.debug("Reading values: frequencies")
         try:
             frequencies = super().readValues("frequencies")
@@ -60,24 +59,27 @@ class TinySA(VNA):
         timeout = self.serial.timeout
         with self.serial.lock:
             drain_serial(self.serial)
-            self.serial.write("capture\r".encode('ascii'))
+            self.serial.write("capture\r".encode("ascii"))
             self.serial.readline()
             self.serial.timeout = 4
             image_data = self.serial.read(
-                self.screenwidth * self.screenheight * 2)
+                self.screenwidth * self.screenheight * 2
+            )
             self.serial.timeout = timeout
         self.serial.timeout = timeout
         return image_data
 
     def _convert_data(self, image_data: bytes) -> bytes:
         rgb_data = struct.unpack(
-            f">{self.screenwidth * self.screenheight}H",
-            image_data)
+            f">{self.screenwidth * self.screenheight}H", image_data
+        )
         rgb_array = np.array(rgb_data, dtype=np.uint32)
-        return (0xFF000000 +
-                ((rgb_array & 0xF800) << 8) +
-                ((rgb_array & 0x07E0) << 5) +
-                ((rgb_array & 0x001F) << 3))
+        return (
+            0xFF000000
+            + ((rgb_array & 0xF800) << 8)
+            + ((rgb_array & 0x07E0) << 5)
+            + ((rgb_array & 0x001F) << 3)
+        )
 
     def getScreenshot(self) -> QtGui.QPixmap:
         logger.debug("Capturing screenshot...")
@@ -89,12 +91,12 @@ class TinySA(VNA):
                 rgba_array,
                 self.screenwidth,
                 self.screenheight,
-                QtGui.QImage.Format_ARGB32)
+                QtGui.QImage.Format_ARGB32,
+            )
             logger.debug("Captured screenshot")
             return QtGui.QPixmap(image)
         except serial.SerialException as exc:
-            logger.exception(
-                "Exception while capturing screenshot: %s", exc)
+            logger.exception("Exception while capturing screenshot: %s", exc)
         return QtGui.QPixmap()
 
     def resetSweep(self, start: int, stop: int):
@@ -113,6 +115,7 @@ class TinySA(VNA):
     def readValues(self, value) -> List[str]:
         logger.debug("Read: %s", value)
         if value == "data 0":
-            self._sweepdata = [f"0 {line.strip()}"
-                               for line in self.exec_command("data")]
+            self._sweepdata = [
+                f"0 {line.strip()}" for line in self.exec_command("data")
+            ]
         return self._sweepdata

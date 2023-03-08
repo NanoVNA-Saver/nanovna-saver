@@ -57,9 +57,12 @@ class BandsModel(QtCore.QAbstractTableModel):
     # These bands correspond broadly to the Danish Amateur Radio allocation
     def __init__(self):
         super().__init__()
-        self.settings = QtCore.QSettings(QtCore.QSettings.IniFormat,
-                                         QtCore.QSettings.UserScope,
-                                         "NanoVNASaver", "Bands")
+        self.settings = QtCore.QSettings(
+            QtCore.QSettings.IniFormat,
+            QtCore.QSettings.UserScope,
+            "NanoVNASaver",
+            "Bands",
+        )
         self.settings.setIniCodec("UTF-8")
 
         self.enabled = self.settings.value("ShowBands", False, bool)
@@ -71,7 +74,8 @@ class BandsModel(QtCore.QAbstractTableModel):
     def saveSettings(self):
         self.settings.setValue(
             "bands",
-            [f"{name};{start};{end}" for name, start, end in self.bands])
+            [f"{name};{start};{end}" for name, start, end in self.bands],
+        )
         self.settings.sync()
 
     def resetBands(self):
@@ -87,18 +91,22 @@ class BandsModel(QtCore.QAbstractTableModel):
 
     def data(self, index: QModelIndex, role: int = ...) -> QtCore.QVariant:
         if role in [
-            QtCore.Qt.DisplayRole, QtCore.Qt.ItemDataRole, QtCore.Qt.EditRole,
+            QtCore.Qt.DisplayRole,
+            QtCore.Qt.ItemDataRole,
+            QtCore.Qt.EditRole,
         ]:
             return QtCore.QVariant(self.bands[index.row()][index.column()])
         if role == QtCore.Qt.TextAlignmentRole:
             if index.column() == 0:
                 return QtCore.QVariant(QtCore.Qt.AlignCenter)
             return QtCore.QVariant(
-                QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+                QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+            )
         return QtCore.QVariant()
 
-    def setData(self, index: QModelIndex,
-                value: typing.Any, role: int = ...) -> bool:
+    def setData(
+        self, index: QModelIndex, value: typing.Any, role: int = ...
+    ) -> bool:
         if role == QtCore.Qt.EditRole and index.isValid():
             t = self.bands[index.row()]
             name = t[0]
@@ -116,14 +124,14 @@ class BandsModel(QtCore.QAbstractTableModel):
             return True
         return False
 
-    def index(self, row: int,
-              column: int, _: QModelIndex = ...) -> QModelIndex:
+    def index(self, row: int, column: int, _: QModelIndex = ...) -> QModelIndex:
         return self.createIndex(row, column)
 
     def addRow(self):
         self.bands.append(("New", 0, 0))
-        self.dataChanged.emit(self.index(len(self.bands), 0),
-                              self.index(len(self.bands), 2))
+        self.dataChanged.emit(
+            self.index(len(self.bands), 0), self.index(len(self.bands), 2)
+        )
         self.layoutChanged.emit()
 
     def removeRow(self, row: int, _: QModelIndex = ...) -> bool:
@@ -132,10 +140,13 @@ class BandsModel(QtCore.QAbstractTableModel):
         self.saveSettings()
         return True
 
-    def headerData(self, section: int,
-                   orientation: QtCore.Qt.Orientation, role: int = ...):
-        if (role == QtCore.Qt.DisplayRole and
-                orientation == QtCore.Qt.Horizontal):
+    def headerData(
+        self, section: int, orientation: QtCore.Qt.Orientation, role: int = ...
+    ):
+        if (
+            role == QtCore.Qt.DisplayRole
+            and orientation == QtCore.Qt.Horizontal
+        ):
             with contextlib.suppress(IndexError):
                 return _HEADER_DATA[section]
         return None
@@ -143,9 +154,10 @@ class BandsModel(QtCore.QAbstractTableModel):
     def flags(self, index: QModelIndex) -> QtCore.Qt.ItemFlags:
         if index.isValid():
             return QtCore.Qt.ItemFlags(
-                QtCore.Qt.ItemIsEditable |
-                QtCore.Qt.ItemIsEnabled |
-                QtCore.Qt.ItemIsSelectable)
+                QtCore.Qt.ItemIsEditable
+                | QtCore.Qt.ItemIsEnabled
+                | QtCore.Qt.ItemIsSelectable
+            )
         super().flags(index)
 
     def setColor(self, color):

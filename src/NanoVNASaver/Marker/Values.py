@@ -56,10 +56,10 @@ TYPES = (
     Label("s21groupdelay", "S21 Group Delay", "S21 Group Delay", False),
     Label("s21magshunt", "S21 |Z| shunt", "S21 Z Magnitude shunt", False),
     Label("s21magseries", "S21 |Z| series", "S21 Z Magnitude series", False),
-    Label("s21realimagshunt", "S21 R+jX shunt",
-          "S21 Z Real+Imag shunt", False),
-    Label("s21realimagseries", "S21 R+jX series",
-          "S21 Z Real+Imag series", False),
+    Label("s21realimagshunt", "S21 R+jX shunt", "S21 Z Real+Imag shunt", False),
+    Label(
+        "s21realimagseries", "S21 R+jX series", "S21 Z Real+Imag series", False
+    ),
 )
 
 
@@ -67,31 +67,40 @@ def default_label_ids() -> str:
     return [label.label_id for label in TYPES if label.default_active]
 
 
-class Value():
+class Value:
     """Contains the data area to calculate marker values from"""
 
-    def __init__(self, freq: int = 0,
-                 s11: List[Datapoint] = None,
-                 s21: List[Datapoint] = None):
+    def __init__(
+        self,
+        freq: int = 0,
+        s11: List[Datapoint] = None,
+        s21: List[Datapoint] = None,
+    ):
         self.freq = freq
         self.s11 = [] if s11 is None else s11[:]
         self.s21 = [] if s21 is None else s21[:]
 
-    def store(self, index: int,
-              s11: List[Datapoint],
-              s21: List[Datapoint]):
+    def store(self, index: int, s11: List[Datapoint], s21: List[Datapoint]):
         # handle boundaries
         if index == 0:
             index = 1
-            s11 = [s11[0], ] + s11
+            s11 = [
+                s11[0],
+            ] + s11
             if s21:
-                s21 = [s21[0], ] + s21
+                s21 = [
+                    s21[0],
+                ] + s21
         if index == len(s11):
-            s11 += [s11[-1], ]
+            s11 += [
+                s11[-1],
+            ]
             if s21:
-                s21 += [s21[-1], ]
+                s21 += [
+                    s21[-1],
+                ]
 
         self.freq = s11[1].freq
-        self.s11 = s11[index - 1:index + 2]
+        self.s11 = s11[index - 1 : index + 2]
         if s21:
-            self.s21 = s21[index - 1:index + 2]
+            self.s21 = s21[index - 1 : index + 2]

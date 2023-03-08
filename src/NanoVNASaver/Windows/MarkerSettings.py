@@ -28,12 +28,16 @@ logger = logging.getLogger(__name__)
 
 
 class MarkerSettingsWindow(QtWidgets.QWidget):
-    exampleData11 = [Datapoint(123000000, 0.89, -0.11),
-                     Datapoint(123500000, 0.9, -0.1),
-                     Datapoint(124000000, 0.91, -0.95)]
-    exampleData21 = [Datapoint(123000000, -0.25, 0.49),
-                     Datapoint(123456000, -0.3, 0.5),
-                     Datapoint(124000000, -0.2, 0.5)]
+    exampleData11 = [
+        Datapoint(123000000, 0.89, -0.11),
+        Datapoint(123500000, 0.9, -0.1),
+        Datapoint(124000000, 0.91, -0.95),
+    ]
+    exampleData21 = [
+        Datapoint(123000000, -0.25, 0.49),
+        Datapoint(123456000, -0.3, 0.5),
+        Datapoint(124000000, -0.2, 0.5),
+    ]
 
     def __init__(self, app: QtWidgets.QWidget):
         super().__init__()
@@ -50,10 +54,10 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
 
         settings_group_box = QtWidgets.QGroupBox("Settings")
         settings_group_box_layout = QtWidgets.QFormLayout(settings_group_box)
-        self.checkboxColouredMarker = QtWidgets.QCheckBox(
-            "Colored marker name")
+        self.checkboxColouredMarker = QtWidgets.QCheckBox("Colored marker name")
         self.checkboxColouredMarker.setChecked(
-            self.app.settings.value("ColoredMarkerNames", True, bool))
+            self.app.settings.value("ColoredMarkerNames", True, bool)
+        )
         self.checkboxColouredMarker.stateChanged.connect(self.updateMarker)
         settings_group_box_layout.addRow(self.checkboxColouredMarker)
 
@@ -103,7 +107,8 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
     def updateMarker(self):
         self.exampleMarker.setFrequency(123456000)
         self.exampleMarker.setColoredText(
-            self.checkboxColouredMarker.isChecked())
+            self.checkboxColouredMarker.isChecked()
+        )
         self.exampleMarker.setFieldSelection(self.currentFieldSelection)
         self.exampleMarker.findLocation(self.exampleData11)
         self.exampleMarker.resetLabels()
@@ -125,8 +130,11 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
         self.savedFieldSelection = self.currentFieldSelection[:]
         self.app.settings.setValue("MarkerFields", self.savedFieldSelection)
         self.app.settings.setValue(
-            "ColoredMarkerNames", self.checkboxColouredMarker.isChecked())
-        for m in self.app.markers + [self.app.delta_marker, ]:
+            "ColoredMarkerNames", self.checkboxColouredMarker.isChecked()
+        )
+        for m in self.app.markers + [
+            self.app.delta_marker,
+        ]:
             m.setFieldSelection(self.savedFieldSelection)
             m.setColoredText(self.checkboxColouredMarker.isChecked())
 

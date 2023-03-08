@@ -34,11 +34,13 @@ class BandStopAnalysis(BandPassAnalysis):
     def find_center(self, gains: List[float]) -> int:
         return max(enumerate(gains), key=lambda i: i[1])[0]
 
-    def find_bounderies(self,
-                        gains: List[float],
-                        _: int, peak_db: float) -> Dict[str, int]:
+    def find_bounderies(
+        self, gains: List[float], _: int, peak_db: float
+    ) -> Dict[str, int]:
         cutoff_pos = {}
         for attn in CUTOFF_VALS:
-            cutoff_pos[f"{attn:.1f}dB_l"], cutoff_pos[f"{attn:.1f}dB_r"] = (
-                at.dip_cut_offs(gains, peak_db, attn))
+            (
+                cutoff_pos[f"{attn:.1f}dB_l"],
+                cutoff_pos[f"{attn:.1f}dB_r"],
+            ) = at.dip_cut_offs(gains, peak_db, attn)
         return cutoff_pos

@@ -23,7 +23,9 @@ from PyQt5 import QtWidgets
 logger = logging.getLogger(__name__)
 
 
-def make_scrollable(window: QtWidgets.QWidget, layout: QtWidgets.QLayout) -> None:
+def make_scrollable(
+    window: QtWidgets.QWidget, layout: QtWidgets.QLayout
+) -> None:
     area = QtWidgets.QScrollArea()
     area.setWidgetResizable(True)
     outer = QtWidgets.QVBoxLayout()

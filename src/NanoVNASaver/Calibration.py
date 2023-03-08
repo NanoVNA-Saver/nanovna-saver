@@ -35,7 +35,8 @@ IDEAL_OPEN = complex(1, 0)
 IDEAL_LOAD = complex(0, 0)
 IDEAL_THROUGH = complex(1, 0)
 
-RXP_CAL_HEADER = re.compile(r"""
+RXP_CAL_HEADER = re.compile(
+    r"""
     ^ \# \s+ Hz \s+
     ShortR \s+ ShortI \s+ OpenR \s+ OpenI \s+
     LoadR \s+ LoadI
@@ -43,9 +44,12 @@ RXP_CAL_HEADER = re.compile(r"""
     (?P<thrurefl> \s+ ThrureflR \s+ ThrureflI)?
     (?P<isolation> \s+ IsolationR \s+ IsolationI)?
     \s* $
-""", re.VERBOSE | re.IGNORECASE)
+""",
+    re.VERBOSE | re.IGNORECASE,
+)
 
-RXP_CAL_LINE = re.compile(r"""
+RXP_CAL_LINE = re.compile(
+    r"""
     ^ \s*
     (?P<freq>\d+) \s+
     (?P<shortr>[-0-9Ee.]+) \s+ (?P<shorti>[-0-9Ee.]+) \s+
@@ -55,7 +59,9 @@ RXP_CAL_LINE = re.compile(r"""
     ( \s+ (?P<thrureflr>[-0-9Ee.]+) \s+ (?P<thrurefli>[-0-9Ee.]+))?
     ( \s+ (?P<isolationr>[-0-9Ee.]+) \s+ (?P<isolationi>[-0-9Ee.]+))?
     \s* $
-""", re.VERBOSE)
+""",
+    re.VERBOSE,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +69,8 @@ logger = logging.getLogger(__name__)
 def correct_delay(d: Datapoint, delay: float, reflect: bool = False):
     mult = 2 if reflect else 1
     corr_data = d.z * cmath.exp(
-        complex(0, 1) * 2 * math.pi * d.freq * delay * -1 * mult)
+        complex(0, 1) * 2 * math.pi * d.freq * delay * -1 * mult
+    )
     return Datapoint(d.freq, corr_data.real, corr_data.imag)
 
 
@@ -88,14 +95,16 @@ class CalData:
 
     def __str__(self):
         return (
-            f'{self.freq}'
-            f' {self.short.real} {self.short.imag}'
-            f' {self.open.real} {self.open.imag}'
-            f' {self.load.real} {self.load.imag}' + (
-                f' {self.through.real} {self.through.imag}'
-                f' {self.thrurefl.real} {self.thrurefl.imag}'
-                f' {self.isolation.real} {self.isolation.imag}'
-                if self.through else ''
+            f"{self.freq}"
+            f" {self.short.real} {self.short.imag}"
+            f" {self.open.real} {self.open.imag}"
+            f" {self.load.real} {self.load.imag}"
+            + (
+                f" {self.through.real} {self.through.imag}"
+                f" {self.thrurefl.real} {self.thrurefl.imag}"
+                f" {self.isolation.real} {self.isolation.imag}"
+                if self.through
+                else ""
             )
         )
 
@@ -138,26 +147,32 @@ class CalDataSet(UserDict):
             (
                 "# Calibration data for NanoVNA-Saver\n"
                 + "\n".join([f"! {note}" for note in self.notes.splitlines()])
-                + "\n" + "# Hz ShortR ShortI OpenR OpenI LoadR LoadI"
-                + (" ThroughR ThroughI ThrureflR"
-                   " ThrureflI IsolationR IsolationI\n"
-                   if self.complete2port() else "\n")
-                + "\n".join([
-                    f"{self.data.get(freq)}" for freq in self.frequencies()
-                ]) + "\n"
+                + "\n"
+                + "# Hz ShortR ShortI OpenR OpenI LoadR LoadI"
+                + (
+                    " ThroughR ThroughI ThrureflR"
+                    " ThrureflI IsolationR IsolationI\n"
+                    if self.complete2port()
+                    else "\n"
+                )
+                + "\n".join(
+                    [f"{self.data.get(freq)}" for freq in self.frequencies()]
+                )
+                + "\n"
             )
-            if self.complete1port() else ""
+            if self.complete1port()
+            else ""
         )
 
-    def _append_match(self, m: re.Match, header: str,
-                      line_nr: int, line: str) -> None:
+    def _append_match(
+        self, m: re.Match, header: str, line_nr: int, line: str
+    ) -> None:
         cal = m.groupdict()
-        columns = {
-            col[:-1] for col in cal.keys() if cal[col] and col != "freq"
-        }
+        columns = {col[:-1] for col in cal.keys() if cal[col] and col != "freq"}
         if "through" in columns and header == "sol":
-            logger.warning("Through data with sol header. %i: %s",
-                           line_nr, line)
+            logger.warning(
+                "Through data with sol header. %i: %s", line_nr, line
+            )
         # fix short data (without thrurefl)
         if "thrurefl" in columns and "isolation" not in columns:
             cal["isolationr"] = cal["thrureflr"]
@@ -166,11 +181,14 @@ class CalDataSet(UserDict):
         for name in columns:
             self.insert(
                 name,
-                Datapoint(int(cal["freq"]),
-                          float(cal[f"{name}r"]),
-                          float(cal[f"{name}i"])))
+                Datapoint(
+                    int(cal["freq"]),
+                    float(cal[f"{name}r"]),
+                    float(cal[f"{name}i"]),
+                ),
+            )
 
-    def from_str(self, text: str) -> 'CalDataSet':
+    def from_str(self, text: str) -> "CalDataSet":
         # reset data
         self.notes = ""
         self.data = defaultdict(CalData)
@@ -185,7 +203,8 @@ class CalDataSet(UserDict):
             if m := RXP_CAL_HEADER.search(line):
                 if header:
                     logger.warning(
-                        "Duplicate header in cal data. %i: %s", i, line)
+                        "Duplicate header in cal data. %i: %s", i, line
+                    )
                 header = "through" if m.group("through") else "sol"
                 continue
             if not line or line.startswith("#"):
@@ -197,13 +216,20 @@ class CalDataSet(UserDict):
                 continue
             if not header:
                 logger.warning(
-                    "Caldata without having read header: %i: %s", i, line)
+                    "Caldata without having read header: %i: %s", i, line
+                )
             self._append_match(m, header, line, i)
         return self
 
     def insert(self, name: str, dp: Datapoint):
-        if name not in {'short', 'open', 'load',
-                        'through', 'thrurefl', 'isolation'}:
+        if name not in {
+            "short",
+            "open",
+            "load",
+            "through",
+            "thrurefl",
+            "isolation",
+        }:
             raise KeyError(name)
         freq = dp.freq
         setattr(self.data[freq], name, (dp.z))
@@ -223,9 +249,7 @@ class CalDataSet(UserDict):
             yield self.get(freq)
 
     def size_of(self, name: str) -> int:
-        return len(
-            [True for val in self.data.values() if getattr(val, name)]
-        )
+        return len([True for val in self.data.values() if getattr(val, name)])
 
     def complete1port(self) -> bool:
         for val in self.data.values():
@@ -244,7 +268,6 @@ class CalDataSet(UserDict):
 
 class Calibration:
     def __init__(self):
-
         self.notes = []
         self.dataset = CalDataSet()
         self.cal_element = CalElement()
@@ -278,18 +301,30 @@ class Calibration:
         gm2 = cal.open
         gm3 = cal.load
 
-        denominator = (g1 * (g2 - g3) * gm1 +
-                       g2 * g3 * gm2 - g2 * g3 * gm3 -
-                       (g2 * gm2 - g3 * gm3) * g1)
-        cal.e00 = - ((g2 * gm3 - g3 * gm3) * g1 * gm2 -
-                     (g2 * g3 * gm2 - g2 * g3 * gm3 -
-                     (g3 * gm2 - g2 * gm3) * g1) * gm1
-                     ) / denominator
-        cal.e11 = ((g2 - g3) * gm1 - g1 * (gm2 - gm3) +
-                   g3 * gm2 - g2 * gm3) / denominator
-        cal.delta_e = - ((g1 * (gm2 - gm3) - g2 * gm2 + g3 *
-                          gm3) * gm1 + (g2 * gm3 - g3 * gm3) *
-                         gm2) / denominator
+        denominator = (
+            g1 * (g2 - g3) * gm1
+            + g2 * g3 * gm2
+            - g2 * g3 * gm3
+            - (g2 * gm2 - g3 * gm3) * g1
+        )
+        cal.e00 = (
+            -(
+                (g2 * gm3 - g3 * gm3) * g1 * gm2
+                - (g2 * g3 * gm2 - g2 * g3 * gm3 - (g3 * gm2 - g2 * gm3) * g1)
+                * gm1
+            )
+            / denominator
+        )
+        cal.e11 = (
+            (g2 - g3) * gm1 - g1 * (gm2 - gm3) + g3 * gm2 - g2 * gm3
+        ) / denominator
+        cal.delta_e = (
+            -(
+                (g1 * (gm2 - gm3) - g2 * gm2 + g3 * gm3) * gm1
+                + (g2 * gm3 - g3 * gm3) * gm2
+            )
+            / denominator
+        )
 
     def _calc_port_2(self, freq: int, cal: CalData):
         gt = self.gamma_through(freq)
@@ -301,18 +336,16 @@ class Calibration:
 
         cal.e30 = cal.isolation
         cal.e10e01 = cal.e00 * cal.e11 - cal.delta_e
-        cal.e22 = gm7 / (
-            gm7 * cal.e11 * gt ** 2 + cal.e10e01 * gt ** 2)
-        cal.e10e32 = (gm4 - gm6) * (
-            1 - cal.e11 * cal.e22 * gt ** 2) / gt
+        cal.e22 = gm7 / (gm7 * cal.e11 * gt**2 + cal.e10e01 * gt**2)
+        cal.e10e32 = (gm4 - gm6) * (1 - cal.e11 * cal.e22 * gt**2) / gt
 
     def calc_corrections(self):
         if not self.isValid1Port():
-            logger.warning(
-                "Tried to calibrate from insufficient data.")
+            logger.warning("Tried to calibrate from insufficient data.")
             raise ValueError(
                 "All of short, open and load calibration steps"
-                "must be completed for calibration to be applied.")
+                "must be completed for calibration to be applied."
+            )
         logger.debug("Calculating calibration for %d points.", self.size())
 
         for freq, caldata in self.dataset.items():
@@ -324,10 +357,12 @@ class Calibration:
                 self.isCalculated = False
                 logger.error(
                     "Division error - did you use the same measurement"
-                    " for two of short, open and load?")
+                    " for two of short, open and load?"
+                )
                 raise ValueError(
                     f"Two of short, open and load returned the same"
-                    f" values at frequency {freq}Hz.") from exc
+                    f" values at frequency {freq}Hz."
+                ) from exc
 
         self.gen_interpolation()
         self.isCalculated = True
@@ -338,25 +373,47 @@ class Calibration:
             return IDEAL_SHORT
         logger.debug("Using short calibration set values.")
         cal_element = self.cal_element
-        Zsp = complex(0.0, 2.0 * math.pi * freq * (
-            cal_element.short_l0 + cal_element.short_l1 * freq +
-            cal_element.short_l2 * freq**2 + cal_element.short_l3 * freq**3))
+        Zsp = complex(
+            0.0,
+            2.0
+            * math.pi
+            * freq
+            * (
+                cal_element.short_l0
+                + cal_element.short_l1 * freq
+                + cal_element.short_l2 * freq**2
+                + cal_element.short_l3 * freq**3
+            ),
+        )
         # Referencing https://arxiv.org/pdf/1606.02446.pdf (18) - (21)
-        return (Zsp / 50.0 - 1.0) / (Zsp / 50.0 + 1.0) * cmath.exp(
-            complex(0.0,
-                    -4.0 * math.pi * freq * cal_element.short_length))
+        return (
+            (Zsp / 50.0 - 1.0)
+            / (Zsp / 50.0 + 1.0)
+            * cmath.exp(
+                complex(0.0, -4.0 * math.pi * freq * cal_element.short_length)
+            )
+        )
 
     def gamma_open(self, freq: int) -> complex:
         if self.cal_element.open_is_ideal:
             return IDEAL_OPEN
         logger.debug("Using open calibration set values.")
         cal_element = self.cal_element
-        Zop = complex(0.0, 2.0 * math.pi * freq * (
-            cal_element.open_c0 + cal_element.open_c1 * freq +
-            cal_element.open_c2 * freq**2 + cal_element.open_c3 * freq**3))
+        Zop = complex(
+            0.0,
+            2.0
+            * math.pi
+            * freq
+            * (
+                cal_element.open_c0
+                + cal_element.open_c1 * freq
+                + cal_element.open_c2 * freq**2
+                + cal_element.open_c3 * freq**3
+            ),
+        )
         return ((1.0 - 50.0 * Zop) / (1.0 + 50.0 * Zop)) * cmath.exp(
-            complex(0.0,
-                    -4.0 * math.pi * freq * cal_element.open_length))
+            complex(0.0, -4.0 * math.pi * freq * cal_element.open_length)
+        )
 
     def gamma_load(self, freq: int) -> complex:
         if self.cal_element.load_is_ideal:
@@ -367,11 +424,17 @@ class Calibration:
         if cal_element.load_c > 0.0:
             Zl = cal_element.load_r / complex(
                 1.0,
-                2.0 * cal_element.load_r * math.pi * freq * cal_element.load_c)
+                2.0 * cal_element.load_r * math.pi * freq * cal_element.load_c,
+            )
         if cal_element.load_l > 0.0:
             Zl = Zl + complex(0.0, 2 * math.pi * freq * cal_element.load_l)
-        return (Zl / 50.0 - 1.0) / (Zl / 50.0 + 1.0) * cmath.exp(
-            complex(0.0, -4 * math.pi * freq * cal_element.load_length))
+        return (
+            (Zl / 50.0 - 1.0)
+            / (Zl / 50.0 + 1.0)
+            * cmath.exp(
+                complex(0.0, -4 * math.pi * freq * cal_element.load_length)
+            )
+        )
 
     def gamma_through(self, freq: int) -> complex:
         if self.cal_element.through_is_ideal:
@@ -379,59 +442,103 @@ class Calibration:
         logger.debug("Using through calibration set values.")
         cal_element = self.cal_element
         return cmath.exp(
-            complex(0.0, -2.0 * math.pi * cal_element.through_length * freq))
+            complex(0.0, -2.0 * math.pi * cal_element.through_length * freq)
+        )
 
     def gen_interpolation(self):
-        (freq, e00, e11, delta_e, e10e01, e30, e22, e10e32) = zip(*[
-            (c.freq, c.e00, c.e11, c.delta_e, c.e10e01, c.e30, c.e22, c.e10e32)
-            for c in self.dataset.values()])
+        (freq, e00, e11, delta_e, e10e01, e30, e22, e10e32) = zip(
+            *[
+                (
+                    c.freq,
+                    c.e00,
+                    c.e11,
+                    c.delta_e,
+                    c.e10e01,
+                    c.e30,
+                    c.e22,
+                    c.e10e32,
+                )
+                for c in self.dataset.values()
+            ]
+        )
 
         self.interp = {
-            "e00": interp1d(freq, e00,
-                            kind="slinear", bounds_error=False,
-                            fill_value=(e00[0], e00[-1])),
-            "e11": interp1d(freq, e11,
-                            kind="slinear", bounds_error=False,
-                            fill_value=(e11[0], e11[-1])),
-            "delta_e": interp1d(freq, delta_e,
-                                kind="slinear", bounds_error=False,
-                                fill_value=(delta_e[0], delta_e[-1])),
-            "e10e01": interp1d(freq, e10e01,
-                               kind="slinear", bounds_error=False,
-                               fill_value=(e10e01[0], e10e01[-1])),
-            "e30": interp1d(freq, e30,
-                            kind="slinear", bounds_error=False,
-                            fill_value=(e30[0], e30[-1])),
-            "e22": interp1d(freq, e22,
-                            kind="slinear", bounds_error=False,
-                            fill_value=(e22[0], e22[-1])),
-            "e10e32": interp1d(freq, e10e32,
-                               kind="slinear", bounds_error=False,
-                               fill_value=(e10e32[0], e10e32[-1])),
+            "e00": interp1d(
+                freq,
+                e00,
+                kind="slinear",
+                bounds_error=False,
+                fill_value=(e00[0], e00[-1]),
+            ),
+            "e11": interp1d(
+                freq,
+                e11,
+                kind="slinear",
+                bounds_error=False,
+                fill_value=(e11[0], e11[-1]),
+            ),
+            "delta_e": interp1d(
+                freq,
+                delta_e,
+                kind="slinear",
+                bounds_error=False,
+                fill_value=(delta_e[0], delta_e[-1]),
+            ),
+            "e10e01": interp1d(
+                freq,
+                e10e01,
+                kind="slinear",
+                bounds_error=False,
+                fill_value=(e10e01[0], e10e01[-1]),
+            ),
+            "e30": interp1d(
+                freq,
+                e30,
+                kind="slinear",
+                bounds_error=False,
+                fill_value=(e30[0], e30[-1]),
+            ),
+            "e22": interp1d(
+                freq,
+                e22,
+                kind="slinear",
+                bounds_error=False,
+                fill_value=(e22[0], e22[-1]),
+            ),
+            "e10e32": interp1d(
+                freq,
+                e10e32,
+                kind="slinear",
+                bounds_error=False,
+                fill_value=(e10e32[0], e10e32[-1]),
+            ),
         }
 
     def correct11(self, dp: Datapoint):
         i = self.interp
         s11 = (dp.z - i["e00"](dp.freq)) / (
-            (dp.z * i["e11"](dp.freq)) - i["delta_e"](dp.freq))
+            (dp.z * i["e11"](dp.freq)) - i["delta_e"](dp.freq)
+        )
         return Datapoint(dp.freq, s11.real, s11.imag)
 
     def correct21(self, dp: Datapoint, dp11: Datapoint):
         i = self.interp
         s21 = (dp.z - i["e30"](dp.freq)) / i["e10e32"](dp.freq)
-        s21 = s21 * (i["e10e01"](dp.freq) / (i["e11"](dp.freq)
-                                             * dp11.z - i["delta_e"](dp.freq)))
+        s21 = s21 * (
+            i["e10e01"](dp.freq)
+            / (i["e11"](dp.freq) * dp11.z - i["delta_e"](dp.freq))
+        )
         return Datapoint(dp.freq, s21.real, s21.imag)
 
     def save(self, filename: str):
         self.dataset.notes = "\n".join(self.notes)
         if not self.isValid1Port():
             raise ValueError("Not a valid calibration")
-        with open(filename, mode="w", encoding='utf-8') as calfile:
+        with open(filename, mode="w", encoding="utf-8") as calfile:
             calfile.write(str(self.dataset))
 
     def load(self, filename):
         self.source = os.path.basename(filename)
-        with open(filename, encoding='utf-8') as calfile:
+        with open(filename, encoding="utf-8") as calfile:
             self.dataset = CalDataSet().from_str(calfile.read())
             self.notes = self.dataset.notes.splitlines()

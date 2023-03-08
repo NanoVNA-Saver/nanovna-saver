@@ -64,34 +64,50 @@ class VSWRAnalysis(Analysis):
         data = [d.vswr for d in s11]
         threshold = self.input_vswr_limit.value()
 
-        minima = sorted(at.minima(data, threshold),
-                        key=lambda i: data[i])[:VSWRAnalysis.max_dips_shown]
+        minima = sorted(at.minima(data, threshold), key=lambda i: data[i])[
+            : VSWRAnalysis.max_dips_shown
+        ]
         self.minimums = minima
 
         results_header = self.layout.indexOf(self.results_label)
-        logger.debug("Results start at %d, out of %d",
-                     results_header, self.layout.rowCount())
+        logger.debug(
+            "Results start at %d, out of %d",
+            results_header,
+            self.layout.rowCount(),
+        )
         for _ in range(results_header, self.layout.rowCount()):
             self.layout.removeRow(self.layout.rowCount() - 1)
 
         if not minima:
-            self.layout.addRow(QtWidgets.QLabel(
-                f"No areas found with VSWR below {format_vswr(threshold)}."))
+            self.layout.addRow(
+                QtWidgets.QLabel(
+                    f"No areas found with VSWR below {format_vswr(threshold)}."
+                )
+            )
             return
 
         for idx in minima:
             rng = at.take_from_idx(data, idx, lambda i: i[1] < threshold)
             begin, end = rng[0], rng[-1]
-            self.layout.addRow("Start", QtWidgets.QLabel(
-                format_frequency(s11[begin].freq)))
-            self.layout.addRow("Minimum", QtWidgets.QLabel(
-                f"{format_frequency(s11[idx].freq)}"
-                f" ({round(s11[idx].vswr, 2)})"))
-            self.layout.addRow("End", QtWidgets.QLabel(
-                format_frequency(s11[end].freq)))
             self.layout.addRow(
-                "Span", QtWidgets.QLabel(format_frequency(
-                    (s11[end].freq - s11[begin].freq))))
+                "Start", QtWidgets.QLabel(format_frequency(s11[begin].freq))
+            )
+            self.layout.addRow(
+                "Minimum",
+                QtWidgets.QLabel(
+                    f"{format_frequency(s11[idx].freq)}"
+                    f" ({round(s11[idx].vswr, 2)})"
+                ),
+            )
+            self.layout.addRow(
+                "End", QtWidgets.QLabel(format_frequency(s11[end].freq))
+            )
+            self.layout.addRow(
+                "Span",
+                QtWidgets.QLabel(
+                    format_frequency((s11[end].freq - s11[begin].freq))
+                ),
+            )
             self.layout.addWidget(QHLine())
 
         self.layout.removeRow(self.layout.rowCount() - 1)

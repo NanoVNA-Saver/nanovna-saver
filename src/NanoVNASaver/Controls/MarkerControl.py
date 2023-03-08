@@ -29,16 +29,16 @@ logger = logging.getLogger(__name__)
 
 
 class ShowButton(QtWidgets.QPushButton):
-    def setText(self, text: str = ''):
+    def setText(self, text: str = ""):
         if not text:
-            text = ("Show data"
-                    if Defaults.cfg.gui.markers_hidden else "Hide data")
+            text = (
+                "Show data" if Defaults.cfg.gui.markers_hidden else "Hide data"
+            )
         super().setText(text)
         self.setToolTip("Toggle visibility of marker readings area")
 
 
 class MarkerControl(Control):
-
     def __init__(self, app: QtWidgets.QWidget):
         super().__init__(app, "Markers")
 
@@ -72,7 +72,8 @@ class MarkerControl(Control):
         lock_radiobutton = QtWidgets.QRadioButton("Locked")
         lock_radiobutton.setLayoutDirection(QtCore.Qt.RightToLeft)
         lock_radiobutton.setSizePolicy(
-            QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Preferred)
+            QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Preferred
+        )
 
         hbox = QtWidgets.QHBoxLayout()
         hbox.addWidget(self.showMarkerButton)
@@ -82,8 +83,7 @@ class MarkerControl(Control):
     def toggle_frame(self):
         def settings(hidden: bool):
             Defaults.cfg.gui.markers_hidden = not hidden
-            self.app.marker_frame.setHidden(
-                Defaults.cfg.gui.markers_hidden)
+            self.app.marker_frame.setHidden(Defaults.cfg.gui.markers_hidden)
             self.showMarkerButton.setText()
             self.showMarkerButton.repaint()
 

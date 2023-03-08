@@ -39,16 +39,25 @@ class PolarChart(SquareChart):
         qp.setPen(QtGui.QPen(Chart.color.foreground))
 
         qp.drawEllipse(QtCore.QPoint(center_x, center_y), width_2, height_2)
-        qp.drawEllipse(QtCore.QPoint(center_x, center_y),
-                       width_2 // 2, height_2 // 2)
+        qp.drawEllipse(
+            QtCore.QPoint(center_x, center_y), width_2 // 2, height_2 // 2
+        )
 
-        qp.drawLine(center_x - width_2, center_y,
-                    center_x + width_2, center_y)
-        qp.drawLine(center_x, center_y - height_2,
-                    center_x, center_y + height_2)
-        qp.drawLine(center_x + width_45, center_y + height_45,
-                    center_x - width_45, center_y - height_45)
-        qp.drawLine(center_x + width_45, center_y - height_45,
-                    center_x - width_45, center_y + height_45)
+        qp.drawLine(center_x - width_2, center_y, center_x + width_2, center_y)
+        qp.drawLine(
+            center_x, center_y - height_2, center_x, center_y + height_2
+        )
+        qp.drawLine(
+            center_x + width_45,
+            center_y + height_45,
+            center_x - width_45,
+            center_y - height_45,
+        )
+        qp.drawLine(
+            center_x + width_45,
+            center_y - height_45,
+            center_x - width_45,
+            center_y + height_45,
+        )
 
         self.drawTitle(qp)

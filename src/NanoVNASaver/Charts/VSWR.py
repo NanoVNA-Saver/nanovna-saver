@@ -30,7 +30,6 @@ logger = logging.getLogger(__name__)
 
 
 class VSWRChart(FrequencyChart):
-
     def __init__(self, name=""):
         super().__init__(name)
 
@@ -90,19 +89,22 @@ class VSWRChart(FrequencyChart):
                 qp.setPen(Chart.color.text)
                 if vswr != 0:
                     digits = max(
-                        0, min(2, math.floor(3 - math.log10(abs(vswr)))))
+                        0, min(2, math.floor(3 - math.log10(abs(vswr))))
+                    )
                     v_text = f"{round(vswr, digits)}" if digits else "0"
                     qp.drawText(3, y + 3, v_text)
                 qp.setPen(QtGui.QPen(Chart.color.foreground))
-                qp.drawLine(self.leftMargin - 5, y,
-                            self.leftMargin + self.dim.width, y)
-            qp.drawLine(self.leftMargin - 5,
-                        self.topMargin + self.dim.height,
-                        self.leftMargin + self.dim.width,
-                        self.topMargin + self.dim.height)
+                qp.drawLine(
+                    self.leftMargin - 5, y, self.leftMargin + self.dim.width, y
+                )
+            qp.drawLine(
+                self.leftMargin - 5,
+                self.topMargin + self.dim.height,
+                self.leftMargin + self.dim.width,
+                self.topMargin + self.dim.height,
+            )
             qp.setPen(Chart.color.text)
-            digits = max(
-                0, min(2, math.floor(3 - math.log10(abs(minVSWR)))))
+            digits = max(0, min(2, math.floor(3 - math.log10(abs(minVSWR)))))
             v_text = f"{round(minVSWR, digits)}" if digits else "0"
             qp.drawText(3, self.topMargin + self.dim.height, v_text)
         else:
@@ -112,16 +114,20 @@ class VSWRChart(FrequencyChart):
                 qp.setPen(Chart.color.text)
                 if vswr != 0:
                     digits = max(
-                        0, min(2, math.floor(3 - math.log10(abs(vswr)))))
+                        0, min(2, math.floor(3 - math.log10(abs(vswr))))
+                    )
                     vswrstr = f"{round(vswr, digits)}" if digits else "0"
                     qp.drawText(3, y + 3, vswrstr)
                 qp.setPen(QtGui.QPen(Chart.color.foreground))
-                qp.drawLine(self.leftMargin - 5, y,
-                            self.leftMargin + self.dim.width, y)
-            qp.drawLine(self.leftMargin - 5,
-                        self.topMargin,
-                        self.leftMargin + self.dim.width,
-                        self.topMargin)
+                qp.drawLine(
+                    self.leftMargin - 5, y, self.leftMargin + self.dim.width, y
+                )
+            qp.drawLine(
+                self.leftMargin - 5,
+                self.topMargin,
+                self.leftMargin + self.dim.width,
+                self.topMargin,
+            )
             qp.setPen(Chart.color.text)
             digits = max(0, min(2, math.floor(3 - math.log10(abs(maxVSWR)))))
             v_text = f"{round(maxVSWR, digits)}" if digits else "0"
@@ -130,8 +136,7 @@ class VSWRChart(FrequencyChart):
         qp.setPen(Chart.color.swr)
         for vswr in self.swrMarkers:
             y = self.getYPositionFromValue(vswr)
-            qp.drawLine(self.leftMargin, y,
-                        self.leftMargin + self.dim.width, y)
+            qp.drawLine(self.leftMargin, y, self.leftMargin + self.dim.width, y)
             qp.drawText(self.leftMargin + 3, y - 1, str(vswr))
 
         self.drawFrequencyTicks(qp)
@@ -146,13 +151,15 @@ class VSWRChart(FrequencyChart):
                 span = math.log(self.maxVSWR) - math.log(min_val)
             else:
                 return -1
-            return (
-                self.topMargin + int(
-                    (math.log(self.maxVSWR) - math.log(vswr)) /
-                    span * self.dim.height))
+            return self.topMargin + int(
+                (math.log(self.maxVSWR) - math.log(vswr))
+                / span
+                * self.dim.height
+            )
         try:
             return self.topMargin + int(
-                (self.maxVSWR - vswr) / self.span * self.dim.height)
+                (self.maxVSWR - vswr) / self.span * self.dim.height
+            )
         except OverflowError:
             return self.topMargin
 

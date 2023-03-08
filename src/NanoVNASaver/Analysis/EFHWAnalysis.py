@@ -23,10 +23,14 @@ from PyQt5 import QtWidgets
 
 import NanoVNASaver.AnalyticTools as at
 from NanoVNASaver.Analysis.ResonanceAnalysis import (
-    ResonanceAnalysis, format_resistence_neg
+    ResonanceAnalysis,
+    format_resistence_neg,
 )
 from NanoVNASaver.Formatting import (
-    format_frequency, format_complex_imp, format_frequency_short)
+    format_frequency,
+    format_complex_imp,
+    format_frequency_short,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -43,8 +47,8 @@ class EFHWAnalysis(ResonanceAnalysis):
     def do_resonance_analysis(self):
         s11 = self.app.data.s11
         maximums = sorted(
-            at.maxima([d.impedance().real for d in s11],
-                      threshold=500))
+            at.maxima([d.impedance().real for d in s11], threshold=500)
+        )
         extended_data = {}
         logger.info("TO DO: find near data")
         for lowest in self.crossings:
@@ -61,12 +65,14 @@ class EFHWAnalysis(ResonanceAnalysis):
                 extended_data[m].update(my_data)
             else:
                 extended_data[m] = my_data
-        fields = [("freq", format_frequency_short),
-                  ("r", format_resistence_neg), ("lambda", lambda x: round(x, 2))]
+        fields = [
+            ("freq", format_frequency_short),
+            ("r", format_resistence_neg),
+            ("lambda", lambda x: round(x, 2)),
+        ]
 
         if self.old_data:
-            diff = self.compare(
-                self.old_data[-1], extended_data, fields=fields)
+            diff = self.compare(self.old_data[-1], extended_data, fields=fields)
         else:
             diff = self.compare({}, extended_data, fields=fields)
         self.old_data.append(extended_data)
@@ -76,14 +82,17 @@ class EFHWAnalysis(ResonanceAnalysis):
                 QtWidgets.QLabel(
                     f" ({diff[i]['freq']})"
                     f" {format_complex_imp(s11[idx].impedance())}"
-                    f" ({diff[i]['r']}) {diff[i]['lambda']} m"))
+                    f" ({diff[i]['r']}) {diff[i]['lambda']} m"
+                ),
+            )
 
         if self.filename and extended_data:
             with open(
-                    self.filename, 'w', newline='', encoding='utf-8'
+                self.filename, "w", newline="", encoding="utf-8"
             ) as csvfile:
-                fieldnames = extended_data[sorted(
-                    extended_data.keys())[0]].keys()
+                fieldnames = extended_data[
+                    sorted(extended_data.keys())[0]
+                ].keys()
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                 writer.writeheader()
                 for idx in sorted(extended_data.keys()):
@@ -99,10 +108,11 @@ class EFHWAnalysis(ResonanceAnalysis):
         :param old:
         :param new:
         """
-        fields = fields or [("freq", str), ]
+        fields = fields or [
+            ("freq", str),
+        ]
 
         def no_compare():
-
             return {k: "-" for k, _ in fields}
 
         old_idx = sorted(old.keys())
@@ -113,8 +123,9 @@ class EFHWAnalysis(ResonanceAnalysis):
         i_tot = max(len(old_idx), len(new_idx))
 
         if i_max != i_tot:
-            logger.warning("resonances changed from %s to %s",
-                           len(old_idx), len(new_idx))
+            logger.warning(
+                "resonances changed from %s to %s", len(old_idx), len(new_idx)
+            )
 
         split = 0
         max_delta_f = 1_000_000
@@ -135,15 +146,19 @@ class EFHWAnalysis(ResonanceAnalysis):
                 logger.debug("Deltas %s", diff[i])
                 continue
 
-            logger.debug("can't compare, %s is too much ",
-                         format_frequency(delta_f))
+            logger.debug(
+                "can't compare, %s is too much ", format_frequency(delta_f)
+            )
 
             if delta_f > 0:
                 logger.debug("possible missing band, ")
                 if len(old_idx) > (i + split + 1):
-                    if (abs(new[k]["freq"] -
-                            old[old_idx[i + split + 1]]["freq"]) <
-                            max_delta_f):
+                    if (
+                        abs(
+                            new[k]["freq"] - old[old_idx[i + split + 1]]["freq"]
+                        )
+                        < max_delta_f
+                    ):
                         logger.debug("new is missing band, compare next ")
                         split += 1
                         # FIXME: manage 2 or more band missing ?!?

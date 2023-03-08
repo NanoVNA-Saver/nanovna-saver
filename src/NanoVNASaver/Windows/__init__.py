@@ -9,16 +9,17 @@ from .MarkerSettings import MarkerSettingsWindow
 from .Screenshot import ScreenshotWindow
 from .SweepSettings import SweepSettingsWindow
 from .TDR import TDRWindow
+
 __all__ = [
-    'AboutWindow',
-    'AnalysisWindow',
-    'BandsWindow',
-    'CalibrationWindow',
-    'DeviceSettingsWindow',
-    'DisplaySettingsWindow',
-    'FilesWindow',
-    'MarkerSettingsWindow',
-    'ScreenshotWindow',
-    'SweepSettingsWindow',
-    'TDRWindow',
+    "AboutWindow",
+    "AnalysisWindow",
+    "BandsWindow",
+    "CalibrationWindow",
+    "DeviceSettingsWindow",
+    "DisplaySettingsWindow",
+    "FilesWindow",
+    "MarkerSettingsWindow",
+    "ScreenshotWindow",
+    "SweepSettingsWindow",
+    "TDRWindow",
 ]

@@ -43,8 +43,8 @@ USBDevice = namedtuple("Device", "vid pid name")
 
 USBDEVICETYPES = (
     USBDevice(0x0483, 0x5740, "NanoVNA"),
-    USBDevice(0x16c0, 0x0483, "AVNA"),
-    USBDevice(0x04b4, 0x0008, "S-A-A-2"),
+    USBDevice(0x16C0, 0x0483, "AVNA"),
+    USBDevice(0x04B4, 0x0008, "S-A-A-2"),
 )
 RETRIES = 3
 TIMEOUT = 0.2
@@ -71,15 +71,21 @@ NAME2DEVICE = {
 
 def _fix_v2_hwinfo(dev):
     # if dev.hwid == r'PORTS\VID_04B4&PID_0008\DEMO':
-    if r'PORTS\VID_04B4&PID_0008' in dev.hwid:
-        dev.vid, dev.pid = 0x04b4, 0x0008
+    if r"PORTS\VID_04B4&PID_0008" in dev.hwid:
+        dev.vid, dev.pid = 0x04B4, 0x0008
     return dev
 
 
 def usb_typename(device: ListPortInfo) -> str:
-    return next((t.name for t in USBDEVICETYPES if
-                 device.vid == t.vid and device.pid == t.pid),
-                "")
+    return next(
+        (
+            t.name
+            for t in USBDEVICETYPES
+            if device.vid == t.vid and device.pid == t.pid
+        ),
+        "",
+    )
+
 
 # Get list of interfaces with VNAs connected
 
@@ -88,13 +94,18 @@ def get_interfaces() -> List[Interface]:
     interfaces = []
     # serial like usb interfaces
     for d in list_ports.comports():
-        if platform.system() == 'Windows' and d.vid is None:
+        if platform.system() == "Windows" and d.vid is None:
             d = _fix_v2_hwinfo(d)
         if not (typename := usb_typename(d)):
             continue
-        logger.debug("Found %s USB:(%04x:%04x) on port %s",
-                     typename, d.vid, d.pid, d.device)
-        iface = Interface('serial', typename)
+        logger.debug(
+            "Found %s USB:(%04x:%04x) on port %s",
+            typename,
+            d.vid,
+            d.pid,
+            d.device,
+        )
+        iface = Interface("serial", typename)
         iface.port = d.device
         iface.open()
         iface.comment = get_comment(iface)
@@ -109,9 +120,8 @@ def get_portinfos() -> List[str]:
     portinfos = []
     # serial like usb interfaces
     for d in list_ports.comports():
-        logger.debug("Found USB:(%04x:%04x) on port %s",
-                     d.vid, d.pid, d.device)
-        iface = Interface('serial', "DEBUG")
+        logger.debug("Found USB:(%04x:%04x) on port %s", d.vid, d.pid, d.device)
+        iface = Interface("serial", "DEBUG")
         iface.port = d.device
         iface.open()
         version = detect_version(iface)
@@ -130,19 +140,19 @@ def get_comment(iface: Interface) -> str:
     with iface.lock:
         vna_version = detect_version(iface)
 
-    if vna_version == 'v2':
+    if vna_version == "v2":
         return "S-A-A-2"
 
     logger.info("Finding firmware variant...")
     info = get_info(iface)
     for search, name in (
-            ("AVNA + Teensy", "AVNA"),
-            ("NanoVNA-H 4", "H4"),
-            ("NanoVNA-H", "H"),
-            ("NanoVNA-F_V2", "F_V2"),
-            ("NanoVNA-F", "F"),
-            ("NanoVNA", "NanoVNA"),
-            ("tinySA", "tinySA"),
+        ("AVNA + Teensy", "AVNA"),
+        ("NanoVNA-H 4", "H4"),
+        ("NanoVNA-H", "H"),
+        ("NanoVNA-F_V2", "F_V2"),
+        ("NanoVNA-F", "F"),
+        ("NanoVNA", "NanoVNA"),
+        ("tinySA", "tinySA"),
     ):
         if info.find(search) >= 0:
             return name
@@ -171,7 +181,7 @@ def detect_version(serial_port: serial.Serial) -> str:
         if data.startswith("2"):
             return "v2"
         logger.debug("Retry detection: %s", i + 1)
-    logger.error('No VNA detected. Hardware responded to CR with: %s', data)
+    logger.error("No VNA detected. Hardware responded to CR with: %s", data)
     return ""
 
 

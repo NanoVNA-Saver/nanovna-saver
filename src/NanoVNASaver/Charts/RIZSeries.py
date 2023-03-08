@@ -25,6 +25,5 @@ logger = logging.getLogger(__name__)
 
 
 class RealImaginaryZSeriesChart(RealImaginaryZChart):
-
     def impedance(self, p: Datapoint) -> complex:
         return p.seriesImpedance()

@@ -42,9 +42,8 @@ def truncate(values: List[List[Tuple]], count: int) -> List[List[Tuple]]:
     for valueset in np.swapaxes(values, 0, 1).tolist():
         avg = complex(*np.average(valueset, 0))
         truncated.append(
-            sorted(valueset,
-                   key=lambda v, a=avg:
-                   abs(a - complex(*v)))[:keep])
+            sorted(valueset, key=lambda v, a=avg: abs(a - complex(*v)))[:keep]
+        )
     return np.swapaxes(truncated, 0, 1).tolist()
 
 
@@ -87,7 +86,8 @@ class SweepWorker(QtCore.QRunnable):
         logger.info("Initializing SweepWorker")
         if not self.app.vna.connected():
             logger.debug(
-                "Attempted to run without being connected to the NanoVNA")
+                "Attempted to run without being connected to the NanoVNA"
+            )
             self.running = False
             return
 
@@ -106,8 +106,9 @@ class SweepWorker(QtCore.QRunnable):
         if sweep.segments > 1:
             start = sweep.start
             end = sweep.end
-            logger.debug("Resetting NanoVNA sweep to full range: %d to %d",
-                         start, end)
+            logger.debug(
+                "Resetting NanoVNA sweep to full range: %d to %d", start, end
+            )
             self.app.vna.resetSweep(start, end)
 
         self.percentage = 100
@@ -117,9 +118,11 @@ class SweepWorker(QtCore.QRunnable):
 
     def _run_loop(self) -> None:
         sweep = self.sweep
-        averages = (sweep.properties.averages[0]
-                    if sweep.properties.mode == SweepMode.AVERAGE
-                    else 1)
+        averages = (
+            sweep.properties.averages[0]
+            if sweep.properties.mode == SweepMode.AVERAGE
+            else 1
+        )
         logger.info("%d averages", averages)
 
         while True:
@@ -131,7 +134,8 @@ class SweepWorker(QtCore.QRunnable):
                 start, stop = sweep.get_index_range(i)
 
                 freq, values11, values21 = self.readAveragedSegment(
-                    start, stop, averages)
+                    start, stop, averages
+                )
                 self.percentage = (i + 1) * 100 / sweep.segments
                 self.updateData(freq, values11, values21, i)
             if sweep.properties.mode != SweepMode.CONTINOUS or self.stopped:
@@ -152,14 +156,18 @@ class SweepWorker(QtCore.QRunnable):
     def updateData(self, frequencies, values11, values21, index):
         # Update the data from (i*101) to (i+1)*101
         logger.debug(
-            "Calculating data and inserting in existing data at index %d",
-            index)
+            "Calculating data and inserting in existing data at index %d", index
+        )
         offset = self.sweep.points * index
 
-        raw_data11 = [Datapoint(freq, values11[i][0], values11[i][1])
-                      for i, freq in enumerate(frequencies)]
-        raw_data21 = [Datapoint(freq, values21[i][0], values21[i][1])
-                      for i, freq in enumerate(frequencies)]
+        raw_data11 = [
+            Datapoint(freq, values11[i][0], values11[i][1])
+            for i, freq in enumerate(frequencies)
+        ]
+        raw_data21 = [
+            Datapoint(freq, values21[i][0], values21[i][1])
+            for i, freq in enumerate(frequencies)
+        ]
 
         data11, data21 = self.applyCalibration(raw_data11, raw_data21)
         logger.debug("update Freqs: %s, Offset: %s", len(frequencies), offset)
@@ -169,16 +177,18 @@ class SweepWorker(QtCore.QRunnable):
             self.rawData11[offset + i] = raw_data11[i]
             self.rawData21[offset + i] = raw_data21[i]
 
-        logger.debug("Saving data to application (%d and %d points)",
-                     len(self.data11), len(self.data21))
+        logger.debug(
+            "Saving data to application (%d and %d points)",
+            len(self.data11),
+            len(self.data21),
+        )
         self.app.saveData(self.data11, self.data21)
         logger.debug('Sending "updated" signal')
         self.signals.updated.emit()
 
-    def applyCalibration(self,
-                         raw_data11: List[Datapoint],
-                         raw_data21: List[Datapoint]
-                         ) -> Tuple[List[Datapoint], List[Datapoint]]:
+    def applyCalibration(
+        self, raw_data11: List[Datapoint], raw_data21: List[Datapoint]
+    ) -> Tuple[List[Datapoint], List[Datapoint]]:
         data11: List[Datapoint] = []
         data21: List[Datapoint] = []
 
@@ -186,8 +196,9 @@ class SweepWorker(QtCore.QRunnable):
             data11 = raw_data11.copy()
             data21 = raw_data21.copy()
         elif self.app.calibration.isValid1Port():
-            data11.extend(self.app.calibration.correct11(dp)
-                          for dp in raw_data11)
+            data11.extend(
+                self.app.calibration.correct11(dp) for dp in raw_data11
+            )
         else:
             data11 = raw_data11.copy()
 
@@ -199,8 +210,10 @@ class SweepWorker(QtCore.QRunnable):
             data21 = raw_data21
 
         if self.offsetDelay != 0:
-            data11 = [correct_delay(dp, self.offsetDelay, reflect=True)
-                      for dp in data11]
+            data11 = [
+                correct_delay(dp, self.offsetDelay, reflect=True)
+                for dp in data11
+            ]
             data21 = [correct_delay(dp, self.offsetDelay) for dp in data21]
 
         return data11, data21
@@ -209,8 +222,9 @@ class SweepWorker(QtCore.QRunnable):
         values11 = []
         values21 = []
         freq = []
-        logger.info("Reading from %d to %d. Averaging %d values",
-                    start, stop, averages)
+        logger.info(
+            "Reading from %d to %d. Averaging %d values", start, stop, averages
+        )
         for i in range(averages):
             if self.stopped:
                 logger.debug("Stopping averaging as signalled.")
@@ -227,8 +241,9 @@ class SweepWorker(QtCore.QRunnable):
                 retry += 1
                 freq, tmp11, tmp21 = self.readSegment(start, stop)
                 if retry > 1:
-                    logger.error("retry %s readSegment(%s,%s)",
-                                 retry, start, stop)
+                    logger.error(
+                        "retry %s readSegment(%s,%s)", retry, start, stop
+                    )
                     sleep(0.5)
             values11.append(tmp11)
             values21.append(tmp21)
@@ -240,8 +255,7 @@ class SweepWorker(QtCore.QRunnable):
 
         truncates = self.sweep.properties.averages[1]
         if truncates > 0 and averages > 1:
-            logger.debug("Truncating %d values by %d",
-                         len(values11), truncates)
+            logger.debug("Truncating %d values by %d", len(values11), truncates)
             values11 = truncate(values11, truncates)
             values21 = truncate(values21, truncates)
 
@@ -278,36 +292,42 @@ class SweepWorker(QtCore.QRunnable):
                 a, b = d.split(" ")
                 try:
                     if self.app.vna.validateInput and (
-                            abs(float(a)) > 9.5 or
-                            abs(float(b)) > 9.5):
+                        abs(float(a)) > 9.5 or abs(float(b)) > 9.5
+                    ):
                         logger.warning(
-                            "Got a non plausible data value: (%s)", d)
+                            "Got a non plausible data value: (%s)", d
+                        )
                         done = False
                         break
                     returndata.append((float(a), float(b)))
                 except ValueError as exc:
-                    logger.exception("An exception occurred reading %s: %s",
-                                     data, exc)
+                    logger.exception(
+                        "An exception occurred reading %s: %s", data, exc
+                    )
                     done = False
             if not done:
                 logger.debug("Re-reading %s", data)
                 sleep(0.2)
                 count += 1
                 if count == 5:
-                    logger.error("Tried and failed to read %s %d times.",
-                                 data, count)
+                    logger.error(
+                        "Tried and failed to read %s %d times.", data, count
+                    )
                     logger.debug("trying to reconnect")
                     self.app.vna.reconnect()
                 if count >= 10:
                     logger.critical(
                         "Tried and failed to read %s %d times. Giving up.",
-                        data, count)
+                        data,
+                        count,
+                    )
                     raise IOError(
                         f"Failed reading {data} {count} times.\n"
                         f"Data outside expected valid ranges,"
                         f" or in an unexpected format.\n\n"
                         f"You can disable data validation on the"
-                        f"device settings screen.")
+                        f"device settings screen."
+                    )
         return returndata
 
     def gui_error(self, message: str):

@@ -35,24 +35,32 @@ class RealImaginaryZChart(RealImaginaryChart):
         self.y_menu.addSeparator()
 
         self.action_set_fixed_maximum_real = QtWidgets.QAction(
-            f"Maximum R ({self.maxDisplayReal})")
+            f"Maximum R ({self.maxDisplayReal})"
+        )
         self.action_set_fixed_maximum_real.triggered.connect(
-            self.setMaximumRealValue)
+            self.setMaximumRealValue
+        )
 
         self.action_set_fixed_minimum_real = QtWidgets.QAction(
-            f"Minimum R ({self.minDisplayReal})")
+            f"Minimum R ({self.minDisplayReal})"
+        )
         self.action_set_fixed_minimum_real.triggered.connect(
-            self.setMinimumRealValue)
+            self.setMinimumRealValue
+        )
 
         self.action_set_fixed_maximum_imag = QtWidgets.QAction(
-            f"Maximum jX ({self.maxDisplayImag})")
+            f"Maximum jX ({self.maxDisplayImag})"
+        )
         self.action_set_fixed_maximum_imag.triggered.connect(
-            self.setMaximumImagValue)
+            self.setMaximumImagValue
+        )
 
         self.action_set_fixed_minimum_imag = QtWidgets.QAction(
-            f"Minimum jX ({self.minDisplayImag})")
+            f"Minimum jX ({self.minDisplayImag})"
+        )
         self.action_set_fixed_minimum_imag.triggered.connect(
-            self.setMinimumImagValue)
+            self.setMinimumImagValue
+        )
 
         self.y_menu.addAction(self.action_set_fixed_maximum_real)
         self.y_menu.addAction(self.action_set_fixed_minimum_real)
@@ -62,34 +70,43 @@ class RealImaginaryZChart(RealImaginaryChart):
 
     def drawChart(self, qp: QtGui.QPainter):
         qp.setPen(QtGui.QPen(Chart.color.text))
-        qp.drawText(self.leftMargin + 5, 15,
-                    f"{self.name} (\N{OHM SIGN})")
+        qp.drawText(self.leftMargin + 5, 15, f"{self.name} (\N{OHM SIGN})")
         qp.drawText(10, 15, "R")
         qp.drawText(self.leftMargin + self.dim.width + 10, 15, "X")
         qp.setPen(QtGui.QPen(Chart.color.foreground))
-        qp.drawLine(self.leftMargin,
-                    self.topMargin - 5,
-                    self.leftMargin,
-                    self.topMargin + self.dim.height + 5)
-        qp.drawLine(self.leftMargin - 5,
-                    self.topMargin + self.dim.height,
-                    self.leftMargin + self.dim.width + 5,
-                    self.topMargin + self.dim.height)
+        qp.drawLine(
+            self.leftMargin,
+            self.topMargin - 5,
+            self.leftMargin,
+            self.topMargin + self.dim.height + 5,
+        )
+        qp.drawLine(
+            self.leftMargin - 5,
+            self.topMargin + self.dim.height,
+            self.leftMargin + self.dim.width + 5,
+            self.topMargin + self.dim.height,
+        )
         self.drawTitle(qp)
 
     def contextMenuEvent(self, event):
         self.action_set_fixed_start.setText(
-            f"Start ({format_frequency_chart(self.minFrequency)})")
+            f"Start ({format_frequency_chart(self.minFrequency)})"
+        )
         self.action_set_fixed_stop.setText(
-            f"Stop ({format_frequency_chart(self.maxFrequency)})")
+            f"Stop ({format_frequency_chart(self.maxFrequency)})"
+        )
         self.action_set_fixed_minimum_real.setText(
-            f"Minimum R ({self.minDisplayReal})")
+            f"Minimum R ({self.minDisplayReal})"
+        )
         self.action_set_fixed_maximum_real.setText(
-            f"Maximum R ({self.maxDisplayReal})")
+            f"Maximum R ({self.maxDisplayReal})"
+        )
         self.action_set_fixed_minimum_imag.setText(
-            f"Minimum jX ({self.minDisplayImag})")
+            f"Minimum jX ({self.minDisplayImag})"
+        )
         self.action_set_fixed_maximum_imag.setText(
-            f"Maximum jX ({self.maxDisplayImag})")
+            f"Maximum jX ({self.maxDisplayImag})"
+        )
         self.menu.exec_(event.globalPos())
 
     def value(self, p: Datapoint) -> complex:

@@ -57,7 +57,7 @@ class QualityFactorChart(FrequencyChart):
             scale = 0
             if maxQ > 0:
                 scale = max(scale, math.floor(math.log10(maxQ)))
-                maxQ = math.ceil(maxQ / 10 ** scale) * 10 ** scale
+                maxQ = math.ceil(maxQ / 10**scale) * 10**scale
 
         self.minQ = self.minDisplayValue
         self.maxQ = maxQ
@@ -69,8 +69,9 @@ class QualityFactorChart(FrequencyChart):
 
         for i in range(tickcount):
             q = self.minQ + i * self.span / tickcount
-            y = self.topMargin + int((self.maxQ - q) / self.span *
-                                     self.dim.height)
+            y = self.topMargin + int(
+                (self.maxQ - q) / self.span * self.dim.height
+            )
             q = round(q)
             if q < 10:
                 q = round(q, 2)
@@ -79,12 +80,15 @@ class QualityFactorChart(FrequencyChart):
             qp.setPen(QtGui.QPen(Chart.color.text))
             qp.drawText(3, y + 3, str(q))
             qp.setPen(QtGui.QPen(Chart.color.foreground))
-            qp.drawLine(self.leftMargin - 5, y,
-                        self.leftMargin + self.dim.width, y)
-        qp.drawLine(self.leftMargin - 5,
-                    self.topMargin,
-                    self.leftMargin + self.dim.width,
-                    self.topMargin)
+            qp.drawLine(
+                self.leftMargin - 5, y, self.leftMargin + self.dim.width, y
+            )
+        qp.drawLine(
+            self.leftMargin - 5,
+            self.topMargin,
+            self.leftMargin + self.dim.width,
+            self.topMargin,
+        )
         qp.setPen(Chart.color.text)
 
         max_q = round(maxQ)
@@ -119,8 +123,9 @@ class QualityFactorChart(FrequencyChart):
 
     def getYPosition(self, d: Datapoint) -> int:
         Q = d.qFactor()
-        return self.topMargin + int((self.maxQ - Q) / self.span *
-                                    self.dim.height)
+        return self.topMargin + int(
+            (self.maxQ - Q) / self.span * self.dim.height
+        )
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin

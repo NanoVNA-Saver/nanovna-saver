@@ -65,9 +65,11 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         settings_layout = QtWidgets.QFormLayout(settings_box)
 
         self.chkValidateInputData = QtWidgets.QCheckBox(
-            "Validate received data")
+            "Validate received data"
+        )
         validate_input = self.app.settings.value(
-            "SerialInputValidation", False, bool)
+            "SerialInputValidation", False, bool
+        )
         self.chkValidateInputData.setChecked(validate_input)
         self.chkValidateInputData.stateChanged.connect(self.updateValidation)
         settings_layout.addRow("Validation", self.chkValidateInputData)
@@ -100,12 +102,10 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         settings_layout.addRow(form_layout)
 
     def _set_datapoint_index(self, dpoints: int):
-        self.datapoints.setCurrentIndex(
-            self.datapoints.findText(str(dpoints)))
+        self.datapoints.setCurrentIndex(self.datapoints.findText(str(dpoints)))
 
     def _set_bandwidth_index(self, bw: int):
-        self.bandwidth.setCurrentIndex(
-            self.bandwidth.findText(str(bw)))
+        self.bandwidth.setCurrentIndex(self.bandwidth.findText(str(bw)))
 
     def show(self):
         super().show()
@@ -120,10 +120,10 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
             self.btnCaptureScreenshot.setDisabled(True)
             return
 
-        self.label["status"].setText(
-            f"Connected to {self.app.vna.name}.")
+        self.label["status"].setText(f"Connected to {self.app.vna.name}.")
         self.label["firmware"].setText(
-            f"{self.app.vna.name} v{self.app.vna.version}")
+            f"{self.app.vna.name} v{self.app.vna.version}"
+        )
         if self.app.worker.running:
             self.label["calibration"].setText("(Sweep running)")
         else:

@@ -46,10 +46,10 @@ class NanoVNA_F_V2(NanoVNA):
                 rgba_array,
                 self.screenwidth,
                 self.screenheight,
-                QtGui.QImage.Format_RGB16)
+                QtGui.QImage.Format_RGB16,
+            )
             logger.debug("Captured screenshot")
             return QtGui.QPixmap(image)
         except serial.SerialException as exc:
-            logger.exception(
-                "Exception while capturing screenshot: %s", exc)
+            logger.exception("Exception while capturing screenshot: %s", exc)
         return QtGui.QPixmap()
