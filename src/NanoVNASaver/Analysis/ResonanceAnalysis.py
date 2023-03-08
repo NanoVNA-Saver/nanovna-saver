@@ -25,9 +25,7 @@ from PyQt5 import QtWidgets
 
 import NanoVNASaver.AnalyticTools as at
 from NanoVNASaver.Analysis.Base import Analysis, QHLine
-from NanoVNASaver.Formatting import (
-    format_frequency, format_complex_imp,
-    format_resistance)
+from NanoVNASaver.Formatting import format_frequency, format_resistance
 from NanoVNASaver.RFTools import reflection_coefficient
 
 logger = logging.getLogger(__name__)
@@ -44,7 +42,6 @@ def vswr_transformed(z, ratio=49) -> float:
 
 
 class ResonanceAnalysis(Analysis):
-
     def __init__(self, app):
         super().__init__(app)
         self.crossings: List[int] = []
@@ -72,10 +69,8 @@ class ResonanceAnalysis(Analysis):
             "impedance": s11[index].impedance(),
             "vswr": s11[index].vswr,
         }
-        my_data["vswr_49"] = vswr_transformed(
-            my_data["impedance"], 49)
-        my_data["vswr_4"] = vswr_transformed(
-            my_data["impedance"], 4)
+        my_data["vswr_49"] = vswr_transformed(my_data["impedance"], 49)
+        my_data["vswr_4"] = vswr_transformed(my_data["impedance"], 4)
         my_data["r"] = my_data["impedance"].real
         my_data["x"] = my_data["impedance"].imag
 
@@ -83,24 +78,28 @@ class ResonanceAnalysis(Analysis):
 
     def runAnalysis(self):
         self.reset()
-        self.filename = os.path.join(
-            "/tmp/", f"{self.input_description.text()}.csv"
-        ) if self.input_description.text() else ""
+        self.filename = (
+            os.path.join("/tmp/", f"{self.input_description.text()}.csv")
+            if self.input_description.text()
+            else ""
+        )
 
         results_header = self.layout.indexOf(self.results_label)
-        logger.debug("Results start at %d, out of %d",
-                     results_header, self.layout.rowCount())
+        logger.debug(
+            "Results start at %d, out of %d",
+            results_header,
+            self.layout.rowCount(),
+        )
 
         for _ in range(results_header, self.layout.rowCount()):
             self.layout.removeRow(self.layout.rowCount() - 1)
 
         self.crossings = sorted(
-            set(at.zero_crossings([d.phase for d in self.app.data.s11])))
-        logger.debug("Found %d sections ",
-                     len(self.crossings))
+            set(at.zero_crossings([d.phase for d in self.app.data.s11]))
+        )
+        logger.debug("Found %d sections ", len(self.crossings))
         if not self.crossings:
-            self.layout.addRow(QtWidgets.QLabel(
-                "No resonance found"))
+            self.layout.addRow(QtWidgets.QLabel("No resonance found"))
             return
 
         self
@@ -111,14 +110,18 @@ class ResonanceAnalysis(Analysis):
         extended_data = []
         for crossing in self.crossings:
             extended_data.append(self._get_data(crossing))
-            self.layout.addRow("Resonance", QtWidgets.QLabel(
-                format_frequency(self.app.data.s11[crossing].freq)))
+            self.layout.addRow(
+                "Resonance",
+                QtWidgets.QLabel(
+                    format_frequency(self.app.data.s11[crossing].freq)
+                ),
+            )
             self.layout.addWidget(QHLine())
         # Remove the final separator line
         self.layout.removeRow(self.layout.rowCount() - 1)
         if self.filename and extended_data:
             with open(
-                self.filename, 'w', encoding='utf-8', newline=''
+                self.filename, "w", encoding="utf-8", newline=""
             ) as csvfile:
                 fieldnames = extended_data[0].keys()
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)

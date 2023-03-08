@@ -20,6 +20,7 @@ import logging
 import math
 
 import numpy as np
+
 # pylint: disable=import-error, no-name-in-module
 from scipy.signal import convolve
 from scipy.constants import speed_of_light
@@ -48,9 +49,9 @@ CABLE_PARAMETERS = (
     ("RG-8/U (Shireen RFC®400 Low Loss) (0.86)", 0.86),
     ("RG-8X (Belden 9258) (0.82)", 0.82),
     # Next three added by EKZ, KC3KZ, from measurement of actual cable
-    ("RG-8X (Wireman \"Super 8\" CQ106) (0.81)", 0.81),
-    ("RG-8X (Wireman \"MINI-8 Lo-Loss\" CQ118) (0.82)", 0.82),
-    ("RG-58 (Wireman \"CQ 58 Lo-Loss Flex\" CQ129FF) (0.79)", 0.79),
+    ('RG-8X (Wireman "Super 8" CQ106) (0.81)', 0.81),
+    ('RG-8X (Wireman "MINI-8 Lo-Loss" CQ118) (0.82)', 0.82),
+    ('RG-58 (Wireman "CQ 58 Lo-Loss Flex" CQ129FF) (0.79)', 0.79),
     ("RG-11/U 75\N{OHM SIGN} Foam HDPE (Belden 9292) (0.84)", 0.84),
     ("RG-58/U 52\N{OHM SIGN} PE (Belden 9201) (0.66)", 0.66),
     ("RG-58A/U 54\N{OHM SIGN} Foam (Belden 8219) (0.73)", 0.73),
@@ -92,7 +93,8 @@ class TDRWindow(QtWidgets.QWidget):
         for cable_name, velocity in CABLE_PARAMETERS:
             self.tdr_velocity_dropdown.addItem(cable_name, velocity)
         self.tdr_velocity_dropdown.insertSeparator(
-            self.tdr_velocity_dropdown.count())
+            self.tdr_velocity_dropdown.count()
+        )
         self.tdr_velocity_dropdown.addItem("Custom", -1)
         self.tdr_velocity_dropdown.setCurrentIndex(1)  # Default to PE (0.66)
         self.tdr_velocity_dropdown.currentIndexChanged.connect(self.updateTDR)
@@ -121,7 +123,8 @@ class TDRWindow(QtWidgets.QWidget):
         else:
             self.tdr_velocity_input.setDisabled(True)
             self.tdr_velocity_input.setText(
-                str(self.tdr_velocity_dropdown.currentData()))
+                str(self.tdr_velocity_dropdown.currentData())
+            )
 
         try:
             v = float(self.tdr_velocity_input.text())
@@ -142,8 +145,7 @@ class TDRWindow(QtWidgets.QWidget):
         step = np.ones(FFT_POINTS)
         step_response = convolve(td, step)
 
-        self.step_response_Z = 50 * (
-            1 + step_response) / (1 - step_response)
+        self.step_response_Z = 50 * (1 + step_response) / (1 - step_response)
 
         time_axis = np.linspace(0, 1 / step_size, FFT_POINTS)
         self.distance_axis = time_axis * v * speed_of_light

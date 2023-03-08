@@ -34,12 +34,12 @@ class Datapoint(NamedTuple):
 
     @property
     def z(self) -> complex:
-        """ return the s value complex number """
+        """return the s value complex number"""
         return complex(self.re, self.im)
 
     @property
     def phase(self) -> float:
-        """ return the datapoint's phase value """
+        """return the datapoint's phase value"""
         return cmath.phase(self.z)
 
     @property
@@ -77,11 +77,11 @@ class Datapoint(NamedTuple):
 
     def capacitiveEquivalent(self, ref_impedance: float = 50) -> float:
         return impedance_to_capacitance(
-            self.impedance(ref_impedance), self.freq)
+            self.impedance(ref_impedance), self.freq
+        )
 
     def inductiveEquivalent(self, ref_impedance: float = 50) -> float:
-        return impedance_to_inductance(
-            self.impedance(ref_impedance), self.freq)
+        return impedance_to_inductance(self.impedance(ref_impedance), self.freq)
 
 
 def gamma_to_impedance(gamma: complex, ref_impedance: float = 50) -> complex:
@@ -124,9 +124,10 @@ def norm_to_impedance(z: complex, ref_impedance: float = 50) -> complex:
 
 def parallel_to_serial(z: complex) -> complex:
     """Convert parallel impedance to serial impedance equivalent"""
-    z_sq_sum = z.real ** 2 + z.imag ** 2 or 10.0e-30
-    return complex(z.real * z.imag ** 2 / z_sq_sum,
-                   z.real ** 2 * z.imag / z_sq_sum)
+    z_sq_sum = z.real**2 + z.imag**2 or 10.0e-30
+    return complex(
+        z.real * z.imag**2 / z_sq_sum, z.real**2 * z.imag / z_sq_sum
+    )
 
 
 def reflection_coefficient(z: complex, ref_impedance: float = 50) -> complex:
@@ -136,7 +137,7 @@ def reflection_coefficient(z: complex, ref_impedance: float = 50) -> complex:
 
 def serial_to_parallel(z: complex) -> complex:
     """Convert serial impedance to parallel impedance equivalent"""
-    z_sq_sum = z.real ** 2 + z.imag ** 2
+    z_sq_sum = z.real**2 + z.imag**2
     if z.real == 0 and z.imag == 0:
         return complex(math.inf, math.inf)
     if z.imag == 0:
@@ -150,7 +151,7 @@ def corr_att_data(data: List[Datapoint], att: float) -> List[Datapoint]:
     """Correct the ratio for a given attenuation on s21 input"""
     if att <= 0:
         return data
-    att = 10**(att / 20)
+    att = 10 ** (att / 20)
     ndata = []
     for dp in data:
         corrected = dp.z * att

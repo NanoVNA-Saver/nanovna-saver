@@ -62,11 +62,13 @@ class RealImaginaryChart(FrequencyChart):
         self.y_action_automatic.setCheckable(True)
         self.y_action_automatic.setChecked(True)
         self.y_action_automatic.changed.connect(
-            lambda: self.setFixedValues(self.y_action_fixed_span.isChecked()))
+            lambda: self.setFixedValues(self.y_action_fixed_span.isChecked())
+        )
         self.y_action_fixed_span = QtWidgets.QAction("Fixed span")
         self.y_action_fixed_span.setCheckable(True)
         self.y_action_fixed_span.changed.connect(
-            lambda: self.setFixedValues(self.y_action_fixed_span.isChecked()))
+            lambda: self.setFixedValues(self.y_action_fixed_span.isChecked())
+        )
         mode_group = QtWidgets.QActionGroup(self)
         mode_group.addAction(self.y_action_automatic)
         mode_group.addAction(self.y_action_fixed_span)
@@ -110,11 +112,14 @@ class RealImaginaryChart(FrequencyChart):
         self.drawHorizontalTicks(qp)
 
         fmt = Format(max_nr_digits=3)
-        qp.drawText(3, self.dim.height + self.topMargin,
-                    str(Value(min_real, fmt=fmt)))
-        qp.drawText(self.leftMargin + self.dim.width + 8,
-                    self.dim.height + self.topMargin,
-                    str(Value(min_imag, fmt=fmt)))
+        qp.drawText(
+            3, self.dim.height + self.topMargin, str(Value(min_real, fmt=fmt))
+        )
+        qp.drawText(
+            self.leftMargin + self.dim.width + 8,
+            self.dim.height + self.topMargin,
+            str(Value(min_imag, fmt=fmt)),
+        )
 
         self.drawFrequencyTicks(qp)
 
@@ -131,8 +136,12 @@ class RealImaginaryChart(FrequencyChart):
             c.setAlpha(255)
             pen.setColor(c)
             qp.setPen(pen)
-            qp.drawLine(self.leftMargin + self.dim.width, 9,
-                        self.leftMargin + self.dim.width + 5, 9)
+            qp.drawLine(
+                self.leftMargin + self.dim.width,
+                9,
+                self.leftMargin + self.dim.width + 5,
+                9,
+            )
 
         primary_pen.setWidth(self.dim.point)
         secondary_pen.setWidth(self.dim.point)
@@ -161,7 +170,8 @@ class RealImaginaryChart(FrequencyChart):
                         qp.drawLine(x, y_re, prev_x, prev_y_re)
                     else:
                         new_x, new_y = self.getPlotable(
-                            x, y_re, prev_x, prev_y_re)
+                            x, y_re, prev_x, prev_y_re
+                        )
                         qp.drawLine(x, y_re, new_x, new_y)
                 elif self.isPlotable(prev_x, prev_y_re):
                     new_x, new_y = self.getPlotable(prev_x, prev_y_re, x, y_re)
@@ -175,7 +185,8 @@ class RealImaginaryChart(FrequencyChart):
                         qp.drawLine(x, y_im, prev_x, prev_y_im)
                     else:
                         new_x, new_y = self.getPlotable(
-                            x, y_im, prev_x, prev_y_im)
+                            x, y_im, prev_x, prev_y_im
+                        )
                         qp.drawLine(x, y_im, new_x, new_y)
                 elif self.isPlotable(prev_x, prev_y_im):
                     new_x, new_y = self.getPlotable(prev_x, prev_y_im, x, y_im)
@@ -197,8 +208,12 @@ class RealImaginaryChart(FrequencyChart):
             pen = QtGui.QPen(c)
             pen.setWidth(2)
             qp.setPen(pen)
-            qp.drawLine(self.leftMargin + self.dim.width, 14,
-                        self.leftMargin + self.dim.width + 5, 14)
+            qp.drawLine(
+                self.leftMargin + self.dim.width,
+                14,
+                self.leftMargin + self.dim.width + 5,
+                14,
+            )
 
         for i, reference in enumerate(self.reference):
             if reference.freq < self.fstart or reference.freq > self.fstop:
@@ -225,7 +240,8 @@ class RealImaginaryChart(FrequencyChart):
                         qp.drawLine(x, y_re, prev_x, prev_y_re)
                     else:
                         new_x, new_y = self.getPlotable(
-                            x, y_re, prev_x, prev_y_re)
+                            x, y_re, prev_x, prev_y_re
+                        )
                         qp.drawLine(x, y_re, new_x, new_y)
                 elif self.isPlotable(prev_x, prev_y_re):
                     new_x, new_y = self.getPlotable(prev_x, prev_y_re, x, y_re)
@@ -239,7 +255,8 @@ class RealImaginaryChart(FrequencyChart):
                         qp.drawLine(x, y_im, prev_x, prev_y_im)
                     else:
                         new_x, new_y = self.getPlotable(
-                            x, y_im, prev_x, prev_y_im)
+                            x, y_im, prev_x, prev_y_im
+                        )
                         qp.drawLine(x, y_im, new_x, new_y)
                 elif self.isPlotable(prev_x, prev_y_im):
                     new_x, new_y = self.getPlotable(prev_x, prev_y_im, x, y_im)
@@ -252,10 +269,8 @@ class RealImaginaryChart(FrequencyChart):
                 y_re = self.getReYPosition(self.data[m.location])
                 y_im = self.getImYPosition(self.data[m.location])
 
-                self.drawMarker(x, y_re, qp, m.color,
-                                self.markers.index(m) + 1)
-                self.drawMarker(x, y_im, qp, m.color,
-                                self.markers.index(m) + 1)
+                self.drawMarker(x, y_re, qp, m.color, self.markers.index(m) + 1)
+                self.drawMarker(x, y_im, qp, m.color, self.markers.index(m) + 1)
 
     def drawHorizontalTicks(self, qp):
         # We want one horizontal tick per 50 pixels, at most
@@ -264,8 +279,9 @@ class RealImaginaryChart(FrequencyChart):
         for i in range(horizontal_ticks):
             y = self.topMargin + i * self.dim.height // horizontal_ticks
             qp.setPen(QtGui.QPen(Chart.color.foreground))
-            qp.drawLine(self.leftMargin - 5, y,
-                        self.leftMargin + self.dim.width + 5, y)
+            qp.drawLine(
+                self.leftMargin - 5, y, self.leftMargin + self.dim.width + 5, y
+            )
             qp.setPen(QtGui.QPen(Chart.color.text))
             re = self.max_real - i * self.span_real / horizontal_ticks
             im = self.max_imag - i * self.span_imag / horizontal_ticks
@@ -273,7 +289,8 @@ class RealImaginaryChart(FrequencyChart):
             qp.drawText(
                 self.leftMargin + self.dim.width + 8,
                 y + 4,
-                f"{Value(im, fmt=fmt)}")
+                f"{Value(im, fmt=fmt)}",
+            )
 
     def find_scaling(self):
         # Find scaling
@@ -350,20 +367,24 @@ class RealImaginaryChart(FrequencyChart):
 
     def getImYPosition(self, d: Datapoint) -> int:
         im = self.value(d).imag
-        return int(self.topMargin + (self.max_imag - im) / self.span_imag
-                   * self.dim.height)
+        return int(
+            self.topMargin
+            + (self.max_imag - im) / self.span_imag * self.dim.height
+        )
 
     def getReYPosition(self, d: Datapoint) -> int:
         re = self.value(d).real
-        return int(self.topMargin + (self.max_real - re) / self.span_real
-                   * self.dim.height if math.isfinite(re) else self.topMargin)
+        return int(
+            self.topMargin
+            + (self.max_real - re) / self.span_real * self.dim.height
+            if math.isfinite(re)
+            else self.topMargin
+        )
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
-        valRe = -1 * ((absy / self.dim.height *
-                       self.span_real) - self.max_real)
-        valIm = -1 * ((absy / self.dim.height *
-                       self.span_imag) - self.max_imag)
+        valRe = -1 * ((absy / self.dim.height * self.span_real) - self.max_real)
+        valIm = -1 * ((absy / self.dim.height * self.span_imag) - self.max_imag)
         return [valRe, valIm]
 
     def zoomTo(self, x1, y1, x2, y2):
@@ -406,9 +427,12 @@ class RealImaginaryChart(FrequencyChart):
 
     def setMinimumRealValue(self):
         min_val, selected = QtWidgets.QInputDialog.getDouble(
-            self, "Minimum real value",
-            "Set minimum real value", value=self.minDisplayReal,
-            decimals=2)
+            self,
+            "Minimum real value",
+            "Set minimum real value",
+            value=self.minDisplayReal,
+            decimals=2,
+        )
         if not selected:
             return
         if not (self.fixedValues and min_val >= self.maxDisplayReal):
@@ -418,9 +442,12 @@ class RealImaginaryChart(FrequencyChart):
 
     def setMaximumRealValue(self):
         max_val, selected = QtWidgets.QInputDialog.getDouble(
-            self, "Maximum real value",
-            "Set maximum real value", value=self.maxDisplayReal,
-            decimals=2)
+            self,
+            "Maximum real value",
+            "Set maximum real value",
+            value=self.maxDisplayReal,
+            decimals=2,
+        )
         if not selected:
             return
         if not (self.fixedValues and max_val <= self.minDisplayReal):
@@ -430,9 +457,12 @@ class RealImaginaryChart(FrequencyChart):
 
     def setMinimumImagValue(self):
         min_val, selected = QtWidgets.QInputDialog.getDouble(
-            self, "Minimum imaginary value",
-            "Set minimum imaginary value", value=self.minDisplayImag,
-            decimals=2)
+            self,
+            "Minimum imaginary value",
+            "Set minimum imaginary value",
+            value=self.minDisplayImag,
+            decimals=2,
+        )
         if not selected:
             return
         if not (self.fixedValues and min_val >= self.maxDisplayImag):
@@ -442,9 +472,12 @@ class RealImaginaryChart(FrequencyChart):
 
     def setMaximumImagValue(self):
         max_val, selected = QtWidgets.QInputDialog.getDouble(
-            self, "Maximum imaginary value",
-            "Set maximum imaginary value", value=self.maxDisplayImag,
-            decimals=2)
+            self,
+            "Maximum imaginary value",
+            "Set maximum imaginary value",
+            value=self.maxDisplayImag,
+            decimals=2,
+        )
         if not selected:
             return
         if not (self.fixedValues and max_val <= self.minDisplayImag):
@@ -454,9 +487,10 @@ class RealImaginaryChart(FrequencyChart):
 
     def setFixedValues(self, fixed_values: bool):
         self.fixedValues = fixed_values
-        if (fixed_values and
-                (self.minDisplayReal >= self.maxDisplayReal or
-                 self.minDisplayImag > self.maxDisplayImag)):
+        if fixed_values and (
+            self.minDisplayReal >= self.maxDisplayReal
+            or self.minDisplayImag > self.maxDisplayImag
+        ):
             self.fixedValues = False
             self.y_action_automatic.setChecked(True)
             self.y_action_fixed_span.setChecked(False)
@@ -464,17 +498,23 @@ class RealImaginaryChart(FrequencyChart):
 
     def contextMenuEvent(self, event):
         self.action_set_fixed_start.setText(
-            f"Start ({format_frequency_chart(self.minFrequency)})")
+            f"Start ({format_frequency_chart(self.minFrequency)})"
+        )
         self.action_set_fixed_stop.setText(
-            f"Stop ({format_frequency_chart(self.maxFrequency)})")
+            f"Stop ({format_frequency_chart(self.maxFrequency)})"
+        )
         self.action_set_fixed_minimum_real.setText(
-            f"Minimum R ({self.minDisplayReal})")
+            f"Minimum R ({self.minDisplayReal})"
+        )
         self.action_set_fixed_maximum_real.setText(
-            f"Maximum R ({self.maxDisplayReal})")
+            f"Maximum R ({self.maxDisplayReal})"
+        )
         self.action_set_fixed_minimum_imag.setText(
-            f"Minimum jX ({self.minDisplayImag})")
+            f"Minimum jX ({self.minDisplayImag})"
+        )
         self.action_set_fixed_maximum_imag.setText(
-            f"Maximum jX ({self.maxDisplayImag})")
+            f"Maximum jX ({self.maxDisplayImag})"
+        )
         self.menu.exec_(event.globalPos())
 
     def value(self, p: Datapoint) -> complex:

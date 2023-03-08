@@ -22,13 +22,16 @@ logger = logging.getLogger(__name__)
 
 
 class Version:
-    RXP = re.compile(r"""^
+    RXP = re.compile(
+        r"""^
         \D*
         (?P<major>\d+)\.
         (?P<minor>\d+)\.?
         (?P<revision>\d+)?
         (?P<note>.*)
-        $""", re.VERBOSE)
+        $""",
+        re.VERBOSE,
+    )
 
     def __init__(self, vstring: str = "0.0.0"):
         self.data = {
@@ -68,8 +71,10 @@ class Version:
         return self.data == other.data
 
     def __str__(self) -> str:
-        return (f'{self.data["major"]}.{self.data["minor"]}'
-                f'.{self.data["revision"]}{self.data["note"]}')
+        return (
+            f'{self.data["major"]}.{self.data["minor"]}'
+            f'.{self.data["revision"]}{self.data["note"]}'
+        )
 
     @property
     def major(self) -> int:

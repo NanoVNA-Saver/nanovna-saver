@@ -53,28 +53,36 @@ class AboutWindow(QtWidgets.QWidget):
         layout = QtWidgets.QVBoxLayout()
         top_layout.addLayout(layout)
 
-        layout.addWidget(QtWidgets.QLabel(
-            f"NanoVNASaver version {self.app.version}"))
+        layout.addWidget(
+            QtWidgets.QLabel(f"NanoVNASaver version {self.app.version}")
+        )
         layout.addWidget(QtWidgets.QLabel(""))
-        layout.addWidget(QtWidgets.QLabel(
-            "\N{COPYRIGHT SIGN} Copyright 2019, 2020 Rune B. Broberg\n"
-            "\N{COPYRIGHT SIGN} Copyright 2020ff NanoVNA-Saver Authors"
-        ))
-        layout.addWidget(QtWidgets.QLabel(
-            "This program comes with ABSOLUTELY NO WARRANTY"))
-        layout.addWidget(QtWidgets.QLabel(
-            "This program is licensed under the"
-            " GNU General Public License version 3"))
+        layout.addWidget(
+            QtWidgets.QLabel(
+                "\N{COPYRIGHT SIGN} Copyright 2019, 2020 Rune B. Broberg\n"
+                "\N{COPYRIGHT SIGN} Copyright 2020ff NanoVNA-Saver Authors"
+            )
+        )
+        layout.addWidget(
+            QtWidgets.QLabel("This program comes with ABSOLUTELY NO WARRANTY")
+        )
+        layout.addWidget(
+            QtWidgets.QLabel(
+                "This program is licensed under the"
+                " GNU General Public License version 3"
+            )
+        )
         layout.addWidget(QtWidgets.QLabel(""))
         link_label = QtWidgets.QLabel(
-            f'For further details, see: <a href="{INFO_URL}">'
-            f"{INFO_URL}")
+            f'For further details, see: <a href="{INFO_URL}">' f"{INFO_URL}"
+        )
         link_label.setOpenExternalLinks(True)
         layout.addWidget(link_label)
         layout.addWidget(QtWidgets.QLabel(""))
 
         self.versionLabel = QtWidgets.QLabel(
-            "NanoVNA Firmware Version: Not connected.")
+            "NanoVNA Firmware Version: Not connected."
+        )
         layout.addWidget(self.versionLabel)
 
         layout.addStretch()
@@ -106,14 +114,15 @@ class AboutWindow(QtWidgets.QWidget):
         with contextlib.suppress(IOError, AttributeError):
             self.versionLabel.setText(
                 f"NanoVNA Firmware Version: {self.app.vna.name} "
-                f"v{self.app.vna.version}")
+                f"v{self.app.vna.version}"
+            )
 
     def findUpdates(self, automatic=False):
         latest_version = Version()
         latest_url = ""
         try:
             req = request.Request(VERSION_URL)
-            req.add_header('User-Agent', f'NanoVNA-Saver/{self.app.version}')
+            req.add_header("User-Agent", f"NanoVNA-Saver/{self.app.version}")
             for line in request.urlopen(req, timeout=3):
                 line = line.decode("utf-8")
                 if line.startswith("VERSION ="):
@@ -122,17 +131,20 @@ class AboutWindow(QtWidgets.QWidget):
                     latest_url = line[13:].strip(" \"'")
         except error.HTTPError as e:
             logger.exception(
-                "Checking for updates produced an HTTP exception: %s", e)
+                "Checking for updates produced an HTTP exception: %s", e
+            )
             self.updateLabel.setText("Connection error.")
             return
         except TypeError as e:
             logger.exception(
-                "Checking for updates provided an unparseable file: %s", e)
+                "Checking for updates provided an unparseable file: %s", e
+            )
             self.updateLabel.setText("Data error reading versions.")
             return
         except error.URLError as e:
             logger.exception(
-                "Checking for updates produced a URL exception: %s", e)
+                "Checking for updates produced a URL exception: %s", e
+            )
             self.updateLabel.setText("Connection error.")
             return
 
@@ -147,13 +159,17 @@ class AboutWindow(QtWidgets.QWidget):
                     "Updates available",
                     f"There is a new update for NanoVNA-Saver available!\n"
                     f"Version {latest_version}\n\n"
-                    f'Press "About" to find the update.')
+                    f'Press "About" to find the update.',
+                )
             else:
                 QtWidgets.QMessageBox.information(
-                    self, "Updates available",
-                    "There is a new update for NanoVNA-Saver available!")
+                    self,
+                    "Updates available",
+                    "There is a new update for NanoVNA-Saver available!",
+                )
             self.updateLabel.setText(
-                f'<a href="{latest_url}">New version available</a>.')
+                f'<a href="{latest_url}">New version available</a>.'
+            )
             self.updateLabel.setOpenExternalLinks(True)
         else:
             # Probably don't show a message box, just update the screen?
@@ -161,5 +177,6 @@ class AboutWindow(QtWidgets.QWidget):
             #
             self.updateLabel.setText(
                 f"Last checked: "
-                f"{strftime('%Y-%m-%d %H:%M:%S', localtime())}")
+                f"{strftime('%Y-%m-%d %H:%M:%S', localtime())}"
+            )
         return

@@ -29,7 +29,9 @@ from NanoVNASaver.Analysis.HighPassAnalysis import HighPassAnalysis
 from NanoVNASaver.Analysis.LowPassAnalysis import LowPassAnalysis
 from NanoVNASaver.Analysis.PeakSearchAnalysis import PeakSearchAnalysis
 from NanoVNASaver.Analysis.ResonanceAnalysis import ResonanceAnalysis
-from NanoVNASaver.Analysis.SimplePeakSearchAnalysis import SimplePeakSearchAnalysis
+from NanoVNASaver.Analysis.SimplePeakSearchAnalysis import (
+    SimplePeakSearchAnalysis,
+)
 from NanoVNASaver.Analysis.VSWRAnalysis import VSWRAnalysis
 from NanoVNASaver.Windows.Defaults import make_scrollable
 
@@ -55,25 +57,28 @@ class AnalysisWindow(QtWidgets.QWidget):
         select_analysis_box = QtWidgets.QGroupBox("Select analysis")
         select_analysis_layout = QtWidgets.QFormLayout(select_analysis_box)
         self.analysis_list = QtWidgets.QComboBox()
+        self.analysis_list.addItem("Low-pass filter", LowPassAnalysis(self.app))
         self.analysis_list.addItem(
-            "Low-pass filter", LowPassAnalysis(self.app))
+            "Band-pass filter", BandPassAnalysis(self.app)
+        )
         self.analysis_list.addItem(
-            "Band-pass filter", BandPassAnalysis(self.app))
+            "High-pass filter", HighPassAnalysis(self.app)
+        )
         self.analysis_list.addItem(
-            "High-pass filter", HighPassAnalysis(self.app))
+            "Band-stop filter", BandStopAnalysis(self.app)
+        )
         self.analysis_list.addItem(
-            "Band-stop filter", BandStopAnalysis(self.app))
-        self.analysis_list.addItem(
-            "Simple Peak search", SimplePeakSearchAnalysis(self.app))
-        self.analysis_list.addItem(
-            "Peak search", PeakSearchAnalysis(self.app))
+            "Simple Peak search", SimplePeakSearchAnalysis(self.app)
+        )
+        self.analysis_list.addItem("Peak search", PeakSearchAnalysis(self.app))
         self.analysis_list.addItem("VSWR analysis", VSWRAnalysis(self.app))
         self.analysis_list.addItem(
-            "Resonance analysis", ResonanceAnalysis(self.app))
+            "Resonance analysis", ResonanceAnalysis(self.app)
+        )
+        self.analysis_list.addItem("HWEF analysis", EFHWAnalysis(self.app))
         self.analysis_list.addItem(
-            "HWEF analysis", EFHWAnalysis(self.app))
-        self.analysis_list.addItem(
-            "MagLoop analysis", MagLoopAnalysis(self.app))
+            "MagLoop analysis", MagLoopAnalysis(self.app)
+        )
         select_analysis_layout.addRow("Analysis type", self.analysis_list)
         self.analysis_list.currentIndexChanged.connect(self.updateSelection)
 
@@ -82,15 +87,18 @@ class AnalysisWindow(QtWidgets.QWidget):
         select_analysis_layout.addRow(btn_run_analysis)
 
         self.checkbox_run_automatically = QtWidgets.QCheckBox(
-            "Run automatically")
+            "Run automatically"
+        )
         self.checkbox_run_automatically.stateChanged.connect(
-            self.toggleAutomaticRun)
+            self.toggleAutomaticRun
+        )
         select_analysis_layout.addRow(self.checkbox_run_automatically)
 
         analysis_box = QtWidgets.QGroupBox("Analysis")
         analysis_box.setSizePolicy(
             QtWidgets.QSizePolicy.MinimumExpanding,
-            QtWidgets.QSizePolicy.MinimumExpanding)
+            QtWidgets.QSizePolicy.MinimumExpanding,
+        )
 
         self.analysis_layout = QtWidgets.QVBoxLayout(analysis_box)
         self.analysis_layout.setContentsMargins(0, 0, 0, 0)
@@ -110,7 +118,8 @@ class AnalysisWindow(QtWidgets.QWidget):
         if old_item is not None:
             old_widget = self.analysis_layout.itemAt(0).widget()
             self.analysis_layout.replaceWidget(
-                old_widget, self.analysis.widget())
+                old_widget, self.analysis.widget()
+            )
             old_widget.hide()
         else:
             self.analysis_layout.addWidget(self.analysis.widget())

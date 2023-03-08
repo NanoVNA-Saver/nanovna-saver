@@ -35,6 +35,7 @@ class MagLoopAnalysis(VSWRAnalysis):
     Useful for tuning magloop.
 
     """
+
     max_dips_shown = 1
 
     vswr_bandwith_value = 2.56  # -3 dB ?!?
@@ -56,12 +57,17 @@ class MagLoopAnalysis(VSWRAnalysis):
         if self.min_freq is None:
             self.min_freq = new_start
             self.max_freq = new_end
-            logger.debug("setting hard limits to %s - %s",
-                         self.min_freq, self.max_freq)
+            logger.debug(
+                "setting hard limits to %s - %s", self.min_freq, self.max_freq
+            )
 
         if len(self.minimums) > 1:
-            self.layout.addRow("", QtWidgets.QLabel(
-                "Multiple minimums, not magloop or try to lower VSWR limit"))
+            self.layout.addRow(
+                "",
+                QtWidgets.QLabel(
+                    "Multiple minimums, not magloop or try to lower VSWR limit"
+                ),
+            )
             return
 
         if len(self.minimums) == 1:
@@ -73,22 +79,25 @@ class MagLoopAnalysis(VSWRAnalysis):
                 logger.debug(" Zoom to %s-%s", new_start, new_end)
 
             elif self.vswr_limit_value == self.vswr_bandwith_value:
-                Q = self.app.data.s11[lowest].freq / \
-                    (self.app.data.s11[end].freq -
-                     self.app.data.s11[start].freq)
+                Q = self.app.data.s11[lowest].freq / (
+                    self.app.data.s11[end].freq - self.app.data.s11[start].freq
+                )
                 self.layout.addRow("Q", QtWidgets.QLabel(f"{int(Q)}"))
                 new_start = self.app.data.s11[start].freq - self.bandwith
                 new_end = self.app.data.s11[end].freq + self.bandwith
-                logger.debug("Single Spot, new scan on %s-%s",
-                             new_start, new_end)
+                logger.debug(
+                    "Single Spot, new scan on %s-%s", new_start, new_end
+                )
 
             if self.vswr_limit_value > self.vswr_bandwith_value:
                 self.vswr_limit_value = max(
-                    self.vswr_bandwith_value, self.vswr_limit_value - 1)
+                    self.vswr_bandwith_value, self.vswr_limit_value - 1
+                )
                 self.input_vswr_limit.setValue(self.vswr_limit_value)
                 logger.debug(
                     "found higher minimum, lowering vswr search to %s",
-                    self.vswr_limit_value)
+                    self.vswr_limit_value,
+                )
         else:
             new_start = new_start - 5 * self.bandwith
             new_end = new_end + 5 * self.bandwith
@@ -100,14 +109,17 @@ class MagLoopAnalysis(VSWRAnalysis):
                 self.input_vswr_limit.setValue(self.vswr_limit_value)
                 logger.debug(
                     "no minimum found, looking for higher value %s",
-                    self.vswr_limit_value)
+                    self.vswr_limit_value,
+                )
 
         new_start = max(self.min_freq, new_start)
         new_end = min(self.max_freq, new_end)
-        logger.debug("next search will be %s - %s for vswr %s",
-                     new_start,
-                     new_end,
-                     self.vswr_limit_value)
+        logger.debug(
+            "next search will be %s - %s for vswr %s",
+            new_start,
+            new_end,
+            self.vswr_limit_value,
+        )
 
         self.app.sweep_control.set_start(new_start)
         self.app.sweep_control.set_end(new_end)

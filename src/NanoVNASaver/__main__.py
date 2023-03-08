@@ -40,19 +40,27 @@ from NanoVNASaver.Touchstone import Touchstone
 def main():
     parser = argparse.ArgumentParser(
         description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("-d", "--debug", action="store_true",
-                        help="Set loglevel to debug")
-    parser.add_argument("-D", "--debug-file",
-                        help="File to write debug logging output to")
-    parser.add_argument("-f", "--file",
-                        help="Touchstone file to load as sweep for off"
-                        " device usage")
-    parser.add_argument("-r", "--ref-file",
-                        help="Touchstone file to load as reference for off"
-                        " device usage")
-    parser.add_argument("--version", action="version",
-                        version=f"NanoVNASaver {VERSION}")
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "-d", "--debug", action="store_true", help="Set loglevel to debug"
+    )
+    parser.add_argument(
+        "-D", "--debug-file", help="File to write debug logging output to"
+    )
+    parser.add_argument(
+        "-f",
+        "--file",
+        help="Touchstone file to load as sweep for off" " device usage",
+    )
+    parser.add_argument(
+        "-r",
+        "--ref-file",
+        help="Touchstone file to load as reference for off" " device usage",
+    )
+    parser.add_argument(
+        "--version", action="version", version=f"NanoVNASaver {VERSION}"
+    )
     args = parser.parse_args()
 
     console_log_level = logging.WARNING
@@ -69,7 +77,8 @@ def main():
     ch = logging.StreamHandler()
     ch.setLevel(console_log_level)
     formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
     ch.setFormatter(formatter)
     logger.addHandler(ch)
 
@@ -81,8 +90,7 @@ def main():
 
     logger.info("Startup...")
 
-    QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling,
-                                        True)
+    QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
     app = QtWidgets.QApplication(sys.argv)
     window = NanoVNASaver()
     window.show()
@@ -104,5 +112,5 @@ def main():
         raise exc
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

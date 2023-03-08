@@ -1,4 +1,3 @@
-
 #  NanoVNASaver
 #
 #  A python program to view and export Touchstone data from a NanoVNA
@@ -27,7 +26,6 @@ logger = logging.getLogger(__name__)
 
 
 class MagnitudeZSeriesChart(MagnitudeZChart):
-
     @staticmethod
     def magnitude(p: Datapoint) -> float:
         return abs(p.seriesImpedance())

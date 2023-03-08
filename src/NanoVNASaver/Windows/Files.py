@@ -68,27 +68,32 @@ class FilesWindow(QtWidgets.QWidget):
 
         btn_open_file_window = QtWidgets.QPushButton("Files ...")
         btn_open_file_window.clicked.connect(
-            lambda: self.app.display_window("file"))
+            lambda: self.app.display_window("file")
+        )
 
     def exportFile(self, nr_params: int = 1):
         if len(self.app.data.s11) == 0:
             QtWidgets.QMessageBox.warning(
-                self, "No data to save", "There is no data to save.")
+                self, "No data to save", "There is no data to save."
+            )
             return
         if nr_params > 2 and len(self.app.data.s21) == 0:
             QtWidgets.QMessageBox.warning(
-                self, "No S21 data to save", "There is no S21 data to save.")
+                self, "No S21 data to save", "There is no S21 data to save."
+            )
             return
 
         filedialog = QtWidgets.QFileDialog(self)
         if nr_params == 1:
             filedialog.setDefaultSuffix("s1p")
             filedialog.setNameFilter(
-                "Touchstone 1-Port Files (*.s1p);;All files (*.*)")
+                "Touchstone 1-Port Files (*.s1p);;All files (*.*)"
+            )
         else:
             filedialog.setDefaultSuffix("s2p")
             filedialog.setNameFilter(
-                "Touchstone 2-Port Files (*.s2p);;All files (*.*)")
+                "Touchstone 2-Port Files (*.s2p);;All files (*.*)"
+            )
         filedialog.setAcceptMode(QtWidgets.QFileDialog.AcceptSave)
         selected = filedialog.exec()
         if not selected:
@@ -113,7 +118,8 @@ class FilesWindow(QtWidgets.QWidget):
 
     def loadReferenceFile(self):
         filename, _ = QtWidgets.QFileDialog.getOpenFileName(
-            filter="Touchstone Files (*.s1p *.s2p);;All files (*.*)")
+            filter="Touchstone Files (*.s1p *.s2p);;All files (*.*)"
+        )
         if filename != "":
             self.app.resetReference()
             t = Touchstone(filename)
@@ -122,7 +128,8 @@ class FilesWindow(QtWidgets.QWidget):
 
     def loadSweepFile(self):
         filename, _ = QtWidgets.QFileDialog.getOpenFileName(
-            filter="Touchstone Files (*.s1p *.s2p);;All files (*.*)")
+            filter="Touchstone Files (*.s1p *.s2p);;All files (*.*)"
+        )
         if filename != "":
             self.app.data.s11 = []
             self.app.data.s21 = []

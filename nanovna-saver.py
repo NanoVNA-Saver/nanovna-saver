@@ -28,9 +28,10 @@ try:
     from NanoVNASaver.__main__ import main
 except ModuleNotFoundError:
     import sys
-    sys.path.append('src')
+
+    sys.path.append("src")
     from NanoVNASaver.__main__ import main
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

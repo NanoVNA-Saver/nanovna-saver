@@ -27,6 +27,7 @@ from PyQt5 import QtGui
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.RFTools import Datapoint
 from .Frequency import FrequencyChart
+
 logger = logging.getLogger(__name__)
 
 
@@ -124,23 +125,30 @@ class GroupDelayChart(FrequencyChart):
         tickcount = math.floor(self.dim.height / 60)
         for i in range(tickcount):
             delay = min_delay + span * i / tickcount
-            y = self.topMargin + \
-                round((self.maxDelay - delay) / self.span * self.dim.height)
+            y = self.topMargin + round(
+                (self.maxDelay - delay) / self.span * self.dim.height
+            )
             if delay not in {min_delay, max_delay}:
                 qp.setPen(QtGui.QPen(Chart.color.text))
                 # TODO use format class
-                digits = 0 if delay == 0 else max(
-                    0, min(2, math.floor(3 - math.log10(abs(delay)))))
+                digits = (
+                    0
+                    if delay == 0
+                    else max(0, min(2, math.floor(3 - math.log10(abs(delay)))))
+                )
                 delaystr = str(round(delay, digits if digits != 0 else None))
                 qp.drawText(3, y + 3, delaystr)
                 qp.setPen(QtGui.QPen(Chart.color.foreground))
-                qp.drawLine(self.leftMargin - 5, y,
-                            self.leftMargin + self.dim.width, y)
+                qp.drawLine(
+                    self.leftMargin - 5, y, self.leftMargin + self.dim.width, y
+                )
 
-        qp.drawLine(self.leftMargin - 5,
-                    self.topMargin,
-                    self.leftMargin + self.dim.width,
-                    self.topMargin)
+        qp.drawLine(
+            self.leftMargin - 5,
+            self.topMargin,
+            self.leftMargin + self.dim.width,
+            self.topMargin,
+        )
         qp.setPen(Chart.color.text)
         qp.drawText(3, self.topMargin + 5, str(max_delay))
         qp.drawText(3, self.dim.height + self.topMargin, str(min_delay))
@@ -153,15 +161,20 @@ class GroupDelayChart(FrequencyChart):
 
         self.drawFrequencyTicks(qp)
 
-        self.draw_data(qp, Chart.color.sweep,
-                       self.data, self.groupDelay)
-        self.draw_data(qp, Chart.color.reference,
-                       self.reference, self.groupDelayReference)
+        self.draw_data(qp, Chart.color.sweep, self.data, self.groupDelay)
+        self.draw_data(
+            qp, Chart.color.reference, self.reference, self.groupDelayReference
+        )
 
         self.drawMarkers(qp)
 
-    def draw_data(self, qp: QtGui.QPainter, color: QtGui.QColor,
-                  data: List[Datapoint], delay: List[Datapoint]):
+    def draw_data(
+        self,
+        qp: QtGui.QPainter,
+        color: QtGui.QColor,
+        data: List[Datapoint],
+        delay: List[Datapoint],
+    ):
         pen = QtGui.QPen(color)
         pen.setWidth(self.dim.point)
         line_pen = QtGui.QPen(color)
@@ -200,7 +213,8 @@ class GroupDelayChart(FrequencyChart):
 
     def getYPositionFromDelay(self, delay: float) -> int:
         return self.topMargin + int(
-            (self.maxDelay - delay) / self.span * self.dim.height)
+            (self.maxDelay - delay) / self.span * self.dim.height
+        )
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin

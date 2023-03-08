@@ -35,8 +35,8 @@ class Analysis:
     def __init__(self, app: QtWidgets.QWidget):
         self.app = app
         self.label: Dict[str, QtWidgets.QLabel] = {
-            'titel': QtWidgets.QLabel(),
-            'result': QtWidgets.QLabel(),
+            "titel": QtWidgets.QLabel(),
+            "result": QtWidgets.QLabel(),
         }
         self.layout = QtWidgets.QFormLayout()
         self._widget = QtWidgets.QWidget()
@@ -53,7 +53,7 @@ class Analysis:
             label.clear()
 
     def set_result(self, text):
-        self.label['result'].setText(text)
+        self.label["result"].setText(text)
 
     def set_titel(self, text):
-        self.label['titel'].setText(text)
+        self.label["titel"].setText(text)

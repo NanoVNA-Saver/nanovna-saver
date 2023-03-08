@@ -36,13 +36,16 @@ logger = logging.getLogger(__name__)
 class ChartColors:  # pylint: disable=too-many-instance-attributes
     background: QColor = field(default_factory=lambda: QColor(QtCore.Qt.white))
     foreground: QColor = field(
-        default_factory=lambda: QColor(QtCore.Qt.lightGray))
+        default_factory=lambda: QColor(QtCore.Qt.lightGray)
+    )
     reference: QColor = field(default_factory=lambda: QColor(0, 0, 255, 64))
     reference_secondary: QColor = field(
-        default_factory=lambda: QColor(0, 0, 192, 48))
+        default_factory=lambda: QColor(0, 0, 192, 48)
+    )
     sweep: QColor = field(default_factory=lambda: QColor(QtCore.Qt.darkYellow))
     sweep_secondary: QColor = field(
-        default_factory=lambda: QColor(QtCore.Qt.darkMagenta))
+        default_factory=lambda: QColor(QtCore.Qt.darkMagenta)
+    )
     swr: QColor = field(default_factory=lambda: QColor(255, 0, 0, 128))
     text: QColor = field(default_factory=lambda: QColor(QtCore.Qt.black))
     bands: QColor = field(default_factory=lambda: QColor(128, 128, 128, 48))
@@ -97,8 +100,7 @@ class ChartMarker(QtWidgets.QWidget):
 
         if text and Defaults.cfg.chart.marker_label:
             text_width = self.qp.fontMetrics().horizontalAdvance(text)
-            self.qp.drawText(x - int(text_width // 2),
-                             y - 3 - offset, text)
+            self.qp.drawText(x - int(text_width // 2), y - 3 - offset, text)
 
 
 class Chart(QtWidgets.QWidget):
@@ -109,7 +111,7 @@ class Chart(QtWidgets.QWidget):
     def __init__(self, name):
         super().__init__()
         self.name = name
-        self.sweepTitle = ''
+        self.sweepTitle = ""
 
         self.leftMargin = 30
         self.rightMargin = 20
@@ -130,7 +132,8 @@ class Chart(QtWidgets.QWidget):
 
         self.action_popout = QtWidgets.QAction("Popout chart")
         self.action_popout.triggered.connect(
-            lambda: self.popoutRequested.emit(self))
+            lambda: self.popoutRequested.emit(self)
+        )
         self.addAction(self.action_popout)
 
         self.action_save_screenshot = QtWidgets.QAction("Save image")
@@ -230,7 +233,9 @@ class Chart(QtWidgets.QWidget):
             self.zoomTo(
                 self.dragbox.pos_start[0],
                 self.dragbox.pos_start[1],
-                a0.x(), a0.y())
+                a0.x(),
+                a0.y(),
+            )
             self.dragbox.state = False
             self.dragbox.pos = (-1, -1)
             self.dragbox.pos_start = (0, 0)
@@ -262,7 +267,7 @@ class Chart(QtWidgets.QWidget):
             int(self.leftMargin + ratio_x * factor_x),
             int(self.topMargin + ratio_y * factor_y),
             int(self.leftMargin + self.dim.width - (1 - ratio_x) * factor_x),
-            int(self.topMargin + self.dim.height - (1 - ratio_y) * factor_y)
+            int(self.topMargin + self.dim.height - (1 - ratio_y) * factor_y),
         )
         a0.accept()
 
@@ -272,8 +277,10 @@ class Chart(QtWidgets.QWidget):
     def saveScreenshot(self):
         logger.info("Saving %s to file...", self.name)
         filename, _ = QtWidgets.QFileDialog.getSaveFileName(
-            parent=self, caption="Save image",
-            filter="PNG (*.png);;All files (*.*)")
+            parent=self,
+            caption="Save image",
+            filter="PNG (*.png);;All files (*.*)",
+        )
 
         logger.debug("Filename: %s", filename)
         if not filename:
@@ -314,9 +321,9 @@ class Chart(QtWidgets.QWidget):
         self.update()
 
     @staticmethod
-    def drawMarker(x: int, y: int,
-                   qp: QtGui.QPainter, color: QtGui.QColor,
-                   number: int = 0):
+    def drawMarker(
+        x: int, y: int, qp: QtGui.QPainter, color: QtGui.QColor, number: int = 0
+    ):
         cmarker = ChartMarker(qp)
         cmarker.draw(x, y, color, f"{number}")
 

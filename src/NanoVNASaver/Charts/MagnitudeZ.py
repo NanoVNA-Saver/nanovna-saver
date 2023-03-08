@@ -23,8 +23,7 @@ from typing import List
 from PyQt5 import QtGui
 
 from NanoVNASaver.RFTools import Datapoint
-from NanoVNASaver.SITools import (
-    Format, Value, round_ceil, round_floor)
+from NanoVNASaver.SITools import Format, Value, round_ceil, round_floor
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Charts.Frequency import FrequencyChart
 from NanoVNASaver.Charts.LogMag import LogMagChart
@@ -57,8 +56,10 @@ class MagnitudeZChart(FrequencyChart):
         if self.fixedValues:
             self.maxValue = self.maxDisplayValue
             self.minValue = (
-                max(self.minDisplayValue, 0.01) if self.logarithmicY else
-                self.minDisplayValue)
+                max(self.minDisplayValue, 0.01)
+                if self.logarithmicY
+                else self.minDisplayValue
+            )
         else:
             # Find scaling
             self.minValue = 100
@@ -92,15 +93,18 @@ class MagnitudeZChart(FrequencyChart):
         for i in range(horizontal_ticks):
             y = self.topMargin + round(i * self.dim.height / horizontal_ticks)
             qp.setPen(QtGui.QPen(Chart.color.foreground))
-            qp.drawLine(self.leftMargin - 5, y,
-                        self.leftMargin + self.dim.width + 5, y)
+            qp.drawLine(
+                self.leftMargin - 5, y, self.leftMargin + self.dim.width + 5, y
+            )
             qp.setPen(QtGui.QPen(Chart.color.text))
             val = Value(self.valueAtPosition(y)[0], fmt=fmt)
             qp.drawText(3, y + 4, str(val))
 
-        qp.drawText(3,
-                    self.dim.height + self.topMargin,
-                    str(Value(self.minValue, fmt=fmt)))
+        qp.drawText(
+            3,
+            self.dim.height + self.topMargin,
+            str(Value(self.minValue, fmt=fmt)),
+        )
 
         self.drawFrequencyTicks(qp)
 
@@ -116,18 +120,22 @@ class MagnitudeZChart(FrequencyChart):
             if self.logarithmicY:
                 span = math.log(self.maxValue) - math.log(self.minValue)
                 return self.topMargin + int(
-                    (math.log(self.maxValue) - math.log(mag)) /
-                    span * self.dim.height)
+                    (math.log(self.maxValue) - math.log(mag))
+                    / span
+                    * self.dim.height
+                )
             return self.topMargin + int(
-                (self.maxValue - mag) / self.span * self.dim.height)
+                (self.maxValue - mag) / self.span * self.dim.height
+            )
         return self.topMargin
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin
         if self.logarithmicY:
             span = math.log(self.maxValue) - math.log(self.minValue)
-            val = math.exp(math.log(self.maxValue) -
-                           absy * span / self.dim.height)
+            val = math.exp(
+                math.log(self.maxValue) - absy * span / self.dim.height
+            )
         else:
             val = self.maxValue - (absy / self.dim.height * self.span)
         return [val]

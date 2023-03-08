@@ -20,7 +20,8 @@
 VERSION = "0.6.0-pre"
 VERSION_URL = (
     "https://raw.githubusercontent.com/"
-    "NanoVNA-Saver/nanovna-saver/master/NanoVNASaver/About.py")
+    "NanoVNA-Saver/nanovna-saver/master/NanoVNASaver/About.py"
+)
 
 INFO_URL = "https://github.com/NanoVNA-Saver/nanovna-saver"
 INFO = f"""NanoVNASaver {VERSION}

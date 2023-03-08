@@ -27,22 +27,27 @@ FMT_FREQ_SHORT = SITools.Format(max_nr_digits=4)
 FMT_FREQ_SPACE = SITools.Format(space_str=" ")
 FMT_FREQ_SWEEP = SITools.Format(max_nr_digits=9, allow_strip=True)
 FMT_FREQ_INPUTS = SITools.Format(
-    max_nr_digits=10, allow_strip=True,
-    printable_min=0, unprintable_under="- ")
+    max_nr_digits=10, allow_strip=True, printable_min=0, unprintable_under="- "
+)
 FMT_Q_FACTOR = SITools.Format(
-    max_nr_digits=4, assume_infinity=False,
-    min_offset=0, max_offset=0, allow_strip=True)
+    max_nr_digits=4,
+    assume_infinity=False,
+    min_offset=0,
+    max_offset=0,
+    allow_strip=True,
+)
 FMT_GROUP_DELAY = SITools.Format(max_nr_digits=5, space_str=" ")
 FMT_REACT = SITools.Format(max_nr_digits=5, space_str=" ", allow_strip=True)
-FMT_COMPLEX = SITools.Format(max_nr_digits=3, allow_strip=True,
-                             printable_min=0, unprintable_under="- ")
+FMT_COMPLEX = SITools.Format(
+    max_nr_digits=3, allow_strip=True, printable_min=0, unprintable_under="- "
+)
 FMT_COMPLEX_NEG = SITools.Format(max_nr_digits=3, allow_strip=True)
 FMT_SHORT = SITools.Format(max_nr_digits=4)
 FMT_WAVELENGTH = SITools.Format(max_nr_digits=4, space_str=" ")
-FMT_PARSE = SITools.Format(parse_sloppy_unit=True, parse_sloppy_kilo=True,
-                           parse_clamp_min=0)
-FMT_PARSE_VALUE = SITools.Format(
-    parse_sloppy_unit=True, parse_sloppy_kilo=True)
+FMT_PARSE = SITools.Format(
+    parse_sloppy_unit=True, parse_sloppy_kilo=True, parse_clamp_min=0
+)
+FMT_PARSE_VALUE = SITools.Format(parse_sloppy_unit=True, parse_sloppy_kilo=True)
 FMT_VSWR = SITools.Format(max_nr_digits=3)
 
 
@@ -117,7 +122,7 @@ def format_group_delay(val: float) -> str:
 
 
 def format_phase(val: float) -> str:
-    return f"{math.degrees(val):.2f}""\N{DEGREE SIGN}"
+    return f"{math.degrees(val):.2f}" "\N{DEGREE SIGN}"
 
 
 def format_complex_adm(z: complex, allow_negative: bool = False) -> str:
@@ -135,7 +140,7 @@ def format_complex_imp(z: complex, allow_negative: bool = False) -> str:
     fmt_re = FMT_COMPLEX_NEG if allow_negative else FMT_COMPLEX
     re = SITools.Value(z.real, fmt=fmt_re)
     im = SITools.Value(abs(z.imag), fmt=FMT_COMPLEX)
-    return f"{re}{'-' if z.imag < 0 else '+'}j{im} ""\N{OHM SIGN}"
+    return f"{re}{'-' if z.imag < 0 else '+'}j{im} " "\N{OHM SIGN}"
 
 
 def format_wavelength(length: Number) -> str:
@@ -153,10 +158,11 @@ def parse_frequency(freq: str) -> int:
         return -1
 
 
-def parse_value(val: str, unit: str = "",
-                fmt: SITools.Format = FMT_PARSE_VALUE) -> float:
+def parse_value(
+    val: str, unit: str = "", fmt: SITools.Format = FMT_PARSE_VALUE
+) -> float:
     try:
-        val.replace(',', '.')
+        val.replace(",", ".")
         return float(SITools.Value(val, unit, fmt))
     except (ValueError, IndexError):
         return 0.0

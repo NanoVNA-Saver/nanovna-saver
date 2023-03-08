@@ -25,6 +25,7 @@ from PyQt5 import QtGui
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Charts.Frequency import FrequencyChart
+
 logger = logging.getLogger(__name__)
 
 
@@ -78,21 +79,28 @@ class MagnitudeChart(FrequencyChart):
         target_ticks = int(self.dim.height // 60)
         for i in range(target_ticks):
             val = min_value + i / target_ticks * self.span
-            y = self.topMargin + int((self.maxValue - val) / self.span
-                                     * self.dim.height)
+            y = self.topMargin + int(
+                (self.maxValue - val) / self.span * self.dim.height
+            )
             qp.setPen(Chart.color.text)
             if val != min_value:
                 digits = max(0, min(2, math.floor(3 - math.log10(abs(val)))))
-                vswrstr = (str(round(val)) if digits == 0 else
-                           str(round(val, digits)))
+                vswrstr = (
+                    str(round(val)) if digits == 0 else str(round(val, digits))
+                )
                 qp.drawText(3, y + 3, vswrstr)
             qp.setPen(QtGui.QPen(Chart.color.foreground))
-            qp.drawLine(self.leftMargin - 5, y,
-                        self.leftMargin + self.dim.width, y)
+            qp.drawLine(
+                self.leftMargin - 5, y, self.leftMargin + self.dim.width, y
+            )
 
         qp.setPen(QtGui.QPen(Chart.color.foreground))
-        qp.drawLine(self.leftMargin - 5, self.topMargin,
-                    self.leftMargin + self.dim.width, self.topMargin)
+        qp.drawLine(
+            self.leftMargin - 5,
+            self.topMargin,
+            self.leftMargin + self.dim.width,
+            self.topMargin,
+        )
         qp.setPen(Chart.color.text)
         qp.drawText(3, self.topMargin + 4, str(max_value))
         qp.drawText(3, self.dim.height + self.topMargin, str(min_value))
@@ -103,10 +111,10 @@ class MagnitudeChart(FrequencyChart):
             if vswr <= 1:
                 continue
             mag = (vswr - 1) / (vswr + 1)
-            y = self.topMargin + int((self.maxValue - mag) / self.span
-                                     * self.dim.height)
-            qp.drawLine(self.leftMargin, y,
-                        self.leftMargin + self.dim.width, y)
+            y = self.topMargin + int(
+                (self.maxValue - mag) / self.span * self.dim.height
+            )
+            qp.drawLine(self.leftMargin, y, self.leftMargin + self.dim.width, y)
             qp.drawText(self.leftMargin + 3, y - 1, f"VSWR: {vswr}")
 
         self.drawData(qp, self.data, Chart.color.sweep)
@@ -116,7 +124,8 @@ class MagnitudeChart(FrequencyChart):
     def getYPosition(self, d: Datapoint) -> int:
         mag = self.magnitude(d)
         return self.topMargin + int(
-            (self.maxValue - mag) / self.span * self.dim.height)
+            (self.maxValue - mag) / self.span * self.dim.height
+        )
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin

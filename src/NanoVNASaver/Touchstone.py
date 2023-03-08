@@ -35,20 +35,22 @@ class Options:
     # Fun fact: In Touchstone 1.1 spec all params are optional unordered.
     # Just the line has to start with "#"
     UNIT_TO_FACTOR = {
-        "ghz": 10 ** 9,
-        "mhz": 10 ** 6,
-        "khz": 10 ** 3,
-        "hz": 10 ** 0,
+        "ghz": 10**9,
+        "mhz": 10**6,
+        "khz": 10**3,
+        "hz": 10**0,
     }
     VALID_UNITS = UNIT_TO_FACTOR.keys()
     VALID_PARAMETERS = "syzgh"
     VALID_FORMATS = ("ma", "db", "ri")
 
-    def __init__(self,
-                 unit: str = "GHZ",
-                 parameter: str = "S",
-                 t_format: str = "ma",
-                 resistance: int = 50):
+    def __init__(
+        self,
+        unit: str = "GHZ",
+        parameter: str = "S",
+        t_format: str = "ma",
+        resistance: int = 50,
+    ):
         # set defaults
         assert unit.lower() in Options.VALID_UNITS
         assert parameter.lower() in Options.VALID_PARAMETERS
@@ -145,9 +147,11 @@ class Touchstone:
         return self.sdata[Touchstone.FIELD_ORDER.index(name)]
 
     def s_freq(self, name: str, freq: int) -> Datapoint:
-        return Datapoint(freq,
-                         float(self._interp[name]["real"](freq)),
-                         float(self._interp[name]["imag"](freq)))
+        return Datapoint(
+            freq,
+            float(self._interp[name]["real"](freq)),
+            float(self._interp[name]["imag"](freq)),
+        )
 
     def swap(self):
         self.sdata = [self.s22, self.s12, self.s21, self.s11]
@@ -170,12 +174,20 @@ class Touchstone:
                 imag.append(dp.im)
 
             self._interp[i] = {
-                "real": interp1d(freq, real,
-                                 kind="slinear", bounds_error=False,
-                                 fill_value=(real[0], real[-1])),
-                "imag": interp1d(freq, imag,
-                                 kind="slinear", bounds_error=False,
-                                 fill_value=(imag[0], imag[-1])),
+                "real": interp1d(
+                    freq,
+                    real,
+                    kind="slinear",
+                    bounds_error=False,
+                    fill_value=(real[0], real[-1]),
+                ),
+                "imag": interp1d(
+                    freq,
+                    imag,
+                    kind="slinear",
+                    bounds_error=False,
+                    fill_value=(imag[0], imag[-1]),
+                ),
             }
 
     def _parse_comments(self, fp) -> str:
@@ -192,27 +204,29 @@ class Touchstone:
         vals = iter(data)
         for v in vals:
             if self.opts.format == "ri":
-                next(data_list).append(Datapoint(freq, float(v),
-                                                 float(next(vals))))
+                next(data_list).append(
+                    Datapoint(freq, float(v), float(next(vals)))
+                )
             if self.opts.format == "ma":
                 z = cmath.rect(float(v), math.radians(float(next(vals))))
                 next(data_list).append(Datapoint(freq, z.real, z.imag))
             if self.opts.format == "db":
-                z = cmath.rect(10 ** (float(v) / 20),
-                               math.radians(float(next(vals))))
+                z = cmath.rect(
+                    10 ** (float(v) / 20), math.radians(float(next(vals)))
+                )
                 next(data_list).append(Datapoint(freq, z.real, z.imag))
 
     def load(self):
         logger.info("Attempting to open file %s", self.filename)
         try:
-            with open(self.filename, encoding='utf-8') as infile:
+            with open(self.filename, encoding="utf-8") as infile:
                 self.loads(infile.read())
         except IOError as e:
             logger.exception("Failed to open %s: %s", self.filename, e)
 
     def loads(self, s: str):
         """Parse touchstone 1.1 string input
-           appends to existing sdata if Touchstone object exists
+        appends to existing sdata if Touchstone object exists
         """
         try:
             self._loads(s)
@@ -239,7 +253,7 @@ class Touchstone:
                     continue
 
                 # ignore comments at data end
-                data = line.split('!')[0]
+                data = line.split("!")[0]
                 data = data.split()
                 freq, data = round(float(data[0]) * self.opts.factor), data[1:]
                 data_len = len(data)
@@ -270,8 +284,7 @@ class Touchstone:
             nr_params: Number of s-parameters. 2 for s1p, 4 for s2p
         """
 
-        logger.info("Attempting to open file %s for writing",
-                    self.filename)
+        logger.info("Attempting to open file %s for writing", self.filename)
         with open(self.filename, "w", encoding="utf-8") as outfile:
             outfile.write(self.saves(nr_params))
 

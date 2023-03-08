@@ -61,25 +61,34 @@ class ScreenshotWindow(QtWidgets.QLabel):
             self.pix.scaled(
                 self.size(),
                 QtCore.Qt.KeepAspectRatio,
-                QtCore.Qt.FastTransformation))
+                QtCore.Qt.FastTransformation,
+            )
+        )
         w, h = pixmap.width(), pixmap.height()
         self.action_original_size.setText(
-            "Original size (" + str(w) + "x" + str(h) + ")")
+            "Original size (" + str(w) + "x" + str(h) + ")"
+        )
         self.action_2x_size.setText(
-            "2x size (" + str(w * 2) + "x" + str(h * 2) + ")")
+            "2x size (" + str(w * 2) + "x" + str(h * 2) + ")"
+        )
         self.action_3x_size.setText(
-            "3x size (" + str(w * 3) + "x" + str(h * 3) + ")")
+            "3x size (" + str(w * 3) + "x" + str(h * 3) + ")"
+        )
         self.action_4x_size.setText(
-            "4x size (" + str(w * 4) + "x" + str(h * 4) + ")")
+            "4x size (" + str(w * 4) + "x" + str(h * 4) + ")"
+        )
         self.action_5x_size.setText(
-            "5x size (" + str(w * 5) + "x" + str(h * 5) + ")")
+            "5x size (" + str(w * 5) + "x" + str(h * 5) + ")"
+        )
 
     def saveScreenshot(self):
         if self.pix is not None:
             logger.info("Saving screenshot to file...")
             filename, _ = QtWidgets.QFileDialog.getSaveFileName(
-                parent=self, caption="Save image",
-                filter="PNG (*.png);;All files (*.*)")
+                parent=self,
+                caption="Save image",
+                filter="PNG (*.png);;All files (*.*)",
+            )
 
             logger.debug("Filename: %s", filename)
             if filename != "":
@@ -94,9 +103,13 @@ class ScreenshotWindow(QtWidgets.QLabel):
                 self.pix.scaled(
                     self.size(),
                     QtCore.Qt.KeepAspectRatio,
-                    QtCore.Qt.FastTransformation))
+                    QtCore.Qt.FastTransformation,
+                )
+            )
 
     def setScale(self, scale):
-        width, height = (self.pix.size().width() * scale,
-                         self.pix.size().height() * scale)
+        width, height = (
+            self.pix.size().width() * scale,
+            self.pix.size().height() * scale,
+        )
         self.resize(width, height)

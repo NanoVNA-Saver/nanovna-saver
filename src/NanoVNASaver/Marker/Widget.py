@@ -81,7 +81,8 @@ class Marker(QtCore.QObject, Value):
         if self.qsettings:
             Marker._instances += 1
             Marker.active_labels = self.qsettings.value(
-                "MarkerFields", defaultValue=default_label_ids())
+                "MarkerFields", defaultValue=default_label_ids()
+            )
             self.index = Marker._instances
 
         if not self.name:
@@ -92,7 +93,9 @@ class Marker(QtCore.QObject, Value):
         self.frequencyInput.setAlignment(QtCore.Qt.AlignRight)
         self.frequencyInput.editingFinished.connect(
             lambda: self.setFrequency(
-                parse_frequency(self.frequencyInput.text())))
+                parse_frequency(self.frequencyInput.text())
+            )
+        )
 
         ###############################################################
         # Data display labels
@@ -101,8 +104,8 @@ class Marker(QtCore.QObject, Value):
         self.label = {
             label.label_id: MarkerLabel(label.name) for label in TYPES
         }
-        self.label['actualfreq'].setMinimumWidth(100)
-        self.label['returnloss'].setMinimumWidth(80)
+        self.label["actualfreq"].setMinimumWidth(100)
+        self.label["returnloss"].setMinimumWidth(80)
 
         ###############################################################
         # Marker control layout
@@ -112,8 +115,11 @@ class Marker(QtCore.QObject, Value):
         self.btnColorPicker.setMinimumHeight(20)
         self.btnColorPicker.setFixedWidth(20)
         self.btnColorPicker.clicked.connect(
-            lambda: self.setColor(QtWidgets.QColorDialog.getColor(
-                self.color, options=QtWidgets.QColorDialog.ShowAlphaChannel))
+            lambda: self.setColor(
+                QtWidgets.QColorDialog.getColor(
+                    self.color, options=QtWidgets.QColorDialog.ShowAlphaChannel
+                )
+            )
         )
         self.isMouseControlledRadioButton = QtWidgets.QRadioButton()
 
@@ -133,7 +139,9 @@ class Marker(QtCore.QObject, Value):
         try:
             self.setColor(
                 self.qsettings.value(
-                    f"Marker{self.count()}Color", COLORS[self.count()]))
+                    f"Marker{self.count()}Color", COLORS[self.count()]
+                )
+            )
         except AttributeError:  # happens when qsettings == None
             self.setColor(COLORS[1])
         except IndexError:
@@ -159,8 +167,7 @@ class Marker(QtCore.QObject, Value):
 
     def _add_active_labels(self, label_id, form):
         if label_id in self.label:
-            form.addRow(
-                f"{self.label[label_id].name}:", self.label[label_id])
+            form.addRow(f"{self.label[label_id].name}:", self.label[label_id])
             self.label[label_id].show()
 
     def _size_str(self) -> str:
@@ -171,9 +178,9 @@ class Marker(QtCore.QObject, Value):
 
     def setScale(self, scale):
         self.group_box.setMaximumWidth(int(340 * scale))
-        self.label['actualfreq'].setMinimumWidth(int(100 * scale))
-        self.label['actualfreq'].setMinimumWidth(int(100 * scale))
-        self.label['returnloss'].setMinimumWidth(int(80 * scale))
+        self.label["actualfreq"].setMinimumWidth(int(100 * scale))
+        self.label["actualfreq"].setMinimumWidth(int(100 * scale))
+        self.label["returnloss"].setMinimumWidth(int(80 * scale))
         if self.coloredText:
             color_string = QtCore.QVariant(self.color)
             color_string.convert(QtCore.QVariant.String)
@@ -259,8 +266,10 @@ class Marker(QtCore.QObject, Value):
         upper_stepsize = data[-1].freq - data[-2].freq
 
         # We are outside the bounds of the data, so we can't put in a marker
-        if (self.freq + lower_stepsize / 2 < min_freq or
-                self.freq - upper_stepsize / 2 > max_freq):
+        if (
+            self.freq + lower_stepsize / 2 < min_freq
+            or self.freq - upper_stepsize / 2 > max_freq
+        ):
             return
 
         min_distance = max_freq
@@ -286,15 +295,16 @@ class Marker(QtCore.QObject, Value):
         for v in self.label.values():
             v.setText("")
 
-    def updateLabels(self,
-                     s11: List[RFTools.Datapoint],
-                     s21: List[RFTools.Datapoint]):
+    def updateLabels(
+        self, s11: List[RFTools.Datapoint], s21: List[RFTools.Datapoint]
+    ):
         if not s11:
             return
         if self.location == -1:  # initial position
             try:
                 location = (self.index - 1) / (
-                    (self._instances - 1) * (len(s11) - 1))
+                    (self._instances - 1) * (len(s11) - 1)
+                )
                 self.location = int(location)
             except ZeroDivisionError:
                 self.location = 0
@@ -309,63 +319,72 @@ class Marker(QtCore.QObject, Value):
 
         imp = _s11.impedance()
         cap_str = format_capacitance(
-            RFTools.impedance_to_capacitance(imp, _s11.freq))
+            RFTools.impedance_to_capacitance(imp, _s11.freq)
+        )
         ind_str = format_inductance(
-            RFTools.impedance_to_inductance(imp, _s11.freq))
+            RFTools.impedance_to_inductance(imp, _s11.freq)
+        )
 
         imp_p = RFTools.serial_to_parallel(imp)
         cap_p_str = format_capacitance(
-            RFTools.impedance_to_capacitance(imp_p, _s11.freq))
+            RFTools.impedance_to_capacitance(imp_p, _s11.freq)
+        )
         ind_p_str = format_inductance(
-            RFTools.impedance_to_inductance(imp_p, _s11.freq))
+            RFTools.impedance_to_inductance(imp_p, _s11.freq)
+        )
 
         x_str = cap_str if imp.imag < 0 else ind_str
         x_p_str = cap_p_str if imp_p.imag < 0 else ind_p_str
 
-        self.label['actualfreq'].setText(format_frequency_space(_s11.freq))
-        self.label['lambda'].setText(format_wavelength(_s11.wavelength))
-        self.label['admittance'].setText(format_complex_adm(imp))
-        self.label['impedance'].setText(format_complex_imp(imp))
-        self.label['parc'].setText(cap_p_str)
-        self.label['parl'].setText(ind_p_str)
-        self.label['parlc'].setText(x_p_str)
-        self.label['parr'].setText(format_resistance(imp_p.real))
-        self.label['returnloss'].setText(
-            format_gain(_s11.gain, self.returnloss_is_positive))
-        self.label['s11groupdelay'].setText(
-            format_group_delay(RFTools.groupDelay(s11, self.location)))
-        self.label['s11mag'].setText(format_magnitude(abs(_s11.z)))
-        self.label['s11phase'].setText(format_phase(_s11.phase))
-        self.label['s11polar'].setText(
-            f'{str(round(abs(_s11.z), 2))}∠{format_phase(_s11.phase)}'
+        self.label["actualfreq"].setText(format_frequency_space(_s11.freq))
+        self.label["lambda"].setText(format_wavelength(_s11.wavelength))
+        self.label["admittance"].setText(format_complex_adm(imp))
+        self.label["impedance"].setText(format_complex_imp(imp))
+        self.label["parc"].setText(cap_p_str)
+        self.label["parl"].setText(ind_p_str)
+        self.label["parlc"].setText(x_p_str)
+        self.label["parr"].setText(format_resistance(imp_p.real))
+        self.label["returnloss"].setText(
+            format_gain(_s11.gain, self.returnloss_is_positive)
+        )
+        self.label["s11groupdelay"].setText(
+            format_group_delay(RFTools.groupDelay(s11, self.location))
+        )
+        self.label["s11mag"].setText(format_magnitude(abs(_s11.z)))
+        self.label["s11phase"].setText(format_phase(_s11.phase))
+        self.label["s11polar"].setText(
+            f"{str(round(abs(_s11.z), 2))}∠{format_phase(_s11.phase)}"
         )
 
-        self.label['s11q'].setText(format_q_factor(_s11.qFactor()))
-        self.label['s11z'].setText(format_resistance(abs(imp)))
-        self.label['serc'].setText(cap_str)
-        self.label['serl'].setText(ind_str)
-        self.label['serlc'].setText(x_str)
-        self.label['serr'].setText(format_resistance(imp.real))
-        self.label['vswr'].setText(format_vswr(_s11.vswr))
+        self.label["s11q"].setText(format_q_factor(_s11.qFactor()))
+        self.label["s11z"].setText(format_resistance(abs(imp)))
+        self.label["serc"].setText(cap_str)
+        self.label["serl"].setText(ind_str)
+        self.label["serlc"].setText(x_str)
+        self.label["serr"].setText(format_resistance(imp.real))
+        self.label["vswr"].setText(format_vswr(_s11.vswr))
 
         if len(s21) == len(s11):
             _s21 = s21[self.location]
-            self.label['s21gain'].setText(format_gain(_s21.gain))
-            self.label['s21groupdelay'].setText(
-                format_group_delay(RFTools.groupDelay(s21, self.location) / 2))
-            self.label['s21mag'].setText(format_magnitude(abs(_s21.z)))
-            self.label['s21phase'].setText(format_phase(_s21.phase))
-            self.label['s21polar'].setText(
-                f'{str(round(abs(_s21.z), 2))}∠{format_phase(_s21.phase)}'
+            self.label["s21gain"].setText(format_gain(_s21.gain))
+            self.label["s21groupdelay"].setText(
+                format_group_delay(RFTools.groupDelay(s21, self.location) / 2)
+            )
+            self.label["s21mag"].setText(format_magnitude(abs(_s21.z)))
+            self.label["s21phase"].setText(format_phase(_s21.phase))
+            self.label["s21polar"].setText(
+                f"{str(round(abs(_s21.z), 2))}∠{format_phase(_s21.phase)}"
             )
 
-            self.label['s21magshunt'].setText(
-                format_magnitude(abs(_s21.shuntImpedance())))
-            self.label['s21magseries'].setText(
-                format_magnitude(abs(_s21.seriesImpedance())))
-            self.label['s21realimagshunt'].setText(
-                format_complex_imp(
-                    _s21.shuntImpedance(), allow_negative=True))
-            self.label['s21realimagseries'].setText(
-                format_complex_imp(
-                    _s21.seriesImpedance(), allow_negative=True))
+            self.label["s21magshunt"].setText(
+                format_magnitude(abs(_s21.shuntImpedance()))
+            )
+            self.label["s21magseries"].setText(
+                format_magnitude(abs(_s21.seriesImpedance()))
+            )
+            self.label["s21realimagshunt"].setText(
+                format_complex_imp(_s21.shuntImpedance(), allow_negative=True)
+            )
+            self.label["s21realimagseries"].setText(
+                format_complex_imp(_s21.seriesImpedance(), allow_negative=True)
+            )

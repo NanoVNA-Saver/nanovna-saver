@@ -28,7 +28,6 @@ logger = logging.getLogger(__name__)
 
 
 class SerialControl(Control):
-
     def __init__(self, app: QtWidgets.QWidget):
         super().__init__(app, "Serial port control")
 
@@ -58,7 +57,8 @@ class SerialControl(Control):
         self.btn_settings.setMinimumHeight(20)
         self.btn_settings.setFixedWidth(60)
         self.btn_settings.clicked.connect(
-            lambda: self.app.display_window("device_settings"))
+            lambda: self.app.display_window("device_settings")
+        )
 
         button_layout.addWidget(self.btn_settings, stretch=0)
         self.layout.addRow(button_layout)
@@ -82,8 +82,9 @@ class SerialControl(Control):
             try:
                 self.interface.open()
             except (IOError, AttributeError) as exc:
-                logger.error("Tried to open %s and failed: %s",
-                             self.interface, exc)
+                logger.error(
+                    "Tried to open %s and failed: %s", self.interface, exc
+                )
                 return
             if not self.interface.isOpen():
                 logger.error("Unable to open port %s", self.interface)
@@ -96,7 +97,8 @@ class SerialControl(Control):
             logger.error("Unable to connect to VNA: %s", exc)
 
         self.app.vna.validateInput = self.app.settings.value(
-            "SerialInputValidation", True, bool)
+            "SerialInputValidation", True, bool
+        )
 
         # connected
         self.btn_toggle.setText("Disconnect")
@@ -106,16 +108,20 @@ class SerialControl(Control):
         if not frequencies:
             logger.warning("No frequencies read")
             return
-        logger.info("Read starting frequency %s and end frequency %s",
-                    frequencies[0], frequencies[-1])
+        logger.info(
+            "Read starting frequency %s and end frequency %s",
+            frequencies[0],
+            frequencies[-1],
+        )
         self.app.sweep_control.set_start(frequencies[0])
         if frequencies[0] < frequencies[-1]:
             self.app.sweep_control.set_end(frequencies[-1])
         else:
             self.app.sweep_control.set_end(
-                frequencies[0] +
-                self.app.vna.datapoints *
-                self.app.sweep_control.get_segments())
+                frequencies[0]
+                + self.app.vna.datapoints
+                * self.app.sweep_control.get_segments()
+            )
 
         self.app.sweep_control.set_segments(1)  # speed up things
         self.app.sweep_control.update_center_span()

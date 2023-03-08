@@ -32,10 +32,13 @@ class SweepMode(Enum):
 
 
 class Properties:
-    def __init__(self, name: str = "",
-                 mode: 'SweepMode' = SweepMode.SINGLE,
-                 averages: Tuple[int, int] = (3, 0),
-                 logarithmic: bool = False):
+    def __init__(
+        self,
+        name: str = "",
+        mode: "SweepMode" = SweepMode.SINGLE,
+        averages: Tuple[int, int] = (3, 0),
+        logarithmic: bool = False,
+    ):
         self.name = name
         self.mode = mode
         self.averages = averages
@@ -44,13 +47,19 @@ class Properties:
     def __repr__(self):
         return (
             f"Properties('{self.name}', {self.mode}, {self.averages},"
-            f" {self.logarithmic})")
+            f" {self.logarithmic})"
+        )
 
 
 class Sweep:
-    def __init__(self, start: int = 3600000, end: int = 30000000,
-                 points: int = 101, segments: int = 1,
-                 properties: 'Properties' = Properties()):
+    def __init__(
+        self,
+        start: int = 3600000,
+        end: int = 30000000,
+        points: int = 101,
+        segments: int = 1,
+        properties: "Properties" = Properties(),
+    ):
         self.start = start
         self.end = end
         self.points = points
@@ -63,18 +72,22 @@ class Sweep:
     def __repr__(self) -> str:
         return (
             f"Sweep({self.start}, {self.end}, {self.points}, {self.segments},"
-            f" {self.properties})")
+            f" {self.properties})"
+        )
 
     def __eq__(self, other) -> bool:
-        return (self.start == other.start and
-                self.end == other.end and
-                self.points == other.points and
-                self.segments == other.segments and
-                self.properties == other.properties)
+        return (
+            self.start == other.start
+            and self.end == other.end
+            and self.points == other.points
+            and self.segments == other.segments
+            and self.properties == other.properties
+        )
 
-    def copy(self) -> 'Sweep':
-        return Sweep(self.start, self.end, self.points, self.segments,
-                     self.properties)
+    def copy(self) -> "Sweep":
+        return Sweep(
+            self.start, self.end, self.points, self.segments, self.properties
+        )
 
     @property
     def span(self) -> int:
@@ -86,11 +99,11 @@ class Sweep:
 
     def check(self):
         if (
-                self.segments <= 0
-                or self.points <= 0
-                or self.start <= 0
-                or self.end <= 0
-                or self.stepsize < 1
+            self.segments <= 0
+            or self.points <= 0
+            or self.start <= 0
+            or self.end <= 0
+            or self.stepsize < 1
         ):
             raise ValueError(f"Illegal sweep settings: {self}")
 

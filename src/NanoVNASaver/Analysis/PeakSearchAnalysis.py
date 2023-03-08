@@ -20,12 +20,14 @@ import logging
 
 from PyQt5 import QtWidgets
 import numpy as np
+
 # pylint: disable=import-error, no-name-in-module
 from scipy.signal import find_peaks, peak_prominences
 
 from NanoVNASaver.Analysis.Base import QHLine
 from NanoVNASaver.Analysis.SimplePeakSearchAnalysis import (
-    SimplePeakSearchAnalysis)
+    SimplePeakSearchAnalysis,
+)
 
 from NanoVNASaver.Formatting import format_frequency_short
 
@@ -34,7 +36,6 @@ logger = logging.getLogger(__name__)
 
 
 class PeakSearchAnalysis(SimplePeakSearchAnalysis):
-
     def __init__(self, app):
         super().__init__(app)
 
@@ -48,7 +49,7 @@ class PeakSearchAnalysis(SimplePeakSearchAnalysis):
         self.layout.addRow(QtWidgets.QLabel("<b>Results</b>"))
         self.results_header = self.layout.rowCount()
 
-        self.set_titel('Peak search')
+        self.set_titel("Peak search")
 
     def runAnalysis(self):
         if not self.app.data.s11:
@@ -59,14 +60,14 @@ class PeakSearchAnalysis(SimplePeakSearchAnalysis):
         data, fmt_fnc = self.data_and_format()
 
         inverted = False
-        if self.button['peak_l'].isChecked():
+        if self.button["peak_l"].isChecked():
             inverted = True
             peaks, _ = find_peaks(
-                -np.array(data), width=3, distance=3, prominence=1)
+                -np.array(data), width=3, distance=3, prominence=1
+            )
         else:
-            self.button['peak_h'].setChecked(True)
-            peaks, _ = find_peaks(
-                data, width=3, distance=3, prominence=1)
+            self.button["peak_h"].setChecked(True)
+            peaks, _ = find_peaks(data, width=3, distance=3, prominence=1)
 
         # Having found the peaks, get the prominence data
         for i, p in np.ndenumerate(peaks):
@@ -89,19 +90,24 @@ class PeakSearchAnalysis(SimplePeakSearchAnalysis):
                 f"Freq: {format_frequency_short(s11[pos].freq)}",
                 QtWidgets.QLabel(
                     f" Value: {fmt_fnc(-data[pos] if inverted else data[pos])}"
-                ))
+                ),
+            )
 
-        if self.button['move_marker'].isChecked():
+        if self.button["move_marker"].isChecked():
             if count > len(self.app.markers):
                 logger.warning("More peaks found than there are markers")
             for i in range(min(count, len(self.app.markers))):
                 self.app.markers[i].setFrequency(
-                    str(s11[peaks[indices[i]]].freq))
+                    str(s11[peaks[indices[i]]].freq)
+                )
 
     def reset(self):
         super().reset()
-        logger.debug("Results start at %d, out of %d",
-                     self.results_header, self.layout.rowCount())
+        logger.debug(
+            "Results start at %d, out of %d",
+            self.results_header,
+            self.layout.rowCount(),
+        )
         for _ in range(self.results_header, self.layout.rowCount()):
             logger.debug("deleting %s", self.layout.rowCount())
             self.layout.removeRow(self.layout.rowCount() - 1)

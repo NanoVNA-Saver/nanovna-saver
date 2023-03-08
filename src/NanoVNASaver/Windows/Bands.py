@@ -66,6 +66,7 @@ class BandsWindow(QtWidgets.QWidget):
             QtWidgets.QMessageBox.Warning,
             "Confirm reset",
             "Are you sure you want to reset the bands to default?",
-            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Cancel).exec()
+            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Cancel,
+        ).exec()
         if confirm == QtWidgets.QMessageBox.Yes:
             self.app.bands.resetBands()

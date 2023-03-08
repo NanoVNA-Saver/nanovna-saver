@@ -29,11 +29,11 @@ logger = logging.getLogger(__name__)
 
 
 class SquareChart(Chart):
-    def __init__(self, name=''):
+    def __init__(self, name=""):
         super().__init__(name)
         sizepolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Fixed,
-            QtWidgets.QSizePolicy.MinimumExpanding)
+            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.MinimumExpanding
+        )
         self.setSizePolicy(sizepolicy)
         self.dim.width = 250
         self.dim.height = 250
@@ -53,8 +53,14 @@ class SquareChart(Chart):
     def drawChart(self, qp: QtGui.QPainter) -> None:
         raise NotImplementedError()
 
-    def draw_data(self, qp: QtGui.QPainter, color: QtGui.QColor,
-                  data: List[Datapoint], fstart: int = 0, fstop: int = 0):
+    def draw_data(
+        self,
+        qp: QtGui.QPainter,
+        color: QtGui.QColor,
+        data: List[Datapoint],
+        fstart: int = 0,
+        fstop: int = 0,
+    ):
         if not data:
             return
         fstop = fstop or data[-1].freq
@@ -65,8 +71,7 @@ class SquareChart(Chart):
 
         qp.setPen(pen)
         prev_x = self.getXPosition(data[0])
-        prev_y = int(self.height() / 2 + data[0].im * -1 *
-                     self.dim.height / 2)
+        prev_y = int(self.height() / 2 + data[0].im * -1 * self.dim.height / 2)
         for i, d in enumerate(data):
             x = self.getXPosition(d)
             y = int(self.height() / 2 + d.im * -1 * self.dim.height / 2)
@@ -85,14 +90,15 @@ class SquareChart(Chart):
 
         fstart = self.data[0].freq if self.data else 0
         fstop = self.data[-1].freq if self.data else 0
-        self.draw_data(qp, Chart.color.reference,
-                       self.reference, fstart, fstop)
+        self.draw_data(qp, Chart.color.reference, self.reference, fstart, fstop)
 
         for m in self.markers:
             if m.location != -1 and m.location < len(self.data):
                 x = self.getXPosition(self.data[m.location])
-                y = int(self.height() // 2 -
-                        self.data[m.location].im * self.dim.height // 2)
+                y = int(
+                    self.height() // 2
+                    - self.data[m.location].im * self.dim.height // 2
+                )
                 self.drawMarker(x, y, qp, m.color, self.markers.index(m) + 1)
 
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
@@ -114,11 +120,13 @@ class SquareChart(Chart):
         y = a0.y()
         absx = x - (self.width() - self.dim.width) / 2
         absy = y - (self.height() - self.dim.height) / 2
-        if (absx < 0 or
-            absx > self.dim.width or
-            absy < 0 or
-            absy > self.dim.height or
-                (not self.data and not self.reference)):
+        if (
+            absx < 0
+            or absx > self.dim.width
+            or absy < 0
+            or absy > self.dim.height
+            or (not self.data and not self.reference)
+        ):
             a0.ignore()
             return
         a0.accept()
@@ -133,8 +141,9 @@ class SquareChart(Chart):
 
         positions = [
             math.sqrt(
-                (x - (width_2 + d.re * dim_x_2))**2 +
-                (y - (height_2 - d.im * dim_y_2))**2)
+                (x - (width_2 + d.re * dim_x_2)) ** 2
+                + (y - (height_2 - d.im * dim_y_2)) ** 2
+            )
             for d in target
         ]
 

@@ -27,6 +27,7 @@ from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.SITools import Format, Value
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Charts.Frequency import FrequencyChart
+
 logger = logging.getLogger(__name__)
 
 
@@ -50,19 +51,26 @@ class PermeabilityChart(FrequencyChart):
 
     def drawChart(self, qp: QtGui.QPainter):
         qp.setPen(QtGui.QPen(Chart.color.text))
-        qp.drawText(self.leftMargin + 5, 15, self.name +
-                    " (\N{MICRO SIGN}\N{OHM SIGN} / Hz)")
+        qp.drawText(
+            self.leftMargin + 5,
+            15,
+            self.name + " (\N{MICRO SIGN}\N{OHM SIGN} / Hz)",
+        )
         qp.drawText(10, 15, "R")
         qp.drawText(self.leftMargin + self.dim.width + 10, 15, "X")
         qp.setPen(QtGui.QPen(Chart.color.foreground))
-        qp.drawLine(self.leftMargin,
-                    self.topMargin - 5,
-                    self.leftMargin,
-                    self.topMargin + self.dim.height + 5)
-        qp.drawLine(self.leftMargin - 5,
-                    self.topMargin + self.dim.height,
-                    self.leftMargin + self.dim.width + 5,
-                    self.topMargin + self.dim.height)
+        qp.drawLine(
+            self.leftMargin,
+            self.topMargin - 5,
+            self.leftMargin,
+            self.topMargin + self.dim.height + 5,
+        )
+        qp.drawLine(
+            self.leftMargin - 5,
+            self.topMargin + self.dim.height,
+            self.leftMargin + self.dim.width + 5,
+            self.topMargin + self.dim.height,
+        )
         self.drawTitle(qp)
 
     def drawValues(self, qp: QtGui.QPainter):
@@ -121,15 +129,16 @@ class PermeabilityChart(FrequencyChart):
         for i in range(horizontal_ticks):
             y = self.topMargin + round(i * self.dim.height / horizontal_ticks)
             qp.setPen(QtGui.QPen(Chart.color.foreground))
-            qp.drawLine(self.leftMargin - 5, y,
-                        self.leftMargin + self.dim.width + 5, y)
+            qp.drawLine(
+                self.leftMargin - 5, y, self.leftMargin + self.dim.width + 5, y
+            )
             qp.setPen(QtGui.QPen(Chart.color.text))
             val = Value(self.valueAtPosition(y)[0], fmt=fmt)
             qp.drawText(3, y + 4, str(val))
 
-        qp.drawText(3,
-                    self.dim.height + self.topMargin,
-                    str(Value(min_val, fmt=fmt)))
+        qp.drawText(
+            3, self.dim.height + self.topMargin, str(Value(min_val, fmt=fmt))
+        )
 
         self.drawFrequencyTicks(qp)
 
@@ -147,8 +156,11 @@ class PermeabilityChart(FrequencyChart):
             pen.setColor(c)
             qp.setPen(pen)
             qp.drawLine(
-                self.leftMargin + self.dim.width, 9,
-                self.leftMargin + self.dim.width + 5, 9)
+                self.leftMargin + self.dim.width,
+                9,
+                self.leftMargin + self.dim.width + 5,
+                9,
+            )
 
         primary_pen.setWidth(self.dim.point)
         secondary_pen.setWidth(self.dim.point)
@@ -177,7 +189,8 @@ class PermeabilityChart(FrequencyChart):
                         qp.drawLine(x, y_re, prev_x, prev_y_re)
                     else:
                         new_x, new_y = self.getPlotable(
-                            x, y_re, prev_x, prev_y_re)
+                            x, y_re, prev_x, prev_y_re
+                        )
                         qp.drawLine(x, y_re, new_x, new_y)
                 elif self.isPlotable(prev_x, prev_y_re):
                     new_x, new_y = self.getPlotable(prev_x, prev_y_re, x, y_re)
@@ -191,7 +204,8 @@ class PermeabilityChart(FrequencyChart):
                         qp.drawLine(x, y_im, prev_x, prev_y_im)
                     else:
                         new_x, new_y = self.getPlotable(
-                            x, y_im, prev_x, prev_y_im)
+                            x, y_im, prev_x, prev_y_im
+                        )
                         qp.drawLine(x, y_im, new_x, new_y)
                 elif self.isPlotable(prev_x, prev_y_im):
                     new_x, new_y = self.getPlotable(prev_x, prev_y_im, x, y_im)
@@ -213,8 +227,12 @@ class PermeabilityChart(FrequencyChart):
             pen = QtGui.QPen(c)
             pen.setWidth(2)
             qp.setPen(pen)
-            qp.drawLine(self.leftMargin + self.dim.width, 14,
-                        self.leftMargin + self.dim.width + 5, 14)
+            qp.drawLine(
+                self.leftMargin + self.dim.width,
+                14,
+                self.leftMargin + self.dim.width + 5,
+                14,
+            )
 
         for i, reference in enumerate(self.reference):
             if reference.freq < self.fstart or reference.freq > self.fstop:
@@ -241,7 +259,8 @@ class PermeabilityChart(FrequencyChart):
                         qp.drawLine(x, y_re, prev_x, prev_y_re)
                     else:
                         new_x, new_y = self.getPlotable(
-                            x, y_re, prev_x, prev_y_re)
+                            x, y_re, prev_x, prev_y_re
+                        )
                         qp.drawLine(x, y_re, new_x, new_y)
                 elif self.isPlotable(prev_x, prev_y_re):
                     new_x, new_y = self.getPlotable(prev_x, prev_y_re, x, y_re)
@@ -255,7 +274,8 @@ class PermeabilityChart(FrequencyChart):
                         qp.drawLine(x, y_im, prev_x, prev_y_im)
                     else:
                         new_x, new_y = self.getPlotable(
-                            x, y_im, prev_x, prev_y_im)
+                            x, y_im, prev_x, prev_y_im
+                        )
                         qp.drawLine(x, y_im, new_x, new_y)
                 elif self.isPlotable(prev_x, prev_y_im):
                     new_x, new_y = self.getPlotable(prev_x, prev_y_im, x, y_im)
@@ -268,10 +288,8 @@ class PermeabilityChart(FrequencyChart):
                 y_re = self.getReYPosition(self.data[m.location])
                 y_im = self.getImYPosition(self.data[m.location])
 
-                self.drawMarker(x, y_re, qp, m.color,
-                                self.markers.index(m) + 1)
-                self.drawMarker(x, y_im, qp, m.color,
-                                self.markers.index(m) + 1)
+                self.drawMarker(x, y_re, qp, m.color, self.markers.index(m) + 1)
+                self.drawMarker(x, y_im, qp, m.color, self.markers.index(m) + 1)
 
     def getImYPosition(self, d: Datapoint) -> int:
         im = d.impedance().imag
@@ -283,10 +301,12 @@ class PermeabilityChart(FrequencyChart):
             else:
                 return -1
             return int(
-                self.topMargin + (math.log(self.max) - math.log(im)) /
-                span * self.dim.height)
-        return int(self.topMargin + (self.max - im) /
-                   self.span * self.dim.height)
+                self.topMargin
+                + (math.log(self.max) - math.log(im)) / span * self.dim.height
+            )
+        return int(
+            self.topMargin + (self.max - im) / self.span * self.dim.height
+        )
 
     def getReYPosition(self, d: Datapoint) -> int:
         re = d.impedance().real
@@ -298,10 +318,12 @@ class PermeabilityChart(FrequencyChart):
             else:
                 return -1
             return int(
-                self.topMargin + (math.log(self.max) - math.log(re)) /
-                span * self.dim.height)
+                self.topMargin
+                + (math.log(self.max) - math.log(re)) / span * self.dim.height
+            )
         return int(
-            self.topMargin + (self.max - re) / self.span * self.dim.height)
+            self.topMargin + (self.max - re) / self.span * self.dim.height
+        )
 
     def valueAtPosition(self, y) -> List[float]:
         absy = y - self.topMargin

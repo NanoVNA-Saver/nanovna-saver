@@ -26,13 +26,13 @@ from NanoVNASaver.Hardware.Serial import Interface
 from NanoVNASaver.Hardware.VNA import VNA
 from NanoVNASaver.Version import Version
 
-if platform.system() != 'Windows':
+if platform.system() != "Windows":
     import tty
 
 logger = logging.getLogger(__name__)
 
 _CMD_NOP = 0x00
-_CMD_INDICATE = 0x0d
+_CMD_INDICATE = 0x0D
 _CMD_READ = 0x10
 _CMD_READ2 = 0x11
 _CMD_READ4 = 0x12
@@ -49,22 +49,23 @@ _ADDR_SWEEP_POINTS = 0x20
 _ADDR_SWEEP_VALS_PER_FREQ = 0x22
 _ADDR_RAW_SAMPLES_MODE = 0x26
 _ADDR_VALUES_FIFO = 0x30
-_ADDR_DEVICE_VARIANT = 0xf0
-_ADDR_PROTOCOL_VERSION = 0xf1
-_ADDR_HARDWARE_REVISION = 0xf2
-_ADDR_FW_MAJOR = 0xf3
-_ADDR_FW_MINOR = 0xf4
+_ADDR_DEVICE_VARIANT = 0xF0
+_ADDR_PROTOCOL_VERSION = 0xF1
+_ADDR_HARDWARE_REVISION = 0xF2
+_ADDR_FW_MAJOR = 0xF3
+_ADDR_FW_MINOR = 0xF4
 
 WRITE_SLEEP = 0.05
 
 _ADF4350_TXPOWER_DESC_MAP = {
-    0: '9dB attenuation',
-    1: '6dB attenuation',
-    2: '3dB attenuation',
-    3: 'Maximum',
+    0: "9dB attenuation",
+    1: "6dB attenuation",
+    2: "3dB attenuation",
+    3: "Maximum",
 }
 _ADF4350_TXPOWER_DESC_REV_MAP = {
-    value: key for key, value in _ADF4350_TXPOWER_DESC_MAP.items()}
+    value: key for key, value in _ADF4350_TXPOWER_DESC_MAP.items()
+}
 
 
 class NanoVNA_V2(VNA):
@@ -76,7 +77,7 @@ class NanoVNA_V2(VNA):
     def __init__(self, iface: Interface):
         super().__init__(iface)
 
-        if platform.system() != 'Windows':
+        if platform.system() != "Windows":
             tty.setraw(self.serial.fd)
 
         # reset protocol to known state
@@ -85,8 +86,8 @@ class NanoVNA_V2(VNA):
             sleep(WRITE_SLEEP)
 
         # firmware major version of 0xff indicates dfu mode
-        if self.version.data["major"] == 0xff:
-            raise IOError('Device is in DFU mode')
+        if self.version.data["major"] == 0xFF:
+            raise IOError("Device is in DFU mode")
 
         if "S21 hack" in self.features:
             self.valid_datapoints = (101, 11, 51, 201, 301, 501, 1021)
@@ -116,8 +117,13 @@ class NanoVNA_V2(VNA):
             self.features.update({"Set TX power partial", "Set Average"})
             # Can only set ADF4350 power, i.e. for >= 140MHz
             self.txPowerRanges = [
-                ((140e6, self.sweep_max_freq_Hz),
-                 [_ADF4350_TXPOWER_DESC_MAP[value] for value in (3, 2, 1, 0)]),
+                (
+                    (140e6, self.sweep_max_freq_Hz),
+                    [
+                        _ADF4350_TXPOWER_DESC_MAP[value]
+                        for value in (3, 2, 1, 0)
+                    ],
+                ),
             ]
 
     def readFirmware(self) -> str:
@@ -135,9 +141,15 @@ class NanoVNA_V2(VNA):
         freq_index = -1
 
         for i in range(pointstoread):
-            (fwd_real, fwd_imag, rev0_real, rev0_imag, rev1_real,
-             rev1_imag, freq_index) = unpack_from(
-                "<iiiiiihxxxxxx", arr, i * 32)
+            (
+                fwd_real,
+                fwd_imag,
+                rev0_real,
+                rev0_imag,
+                rev1_real,
+                rev1_imag,
+                freq_index,
+            ) = unpack_from("<iiiiiihxxxxxx", arr, i * 32)
             fwd = complex(fwd_real, fwd_imag)
             refl = complex(rev0_real, rev0_imag)
             thru = complex(rev1_real, rev1_imag)
@@ -158,12 +170,14 @@ class NanoVNA_V2(VNA):
                 self.serial.write(pack("<Q", 0))
                 sleep(WRITE_SLEEP)
                 # cmd: write register 0x30 to clear FIFO
-                self.serial.write(pack("<BBB",
-                                       _CMD_WRITE, _ADDR_VALUES_FIFO, 0))
+                self.serial.write(
+                    pack("<BBB", _CMD_WRITE, _ADDR_VALUES_FIFO, 0)
+                )
                 sleep(WRITE_SLEEP)
                 # clear sweepdata
                 self._sweepdata = [(complex(), complex())] * (
-                    self.datapoints + s21hack)
+                    self.datapoints + s21hack
+                )
                 pointstodo = self.datapoints + s21hack
                 # we read at most 255 values at a time and the time required
                 # empirically is just over 3 seconds for 101 points or
@@ -174,9 +188,13 @@ class NanoVNA_V2(VNA):
                     pointstoread = min(255, pointstodo)
                     # cmd: read FIFO, addr 0x30
                     self.serial.write(
-                        pack("<BBB",
-                             _CMD_READFIFO, _ADDR_VALUES_FIFO,
-                             pointstoread))
+                        pack(
+                            "<BBB",
+                            _CMD_READFIFO,
+                            _ADDR_VALUES_FIFO,
+                            pointstoread,
+                        )
+                    )
                     sleep(WRITE_SLEEP)
                     # each value is 32 bytes
                     nBytes = pointstoread * 32
@@ -185,8 +203,9 @@ class NanoVNA_V2(VNA):
                     # timeout secs
                     arr = self.serial.read(nBytes)
                     if nBytes != len(arr):
-                        logger.warning("expected %d bytes, got %d",
-                                       nBytes, len(arr))
+                        logger.warning(
+                            "expected %d bytes, got %d", nBytes, len(arr)
+                        )
                         # the way to retry on timeout is keep the data
                         # already read then try to read the rest of
                         # the data into the array
@@ -205,8 +224,7 @@ class NanoVNA_V2(VNA):
 
         idx = 1 if value == "data 1" else 0
         return [
-            f'{str(x[idx].real)} {str(x[idx].imag)}'
-            for x in self._sweepdata
+            f"{str(x[idx].real)} {str(x[idx].imag)}" for x in self._sweepdata
         ]
 
     def resetSweep(self, start: int, stop: int):
@@ -225,15 +243,15 @@ class NanoVNA_V2(VNA):
             raise IOError("Timeout reading version registers")
         return Version(f"{resp[0]}.0.{resp[1]}")
 
-    def readVersion(self) -> 'Version':
-        result = self._read_version(_ADDR_FW_MAJOR,
-                                    _ADDR_FW_MINOR)
+    def readVersion(self) -> "Version":
+        result = self._read_version(_ADDR_FW_MAJOR, _ADDR_FW_MINOR)
         logger.debug("readVersion: %s", result)
         return result
 
-    def read_board_revision(self) -> 'Version':
-        result = self._read_version(_ADDR_DEVICE_VARIANT,
-                                    _ADDR_HARDWARE_REVISION)
+    def read_board_revision(self) -> "Version":
+        result = self._read_version(
+            _ADDR_DEVICE_VARIANT, _ADDR_HARDWARE_REVISION
+        )
         logger.debug("read_board_revision: %s", result)
         return result
 
@@ -243,34 +261,41 @@ class NanoVNA_V2(VNA):
             return
         self.sweepStartHz = start
         self.sweepStepHz = step
-        logger.info('NanoVNAV2: set sweep start %d step %d',
-                    self.sweepStartHz, self.sweepStepHz)
+        logger.info(
+            "NanoVNAV2: set sweep start %d step %d",
+            self.sweepStartHz,
+            self.sweepStepHz,
+        )
         self._updateSweep()
         return
 
     def _updateSweep(self):
         s21hack = "S21 hack" in self.features
-        cmd = pack("<BBQ", _CMD_WRITE8, _ADDR_SWEEP_START,
-                   max(50000,
-                       int(self.sweepStartHz - (self.sweepStepHz * s21hack))))
-        cmd += pack("<BBQ", _CMD_WRITE8,
-                    _ADDR_SWEEP_STEP, int(self.sweepStepHz))
-        cmd += pack("<BBH", _CMD_WRITE2,
-                    _ADDR_SWEEP_POINTS, self.datapoints + s21hack)
-        cmd += pack("<BBH", _CMD_WRITE2,
-                    _ADDR_SWEEP_VALS_PER_FREQ, 1)
+        cmd = pack(
+            "<BBQ",
+            _CMD_WRITE8,
+            _ADDR_SWEEP_START,
+            max(50000, int(self.sweepStartHz - (self.sweepStepHz * s21hack))),
+        )
+        cmd += pack(
+            "<BBQ", _CMD_WRITE8, _ADDR_SWEEP_STEP, int(self.sweepStepHz)
+        )
+        cmd += pack(
+            "<BBH", _CMD_WRITE2, _ADDR_SWEEP_POINTS, self.datapoints + s21hack
+        )
+        cmd += pack("<BBH", _CMD_WRITE2, _ADDR_SWEEP_VALS_PER_FREQ, 1)
         with self.serial.lock:
             self.serial.write(cmd)
             sleep(WRITE_SLEEP)
 
     def setTXPower(self, freq_range, power_desc):
         if freq_range[0] != 140e6:
-            raise ValueError('Invalid TX power frequency range')
+            raise ValueError("Invalid TX power frequency range")
         # 140MHz..max => ADF4350
         self._set_register(0x42, _ADF4350_TXPOWER_DESC_REV_MAP[power_desc], 1)
 
     def _set_register(self, addr, value, size):
-        packet = b''
+        packet = b""
         if size == 1:
             packet = pack("<BBB", _CMD_WRITE, addr, value)
         elif size == 2:
