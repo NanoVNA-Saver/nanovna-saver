@@ -21,7 +21,7 @@ import logging
 from time import strftime, localtime
 from urllib import request, error
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt6 import QtWidgets, QtCore, QtGui
 
 from NanoVNASaver.About import VERSION_URL, INFO_URL
 from NanoVNASaver.Version import Version
@@ -41,7 +41,7 @@ class AboutWindow(QtWidgets.QWidget):
         top_layout = QtWidgets.QHBoxLayout()
         make_scrollable(self, top_layout)
 
-        QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
+        QtGui.QShortcut(QtCore.Qt.Key.Key_Escape, self, self.hide)
 
         icon_layout = QtWidgets.QVBoxLayout()
         top_layout.addLayout(icon_layout)

@@ -21,9 +21,9 @@ import dataclasses as DC
 import logging
 from ast import literal_eval
 
-from PyQt5 import QtCore
-from PyQt5.QtCore import QSettings, QByteArray
-from PyQt5.QtGui import QColor
+from PyQt6 import QtCore
+from PyQt6.QtCore import QSettings, QByteArray
+from PyQt6.QtGui import QColor, QColorConstants
 
 logger = logging.getLogger(__name__)
 
@@ -69,23 +69,25 @@ class Chart:
 @DC.dataclass
 class ChartColors:  # pylint: disable=too-many-instance-attributes
     background: QColor = DC.field(
-        default_factory=lambda: QColor(QtCore.Qt.white)
+        default_factory=lambda: QColor(QColorConstants.White)
     )
     foreground: QColor = DC.field(
-        default_factory=lambda: QColor(QtCore.Qt.lightGray)
+        default_factory=lambda: QColor(QColorConstants.LightGray)
     )
     reference: QColor = DC.field(default_factory=lambda: QColor(0, 0, 255, 64))
     reference_secondary: QColor = DC.field(
         default_factory=lambda: QColor(0, 0, 192, 48)
     )
     sweep: QColor = DC.field(
-        default_factory=lambda: QColor(QtCore.Qt.darkYellow)
+        default_factory=lambda: QColor(QColorConstants.DarkYellow)
     )
     sweep_secondary: QColor = DC.field(
-        default_factory=lambda: QColor(QtCore.Qt.darkMagenta)
+        default_factory=lambda: QColor(QColorConstants.DarkMagenta)
     )
     swr: QColor = DC.field(default_factory=lambda: QColor(255, 0, 0, 128))
-    text: QColor = DC.field(default_factory=lambda: QColor(QtCore.Qt.black))
+    text: QColor = DC.field(
+        default_factory=lambda: QColor(QColorConstants.Black)
+    )
     bands: QColor = DC.field(default_factory=lambda: QColor(128, 128, 128, 48))
 
 
@@ -110,7 +112,7 @@ class Markers:
     )
     colored_names: bool = True
     color_0: QColor = DC.field(
-        default_factory=lambda: QColor(QtCore.Qt.darkGray)
+        default_factory=lambda: QColor(QColorConstants.DarkGray)
     )
     color_1: QColor = DC.field(default_factory=lambda: QColor(255, 0, 0))
     color_2: QColor = DC.field(default_factory=lambda: QColor(0, 255, 0))
@@ -119,7 +121,7 @@ class Markers:
     color_5: QColor = DC.field(default_factory=lambda: QColor(255, 0, 255))
     color_6: QColor = DC.field(default_factory=lambda: QColor(255, 255, 0))
     color_7: QColor = DC.field(
-        default_factory=lambda: QColor(QtCore.Qt.lightGray)
+        default_factory=lambda: QColor(QColorConstants.LightGray)
     )
 
 

@@ -18,7 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 from typing import Dict
-from PyQt5 import QtWidgets
+from PyQt6 import QtWidgets
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ CUTOFF_VALS = (3.0, 6.0, 10.0, 20.0, 60.0)
 class QHLine(QtWidgets.QFrame):
     def __init__(self):
         super().__init__()
-        self.setFrameShape(QtWidgets.QFrame.HLine)
+        self.setFrameShape(QtWidgets.QFrame.Shape.HLine)
 
 
 class Analysis:

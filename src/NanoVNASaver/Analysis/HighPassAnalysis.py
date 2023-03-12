@@ -20,7 +20,7 @@ import logging
 import math
 from typing import Dict, List
 
-from PyQt5 import QtWidgets
+from PyQt6 import QtWidgets
 
 import NanoVNASaver.AnalyticTools as at
 from NanoVNASaver.Analysis.Base import Analysis, CUTOFF_VALS

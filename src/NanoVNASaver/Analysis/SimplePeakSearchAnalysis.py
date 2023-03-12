@@ -19,7 +19,7 @@
 import logging
 from typing import Callable, List, Tuple
 
-from PyQt5 import QtWidgets
+from PyQt6 import QtWidgets
 import numpy as np
 
 from NanoVNASaver.Analysis.Base import Analysis, QHLine

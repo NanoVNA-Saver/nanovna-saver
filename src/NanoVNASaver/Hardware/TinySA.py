@@ -22,7 +22,7 @@ from typing import List
 
 import serial
 import numpy as np
-from PyQt5 import QtGui
+from PyQt6 import QtGui
 
 from NanoVNASaver.Hardware.Serial import drain_serial, Interface
 from NanoVNASaver.Hardware.VNA import VNA

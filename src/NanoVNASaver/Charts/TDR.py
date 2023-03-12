@@ -20,7 +20,8 @@ import math
 import logging
 
 import numpy as np
-from PyQt5 import QtWidgets, QtGui, QtCore
+from PyQt6 import QtWidgets, QtGui, QtCore
+from PyQt6.QtCore import Qt
 
 from NanoVNASaver.Charts.Chart import Chart
 
@@ -48,31 +49,31 @@ class TDRChart(Chart):
         self.setMinimumSize(300, 300)
         self.setSizePolicy(
             QtWidgets.QSizePolicy(
-                QtWidgets.QSizePolicy.MinimumExpanding,
-                QtWidgets.QSizePolicy.MinimumExpanding,
+                QtWidgets.QSizePolicy.Policy.MinimumExpanding,
+                QtWidgets.QSizePolicy.Policy.MinimumExpanding,
             )
         )
         pal = QtGui.QPalette()
-        pal.setColor(QtGui.QPalette.Background, Chart.color.background)
+        pal.setColor(QtGui.QPalette.ColorRole.Window, Chart.color.background)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
-        self.setContextMenuPolicy(QtCore.Qt.DefaultContextMenu)
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.DefaultContextMenu)
         self.menu = QtWidgets.QMenu()
 
-        self.reset = QtWidgets.QAction("Reset")
+        self.reset = QtGui.QAction("Reset")
         self.reset.triggered.connect(self.resetDisplayLimits)
         self.menu.addAction(self.reset)
 
         self.x_menu = QtWidgets.QMenu("Length axis")
-        self.mode_group = QtWidgets.QActionGroup(self.x_menu)
-        self.action_automatic = QtWidgets.QAction("Automatic")
+        self.mode_group = QtGui.QActionGroup(self.x_menu)
+        self.action_automatic = QtGui.QAction("Automatic")
         self.action_automatic.setCheckable(True)
         self.action_automatic.setChecked(True)
         self.action_automatic.changed.connect(
             lambda: self.setFixedSpan(self.action_fixed_span.isChecked())
         )
-        self.action_fixed_span = QtWidgets.QAction("Fixed span")
+        self.action_fixed_span = QtGui.QAction("Fixed span")
         self.action_fixed_span.setCheckable(True)
         self.action_fixed_span.changed.connect(
             lambda: self.setFixedSpan(self.action_fixed_span.isChecked())
@@ -83,12 +84,12 @@ class TDRChart(Chart):
         self.x_menu.addAction(self.action_fixed_span)
         self.x_menu.addSeparator()
 
-        self.action_set_fixed_start = QtWidgets.QAction(
+        self.action_set_fixed_start = QtGui.QAction(
             f"Start ({self.minDisplayLength})"
         )
         self.action_set_fixed_start.triggered.connect(self.setMinimumLength)
 
-        self.action_set_fixed_stop = QtWidgets.QAction(
+        self.action_set_fixed_stop = QtGui.QAction(
             f"Stop ({self.maxDisplayLength})"
         )
         self.action_set_fixed_stop.triggered.connect(self.setMaximumLength)
@@ -97,14 +98,14 @@ class TDRChart(Chart):
         self.x_menu.addAction(self.action_set_fixed_stop)
 
         self.y_menu = QtWidgets.QMenu("Impedance axis")
-        self.y_mode_group = QtWidgets.QActionGroup(self.y_menu)
-        self.y_action_automatic = QtWidgets.QAction("Automatic")
+        self.y_mode_group = QtGui.QActionGroup(self.y_menu)
+        self.y_action_automatic = QtGui.QAction("Automatic")
         self.y_action_automatic.setCheckable(True)
         self.y_action_automatic.setChecked(True)
         self.y_action_automatic.changed.connect(
             lambda: self.setFixedValues(self.y_action_fixed.isChecked())
         )
-        self.y_action_fixed = QtWidgets.QAction("Fixed")
+        self.y_action_fixed = QtGui.QAction("Fixed")
         self.y_action_fixed.setCheckable(True)
         self.y_action_fixed.changed.connect(
             lambda: self.setFixedValues(self.y_action_fixed.isChecked())
@@ -115,14 +116,14 @@ class TDRChart(Chart):
         self.y_menu.addAction(self.y_action_fixed)
         self.y_menu.addSeparator()
 
-        self.y_action_set_fixed_maximum = QtWidgets.QAction(
+        self.y_action_set_fixed_maximum = QtGui.QAction(
             f"Maximum ({self.maxImpedance})"
         )
         self.y_action_set_fixed_maximum.triggered.connect(
             self.setMaximumImpedance
         )
 
-        self.y_action_set_fixed_minimum = QtWidgets.QAction(
+        self.y_action_set_fixed_minimum = QtGui.QAction(
             f"Minimum ({self.minImpedance})"
         )
         self.y_action_set_fixed_minimum.triggered.connect(
@@ -136,7 +137,7 @@ class TDRChart(Chart):
         self.menu.addMenu(self.y_menu)
         self.menu.addSeparator()
         self.menu.addAction(self.action_save_screenshot)
-        self.action_popout = QtWidgets.QAction("Popout chart")
+        self.action_popout = QtGui.QAction("Popout chart")
         self.action_popout.triggered.connect(
             lambda: self.popoutRequested.emit(self)
         )
@@ -256,34 +257,34 @@ class TDRChart(Chart):
         return new_chart
 
     def mouseMoveEvent(self, a0: QtGui.QMouseEvent) -> None:
-        if a0.buttons() == QtCore.Qt.RightButton:
+        if a0.buttons() == Qt.MouseButton.RightButton:
             a0.ignore()
             return
-        if a0.buttons() == QtCore.Qt.MiddleButton:
+        if a0.buttons() == Qt.MouseButton.MiddleButton:
             # Drag the display
             a0.accept()
             if self.dragbox.move_x != -1 and self.dragbox.move_y != -1:
-                dx = self.dragbox.move_x - a0.x()
-                dy = self.dragbox.move_y - a0.y()
+                dx = self.dragbox.move_x - a0.position().x()
+                dy = self.dragbox.move_y - a0.position().y()
                 self.zoomTo(
                     self.leftMargin + dx,
                     self.topMargin + dy,
                     self.leftMargin + self.dim.width + dx,
                     self.topMargin + self.dim.height + dy,
                 )
-            self.dragbox.move_x = a0.x()
-            self.dragbox.move_y = a0.y()
+            self.dragbox.move_x = a0.position().x()
+            self.dragbox.move_y = a0.position().y()
             return
-        if a0.modifiers() == QtCore.Qt.ControlModifier:
+        if a0.modifiers() == Qt.KeyboardModifier.ControlModifier:
             # Dragging a box
             if not self.dragbox.state:
-                self.dragbox.pos_start = (a0.x(), a0.y())
-            self.dragbox.pos = (a0.x(), a0.y())
+                self.dragbox.pos_start = (a0.position().x(), a0.position().y())
+            self.dragbox.pos = (a0.position().x(), a0.position().y())
             self.update()
             a0.accept()
             return
 
-        x = a0.x()
+        x = a0.position().x()
         absx = x - self.leftMargin
         if absx < 0 or absx > self.width() - self.rightMargin:
             a0.ignore()

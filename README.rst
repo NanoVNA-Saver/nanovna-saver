@@ -39,7 +39,7 @@ points, and generally display and analyze the resulting data.
 * Copyright 2019, 2020 Rune B. Broberg
 * Copyright 2020ff NanoVNA-Saver Authors
 
-It's written in **Python 3** using **PyQt5** and **scipy**.
+It's written in **Python 3** using **PyQt6** and **scipy**.
 
 
 Introduction

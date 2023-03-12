@@ -19,7 +19,7 @@
 import logging
 
 import serial
-from PyQt5 import QtGui
+from PyQt6 import QtGui
 
 from NanoVNASaver.Hardware.NanoVNA import NanoVNA
 from NanoVNASaver.Hardware.Serial import Interface

@@ -18,7 +18,8 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt6 import QtWidgets, QtCore, QtGui
+from PyQt6.QtCore import Qt
 
 from NanoVNASaver.Analysis.AntennaAnalysis import MagLoopAnalysis
 from NanoVNASaver.Analysis.BandPassAnalysis import BandPassAnalysis
@@ -49,7 +50,7 @@ class AnalysisWindow(QtWidgets.QWidget):
         self.setWindowTitle("Sweep analysis")
         self.setWindowIcon(self.app.icon)
 
-        QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
+        QtGui.QShortcut(QtCore.Qt.Key.Key_Escape, self, self.hide)
 
         layout = QtWidgets.QVBoxLayout()
         make_scrollable(self, layout)
@@ -96,8 +97,8 @@ class AnalysisWindow(QtWidgets.QWidget):
 
         analysis_box = QtWidgets.QGroupBox("Analysis")
         analysis_box.setSizePolicy(
-            QtWidgets.QSizePolicy.MinimumExpanding,
-            QtWidgets.QSizePolicy.MinimumExpanding,
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
         )
 
         self.analysis_layout = QtWidgets.QVBoxLayout(analysis_box)
@@ -126,8 +127,8 @@ class AnalysisWindow(QtWidgets.QWidget):
         self.analysis.widget().show()
         self.update()
 
-    def toggleAutomaticRun(self, state: QtCore.Qt.CheckState):
-        if state == QtCore.Qt.Checked:
+    def toggleAutomaticRun(self, state: Qt.CheckState):
+        if state == Qt.CheckState.Checked:
             self.analysis_list.setDisabled(True)
             self.app.dataAvailable.connect(self.runAnalysis)
         else:

@@ -18,7 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from PyQt5 import QtWidgets
+from PyQt6 import QtWidgets
 import numpy as np
 
 # pylint: disable=import-error, no-name-in-module

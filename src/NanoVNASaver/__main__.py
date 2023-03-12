@@ -30,7 +30,7 @@ import argparse
 import logging
 import sys
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt6 import QtWidgets
 
 from NanoVNASaver.About import VERSION, INFO
 from NanoVNASaver.NanoVNASaver import NanoVNASaver
@@ -90,7 +90,6 @@ def main():
 
     logger.info("Startup...")
 
-    QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
     app = QtWidgets.QApplication(sys.argv)
     window = NanoVNASaver()
     window.show()
@@ -106,7 +105,7 @@ def main():
         window.setReference(t.s11, t.s21, args.ref_file)
         window.dataUpdated()
     try:
-        app.exec_()
+        app.exec()
     except BaseException as exc:
         logger.exception("%s", exc)
         raise exc

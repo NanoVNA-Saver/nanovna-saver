@@ -25,7 +25,7 @@ import numpy as np
 from scipy.signal import convolve
 from scipy.constants import speed_of_light
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt6 import QtWidgets, QtCore, QtGui
 
 from NanoVNASaver.Windows.Defaults import make_scrollable
 
@@ -84,7 +84,7 @@ class TDRWindow(QtWidgets.QWidget):
         self.setWindowTitle("TDR")
         self.setWindowIcon(self.app.icon)
 
-        QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
+        QtGui.QShortcut(QtCore.Qt.Key.Key_Escape, self, self.hide)
 
         layout = QtWidgets.QFormLayout()
         make_scrollable(self, layout)

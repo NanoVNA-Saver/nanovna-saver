@@ -17,7 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt6 import QtWidgets, QtCore, QtGui
 
 logger = logging.getLogger(__name__)
 
@@ -30,18 +30,20 @@ class ScreenshotWindow(QtWidgets.QLabel):
         self.setWindowTitle("Screenshot")
         # TODO : self.setWindowIcon(self.app.icon)
 
-        QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
-        self.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
+        QtGui.QShortcut(QtCore.Qt.Key.Key_Escape, self, self.hide)
+        self.setContextMenuPolicy(
+            QtCore.Qt.ContextMenuPolicy.ActionsContextMenu
+        )
 
-        self.action_original_size = QtWidgets.QAction("Original size")
+        self.action_original_size = QtGui.QAction("Original size")
         self.action_original_size.triggered.connect(lambda: self.setScale(1))
-        self.action_2x_size = QtWidgets.QAction("2x size")
+        self.action_2x_size = QtGui.QAction("2x size")
         self.action_2x_size.triggered.connect(lambda: self.setScale(2))
-        self.action_3x_size = QtWidgets.QAction("3x size")
+        self.action_3x_size = QtGui.QAction("3x size")
         self.action_3x_size.triggered.connect(lambda: self.setScale(3))
-        self.action_4x_size = QtWidgets.QAction("4x size")
+        self.action_4x_size = QtGui.QAction("4x size")
         self.action_4x_size.triggered.connect(lambda: self.setScale(4))
-        self.action_5x_size = QtWidgets.QAction("5x size")
+        self.action_5x_size = QtGui.QAction("5x size")
         self.action_5x_size.triggered.connect(lambda: self.setScale(5))
 
         self.addAction(self.action_original_size)
@@ -49,7 +51,7 @@ class ScreenshotWindow(QtWidgets.QLabel):
         self.addAction(self.action_3x_size)
         self.addAction(self.action_4x_size)
         self.addAction(self.action_5x_size)
-        self.action_save_screenshot = QtWidgets.QAction("Save image")
+        self.action_save_screenshot = QtGui.QAction("Save image")
         self.action_save_screenshot.triggered.connect(self.saveScreenshot)
         self.addAction(self.action_save_screenshot)
 

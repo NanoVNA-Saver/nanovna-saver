@@ -20,8 +20,8 @@ import contextlib
 import logging
 import typing
 
-from PyQt5 import QtCore, QtGui
-from PyQt5.QtCore import QModelIndex
+from PyQt6 import QtCore, QtGui
+from PyQt6.QtCore import QModelIndex, Qt
 
 _DEFAULT_BANDS = (
     "2200 m;135700;137800",
@@ -58,12 +58,12 @@ class BandsModel(QtCore.QAbstractTableModel):
     def __init__(self):
         super().__init__()
         self.settings = QtCore.QSettings(
-            QtCore.QSettings.IniFormat,
-            QtCore.QSettings.UserScope,
+            QtCore.QSettings.Format.IniFormat,
+            QtCore.QSettings.Scope.UserScope,
             "NanoVNASaver",
             "Bands",
         )
-        self.settings.setIniCodec("UTF-8")
+        # self.settings.setIniCodec("UTF-8")
 
         self.enabled = self.settings.value("ShowBands", False, bool)
         self.bands = [
@@ -91,16 +91,15 @@ class BandsModel(QtCore.QAbstractTableModel):
 
     def data(self, index: QModelIndex, role: int = ...) -> QtCore.QVariant:
         if role in [
-            QtCore.Qt.DisplayRole,
-            QtCore.Qt.ItemDataRole,
-            QtCore.Qt.EditRole,
+            Qt.ItemDataRole.DisplayRole,
+            Qt.ItemDataRole.EditRole,
         ]:
             return QtCore.QVariant(self.bands[index.row()][index.column()])
-        if role == QtCore.Qt.TextAlignmentRole:
+        if role == Qt.ItemDataRole.TextAlignmentRole:
             if index.column() == 0:
-                return QtCore.QVariant(QtCore.Qt.AlignCenter)
+                return QtCore.QVariant(Qt.AlignmentFlag.AlignCenter)
             return QtCore.QVariant(
-                QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter
+                Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
             )
         return QtCore.QVariant()
 
@@ -141,22 +140,22 @@ class BandsModel(QtCore.QAbstractTableModel):
         return True
 
     def headerData(
-        self, section: int, orientation: QtCore.Qt.Orientation, role: int = ...
+        self, section: int, orientation: Qt.Orientation, role: int = ...
     ):
         if (
-            role == QtCore.Qt.DisplayRole
-            and orientation == QtCore.Qt.Horizontal
+            role == Qt.ItemDataRole.DisplayRole
+            and orientation == Qt.Orientation.Horizontal
         ):
             with contextlib.suppress(IndexError):
                 return _HEADER_DATA[section]
         return None
 
-    def flags(self, index: QModelIndex) -> QtCore.Qt.ItemFlags:
+    def flags(self, index: QModelIndex) -> Qt.ItemFlag:
         if index.isValid():
-            return QtCore.Qt.ItemFlags(
-                QtCore.Qt.ItemIsEditable
-                | QtCore.Qt.ItemIsEnabled
-                | QtCore.Qt.ItemIsSelectable
+            return Qt.ItemFlag(
+                Qt.ItemFlag.ItemIsEditable
+                | Qt.ItemFlag.ItemIsEnabled
+                | Qt.ItemFlag.ItemIsSelectable
             )
         super().flags(index)
 

@@ -19,7 +19,8 @@
 import logging
 from typing import List
 
-from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt6 import QtWidgets, QtCore, QtGui
+from PyQt6.QtGui import QColorConstants
 
 from NanoVNASaver import Defaults
 from NanoVNASaver.Charts.Chart import Chart, ChartColors
@@ -41,7 +42,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.marker_window = MarkerSettingsWindow(self.app)
         self.callback_params = {}
 
-        QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
+        QtGui.QShortcut(QtCore.Qt.Key.Key_Escape, self, self.hide)
 
         layout = QtWidgets.QHBoxLayout()
         make_scrollable(self, layout)
@@ -95,7 +96,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.pointSizeInput.setMinimum(1)
         self.pointSizeInput.setMaximum(10)
         self.pointSizeInput.setSuffix(" px")
-        self.pointSizeInput.setAlignment(QtCore.Qt.AlignRight)
+        self.pointSizeInput.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
         self.pointSizeInput.valueChanged.connect(self.changePointSize)
         display_options_layout.addRow("Point size", self.pointSizeInput)
 
@@ -107,7 +108,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.lineThicknessInput.setMinimum(1)
         self.lineThicknessInput.setMaximum(10)
         self.lineThicknessInput.setSuffix(" px")
-        self.lineThicknessInput.setAlignment(QtCore.Qt.AlignRight)
+        self.lineThicknessInput.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
         self.lineThicknessInput.valueChanged.connect(self.changeLineThickness)
         display_options_layout.addRow("Line thickness", self.lineThicknessInput)
 
@@ -119,7 +120,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.markerSizeInput.setMaximum(20)
         self.markerSizeInput.setSingleStep(2)
         self.markerSizeInput.setSuffix(" px")
-        self.markerSizeInput.setAlignment(QtCore.Qt.AlignRight)
+        self.markerSizeInput.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
         self.markerSizeInput.valueChanged.connect(self.changeMarkerSize)
         display_options_layout.addRow("Marker size", self.markerSizeInput)
 
@@ -452,7 +453,9 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.callback_params[cp] = (setting, attr)
         cp.clicked.connect(self.setColor)
         p = cp.palette()
-        p.setColor(QtGui.QPalette.ButtonText, getattr(Chart.color, attr))
+        p.setColor(
+            QtGui.QPalette.ColorRole.ButtonText, getattr(Chart.color, attr)
+        )
         cp.setPalette(p)
         return cp
 
@@ -526,13 +529,13 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
     def changeDarkMode(self):
         state = self.dark_mode_option.isChecked()
         Defaults.cfg.gui.dark_mode = bool(state)
-        Chart.color.foreground = QtGui.QColor(QtCore.Qt.lightGray)
+        Chart.color.foreground = QtGui.QColor(QColorConstants.LightGray)
         if state:
-            Chart.color.background = QtGui.QColor(QtCore.Qt.black)
-            Chart.color.text = QtGui.QColor(QtCore.Qt.white)
+            Chart.color.background = QtGui.QColor(QColorConstants.Black)
+            Chart.color.text = QtGui.QColor(QColorConstants.White)
         else:
-            Chart.color.background = QtGui.QColor(QtCore.Qt.white)
-            Chart.color.text = QtGui.QColor(QtCore.Qt.black)
+            Chart.color.background = QtGui.QColor(QColorConstants.White)
+            Chart.color.text = QtGui.QColor(QColorConstants.Black)
         Chart.color.swr = Chart.color.swr
         self.updateCharts()
 

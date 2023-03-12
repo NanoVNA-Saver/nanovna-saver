@@ -22,7 +22,7 @@ import sys
 import threading
 from time import strftime, localtime
 
-from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt6 import QtWidgets, QtCore, QtGui
 
 from NanoVNASaver import Defaults
 from .Windows import (
@@ -95,8 +95,8 @@ class NanoVNASaver(QtWidgets.QWidget):
             self.icon = QtGui.QIcon("icon_48x48.png")
         self.setWindowIcon(self.icon)
         self.settings = Defaults.AppSettings(
-            QtCore.QSettings.IniFormat,
-            QtCore.QSettings.UserScope,
+            QtCore.QSettings.Format.IniFormat,
+            QtCore.QSettings.Scope.UserScope,
             "NanoVNASaver",
             "NanoVNASaver",
         )
@@ -140,7 +140,9 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.baseTitle = f"NanoVNA Saver {NanoVNASaver.version}"
         self.updateTitle()
-        layout = QtWidgets.QBoxLayout(QtWidgets.QBoxLayout.LeftToRight)
+        layout = QtWidgets.QBoxLayout(
+            QtWidgets.QBoxLayout.Direction.LeftToRight
+        )
 
         scrollarea = QtWidgets.QScrollArea()
         outer = QtWidgets.QVBoxLayout()
@@ -151,12 +153,12 @@ class NanoVNASaver(QtWidgets.QWidget):
             Defaults.cfg.gui.window_width, Defaults.cfg.gui.window_height
         )
         scrollarea.setSizePolicy(
-            QtWidgets.QSizePolicy.MinimumExpanding,
-            QtWidgets.QSizePolicy.MinimumExpanding,
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
         )
         self.setSizePolicy(
-            QtWidgets.QSizePolicy.MinimumExpanding,
-            QtWidgets.QSizePolicy.MinimumExpanding,
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
         )
         widget = QtWidgets.QWidget()
         widget.setLayout(layout)
@@ -236,7 +238,7 @@ class NanoVNASaver(QtWidgets.QWidget):
 
         self.charts_layout = QtWidgets.QGridLayout()
 
-        QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+Q"), self, self.close)
+        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+Q"), self, self.close)
 
         ###############################################################
         #  Create main layout
@@ -388,8 +390,8 @@ class NanoVNASaver(QtWidgets.QWidget):
             QtWidgets.QSpacerItem(
                 1,
                 1,
-                QtWidgets.QSizePolicy.Fixed,
-                QtWidgets.QSizePolicy.Expanding,
+                QtWidgets.QSizePolicy.Policy.Fixed,
+                QtWidgets.QSizePolicy.Policy.Expanding,
             )
         )
 

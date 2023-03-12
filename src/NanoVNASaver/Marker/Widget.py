@@ -19,8 +19,9 @@
 import math
 from typing import List
 
-from PyQt5 import QtGui, QtWidgets, QtCore
-from PyQt5.QtCore import pyqtSignal
+from PyQt6 import QtGui, QtWidgets, QtCore
+from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtGui import QColorConstants
 
 from NanoVNASaver import RFTools
 from NanoVNASaver.Formatting import (
@@ -43,7 +44,7 @@ from NanoVNASaver.Inputs import MarkerFrequencyInputWidget as FrequencyInput
 from NanoVNASaver.Marker.Values import TYPES, Value, default_label_ids
 
 COLORS = (
-    QtGui.QColor(QtCore.Qt.darkGray),
+    QtGui.QColor(QColorConstants.DarkGray),
     QtGui.QColor(255, 0, 0),
     QtGui.QColor(0, 255, 0),
     QtGui.QColor(0, 0, 255),
@@ -90,7 +91,7 @@ class Marker(QtCore.QObject, Value):
 
         self.frequencyInput = FrequencyInput()
         self.frequencyInput.setMinimumHeight(20)
-        self.frequencyInput.setAlignment(QtCore.Qt.AlignRight)
+        self.frequencyInput.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
         self.frequencyInput.editingFinished.connect(
             lambda: self.setFrequency(
                 parse_frequency(self.frequencyInput.text())
@@ -117,7 +118,8 @@ class Marker(QtCore.QObject, Value):
         self.btnColorPicker.clicked.connect(
             lambda: self.setColor(
                 QtWidgets.QColorDialog.getColor(
-                    self.color, options=QtWidgets.QColorDialog.ShowAlphaChannel
+                    self.color,
+                    options=QtWidgets.QColorDialog.ColorDialogOption.ShowAlphaChannel,
                 )
             )
         )
@@ -148,7 +150,7 @@ class Marker(QtCore.QObject, Value):
             self.setColor(COLORS[0])
 
         line = QtWidgets.QFrame()
-        line.setFrameShape(QtWidgets.QFrame.VLine)
+        line.setFrameShape(QtWidgets.QFrame.Shape.VLine)
 
         # line only if more then 3 selected
         self.left_form = QtWidgets.QFormLayout()
@@ -183,7 +185,7 @@ class Marker(QtCore.QObject, Value):
         self.label["returnloss"].setMinimumWidth(int(80 * scale))
         if self.coloredText:
             color_string = QtCore.QVariant(self.color)
-            color_string.convert(QtCore.QVariant.String)
+            #            color_string.convert(QtCore.QVariant.String)
             self.group_box.setStyleSheet(
                 f"QGroupBox {{ color: {color_string.value()}; "
                 f"font-size: {self._size_str()}}};"
@@ -230,11 +232,11 @@ class Marker(QtCore.QObject, Value):
         if color.isValid():
             self.color = color
             p = self.btnColorPicker.palette()
-            p.setColor(QtGui.QPalette.ButtonText, self.color)
+            # TODO: p.setColor(QtGui.QPalette.ButtonText, self.color)
             self.btnColorPicker.setPalette(p)
         if self.coloredText:
             color_string = QtCore.QVariant(color)
-            color_string.convert(QtCore.QVariant.String)
+            # TODO: color_string.convert(str)
             self.group_box.setStyleSheet(
                 f"QGroupBox {{ color: {color_string.value()}; "
                 f"font-size: {self._size_str()}}};"

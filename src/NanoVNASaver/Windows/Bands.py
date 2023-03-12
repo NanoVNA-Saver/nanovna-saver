@@ -18,7 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt6 import QtWidgets, QtCore, QtGui
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ class BandsWindow(QtWidgets.QWidget):
         self.setWindowTitle("Manage bands")
         self.setWindowIcon(self.app.icon)
 
-        QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
+        QtGui.QShortcut(QtCore.Qt.Key.Key_Escape, self, self.hide)
 
         layout = QtWidgets.QVBoxLayout()
         self.setLayout(layout)

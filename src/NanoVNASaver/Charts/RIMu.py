@@ -21,7 +21,7 @@ import numpy as np
 import logging
 from scipy.constants import mu_0
 
-from PyQt5 import QtWidgets, QtGui
+from PyQt6 import QtWidgets, QtGui
 
 from NanoVNASaver.Formatting import format_frequency_chart
 from NanoVNASaver.RFTools import Datapoint
@@ -38,28 +38,28 @@ class RealImaginaryMuChart(RealImaginaryChart):
         super().__init__(name)
         self.y_menu.addSeparator()
 
-        self.action_set_fixed_maximum_real = QtWidgets.QAction(
+        self.action_set_fixed_maximum_real = QtGui.QAction(
             f"Maximum {MU}' ({self.maxDisplayReal})"
         )
         self.action_set_fixed_maximum_real.triggered.connect(
             self.setMaximumRealValue
         )
 
-        self.action_set_fixed_minimum_real = QtWidgets.QAction(
+        self.action_set_fixed_minimum_real = QtGui.QAction(
             f"Minimum {MU}' ({self.minDisplayReal})"
         )
         self.action_set_fixed_minimum_real.triggered.connect(
             self.setMinimumRealValue
         )
 
-        self.action_set_fixed_maximum_imag = QtWidgets.QAction(
+        self.action_set_fixed_maximum_imag = QtGui.QAction(
             f"Maximum {MU}'' ({self.maxDisplayImag})"
         )
         self.action_set_fixed_maximum_imag.triggered.connect(
             self.setMaximumImagValue
         )
 
-        self.action_set_fixed_minimum_imag = QtWidgets.QAction(
+        self.action_set_fixed_minimum_imag = QtGui.QAction(
             f"Minimum {MU}'' ({self.minDisplayImag})"
         )
         self.action_set_fixed_minimum_imag.triggered.connect(
@@ -79,15 +79,13 @@ class RealImaginaryMuChart(RealImaginaryChart):
         self.coreWindings = 1
 
         self.menu.addSeparator()
-        self.action_set_core_length = QtWidgets.QAction("Core effective length")
+        self.action_set_core_length = QtGui.QAction("Core effective length")
         self.action_set_core_length.triggered.connect(self.setCoreLength)
 
-        self.action_set_core_area = QtWidgets.QAction("Core area")
+        self.action_set_core_area = QtGui.QAction("Core area")
         self.action_set_core_area.triggered.connect(self.setCoreArea)
 
-        self.action_set_core_windings = QtWidgets.QAction(
-            "Core number of windings"
-        )
+        self.action_set_core_windings = QtGui.QAction("Core number of windings")
         self.action_set_core_windings.triggered.connect(self.setCoreWindings)
 
         self.menu.addAction(self.action_set_core_length)

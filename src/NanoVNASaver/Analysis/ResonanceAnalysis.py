@@ -21,7 +21,7 @@ import csv
 import logging
 from typing import List
 
-from PyQt5 import QtWidgets
+from PyQt6 import QtWidgets
 
 import NanoVNASaver.AnalyticTools as at
 from NanoVNASaver.Analysis.Base import Analysis, QHLine
