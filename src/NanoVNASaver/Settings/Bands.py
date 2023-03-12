@@ -157,7 +157,7 @@ class BandsModel(QtCore.QAbstractTableModel):
                 | Qt.ItemFlag.ItemIsEnabled
                 | Qt.ItemFlag.ItemIsSelectable
             )
-        super().flags(index)
+        return super().flags(index)
 
     def setColor(self, color):
         self.color = color
