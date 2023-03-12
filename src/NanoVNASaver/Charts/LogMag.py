@@ -21,7 +21,7 @@ import math
 import logging
 from typing import List
 
-from PyQt5 import QtGui
+from PyQt6 import QtGui
 
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Charts.Frequency import FrequencyChart

@@ -22,7 +22,7 @@ import logging
 from typing import List
 import numpy as np
 
-from PyQt5 import QtWidgets, QtGui
+from PyQt6 import QtWidgets, QtGui
 
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.Charts.Chart import Chart
@@ -47,7 +47,7 @@ class PhaseChart(FrequencyChart):
         self.maxDisplayValue = 180
 
         self.y_menu.addSeparator()
-        self.action_unwrap = QtWidgets.QAction("Unwrap")
+        self.action_unwrap = QtGui.QAction("Unwrap")
         self.action_unwrap.setCheckable(True)
         self.action_unwrap.triggered.connect(
             lambda: self.setUnwrap(self.action_unwrap.isChecked())

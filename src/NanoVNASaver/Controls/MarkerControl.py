@@ -18,8 +18,8 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtWidgets import QCheckBox
+from PyQt6 import QtWidgets, QtCore
+from PyQt6.QtWidgets import QCheckBox, QSizePolicy
 
 from NanoVNASaver import Defaults
 from NanoVNASaver.Marker.Widget import Marker
@@ -70,9 +70,11 @@ class MarkerControl(Control):
         self.showMarkerButton.clicked.connect(self.toggle_frame)
 
         lock_radiobutton = QtWidgets.QRadioButton("Locked")
-        lock_radiobutton.setLayoutDirection(QtCore.Qt.RightToLeft)
+        lock_radiobutton.setLayoutDirection(
+            QtCore.Qt.LayoutDirection.RightToLeft
+        )
         lock_radiobutton.setSizePolicy(
-            QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Preferred
+            QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Preferred
         )
 
         hbox = QtWidgets.QHBoxLayout()

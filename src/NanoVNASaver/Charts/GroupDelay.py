@@ -22,7 +22,7 @@ from typing import List
 
 import numpy as np
 
-from PyQt5 import QtGui
+from PyQt6 import QtGui
 
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.RFTools import Datapoint

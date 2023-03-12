@@ -19,7 +19,7 @@
 import csv
 import logging
 
-from PyQt5 import QtWidgets
+from PyQt6 import QtWidgets
 
 import NanoVNASaver.AnalyticTools as at
 from NanoVNASaver.Analysis.ResonanceAnalysis import (

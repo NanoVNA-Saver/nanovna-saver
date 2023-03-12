@@ -20,7 +20,7 @@ import logging
 import math
 from typing import List
 
-from PyQt5 import QtGui, QtCore, QtWidgets
+from PyQt6 import QtGui, QtCore, QtWidgets
 
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.RFTools import Datapoint
@@ -32,7 +32,8 @@ class SquareChart(Chart):
     def __init__(self, name=""):
         super().__init__(name)
         sizepolicy = QtWidgets.QSizePolicy(
-            QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.MinimumExpanding
+            QtWidgets.QSizePolicy.Policy.Fixed,
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
         )
         self.setSizePolicy(sizepolicy)
         self.dim.width = 250
@@ -40,7 +41,7 @@ class SquareChart(Chart):
         self.setMinimumSize(self.dim.width + 40, self.dim.height + 40)
 
         pal = QtGui.QPalette()
-        pal.setColor(QtGui.QPalette.Background, Chart.color.background)
+        pal.setColor(QtGui.QPalette.ColorRole.Window, Chart.color.background)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
@@ -112,12 +113,12 @@ class SquareChart(Chart):
         self.update()
 
     def mouseMoveEvent(self, a0: QtGui.QMouseEvent):
-        if a0.buttons() == QtCore.Qt.RightButton:
+        if a0.buttons() == QtCore.Qt.MouseButton.RightButton:
             a0.ignore()
             return
 
-        x = a0.x()
-        y = a0.y()
+        x = a0.position().x()
+        y = a0.position().y()
         absx = x - (self.width() - self.dim.width) / 2
         absy = y - (self.height() - self.dim.height) / 2
         if (

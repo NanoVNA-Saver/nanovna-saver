@@ -18,7 +18,8 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 from functools import partial
-from PyQt5 import QtWidgets, QtCore
+from PyQt6 import QtWidgets, QtCore, QtGui
+from PyQt6.QtCore import Qt
 
 from NanoVNASaver.Formatting import (
     format_frequency_short,
@@ -39,7 +40,7 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         self.setWindowTitle("Sweep settings")
         self.setWindowIcon(self.app.icon)
 
-        QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
+        QtGui.QShortcut(QtCore.Qt.Key.Key_Escape, self, self.hide)
 
         layout = QtWidgets.QVBoxLayout()
         make_scrollable(self, layout)
@@ -114,7 +115,11 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         layout.addRow(label)
         checkbox = QtWidgets.QCheckBox("Logarithmic sweep")
         checkbox.setMinimumHeight(20)
-        checkbox.setCheckState(self.app.sweep.properties.logarithmic)
+        checkbox.setCheckState(
+            Qt.CheckState.Checked
+            if self.app.sweep.properties.logarithmic
+            else Qt.CheckState.Unchecked
+        )
         checkbox.toggled.connect(
             lambda: self.update_logarithmic(checkbox.isChecked())
         )
@@ -224,12 +229,12 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         )
         start = int(
             self.band_list.model()
-            .data(index_start, QtCore.Qt.ItemDataRole)
+            .data(index_start, Qt.ItemDataRole.EditRole)
             .value()
         )
         stop = int(
             self.band_list.model()
-            .data(index_stop, QtCore.Qt.ItemDataRole)
+            .data(index_stop, Qt.ItemDataRole.EditRole)
             .value()
         )
 

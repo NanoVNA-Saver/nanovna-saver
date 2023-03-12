@@ -21,9 +21,9 @@ import logging
 from dataclasses import dataclass, field, replace
 from typing import List, Set, Tuple, ClassVar, Any, Optional
 
-from PyQt5 import QtWidgets, QtGui, QtCore
-from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtGui import QColor
+from PyQt6 import QtWidgets, QtGui, QtCore
+from PyQt6.QtCore import pyqtSignal, Qt
+from PyQt6.QtGui import QColor, QColorConstants, QAction
 
 from NanoVNASaver import Defaults
 from NanoVNASaver.RFTools import Datapoint
@@ -34,20 +34,24 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class ChartColors:  # pylint: disable=too-many-instance-attributes
-    background: QColor = field(default_factory=lambda: QColor(QtCore.Qt.white))
+    background: QColor = field(
+        default_factory=lambda: QColor(QColorConstants.White)
+    )
     foreground: QColor = field(
-        default_factory=lambda: QColor(QtCore.Qt.lightGray)
+        default_factory=lambda: QColor(QColorConstants.LightGray)
     )
     reference: QColor = field(default_factory=lambda: QColor(0, 0, 255, 64))
     reference_secondary: QColor = field(
         default_factory=lambda: QColor(0, 0, 192, 48)
     )
-    sweep: QColor = field(default_factory=lambda: QColor(QtCore.Qt.darkYellow))
+    sweep: QColor = field(
+        default_factory=lambda: QColor(QColorConstants.DarkYellow)
+    )
     sweep_secondary: QColor = field(
-        default_factory=lambda: QColor(QtCore.Qt.darkMagenta)
+        default_factory=lambda: QColor(QColorConstants.DarkMagenta)
     )
     swr: QColor = field(default_factory=lambda: QColor(255, 0, 0, 128))
-    text: QColor = field(default_factory=lambda: QColor(QtCore.Qt.black))
+    text: QColor = field(default_factory=lambda: QColor(QColorConstants.Black))
     bands: QColor = field(default_factory=lambda: QColor(128, 128, 128, 48))
 
 
@@ -130,17 +134,17 @@ class Chart(QtWidgets.QWidget):
         self.markers: List[Marker] = []
         self.swrMarkers: Set[float] = set()
 
-        self.action_popout = QtWidgets.QAction("Popout chart")
+        self.action_popout = QAction("Popout chart")
         self.action_popout.triggered.connect(
             lambda: self.popoutRequested.emit(self)
         )
         self.addAction(self.action_popout)
 
-        self.action_save_screenshot = QtWidgets.QAction("Save image")
+        self.action_save_screenshot = QAction("Save image")
         self.action_save_screenshot.triggered.connect(self.saveScreenshot)
         self.addAction(self.action_save_screenshot)
 
-        self.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
 
     def setReference(self, data):
         self.reference = data
@@ -209,21 +213,21 @@ class Chart(QtWidgets.QWidget):
         self.update()
 
     def mousePressEvent(self, event: QtGui.QMouseEvent) -> None:
-        if event.buttons() == QtCore.Qt.RightButton:
+        if event.buttons() == Qt.MouseButton.RightButton:
             event.ignore()
             return
-        if event.buttons() == QtCore.Qt.MiddleButton:
+        if event.buttons() == Qt.MouseButton.MiddleButton:
             # Drag event
             event.accept()
             self.dragbox.move_x = event.x()
             self.dragbox.move_y = event.y()
             return
-        if event.modifiers() == QtCore.Qt.ControlModifier:
+        if event.modifiers() == Qt.KeyboardModifier.ControlModifier:
             event.accept()
             self.dragbox.state = True
             self.dragbox.pos_start = (event.x(), event.y())
             return
-        if event.modifiers() == QtCore.Qt.ShiftModifier:
+        if event.modifiers() == Qt.KeyboardModifier.ShiftModifier:
             self.draggedMarker = self.getNearestMarker(event.x(), event.y())
         self.mouseMoveEvent(event)
 
@@ -233,8 +237,8 @@ class Chart(QtWidgets.QWidget):
             self.zoomTo(
                 self.dragbox.pos_start[0],
                 self.dragbox.pos_start[1],
-                a0.x(),
-                a0.y(),
+                a0.position().x(),
+                a0.position().y(),
             )
             self.dragbox.state = False
             self.dragbox.pos = (-1, -1)
@@ -248,8 +252,8 @@ class Chart(QtWidgets.QWidget):
             return
         modifiers = a0.modifiers()
 
-        zoom_x = modifiers != QtCore.Qt.ShiftModifier
-        zoom_y = modifiers != QtCore.Qt.ControlModifier
+        zoom_x = modifiers != Qt.KeyboardModifier.ShiftModifier
+        zoom_y = modifiers != Qt.KeyboardModifier.ControlModifier
         rate = -delta / 120
         # zooming in 10% increments and 9% complementary
         divisor = 10 if delta > 0 else 9
@@ -257,8 +261,8 @@ class Chart(QtWidgets.QWidget):
         factor_x = rate * self.dim.width / divisor if zoom_x else 0
         factor_y = rate * self.dim.height / divisor if zoom_y else 0
 
-        abs_x = max(0, a0.x() - self.leftMargin)
-        abs_y = max(0, a0.y() - self.topMargin)
+        abs_x = max(0, a0.position().x() - self.leftMargin)
+        abs_y = max(0, a0.position().y() - self.topMargin)
 
         ratio_x = abs_x / self.dim.width
         ratio_y = abs_y / self.dim.height
@@ -337,6 +341,6 @@ class Chart(QtWidgets.QWidget):
 
     def update(self):
         pal = self.palette()
-        pal.setColor(QtGui.QPalette.Background, Chart.color.background)
+        pal.setColor(QtGui.QPalette.ColorRole.Window, Chart.color.background)
         self.setPalette(pal)
         super().update()

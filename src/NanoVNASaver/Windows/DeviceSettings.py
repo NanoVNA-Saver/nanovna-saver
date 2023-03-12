@@ -18,7 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt6 import QtWidgets, QtCore, QtGui
 
 from NanoVNASaver.Windows.Defaults import make_scrollable
 from NanoVNASaver.Windows.Screenshot import ScreenshotWindow
@@ -34,7 +34,7 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         self.setWindowTitle("Device settings")
         self.setWindowIcon(self.app.icon)
 
-        QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
+        QtGui.QShortcut(QtCore.Qt.Key.Key_Escape, self, self.hide)
 
         self.label = {
             "status": QtWidgets.QLabel("Not connected."),

@@ -20,7 +20,7 @@ import math
 import logging
 from typing import List
 
-from PyQt5 import QtGui
+from PyQt6 import QtGui
 
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.SITools import Format, Value, round_ceil, round_floor

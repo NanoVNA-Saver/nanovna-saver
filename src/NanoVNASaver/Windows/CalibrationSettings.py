@@ -20,7 +20,7 @@
 import logging
 from functools import partial
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt6 import QtWidgets, QtCore, QtGui
 
 from NanoVNASaver.Calibration import Calibration
 from NanoVNASaver.Settings.Sweep import SweepMode
@@ -51,11 +51,11 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.setWindowTitle("Calibration")
         self.setWindowIcon(self.app.icon)
         self.setSizePolicy(
-            QtWidgets.QSizePolicy.MinimumExpanding,
-            QtWidgets.QSizePolicy.MinimumExpanding,
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
+            QtWidgets.QSizePolicy.Policy.MinimumExpanding,
         )
 
-        QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.hide)
+        QtGui.QShortcut(QtCore.Qt.Key.Key_Escape, self, self.hide)
 
         top_layout = QtWidgets.QHBoxLayout()
         left_layout = QtWidgets.QVBoxLayout()
@@ -106,7 +106,7 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.input_offset_delay.setMinimumHeight(20)
         self.input_offset_delay.setValue(0)
         self.input_offset_delay.setSuffix(" ps")
-        self.input_offset_delay.setAlignment(QtCore.Qt.AlignRight)
+        self.input_offset_delay.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
         self.input_offset_delay.valueChanged.connect(self.setOffsetDelay)
         self.input_offset_delay.setRange(-10e6, 10e6)
 

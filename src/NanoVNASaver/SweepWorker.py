@@ -21,8 +21,8 @@ from time import sleep
 from typing import List, Tuple
 
 import numpy as np
-from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtCore import pyqtSlot, pyqtSignal
+from PyQt6 import QtCore, QtWidgets
+from PyQt6.QtCore import pyqtSlot, pyqtSignal
 
 from NanoVNASaver.Calibration import correct_delay
 from NanoVNASaver.RFTools import Datapoint

@@ -18,7 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from PyQt5 import QtWidgets, QtGui
+from PyQt6 import QtWidgets, QtGui
 
 from NanoVNASaver.Formatting import format_frequency_chart
 from NanoVNASaver.RFTools import Datapoint
@@ -34,28 +34,28 @@ class RealImaginaryZChart(RealImaginaryChart):
         super().__init__(name)
         self.y_menu.addSeparator()
 
-        self.action_set_fixed_maximum_real = QtWidgets.QAction(
+        self.action_set_fixed_maximum_real = QtGui.QAction(
             f"Maximum R ({self.maxDisplayReal})"
         )
         self.action_set_fixed_maximum_real.triggered.connect(
             self.setMaximumRealValue
         )
 
-        self.action_set_fixed_minimum_real = QtWidgets.QAction(
+        self.action_set_fixed_minimum_real = QtGui.QAction(
             f"Minimum R ({self.minDisplayReal})"
         )
         self.action_set_fixed_minimum_real.triggered.connect(
             self.setMinimumRealValue
         )
 
-        self.action_set_fixed_maximum_imag = QtWidgets.QAction(
+        self.action_set_fixed_maximum_imag = QtGui.QAction(
             f"Maximum jX ({self.maxDisplayImag})"
         )
         self.action_set_fixed_maximum_imag.triggered.connect(
             self.setMaximumImagValue
         )
 
-        self.action_set_fixed_minimum_imag = QtWidgets.QAction(
+        self.action_set_fixed_minimum_imag = QtGui.QAction(
             f"Minimum jX ({self.minDisplayImag})"
         )
         self.action_set_fixed_minimum_imag.triggered.connect(

@@ -18,7 +18,8 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt6 import QtWidgets, QtCore, QtGui
+from PyQt6.QtCore import Qt
 
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.Marker.Widget import Marker
@@ -46,7 +47,7 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
         self.setWindowTitle("Marker settings")
         self.setWindowIcon(self.app.icon)
 
-        QtWidgets.QShortcut(QtCore.Qt.Key_Escape, self, self.cancelButtonClick)
+        QtGui.QShortcut(QtCore.Qt.Key.Key_Escape, self, self.cancelButtonClick)
 
         self.exampleMarker = Marker("Example marker")
         layout = QtWidgets.QVBoxLayout()
@@ -115,12 +116,12 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
         self.exampleMarker.updateLabels(self.exampleData11, self.exampleData21)
 
     def updateField(self, field: QtGui.QStandardItem):
-        if field.checkState() == QtCore.Qt.Checked:
+        if field.checkState() == Qt.CheckState.Checked:
             if field.data() not in self.currentFieldSelection:
                 self.currentFieldSelection = []
                 for i in range(self.model.rowCount()):
                     field = self.model.item(i, 0)
-                    if field.checkState() == QtCore.Qt.Checked:
+                    if field.checkState() == Qt.CheckState.Checked:
                         self.currentFieldSelection.append(field.data())
         elif field.data() in self.currentFieldSelection:
             self.currentFieldSelection.remove(field.data())
@@ -161,7 +162,7 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
             item.setCheckable(True)
             item.setEditable(False)
             if label.label_id in self.currentFieldSelection:
-                item.setCheckState(QtCore.Qt.Checked)
+                item.setCheckState(Qt.CheckState.Checked)
             self.model.appendRow(item)
         self.active_labels_view.setModel(self.model)
         self.model.itemChanged.connect(self.updateField)

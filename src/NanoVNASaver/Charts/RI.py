@@ -20,7 +20,7 @@ import math
 import logging
 from typing import List, Optional
 
-from PyQt5 import QtWidgets, QtGui
+from PyQt6 import QtWidgets, QtGui
 
 from NanoVNASaver.Formatting import format_frequency_chart
 from NanoVNASaver.Marker.Widget import Marker
@@ -58,18 +58,18 @@ class RealImaginaryChart(FrequencyChart):
 
         self.y_menu.clear()
 
-        self.y_action_automatic = QtWidgets.QAction("Automatic")
+        self.y_action_automatic = QtGui.QAction("Automatic")
         self.y_action_automatic.setCheckable(True)
         self.y_action_automatic.setChecked(True)
         self.y_action_automatic.changed.connect(
             lambda: self.setFixedValues(self.y_action_fixed_span.isChecked())
         )
-        self.y_action_fixed_span = QtWidgets.QAction("Fixed span")
+        self.y_action_fixed_span = QtGui.QAction("Fixed span")
         self.y_action_fixed_span.setCheckable(True)
         self.y_action_fixed_span.changed.connect(
             lambda: self.setFixedValues(self.y_action_fixed_span.isChecked())
         )
-        mode_group = QtWidgets.QActionGroup(self)
+        mode_group = QtGui.QActionGroup(self)
         mode_group.addAction(self.y_action_automatic)
         mode_group.addAction(self.y_action_fixed_span)
         self.y_menu.addAction(self.y_action_automatic)
