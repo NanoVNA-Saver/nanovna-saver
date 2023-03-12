@@ -23,6 +23,7 @@ import threading
 from time import strftime, localtime
 
 from PyQt6 import QtWidgets, QtCore, QtGui
+from PyQt6.QtWidgets import QWidget
 
 from NanoVNASaver import Defaults
 from .Windows import (
@@ -78,7 +79,7 @@ from .About import VERSION
 logger = logging.getLogger(__name__)
 
 
-class NanoVNASaver(QtWidgets.QWidget):
+class NanoVNASaver(QWidget):
     version = VERSION
     dataAvailable = QtCore.pyqtSignal()
     scaleFactor = 1
@@ -160,7 +161,7 @@ class NanoVNASaver(QtWidgets.QWidget):
             QtWidgets.QSizePolicy.Policy.MinimumExpanding,
             QtWidgets.QSizePolicy.Policy.MinimumExpanding,
         )
-        widget = QtWidgets.QWidget()
+        widget = QWidget()
         widget.setLayout(layout)
         scrollarea.setWidget(widget)
 
@@ -248,7 +249,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         right_column = QtWidgets.QVBoxLayout()
         right_column.addLayout(self.charts_layout)
         self.marker_frame.setHidden(Defaults.cfg.gui.markers_hidden)
-        chart_widget = QtWidgets.QWidget()
+        chart_widget = QWidget()
         chart_widget.setLayout(right_column)
         self.splitter = QtWidgets.QSplitter()
         self.splitter.addWidget(self.marker_frame)
@@ -301,7 +302,7 @@ class NanoVNASaver(QtWidgets.QWidget):
         scroll2.setWidgetResizable(True)
         scroll2.setVisible(True)
 
-        widget2 = QtWidgets.QWidget()
+        widget2 = QWidget()
         widget2.setLayout(self.marker_data_layout)
         scroll2.setWidget(widget2)
         self.marker_column.addWidget(scroll2)

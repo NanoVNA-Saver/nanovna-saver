@@ -160,6 +160,6 @@ class SmithChart(SquareChart):
             qp.drawEllipse(QtCore.QPoint(center_x, center_y), r, r)
             qp.drawText(
                 QtCore.QRect(center_x - 50, center_y - 4 + r, 100, 20),
-                QtCore.Qt.AlignCenter,
+                QtCore.Qt.AlignmentFlag.AlignCenter,
                 f"{swr}",
             )

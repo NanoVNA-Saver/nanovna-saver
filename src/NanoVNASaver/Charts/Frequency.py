@@ -239,7 +239,7 @@ class FrequencyChart(Chart):
         else:
             self.y_action_automatic.setChecked(True)
 
-        self.menu.exec_(event.globalPos())
+        self.menu.exec(event.globalPos())
 
     def setFixedSpan(self, fixed_span: bool):
         self.fixedSpan = fixed_span
