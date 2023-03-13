@@ -102,8 +102,6 @@ class ResonanceAnalysis(Analysis):
             self.layout.addRow(QtWidgets.QLabel("No resonance found"))
             return
 
-        self
-
         self.do_resonance_analysis()
 
     def do_resonance_analysis(self):

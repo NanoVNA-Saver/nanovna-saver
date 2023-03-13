@@ -39,7 +39,8 @@ points, and generally display and analyze the resulting data.
 * Copyright 2019, 2020 Rune B. Broberg
 * Copyright 2020ff NanoVNA-Saver Authors
 
-It's written in **Python 3** using **PyQt6** and **scipy**.
+It's developed in **Python 3 (>=3.8)** using **PyQt6**, **numpy** and
+**scipy**.
 
 
 Introduction
@@ -88,8 +89,6 @@ Screenshot
 Running the application
 -----------------------
 
-The software was written in Python on Windows, using Pycharm, and the modules
-PyQT5, numpy, scipy and pyserial.
 Main development is currently done on Linux (Mint 21 "Vanessa" Cinnamon)
 
 Installation
@@ -187,9 +186,12 @@ for the plot (right click on the plot).
 Latest Changes
 ^^^^^^^^^^^^^^
 
+* Using PyQt6
+* Moved to PyScaffold project structure
+
+
 Changes in 0.5.5
 ^^^^^^^^^^^^^^^^
-
 
 * Measuring inductor core permeability
 * Bugfixes for calibration data loading and saving
@@ -198,7 +200,6 @@ Changes in 0.5.5
 
 Changes in 0.5.4
 ^^^^^^^^^^^^^^^^
-
 
 * Bugfixes for Python3.11 compatability
 * Bugfix for Python3.8 compatability
