@@ -188,6 +188,7 @@ Latest Changes
 
 * Using PyQt6
 * Moved to PyScaffold project structure
+* Fixed crash in resonance analysis
 
 
 Changes in 0.5.5
