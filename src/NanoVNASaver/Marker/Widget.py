@@ -232,11 +232,11 @@ class Marker(QtCore.QObject, Value):
         if color.isValid():
             self.color = color
             p = self.btnColorPicker.palette()
-            # TODO: p.setColor(QtGui.QPalette.ButtonText, self.color)
+            p.setColor(QtGui.QPalette.ColorRole.ButtonText, self.color)
             self.btnColorPicker.setPalette(p)
+        # TODO: fix Stylesheet
         if self.coloredText:
             color_string = QtCore.QVariant(color)
-            # TODO: color_string.convert(str)
             self.group_box.setStyleSheet(
                 f"QGroupBox {{ color: {color_string.value()}; "
                 f"font-size: {self._size_str()}}};"
@@ -377,7 +377,6 @@ class Marker(QtCore.QObject, Value):
             self.label["s21polar"].setText(
                 f"{str(round(abs(_s21.z), 2))}∠{format_phase(_s21.phase)}"
             )
-
             self.label["s21magshunt"].setText(
                 format_magnitude(abs(_s21.shuntImpedance()))
             )

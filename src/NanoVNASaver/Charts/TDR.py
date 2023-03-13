@@ -20,8 +20,18 @@ import math
 import logging
 
 import numpy as np
-from PyQt6 import QtWidgets, QtGui, QtCore
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import QPoint, QRect, Qt
+from PyQt6.QtGui import (
+    QAction,
+    QActionGroup,
+    QMouseEvent,
+    QPalette,
+    QPainter,
+    QPaintEvent,
+    QPen,
+    QResizeEvent,
+)
+from PyQt6.QtWidgets import QInputDialog, QMenu, QSizePolicy
 
 from NanoVNASaver.Charts.Chart import Chart
 
@@ -48,32 +58,32 @@ class TDRChart(Chart):
 
         self.setMinimumSize(300, 300)
         self.setSizePolicy(
-            QtWidgets.QSizePolicy(
-                QtWidgets.QSizePolicy.Policy.MinimumExpanding,
-                QtWidgets.QSizePolicy.Policy.MinimumExpanding,
+            QSizePolicy(
+                QSizePolicy.Policy.MinimumExpanding,
+                QSizePolicy.Policy.MinimumExpanding,
             )
         )
-        pal = QtGui.QPalette()
-        pal.setColor(QtGui.QPalette.ColorRole.Window, Chart.color.background)
+        pal = QPalette()
+        pal.setColor(QPalette.ColorRole.Window, Chart.color.background)
         self.setPalette(pal)
         self.setAutoFillBackground(True)
 
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.DefaultContextMenu)
-        self.menu = QtWidgets.QMenu()
+        self.menu = QMenu()
 
-        self.reset = QtGui.QAction("Reset")
+        self.reset = QAction("Reset")
         self.reset.triggered.connect(self.resetDisplayLimits)
         self.menu.addAction(self.reset)
 
-        self.x_menu = QtWidgets.QMenu("Length axis")
-        self.mode_group = QtGui.QActionGroup(self.x_menu)
-        self.action_automatic = QtGui.QAction("Automatic")
+        self.x_menu = QMenu("Length axis")
+        self.mode_group = QActionGroup(self.x_menu)
+        self.action_automatic = QAction("Automatic")
         self.action_automatic.setCheckable(True)
         self.action_automatic.setChecked(True)
         self.action_automatic.changed.connect(
             lambda: self.setFixedSpan(self.action_fixed_span.isChecked())
         )
-        self.action_fixed_span = QtGui.QAction("Fixed span")
+        self.action_fixed_span = QAction("Fixed span")
         self.action_fixed_span.setCheckable(True)
         self.action_fixed_span.changed.connect(
             lambda: self.setFixedSpan(self.action_fixed_span.isChecked())
@@ -84,28 +94,26 @@ class TDRChart(Chart):
         self.x_menu.addAction(self.action_fixed_span)
         self.x_menu.addSeparator()
 
-        self.action_set_fixed_start = QtGui.QAction(
+        self.action_set_fixed_start = QAction(
             f"Start ({self.minDisplayLength})"
         )
         self.action_set_fixed_start.triggered.connect(self.setMinimumLength)
 
-        self.action_set_fixed_stop = QtGui.QAction(
-            f"Stop ({self.maxDisplayLength})"
-        )
+        self.action_set_fixed_stop = QAction(f"Stop ({self.maxDisplayLength})")
         self.action_set_fixed_stop.triggered.connect(self.setMaximumLength)
 
         self.x_menu.addAction(self.action_set_fixed_start)
         self.x_menu.addAction(self.action_set_fixed_stop)
 
-        self.y_menu = QtWidgets.QMenu("Impedance axis")
-        self.y_mode_group = QtGui.QActionGroup(self.y_menu)
-        self.y_action_automatic = QtGui.QAction("Automatic")
+        self.y_menu = QMenu("Impedance axis")
+        self.y_mode_group = QActionGroup(self.y_menu)
+        self.y_action_automatic = QAction("Automatic")
         self.y_action_automatic.setCheckable(True)
         self.y_action_automatic.setChecked(True)
         self.y_action_automatic.changed.connect(
             lambda: self.setFixedValues(self.y_action_fixed.isChecked())
         )
-        self.y_action_fixed = QtGui.QAction("Fixed")
+        self.y_action_fixed = QAction("Fixed")
         self.y_action_fixed.setCheckable(True)
         self.y_action_fixed.changed.connect(
             lambda: self.setFixedValues(self.y_action_fixed.isChecked())
@@ -116,14 +124,14 @@ class TDRChart(Chart):
         self.y_menu.addAction(self.y_action_fixed)
         self.y_menu.addSeparator()
 
-        self.y_action_set_fixed_maximum = QtGui.QAction(
+        self.y_action_set_fixed_maximum = QAction(
             f"Maximum ({self.maxImpedance})"
         )
         self.y_action_set_fixed_maximum.triggered.connect(
             self.setMaximumImpedance
         )
 
-        self.y_action_set_fixed_minimum = QtGui.QAction(
+        self.y_action_set_fixed_minimum = QAction(
             f"Minimum ({self.minImpedance})"
         )
         self.y_action_set_fixed_minimum.triggered.connect(
@@ -137,7 +145,7 @@ class TDRChart(Chart):
         self.menu.addMenu(self.y_menu)
         self.menu.addSeparator()
         self.menu.addAction(self.action_save_screenshot)
-        self.action_popout = QtGui.QAction("Popout chart")
+        self.action_popout = QAction("Popout chart")
         self.action_popout.triggered.connect(
             lambda: self.popoutRequested.emit(self)
         )
@@ -177,7 +185,7 @@ class TDRChart(Chart):
         self.update()
 
     def setMinimumLength(self):
-        min_val, selected = QtWidgets.QInputDialog.getDouble(
+        min_val, selected = QInputDialog.getDouble(
             self,
             "Start length (m)",
             "Set start length (m)",
@@ -193,7 +201,7 @@ class TDRChart(Chart):
             self.update()
 
     def setMaximumLength(self):
-        max_val, selected = QtWidgets.QInputDialog.getDouble(
+        max_val, selected = QInputDialog.getDouble(
             self,
             "Stop length (m)",
             "Set stop length (m)",
@@ -213,7 +221,7 @@ class TDRChart(Chart):
         self.update()
 
     def setMinimumImpedance(self):
-        min_val, selected = QtWidgets.QInputDialog.getDouble(
+        min_val, selected = QInputDialog.getDouble(
             self,
             "Minimum impedance (\N{OHM SIGN})",
             "Set minimum impedance (\N{OHM SIGN})",
@@ -229,7 +237,7 @@ class TDRChart(Chart):
             self.update()
 
     def setMaximumImpedance(self):
-        max_val, selected = QtWidgets.QInputDialog.getDouble(
+        max_val, selected = QInputDialog.getDouble(
             self,
             "Maximum impedance (\N{OHM SIGN})",
             "Set maximum impedance (\N{OHM SIGN})",
@@ -256,7 +264,7 @@ class TDRChart(Chart):
         self.tdrWindow.updated.connect(new_chart.update)
         return new_chart
 
-    def mouseMoveEvent(self, a0: QtGui.QMouseEvent) -> None:
+    def mouseMoveEvent(self, a0: QMouseEvent) -> None:
         if a0.buttons() == Qt.MouseButton.RightButton:
             a0.ignore()
             return
@@ -310,12 +318,12 @@ class TDRChart(Chart):
 
     def _draw_ticks(self, height, width, x_step, min_index):
         ticks = (self.width() - self.leftMargin) // 100
-        qp = QtGui.QPainter(self)
+        qp = QPainter(self)
         for i in range(ticks):
             x = self.leftMargin + round((i + 1) * width / ticks)
-            qp.setPen(QtGui.QPen(Chart.color.foreground))
+            qp.setPen(QPen(Chart.color.foreground))
             qp.drawLine(x, self.topMargin, x, self.topMargin + height)
-            qp.setPen(QtGui.QPen(Chart.color.text))
+            qp.setPen(QPen(Chart.color.text))
             distance = (
                 self.tdrWindow.distance_axis[
                     min_index + int((x - self.leftMargin) * x_step) - 1
@@ -325,15 +333,15 @@ class TDRChart(Chart):
             qp.drawText(
                 x - 15, self.topMargin + height + 15, f"{round(distance, 1)}m"
             )
-        qp.setPen(QtGui.QPen(Chart.color.text))
+        qp.setPen(QPen(Chart.color.text))
         qp.drawText(
             self.leftMargin - 10,
             self.topMargin + height + 15,
-            str(round(self.tdrWindow.distance_axis[min_index] / 2, 1)) + "m",
+            f"{str(round(self.tdrWindow.distance_axis[min_index] / 2, 1))}m",
         )
 
     def _draw_y_ticks(self, height, width, min_impedance, max_impedance):
-        qp = QtGui.QPainter(self)
+        qp = QPainter(self)
         y_step = (max_impedance - min_impedance) / height
         y_ticks = math.floor(height / 60)
         y_tick_step = height / y_ticks
@@ -350,10 +358,10 @@ class TDRChart(Chart):
         )
 
     def _draw_max_point(self, height, x_step, y_step, min_index):
-        qp = QtGui.QPainter(self)
+        qp = QPainter(self)
         id_max = np.argmax(self.tdrWindow.td)
 
-        max_point = QtCore.QPoint(
+        max_point = QPoint(
             self.leftMargin + int((id_max - min_index) / x_step),
             (self.topMargin + height) - int(self.tdrWindow.td[id_max] / y_step),
         )
@@ -368,8 +376,8 @@ class TDRChart(Chart):
         )
 
     def _draw_marker(self, height, x_step, y_step, min_index):
-        qp = QtGui.QPainter(self)
-        marker_point = QtCore.QPoint(
+        qp = QPainter(self)
+        marker_point = QPoint(
             self.leftMargin + int((self.markerLocation - min_index) / x_step),
             (self.topMargin + height)
             - int(self.tdrWindow.td[self.markerLocation] / y_step),
@@ -415,8 +423,8 @@ class TDRChart(Chart):
         self._draw_ticks(height, width, x_step, min_index)
         self._draw_y_ticks(height, width, min_impedance, max_impedance)
 
-        qp = QtGui.QPainter(self)
-        pen = QtGui.QPen(Chart.color.sweep)
+        qp = QPainter(self)
+        pen = QPen(Chart.color.sweep)
         pen.setWidth(self.dim.point)
         qp.setPen(pen)
 
@@ -443,15 +451,15 @@ class TDRChart(Chart):
         if self.markerLocation != -1:
             self._draw_marker(height, x_step, y_step, min_index)
 
-    def paintEvent(self, _: QtGui.QPaintEvent) -> None:
-        qp = QtGui.QPainter(self)
-        qp.setPen(QtGui.QPen(Chart.color.text))
+    def paintEvent(self, _: QPaintEvent) -> None:
+        qp = QPainter(self)
+        qp.setPen(QPen(Chart.color.text))
         qp.drawText(3, 15, self.name)
 
         width = self.width() - self.leftMargin - self.rightMargin
         height = self.height() - self.bottomMargin - self.topMargin
 
-        qp.setPen(QtGui.QPen(Chart.color.foreground))
+        qp.setPen(QPen(Chart.color.foreground))
         qp.drawLine(
             self.leftMargin - 5,
             self.height() - self.bottomMargin,
@@ -471,14 +479,12 @@ class TDRChart(Chart):
             self._draw_graph(height, width)
 
         if self.dragbox.state and self.dragbox.pos[0] != -1:
-            dashed_pen = QtGui.QPen(
-                Chart.color.foreground, 1, QtCore.Qt.DashLine
-            )
+            dashed_pen = QPen(Chart.color.foreground, 1, Qt.DashLine)
             qp.setPen(dashed_pen)
             qp.drawRect(
-                QtCore.QRect(
-                    QtCore.QPoint(*self.dragbox.pos_start),
-                    QtCore.QPoint(*self.dragbox.pos),
+                QRect(
+                    QPoint(*self.dragbox.pos_start),
+                    QPoint(*self.dragbox.pos),
                 )
             )
 
@@ -548,7 +554,7 @@ class TDRChart(Chart):
 
         self.update()
 
-    def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
+    def resizeEvent(self, a0: QResizeEvent) -> None:
         super().resizeEvent(a0)
         self.dim.width = self.width() - self.leftMargin - self.rightMargin
         self.dim.height = self.height() - self.bottomMargin - self.topMargin

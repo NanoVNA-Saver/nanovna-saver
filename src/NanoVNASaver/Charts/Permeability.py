@@ -144,7 +144,7 @@ class PermeabilityChart(FrequencyChart):
 
         primary_pen = pen
         secondary_pen = QtGui.QPen(Chart.color.sweep_secondary)
-        if len(self.data) > 0:
+        if self.data:
             c = QtGui.QColor(Chart.color.sweep)
             c.setAlpha(255)
             pen = QtGui.QPen(c)
@@ -215,7 +215,7 @@ class PermeabilityChart(FrequencyChart):
         line_pen.setColor(Chart.color.reference)
         secondary_pen.setColor(Chart.color.reference_secondary)
         qp.setPen(primary_pen)
-        if len(self.reference) > 0:
+        if self.reference:
             c = QtGui.QColor(Chart.color.reference)
             c.setAlpha(255)
             pen = QtGui.QPen(c)

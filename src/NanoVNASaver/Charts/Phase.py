@@ -22,7 +22,7 @@ import logging
 from typing import List
 import numpy as np
 
-from PyQt6 import QtWidgets, QtGui
+from PyQt6.QtGui import QAction, QPainter, QPen
 
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.Charts.Chart import Chart
@@ -47,7 +47,7 @@ class PhaseChart(FrequencyChart):
         self.maxDisplayValue = 180
 
         self.y_menu.addSeparator()
-        self.action_unwrap = QtGui.QAction("Unwrap")
+        self.action_unwrap = QAction("Unwrap")
         self.action_unwrap.setCheckable(True)
         self.action_unwrap.triggered.connect(
             lambda: self.setUnwrap(self.action_unwrap.isChecked())
@@ -64,7 +64,7 @@ class PhaseChart(FrequencyChart):
         self.unwrap = unwrap
         self.update()
 
-    def drawValues(self, qp: QtGui.QPainter):
+    def drawValues(self, qp: QPainter):
         if len(self.data) == 0 and len(self.reference) == 0:
             return
 
@@ -102,7 +102,7 @@ class PhaseChart(FrequencyChart):
                 (self.maxAngle - angle) / self.span * self.dim.height
             )
             if angle not in [minAngle, maxAngle]:
-                qp.setPen(QtGui.QPen(Chart.color.text))
+                qp.setPen(QPen(Chart.color.text))
                 if angle != 0:
                     digits = max(
                         0, min(2, math.floor(3 - math.log10(abs(angle))))
@@ -115,7 +115,7 @@ class PhaseChart(FrequencyChart):
                 else:
                     anglestr = "0"
                 qp.drawText(3, y + 3, f"{anglestr}°")
-                qp.setPen(QtGui.QPen(Chart.color.foreground))
+                qp.setPen(QPen(Chart.color.foreground))
                 qp.drawLine(
                     self.leftMargin - 5, y, self.leftMargin + self.dim.width, y
                 )
