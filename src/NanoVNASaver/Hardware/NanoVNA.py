@@ -22,7 +22,7 @@ from typing import List
 
 import serial
 import numpy as np
-from PyQt6 import QtGui
+from PyQt6.QtGui import QImage, QPixmap
 
 from NanoVNASaver.Hardware.Serial import drain_serial, Interface
 from NanoVNASaver.Hardware.VNA import VNA
@@ -82,23 +82,23 @@ class NanoVNA(VNA):
             + ((rgb_array & 0x001F) << 3)
         )
 
-    def getScreenshot(self) -> QtGui.QPixmap:
+    def getScreenshot(self) -> QPixmap:
         logger.debug("Capturing screenshot...")
         if not self.connected():
-            return QtGui.QPixmap()
+            return QPixmap()
         try:
             rgba_array = self._convert_data(self._capture_data())
-            image = QtGui.QImage(
+            image = QImage(
                 rgba_array,
                 self.screenwidth,
                 self.screenheight,
-                QtGui.QImage.Format_ARGB32,
+                QImage.Format_ARGB32,
             )
             logger.debug("Captured screenshot")
-            return QtGui.QPixmap(image)
+            return QPixmap(image)
         except serial.SerialException as exc:
             logger.exception("Exception while capturing screenshot: %s", exc)
-        return QtGui.QPixmap()
+        return QPixmap()
 
     def resetSweep(self, start: int, stop: int):
         list(self.exec_command(f"sweep {start} {stop} {self.datapoints}"))

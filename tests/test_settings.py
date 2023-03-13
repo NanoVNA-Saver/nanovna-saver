@@ -36,12 +36,12 @@ class TestCases(unittest.TestCase):
 
     def setUp(self) -> None:
         self.settings_1 = CFG.AppSettings(
-            CFG.QSettings.IniFormat,
-            CFG.QSettings.UserScope,
+            CFG.QSettings.Format.IniFormat,
+            CFG.QSettings.Scope.UserScope,
             "NanoVNASaver", "Test_1")
         self.settings_2 = CFG.AppSettings(
-            CFG.QSettings.IniFormat,
-            CFG.QSettings.UserScope,
+            CFG.QSettings.Format.IniFormat,
+            CFG.QSettings.Scope.UserScope,
             "NanoVNASaver", "Test_2")
         self.config_1 = TConfig()
         self.config_2 = TConfig(

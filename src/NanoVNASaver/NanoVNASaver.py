@@ -186,6 +186,7 @@ class NanoVNASaver(QWidget):
                 "smith": SmithChart("S11 Smith Chart"),
                 "s_parameter": SParameterChart("S11 Real/Imaginary"),
                 "vswr": VSWRChart("S11 VSWR"),
+                "sa_dbm": LogMagChart("Signal Analyser dBm"),
             },
             "s21": {
                 "group_delay": GroupDelayChart(

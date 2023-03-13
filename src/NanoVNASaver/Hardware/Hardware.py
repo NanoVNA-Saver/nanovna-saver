@@ -34,7 +34,7 @@ from NanoVNASaver.Hardware.NanoVNA_F_V2 import NanoVNA_F_V2
 from NanoVNASaver.Hardware.NanoVNA_H import NanoVNA_H
 from NanoVNASaver.Hardware.NanoVNA_H4 import NanoVNA_H4
 from NanoVNASaver.Hardware.NanoVNA_V2 import NanoVNA_V2
-from NanoVNASaver.Hardware.TinySA import TinySA
+from NanoVNASaver.Hardware.TinySA import TinySA, TinySA_Ultra
 from NanoVNASaver.Hardware.Serial import drain_serial, Interface
 
 logger = logging.getLogger(__name__)
@@ -59,6 +59,7 @@ NAME2DEVICE = {
     "F": NanoVNA_F,
     "NanoVNA": NanoVNA,
     "tinySA": TinySA,
+    "tinySA_Ultra": TinySA_Ultra,
     "Unknown": NanoVNA,
 }
 
@@ -152,6 +153,7 @@ def get_comment(iface: Interface) -> str:
         ("NanoVNA-F_V2", "F_V2"),
         ("NanoVNA-F", "F"),
         ("NanoVNA", "NanoVNA"),
+        ("tinySA4", "tinySA_Ultra"),
         ("tinySA", "tinySA"),
     ):
         if info.find(search) >= 0:

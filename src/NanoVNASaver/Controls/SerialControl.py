@@ -97,7 +97,7 @@ class SerialControl(Control):
             logger.error("Unable to connect to VNA: %s", exc)
 
         self.app.vna.validateInput = self.app.settings.value(
-            "SerialInputValidation", True, bool
+            "SerialInputValidation", False, bool
         )
 
         # connected

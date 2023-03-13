@@ -43,6 +43,7 @@ class TinySA(VNA):
         self.start, self.stop = self._get_running_frequencies()
         self.sweep_max_freq_Hz = 950e6
         self._sweepdata = []
+        self.validateInput = False
 
     def _get_running_frequencies(self):
         logger.debug("Reading values: frequencies")
@@ -91,7 +92,7 @@ class TinySA(VNA):
                 rgba_array,
                 self.screenwidth,
                 self.screenheight,
-                QtGui.QImage.Format_ARGB32,
+                QtGui.QImage.Format.Format_ARGB32,
             )
             logger.debug("Captured screenshot")
             return QtGui.QPixmap(image)
@@ -113,9 +114,22 @@ class TinySA(VNA):
         return [int(line) for line in self.exec_command("frequencies")]
 
     def readValues(self, value) -> List[str]:
+        def conv2float(data: str) -> float:
+            try:
+                return 10**(float(data.strip()) / 20)
+            except ValueError:
+                return 0.0
         logger.debug("Read: %s", value)
         if value == "data 0":
             self._sweepdata = [
-                f"0 {line.strip()}" for line in self.exec_command("data")
+                f"{conv2float(line)} 0.0"
+                for line in self.exec_command("data 0")
             ]
         return self._sweepdata
+
+
+class TinySA_Ultra(TinySA):
+    name = "tinySA Ultra"
+    screenwidth = 480
+    screenheight = 320
+    valid_datapoints = (51, 101, 145, 290, 450)

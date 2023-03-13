@@ -1,32 +1,25 @@
 .. role:: raw-html-m2r(raw)
    :format: html
 
-
-
 .. image:: https://img.shields.io/github/v/release/NanoVNA-Saver/nanovna-saver.svg
    :target: https://github.com/NanoVNA-Saver/nanovna-saver/releases/latest
    :alt: Latest Release
-
 
 .. image:: https://img.shields.io/github/license/NanoVNA-Saver/nanovna-saver.svg
    :target: https://github.com/NanoVNA-Saver/nanovna-saver/blob/master/LICENSE.txt
    :alt: License
 
-
 .. image:: https://img.shields.io/github/downloads/NanoVNA-Saver/nanovna-saver/total.svg
    :target: https://github.com/NanoVNA-Saver/nanovna-saver/releases/
    :alt: Downloads
-
 
 .. image:: https://img.shields.io/github/downloads/NanoVNA-Saver/nanovna-saver/latest/total
    :target: https://github.com/NanoVNA-Saver/nanovna-saver/releases/latest
    :alt: GitHub Releases
 
-
 .. image:: https://img.shields.io/badge/paypal-donate-yellow.svg
    :target: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=T8KTGVDQF5K6E&item_name=NanoVNASaver+Development&currency_code=EUR&source=url
    :alt: Donate
-
 
 NanoVNASaver
 ============
@@ -57,6 +50,7 @@ Current features
 
 * Reading data from a NanoVNA -- Compatible devices: NanoVNA, NanoVNA-H,
   NanoVNA-H4, NanoVNA-F, AVNA via Teensy
+* Reading data from a TinySA
 * Splitting a frequency range into multiple segments to increase resolution
   (tried up to >10k points)
 * Averaging data for better results particularly at higher frequencies
@@ -189,6 +183,7 @@ Latest Changes
 * Using PyQt6
 * Moved to PyScaffold project structure
 * Fixed crash in resonance analysis
+* Added TinySA readout and screenshot
 
 
 Changes in 0.5.5
