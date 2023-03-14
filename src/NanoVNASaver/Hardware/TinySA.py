@@ -22,7 +22,7 @@ from typing import List
 
 import serial
 import numpy as np
-from PyQt6 import QtGui
+from PyQt6.QtGui import QImage, QPixmap
 
 from NanoVNASaver.Hardware.Serial import drain_serial, Interface
 from NanoVNASaver.Hardware.VNA import VNA
@@ -82,23 +82,23 @@ class TinySA(VNA):
             + ((rgb_array & 0x001F) << 3)
         )
 
-    def getScreenshot(self) -> QtGui.QPixmap:
+    def getScreenshot(self) -> QPixmap:
         logger.debug("Capturing screenshot...")
         if not self.connected():
-            return QtGui.QPixmap()
+            return QPixmap()
         try:
             rgba_array = self._convert_data(self._capture_data())
-            image = QtGui.QImage(
+            image = QImage(
                 rgba_array,
                 self.screenwidth,
                 self.screenheight,
-                QtGui.QImage.Format.Format_ARGB32,
+                QImage.Format.Format_ARGB32,
             )
             logger.debug("Captured screenshot")
-            return QtGui.QPixmap(image)
+            return QPixmap(image)
         except serial.SerialException as exc:
             logger.exception("Exception while capturing screenshot: %s", exc)
-        return QtGui.QPixmap()
+        return QPixmap()
 
     def resetSweep(self, start: int, stop: int):
         return
@@ -116,9 +116,10 @@ class TinySA(VNA):
     def readValues(self, value) -> List[str]:
         def conv2float(data: str) -> float:
             try:
-                return 10**(float(data.strip()) / 20)
+                return 10 ** (float(data.strip()) / 20)
             except ValueError:
                 return 0.0
+
         logger.debug("Read: %s", value)
         if value == "data 0":
             self._sweepdata = [
@@ -132,4 +133,13 @@ class TinySA_Ultra(TinySA):
     name = "tinySA Ultra"
     screenwidth = 480
     screenheight = 320
-    valid_datapoints = (51, 101, 145, 290, 450)
+    valid_datapoints = (450, 51, 101, 145, 290)
+
+    def __init__(self, iface: Interface):
+        super().__init__(iface)
+        self.features = {"Screenshots", "Customizable data points"}
+        logger.debug("Setting initial start,stop")
+        self.start, self.stop = self._get_running_frequencies()
+        self.sweep_max_freq_Hz = 5.4e9
+        self._sweepdata = []
+        self.validateInput = False

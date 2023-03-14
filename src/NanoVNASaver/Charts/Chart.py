@@ -219,16 +219,21 @@ class Chart(QtWidgets.QWidget):
         if event.buttons() == Qt.MouseButton.MiddleButton:
             # Drag event
             event.accept()
-            self.dragbox.move_x = event.x()
-            self.dragbox.move_y = event.y()
+            self.dragbox.move_x = event.position().x()
+            self.dragbox.move_y = event.position().y()
             return
         if event.modifiers() == Qt.KeyboardModifier.ControlModifier:
             event.accept()
             self.dragbox.state = True
-            self.dragbox.pos_start = (event.x(), event.y())
+            self.dragbox.pos_start = (
+                event.position().x(),
+                event.position().y(),
+            )
             return
         if event.modifiers() == Qt.KeyboardModifier.ShiftModifier:
-            self.draggedMarker = self.getNearestMarker(event.x(), event.y())
+            self.draggedMarker = self.getNearestMarker(
+                event.position().x(), event.position().y()
+            )
         self.mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, a0: QtGui.QMouseEvent):
