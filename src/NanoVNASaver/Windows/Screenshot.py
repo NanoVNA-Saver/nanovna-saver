@@ -62,8 +62,8 @@ class ScreenshotWindow(QtWidgets.QLabel):
         self.setPixmap(
             self.pix.scaled(
                 self.size(),
-                QtCore.Qt.KeepAspectRatio,
-                QtCore.Qt.FastTransformation,
+                QtCore.Qt.AspectRatioMode.KeepAspectRatio,
+                QtCore.Qt.TransformationMode.FastTransformation,
             )
         )
         w, h = pixmap.width(), pixmap.height()
@@ -104,8 +104,8 @@ class ScreenshotWindow(QtWidgets.QLabel):
             self.setPixmap(
                 self.pix.scaled(
                     self.size(),
-                    QtCore.Qt.KeepAspectRatio,
-                    QtCore.Qt.FastTransformation,
+                    QtCore.Qt.AspectRatioMode.KeepAspectRatio,
+                    QtCore.Qt.TransformationMode.FastTransformation,
                 )
             )
 

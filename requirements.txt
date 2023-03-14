@@ -3,3 +3,5 @@ PyQt6==5.15.9
 numpy==1.24.2
 scipy==1.10.1
 Cython==0.29.33
+setuptools==65.3.0
+setuptools-scm==7.1.0

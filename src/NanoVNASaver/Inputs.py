@@ -33,13 +33,16 @@ class FrequencyInputWidget(QtWidgets.QLineEdit):
 
 class MarkerFrequencyInputWidget(FrequencyInputWidget):
     def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
-        if a0.type() == QtCore.QEvent.KeyPress:
-            if a0.key() == QtCore.Qt.Key_Up and self.nextFrequency != -1:
+        if a0.type() == QtGui.QKeyEvent.Type.KeyPress:
+            if a0.key() == QtCore.Qt.Key.Key_Up and self.nextFrequency != -1:
                 a0.accept()
                 self.setText(str(self.nextFrequency))
                 self.editingFinished.emit()  # self.text())
                 return
-            if a0.key() == QtCore.Qt.Key_Down and self.previousFrequency != -1:
+            if (
+                a0.key() == QtCore.Qt.Key.Key_Down
+                and self.previousFrequency != -1
+            ):
                 a0.accept()
                 self.setText(str(self.previousFrequency))
                 self.editingFinished.emit()  # self.text())

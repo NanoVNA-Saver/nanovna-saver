@@ -311,14 +311,15 @@ class FrequencyChart(Chart):
         )
         if not selected:
             return
+        text = text.replace("dB", "")
         min_val = parse_value(text)
         yspan = abs(self.maxDisplayValue - self.minDisplayValue)
         self.minDisplayValue = min_val
         if self.minDisplayValue >= self.maxDisplayValue:
             self.maxDisplayValue = self.minDisplayValue + yspan
         # TODO: negativ logarythmical scale
-        if self.logarithmicY and min_val <= 0:
-            self.minDisplayValue = 0.01
+        # if self.logarithmicY and min_val <= 0:
+        #    self.minDisplayValue = 0.01
         self.fixedValues = True
         self.update()
 
@@ -329,6 +330,7 @@ class FrequencyChart(Chart):
             "Set maximum value",
             text=format_y_axis(self.maxDisplayValue, self.name_unit),
         )
+        text = text.replace("dB", "")
         if not selected:
             return
         max_val = parse_value(text)
@@ -627,7 +629,7 @@ class FrequencyChart(Chart):
         ticks = math.floor(self.dim.width / 100)
 
         # try to adapt format to span
-        if int(fspan / ticks / self.fstart * 10000) > 2:
+        if self.fstart == 0 or int(fspan / ticks / self.fstart * 10000) > 2:
             my_format_frequency = format_frequency_chart
         else:
             my_format_frequency = format_frequency_chart_2

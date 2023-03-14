@@ -101,7 +101,7 @@ class Sweep:
         if (
             self.segments <= 0
             or self.points <= 0
-            or self.start <= 0
+            or self.start < 0
             or self.end <= 0
             or self.stepsize < 1
         ):

@@ -23,6 +23,7 @@ import threading
 from time import strftime, localtime
 
 from PyQt6 import QtWidgets, QtCore, QtGui
+from PyQt6.QtCore import QObject
 from PyQt6.QtWidgets import QWidget
 
 from NanoVNASaver import Defaults
@@ -74,18 +75,22 @@ from .SweepWorker import SweepWorker
 from .Settings.Bands import BandsModel
 from .Settings.Sweep import Sweep
 from .Touchstone import Touchstone
-from .About import VERSION
+from .About import version
 
 logger = logging.getLogger(__name__)
 
 
+class Communicate(QObject):
+    data_available = QtCore.pyqtSignal()
+
+
 class NanoVNASaver(QWidget):
-    version = VERSION
-    dataAvailable = QtCore.pyqtSignal()
+    version = version
     scaleFactor = 1
 
     def __init__(self):
         super().__init__()
+        self.communicate = Communicate()
         self.s21att = 0.0
         if getattr(sys, "frozen", False):
             logger.debug("Running from pyinstaller bundle")
@@ -186,6 +191,7 @@ class NanoVNASaver(QWidget):
                 "smith": SmithChart("S11 Smith Chart"),
                 "s_parameter": SParameterChart("S11 Real/Imaginary"),
                 "vswr": VSWRChart("S11 VSWR"),
+                "sa_dbm": LogMagChart("Signal Analyser dBm"),
             },
             "s21": {
                 "group_delay": GroupDelayChart(
@@ -589,7 +595,7 @@ class NanoVNASaver(QWidget):
             self.s21_max_gain_label.setText("")
 
         self.updateTitle()
-        self.dataAvailable.emit()
+        self.communicate.data_available.emit()
 
     def sweepFinished(self):
         self._sweep_control(start=False)

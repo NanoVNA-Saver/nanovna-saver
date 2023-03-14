@@ -32,7 +32,7 @@ import sys
 
 from PyQt6 import QtWidgets
 
-from NanoVNASaver.About import VERSION, INFO
+from NanoVNASaver.About import version, INFO
 from NanoVNASaver.NanoVNASaver import NanoVNASaver
 from NanoVNASaver.Touchstone import Touchstone
 
@@ -59,7 +59,7 @@ def main():
         help="Touchstone file to load as reference for off" " device usage",
     )
     parser.add_argument(
-        "--version", action="version", version=f"NanoVNASaver {VERSION}"
+        "--version", action="version", version=f"NanoVNASaver {version}"
     )
     args = parser.parse_args()
 
