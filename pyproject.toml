@@ -9,9 +9,9 @@ dynamic = ["version"]
 [tool.setuptools_scm]
 # For smarter version schemes and other configuration options,
 # check out https://github.com/pypa/setuptools_scm
+root="."
 version_scheme = "no-guess-dev"
 write_to = "src/NanoVNASaver/_version.py"
-
 
 [tool.pytest.ini_options]
 pythonpath = [
