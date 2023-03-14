@@ -71,7 +71,7 @@ class PeakSearchAnalysis(SimplePeakSearchAnalysis):
 
         # Having found the peaks, get the prominence data
         for i, p in np.ndenumerate(peaks):
-            logger.debug("Peak %i at %d", i, p)
+            logger.debug("Peak %s at %s", i, p)
         prominences = peak_prominences(data, peaks)[0]
         logger.debug("%d prominences", len(prominences))
 

@@ -273,7 +273,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         charts_box = QtWidgets.QGroupBox("Displayed charts")
         charts_layout = QtWidgets.QGridLayout(charts_box)
 
-        selections = [c.name for c in self.app .selectable_charts]
+        selections = [c.name for c in self.app.selectable_charts]
         selections.append("None")
 
         self._chart_selection(charts_layout, selections)
@@ -447,9 +447,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.callback_params[cp] = (setting, attr)
         cp.clicked.connect(self.setColor)
         p = cp.palette()
-        p.setColor(
-            QPalette.ColorRole.ButtonText, getattr(Chart.color, attr)
-        )
+        p.setColor(QPalette.ColorRole.ButtonText, getattr(Chart.color, attr))
         cp.setPalette(p)
         return cp
 

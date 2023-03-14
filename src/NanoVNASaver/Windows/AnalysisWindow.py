@@ -128,9 +128,9 @@ class AnalysisWindow(QtWidgets.QWidget):
         self.update()
 
     def toggleAutomaticRun(self, state: Qt.CheckState):
-        if state == Qt.CheckState.Checked:
+        if state == Qt.CheckState.Checked.value:
             self.analysis_list.setDisabled(True)
-            self.app.dataAvailable.connect(self.runAnalysis)
+            self.app.communicate.data_available.connect(self.runAnalysis)
         else:
             self.analysis_list.setDisabled(False)
-            self.app.dataAvailable.disconnect(self.runAnalysis)
+            self.app.communicate.data_available.disconnect(self.runAnalysis)
