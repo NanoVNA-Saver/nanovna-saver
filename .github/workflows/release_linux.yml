@@ -23,9 +23,9 @@ jobs:
       run: |
         python3.9 -m venv build
         . build/bin/activate
-        python -m pip install pip==23.0.1 setuptools==67.4.0
+        python -m pip install pip==23.0.1 setuptools==67.6.0
         pip install -r requirements.txt
-        pip install PyInstaller==5.8.0
+        pip install PyInstaller==5.9.0
     - name: Build binary
       run: |
         . build/bin/activate
