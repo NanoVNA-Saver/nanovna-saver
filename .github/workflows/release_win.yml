@@ -24,7 +24,7 @@ jobs:
         architecture: ${{ matrix.arch }}
     - name: Install dependencies and pyinstall
       run: |
-        pip install -U pip setuptools
+        pip install -U pip setuptools setuptools-scm
         pip install -r requirements.txt
         pip install PyInstaller==5.9.0
     - name: Build binary
