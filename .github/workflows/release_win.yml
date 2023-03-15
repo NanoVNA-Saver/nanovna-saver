@@ -27,6 +27,7 @@ jobs:
         pip install PyInstaller==5.9.0
     - name: Build binary
       run: |
+        python setup.py -V
         pyinstaller --onefile -p src -n nanovna-saver.exe nanovna-saver.py
 
     - name: Archive production artifacts
