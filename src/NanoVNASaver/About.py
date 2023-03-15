@@ -18,7 +18,10 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from setuptools_scm import get_version
-version = get_version()  # root='.', relative_to=__file__)
+try:
+    version = get_version(root='..', relative_to=__file__)
+except LookupError:
+    from NanoVNASaver._version import version
 
 VERSION_URL = (
     "https://raw.githubusercontent.com/"
