@@ -1,0 +1,66 @@
+.\"  English manual page for  nanovna-saver
+.\"
+.\"  Copyright (C) 2023-2023 Nicolas Boulenguez <nicolas@debian.org>
+.\"
+.\"  This program is free software: you can redistribute it and/or
+.\"  modify it under the terms of the GNU General Public License as
+.\"  published by the Free Software Foundation, either version 3 of the
+.\"  License, or (at your option) any later version.
+.\"  This program is distributed in the hope that it will be useful, but
+.\"  WITHOUT ANY WARRANTY; without even the implied warranty of
+.\"  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+.\"  General Public License for more details.
+.\"  You should have received a copy of the GNU General Public License
+.\"  along with this program. If not, see <http://www.gnu.org/licenses/>.
+.\"
+.TH NANOVNASAVER 1 "2023-03-19"
+.\"----------------------------------------------------------------------
+.SH NAME
+NANOVNASAVER \- save Touchstone files from the NanoVNA device
+.\"----------------------------------------------------------------------
+.SH SYNOPSIS
+.B NanoVNASaver
+.RB [\| \-h \|]
+.RB [\| \-d \|]
+.RB [\| \-D
+.IR DEBUG_FILE \|]
+.RB [\| \-f
+.IR FILE \|]
+.RB [\| \-r
+.IR REF_FILE \|]
+.RB [\| \-\-version \|]
+.\"----------------------------------------------------------------------
+.SH DESCRCIPTION
+The NanoVNASaver graphical tool saves Touchstone files from the
+NanoVNA, sweeps frequency spans in segments to gain more data points,
+and generally displays and analyzes the resulting data.
+.PP
+The authors expect most users to use a graphical launcher instead of
+the command line interface.
+.\"----------------------------------------------------------------------
+.SH OPTIONS
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Show a summary of options and exit.
+.TP
+\fB\-d\fR, \fB\-\-debug\fR
+Set loglevel to debug.
+.TP
+\fB\-D \fIDEBUG_FILE\fR, \fB\-\-debug\-file \fIDEBUG_FILE\fR
+File to write debug logging output to.
+.TP
+\fB\-f \fIFILE\fR, \fB\-\-file \fIFILE\fR
+Touchstone file to load as sweep for off device usage.
+.TP
+\fB\-r \fIREF_FILE\fR, \fB\-\-ref\-file \fIREF_FILE\fR
+Touchstone file to load as reference for off device usage.
+.TP
+\fB\-\-version\fR
+Show program's version number and exit.
+.\"----------------------------------------------------------------------
+.SH SEE ALSO
+The documentation is installed at
+.BR /usr/share/doc/nanovna-saver/ .
+.\"----------------------------------------------------------------------
+.SH HISTORY
+This page has been written for Debian but may be reused by others.
