@@ -1,5 +1,3 @@
-#! /bin/env python
-#
 #  NanoVNASaver
 #
 #  A python program to view and export Touchstone data from a NanoVNA
