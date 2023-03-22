@@ -17,10 +17,11 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
+from dataclasses import dataclass, replace
 from enum import Enum
 from math import log
 from threading import Lock
-from typing import Iterator
+from typing import Iterator, NamedTuple
 
 logger = logging.getLogger(__name__)
 
@@ -31,63 +32,28 @@ class SweepMode(Enum):
     AVERAGE = 2
 
 
-class Properties:
-    def __init__(
-        self,
-        name: str = "",
-        mode: "SweepMode" = SweepMode.SINGLE,
-        averages: tuple[int, int] = (3, 0),
-        logarithmic: bool = False,
-    ):
-        self.name = name
-        self.mode = mode
-        self.averages = averages
-        self.logarithmic = logarithmic
-
-    def __repr__(self):
-        return (
-            f"Properties('{self.name}', {self.mode}, {self.averages},"
-            f" {self.logarithmic})"
-        )
+class Properties(NamedTuple):
+    name: str = ""
+    mode: "SweepMode" = SweepMode.SINGLE
+    averages: tuple[int, int] = (3, 0)
+    logarithmic: bool = False
 
 
+@dataclass
 class Sweep:
-    def __init__(
-        self,
-        start: int = 3600000,
-        end: int = 30000000,
-        points: int = 101,
-        segments: int = 1,
-        properties: "Properties" = Properties(),
-    ):
-        self.start = start
-        self.end = end
-        self.points = points
-        self.segments = segments
-        self.properties = properties
+    start: int = 3600000
+    end: int = 30000000
+    points: int = 101
+    segments: int = 1
+    properties: "Properties" = Properties()
+
+    def __post_init__(self):
         self.lock = Lock()
         self.check()
         logger.debug("%s", self)
 
-    def __repr__(self) -> str:
-        return (
-            f"Sweep({self.start}, {self.end}, {self.points}, {self.segments},"
-            f" {self.properties})"
-        )
-
-    def __eq__(self, other) -> bool:
-        return (
-            self.start == other.start
-            and self.end == other.end
-            and self.points == other.points
-            and self.segments == other.segments
-            and self.properties == other.properties
-        )
-
     def copy(self) -> "Sweep":
-        return Sweep(
-            self.start, self.end, self.points, self.segments, self.properties
-        )
+        return replace(self)
 
     @property
     def span(self) -> int:
