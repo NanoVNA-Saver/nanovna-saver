@@ -18,7 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from PyQt6 import QtWidgets, QtGui
+from PyQt6 import QtGui
 
 from NanoVNASaver.Formatting import format_frequency_chart
 from NanoVNASaver.RFTools import Datapoint
