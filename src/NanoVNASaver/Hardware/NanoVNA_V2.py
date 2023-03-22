@@ -20,7 +20,6 @@ import logging
 import platform
 from struct import pack, unpack_from
 from time import sleep
-from typing import List
 
 from NanoVNASaver.Hardware.Serial import Interface
 from NanoVNASaver.Hardware.VNA import VNA
@@ -131,7 +130,7 @@ class NanoVNA_V2(VNA):
         logger.debug("readFirmware: %s", result)
         return result
 
-    def readFrequencies(self) -> List[int]:
+    def readFrequencies(self) -> list[int]:
         return [
             int(self.sweepStartHz + i * self.sweepStepHz)
             for i in range(self.datapoints)
@@ -159,7 +158,7 @@ class NanoVNA_V2(VNA):
 
         logger.debug("Freq index to: %i", freq_index)
 
-    def readValues(self, value) -> List[str]:
+    def readValues(self, value) -> list[str]:
         # Actually grab the data only when requesting channel 0.
         # The hardware will return all channels which we will store.
         if value == "data 0":

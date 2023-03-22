@@ -18,7 +18,6 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 import math
-from typing import Dict, List
 
 from PyQt6 import QtWidgets
 
@@ -158,13 +157,13 @@ class BandPassAnalysis(Analysis):
         self.set_result(f"Analysis complete ({len(s21)} points)")
 
     def derive_60dB(
-        self, cutoff_pos: Dict[str, int], cutoff_freq: Dict[str, float]
+        self, cutoff_pos: dict[str, int], cutoff_freq: dict[str, float]
     ):
         """derive 60dB cutoff if needed an possible
 
         Args:
-            cutoff_pos (Dict[str, int])
-            cutoff_freq (Dict[str, float])
+            cutoff_pos (dict[str, int])
+            cutoff_freq (dict[str, float])
         """
         if (
             math.isnan(cutoff_freq["60.0dB_l"])
@@ -191,7 +190,7 @@ class BandPassAnalysis(Analysis):
                 )
             )
 
-    def find_center(self, gains: List[float]) -> int:
+    def find_center(self, gains: list[float]) -> int:
         marker = self.app.markers[0]
         if marker.location <= 0 or marker.location >= len(gains) - 1:
             logger.debug(
@@ -207,8 +206,8 @@ class BandPassAnalysis(Analysis):
         return peak
 
     def find_bounderies(
-        self, gains: List[float], peak: int, peak_db: float
-    ) -> Dict[str, int]:
+        self, gains: list[float], peak: int, peak_db: float
+    ) -> dict[str, int]:
         cutoff_pos = {}
         for attn in CUTOFF_VALS:
             cutoff_pos[f"{attn:.1f}dB_l"] = at.cut_off_left(

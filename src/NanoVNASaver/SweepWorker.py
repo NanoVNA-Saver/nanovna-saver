@@ -18,7 +18,6 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 from time import sleep
-from typing import List, Tuple
 
 import numpy as np
 from PyQt6 import QtCore, QtWidgets
@@ -31,7 +30,7 @@ from NanoVNASaver.Settings.Sweep import Sweep, SweepMode
 logger = logging.getLogger(__name__)
 
 
-def truncate(values: List[List[Tuple]], count: int) -> List[List[Tuple]]:
+def truncate(values: list[list[tuple]], count: int) -> list[list[tuple]]:
     """truncate drops extrema from data list if averaging is active"""
     keep = len(values) - count
     logger.debug("Truncating from %d values to %d", len(values), keep)
@@ -62,10 +61,10 @@ class SweepWorker(QtCore.QRunnable):
         self.sweep = Sweep()
         self.setAutoDelete(False)
         self.percentage = 0
-        self.data11: List[Datapoint] = []
-        self.data21: List[Datapoint] = []
-        self.rawData11: List[Datapoint] = []
-        self.rawData21: List[Datapoint] = []
+        self.data11: list[Datapoint] = []
+        self.data21: list[Datapoint] = []
+        self.rawData11: list[Datapoint] = []
+        self.rawData21: list[Datapoint] = []
         self.init_data()
         self.stopped = False
         self.running = False
@@ -187,10 +186,10 @@ class SweepWorker(QtCore.QRunnable):
         self.signals.updated.emit()
 
     def applyCalibration(
-        self, raw_data11: List[Datapoint], raw_data21: List[Datapoint]
-    ) -> Tuple[List[Datapoint], List[Datapoint]]:
-        data11: List[Datapoint] = []
-        data21: List[Datapoint] = []
+        self, raw_data11: list[Datapoint], raw_data21: list[Datapoint]
+    ) -> tuple[list[Datapoint], list[Datapoint]]:
+        data11: list[Datapoint] = []
+        data21: list[Datapoint] = []
 
         if not self.app.calibration.isCalculated:
             data11 = raw_data11.copy()

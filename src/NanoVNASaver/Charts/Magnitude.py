@@ -18,7 +18,6 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
 import logging
-from typing import List
 
 from PyQt6 import QtGui
 
@@ -127,7 +126,7 @@ class MagnitudeChart(FrequencyChart):
             (self.maxValue - mag) / self.span * self.dim.height
         )
 
-    def valueAtPosition(self, y) -> List[float]:
+    def valueAtPosition(self, y) -> list[float]:
         absy = y - self.topMargin
         val = -1 * ((absy / self.dim.height * self.span) - self.maxValue)
         return [val]

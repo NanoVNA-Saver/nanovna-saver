@@ -17,7 +17,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-from typing import Dict, List
 
 import NanoVNASaver.AnalyticTools as at
 from NanoVNASaver.Analysis.Base import CUTOFF_VALS
@@ -33,8 +32,8 @@ class LowPassAnalysis(HighPassAnalysis):
         self.set_titel("Lowpass filter analysis")
 
     def find_cutoffs(
-        self, gains: List[float], peak: int, peak_db: float
-    ) -> Dict[str, int]:
+        self, gains: list[float], peak: int, peak_db: float
+    ) -> dict[str, int]:
         return {
             f"{attn:.1f}dB": at.cut_off_right(gains, peak, peak_db, attn)
             for attn in CUTOFF_VALS

@@ -17,7 +17,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
-from typing import List
 
 from PyQt6 import QtGui, QtWidgets, QtCore
 from PyQt6.QtCore import pyqtSignal
@@ -253,7 +252,7 @@ class Marker(QtCore.QObject, Value):
     def getRow(self):
         return QtWidgets.QLabel(self.name), self.layout
 
-    def findLocation(self, data: List[RFTools.Datapoint]):
+    def findLocation(self, data: list[RFTools.Datapoint]):
         self.location = -1
         self.frequencyInput.nextFrequency = -1
         self.frequencyInput.previousFrequency = -1
@@ -298,7 +297,7 @@ class Marker(QtCore.QObject, Value):
             v.setText("")
 
     def updateLabels(
-        self, s11: List[RFTools.Datapoint], s21: List[RFTools.Datapoint]
+        self, s11: list[RFTools.Datapoint], s21: list[RFTools.Datapoint]
     ):
         if not s11:
             return

@@ -19,7 +19,7 @@
 import logging
 
 from dataclasses import dataclass, field, replace
-from typing import List, Set, Tuple, ClassVar, Any, Optional
+from typing import ClassVar, Any
 
 from PyQt6 import QtWidgets, QtGui, QtCore
 from PyQt6.QtCore import pyqtSignal, Qt
@@ -67,8 +67,8 @@ class ChartDimensions:
 
 @dataclass
 class ChartDragBox:
-    pos: Tuple[int] = (-1, -1)
-    pos_start: Tuple[int] = (0, 0)
+    pos: tuple[int] = (-1, -1)
+    pos_start: tuple[int] = (0, 0)
     state: bool = False
     move_x: int = -1
     move_y: int = -1
@@ -128,11 +128,11 @@ class Chart(QtWidgets.QWidget):
 
         self.draggedMarker = None
 
-        self.data: List[Datapoint] = []
-        self.reference: List[Datapoint] = []
+        self.data: list[Datapoint] = []
+        self.reference: list[Datapoint] = []
 
-        self.markers: List[Marker] = []
-        self.swrMarkers: Set[float] = set()
+        self.markers: list[Marker] = []
+        self.swrMarkers: set[float] = set()
 
         self.action_popout = QAction("Popout chart")
         self.action_popout.triggered.connect(
@@ -192,7 +192,7 @@ class Chart(QtWidgets.QWidget):
             None,
         )
 
-    def getNearestMarker(self, x, y) -> Optional[Marker]:
+    def getNearestMarker(self, x, y) -> Marker | None:
         if not self.data:
             return None
         shortest = 10**6
@@ -205,7 +205,7 @@ class Chart(QtWidgets.QWidget):
                 nearest = m
         return nearest
 
-    def getPosition(self, d: Datapoint) -> Tuple[int, int]:
+    def getPosition(self, d: Datapoint) -> tuple[int, int]:
         return self.getXPosition(d), self.getYPosition(d)
 
     def setDrawLines(self, draw_lines):

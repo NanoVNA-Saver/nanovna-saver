@@ -20,7 +20,7 @@ import logging
 from enum import Enum
 from math import log
 from threading import Lock
-from typing import Iterator, Tuple
+from typing import Iterator
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ class Properties:
         self,
         name: str = "",
         mode: "SweepMode" = SweepMode.SINGLE,
-        averages: Tuple[int, int] = (3, 0),
+        averages: tuple[int, int] = (3, 0),
         logarithmic: bool = False,
     ):
         self.name = name
@@ -110,7 +110,7 @@ class Sweep:
     def _exp_factor(self, index: int) -> float:
         return 1 - log(self.segments + 1 - index) / log(self.segments + 1)
 
-    def get_index_range(self, index: int) -> Tuple[int, int]:
+    def get_index_range(self, index: int) -> tuple[int, int]:
         if not self.properties.logarithmic:
             start = self.start + index * self.points * self.stepsize
             end = start + (self.points - 1) * self.stepsize

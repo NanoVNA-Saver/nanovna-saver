@@ -17,7 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import List, NamedTuple
+from typing import NamedTuple
 from NanoVNASaver.RFTools import Datapoint
 
 
@@ -73,14 +73,14 @@ class Value:
     def __init__(
         self,
         freq: int = 0,
-        s11: List[Datapoint] = None,
-        s21: List[Datapoint] = None,
+        s11: list[Datapoint] = None,
+        s21: list[Datapoint] = None,
     ):
         self.freq = freq
         self.s11 = [] if s11 is None else s11[:]
         self.s21 = [] if s21 is None else s21[:]
 
-    def store(self, index: int, s11: List[Datapoint], s21: List[Datapoint]):
+    def store(self, index: int, s11: list[Datapoint], s21: list[Datapoint]):
         # handle boundaries
         if index == 0:
             index = 1

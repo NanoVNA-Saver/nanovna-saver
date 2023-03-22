@@ -18,7 +18,6 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
 import logging
-from typing import List, Optional
 
 from PyQt6 import QtWidgets, QtGui
 
@@ -381,7 +380,7 @@ class RealImaginaryChart(FrequencyChart):
             else self.topMargin
         )
 
-    def valueAtPosition(self, y) -> List[float]:
+    def valueAtPosition(self, y) -> list[float]:
         absy = y - self.topMargin
         valRe = -1 * ((absy / self.dim.height * self.span_real) - self.max_real)
         valIm = -1 * ((absy / self.dim.height * self.span_imag) - self.max_imag)
@@ -408,7 +407,7 @@ class RealImaginaryChart(FrequencyChart):
 
         self.update()
 
-    def getNearestMarker(self, x, y) -> Optional[Marker]:
+    def getNearestMarker(self, x, y) -> Marker | None:
         if not self.data:
             return None
         shortest = 10e6

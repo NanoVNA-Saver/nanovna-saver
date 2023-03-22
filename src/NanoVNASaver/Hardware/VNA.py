@@ -18,7 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 from time import sleep
-from typing import List, Iterator, Set
+from typing import Iterator
 
 from PyQt6 import QtGui
 
@@ -131,7 +131,7 @@ class VNA:
         if len(self.valid_datapoints) > 1:
             self.features.add("Customizable data points")
 
-    def get_bandwidths(self) -> List[int]:
+    def get_bandwidths(self) -> list[int]:
         logger.debug("get bandwidths")
         if self.bw_method == "dislord":
             return list(DISLORD_BW.keys())
@@ -153,7 +153,7 @@ class VNA:
             raise IOError(f"set_bandwith({bandwidth}: {result}")
         self.bandwidth = bandwidth
 
-    def readFrequencies(self) -> List[int]:
+    def readFrequencies(self) -> list[int]:
         return [int(f) for f in self.readValues("frequencies")]
 
     def resetSweep(self, start: int, stop: int):
@@ -170,7 +170,7 @@ class VNA:
     def connected(self) -> bool:
         return self.serial.is_open
 
-    def getFeatures(self) -> Set[str]:
+    def getFeatures(self) -> set[str]:
         return self.features
 
     def getCalibration(self) -> str:
@@ -194,7 +194,7 @@ class VNA:
         logger.debug("result:\n%s", result)
         return result
 
-    def readValues(self, value) -> List[str]:
+    def readValues(self, value) -> list[str]:
         logger.debug("VNA reading %s", value)
         result = list(self.exec_command(value))
         logger.debug("VNA done reading %s (%d values)", value, len(result))

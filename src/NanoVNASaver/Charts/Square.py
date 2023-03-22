@@ -18,7 +18,6 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 import math
-from typing import List
 
 from PyQt6 import QtGui, QtCore, QtWidgets
 
@@ -58,7 +57,7 @@ class SquareChart(Chart):
         self,
         qp: QtGui.QPainter,
         color: QtGui.QColor,
-        data: List[Datapoint],
+        data: list[Datapoint],
         fstart: int = 0,
         fstop: int = 0,
     ):

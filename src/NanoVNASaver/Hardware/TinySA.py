@@ -18,7 +18,6 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 import struct
-from typing import List
 
 import serial
 import numpy as np
@@ -109,11 +108,11 @@ class TinySA(VNA):
         list(self.exec_command(f"sweep {start} {stop} {self.datapoints}"))
         list(self.exec_command("trigger auto"))
 
-    def readFrequencies(self) -> List[int]:
+    def readFrequencies(self) -> list[int]:
         logger.debug("readFrequencies")
         return [int(line) for line in self.exec_command("frequencies")]
 
-    def readValues(self, value) -> List[str]:
+    def readValues(self, value) -> list[str]:
         def conv2float(data: str) -> float:
             try:
                 return 10 ** (float(data.strip()) / 20)

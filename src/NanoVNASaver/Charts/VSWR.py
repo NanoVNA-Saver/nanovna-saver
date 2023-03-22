@@ -18,7 +18,6 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
 import logging
-from typing import List
 
 from PyQt6 import QtGui
 
@@ -166,7 +165,7 @@ class VSWRChart(FrequencyChart):
     def getYPosition(self, d: Datapoint) -> int:
         return self.getYPositionFromValue(d.vswr)
 
-    def valueAtPosition(self, y) -> List[float]:
+    def valueAtPosition(self, y) -> list[float]:
         absy = y - self.topMargin
         if self.logarithmicY:
             min_val = self.maxVSWR - self.span

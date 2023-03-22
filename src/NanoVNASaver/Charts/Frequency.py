@@ -18,7 +18,6 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
 import logging
-from typing import List, Tuple
 
 import numpy as np
 from PyQt6 import QtWidgets, QtGui, QtCore
@@ -405,7 +404,7 @@ class FrequencyChart(Chart):
         step = span / self.dim.width
         return round(self.fstart + absx * step)
 
-    def valueAtPosition(self, y) -> List[float]:
+    def valueAtPosition(self, y) -> list[float]:
         """
         Returns the chart-specific value(s) at the specified Y-position
         :param y: The Y position to calculate for.
@@ -493,7 +492,7 @@ class FrequencyChart(Chart):
             self.drawDragbog(qp)
         qp.end()
 
-    def _data_oob(self, data: List[Datapoint]) -> bool:
+    def _data_oob(self, data: list[Datapoint]) -> bool:
         return data[0].freq > self.fstop or self.data[-1].freq < self.fstart
 
     def _check_frequency_boundaries(self, qp: QtGui.QPainter):
@@ -605,7 +604,7 @@ class FrequencyChart(Chart):
         self.drawData(qp, self.reference, Chart.color.reference)
         self.drawMarkers(qp)
 
-    def _find_scaling(self) -> Tuple[float, float]:
+    def _find_scaling(self) -> tuple[float, float]:
         min_value = self.minDisplayValue / 10e11
         max_value = self.maxDisplayValue / 10e11
         if self.fixedValues:
@@ -686,7 +685,7 @@ class FrequencyChart(Chart):
     def drawData(
         self,
         qp: QtGui.QPainter,
-        data: List[Datapoint],
+        data: list[Datapoint],
         color: QtGui.QColor,
         y_function=None,
     ):

@@ -22,8 +22,6 @@ import cmath
 import io
 from operator import attrgetter
 
-from typing import List
-
 from scipy.interpolate import interp1d
 
 from NanoVNASaver.RFTools import Datapoint
@@ -108,42 +106,42 @@ class Touchstone:
         self._interp = {}
 
     @property
-    def s11(self) -> List[Datapoint]:
+    def s11(self) -> list[Datapoint]:
         return self.s("11")
 
     @s11.setter
-    def s11(self, value: List[Datapoint]):
+    def s11(self, value: list[Datapoint]):
         self.sdata[0] = value
 
     @property
-    def s12(self) -> List[Datapoint]:
+    def s12(self) -> list[Datapoint]:
         return self.s("12")
 
     @s12.setter
-    def s12(self, value: List[Datapoint]):
+    def s12(self, value: list[Datapoint]):
         self.sdata[2] = value
 
     @property
-    def s21(self) -> List[Datapoint]:
+    def s21(self) -> list[Datapoint]:
         return self.s("21")
 
     @s21.setter
-    def s21(self, value: List[Datapoint]):
+    def s21(self, value: list[Datapoint]):
         self.sdata[1] = value
 
     @property
-    def s22(self) -> List[Datapoint]:
+    def s22(self) -> list[Datapoint]:
         return self.s("22")
 
     @s22.setter
-    def s22(self, value: List[Datapoint]):
+    def s22(self, value: list[Datapoint]):
         self.sdata[3] = value
 
     @property
     def r(self) -> int:
         return self.opts.resistance
 
-    def s(self, name: str) -> List[Datapoint]:
+    def s(self, name: str) -> list[Datapoint]:
         return self.sdata[Touchstone.FIELD_ORDER.index(name)]
 
     def s_freq(self, name: str, freq: int) -> Datapoint:

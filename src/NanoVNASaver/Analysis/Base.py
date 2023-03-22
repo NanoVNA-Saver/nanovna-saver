@@ -17,7 +17,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-from typing import Dict
 from PyQt6 import QtWidgets
 
 logger = logging.getLogger(__name__)
@@ -34,7 +33,7 @@ class QHLine(QtWidgets.QFrame):
 class Analysis:
     def __init__(self, app: QtWidgets.QWidget):
         self.app = app
-        self.label: Dict[str, QtWidgets.QLabel] = {
+        self.label: dict[str, QtWidgets.QLabel] = {
             "titel": QtWidgets.QLabel(),
             "result": QtWidgets.QLabel(),
         }

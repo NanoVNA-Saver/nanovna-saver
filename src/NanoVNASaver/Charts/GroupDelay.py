@@ -18,7 +18,6 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
 import logging
-from typing import List
 
 import numpy as np
 
@@ -74,7 +73,7 @@ class GroupDelayChart(FrequencyChart):
         self.groupDelayReference = self.calc_data(self.reference)
         self.update()
 
-    def calc_data(self, data: List[Datapoint]):
+    def calc_data(self, data: list[Datapoint]):
         data_len = len(data)
         if data_len <= 1:
             return []
@@ -172,8 +171,8 @@ class GroupDelayChart(FrequencyChart):
         self,
         qp: QtGui.QPainter,
         color: QtGui.QColor,
-        data: List[Datapoint],
-        delay: List[Datapoint],
+        data: list[Datapoint],
+        delay: list[Datapoint],
     ):
         pen = QtGui.QPen(color)
         pen.setWidth(self.dim.point)
@@ -216,7 +215,7 @@ class GroupDelayChart(FrequencyChart):
             (self.maxDelay - delay) / self.span * self.dim.height
         )
 
-    def valueAtPosition(self, y) -> List[float]:
+    def valueAtPosition(self, y) -> list[float]:
         absy = y - self.topMargin
         val = -1 * ((absy / self.dim.height * self.span) - self.maxDelay)
         return [val]

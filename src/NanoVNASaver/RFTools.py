@@ -18,7 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
 import cmath
-from typing import List, NamedTuple
+from typing import NamedTuple
 
 from NanoVNASaver.SITools import Format, clamp_value
 
@@ -92,7 +92,7 @@ def gamma_to_impedance(gamma: complex, ref_impedance: float = 50) -> complex:
         return math.inf
 
 
-def groupDelay(data: List[Datapoint], index: int) -> float:
+def groupDelay(data: list[Datapoint], index: int) -> float:
     idx0 = clamp_value(index - 1, 0, len(data) - 1)
     idx1 = clamp_value(index + 1, 0, len(data) - 1)
     delta_angle = data[idx1].phase - data[idx0].phase
@@ -147,7 +147,7 @@ def serial_to_parallel(z: complex) -> complex:
     return complex(z_sq_sum / z.real, z_sq_sum / z.imag)
 
 
-def corr_att_data(data: List[Datapoint], att: float) -> List[Datapoint]:
+def corr_att_data(data: list[Datapoint], att: float) -> list[Datapoint]:
     """Correct the ratio for a given attenuation on s21 input"""
     if att <= 0:
         return data

@@ -23,7 +23,6 @@ import os
 import re
 from collections import defaultdict, UserDict
 from dataclasses import dataclass
-from typing import List
 
 from scipy.interpolate import interp1d
 
@@ -235,7 +234,7 @@ class CalDataSet(UserDict):
         setattr(self.data[freq], name, (dp.z))
         self.data[freq].freq = freq
 
-    def frequencies(self) -> List[int]:
+    def frequencies(self) -> list[int]:
         return sorted(self.data.keys())
 
     def get(self, key: int, default: CalData = None) -> CalData:
@@ -276,7 +275,7 @@ class Calibration:
 
         self.source = "Manual"
 
-    def insert(self, name: str, data: List[Datapoint]):
+    def insert(self, name: str, data: list[Datapoint]):
         for dp in data:
             self.dataset.insert(name, dp)
 

@@ -18,7 +18,6 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
 import logging
-from typing import List
 
 from PyQt6 import QtGui
 
@@ -33,11 +32,11 @@ class CombinedLogMagChart(LogMagChart):
     def __init__(self, name=""):
         super().__init__(name)
 
-        self.data11: List[Datapoint] = []
-        self.data21: List[Datapoint] = []
+        self.data11: list[Datapoint] = []
+        self.data21: list[Datapoint] = []
 
-        self.reference11: List[Datapoint] = []
-        self.reference21: List[Datapoint] = []
+        self.reference11: list[Datapoint] = []
+        self.reference21: list[Datapoint] = []
 
     def setCombinedData(self, data11, data21):
         self.data11 = data11

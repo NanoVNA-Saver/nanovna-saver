@@ -18,7 +18,6 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 import struct
-from typing import List
 
 import serial
 import numpy as np
@@ -123,7 +122,7 @@ class NanoVNA(VNA):
             self.features.add("Scan command")
             self.sweep_method = "scan"
 
-    def readFrequencies(self) -> List[int]:
+    def readFrequencies(self) -> list[int]:
         logger.debug("readFrequencies: %s", self.sweep_method)
         if self.sweep_method != "scan_mask":
             return super().readFrequencies()
@@ -134,7 +133,7 @@ class NanoVNA(VNA):
             )
         ]
 
-    def readValues(self, value) -> List[str]:
+    def readValues(self, value) -> list[str]:
         if self.sweep_method != "scan_mask":
             return super().readValues(value)
         logger.debug("readValue with scan mask (%s)", value)
