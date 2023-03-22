@@ -71,14 +71,11 @@ class Value:
     """Contains the data area to calculate marker values from"""
 
     def __init__(
-        self,
-        freq: int = 0,
-        s11: list[Datapoint] = None,
-        s21: list[Datapoint] = None,
+            self,
     ):
-        self.freq = freq
-        self.s11 = [] if s11 is None else s11[:]
-        self.s21 = [] if s21 is None else s21[:]
+        self.freq: int = 0
+        self.s11: list[Datapoint] = []
+        self.s21: list[Datapoint] = []
 
     def store(self, index: int, s11: list[Datapoint], s21: list[Datapoint]):
         # handle boundaries
