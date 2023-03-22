@@ -27,8 +27,10 @@ class TestCases(unittest.TestCase):
     def test_sweep(self):
         sweep = Sweep()
         self.assertEqual(str(sweep),
-                         "Sweep(3600000, 30000000, 101, 1, Properties('',"
-                         " SweepMode.SINGLE, (3, 0), False))")
+                         "Sweep(start=3600000, end=30000000, points=101,"
+                         " segments=1, properties=Properties(name='',"
+                         " mode=<SweepMode.SINGLE: 0>, averages=(3, 0),"
+                         " logarithmic=False))")
         self.assertTrue(Sweep(3600000) == sweep)
         self.assertFalse(Sweep(3600001) == sweep)
         self.assertRaises(ValueError, Sweep, -1)

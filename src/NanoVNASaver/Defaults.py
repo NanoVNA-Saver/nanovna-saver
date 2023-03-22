@@ -62,7 +62,7 @@ class Chart:
     marker_size: int = 8
     returnloss_is_positive: bool = False
     show_bands: bool = False
-    vswr_lines: list = DC.field(default_factory=lambda: [])
+    vswr_lines: list = DC.field(default_factory=list)
 
 
 @DC.dataclass
@@ -126,11 +126,11 @@ class Markers:
 
 @DC.dataclass
 class CFG:
-    gui: object = DC.field(default_factory=lambda: GUI())
-    charts_selected: object = DC.field(default_factory=lambda: ChartsSelected())
-    chart: object = DC.field(default_factory=lambda: Chart())
-    chart_colors: object = DC.field(default_factory=lambda: ChartColors())
-    markers: object = DC.field(default_factory=lambda: Markers())
+    gui: object = DC.field(default_factory=GUI)
+    charts_selected: object = DC.field(default_factory=ChartsSelected)
+    chart: object = DC.field(default_factory=Chart)
+    chart_colors: object = DC.field(default_factory=ChartColors)
+    markers: object = DC.field(default_factory=Markers)
 
 
 cfg = CFG()
@@ -159,9 +159,9 @@ def store(settings: "AppSettings", data: CFG = None) -> None:
 
 def from_type(data) -> str:
     type_map = {
-        bytearray: lambda x: x.hex(),
-        QColor: lambda x: x.getRgb(),
-        QByteArray: lambda x: x.toHex(),
+        bytearray: bytearray.hex,
+        QColor: QColor.getRgb,
+        QByteArray: QByteArray.toHex,
     }
     return (
         f"{type_map[type(data)](data)}" if type(data) in type_map else f"{data}"

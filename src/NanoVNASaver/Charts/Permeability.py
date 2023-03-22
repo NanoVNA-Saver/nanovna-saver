@@ -18,7 +18,6 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
 import logging
-from typing import List
 
 from PyQt6 import QtGui
 
@@ -325,7 +324,7 @@ class PermeabilityChart(FrequencyChart):
             self.topMargin + (self.max - re) / self.span * self.dim.height
         )
 
-    def valueAtPosition(self, y) -> List[float]:
+    def valueAtPosition(self, y) -> list[float]:
         absy = y - self.topMargin
         if self.logarithmicY:
             min_val = self.max - self.span

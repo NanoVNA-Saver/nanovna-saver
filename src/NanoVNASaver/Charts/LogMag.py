@@ -19,7 +19,6 @@
 from dataclasses import dataclass
 import math
 import logging
-from typing import List
 
 from PyQt6 import QtGui
 
@@ -165,7 +164,7 @@ class LogMagChart(FrequencyChart):
             (self.maxValue - logMag) / self.span * self.dim.height
         )
 
-    def valueAtPosition(self, y) -> List[float]:
+    def valueAtPosition(self, y) -> list[float]:
         absy = y - self.topMargin
         val = -1 * ((absy / self.dim.height * self.span) - self.maxValue)
         return [val]

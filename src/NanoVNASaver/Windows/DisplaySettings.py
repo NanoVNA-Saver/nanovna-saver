@@ -17,7 +17,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-from typing import List
 
 from PyQt6 import QtWidgets, QtCore
 from PyQt6.QtGui import QColor, QColorConstants, QPalette, QShortcut
@@ -210,7 +209,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         vswr_marker_box = QtWidgets.QGroupBox("VSWR Markers")
         vswr_marker_layout = QtWidgets.QFormLayout(vswr_marker_box)
 
-        self.vswrMarkers: List[float] = self.app.settings.value(
+        self.vswrMarkers: list[float] = self.app.settings.value(
             "VSWRMarkers", [], float
         )
 

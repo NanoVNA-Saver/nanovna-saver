@@ -18,7 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import itertools as it
 import math
-from typing import Callable, List, Tuple
+from typing import Callable
 
 import numpy as np
 
@@ -28,14 +28,14 @@ from scipy.signal import find_peaks
 from NanoVNASaver.RFTools import Datapoint
 
 
-def zero_crossings(data: List[float]) -> List[int]:
+def zero_crossings(data: list[float]) -> list[int]:
     """find zero crossings
 
     Args:
-        data (List[float]): data list execute
+        data (list[float]): data list execute
 
     Returns:
-        List[int]: sorted indices of zero crossing points
+        list[int]: sorted indices of zero crossing points
     """
     if not data:
         return []
@@ -54,27 +54,27 @@ def zero_crossings(data: List[float]) -> List[int]:
     return sorted(real_zeros + crossings)
 
 
-def maxima(data: List[float], threshold: float = 0.0) -> List[int]:
+def maxima(data: list[float], threshold: float = 0.0) -> list[int]:
     """maxima
 
     Args:
-        data (List[float]): data list to execute
+        data (list[float]): data list to execute
 
     Returns:
-        List[int]: indices of maxima
+        list[int]: indices of maxima
     """
     peaks = find_peaks(data, width=2, distance=3, prominence=1)[0].tolist()
     return [i for i in peaks if data[i] > threshold] if threshold else peaks
 
 
-def minima(data: List[float], threshold: float = 0.0) -> List[int]:
+def minima(data: list[float], threshold: float = 0.0) -> list[int]:
     """minima
 
     Args:
-        data (List[float]): data list to execute
+        data (list[float]): data list to execute
 
     Returns:
-        List[int]: indices of minima
+        list[int]: indices of minima
     """
     bottoms = find_peaks(-np.array(data), width=2, distance=3, prominence=1)[
         0
@@ -83,18 +83,18 @@ def minima(data: List[float], threshold: float = 0.0) -> List[int]:
 
 
 def take_from_idx(
-    data: List[float], idx: int, predicate: Callable
-) -> List[int]:
+    data: list[float], idx: int, predicate: Callable
+) -> list[int]:
     """take_from_center
 
     Args:
-        data (List[float]): data list to execute
+        data (list[float]): data list to execute
         idx (int): index of a start position
         predicate (Callable): predicate on which elements to take
             from center. (e.g. lambda i: i[1] < threshold)
 
     Returns:
-        List[int]: indices of element matching predicate left
+        list[int]: indices of element matching predicate left
                    and right from index
     """
     lower = list(
@@ -111,11 +111,11 @@ def take_from_idx(
     return lower + upper
 
 
-def center_from_idx(gains: List[float], idx: int, delta: float = 3.0) -> int:
+def center_from_idx(gains: list[float], idx: int, delta: float = 3.0) -> int:
     """find maximum from index postion of gains in a attn dB gain span
 
     Args:
-        gains (List[float]): gain values
+        gains (list[float]): gain values
         idx (int): start position to search from
         delta (float, optional): max gain delta from start. Defaults to 3.0.
 
@@ -128,13 +128,13 @@ def center_from_idx(gains: List[float], idx: int, delta: float = 3.0) -> int:
 
 
 def cut_off_left(
-    gains: List[float], idx: int, peak_gain: float, attn: float = 3.0
+    gains: list[float], idx: int, peak_gain: float, attn: float = 3.0
 ) -> int:
     """find first position in list where gain in attn lower then peak
     left from index
 
     Args:
-        gains (List[float]): gain values
+        gains (list[float]): gain values
         idx (int): start position to search from
         peak_gain (float): reference gain value
         attn (float, optional): attenuation to search position for.
@@ -149,13 +149,13 @@ def cut_off_left(
 
 
 def cut_off_right(
-    gains: List[float], idx: int, peak_gain: float, attn: float = 3.0
+    gains: list[float], idx: int, peak_gain: float, attn: float = 3.0
 ) -> int:
     """find first position in list where gain in attn lower then peak
     right from index
 
     Args:
-        gains (List[float]): gain values
+        gains (list[float]): gain values
         idx (int): start position to search from
         peak_gain (float): reference gain value
         attn (float, optional): attenuation to search position for.
@@ -171,15 +171,15 @@ def cut_off_right(
 
 
 def dip_cut_offs(
-    gains: List[float], peak_gain: float, attn: float = 3.0
-) -> Tuple[int, int]:
+    gains: list[float], peak_gain: float, attn: float = 3.0
+) -> tuple[int, int]:
     rng = np.where(np.array(gains) < (peak_gain - attn))[0].tolist()
     return (rng[0], rng[-1]) if rng else (math.nan, math.nan)
 
 
 def calculate_rolloff(
-    s21: List[Datapoint], idx_1: int, idx_2: int
-) -> Tuple[float, float]:
+    s21: list[Datapoint], idx_1: int, idx_2: int
+) -> tuple[float, float]:
     if idx_1 == idx_2:
         return (math.nan, math.nan)
     freq_1, freq_2 = s21[idx_1].freq, s21[idx_2].freq

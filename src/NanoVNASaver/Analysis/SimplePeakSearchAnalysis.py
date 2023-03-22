@@ -17,7 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-from typing import Callable, List, Tuple
+from typing import Callable
 
 from PyQt6 import QtWidgets
 import numpy as np
@@ -102,7 +102,7 @@ class SimplePeakSearchAnalysis(Analysis):
         if self.button["move_marker"].isChecked() and self.app.markers:
             self.app.markers[0].setFrequency(f"{s11[idx_peak].freq}")
 
-    def data_and_format(self) -> Tuple[List[float], Callable]:
+    def data_and_format(self) -> tuple[list[float], Callable]:
         s11 = self.app.data.s11
         s21 = self.app.data.s21
 

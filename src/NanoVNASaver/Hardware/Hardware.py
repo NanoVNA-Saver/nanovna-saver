@@ -20,7 +20,6 @@ import logging
 import platform
 from collections import namedtuple
 from time import sleep
-from typing import List
 
 import serial
 from serial.tools import list_ports
@@ -91,7 +90,7 @@ def usb_typename(device: ListPortInfo) -> str:
 # Get list of interfaces with VNAs connected
 
 
-def get_interfaces() -> List[Interface]:
+def get_interfaces() -> list[Interface]:
     interfaces = []
     # serial like usb interfaces
     for d in list_ports.comports():
@@ -117,7 +116,7 @@ def get_interfaces() -> List[Interface]:
     return interfaces
 
 
-def get_portinfos() -> List[str]:
+def get_portinfos() -> list[str]:
     portinfos = []
     # serial like usb interfaces
     for d in list_ports.comports():

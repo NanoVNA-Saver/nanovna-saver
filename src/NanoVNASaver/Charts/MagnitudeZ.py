@@ -18,7 +18,6 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
 import logging
-from typing import List
 
 from PyQt6 import QtGui
 
@@ -129,7 +128,7 @@ class MagnitudeZChart(FrequencyChart):
             )
         return self.topMargin
 
-    def valueAtPosition(self, y) -> List[float]:
+    def valueAtPosition(self, y) -> list[float]:
         absy = y - self.topMargin
         if self.logarithmicY:
             span = math.log(self.maxValue) - math.log(self.minValue)

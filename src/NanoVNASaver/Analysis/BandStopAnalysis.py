@@ -17,7 +17,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-from typing import Dict, List
 
 import NanoVNASaver.AnalyticTools as at
 from NanoVNASaver.Analysis.Base import CUTOFF_VALS
@@ -31,12 +30,12 @@ class BandStopAnalysis(BandPassAnalysis):
         super().__init__(app)
         self.set_titel("Band stop filter analysis")
 
-    def find_center(self, gains: List[float]) -> int:
+    def find_center(self, gains: list[float]) -> int:
         return max(enumerate(gains), key=lambda i: i[1])[0]
 
     def find_bounderies(
-        self, gains: List[float], _: int, peak_db: float
-    ) -> Dict[str, int]:
+        self, gains: list[float], _: int, peak_db: float
+    ) -> dict[str, int]:
         cutoff_pos = {}
         for attn in CUTOFF_VALS:
             (

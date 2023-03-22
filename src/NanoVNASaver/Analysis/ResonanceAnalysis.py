@@ -19,7 +19,6 @@
 import os
 import csv
 import logging
-from typing import List
 
 from PyQt6 import QtWidgets
 
@@ -44,7 +43,7 @@ def vswr_transformed(z, ratio=49) -> float:
 class ResonanceAnalysis(Analysis):
     def __init__(self, app):
         super().__init__(app)
-        self.crossings: List[int] = []
+        self.crossings: list[int] = []
         self.filename = ""
         self._widget = QtWidgets.QWidget()
         self.layout = QtWidgets.QFormLayout()

@@ -18,7 +18,6 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 import math
-from typing import Dict, List
 
 from PyQt6 import QtWidgets
 
@@ -109,7 +108,7 @@ class HighPassAnalysis(Analysis):
 
         self.set_result(f"Analysis complete ({len(s21)}) points)")
 
-    def find_level(self, gains: List[float]) -> int:
+    def find_level(self, gains: list[float]) -> int:
         marker = self.app.markers[0]
         logger.debug("Pass band location: %d", marker.location)
         if marker.location < 0:
@@ -118,8 +117,8 @@ class HighPassAnalysis(Analysis):
         return at.center_from_idx(gains, marker.location)
 
     def find_cutoffs(
-        self, gains: List[float], peak: int, peak_db: float
-    ) -> Dict[str, int]:
+        self, gains: list[float], peak: int, peak_db: float
+    ) -> dict[str, int]:
         return {
             f"{attn:.1f}dB": at.cut_off_left(gains, peak, peak_db, attn)
             for attn in CUTOFF_VALS

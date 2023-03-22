@@ -19,7 +19,6 @@
 import math
 import logging
 
-from typing import List
 import numpy as np
 
 from PyQt6.QtGui import QAction, QPainter, QPen
@@ -151,7 +150,7 @@ class PhaseChart(FrequencyChart):
             (self.maxAngle - angle) / self.span * self.dim.height
         )
 
-    def valueAtPosition(self, y) -> List[float]:
+    def valueAtPosition(self, y) -> list[float]:
         absy = y - self.topMargin
         val = -1 * ((absy / self.dim.height * self.span) - self.maxAngle)
         return [val]

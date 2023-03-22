@@ -17,7 +17,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-from typing import List
 
 from PyQt6 import QtWidgets
 
@@ -54,7 +53,7 @@ class VSWRAnalysis(Analysis):
         self.results_label = QtWidgets.QLabel("<b>Results</b>")
         self.layout.addRow(self.results_label)
 
-        self.minimums: List[int] = []
+        self.minimums: list[int] = []
 
     def runAnalysis(self):
         if not self.app.data.s11:
