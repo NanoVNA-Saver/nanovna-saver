@@ -32,7 +32,7 @@ class SweepMode(Enum):
     AVERAGE = 2
 
 
-class Properties(NamedTuple):
+class Properties:
     name: str = ""
     mode: "SweepMode" = SweepMode.SINGLE
     averages: tuple[int, int] = (3, 0)

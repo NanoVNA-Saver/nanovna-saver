@@ -85,7 +85,7 @@ class NanoVNA_V2(VNA):
             sleep(WRITE_SLEEP)
 
         # firmware major version of 0xff indicates dfu mode
-        if self.version.data["major"] == 0xFF:
+        if self.version.major == 0xFF:
             raise IOError("Device is in DFU mode")
 
         if "S21 hack" in self.features:
