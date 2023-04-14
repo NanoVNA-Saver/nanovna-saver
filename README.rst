@@ -1,26 +1,3 @@
-.. role:: raw-html-m2r(raw)
-   :format: html
-
-.. image:: https://img.shields.io/github/v/release/NanoVNA-Saver/nanovna-saver.svg
-   :target: https://github.com/NanoVNA-Saver/nanovna-saver/releases/latest
-   :alt: Latest Release
-
-.. image:: https://img.shields.io/github/license/NanoVNA-Saver/nanovna-saver.svg
-   :target: https://github.com/NanoVNA-Saver/nanovna-saver/blob/master/LICENSE.txt
-   :alt: License
-
-.. image:: https://img.shields.io/github/downloads/NanoVNA-Saver/nanovna-saver/total.svg
-   :target: https://github.com/NanoVNA-Saver/nanovna-saver/releases/
-   :alt: Downloads
-
-.. image:: https://img.shields.io/github/downloads/NanoVNA-Saver/nanovna-saver/latest/total
-   :target: https://github.com/NanoVNA-Saver/nanovna-saver/releases/latest
-   :alt: GitHub Releases
-
-.. image:: https://img.shields.io/badge/paypal-donate-yellow.svg
-   :target: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=T8KTGVDQF5K6E&item_name=NanoVNASaver+Development&currency_code=EUR&source=url
-   :alt: Donate
-
 NanoVNASaver
 ============
 
@@ -75,9 +52,7 @@ Screenshot
 ^^^^^^^^^^
 
 
-.. image:: https://i.imgur.com/ZoFsV2V.png
-   :target: https://i.imgur.com/ZoFsV2V.png
-   :alt: Screenshot of version 0.1.4
+`Screenshot of version 0.1.4 <https://i.imgur.com/ZoFsV2V.png>`_
 
 
 Running the application
@@ -146,9 +121,7 @@ bottom of the window.  Notes are saved and loaded along with the calibration
 data.
 
 
-.. image:: https://i.imgur.com/p94cxOX.png
-   :target: https://i.imgur.com/p94cxOX.png
-   :alt: Screenshot of Calibration Window
+`Screenshot of Calibration Window <https://i.imgur.com/p94cxOX.png>`_
 
 
 Users of known characterized calibration standard sets can enter the data for
@@ -261,11 +234,5 @@ Thanks to everyone who have tested, commented and inspired.  Particular thanks
 go to the alpha testing crew who suffer the early instability of new versions.
 
 This software is available free of charge. If you read all this way, and you
-*still* want to support it, you may donate to the developer using the button
-below:
-
-
-.. image:: https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif
-   :target: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=T8KTGVDQF5K6E&item_name=NanoVNASaver+Development&currency_code=EUR&source=url
-   :alt: Paypal
-
+*still* want to support it, you may donate to the developer via
+`Paypal <https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=T8KTGVDQF5K6E&item_name=NanoVNASaver+Development&currency_code=EUR&source=url>`_.
