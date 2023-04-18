@@ -479,7 +479,7 @@ class TDRChart(Chart):
             self._draw_graph(height, width)
 
         if self.dragbox.state and self.dragbox.pos[0] != -1:
-            dashed_pen = QPen(Chart.color.foreground, 1, Qt.DashLine)
+            dashed_pen = QPen(Chart.color.foreground, 1, Qt.PenStyle.DashLine)
             qp.setPen(dashed_pen)
             qp.drawRect(
                 QRect(

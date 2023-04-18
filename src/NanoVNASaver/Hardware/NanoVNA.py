@@ -91,7 +91,7 @@ class NanoVNA(VNA):
                 rgba_array,
                 self.screenwidth,
                 self.screenheight,
-                QImage.Format_ARGB32,
+                QImage.Format.Format_ARGB32,
             )
             logger.debug("Captured screenshot")
             return QPixmap(image)
