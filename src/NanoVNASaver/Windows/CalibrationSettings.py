@@ -282,11 +282,11 @@ class CalibrationWindow(QtWidgets.QWidget):
                     "If you are certain you know what you are doing, click"
                     " Yes."
                 ),
-                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.Cancel,
-                QtWidgets.QMessageBox.Cancel,
+                QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.Cancel,
+                QtWidgets.QMessageBox.StandardButton.Cancel,
             )
 
-            if response == QtWidgets.QMessageBox.Yes:
+            if response == QtWidgets.QMessageBox.StandardButton.Yes:
                 self.app.settings.setValue("ExpertCalibrationUser", True)
                 return True
             return False
@@ -677,7 +677,7 @@ class CalibrationWindow(QtWidgets.QWidget):
         filedialog = QtWidgets.QFileDialog(self)
         filedialog.setDefaultSuffix("cal")
         filedialog.setNameFilter("Calibration Files (*.cal);;All files (*.*)")
-        filedialog.setAcceptMode(QtWidgets.QFileDialog.AcceptSave)
+        filedialog.setAcceptMode(QtWidgets.QFileDialog.AcceptMode.AcceptSave)
         if filedialog.exec():
             filename = filedialog.selectedFiles()[0]
         else:
@@ -707,7 +707,7 @@ class CalibrationWindow(QtWidgets.QWidget):
     def automaticCalibration(self):
         self.btn_automatic.setDisabled(True)
         introduction = QtWidgets.QMessageBox(
-            QtWidgets.QMessageBox.Information,
+            QtWidgets.QMessageBox.Icon.Information,
             "Calibration assistant",
             (
                 "This calibration assistant will help you create a calibration"
@@ -723,16 +723,16 @@ class CalibrationWindow(QtWidgets.QWidget):
                 " to save slot 0 before starting.</b><br><br>"
                 "Once you are ready to proceed, press Ok."
             ),
-            QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel,
+            QtWidgets.QMessageBox.StandardButton.Ok | QtWidgets.QMessageBox.StandardButton.Cancel,
         )
         response = introduction.exec()
-        if response != QtWidgets.QMessageBox.Ok:
+        if response != QtWidgets.QMessageBox.StandardButton.Ok:
             self.btn_automatic.setDisabled(False)
             return
         logger.info("Starting automatic calibration assistant.")
         if not self.app.vna.connected():
             QtWidgets.QMessageBox(
-                QtWidgets.QMessageBox.Information,
+                QtWidgets.QMessageBox.Icon.Information,
                 "NanoVNA not connected",
                 (
                     "Please ensure the NanoVNA is connected before attempting"
@@ -744,7 +744,7 @@ class CalibrationWindow(QtWidgets.QWidget):
 
         if self.app.sweep.properties.mode == SweepMode.CONTINOUS:
             QtWidgets.QMessageBox(
-                QtWidgets.QMessageBox.Information,
+                QtWidgets.QMessageBox.Icon.Information,
                 "Continuous sweep enabled",
                 (
                     "Please disable continuous sweeping before attempting"
@@ -755,18 +755,18 @@ class CalibrationWindow(QtWidgets.QWidget):
             return
 
         short_step = QtWidgets.QMessageBox(
-            QtWidgets.QMessageBox.Information,
+            QtWidgets.QMessageBox.Icon.Information,
             "Calibrate short",
             (
                 'Please connect the "short" standard to port 0 of the'
                 " NanoVNA.\n\n"
                 "Press Ok when you are ready to continue."
             ),
-            QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel,
+            QtWidgets.QMessageBox.StandardButton.Ok | QtWidgets.QMessageBox.StandardButton.Cancel,
         )
 
         response = short_step.exec()
-        if response != QtWidgets.QMessageBox.Ok:
+        if response != QtWidgets.QMessageBox.StandardButton.Ok:
             self.btn_automatic.setDisabled(False)
             return
         self.reset()
@@ -789,7 +789,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.nextStep = 1
 
             open_step = QtWidgets.QMessageBox(
-                QtWidgets.QMessageBox.Information,
+                QtWidgets.QMessageBox.Icon.Information,
                 "Calibrate open",
                 (
                     'Please connect the "open" standard to port 0 of the'
@@ -798,11 +798,11 @@ class CalibrationWindow(QtWidgets.QWidget):
                     " cable unconnected if desired.\n\n"
                     "Press Ok when you are ready to continue."
                 ),
-                QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel,
+                QtWidgets.QMessageBox.StandardButton.Ok | QtWidgets.QMessageBox.StandardButton.Cancel,
             )
 
             response = open_step.exec()
-            if response != QtWidgets.QMessageBox.Ok:
+            if response != QtWidgets.QMessageBox.StandardButton.Ok:
                 self.nextStep = -1
                 self.btn_automatic.setDisabled(False)
                 self.app.worker.signals.finished.disconnect(
@@ -817,18 +817,18 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.cal_save("open")
             self.nextStep = 2
             load_step = QtWidgets.QMessageBox(
-                QtWidgets.QMessageBox.Information,
+                QtWidgets.QMessageBox.Icon.Information,
                 "Calibrate load",
                 (
                     'Please connect the "load" standard to port 0 of the'
                     " NanoVNA.\n\n"
                     "Press Ok when you are ready to continue."
                 ),
-                QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel,
+                QtWidgets.QMessageBox.StandardButton.Ok | QtWidgets.QMessageBox.StandardButton.Cancel,
             )
 
             response = load_step.exec()
-            if response != QtWidgets.QMessageBox.Ok:
+            if response != QtWidgets.QMessageBox.StandardButton.Ok:
                 self.btn_automatic.setDisabled(False)
                 self.nextStep = -1
                 self.app.worker.signals.finished.disconnect(
@@ -843,7 +843,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.cal_save("load")
             self.nextStep = 3
             continue_step = QtWidgets.QMessageBox(
-                QtWidgets.QMessageBox.Information,
+                QtWidgets.QMessageBox.Icon.Information,
                 "1-port calibration complete",
                 (
                     "The required steps for a 1-port calibration are now"
@@ -852,13 +852,13 @@ class CalibrationWindow(QtWidgets.QWidget):
                     ' press "Yes". To apply the 1-port calibration and stop,'
                     ' press "Apply"'
                 ),
-                QtWidgets.QMessageBox.Yes
-                | QtWidgets.QMessageBox.Apply
-                | QtWidgets.QMessageBox.Cancel,
+                QtWidgets.QMessageBox.StandardButton.Yes
+                | QtWidgets.QMessageBox.StandardButton.Apply
+                | QtWidgets.QMessageBox.StandardButton.Cancel,
             )
 
             response = continue_step.exec()
-            if response == QtWidgets.QMessageBox.Apply:
+            if response == QtWidgets.QMessageBox.StandardButton.Apply:
                 self.calculate()
                 self.nextStep = -1
                 self.app.worker.signals.finished.disconnect(
@@ -866,7 +866,7 @@ class CalibrationWindow(QtWidgets.QWidget):
                 )
                 self.btn_automatic.setDisabled(False)
                 return
-            if response != QtWidgets.QMessageBox.Yes:
+            if response != QtWidgets.QMessageBox.StandardButton.Yes:
                 self.btn_automatic.setDisabled(False)
                 self.nextStep = -1
                 self.app.worker.signals.finished.disconnect(
@@ -875,7 +875,7 @@ class CalibrationWindow(QtWidgets.QWidget):
                 return
 
             isolation_step = QtWidgets.QMessageBox(
-                QtWidgets.QMessageBox.Information,
+                QtWidgets.QMessageBox.Icon.Information,
                 "Calibrate isolation",
                 (
                     'Please connect the "load" standard to port 1 of the'
@@ -884,11 +884,11 @@ class CalibrationWindow(QtWidgets.QWidget):
                     " port 0.\n\n"
                     "Press Ok when you are ready to continue."
                 ),
-                QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel,
+                QtWidgets.QMessageBox.StandardButton.Ok | QtWidgets.QMessageBox.StandardButton.Cancel,
             )
 
             response = isolation_step.exec()
-            if response != QtWidgets.QMessageBox.Ok:
+            if response != QtWidgets.QMessageBox.StandardButton.Ok:
                 self.btn_automatic.setDisabled(False)
                 self.nextStep = -1
                 self.app.worker.signals.finished.disconnect(
@@ -903,18 +903,18 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.cal_save("isolation")
             self.nextStep = 4
             through_step = QtWidgets.QMessageBox(
-                QtWidgets.QMessageBox.Information,
+                QtWidgets.QMessageBox.Icon.Information,
                 "Calibrate through",
                 (
                     'Please connect the "through" standard between'
                     " port 0 and port 1 of the NanoVNA.\n\n"
                     "Press Ok when you are ready to continue."
                 ),
-                QtWidgets.QMessageBox.Ok | QtWidgets.QMessageBox.Cancel,
+                QtWidgets.QMessageBox.StandardButton.Ok | QtWidgets.QMessageBox.StandardButton.Cancel,
             )
 
             response = through_step.exec()
-            if response != QtWidgets.QMessageBox.Ok:
+            if response != QtWidgets.QMessageBox.StandardButton.Ok:
                 self.btn_automatic.setDisabled(False)
                 self.nextStep = -1
                 self.app.worker.signals.finished.disconnect(
@@ -929,17 +929,17 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.cal_save("thrurefl")
             self.cal_save("through")
             apply_step = QtWidgets.QMessageBox(
-                QtWidgets.QMessageBox.Information,
+                QtWidgets.QMessageBox.Icon.Information,
                 "Calibrate complete",
                 (
                     "The calibration process is now complete.  Press"
                     ' "Apply" to apply the calibration parameters.'
                 ),
-                QtWidgets.QMessageBox.Apply | QtWidgets.QMessageBox.Cancel,
+                QtWidgets.QMessageBox.StandardButton.Apply | QtWidgets.QMessageBox.StandardButton.Cancel,
             )
 
             response = apply_step.exec()
-            if response != QtWidgets.QMessageBox.Apply:
+            if response != QtWidgets.QMessageBox.StandardButton.Apply:
                 self.btn_automatic.setDisabled(False)
                 self.nextStep = -1
                 self.app.worker.signals.finished.disconnect(

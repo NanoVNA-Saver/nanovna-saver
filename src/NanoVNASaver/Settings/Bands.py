@@ -106,7 +106,7 @@ class BandsModel(QtCore.QAbstractTableModel):
     def setData(
         self, index: QModelIndex, value: typing.Any, role: int = ...
     ) -> bool:
-        if role == QtCore.Qt.EditRole and index.isValid():
+        if role == QtCore.Qt.ItemDataRole.EditRole and index.isValid():
             t = self.bands[index.row()]
             name = t[0]
             start = t[1]

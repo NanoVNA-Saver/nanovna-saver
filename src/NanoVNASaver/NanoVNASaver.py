@@ -304,7 +304,7 @@ class NanoVNASaver(QWidget):
             self.marker_data_layout.addWidget(m.get_data_layout())
 
         scroll2 = QtWidgets.QScrollArea()
-        # scroll2.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        # scroll2.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
         scroll2.setWidgetResizable(True)
         scroll2.setVisible(True)
 

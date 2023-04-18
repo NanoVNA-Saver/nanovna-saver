@@ -502,7 +502,7 @@ class FrequencyChart(Chart):
             and (not self.reference or self._data_oob(self.reference))
         ):
             # Data outside frequency range
-            qp.setBackgroundMode(Qt.OpaqueMode)
+            qp.setBackgroundMode(Qt.BGMode.OpaqueMode)
             qp.setBackground(Chart.color.background)
             qp.setPen(Chart.color.text)
             qp.drawText(
@@ -512,7 +512,7 @@ class FrequencyChart(Chart):
             )
 
     def drawDragbog(self, qp: QtGui.QPainter):
-        dashed_pen = QtGui.QPen(Chart.color.foreground, 1, Qt.DashLine)
+        dashed_pen = QtGui.QPen(Chart.color.foreground, 1, Qt.PenStyle.DashLine)
         qp.setPen(dashed_pen)
         top_left = QtCore.QPoint(
             self.dragbox.pos_start[0], self.dragbox.pos_start[1]

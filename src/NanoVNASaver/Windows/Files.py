@@ -94,7 +94,7 @@ class FilesWindow(QtWidgets.QWidget):
             filedialog.setNameFilter(
                 "Touchstone 2-Port Files (*.s2p);;All files (*.*)"
             )
-        filedialog.setAcceptMode(QtWidgets.QFileDialog.AcceptSave)
+        filedialog.setAcceptMode(QtWidgets.QFileDialog.AcceptMode.AcceptSave)
         selected = filedialog.exec()
         if not selected:
             return

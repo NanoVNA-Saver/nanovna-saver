@@ -544,7 +544,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         color = getattr(Chart.color, attr)
         color = QtWidgets.QColorDialog.getColor(
-            color, options=QtWidgets.QColorDialog.ShowAlphaChannel
+            color, options=QtWidgets.QColorDialog.ColorDialogOption.ShowAlphaChannel
         )
 
         if not color.isValid():
@@ -552,7 +552,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             return
 
         palette = sender.palette()
-        palette.setColor(QPalette.ButtonText, color)
+        palette.setColor(QPalette.ColorRole.ButtonText, color)
         sender.setPalette(palette)
         self.changeSetting(setting, color)
 
