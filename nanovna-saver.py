@@ -17,6 +17,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from contextlib import suppress
+import os
 
 # noinspection PyUnresolvedReferences
 with suppress(ImportError):
@@ -29,7 +30,7 @@ try:
 except ModuleNotFoundError:
     import sys
 
-    sys.path.append("src")
+    sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
     from NanoVNASaver.__main__ import main
 
 
