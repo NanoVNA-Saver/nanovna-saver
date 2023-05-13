@@ -541,14 +541,14 @@ class CalibrationWindow(QtWidgets.QWidget):
         cal_element.short_is_ideal = True
         cal_element.open_is_ideal = True
         cal_element.load_is_ideal = True
-        cal_element.throuh_is_ideal = True
+        cal_element.through_is_ideal = True
 
         # TODO: all ideal or not?
         if not self.use_ideal_values.isChecked():
             cal_element.short_is_ideal = False
             cal_element.open_is_ideal = False
             cal_element.load_is_ideal = False
-            cal_element.throuh_is_ideal = False
+            cal_element.through_is_ideal = False
 
             # We are using custom calibration standards
 
