@@ -183,10 +183,8 @@ class Marker(QtCore.QObject, Value):
         self.label["actualfreq"].setMinimumWidth(int(100 * scale))
         self.label["returnloss"].setMinimumWidth(int(80 * scale))
         if self.coloredText:
-            color_string = QtCore.QVariant(self.color)
-            #            color_string.convert(QtCore.QVariant.String)
             self.group_box.setStyleSheet(
-                f"QGroupBox {{ color: {color_string.value()}; "
+                f"QGroupBox {{ color: {self.color.name()}; "
                 f"font-size: {self._size_str()}}};"
             )
         else:
@@ -233,11 +231,9 @@ class Marker(QtCore.QObject, Value):
             p = self.btnColorPicker.palette()
             p.setColor(QtGui.QPalette.ColorRole.ButtonText, self.color)
             self.btnColorPicker.setPalette(p)
-        # TODO: fix Stylesheet
         if self.coloredText:
-            color_string = QtCore.QVariant(color)
             self.group_box.setStyleSheet(
-                f"QGroupBox {{ color: {color_string.value()}; "
+                f"QGroupBox {{ color: {color.name()}; "
                 f"font-size: {self._size_str()}}};"
             )
         else:
