@@ -473,6 +473,10 @@ class NanoVNASaver(QWidget):
 
         logger.debug("Finished building interface")
 
+    def auto_connect( self ): # connect to the 1st detected serial device
+        if self.serial_control.inp_port.currentData():
+            self.serial_control.connect_device()
+
     def _sweep_control(self, start: bool = True) -> None:
         self.sweep_control.progress_bar.setValue(0 if start else 100)
         self.sweep_control.btn_start.setDisabled(start)
