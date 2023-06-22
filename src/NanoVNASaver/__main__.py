@@ -47,7 +47,7 @@ def main():
         "-D", "--debug-file", help="File to write debug logging output to"
     )
     parser.add_argument(
-        "-a", "--auto-connect", action="store_true", help="Auto connect to detected 1st device"
+        "-a", "--auto-connect", action="store_true", help="Auto connect if one device detected"
     )
     parser.add_argument(
         "-f",
