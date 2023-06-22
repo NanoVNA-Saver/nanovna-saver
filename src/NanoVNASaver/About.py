@@ -24,8 +24,7 @@ except LookupError:
     from NanoVNASaver._version import version
 
 VERSION_URL = (
-    "https://raw.githubusercontent.com/"
-    "NanoVNA-Saver/nanovna-saver/master/NanoVNASaver/About.py"
+    "https://github.com/NanoVNA-Saver/nanovna-saver/raw/main/src/NanoVNASaver/About.py"
 )
 
 INFO_URL = "https://github.com/NanoVNA-Saver/nanovna-saver"
