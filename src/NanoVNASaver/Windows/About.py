@@ -38,73 +38,77 @@ class AboutWindow(QtWidgets.QWidget):
         self.setWindowTitle("About NanoVNASaver")
         self.setWindowIcon(self.app.icon)
 
-        top_layout = QtWidgets.QHBoxLayout()
+        top_layout = QtWidgets.QVBoxLayout()
         make_scrollable(self, top_layout)
 
+        upper_layout = QtWidgets.QHBoxLayout()
+        top_layout.addLayout( upper_layout )
         QtGui.QShortcut(QtCore.Qt.Key.Key_Escape, self, self.hide)
 
         icon_layout = QtWidgets.QVBoxLayout()
-        top_layout.addLayout(icon_layout)
+        upper_layout.addLayout(icon_layout)
         icon = QtWidgets.QLabel()
         icon.setPixmap(self.app.icon.pixmap(128, 128))
         icon_layout.addWidget(icon)
         icon_layout.addStretch()
 
-        layout = QtWidgets.QVBoxLayout()
-        top_layout.addLayout(layout)
+        info_layout = QtWidgets.QVBoxLayout()
+        upper_layout.addLayout(info_layout)
+        upper_layout.addStretch()
 
-        layout.addWidget(
+        info_layout.addWidget(
             QtWidgets.QLabel(f"NanoVNASaver version {self.app.version}")
         )
-        layout.addWidget(QtWidgets.QLabel(""))
-        layout.addWidget(
+        info_layout.addWidget(QtWidgets.QLabel(""))
+        info_layout.addWidget(
             QtWidgets.QLabel(
                 "\N{COPYRIGHT SIGN} Copyright 2019, 2020 Rune B. Broberg\n"
                 "\N{COPYRIGHT SIGN} Copyright 2020ff NanoVNA-Saver Authors"
             )
         )
-        layout.addWidget(
+        info_layout.addWidget(
             QtWidgets.QLabel("This program comes with ABSOLUTELY NO WARRANTY")
         )
-        layout.addWidget(
+        info_layout.addWidget(
             QtWidgets.QLabel(
                 "This program is licensed under the"
                 " GNU General Public License version 3"
             )
         )
-        layout.addWidget(QtWidgets.QLabel(""))
+        info_layout.addWidget(QtWidgets.QLabel(""))
         link_label = QtWidgets.QLabel(
             f'For further details, see: <a href="{INFO_URL}">' f"{INFO_URL}"
         )
         link_label.setOpenExternalLinks(True)
-        layout.addWidget(link_label)
-        layout.addWidget(QtWidgets.QLabel(""))
+        info_layout.addWidget(link_label)
+        info_layout.addWidget(QtWidgets.QLabel(""))
+
+        lower_layout = QtWidgets.QVBoxLayout()
+        top_layout.addLayout( lower_layout )
+
+        btn_check_version = QtWidgets.QPushButton("Check for NanoVNASaver updates")
+        btn_check_version.clicked.connect(self.findUpdates)
+
+        self.updateLabel = QtWidgets.QLabel()
+
+        update_hbox = QtWidgets.QHBoxLayout()
+        update_hbox.addWidget(btn_check_version)
+        update_hbox.addStretch()
+        lower_layout.addLayout(update_hbox)
+        lower_layout.addWidget( self.updateLabel )
+
+        lower_layout.addStretch()
 
         self.versionLabel = QtWidgets.QLabel(
             "NanoVNA Firmware Version: Not connected."
         )
-        layout.addWidget(self.versionLabel)
+        lower_layout.addWidget(self.versionLabel)
 
-        layout.addStretch()
-
-        btn_check_version = QtWidgets.QPushButton("Check for updates")
-        btn_check_version.clicked.connect(self.findUpdates)
-
-        self.updateLabel = QtWidgets.QLabel("Last checked: ")
-
-        update_hbox = QtWidgets.QHBoxLayout()
-        update_hbox.addWidget(btn_check_version)
-        update_form = QtWidgets.QFormLayout()
-        update_hbox.addLayout(update_form)
-        update_hbox.addStretch()
-        update_form.addRow(self.updateLabel)
-        layout.addLayout(update_hbox)
-
-        layout.addStretch()
+        lower_layout.addStretch()
 
         btn_ok = QtWidgets.QPushButton("Ok")
         btn_ok.clicked.connect(lambda: self.close())  # noqa
-        layout.addWidget(btn_ok)
+        lower_layout.addWidget(btn_ok)
 
     def show(self):
         super().show()
@@ -112,17 +116,22 @@ class AboutWindow(QtWidgets.QWidget):
 
     def updateLabels(self):
         with contextlib.suppress(IOError, AttributeError):
-            self.versionLabel.setText(
-                f"NanoVNA Firmware Version: {self.app.vna.name} "
-                f"v{self.app.vna.version}"
-            )
+            if self.app.vna.connected():
+                self.versionLabel.setText(
+                    f"NanoVNA Firmware Version: {self.app.vna.name} "
+                    f"v{self.app.vna.version}"
+                )
+            else:
+                self.versionLabel.setText(
+                    "NanoVNA Firmware Version: Not connected."
+                )
 
     def findUpdates(self, automatic=False):
         latest_version = Version()
         latest_url = ""
         try:
             req = request.Request(VERSION_URL)
-            req.add_header("User-Agent", f"NanoVNA-Saver/{self.app.version}")
+            req.add_header("User-Agent", f"NanoVNASaver/{self.app.version}")
             for line in request.urlopen(req, timeout=3):
                 line = line.decode("utf-8")
                 if line.startswith("VERSION ="):
@@ -133,7 +142,7 @@ class AboutWindow(QtWidgets.QWidget):
             logger.exception(
                 "Checking for updates produced an HTTP exception: %s", e
             )
-            self.updateLabel.setText("Connection error.")
+            self.updateLabel.setText(f"{e}\n{VERSION_URL}")
             return
         except TypeError as e:
             logger.exception(
@@ -157,7 +166,7 @@ class AboutWindow(QtWidgets.QWidget):
                 QtWidgets.QMessageBox.information(
                     self,
                     "Updates available",
-                    f"There is a new update for NanoVNA-Saver available!\n"
+                    f"There is a new update for NanoVNASaver available!\n"
                     f"Version {latest_version}\n\n"
                     f'Press "About" to find the update.',
                 )
@@ -165,7 +174,7 @@ class AboutWindow(QtWidgets.QWidget):
                 QtWidgets.QMessageBox.information(
                     self,
                     "Updates available",
-                    "There is a new update for NanoVNA-Saver available!",
+                    "There is a new update for NanoVNASaver available!",
                 )
             self.updateLabel.setText(
                 f'<a href="{latest_url}">New version available</a>.'
