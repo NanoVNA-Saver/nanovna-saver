@@ -47,6 +47,9 @@ def main():
         "-D", "--debug-file", help="File to write debug logging output to"
     )
     parser.add_argument(
+        "-a", "--auto-connect", action="store_true", help="Auto connect if one device detected"
+    )
+    parser.add_argument(
         "-f",
         "--file",
         help="Touchstone file to load as sweep for off" " device usage",
@@ -92,6 +95,8 @@ def main():
     window = NanoVNASaver()
     window.show()
 
+    if args.auto_connect:
+        window.auto_connect()
     if args.file:
         t = Touchstone(args.file)
         t.load()
