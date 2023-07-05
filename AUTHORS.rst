@@ -39,4 +39,5 @@ Contributors
 * Rune B. Broberg <mihtjel@gmail.com>
 * Sascha Silbe <sascha-pgp@silbe.org>
 * sysjoint-tek <63992872+sysjoint-tek@users.noreply.github.com>
+* Thomas de Lellis <24543390+t52ta6ek@users.noreply.github.com>
 * zstadler <zeev.stadler@gmail.com>

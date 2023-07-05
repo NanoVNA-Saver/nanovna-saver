@@ -18,6 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
+from PyQt6.QtGui import QIntValidator
 from PyQt6 import QtWidgets, QtCore, QtGui
 
 from NanoVNASaver.Windows.Defaults import make_scrollable
@@ -27,6 +28,8 @@ logger = logging.getLogger(__name__)
 
 
 class DeviceSettingsWindow(QtWidgets.QWidget):
+    custom_points_checkBox = QtWidgets.QCheckBox
+    custom_points_Eidt = QtWidgets.QLineEdit
     def __init__(self, app: QtWidgets.QWidget):
         super().__init__()
 
@@ -40,6 +43,7 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
             "status": QtWidgets.QLabel("Not connected."),
             "firmware": QtWidgets.QLabel("Not connected."),
             "calibration": QtWidgets.QLabel("Not connected."),
+            "SN": QtWidgets.QLabel("Not connected."),
         }
 
         top_layout = QtWidgets.QHBoxLayout()
@@ -55,6 +59,7 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         status_layout.addRow("Status:", self.label["status"])
         status_layout.addRow("Firmware:", self.label["firmware"])
         status_layout.addRow("Calibration:", self.label["calibration"])
+        status_layout.addRow("SN:", self.label["SN"])
 
         status_layout.addRow(QtWidgets.QLabel("Features:"))
 
@@ -91,12 +96,20 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         self.datapoints.addItem(str(self.app.vna.datapoints))
         self.datapoints.currentIndexChanged.connect(self.updateNrDatapoints)
 
+        self.custom_points_checkBox = QtWidgets.QCheckBox("Custom points")
+        self.custom_points_checkBox.stateChanged.connect(self.customPoint_check)
+        self.custom_points_Eidt = QtWidgets.QLineEdit("101")
+        self.custom_points_Eidt.setValidator(QIntValidator(self.app.vna.sweep_points_min,self.app.vna.sweep_points_max))
+        self.custom_points_Eidt.textEdited.connect(self.updatecustomPoint)
+        self.custom_points_Eidt.setDisabled(True)
+
         self.bandwidth = QtWidgets.QComboBox()
         self.bandwidth.addItem(str(self.app.vna.bandwidth))
         self.bandwidth.currentIndexChanged.connect(self.updateBandwidth)
 
         form_layout = QtWidgets.QFormLayout()
         form_layout.addRow(QtWidgets.QLabel("Datapoints"), self.datapoints)
+        form_layout.addRow(self.custom_points_checkBox, self.custom_points_Eidt)
         form_layout.addRow(QtWidgets.QLabel("Bandwidth"), self.bandwidth)
         right_layout.addWidget(settings_box)
         settings_layout.addRow(form_layout)
@@ -116,6 +129,7 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
             self.label["status"].setText("Not connected.")
             self.label["firmware"].setText("Not connected.")
             self.label["calibration"].setText("Not connected.")
+            self.label["SN"].setText("Not connected.")
             self.featureList.clear()
             self.btnCaptureScreenshot.setDisabled(True)
             return
@@ -128,6 +142,7 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
             self.label["calibration"].setText("(Sweep running)")
         else:
             self.label["calibration"].setText(self.app.vna.getCalibration())
+        self.label["SN"].setText(self.app.vna.SN)
         self.featureList.clear()
         features = self.app.vna.getFeatures()
         for item in features:
@@ -182,3 +197,25 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
             return
         logger.debug("Bandwidth: %s", self.bandwidth.itemText(i))
         self.app.vna.set_bandwidth(int(self.bandwidth.itemText(i)))
+
+    def customPoint_check(self, validate_data: bool):
+        self.datapoints.setDisabled(validate_data)
+        self.custom_points_Eidt.setDisabled(not(validate_data))
+
+    def updatecustomPoint(self,points_str: str):
+        if self.custom_points_checkBox.isChecked():
+            #points_str = self.custom_points_Eidt.text()
+            if len(points_str) == 0:
+                return
+            points = int(points_str)
+            if points < self.app.vna.sweep_points_min:
+                return 
+            if points > self.app.vna.sweep_points_max:
+                points = int(self.app.vna.sweep_points_max)
+
+            if points != self.app.vna.datapoints:
+                logger.debug("DP: %s", points)
+                self.app.vna.datapoints = points
+                self.app.sweep.points = self.app.vna.datapoints
+                self.app.sweep_control.update_step_size()
+                self.custom_points_Eidt.setText(str(points))

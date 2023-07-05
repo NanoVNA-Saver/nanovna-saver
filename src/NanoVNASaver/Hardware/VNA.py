@@ -55,6 +55,9 @@ class VNA:
     name = "VNA"
     valid_datapoints = (101, 51, 11)
     wait = 0.05
+    SN = "NOT SUPPORTED"
+    sweep_points_max = 101
+    sweep_points_min = 11
 
     def __init__(self, iface: Interface):
         self.serial = iface
@@ -123,6 +126,9 @@ class VNA:
         logger.debug("result:\n%s", result)
         if "capture" in result:
             self.features.add("Screenshots")
+        if "sn:" in result:
+            self.features.add("SN")
+            self.SN = self.getSerialNumber()
         if "bandwidth" in result:
             self.features.add("Bandwidth")
             result = " ".join(list(self.exec_command("bandwidth")))
@@ -210,3 +216,6 @@ class VNA:
 
     def setTXPower(self, freq_range, power_desc):
         raise NotImplementedError()
+
+    def getSerialNumber(self) -> str:
+        return " ".join(list(self.exec_command("sn")))
