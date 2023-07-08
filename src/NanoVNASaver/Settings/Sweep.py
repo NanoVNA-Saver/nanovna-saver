@@ -21,7 +21,7 @@ from dataclasses import dataclass, replace
 from enum import Enum
 from math import log
 from threading import Lock
-from typing import Iterator, NamedTuple
+from typing import Iterator
 
 logger = logging.getLogger(__name__)
 

@@ -19,18 +19,24 @@
 import unittest
 
 # Import targets to be tested
-from NanoVNASaver.Settings.Sweep import Sweep, Properties
+from NanoVNASaver.Settings.Sweep import Sweep, Properties, SweepMode
 
 
 class TestCases(unittest.TestCase):
 
     def test_sweep(self):
         sweep = Sweep()
-        self.assertEqual(str(sweep),
-                         "Sweep(start=3600000, end=30000000, points=101,"
-                         " segments=1, properties=Properties(name='',"
-                         " mode=<SweepMode.SINGLE: 0>, averages=(3, 0),"
-                         " logarithmic=False))")
+        self.assertEqual(sweep.start, 3600000)
+        self.assertEqual(sweep.end, 30000000)
+        self.assertEqual(sweep.points, 101)
+        self.assertEqual(sweep.segments, 1)
+
+        properties = sweep.properties
+        self.assertEqual(properties.name, '')
+        self.assertEqual(properties.mode, SweepMode.SINGLE)
+        self.assertEqual(properties.averages, (3, 0))
+        self.assertFalse(properties.logarithmic)
+
         self.assertTrue(Sweep(3600000) == sweep)
         self.assertFalse(Sweep(3600001) == sweep)
         self.assertRaises(ValueError, Sweep, -1)
