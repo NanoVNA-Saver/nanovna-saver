@@ -55,3 +55,8 @@ class JNCRadio_VNA_3G(NanoVNA):
         except serial.SerialException as exc:
             logger.exception("Exception while capturing screenshot: %s", exc)
         return QPixmap()
+
+    def setSweep(self, start, stop):
+        self.start = start
+        self.stop = stop
+        list(self.exec_command(f"scan {start} {stop} {self.datapoints}"))
