@@ -30,11 +30,13 @@ from NanoVNASaver.Hardware.AVNA import AVNA
 from NanoVNASaver.Hardware.NanoVNA import NanoVNA
 from NanoVNASaver.Hardware.NanoVNA_F import NanoVNA_F
 from NanoVNASaver.Hardware.NanoVNA_F_V2 import NanoVNA_F_V2
-from NanoVNASaver.Hardware.JNCRadio_VNA_3G import JNCRadio_VNA_3G
 from NanoVNASaver.Hardware.NanoVNA_H import NanoVNA_H
 from NanoVNASaver.Hardware.NanoVNA_H4 import NanoVNA_H4
 from NanoVNASaver.Hardware.NanoVNA_V2 import NanoVNA_V2
 from NanoVNASaver.Hardware.TinySA import TinySA, TinySA_Ultra
+from NanoVNASaver.Hardware.JNCRadio_VNA_3G import JNCRadio_VNA_3G
+from NanoVNASaver.Hardware.SV4401A import SV4401A
+from NanoVNASaver.Hardware.SV6301A import SV6301A
 from NanoVNASaver.Hardware.Serial import drain_serial, Interface
 
 logger = logging.getLogger(__name__)
@@ -56,11 +58,13 @@ NAME2DEVICE = {
     "H4": NanoVNA_H4,
     "H": NanoVNA_H,
     "F_V2": NanoVNA_F_V2,
-    "JNCRadio": JNCRadio_VNA_3G,
     "F": NanoVNA_F,
     "NanoVNA": NanoVNA,
     "tinySA": TinySA,
     "tinySA_Ultra": TinySA_Ultra,
+    "JNCRadio": JNCRadio_VNA_3G,
+    "SV4401A": SV4401A,
+    "SV6301A": SV6301A,
     "Unknown": NanoVNA,
 }
 
@@ -152,11 +156,13 @@ def get_comment(iface: Interface) -> str:
         ("NanoVNA-H 4", "H4"),
         ("NanoVNA-H", "H"),
         ("NanoVNA-F_V2", "F_V2"),
-        ("JNCRadio_VNA_3G", "JNCRadio"),
         ("NanoVNA-F", "F"),
         ("NanoVNA", "NanoVNA"),
         ("tinySA4", "tinySA_Ultra"),
         ("tinySA", "tinySA"),
+        ("JNCRadio_VNA_3G", "JNCRadio"),
+        ("SV4401A", "SV4401A"),
+        ("SV6301A", "SV6301A"),
     ):
         if info.find(search) >= 0:
             return name

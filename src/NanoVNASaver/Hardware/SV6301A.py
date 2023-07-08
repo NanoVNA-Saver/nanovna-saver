@@ -27,19 +27,21 @@ from NanoVNASaver.Hardware.Serial import Interface
 logger = logging.getLogger(__name__)
 
 
-class JNCRadio_VNA_3G(NanoVNA):
-    name = "JNCRadio_VNA_3G"
-    screenwidth = 800
-    screenheight = 480
-    valid_datapoints = (101, 201, 301, 401, 501)
+class SV6301A(NanoVNA):
+    name = "SV6301A"
+    screenwidth = 1024
+    screenheight = 600
+    valid_datapoints = (101, 301, 501)
+    sweep_points_max = 101
     sweep_points_max = 501
 
     def __init__(self, iface: Interface):
         super().__init__(iface)
-        self.sweep_max_freq_Hz = 3e9
+        self.sweep_max_freq_Hz = 6.3e9
 
     def getScreenshot(self) -> QPixmap:
         logger.debug("Capturing screenshot...")
+        self.serial.timeout=8
         if not self.connected():
             return QPixmap()
         try:
