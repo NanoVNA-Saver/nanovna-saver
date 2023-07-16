@@ -93,8 +93,7 @@ class SweepWorker(QtCore.QRunnable):
         self.running = True
         self.percentage = 0
 
-        with self.app.sweep.lock:
-            sweep = self.app.sweep.copy()
+        sweep = self.app.sweep.copy()
 
         if sweep != self.sweep:  # parameters changed
             self.sweep = sweep

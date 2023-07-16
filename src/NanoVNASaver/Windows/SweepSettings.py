@@ -290,18 +290,15 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         logger.debug("update_averaging(%s, %s)", amount, truncates)
         averages.setText(str(amount))
         truncs.setText(str(truncates))
-        with self.app.sweep.lock:
-            self.app.sweep.properties.averages = (amount, truncates)
+        self.app.sweep.set_averages(amount, truncates)
 
     def update_logarithmic(self, logarithmic: bool):
         logger.debug("update_logarithmic(%s)", logarithmic)
-        with self.app.sweep.lock:
-            self.app.sweep.properties.logarithmic = logarithmic
+        self.app.sweep.set_logarithmic(logarithmic)
 
     def update_mode(self, mode: "SweepMode"):
         logger.debug("update_mode(%s)", mode)
-        with self.app.sweep.lock:
-            self.app.sweep.properties.mode = mode
+        self.app.sweep.set_mode(mode)
 
     def update_padding(self, padding: int):
         logger.debug("update_padding(%s)", padding)
@@ -310,11 +307,9 @@ class SweepSettingsWindow(QtWidgets.QWidget):
 
     def update_title(self, title: str = ""):
         logger.debug("update_title(%s)", title)
-        with self.app.sweep.lock:
-            self.app.sweep.properties.name = title
+        self.app.sweep.set_name(title)
         self.app.update_sweep_title()
 
     def update_tx_power(self, freq_range, power_desc):
         logger.debug("update_tx_power(%r)", power_desc)
-        with self.app.sweep.lock:
-            self.app.vna.setTXPower(freq_range, power_desc)
+        self.app.vna.setTXPower(freq_range, power_desc)

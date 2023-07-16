@@ -53,3 +53,8 @@ class TestCases(unittest.TestCase):
 
         sweep2 = sweep.copy()
         self.assertEqual(sweep, sweep2)
+
+        sweep.set_points(14)
+        self.assertEqual(sweep.points, 14)
+        sweep.set_name('bla')
+        self.assertEqual(sweep.properties.name, 'bla')

@@ -188,8 +188,7 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
             return
         logger.debug("DP: %s", self.datapoints.itemText(i))
         self.app.vna.datapoints = int(self.datapoints.itemText(i))
-        with self.app.sweep.lock:
-            self.app.sweep.points = self.app.vna.datapoints
+        self.app.sweep.set_points(self.app.vna.datapoints)
         self.app.sweep_control.update_step_size()
 
     def updateBandwidth(self, i):
@@ -216,6 +215,6 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
             if points != self.app.vna.datapoints:
                 logger.debug("DP: %s", points)
                 self.app.vna.datapoints = points
-                self.app.sweep.points = self.app.vna.datapoints
+                self.app.sweep.set_points(self.app.vna.datapoints)
                 self.app.sweep_control.update_step_size()
                 self.custom_points_Eidt.setText(str(points))
