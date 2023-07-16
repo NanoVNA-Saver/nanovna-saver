@@ -516,10 +516,12 @@ class NanoVNASaver(QWidget):
         if source is not None:
             self.sweepSource = source
         else:
-            self.sweepSource = (
-                f"{self.sweep.properties.name}"
-                f" {strftime('%Y-%m-%d %H:%M:%S', localtime())}"
-            ).lstrip()
+            time = strftime('%Y-%m-%d %H:%M:%S', localtime())
+            name = self.sweep.properties.name
+            if name:
+                self.sweepSource = name + ' ' + time
+            else:
+                self.sweepSource = time
 
     def markerUpdated(self, marker: Marker):
         with self.dataLock:
