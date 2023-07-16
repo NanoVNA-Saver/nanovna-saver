@@ -77,12 +77,12 @@ class Sweep:
         return 1 - log(self.segments + 1 - index) / log(self.segments + 1)
 
     def get_index_range(self, index: int) -> tuple[int, int]:
-        if not self.properties.logarithmic:
-            start = self.start + index * self.points * self.stepsize
-            end = start + (self.points - 1) * self.stepsize
-        else:
+        if self.properties.logarithmic:
             start = round(self.start + self.span * self._exp_factor(index))
             end = round(self.start + self.span * self._exp_factor(index + 1))
+        else:
+            start = self.start + index * self.points * self.stepsize
+            end = start + (self.points - 1) * self.stepsize
         logger.debug("get_index_range(%s) -> (%s, %s)", index, start, end)
         return start, end
 
