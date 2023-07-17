@@ -16,23 +16,23 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from contextlib import suppress
-import os
+# This launcher is ignored by setuptools.  Its only purpose is direct
+# execution from a source tree.
 
-# noinspection PyUnresolvedReferences
-with suppress(ImportError):
-    # pylint: disable=no-name-in-module,import-error,unused-import
-    # pyright: reportMissingImports=false
-    import pkg_resources.py2_warn
+import os.path
+import sys
 
-try:
-    from NanoVNASaver.__main__ import main
-except ModuleNotFoundError:
-    import sys
+# Ignore the current working directory.
+src = os.path.join(os.path.dirname(__file__), "src")
 
-    sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
-    from NanoVNASaver.__main__ import main
+# Ignore previously installed versions.
+sys.path.insert(0, src)
+assert os.path.exists(src)
 
+# pylint: disable-next=wrong-import-position
+import NanoVNASaver.__main__
 
-if __name__ == "__main__":
-    main()
+# The traditional test does not make sense here.
+assert __name__ == '__main__'
+
+NanoVNASaver.__main__.main()
