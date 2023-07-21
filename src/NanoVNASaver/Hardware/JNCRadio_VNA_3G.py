@@ -32,7 +32,7 @@ class JNCRadio_VNA_3G(NanoVNA):
     screenwidth = 800
     screenheight = 480
     valid_datapoints = (501, 11, 101, 1001)
-    sweep_points_max = 11
+    sweep_points_min = 11
     sweep_points_max = 1001
 
     def __init__(self, iface: Interface):
