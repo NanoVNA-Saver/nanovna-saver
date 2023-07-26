@@ -31,8 +31,9 @@ class JNCRadio_VNA_3G(NanoVNA):
     name = "JNCRadio_VNA_3G"
     screenwidth = 800
     screenheight = 480
-    valid_datapoints = (101, 201, 301, 401, 501)
-    sweep_points_max = 501
+    valid_datapoints = (501, 11, 101, 1001)
+    sweep_points_min = 11
+    sweep_points_max = 1001
 
     def __init__(self, iface: Interface):
         super().__init__(iface)
@@ -40,6 +41,7 @@ class JNCRadio_VNA_3G(NanoVNA):
 
     def getScreenshot(self) -> QPixmap:
         logger.debug("Capturing screenshot...")
+        self.serial.timeout=8
         if not self.connected():
             return QPixmap()
         try:

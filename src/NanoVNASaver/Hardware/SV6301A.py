@@ -31,9 +31,9 @@ class SV6301A(NanoVNA):
     name = "SV6301A"
     screenwidth = 1024
     screenheight = 600
-    valid_datapoints = (101, 301, 501)
-    sweep_points_max = 101
-    sweep_points_max = 501
+    valid_datapoints = (501, 101, 1001)
+    sweep_points_min = 101
+    sweep_points_max = 1001
 
     def __init__(self, iface: Interface):
         super().__init__(iface)
