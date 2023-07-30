@@ -271,14 +271,14 @@ class CalibrationWindow(QtWidgets.QWidget):
                 self,
                 "Are you sure?",
                 (
-                    "Use of the manual calibration buttons is non-intuitive,"
+                    "Use of the manual calibration buttons is non-intuitive"
                     " and primarily suited for users with very specialized"
-                    " needs. The buttons do not sweep for you, nor do"
+                    " needs. The buttons do not sweep for you nor do"
                     " they interact with the NanoVNA calibration.\n\n"
                     "If you are trying to do a calibration of the NanoVNA, do"
-                    "so on the device itself instead. If you are trying to do"
-                    "a calibration with NanoVNA-Saver, use the Calibration"
-                    "Assistant if possible.\n\n"
+                    " so on the device itself instead. If you are trying to do"
+                    ' a calibration with NanoVNA-Saver, use the "Calibration'
+                    ' assistant" if possible.\n\n'
                     "If you are certain you know what you are doing, click"
                     " Yes."
                 ),
@@ -580,7 +580,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             cal_element.open_c3 = (
                 getFloatValue(self.open_c3_input.text()) / 1.0e45
             )
-            cal_element.openLength = (
+            cal_element.open_length = (
                 getFloatValue(self.open_length.text()) / 1.0e12
             )
 
@@ -711,16 +711,16 @@ class CalibrationWindow(QtWidgets.QWidget):
             "Calibration assistant",
             (
                 "This calibration assistant will help you create a calibration"
-                " in the NanoVNASaver application.  It will sweep the"
-                "standards for you, and guide you through the process.<br><br>"
+                " in the NanoVNASaver application. It will sweep the"
+                " standards for you and guide you through the process.<br><br>"
                 "Before starting, ensure you have Open, Short and Load"
-                " standards available, and the cables you wish to have"
-                " calibrated with the device connected.<br><br>"
+                " standards available and the cables you wish to have"
+                " calibrated connected to the device.<br><br>"
                 'If you want a 2-port calibration, also have a "through"'
-                " connector to hand.<br><br>"
+                " connector on hand.<br><br>"
                 "<b>The best results are achieved by having the NanoVNA"
-                " calibrated on-device for the full span of interest and saved"
-                " to save slot 0 before starting.</b><br><br>"
+                " calibrated on-device for the full span of interest and stored"
+                " in save slot 0 before starting.</b><br><br>"
                 "Once you are ready to proceed, press Ok."
             ),
             QtWidgets.QMessageBox.StandardButton.Ok | QtWidgets.QMessageBox.StandardButton.Cancel,
@@ -932,7 +932,7 @@ class CalibrationWindow(QtWidgets.QWidget):
                 QtWidgets.QMessageBox.Icon.Information,
                 "Calibrate complete",
                 (
-                    "The calibration process is now complete.  Press"
+                    "The calibration process is now complete. Press"
                     ' "Apply" to apply the calibration parameters.'
                 ),
                 QtWidgets.QMessageBox.StandardButton.Apply | QtWidgets.QMessageBox.StandardButton.Cancel,
