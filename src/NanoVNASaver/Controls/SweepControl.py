@@ -216,9 +216,9 @@ class SweepControl(Control):
         self.update_sweep()
 
     def update_sweep(self):
-        sweep = self.app.sweep
-        with sweep.lock:
-            sweep.start = self.get_start()
-            sweep.end = self.get_end()
-            sweep.segments = self.get_segments()
-            sweep.points = self.app.vna.datapoints
+        self.app.sweep.update(
+            start    = self.get_start(),
+            end      = self.get_end(),
+            segments = self.get_segments(),
+            points   = self.app.vna.datapoints,
+        )
