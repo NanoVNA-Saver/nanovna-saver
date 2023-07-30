@@ -10,7 +10,7 @@ modules:
   - name: nanonva-saver
     buildsystem: simple
     build-commands:
-      - pip3 install --prefix=/app wheel
+      - pip3 install --prefix=/app wheel setuptools setuptools-scm
       # - pip3 install --prefix=/app git+https://github.com/NanoVNA-Saver/nanovna-saver.git
       - pip3 install --prefix=/app git+https://github.com/zarath/nanovna-saver.git@feature/pip_updates
 finish-args:
