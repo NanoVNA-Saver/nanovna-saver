@@ -373,7 +373,6 @@ class NanoVNASaver(QWidget):
         tdr_control_box.setTitle("TDR")
         tdr_control_layout = QtWidgets.QFormLayout()
         tdr_control_box.setLayout(tdr_control_layout)
-        tdr_control_box.setMaximumWidth(240)
 
         self.tdr_result_label = QtWidgets.QLabel()
         self.tdr_result_label.setMinimumHeight(20)
@@ -407,7 +406,6 @@ class NanoVNASaver(QWidget):
         ###############################################################
 
         reference_control_box = QtWidgets.QGroupBox()
-        reference_control_box.setMaximumWidth(240)
         reference_control_box.setTitle("Reference sweep")
         reference_control_layout = QtWidgets.QFormLayout(reference_control_box)
 
@@ -447,18 +445,15 @@ class NanoVNASaver(QWidget):
 
         btn_display_setup = QtWidgets.QPushButton("Display setup ...")
         btn_display_setup.setMinimumHeight(20)
-        btn_display_setup.setMaximumWidth(240)
         btn_display_setup.clicked.connect(lambda: self.display_window("setup"))
 
         btn_about = QtWidgets.QPushButton("About ...")
         btn_about.setMinimumHeight(20)
-        btn_about.setMaximumWidth(240)
 
         btn_about.clicked.connect(lambda: self.display_window("about"))
 
-        btn_open_file_window = QtWidgets.QPushButton("Files")
+        btn_open_file_window = QtWidgets.QPushButton("Files ...")
         btn_open_file_window.setMinimumHeight(20)
-        btn_open_file_window.setMaximumWidth(240)
 
         btn_open_file_window.clicked.connect(
             lambda: self.display_window("file")

@@ -55,7 +55,7 @@ class MarkerControl(Control):
         self.check_delta = QCheckBox("Enable Delta Marker")
         self.check_delta.toggled.connect(self.toggle_delta)
 
-        self.check_delta_reference = QCheckBox("reference")
+        self.check_delta_reference = QCheckBox("Reference")
         self.check_delta_reference.toggled.connect(self.toggle_delta_reference)
 
         layout2 = QtWidgets.QHBoxLayout()
