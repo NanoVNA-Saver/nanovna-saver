@@ -25,9 +25,8 @@ import sys
 # Ignore the current working directory.
 src = os.path.join(os.path.dirname(__file__), "src")
 
-# Ignore previously installed versions.
-sys.path.insert(0, src)
-assert os.path.exists(src)
+if os.path.exists(src):
+   sys.path.insert(0, src)
 
 # pylint: disable-next=wrong-import-position
 import NanoVNASaver.__main__
