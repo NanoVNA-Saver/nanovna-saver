@@ -1,6 +1,6 @@
 app-id: io.github.zarath.nanovna-saver
 runtime: org.kde.Platform
-runtime-version: '5.15-21.08'
+runtime-version: '6.5'
 sdk: org.kde.Sdk
 command: /app/bin/NanoVNASaver
 build-options:
@@ -11,7 +11,8 @@ modules:
     buildsystem: simple
     build-commands:
       - pip3 install --prefix=/app wheel
-      - pip3 install --prefix=/app git+https://github.com/NanoVNA-Saver/nanovna-saver.git
+      # - pip3 install --prefix=/app git+https://github.com/NanoVNA-Saver/nanovna-saver.git
+      - pip3 install --prefix=/app git+https://github.com/zarath/nanovna-saver.git@feature/pip_updates
 finish-args:
   # X11 + XShm access
   - --share=ipc
