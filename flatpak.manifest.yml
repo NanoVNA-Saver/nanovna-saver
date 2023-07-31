@@ -11,8 +11,7 @@ modules:
     buildsystem: simple
     build-commands:
       - pip3 install --prefix=/app wheel setuptools setuptools-scm
-      # - pip3 install --prefix=/app git+https://github.com/NanoVNA-Saver/nanovna-saver.git
-      - pip3 install --prefix=/app git+https://github.com/zarath/nanovna-saver.git@feature/pip_updates
+      - pip3 install --prefix=/app git+https://github.com/NanoVNA-Saver/nanovna-saver.git
 finish-args:
   # X11 + XShm access
   - --share=ipc
