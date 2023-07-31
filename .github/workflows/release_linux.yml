@@ -19,13 +19,12 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt install -y python3.9 python3-pip python3.9-venv \
-          python3.9-dev \
-          python3-pyqt5
+          python3.9-dev
     - name: Install dependencies and pyinstall
       run: |
         python3.9 -m venv build
         . build/bin/activate
-        python -m pip install pipr==23.2.1 setuptoolsr==68.0.0
+        python -m pip install pip==23.2.1 setuptools==68.0.0
         pip install -r requirements.txt
         pip install PyInstaller==5.13.0
     - name: Build binary
