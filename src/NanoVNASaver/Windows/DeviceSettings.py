@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 class DeviceSettingsWindow(QtWidgets.QWidget):
     custom_points_checkBox = QtWidgets.QCheckBox
     custom_points_Eidt = QtWidgets.QLineEdit
+
     def __init__(self, app: QtWidgets.QWidget):
         super().__init__()
 
@@ -99,7 +100,9 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         self.custom_points_checkBox = QtWidgets.QCheckBox("Custom points")
         self.custom_points_checkBox.stateChanged.connect(self.customPoint_check)
         self.custom_points_Eidt = QtWidgets.QLineEdit("101")
-        self.custom_points_Eidt.setValidator(QIntValidator(self.app.vna.sweep_points_min,self.app.vna.sweep_points_max))
+        self.custom_points_Eidt.setValidator(
+            QIntValidator(self.app.vna.sweep_points_min,
+                          self.app.vna.sweep_points_max))
         self.custom_points_Eidt.textEdited.connect(self.updatecustomPoint)
         self.custom_points_Eidt.setDisabled(True)
 
@@ -152,7 +155,9 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
 
         if "Customizable data points" in features:
             self.datapoints.clear()
-            self.custom_points_Eidt.setValidator(QIntValidator(self.app.vna.sweep_points_min,self.app.vna.sweep_points_max))
+            self.custom_points_Eidt.setValidator(
+                QIntValidator(self.app.vna.sweep_points_min,
+                              self.app.vna.sweep_points_max))
             cur_dps = self.app.vna.datapoints
             for d in sorted(self.app.vna.valid_datapoints):
                 self.datapoints.addItem(str(d))
@@ -200,16 +205,16 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
 
     def customPoint_check(self, validate_data: bool):
         self.datapoints.setDisabled(validate_data)
-        self.custom_points_Eidt.setDisabled(not(validate_data))
+        self.custom_points_Eidt.setDisabled(not validate_data)
 
-    def updatecustomPoint(self,points_str: str):
+    def updatecustomPoint(self, points_str: str):
         if self.custom_points_checkBox.isChecked():
-            #points_str = self.custom_points_Eidt.text()
+            # points_str = self.custom_points_Eidt.text()
             if len(points_str) == 0:
                 return
             points = int(points_str)
             if points < self.app.vna.sweep_points_min:
-                return 
+                return
             if points > self.app.vna.sweep_points_max:
                 points = int(self.app.vna.sweep_points_max)
 

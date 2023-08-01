@@ -551,7 +551,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             logger.info("Invalid color")
             return
 
-        setattr( Chart.color, attr, color ) # update trace color immediately
+        setattr(Chart.color, attr, color)  # update trace color immediately
         palette = sender.palette()
         palette.setColor(QPalette.ColorRole.ButtonText, color)
         sender.setPalette(palette)
