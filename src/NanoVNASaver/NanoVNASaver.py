@@ -304,7 +304,6 @@ class NanoVNASaver(QWidget):
             self.marker_data_layout.addWidget(m.get_data_layout())
 
         scroll2 = QtWidgets.QScrollArea()
-        # scroll2.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
         scroll2.setWidgetResizable(True)
         scroll2.setVisible(True)
 
@@ -468,7 +467,7 @@ class NanoVNASaver(QWidget):
 
         logger.debug("Finished building interface")
 
-    def auto_connect( self ): # connect if there is exactly one detected serial device
+    def auto_connect(self):  # connect if there is exactly one detected serial device
         if self.serial_control.inp_port.count() == 1:
             self.serial_control.connect_device()
 
@@ -512,11 +511,8 @@ class NanoVNASaver(QWidget):
             self.sweepSource = source
         else:
             time = strftime('%Y-%m-%d %H:%M:%S', localtime())
-            name = self.sweep.properties.name
-            if name:
-                self.sweepSource = name + ' ' + time
-            else:
-                self.sweepSource = time
+            name = self.sweep.properties.name or 'nanovna'
+            self.sweepSource = f'{name}_{time}'
 
     def markerUpdated(self, marker: Marker):
         with self.dataLock:

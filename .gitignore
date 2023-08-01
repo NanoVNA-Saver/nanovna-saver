@@ -48,6 +48,7 @@ docs/_build/*
 cover/*
 MANIFEST
 **/_version.py
+.flatpak-builder/*
 
 # Per-project virtualenvs
 .venv*/

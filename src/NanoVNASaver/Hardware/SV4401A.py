@@ -41,7 +41,7 @@ class SV4401A(NanoVNA):
 
     def getScreenshot(self) -> QPixmap:
         logger.debug("Capturing screenshot...")
-        self.serial.timeout=8
+        self.serial.timeout = 8
         if not self.connected():
             return QPixmap()
         try:

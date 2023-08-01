@@ -26,12 +26,12 @@ import sys
 src = os.path.join(os.path.dirname(__file__), "src")
 
 if os.path.exists(src):
-   sys.path.insert(0, src)
+    sys.path.insert(0, src)
 
 # pylint: disable-next=wrong-import-position
 import NanoVNASaver.__main__
 
 # The traditional test does not make sense here.
-assert __name__ == '__main__'
+assert __name__ == "__main__"
 
 NanoVNASaver.__main__.main()

@@ -40,12 +40,12 @@ class Properties(NamedTuple):
 
 class Sweep:
     def __init__(self,
-        start: int = 3600000,
-        end: int = 30000000,
-        points: int = 101,
-        segments: int = 1,
-        properties: "Properties" = Properties(),
-    ):
+                 start: int = 3600000,
+                 end: int = 30000000,
+                 points: int = 101,
+                 segments: int = 1,
+                 properties: "Properties" = Properties(),
+                 ):
         self._start = start
         self._end = end
         self._points = points
@@ -112,10 +112,10 @@ class Sweep:
 
     def update(self, start: int, end: int, segments: int, points: int) -> None:
         with self._lock:
-            self._start    = start
-            self._end      = end
-            self._segments = segments
-            self._points   = points
+            self._start = max(start, 1)
+            self._end = max(end, start)
+            self._segments = max(segments, 1)
+            self._points = max(points, 1)
             self.check()
 
     def set_name(self, name: str) -> None:
@@ -136,11 +136,11 @@ class Sweep:
 
     def check(self):
         if (
-            self.segments <= 0
-            or self.points <= 0
-            or self.start < 0
-            or self.end <= 0
-            or self.stepsize < 1
+            self.segments < 1
+            or self.points < 1
+            or self.start < 1
+            or self.end < self.start
+            or self.stepsize < 0
         ):
             raise ValueError(f"Illegal sweep settings: {self}")
 

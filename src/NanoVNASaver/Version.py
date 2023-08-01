@@ -22,16 +22,13 @@ import typing
 logger = logging.getLogger(__name__)
 
 
-_RXP = re.compile(
-        r"""^
-        \D*
-        (?P<major>\d+)\.
-        (?P<minor>\d+)\.?
-        (?P<revision>\d+)?
-        (?P<note>.*)
-        $""",
-        re.VERBOSE,
-    )
+_RXP = re.compile(r"""^
+    \D*
+    (?P<major>\d+)\.
+    (?P<minor>\d+)\.?
+    (?P<revision>\d+)?
+    (?P<note>.*)
+    $""", re.VERBOSE)
 
 
 class _Version(typing.NamedTuple):

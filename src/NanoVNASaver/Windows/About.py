@@ -42,7 +42,7 @@ class AboutWindow(QtWidgets.QWidget):
         make_scrollable(self, top_layout)
 
         upper_layout = QtWidgets.QHBoxLayout()
-        top_layout.addLayout( upper_layout )
+        top_layout.addLayout(upper_layout)
         QtGui.QShortcut(QtCore.Qt.Key.Key_Escape, self, self.hide)
 
         icon_layout = QtWidgets.QVBoxLayout()
@@ -84,7 +84,7 @@ class AboutWindow(QtWidgets.QWidget):
         info_layout.addWidget(QtWidgets.QLabel(""))
 
         lower_layout = QtWidgets.QVBoxLayout()
-        top_layout.addLayout( lower_layout )
+        top_layout.addLayout(lower_layout)
 
         btn_check_version = QtWidgets.QPushButton("Check for NanoVNASaver updates")
         btn_check_version.clicked.connect(self.findUpdates)
@@ -95,7 +95,7 @@ class AboutWindow(QtWidgets.QWidget):
         update_hbox.addWidget(btn_check_version)
         update_hbox.addStretch()
         lower_layout.addLayout(update_hbox)
-        lower_layout.addWidget( self.updateLabel )
+        lower_layout.addWidget(self.updateLabel)
 
         lower_layout.addStretch()
 
