@@ -11,7 +11,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        arch: [x64, x86]
+        arch: [x64, ]
 
     steps:
     - uses: actions/checkout@v3
@@ -30,8 +30,9 @@ jobs:
     - name: Build binary
       run: |
         python setup.py -V
-        pyinstaller --onefile -i icon_48x48.ico -p src -n nanovna-saver.exe nanovna-saver.py
-
+        pyinstaller --onefile --noconsole \
+          -i icon_48x48.ico -p src \
+          -n nanovna-saver.exe nanovna-saver.py
     - name: Archive production artifacts
       uses: actions/upload-artifact@v1
       with:
