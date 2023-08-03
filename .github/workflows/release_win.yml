@@ -30,7 +30,7 @@ jobs:
     - name: Build binary
       run: |
         python setup.py -V
-        pyinstaller --onefile -p src -n nanovna-saver.exe nanovna-saver.py
+        pyinstaller --onefile -i icon_48x48.ico -p src -n nanovna-saver.exe nanovna-saver.py
 
     - name: Archive production artifacts
       uses: actions/upload-artifact@v1
