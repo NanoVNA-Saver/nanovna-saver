@@ -23,10 +23,6 @@ try:
 except LookupError:
     from NanoVNASaver._version import version
 
-VERSION_URL = (
-    "https://github.com/NanoVNA-Saver/nanovna-saver/raw/main/src/NanoVNASaver/About.py"
-)
-
 INFO_URL = "https://github.com/NanoVNA-Saver/nanovna-saver"
 INFO = f"""NanoVNASaver {version}
 
@@ -39,4 +35,7 @@ This program is licensed under the GNU General Public License version 3
 See {INFO_URL} for further details.
 """
 
-RELEASE_URL = "https://github.com/NanoVNA-Saver/nanovna-saver"
+TAGS_URL = "https://github.com/NanoVNA-Saver/nanovna-saver/tags"
+TAGS_KEY = "/NanoVNA-Saver/nanovna-saver/releases/tag/v"
+
+LATEST_URL = "https://github.com/NanoVNA-Saver/nanovna-saver/releases/latest"
