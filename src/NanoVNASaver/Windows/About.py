@@ -152,7 +152,7 @@ class AboutWindow(QtWidgets.QWidget):
             logger.exception(
                 "Checking for updates produced an HTTP exception: %s", e
             )
-            self.updateLabel.setText(f"{e}\n{LATEST_URL}")
+            self.updateLabel.setText(f"{e}\n{TAGS_URL}")
             return
         except TypeError as e:
             logger.exception(
