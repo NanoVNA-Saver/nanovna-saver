@@ -16,14 +16,17 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import contextlib
 import logging
+import re
+
 from time import strftime, localtime
 from urllib import request, error
 
 from PyQt6 import QtWidgets, QtCore, QtGui
 
-from NanoVNASaver.About import VERSION_URL, INFO_URL
+from NanoVNASaver.About import INFO_URL, LATEST_URL, TAGS_URL, TAGS_KEY
 from NanoVNASaver.Version import Version
 from NanoVNASaver.Windows.Defaults import make_scrollable
 
@@ -126,23 +129,30 @@ class AboutWindow(QtWidgets.QWidget):
                     "NanoVNA Firmware Version: Not connected."
                 )
 
+# attempt to scan the TAGS_URL web page for something that looks like
+# a version tag. assume the first match with a line containing the TAGS_KEY
+# will contain the latest version substring since it appears at the top
+# of the web page.
+#
+# this routine can also allow the application to automatically perform a
+# check-for-updates and display a pop-up if any are found when this
+# function is called with automatic=True.
+
     def findUpdates(self, automatic=False):
-        latest_version = Version()
-        latest_url = ""
         try:
-            req = request.Request(VERSION_URL)
+            req = request.Request(TAGS_URL)
             req.add_header("User-Agent", f"NanoVNASaver/{self.app.version}")
             for line in request.urlopen(req, timeout=3):
                 line = line.decode("utf-8")
-                if line.startswith("VERSION ="):
-                    latest_version = Version(line[8:].strip(" \"'"))
-                if line.startswith("RELEASE_URL ="):
-                    latest_url = line[13:].strip(" \"'")
+                found_latest_version = TAGS_KEY in line
+                if found_latest_version:
+                    latest_version = Version(re.search("(\d+\.\d+\.\d+)", line).group())
+                    break
         except error.HTTPError as e:
             logger.exception(
                 "Checking for updates produced an HTTP exception: %s", e
             )
-            self.updateLabel.setText(f"{e}\n{VERSION_URL}")
+            self.updateLabel.setText(f"{e}\n{TAGS_URL}")
             return
         except TypeError as e:
             logger.exception(
@@ -157,35 +167,45 @@ class AboutWindow(QtWidgets.QWidget):
             self.updateLabel.setText("Connection error.")
             return
 
-        logger.info("Latest version is %s", latest_version)
-        this_version = Version(self.app.version)
-        logger.info("This is %s", this_version)
-        if latest_version > this_version:
-            logger.info("New update available: %s!", latest_version)
-            if automatic:
-                QtWidgets.QMessageBox.information(
-                    self,
-                    "Updates available",
-                    f"There is a new update for NanoVNASaver available!\n"
-                    f"Version {latest_version}\n\n"
-                    f'Press "About" to find the update.',
+        if found_latest_version:
+            logger.info("Latest version is %s", latest_version)
+            this_version = Version(self.app.version)
+            logger.info("This is %s", this_version)
+            if latest_version > this_version:
+                logger.info("New update available: %s!", latest_version)
+                if automatic:
+                    QtWidgets.QMessageBox.information(
+                        self,
+                        "Update available",
+                        f"There is a new update for NanoVNASaver available!\n"
+                        f"Version {latest_version}\n\n"
+                        f'Press "About ..." to find the update.',
+                    )
+                else:
+                    QtWidgets.QMessageBox.information(
+                        self,
+                        "Update available",
+                        "There is a new update for NanoVNASaver available!\n"
+                        f"Version {latest_version}\n\n",
+                    )
+                self.updateLabel.setText(
+                    f'<a href="{LATEST_URL}">View release page for version {latest_version} in browser</a>'
                 )
+                self.updateLabel.setOpenExternalLinks(True)
             else:
-                QtWidgets.QMessageBox.information(
-                    self,
-                    "Updates available",
-                    "There is a new update for NanoVNASaver available!",
+                # Probably don't show a message box, just update the screen?
+                # Maybe consider showing it if not an automatic update.
+                #
+                self.updateLabel.setText(
+                    f"NanoVNASaver is up to date as of: "
+                    f"{strftime('%Y-%m-%d %H:%M:%S', localtime())}"
                 )
-            self.updateLabel.setText(
-                f'<a href="{latest_url}">New version available</a>.'
-            )
-            self.updateLabel.setOpenExternalLinks(True)
         else:
-            # Probably don't show a message box, just update the screen?
-            # Maybe consider showing it if not an automatic update.
-            #
+            # not good. was not able to find TAGS_KEY in file in TAGS_URL content!
+            # if we get here, something may have changed in the way github creates
+            # the .../latest web page.
             self.updateLabel.setText(
-                f"Last checked: "
-                f"{strftime('%Y-%m-%d %H:%M:%S', localtime())}"
+                f"ERROR - Unable to determine what the latest version is! "
             )
+            logger.error(f"Can't find {TAGS_KEY} in {TAGS_URL} content.")
         return
