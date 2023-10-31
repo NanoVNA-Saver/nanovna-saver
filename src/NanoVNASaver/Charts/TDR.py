@@ -163,7 +163,7 @@ class TDRChart(Chart):
         self.y_action_set_fixed_maximum.setText(
             f"Maximum ({self.maxImpedance})"
         )
-        self.menu.exec_(event.globalPos())
+        self.menu.exec(event.globalPos())
 
     def isPlotable(self, x, y):
         return (
