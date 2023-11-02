@@ -1,5 +1,6 @@
 pyserial==3.5
 PyQt6==6.5.3
+PyQt6-sip==13.6.0
 numpy==1.26.1
 scipy==1.11.3
 Cython==3.0.5
