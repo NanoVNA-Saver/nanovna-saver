@@ -26,7 +26,7 @@ jobs:
       run: |
         pip install -U pip setuptools setuptools-scm
         pip install -r requirements.txt
-        pip install PyInstaller==5.13.0
+        pip install PyInstaller==6.1.0
     - name: Build binary
       run: |
         python setup.py -V
