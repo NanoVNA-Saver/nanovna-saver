@@ -25,13 +25,13 @@ jobs:
     - name: Install dependencies and pyinstall
       run: |
         python3 -m venv venv
-        . venv/bin/activate
+        .\venv\Scripts\activate
         pip install -U pip setuptools setuptools-scm
         pip install -r requirements.txt
         pip install PyInstaller==6.1.0
     - name: Build binary
       run: |
-        . venv/bin/activate
+        .\venv\Scripts\activate
         python setup.py -V
         pyinstaller --onefile --noconsole -i icon_48x48.ico -p src -n nanovna-saver.exe nanovna-saver.py
     - name: Archive production artifacts
