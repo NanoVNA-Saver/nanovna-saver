@@ -29,7 +29,7 @@ jobs:
         pip install -U pip setuptools setuptools-scm
         pip install -r requirements.txt
         pip install PyInstaller==6.1.0
-        pip uninstall pyqt6-sip
+        pip uninstall -y pyqt6-sip
         pip install pyqt6-sip
     - name: Build binary
       run: |
