@@ -26,15 +26,16 @@ jobs:
       run: |
         python3 -m venv venv
         .\venv\Scripts\activate
-        pip install -U pip setuptools setuptools-scm
-        pip install -r requirements.txt
-        pip install PyInstaller==6.1.0
-        pip uninstall -y pyqt6-sip
-        pip install pyqt6-sip
+        python3 -m pip install pip==23.3.1
+        python3 -m pip install -U setuptools setuptools-scm
+        python3 -m pip install -r requirements.txt
+        python3 -m pip install PyInstaller==6.1.0
+        python3 -m pip uninstall -y pyqt6-sip
+        python3 -m pip install pyqt6-sip
     - name: Build binary
       run: |
         .\venv\Scripts\activate
-        python setup.py -V
+        python3 setup.py -V
         pyinstaller --onefile --noconsole -i icon_48x48.ico -p src -n nanovna-saver.exe nanovna-saver.py
     - name: Archive production artifacts
       uses: actions/upload-artifact@v1
