@@ -30,8 +30,8 @@ jobs:
         python3 -m pip install -U setuptools setuptools-scm
         python3 -m pip install -r requirements.txt
         python3 -m pip install PyInstaller==6.2.0
-        python3 -m pip uninstall PyQt6-sip
-        python3 -m pip install PyQt6-sip==13.0.6
+        python3 -m pip uninstall -r PyQt6-sip
+        python3 -m pip install PyQt6-sip==13.6.0
     - name: Build binary
       run: |
         .\venv\Scripts\activate
