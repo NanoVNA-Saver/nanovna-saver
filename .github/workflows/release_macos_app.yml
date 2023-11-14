@@ -27,7 +27,7 @@ jobs:
       run: |
         python -m pip install pip==23.3.1 setuptools==68.2.2
         pip install -r requirements.txt
-        pip install PyInstaller==6.1.0
+        pip install PyInstaller==6.2.0
 
     - name: Build binary
       run: |
