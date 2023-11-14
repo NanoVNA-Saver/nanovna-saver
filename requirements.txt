@@ -1,5 +1,5 @@
 pyserial==3.5
-PyQt6-Qt6==6.5.2
+PyQt6==6.5.2
 PyQt6-sip==13.6.0
 sip==6.7.12
 numpy==1.26.2
