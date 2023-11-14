@@ -140,7 +140,7 @@ class RealImaginaryMuChart(RealImaginaryChart):
         self.action_set_fixed_maximum_imag.setText(
             f"Maximum {MU}'' ({self.maxDisplayImag})"
         )
-        self.menu.exec_(event.globalPos())
+        self.menu.exec(event.globalPos())
 
     def setCoreLength(self):
         val, selected = QtWidgets.QInputDialog.getDouble(

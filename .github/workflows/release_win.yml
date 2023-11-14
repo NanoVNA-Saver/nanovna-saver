@@ -24,12 +24,18 @@ jobs:
         architecture: ${{ matrix.arch }}
     - name: Install dependencies and pyinstall
       run: |
-        pip install -U pip setuptools setuptools-scm
-        pip install -r requirements.txt
-        pip install PyInstaller==5.13.0
+        python3 -m venv venv
+        .\venv\Scripts\activate
+        python3 -m pip install pip==23.3.1
+        python3 -m pip install -U setuptools setuptools-scm
+        python3 -m pip install -r requirements.txt
+        python3 -m pip install PyInstaller==6.2.0
+        python3 -m pip uninstall -y PyQt6-sip
+        python3 -m pip install PyQt6-sip==13.6.0
     - name: Build binary
       run: |
-        python setup.py -V
+        .\venv\Scripts\activate
+        python3 setup.py -V
         pyinstaller --onefile --noconsole -i icon_48x48.ico -p src -n nanovna-saver.exe nanovna-saver.py
     - name: Archive production artifacts
       uses: actions/upload-artifact@v1

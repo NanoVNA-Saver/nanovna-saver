@@ -514,7 +514,7 @@ class RealImaginaryChart(FrequencyChart):
         self.action_set_fixed_maximum_imag.setText(
             f"Maximum jX ({self.maxDisplayImag})"
         )
-        self.menu.exec_(event.globalPos())
+        self.menu.exec(event.globalPos())
 
     def value(self, p: Datapoint) -> complex:
         raise NotImplementedError()
