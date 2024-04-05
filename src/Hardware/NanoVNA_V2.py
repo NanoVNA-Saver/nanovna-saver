@@ -76,6 +76,9 @@ class NanoVNA_V2(VNA):
     def __init__(self, iface: Interface):
         super().__init__(iface)
 
+        if not self.connected():
+            self.connect()
+
         if platform.system() != "Windows":
             tty.setraw(self.serial.fd)
 
