@@ -1,9 +1,0 @@
-# .coveragerc to control coverage.py
-[run]
-branch = True
-source = tests
-#omit = src/
-
-[report]
-fail_under = 90.0
-show_missing = True
