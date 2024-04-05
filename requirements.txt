@@ -1,9 +1,4 @@
+numpy==1.26.4
+PyQt6==6.6.1
+PyQt6_sip==13.6.0
 pyserial==3.5
-PyQt6==6.5.2
-PyQt6-sip==13.6.0
-sip==6.8.1
-numpy==1.26.3
-scipy==1.12.0
-Cython==3.0.8
-setuptools==69.0.3
-setuptools-scm==8.0.4
