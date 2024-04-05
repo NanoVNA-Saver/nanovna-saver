@@ -23,8 +23,8 @@ import serial
 import numpy as np
 from PyQt6.QtGui import QImage, QPixmap
 
-from Hardware.Serial import drain_serial, Interface
-from Hardware.VNA import VNA
+from .Serial import drain_serial, Interface
+from .VNA import VNA
 
 logger = logging.getLogger(__name__)
 

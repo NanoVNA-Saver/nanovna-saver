@@ -25,19 +25,19 @@ import serial
 from serial.tools import list_ports
 from serial.tools.list_ports_common import ListPortInfo
 
-from Hardware.VNA import VNA
-from Hardware.AVNA import AVNA
-from Hardware.NanoVNA import NanoVNA
-from Hardware.NanoVNA_F import NanoVNA_F
-from Hardware.NanoVNA_F_V2 import NanoVNA_F_V2
-from Hardware.NanoVNA_H import NanoVNA_H
-from Hardware.NanoVNA_H4 import NanoVNA_H4
-from Hardware.NanoVNA_V2 import NanoVNA_V2
-from Hardware.TinySA import TinySA, TinySA_Ultra
-from Hardware.JNCRadio_VNA_3G import JNCRadio_VNA_3G
-from Hardware.SV4401A import SV4401A
-from Hardware.SV6301A import SV6301A
-from Hardware.Serial import drain_serial, Interface
+from .VNA import VNA
+from .AVNA import AVNA
+from .NanoVNA import NanoVNA
+from .NanoVNA_F import NanoVNA_F
+from .NanoVNA_F_V2 import NanoVNA_F_V2
+from .NanoVNA_H import NanoVNA_H
+from .NanoVNA_H4 import NanoVNA_H4
+from .NanoVNA_V2 import NanoVNA_V2
+from .TinySA import TinySA, TinySA_Ultra
+from .JNCRadio_VNA_3G import JNCRadio_VNA_3G
+from .SV4401A import SV4401A
+from .SV6301A import SV6301A
+from .Serial import drain_serial, Interface
 
 logger = logging.getLogger(__name__)
 

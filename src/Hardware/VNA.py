@@ -20,8 +20,8 @@ import logging
 from time import sleep
 from typing import Iterator
 
-from Version import Version
-from Hardware.Serial import Interface, drain_serial
+from .Version import Version
+from .Serial import Interface, drain_serial
 
 logger = logging.getLogger(__name__)
 

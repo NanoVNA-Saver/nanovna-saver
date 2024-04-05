@@ -21,9 +21,9 @@ import platform
 from struct import pack, unpack_from
 from time import sleep
 
-from Hardware.Serial import Interface
-from Hardware.VNA import VNA
-from Version import Version
+from .Serial import Interface
+from .VNA import VNA
+from .Version import Version
 
 if platform.system() != "Windows":
     import tty

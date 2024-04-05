@@ -1,6 +1,6 @@
-from src.Hardware import Hardware as hw
-from src.Hardware.VNA import VNA
+from src.NanoVNASaverHeadless import NanoVNASaverHeadless
 
 
 ############### TODO: Implement high level script for newbies. #######################
-pass
+t = NanoVNASaverHeadless(vna_index=0, verbose=True)
+t.kill()

@@ -21,8 +21,8 @@ import logging
 import serial
 from PyQt6.QtGui import QImage, QPixmap
 
-from Hardware.NanoVNA import NanoVNA
-from Hardware.Serial import Interface
+from .NanoVNA import NanoVNA
+from .Serial import Interface
 
 logger = logging.getLogger(__name__)
 
