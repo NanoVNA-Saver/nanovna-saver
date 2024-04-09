@@ -149,29 +149,22 @@ class CalDataSet(UserDict):
                 + "\n"
                 + "# Hz ShortR ShortI OpenR OpenI LoadR LoadI"
                 + (
-                    " ThroughR ThroughI ThrureflR"
-                    " ThrureflI IsolationR IsolationI\n"
+                    " ThroughR ThroughI ThrureflR" " ThrureflI IsolationR IsolationI\n"
                     if self.complete2port()
                     else "\n"
                 )
-                + "\n".join(
-                    [f"{self.data.get(freq)}" for freq in self.frequencies()]
-                )
+                + "\n".join([f"{self.data.get(freq)}" for freq in self.frequencies()])
                 + "\n"
             )
             if self.complete1port()
             else ""
         )
 
-    def _append_match(
-        self, m: re.Match, header: str, line_nr: int, line: str
-    ) -> None:
+    def _append_match(self, m: re.Match, header: str, line_nr: int, line: str) -> None:
         cal = m.groupdict()
         columns = {col[:-1] for col in cal.keys() if cal[col] and col != "freq"}
         if "through" in columns and header == "sol":
-            logger.warning(
-                "Through data with sol header. %i: %s", line_nr, line
-            )
+            logger.warning("Through data with sol header. %i: %s", line_nr, line)
         # fix short data (without thrurefl)
         if "thrurefl" in columns and "isolation" not in columns:
             cal["isolationr"] = cal["thrureflr"]
@@ -201,9 +194,7 @@ class CalDataSet(UserDict):
                 continue
             if m := RXP_CAL_HEADER.search(line):
                 if header:
-                    logger.warning(
-                        "Duplicate header in cal data. %i: %s", i, line
-                    )
+                    logger.warning("Duplicate header in cal data. %i: %s", i, line)
                 header = "through" if m.group("through") else "sol"
                 continue
             if not line or line.startswith("#"):
@@ -214,9 +205,7 @@ class CalDataSet(UserDict):
                 logger.warning("Illegal caldata. Line %i: %s", i, line)
                 continue
             if not header:
-                logger.warning(
-                    "Caldata without having read header: %i: %s", i, line
-                )
+                logger.warning("Caldata without having read header: %i: %s", i, line)
             self._append_match(m, header, line, i)
         return self
 
@@ -290,7 +279,7 @@ class Calibration:
 
     def isValid2Port(self) -> bool:
         return self.dataset.complete2port()
-    
+
     def _calc_port_1(self, freq: int, cal: CalData):
         g1 = self.gamma_short(freq)
         g2 = self.gamma_open(freq)
@@ -309,8 +298,7 @@ class Calibration:
         cal.e00 = (
             -(
                 (g2 * gm3 - g3 * gm3) * g1 * gm2
-                - (g2 * g3 * gm2 - g2 * g3 * gm3 - (g3 * gm2 - g2 * gm3) * g1)
-                * gm1
+                - (g2 * g3 * gm2 - g2 * g3 * gm3 - (g3 * gm2 - g2 * gm3) * g1) * gm1
             )
             / denominator
         )
@@ -388,9 +376,7 @@ class Calibration:
         return (
             (Zsp / 50.0 - 1.0)
             / (Zsp / 50.0 + 1.0)
-            * cmath.exp(
-                complex(0.0, -4.0 * math.pi * freq * cal_element.short_length)
-            )
+            * cmath.exp(complex(0.0, -4.0 * math.pi * freq * cal_element.short_length))
         )
 
     def gamma_open(self, freq: int) -> complex:
@@ -430,9 +416,7 @@ class Calibration:
         return (
             (Zl / 50.0 - 1.0)
             / (Zl / 50.0 + 1.0)
-            * cmath.exp(
-                complex(0.0, -4 * math.pi * freq * cal_element.load_length)
-            )
+            * cmath.exp(complex(0.0, -4 * math.pi * freq * cal_element.load_length))
         )
 
     def gamma_through(self, freq: int) -> complex:
@@ -524,8 +508,7 @@ class Calibration:
         i = self.interp
         s21 = (dp.z - i["e30"](dp.freq)) / i["e10e32"](dp.freq)
         s21 = s21 * (
-            i["e10e01"](dp.freq)
-            / (i["e11"](dp.freq) * dp11.z - i["delta_e"](dp.freq))
+            i["e10e01"](dp.freq) / (i["e11"](dp.freq) * dp11.z - i["delta_e"](dp.freq))
         )
         return Datapoint(dp.freq, s21.real, s21.imag)
 

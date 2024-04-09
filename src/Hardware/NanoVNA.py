@@ -62,9 +62,7 @@ class NanoVNA(VNA):
             self.serial.write("capture\r".encode("ascii"))
             self.serial.readline()
             self.serial.timeout = 4
-            image_data = self.serial.read(
-                self.screenwidth * self.screenheight * 2
-            )
+            image_data = self.serial.read(self.screenwidth * self.screenheight * 2)
             self.serial.timeout = timeout
         self.serial.timeout = timeout
         return image_data
@@ -145,9 +143,7 @@ class NanoVNA(VNA):
                 f"scan {self.start} {self.stop} {self.datapoints} 0b110"
             ):
                 data = line.split()
-                self._sweepdata.append(
-                    (f"{data[0]} {data[1]}", f"{data[2]} {data[3]}")
-                )
+                self._sweepdata.append((f"{data[0]} {data[1]}", f"{data[2]} {data[3]}"))
         if value == "data 0":
             return [x[0] for x in self._sweepdata]
         if value == "data 1":

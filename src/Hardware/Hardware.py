@@ -84,11 +84,7 @@ def _fix_v2_hwinfo(dev):
 
 def usb_typename(device: ListPortInfo) -> str:
     return next(
-        (
-            t.name
-            for t in USBDEVICETYPES
-            if device.vid == t.vid and device.pid == t.pid
-        ),
+        (t.name for t in USBDEVICETYPES if device.vid == t.vid and device.pid == t.pid),
         "",
     )
 
@@ -135,8 +131,10 @@ def get_portinfos() -> list[str]:
         portinfos.append(version)
     return portinfos
 
+
 def get_VNA(iface: Interface) -> VNA:
     return NAME2DEVICE[iface.comment](iface)
+
 
 def get_comment(iface: Interface) -> str:
     logger.info("Finding correct VNA type...")

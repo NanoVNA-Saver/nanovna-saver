@@ -43,9 +43,7 @@ WAIT = 0.05
 
 def _max_retries(bandwidth: int, datapoints: int) -> int:
     return round(
-        20
-        + 20 * (datapoints / 101)
-        + (1000 / bandwidth) ** 1.30 * (datapoints / 101)
+        20 + 20 * (datapoints / 101) + (1000 / bandwidth) ** 1.30 * (datapoints / 101)
     )
 
 
@@ -149,9 +147,7 @@ class VNA:
             ]
 
     def set_bandwidth(self, bandwidth: int):
-        bw_val = (
-            DISLORD_BW[bandwidth] if self.bw_method == "dislord" else bandwidth
-        )
+        bw_val = DISLORD_BW[bandwidth] if self.bw_method == "dislord" else bandwidth
         result = " ".join(self.exec_command(f"bandwidth {bw_val}"))
         if self.bw_method == "ttrftech" and result:
             raise IOError(f"set_bandwith({bandwidth}: {result}")

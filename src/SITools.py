@@ -116,9 +116,7 @@ class Value:
         fmt = self.fmt
         if math.isnan(self._value):
             return f"-{fmt.space_str}{self._unit}"
-        if fmt.assume_infinity and abs(self._value) >= 10 ** (
-            (fmt.max_offset + 1) * 3
-        ):
+        if fmt.assume_infinity and abs(self._value) >= 10 ** ((fmt.max_offset + 1) * 3):
             return (
                 ("-" if self._value < 0 else "")
                 + "\N{INFINITY}"
