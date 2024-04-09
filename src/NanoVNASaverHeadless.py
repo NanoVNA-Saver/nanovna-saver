@@ -5,6 +5,7 @@ from .RFTools import Datapoint
 import matplotlib.pyplot as plt
 import math
 
+
 class NanoVNASaverHeadless:
     def __init__(self, vna_index=0, verbose=False):
         self.verbose = verbose
@@ -39,7 +40,14 @@ class NanoVNASaverHeadless:
 
     def set_sweep(self, start, stop):
         self.vna.setSweep(start, stop)
-        print("Sweep set from " + str(self.vna.readFrequencies()[0]/1e9) + "e9" + " to " + str(self.vna.readFrequencies()[-1]/1e9) + "e9")
+        print(
+            "Sweep set from "
+            + str(self.vna.readFrequencies()[0] / 1e9)
+            + "e9"
+            + " to "
+            + str(self.vna.readFrequencies()[-1] / 1e9)
+            + "e9"
+        )
 
     def stream_data(self):
         data = self.get_data()
@@ -80,7 +88,7 @@ class NanoVNASaverHeadless:
             values = item.split()
             real.append(float(values[0]))
             imaginary.append(float(values[1]))
-        #add exception handling
+        # add exception handling
         return real, imaginary
 
     def kill(self):

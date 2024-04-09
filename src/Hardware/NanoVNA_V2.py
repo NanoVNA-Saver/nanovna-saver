@@ -121,10 +121,7 @@ class NanoVNA_V2(VNA):
             self.txPowerRanges = [
                 (
                     (140e6, self.sweep_max_freq_Hz),
-                    [
-                        _ADF4350_TXPOWER_DESC_MAP[value]
-                        for value in (3, 2, 1, 0)
-                    ],
+                    [_ADF4350_TXPOWER_DESC_MAP[value] for value in (3, 2, 1, 0)],
                 ),
             ]
 
@@ -172,14 +169,10 @@ class NanoVNA_V2(VNA):
                 self.serial.write(pack("<Q", 0))
                 sleep(WRITE_SLEEP)
                 # cmd: write register 0x30 to clear FIFO
-                self.serial.write(
-                    pack("<BBB", _CMD_WRITE, _ADDR_VALUES_FIFO, 0)
-                )
+                self.serial.write(pack("<BBB", _CMD_WRITE, _ADDR_VALUES_FIFO, 0))
                 sleep(WRITE_SLEEP)
                 # clear sweepdata
-                self._sweepdata = [(complex(), complex())] * (
-                    self.datapoints + s21hack
-                )
+                self._sweepdata = [(complex(), complex())] * (self.datapoints + s21hack)
                 pointstodo = self.datapoints + s21hack
                 # we read at most 255 values at a time and the time required
                 # empirically is just over 3 seconds for 101 points or
@@ -205,9 +198,7 @@ class NanoVNA_V2(VNA):
                     # timeout secs
                     arr = self.serial.read(nBytes)
                     if nBytes != len(arr):
-                        logger.warning(
-                            "expected %d bytes, got %d", nBytes, len(arr)
-                        )
+                        logger.warning("expected %d bytes, got %d", nBytes, len(arr))
                         # the way to retry on timeout is keep the data
                         # already read then try to read the rest of
                         # the data into the array
@@ -225,9 +216,7 @@ class NanoVNA_V2(VNA):
                 self._sweepdata = self._sweepdata[1:]
 
         idx = 1 if value == "data 1" else 0
-        return [
-            f"{str(x[idx].real)} {str(x[idx].imag)}" for x in self._sweepdata
-        ]
+        return [f"{str(x[idx].real)} {str(x[idx].imag)}" for x in self._sweepdata]
 
     def resetSweep(self, start: int, stop: int):
         self.setSweep(start, stop)
@@ -251,9 +240,7 @@ class NanoVNA_V2(VNA):
         return result
 
     def read_board_revision(self) -> "Version":
-        result = self._read_version(
-            _ADDR_DEVICE_VARIANT, _ADDR_HARDWARE_REVISION
-        )
+        result = self._read_version(_ADDR_DEVICE_VARIANT, _ADDR_HARDWARE_REVISION)
         logger.debug("read_board_revision: %s", result)
         return result
 
@@ -279,12 +266,8 @@ class NanoVNA_V2(VNA):
             _ADDR_SWEEP_START,
             max(50000, int(self.sweepStartHz - (self.sweepStepHz * s21hack))),
         )
-        cmd += pack(
-            "<BBQ", _CMD_WRITE8, _ADDR_SWEEP_STEP, int(self.sweepStepHz)
-        )
-        cmd += pack(
-            "<BBH", _CMD_WRITE2, _ADDR_SWEEP_POINTS, self.datapoints + s21hack
-        )
+        cmd += pack("<BBQ", _CMD_WRITE8, _ADDR_SWEEP_STEP, int(self.sweepStepHz))
+        cmd += pack("<BBH", _CMD_WRITE2, _ADDR_SWEEP_POINTS, self.datapoints + s21hack)
         cmd += pack("<BBH", _CMD_WRITE2, _ADDR_SWEEP_VALS_PER_FREQ, 1)
         with self.serial.lock:
             self.serial.write(cmd)
