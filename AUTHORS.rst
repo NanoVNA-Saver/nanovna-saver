@@ -42,3 +42,5 @@ Contributors
 * Thomas de Lellis <24543390+t52ta6ek@users.noreply.github.com>
 * zstadler <zeev.stadler@gmail.com>
 * tbergkvist <bergkvist.teo@protonmail.com>
+* timmythetank <maans.jacobsson@gmail.com>
+* ottoedgren <edgrenotto@gmail.com>
