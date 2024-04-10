@@ -18,12 +18,6 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-
-######################### TODO Rewrite this to be used headless.
-
-
-
-import logging
 import math
 import cmath
 import io
@@ -31,9 +25,7 @@ from operator import attrgetter
 
 from scipy.interpolate import interp1d
 
-from NanoVNASaver.RFTools import Datapoint
-
-logger = logging.getLogger(__name__)
+from .RFTools import Datapoint
 
 
 class Options:
@@ -96,7 +88,7 @@ class Options:
                 try:
                     self.resistance = int(rstr)
                 except ValueError:
-                    logger.warning("Non integer resistance value: %s", rstr)
+                    print("Non integer resistance value: %s", rstr)
                     self.resistance = int(float(rstr))
             else:
                 raise TypeError(f"Illegal option line: {line}")
@@ -199,7 +191,7 @@ class Touchstone:
         for line in fp:
             line = line.strip()
             if line.startswith("!"):
-                logger.info(line)
+                print(line)
                 self.comments.append(line)
                 continue
             return line
@@ -222,12 +214,12 @@ class Touchstone:
                 next(data_list).append(Datapoint(freq, z.real, z.imag))
 
     def load(self):
-        logger.info("Attempting to open file %s", self.filename)
+        print("Attempting to open file %s", self.filename)
         try:
             with open(self.filename, encoding="utf-8") as infile:
                 self.loads(infile.read())
         except IOError as e:
-            logger.exception("Failed to open %s: %s", self.filename, e)
+            print("Failed to open %s: %s", self.filename, e)
 
     def loads(self, s: str):
         """Parse touchstone 1.1 string input
@@ -236,7 +228,7 @@ class Touchstone:
         try:
             self._loads(s)
         except TypeError as e:
-            logger.exception("Failed to parse %s: %s", self.filename, e)
+            print("Failed to parse %s: %s", self.filename, e)
 
     def _loads(self, s: str):
         need_reorder = False
@@ -253,7 +245,7 @@ class Touchstone:
                     continue
                 # accept comment lines after header
                 if line.startswith("!"):
-                    logger.warning("Comment after header: %s", line)
+                    print("Comment after header: %s", line)
                     self.comments.append(line)
                     continue
 
@@ -267,7 +259,7 @@ class Touchstone:
 
                 # consistency checks
                 if freq <= prev_freq:
-                    logger.warning("Frequency not ascending: %s", line)
+                    print("Frequency not ascending: %s", line)
                     need_reorder = True
                 prev_freq = freq
 
@@ -278,7 +270,7 @@ class Touchstone:
 
                 self._append_line_data(freq, data)
             if need_reorder:
-                logger.warning("Reordering data")
+                print("Reordering data")
                 for datalist in self.sdata:
                     datalist.sort(key=attrgetter("freq"))
 
@@ -289,7 +281,7 @@ class Touchstone:
             nr_params: Number of s-parameters. 2 for s1p, 4 for s2p
         """
 
-        logger.info("Attempting to open file %s for writing", self.filename)
+        print("Attempting to open file %s for writing", self.filename)
         with open(self.filename, "w", encoding="utf-8") as outfile:
             outfile.write(self.saves(nr_params))
 

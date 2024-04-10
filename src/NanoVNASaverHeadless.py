@@ -1,7 +1,9 @@
 from .Hardware import Hardware as hw
-from .Hardware.VNA import VNA
 from .Calibration import Calibration
+from .CalibrationGuide import CalibrationGuide
+from .Touchstone import Touchstone
 from .RFTools import Datapoint
+from .SweepWorker import SweepWorker
 import matplotlib.pyplot as plt
 import math
 
@@ -12,31 +14,19 @@ class NanoVNASaverHeadless:
         self.iface = hw.get_interfaces()[vna_index]
         self.vna = hw.get_VNA(self.iface)
         self.calibration = Calibration()
+        self.touchstone = Touchstone("Save.s2p") # s2p for two port nanovnas.
+        self.worker = SweepWorker(self.vna, verbose)
+        self.CalibrationGuide = CalibrationGuide(self.calibration, self.touchstone, self.worker)
         if self.verbose:
             print("VNA is connected: ", self.vna.connected())
             print("Firmware: ", self.vna.readFirmware())
             print("Features: ", self.vna.read_features())
 
     def calibrate(self):
-        self.wait_for_ans("OPEN")
-        data = self.get_data()
-        open_dp_list = self.make_datapoint_list(data[4], data[0], data[1])
-        self.calibration.insert("open", open_dp_list)
-
-        self.wait_for_ans("SHORT")
-        data = self.get_data()
-        short_dp_list = self.make_datapoint_list(data[4], data[0], data[1])
-        self.calibration.insert("short", short_dp_list)
-
-        self.wait_for_ans("LOAD")
-        data = self.get_data()
-        load_dp_list = self.make_datapoint_list(data[4], data[0], data[1])
-        self.calibration.insert("load", load_dp_list)
-
-        self.wait_for_ans("THROUGH")
-        data = self.get_data()
-        thru_dp_list = self.make_datapoint_list(data[4], data[2], data[3])
-        self.calibration.insert("through", thru_dp_list)
+        proceed = self.CalibrationGuide.automaticCalibration()
+        while proceed:
+            self.CalibrationGuide.automaticCalibrationStep()
+        
 
     def set_sweep(self, start, stop):
         self.vna.setSweep(start, stop)

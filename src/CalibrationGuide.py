@@ -19,6 +19,7 @@
 
 from .Calibration import Calibration
 from .Sweep import SweepMode
+from .RFTools import corr_att_data
 
 class CalibrationGuide():# renamed from CalibrationWindow since it is no longer a window.
     nextStep = -1
@@ -28,9 +29,16 @@ class CalibrationGuide():# renamed from CalibrationWindow since it is no longer 
         self.data = touchstone
         self.worker = worker
 
+    def saveData(self, data, data21): # This function is werid and should probably be rewritten.
+        with self.dataLock:
+            self.data.s11 = data
+            self.data.s21 = data21
+            if self.s21att > 0:
+                self.data.s21 = corr_att_data(self.data.s21, self.s21att)
+
     def cal_save(self, name: str):
         if name in {"through", "isolation"}:
-            self.calibration.insert(name, self.data.s21) ######## FIX THIS
+            self.calibration.insert(name, self.data.s21)
         else:
             self.calibration.insert(name, self.data.s11)
 
@@ -47,7 +55,6 @@ class CalibrationGuide():# renamed from CalibrationWindow since it is no longer 
             self.saveData(
                 self.worker.rawData11,
                 self.worker.rawData21,
-                self.sweepSource,
             )
 
     def setOffsetDelay(self, value: float):
@@ -69,7 +76,6 @@ class CalibrationGuide():# renamed from CalibrationWindow since it is no longer 
             self.saveData(
                 self.worker.data11,
                 self.worker.data21,
-                self.sweepSource,
             )
 
     def calculate(self):
@@ -85,28 +91,19 @@ class CalibrationGuide():# renamed from CalibrationWindow since it is no longer 
 
         try:
             self.calibration.calc_corrections()
-            
-            if self.use_ideal_values:
-                self.calibration_source_label.setText(
-                    self.calibration.source
-                )
 
             if self.worker.rawData11:
                 # There's raw data, so we can get corrected data
                 if self.verbose:
                     print("Applying calibration to existing sweep data.")
-                (
-                    self.worker.data11,
-                    self.worker.data21,
-                ) = self.worker.applyCalibration(
-                    self.worker.rawData11, self.worker.rawData21
-                )
+                (self.worker.data11, self.worker.data21) = self.worker.applyCalibration(self.worker.rawData11, self.worker.rawData21)
+                
                 if self.verbose:
                     print("Saving and displaying corrected data.")
+
                 self.saveData(
                     self.worker.data11,
                     self.worker.data21,
-                    self.sweepSource,
                 )
         except ValueError as e:
             raise Exception(f"Error applying calibration: {str(e)}\nApplying calibration failed.")
@@ -155,30 +152,31 @@ class CalibrationGuide():# renamed from CalibrationWindow since it is no longer 
                 Once you are ready to proceed, press enter. (q to quit).""")
         
         if response.lower() == 'q':
-            return
+            return False
         print("Starting automatic calibration assistant.")
         if not self.vna.connected():
             print("NanoVNA not connected.\n\nPlease ensure the NanoVNA is connected before attempting calibration.")
-            return
+            return False
         
         if self.worker.sweep.properties.mode == SweepMode.CONTINOUS:
             print("Please disable continuous sweeping before attempting calibration.")
-            return
+            return False
 
         response = input("Calibrate short.\n\nPlease connect the short standard to port 0 of the NanoVNA.\n\n Press enter when you are ready to continue. (q to quit).")
 
         if response.lower() == 'q':
-            return
+            return False
         
         self.reset()
         self.calibration.source = "Calibration assistant"
         self.nextStep = 0
-        self.sweep_start()
-        return
+        self.automaticCalibrationStep()
+        self.worker.run()
+        return True
 
     def automaticCalibrationStep(self):
         if self.nextStep == -1:
-            return
+            return False
 
         if self.nextStep == 0:
             # Short
@@ -193,9 +191,9 @@ class CalibrationGuide():# renamed from CalibrationWindow since it is no longer 
 
             if response.lower() == 'q':
                 self.nextStep = -1
-                return
-            self.sweep_start()
-            return
+                return False
+            self.worker.run()
+            return True
 
         if self.nextStep == 1:
             # Open
@@ -207,9 +205,9 @@ class CalibrationGuide():# renamed from CalibrationWindow since it is no longer 
 
             if response.lower() == 'q':
                 self.nextStep = -1
-                return
-            self.sweep_start()
-            return
+                return False
+            self.worker.run()
+            return True
 
         if self.nextStep == 2:
             # Load
@@ -223,10 +221,10 @@ class CalibrationGuide():# renamed from CalibrationWindow since it is no longer 
             if response.lower() == 'q':
                 self.calculate()
                 self.nextStep = -1
-                return
+                return False
             if response.lower() == 'y' or response.lower() == "yes":
                 self.nextStep = -1
-                return
+                return True
 
             response = input("""Calibrate isolation\n
                              Please connect the load standard to port 1 of the 
@@ -235,9 +233,9 @@ class CalibrationGuide():# renamed from CalibrationWindow since it is no longer 
 
             if response.lower() == 'q':
                 self.nextStep = -1
-                return
-            self.sweep_start()
-            return
+                return False
+            self.worker.run()
+            return True
 
         if self.nextStep == 3:
             # Isolation
@@ -249,11 +247,10 @@ class CalibrationGuide():# renamed from CalibrationWindow since it is no longer 
                              Press Ok when you are ready to continue. (q to quit).""")
 
             if response.lower() == 'q':
-                self.btn_automatic.setDisabled(False)
                 self.nextStep = -1
-                return
-            self.sweep_start()
-            return
+                return False
+            self.worker.run()
+            return True
 
         if self.nextStep == 4:
             # Done
@@ -264,11 +261,9 @@ class CalibrationGuide():# renamed from CalibrationWindow since it is no longer 
                              enter to apply the calibration parameters. (q to quit).""")
 
             if response.lower() == 'q':
-                self.btn_automatic.setDisabled(False)
                 self.nextStep = -1
-                return
+                return False
 
             self.calculate()
-            self.btn_automatic.setDisabled(False)
             self.nextStep = -1
-            return
+            return True
