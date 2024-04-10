@@ -18,40 +18,15 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from .Calibration import Calibration
-from .Settings.Sweep import SweepMode
+from .Sweep import SweepMode
 
-
-class CalibrationHelpers():# renamed from CalibrationWindow since it is no longer a window.
+class CalibrationGuide():# renamed from CalibrationWindow since it is no longer a window.
     nextStep = -1
 
-    def __init__(self, calibration, settings, touchstone):
+    def __init__(self, calibration, touchstone, worker):
         self.calibration = calibration
-        self.settings = settings
         self.data = touchstone
-        
-        self.listCalibrationStandards() # The only thing in the init that was worth saving. 
-
-
-    def checkExpertUser(self):
-        if not self.settings.value("ExpertCalibrationUser", False, bool):
-            response = input(
-                """Are you sure? \n
-                
-                    Use of the manual calibration buttons is non-intuitive
-                    and primarily suited for users with very specialized
-                    needs. The buttons do not sweep for you nor do\n
-                    they interact with the NanoVNA calibration.\n\n
-                    If you are trying to do a calibration of the NanoVNA,\n
-                    do so on the device itself instead. If you are trying to\n
-                    do a calibration with NanoVNA-Saver, use the Calibration assistant\n
-                    if possible.\n\n
-                    Are you certain you know what you are doing? (Y/n)
-                """)
-            if response.upper() == "Y" or response.upper() == "YES":
-                self.settings.setValue("ExpertCalibrationUser", True)
-                return True
-            return False
-        return True
+        self.worker = worker
 
     def cal_save(self, name: str):
         if name in {"through", "isolation"}:
@@ -60,16 +35,7 @@ class CalibrationHelpers():# renamed from CalibrationWindow since it is no longe
             self.calibration.insert(name, self.data.s11)
 
     def manual_save(self, name: str):
-        if self.checkExpertUser():
-            self.cal_save(name)
-
-    def listCalibrationStandards(self):
-        num_standards = self.settings.beginReadArray("CalibrationStandards")
-        for i in range(num_standards):
-            self.settings.setArrayIndex(i)
-            name = self.settings.value("Name", defaultValue="INVALID NAME")
-            print(name)
-        self.settings.endArray()
+        self.cal_save(name)
 
     def reset(self):
         self.calibration = Calibration()
@@ -83,7 +49,6 @@ class CalibrationHelpers():# renamed from CalibrationWindow since it is no longe
                 self.worker.rawData21,
                 self.sweepSource,
             )
-            self.worker.signals.updated.emit()
 
     def setOffsetDelay(self, value: float):
         if self.verbose:
@@ -106,7 +71,6 @@ class CalibrationHelpers():# renamed from CalibrationWindow since it is no longe
                 self.worker.data21,
                 self.sweepSource,
             )
-            self.worker.signals.updated.emit()
 
     def calculate(self):
         cal_element = self.calibration.cal_element
@@ -144,7 +108,6 @@ class CalibrationHelpers():# renamed from CalibrationWindow since it is no longe
                     self.worker.data21,
                     self.sweepSource,
                 )
-                self.worker.signals.updated.emit()
         except ValueError as e:
             raise Exception(f"Error applying calibration: {str(e)}\nApplying calibration failed.")
 
@@ -161,7 +124,6 @@ class CalibrationHelpers():# renamed from CalibrationWindow since it is no longe
             if i == 2 and not self.calibration.isValid2Port():
                 break
         self.calculate()
-        self.settings.setValue("CalibrationFile", filename)
 
     def saveCalibration(self, filename):
         if not self.calibration.isCalculated:
@@ -169,7 +131,6 @@ class CalibrationHelpers():# renamed from CalibrationWindow since it is no longe
 
         try:
             self.calibration.save(filename)
-            self.settings.setValue("CalibrationFile", filename)
             return True
         except Exception as e:
             print("Save failed: ", e)
@@ -185,6 +146,7 @@ class CalibrationHelpers():# renamed from CalibrationWindow since it is no longe
                 Before starting, ensure you have Open, Short and Load\n
                 standards available and the cables you wish to have\n
                 calibrated connected to the device.<br><br>\n
+                Make sure sweep is NOT in continuous mode.\n
                 If you want a 2-port calibration, also have a through\n
                 connector on hand.<br><br>\n
                 <b>The best results are achieved by having the NanoVNA\n
@@ -198,9 +160,9 @@ class CalibrationHelpers():# renamed from CalibrationWindow since it is no longe
         if not self.vna.connected():
             print("NanoVNA not connected.\n\nPlease ensure the NanoVNA is connected before attempting calibration.")
             return
-
-        if self.sweep.properties.mode == SweepMode.CONTINOUS:
-            print("Continuous sweep enabled.\n\nPlease disable continuous sweeping before attempting calibration.")
+        
+        if self.worker.sweep.properties.mode == SweepMode.CONTINOUS:
+            print("Please disable continuous sweeping before attempting calibration.")
             return
 
         response = input("Calibrate short.\n\nPlease connect the short standard to port 0 of the NanoVNA.\n\n Press enter when you are ready to continue. (q to quit).")
@@ -211,15 +173,11 @@ class CalibrationHelpers():# renamed from CalibrationWindow since it is no longe
         self.reset()
         self.calibration.source = "Calibration assistant"
         self.nextStep = 0
-        self.worker.signals.finished.connect(self.automaticCalibrationStep)
         self.sweep_start()
         return
 
     def automaticCalibrationStep(self):
         if self.nextStep == -1:
-            self.worker.signals.finished.disconnect(
-                self.automaticCalibrationStep
-            )
             return
 
         if self.nextStep == 0:
@@ -235,9 +193,6 @@ class CalibrationHelpers():# renamed from CalibrationWindow since it is no longe
 
             if response.lower() == 'q':
                 self.nextStep = -1
-                self.worker.signals.finished.disconnect(
-                    self.automaticCalibrationStep
-                )
                 return
             self.sweep_start()
             return
@@ -252,9 +207,6 @@ class CalibrationHelpers():# renamed from CalibrationWindow since it is no longe
 
             if response.lower() == 'q':
                 self.nextStep = -1
-                self.worker.signals.finished.disconnect(
-                    self.automaticCalibrationStep
-                )
                 return
             self.sweep_start()
             return
@@ -271,15 +223,9 @@ class CalibrationHelpers():# renamed from CalibrationWindow since it is no longe
             if response.lower() == 'q':
                 self.calculate()
                 self.nextStep = -1
-                self.worker.signals.finished.disconnect(
-                    self.automaticCalibrationStep
-                )
                 return
             if response.lower() == 'y' or response.lower() == "yes":
                 self.nextStep = -1
-                self.worker.signals.finished.disconnect(
-                    self.automaticCalibrationStep
-                )
                 return
 
             response = input("""Calibrate isolation\n
@@ -289,9 +235,6 @@ class CalibrationHelpers():# renamed from CalibrationWindow since it is no longe
 
             if response.lower() == 'q':
                 self.nextStep = -1
-                self.worker.signals.finished.disconnect(
-                    self.automaticCalibrationStep
-                )
                 return
             self.sweep_start()
             return
@@ -308,9 +251,6 @@ class CalibrationHelpers():# renamed from CalibrationWindow since it is no longe
             if response.lower() == 'q':
                 self.btn_automatic.setDisabled(False)
                 self.nextStep = -1
-                self.worker.signals.finished.disconnect(
-                    self.automaticCalibrationStep
-                )
                 return
             self.sweep_start()
             return
@@ -326,15 +266,9 @@ class CalibrationHelpers():# renamed from CalibrationWindow since it is no longe
             if response.lower() == 'q':
                 self.btn_automatic.setDisabled(False)
                 self.nextStep = -1
-                self.worker.signals.finished.disconnect(
-                    self.automaticCalibrationStep
-                )
                 return
 
             self.calculate()
             self.btn_automatic.setDisabled(False)
             self.nextStep = -1
-            self.worker.signals.finished.disconnect(
-                self.automaticCalibrationStep
-            )
             return
