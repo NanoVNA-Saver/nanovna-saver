@@ -23,9 +23,9 @@ from time import sleep
 
 import numpy as np
 
-from. Calibration import correct_delay
+from .Calibration import correct_delay
 from .Sweep import Sweep, SweepMode
-from RFTools import Datapoint
+from .RFTools import Datapoint
 
 
 def truncate(values: list[list[tuple]], count: int, verbose=False) -> list[list[tuple]]:
