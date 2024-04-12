@@ -3,20 +3,20 @@ from .Calibration import Calibration
 from .CalibrationGuide import CalibrationGuide
 from .Touchstone import Touchstone
 from .SweepWorker import SweepWorker
-import matplotlib.pyplot as plt
-import math
 from datetime import datetime
+import threading
 
 
 class NanoVNASaverHeadless:
-    def __init__(self, vna_index=0, verbose=False):
+    def __init__(self, vna_index=0, verbose=False, save_path="./Save.s2p"):
         self.verbose = verbose
+        self.save_path = save_path
         self.iface = hw.get_interfaces()[vna_index]
         self.vna = hw.get_VNA(self.iface)
         self.calibration = Calibration()
-        self.touchstone = Touchstone("Save.s2p")  # s2p for two port nanovnas.
+        self.touchstone = Touchstone(self.save_path)  # s2p for two port nanovnas.
         self.worker = SweepWorker(self.vna, self.calibration, self.touchstone, verbose)
-        self.CalibrationGuide = CalibrationGuide(self.calibration, self.worker)
+        self.CalibrationGuide = CalibrationGuide(self.calibration, self.worker, verbose)
         if self.verbose:
             print("VNA is connected: ", self.vna.connected())
             print("Firmware: ", self.vna.readFirmware())
@@ -35,45 +35,64 @@ class NanoVNASaverHeadless:
 
     def set_sweep(self, start, stop, segments, points):
         self.worker.sweep.update(start, stop, segments, points)
-        print(
-            "Sweep set from "
-            + str(self.worker.sweep.start / 1e9)
-            + "e9"
-            + " to "
-            + str(self.worker.sweep.end  / 1e9)
-            + "e9"
-        )
+        if self.verbose:
+            print(
+                "Sweep set from "
+                + str(self.worker.sweep.start / 1e9)
+                + "e9"
+                + " to "
+                + str(self.worker.sweep.end / 1e9)
+                + "e9"
+            )
 
     def stream_data(self):
-        self.worker.sweep.set_mode("CONTINOUS")
-        self.worker.run()
-        #await self.loop()
-        for i in range (0, 20):
-            data = self.get_data()
-            print(data[0][30])
+        self._stream_data()
+        try:
+            yield list(
+                self._access_data()
+            )  # Monitor and process data in the main thread
+        except Exception as e:
+            if self.verbose:
+                print("Exception in data stream: ", e)
+        finally:
+            if self.verbose:
+                print("Stopping worker.")
+            self._stop_worker()
 
-    async def loop(self):
+    def _stream_data(self):
         self.worker.sweep.set_mode("CONTINOUS")
-        self.worker.run()
+        # Start the worker in a new thread
+        self.worker_thread = threading.Thread(target=self.worker.run)
+        self.worker_thread.start()
+
+    def _access_data(self):
+        # Access data while the worker is running
+        while self.worker.running:
+            yield self.get_data()
+
+    def _stop_worker(self):
+        if self.verbose:
+            print("NanoVNASaverHeadless is stopping sweepworker now.")
+        self.worker.running = False
+        self.worker_thread.join()
 
     def get_data(self):
-        dataS11 = self.worker.data.s11
-        dataS21 = self.worker.data.s21
+        data_s11 = self.worker.data11
+        data_s21 = self.worker.data21
         reflRe = []
         reflIm = []
         thruRe = []
         thruIm = []
         freq = []
-        for datapoint in dataS11:
+        for datapoint in data_s11:
             reflRe.append(datapoint.re)
             reflIm.append(datapoint.im)
             freq.append(datapoint.freq)
-        for datapoint in dataS21:
+        for datapoint in data_s21:
             thruRe.append(datapoint.re)
             thruIm.append(datapoint.im)
 
         return reflRe, reflIm, thruRe, thruIm, freq
-
 
     def kill(self):
         self.vna.disconnect()

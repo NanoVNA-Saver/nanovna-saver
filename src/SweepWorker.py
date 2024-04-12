@@ -22,8 +22,7 @@ from time import sleep
 import numpy as np
 import threading
 from .RFTools import corr_att_data
-
-from .Sweep import Sweep, SweepMode
+from .Sweep import Sweep
 from .RFTools import Datapoint
 
 
@@ -60,7 +59,6 @@ class SweepWorker:
         self.calibration = calibration
         self.data = data
         self.init_data()
-        self.stopped = False
         self.running = False
         self.error_message = ""
         self.offsetDelay = 0
@@ -69,7 +67,7 @@ class SweepWorker:
 
     def saveData(
         self, data11, data21
-    ):  # This function is werid and should probably be rewritten.
+    ) -> None:  # This function is werid and should probably be rewritten.
         with self.dataLock:
             self.data.s11 = data11
             self.data.s21 = data21
@@ -114,15 +112,13 @@ class SweepWorker:
 
         self.percentage = 100
         if self.verbose:
-            print('Sending "finished" signal')
+            print("Sweep is finished.")
         self.running = False
 
     def _run_loop(self) -> None:
         sweep = self.sweep
         averages = (
-            sweep.properties.averages[0]
-            if sweep.properties.mode == SweepMode.AVERAGE
-            else 1
+            sweep.properties.averages[0] if sweep.properties.mode == "AVERAGE" else 1
         )
         if self.verbose:
             print("%d averages", averages)
@@ -131,7 +127,7 @@ class SweepWorker:
             for i in range(sweep.segments):
                 if self.verbose:
                     print("Sweep segment no %d", i)
-                if self.stopped:
+                if not self.running:
                     if self.verbose:
                         print("Stopping sweeping as signalled")
                     break
@@ -142,7 +138,7 @@ class SweepWorker:
                 )
                 self.percentage = (i + 1) * 100 / sweep.segments
                 self.updateData(freq, values11, values21, i)
-            if sweep.properties.mode != SweepMode.CONTINOUS or self.stopped:
+            if sweep.properties.mode != "CONTINOUS" or not self.running:
                 break
 
     def init_data(self):
@@ -189,8 +185,6 @@ class SweepWorker:
                 len(self.data21),
             )
         self.saveData(self.data11, self.data21)
-        if self.verbose:
-            print('Sending "updated" signal')
 
     def applyCalibration(
         self, raw_data11: list[Datapoint], raw_data21: list[Datapoint]
@@ -231,7 +225,7 @@ class SweepWorker:
         if self.verbose:
             print("Reading from %d to %d. Averaging %d values", start, stop, averages)
         for i in range(averages):
-            if self.stopped:
+            if not self.running:
                 if self.verbose:
                     print("Stopping averaging as signalled.")
                 if averages == 1:
@@ -338,8 +332,3 @@ class SweepWorker:
                         f"device settings screen."
                     )
         return returndata
-
-    def gui_error(self, message: str):
-        self.error_message = message
-        self.stopped = True
-        self.running = False
