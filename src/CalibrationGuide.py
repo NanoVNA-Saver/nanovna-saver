@@ -19,22 +19,17 @@
 
 from .Calibration import Calibration
 from .Sweep import SweepMode
-from .RFTools import corr_att_data
 
-class CalibrationGuide():# renamed from CalibrationWindow since it is no longer a window.
+
+class CalibrationGuide:  # renamed from CalibrationWindow since it is no longer a window.
     nextStep = -1
 
-    def __init__(self, calibration, touchstone, worker):
+    def __init__(self, calibration, worker, verbose=False):
         self.calibration = calibration
-        self.data = touchstone
         self.worker = worker
-
-    def saveData(self, data, data21): # This function is werid and should probably be rewritten.
-        with self.dataLock:
-            self.data.s11 = data
-            self.data.s21 = data21
-            if self.s21att > 0:
-                self.data.s21 = corr_att_data(self.data.s21, self.s21att)
+        self.vna = worker.vna
+        self.data = worker.data
+        self.verbose = verbose
 
     def cal_save(self, name: str):
         if name in {"through", "isolation"}:
@@ -52,7 +47,7 @@ class CalibrationGuide():# renamed from CalibrationWindow since it is no longer 
             # There's raw data, so we can get corrected data
             if self.verbose:
                 print("Saving and displaying raw data.")
-            self.saveData(
+            self.worker.saveData(
                 self.worker.rawData11,
                 self.worker.rawData21,
             )
@@ -73,15 +68,17 @@ class CalibrationGuide():# renamed from CalibrationWindow since it is no longer 
             )
             if self.verbose:
                 print("Saving and displaying corrected data.")
-            self.saveData(
+            self.worker.saveData(
                 self.worker.data11,
                 self.worker.data21,
             )
 
     def calculate(self):
         cal_element = self.calibration.cal_element
-        if False: #TODO ensure sweep is not currently running.
-            print("Unable to apply calibration while a sweep is running. Please stop the sweep and try again.")
+        if False:  # TODO ensure sweep is not currently running.
+            print(
+                "Unable to apply calibration while a sweep is running. Please stop the sweep and try again."
+            )
             return
 
         cal_element.short_is_ideal = True
@@ -96,18 +93,21 @@ class CalibrationGuide():# renamed from CalibrationWindow since it is no longer 
                 # There's raw data, so we can get corrected data
                 if self.verbose:
                     print("Applying calibration to existing sweep data.")
-                (self.worker.data11, self.worker.data21) = self.worker.applyCalibration(self.worker.rawData11, self.worker.rawData21)
-                
+                (self.worker.data11, self.worker.data21) = self.worker.applyCalibration(
+                    self.worker.rawData11, self.worker.rawData21
+                )
+
                 if self.verbose:
                     print("Saving and displaying corrected data.")
 
-                self.saveData(
+                self.worker.saveData(
                     self.worker.data11,
                     self.worker.data21,
                 )
         except ValueError as e:
-            raise Exception(f"Error applying calibration: {str(e)}\nApplying calibration failed.")
-
+            raise Exception(
+                f"Error applying calibration: {str(e)}\nApplying calibration failed."
+            )
 
     def loadCalibration(self, filename):
         if filename:
@@ -149,29 +149,34 @@ class CalibrationGuide():# renamed from CalibrationWindow since it is no longer 
                 <b>The best results are achieved by having the NanoVNA\n
                 calibrated on-device for the full span of interest and stored\n
                 in save slot 0 before starting.</b><br><br>\n\n
-                Once you are ready to proceed, press enter. (q to quit).""")
-        
-        if response.lower() == 'q':
+                Once you are ready to proceed, press enter. (q to quit)."""
+        )
+
+        if response.lower() == "q":
             return False
         print("Starting automatic calibration assistant.")
         if not self.vna.connected():
-            print("NanoVNA not connected.\n\nPlease ensure the NanoVNA is connected before attempting calibration.")
+            print(
+                "NanoVNA not connected.\n\nPlease ensure the NanoVNA is connected before attempting calibration."
+            )
             return False
-        
+
         if self.worker.sweep.properties.mode == SweepMode.CONTINOUS:
             print("Please disable continuous sweeping before attempting calibration.")
             return False
 
-        response = input("Calibrate short.\n\nPlease connect the short standard to port 0 of the NanoVNA.\n\n Press enter when you are ready to continue. (q to quit).")
+        response = input(
+            "Calibrate short.\n\nPlease connect the short standard to port 0 of the NanoVNA.\n\n Press enter when you are ready to continue. (q to quit)."
+        )
 
-        if response.lower() == 'q':
+        if response.lower() == "q":
             return False
-        
+
         self.reset()
         self.calibration.source = "Calibration assistant"
         self.nextStep = 0
-        self.automaticCalibrationStep()
         self.worker.run()
+        self.automaticCalibrationStep()
         return True
 
     def automaticCalibrationStep(self):
@@ -183,13 +188,11 @@ class CalibrationGuide():# renamed from CalibrationWindow since it is no longer 
             self.cal_save("short")
             self.nextStep = 1
 
-            response = input("""Calibrate open.\n\nPlease connect the open
-                    standard to port 0 of the NanoVNA.\n\n
-                    Either use a supplied open, or leave the end of the
-                    cable unconnected if desired.\n\n
-                    Press enter when you are ready to continue. (q to quit).""")
+            response = input(
+                """Calibrate open.\n\nPlease connect the open standard to port 0 of the NanoVNA.\n\nEither use a supplied open, or leave the end of the cable unconnected if desired.\n\nPress enter when you are ready to continue. (q to quit)."""
+            )
 
-            if response.lower() == 'q':
+            if response.lower() == "q":
                 self.nextStep = -1
                 return False
             self.worker.run()
@@ -199,11 +202,11 @@ class CalibrationGuide():# renamed from CalibrationWindow since it is no longer 
             # Open
             self.cal_save("open")
             self.nextStep = 2
-            response = input("""Calibrate load
-                    Please connect the "load" standard to port 0 of the NanoVNA.\n\n
-                    Press Ok when you are ready to continue. (q to quit).""")
+            response = input(
+                """Calibrate load.\nPlease connect the "load" standard to port 0 of the NanoVNA.\n\nPress Ok when you are ready to continue. (q to quit)."""
+            )
 
-            if response.lower() == 'q':
+            if response.lower() == "q":
                 self.nextStep = -1
                 return False
             self.worker.run()
@@ -213,25 +216,22 @@ class CalibrationGuide():# renamed from CalibrationWindow since it is no longer 
             # Load
             self.cal_save("load")
             self.nextStep = 3
-            response = input("""1-port calibration complete,\n
-                    The required steps for a 1-port calibration are now complete.\n\n
-                    Do you wish to continue and perform a 2-port calibration,
-                    enter Y.\nTo apply the 1-port calibration and stop, press q""")
+            response = input(
+                """1-port calibration complete.\nThe required steps for a 1-port calibration are now complete.\n\nDo you wish to continue and perform a 2-port calibration, enter Y.\nTo apply the 1-port calibration and stop, press q. Answer:"""
+            )
 
-            if response.lower() == 'q':
+            if response.lower() == "q":
                 self.calculate()
                 self.nextStep = -1
                 return False
-            if response.lower() == 'y' or response.lower() == "yes":
-                self.nextStep = -1
-                return True
+            if response.lower() == "y" or response.lower() == "yes" or response == "":
+                self.nextStep = 3
 
-            response = input("""Calibrate isolation\n
-                             Please connect the load standard to port 1 of the 
-                             NanoVNA.\n\n If available, also connect a load standard to 
-                             port 0.\n\n Press enter when you are ready to continue. (q to quit).""")
+            response = input(
+                """Calibrate isolation\nPlease connect the load standard to port 1 of the NanoVNA.\n\n If available, also connect a load standard to port 0.\n\n Press enter when you are ready to continue. (q to quit)."""
+            )
 
-            if response.lower() == 'q':
+            if response.lower() == "q":
                 self.nextStep = -1
                 return False
             self.worker.run()
@@ -241,12 +241,11 @@ class CalibrationGuide():# renamed from CalibrationWindow since it is no longer 
             # Isolation
             self.cal_save("isolation")
             self.nextStep = 4
-            response = input("""Calibrate through.\n
-                             Please connect the "through" standard between
-                             port 0 and port 1 of the NanoVNA.\n\n
-                             Press Ok when you are ready to continue. (q to quit).""")
+            response = input(
+                """Calibrate through.\nPlease connect the "through" standard between port 0 and port 1 of the NanoVNA.\n\nPress Ok when you are ready to continue. (q to quit)."""
+            )
 
-            if response.lower() == 'q':
+            if response.lower() == "q":
                 self.nextStep = -1
                 return False
             self.worker.run()
@@ -256,11 +255,11 @@ class CalibrationGuide():# renamed from CalibrationWindow since it is no longer 
             # Done
             self.cal_save("thrurefl")
             self.cal_save("through")
-            response = input("""Calibrate complete.\n
-                             The calibration process is now complete. Press
-                             enter to apply the calibration parameters. (q to quit).""")
+            response = input(
+                """Calibrate complete.\nThe calibration process is now complete. Press enter to apply the calibration parameters. (q to quit)."""
+            )
 
-            if response.lower() == 'q':
+            if response.lower() == "q":
                 self.nextStep = -1
                 return False
 

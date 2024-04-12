@@ -14,9 +14,9 @@ class NanoVNASaverHeadless:
         self.iface = hw.get_interfaces()[vna_index]
         self.vna = hw.get_VNA(self.iface)
         self.calibration = Calibration()
-        self.touchstone = Touchstone("Save.s2p") # s2p for two port nanovnas.
-        self.worker = SweepWorker(self.vna, verbose)
-        self.CalibrationGuide = CalibrationGuide(self.calibration, self.touchstone, self.worker)
+        self.touchstone = Touchstone("Save.s2p")  # s2p for two port nanovnas.
+        self.worker = SweepWorker(self.vna, self.calibration, self.touchstone, verbose)
+        self.CalibrationGuide = CalibrationGuide(self.calibration, self.worker)
         if self.verbose:
             print("VNA is connected: ", self.vna.connected())
             print("Firmware: ", self.vna.readFirmware())
@@ -25,8 +25,7 @@ class NanoVNASaverHeadless:
     def calibrate(self):
         proceed = self.CalibrationGuide.automaticCalibration()
         while proceed:
-            self.CalibrationGuide.automaticCalibrationStep()
-        
+            proceed = self.CalibrationGuide.automaticCalibrationStep()
 
     def set_sweep(self, start, stop):
         self.vna.setSweep(start, stop)
@@ -43,7 +42,7 @@ class NanoVNASaverHeadless:
         data = self.get_data()
         magnList = []
         for re, im in zip(data[0], data[1]):
-            magn = (math.sqrt(re**2+im**2))
+            magn = math.sqrt(re**2 + im**2)
             magnList.append(magn)
         plt.plot(data[4], magnList)
         plt.show()
@@ -55,17 +54,17 @@ class NanoVNASaverHeadless:
         thruRe, thruImag = self.split_data(dataS21)
         freq = self.vna.readFrequencies()
         return reflRe, reflImag, thruRe, thruImag, freq
-    
+
     def make_datapoint_list(self, freqList, reList, imList):
         list = []
         for freq, re, im in zip(freqList, reList, imList):
             list.append(Datapoint(freq, re, im))
         return list
-    
+
     def wait_for_ans(self, string):
         while True:
             answer = input("Connect " + string + ": ").lower()
-            if answer == 'done':
+            if answer == "done":
                 print("Proceeding...")
                 break
             else:

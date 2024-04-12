@@ -18,12 +18,11 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-
 from time import sleep
-
 import numpy as np
+import threading
+from .RFTools import corr_att_data
 
-from .Calibration import correct_delay
 from .Sweep import Sweep, SweepMode
 from .RFTools import Datapoint
 
@@ -46,24 +45,36 @@ def truncate(values: list[list[tuple]], count: int, verbose=False) -> list[list[
     return np.swapaxes(truncated, 0, 1).tolist()
 
 
-class SweepWorker():
-    def __init__(self, vna, verbose=False):
+class SweepWorker:
+    def __init__(self, vna, calibration, data, verbose=False):
         if verbose:
             print("Initializing SweepWorker")
         self.sweep = Sweep()
-        self.setAutoDelete(False)
         self.percentage = 0
         self.data11: list[Datapoint] = []
         self.data21: list[Datapoint] = []
         self.rawData11: list[Datapoint] = []
         self.rawData21: list[Datapoint] = []
+        self.verbose = verbose
+        self.vna = vna
+        self.calibration = calibration
+        self.data = data
         self.init_data()
         self.stopped = False
         self.running = False
         self.error_message = ""
         self.offsetDelay = 0
-        self.verbose = verbose
-        self.vna = vna
+        self.dataLock = threading.Lock()
+        self.s21att = 0.0
+
+    def saveData(
+        self, data, data21
+    ):  # This function is werid and should probably be rewritten.
+        with self.dataLock:
+            self.data.s11 = data
+            self.data.s21 = data21
+            if self.s21att > 0:
+                self.data.s21 = corr_att_data(self.data.s21, self.s21att)
 
     def run(self) -> None:
         try:
@@ -172,7 +183,11 @@ class SweepWorker():
             self.rawData21[offset + i] = raw_data21[i]
 
         if self.verbose:
-            print("Saving data to application (%d and %d points)", len(self.data11), len(self.data21))
+            print(
+                "Saving data to application (%d and %d points)",
+                len(self.data11),
+                len(self.data21),
+            )
         self.saveData(self.data11, self.data21)
         if self.verbose:
             print('Sending "updated" signal')
@@ -187,9 +202,7 @@ class SweepWorker():
             data11 = raw_data11.copy()
             data21 = raw_data21.copy()
         elif self.calibration.isValid1Port():
-            data11.extend(
-                self.calibration.correct11(dp) for dp in raw_data11
-            )
+            data11.extend(self.calibration.correct11(dp) for dp in raw_data11)
         else:
             data11 = raw_data11.copy()
 
@@ -202,10 +215,12 @@ class SweepWorker():
 
         if self.offsetDelay != 0:
             data11 = [
-                correct_delay(dp, self.offsetDelay, reflect=True)
+                self.calibration.correct_delay(dp, self.offsetDelay, reflect=True)
                 for dp in data11
             ]
-            data21 = [correct_delay(dp, self.offsetDelay) for dp in data21]
+            data21 = [
+                self.calibration.correct_delay(dp, self.offsetDelay) for dp in data21
+            ]
 
         return data11, data21
 
@@ -312,7 +327,9 @@ class SweepWorker():
                         print("trying to reconnect")
                     self.vna.reconnect()
                 if count >= 10:
-                    print("Tried and failed to read %s %d times. Giving up.", data, count)
+                    print(
+                        "Tried and failed to read %s %d times. Giving up.", data, count
+                    )
                     raise IOError(
                         f"Failed reading {data} {count} times.\n"
                         f"Data outside expected valid ranges,"
