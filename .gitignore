@@ -54,3 +54,7 @@ MANIFEST
 .venv*/
 .conda*/
 .python-version
+
+# NanoVNASaverHeadless specific
+*.s1p
+*.s2p
