@@ -6,6 +6,7 @@ from .RFTools import Datapoint
 from .SweepWorker import SweepWorker
 import matplotlib.pyplot as plt
 import math
+from datetime import datetime
 
 
 class NanoVNASaverHeadless:
@@ -22,10 +23,16 @@ class NanoVNASaverHeadless:
             print("Firmware: ", self.vna.readFirmware())
             print("Features: ", self.vna.read_features())
 
-    def calibrate(self):
+    def calibrate(self, savefile=None, load_file=False):
+        if load_file:
+            self.CalibrationGuide.loadCalibration(load_file)
+            return
         proceed = self.CalibrationGuide.automaticCalibration()
         while proceed:
             proceed = self.CalibrationGuide.automaticCalibrationStep()
+        if savefile is None:
+            savefile = f"./Calibration_file_{datetime.now()}.s2p"
+        self.CalibrationGuide.saveCalibration(savefile)
 
     def set_sweep(self, start, stop):
         self.vna.setSweep(start, stop)
