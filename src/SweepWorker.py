@@ -68,10 +68,10 @@ class SweepWorker:
         self.s21att = 0.0
 
     def saveData(
-        self, data, data21
+        self, data11, data21
     ):  # This function is werid and should probably be rewritten.
         with self.dataLock:
-            self.data.s11 = data
+            self.data.s11 = data11
             self.data.s21 = data21
             if self.s21att > 0:
                 self.data.s21 = corr_att_data(self.data.s21, self.s21att)

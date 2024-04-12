@@ -2,7 +2,6 @@ from .Hardware import Hardware as hw
 from .Calibration import Calibration
 from .CalibrationGuide import CalibrationGuide
 from .Touchstone import Touchstone
-from .RFTools import Datapoint
 from .SweepWorker import SweepWorker
 import matplotlib.pyplot as plt
 import math
@@ -34,58 +33,47 @@ class NanoVNASaverHeadless:
             savefile = f"./Calibration_file_{datetime.now()}.s2p"
         self.CalibrationGuide.saveCalibration(savefile)
 
-    def set_sweep(self, start, stop):
-        self.vna.setSweep(start, stop)
+    def set_sweep(self, start, stop, segments, points):
+        self.worker.sweep.update(start, stop, segments, points)
         print(
             "Sweep set from "
-            + str(self.vna.readFrequencies()[0] / 1e9)
+            + str(self.worker.sweep.start / 1e9)
             + "e9"
             + " to "
-            + str(self.vna.readFrequencies()[-1] / 1e9)
+            + str(self.worker.sweep.end  / 1e9)
             + "e9"
         )
 
     def stream_data(self):
-        data = self.get_data()
-        magnList = []
-        for re, im in zip(data[0], data[1]):
-            magn = math.sqrt(re**2 + im**2)
-            magnList.append(magn)
-        plt.plot(data[4], magnList)
-        plt.show()
+        self.worker.sweep.set_mode("CONTINOUS")
+        self.worker.run()
+        #await self.loop()
+        for i in range (0, 20):
+            data = self.get_data()
+            print(data[0][30])
+
+    async def loop(self):
+        self.worker.sweep.set_mode("CONTINOUS")
+        self.worker.run()
 
     def get_data(self):
-        dataS11 = self.vna.readValues("data 0")
-        dataS21 = self.vna.readValues("data 1")
-        reflRe, reflImag = self.split_data(dataS11)
-        thruRe, thruImag = self.split_data(dataS21)
-        freq = self.vna.readFrequencies()
-        return reflRe, reflImag, thruRe, thruImag, freq
+        dataS11 = self.worker.data.s11
+        dataS21 = self.worker.data.s21
+        reflRe = []
+        reflIm = []
+        thruRe = []
+        thruIm = []
+        freq = []
+        for datapoint in dataS11:
+            reflRe.append(datapoint.re)
+            reflIm.append(datapoint.im)
+            freq.append(datapoint.freq)
+        for datapoint in dataS21:
+            thruRe.append(datapoint.re)
+            thruIm.append(datapoint.im)
 
-    def make_datapoint_list(self, freqList, reList, imList):
-        list = []
-        for freq, re, im in zip(freqList, reList, imList):
-            list.append(Datapoint(freq, re, im))
-        return list
+        return reflRe, reflIm, thruRe, thruIm, freq
 
-    def wait_for_ans(self, string):
-        while True:
-            answer = input("Connect " + string + ": ").lower()
-            if answer == "done":
-                print("Proceeding...")
-                break
-            else:
-                print("Invalid input. Please enter 'done' to continue.")
-
-    def split_data(self, data):
-        real = []
-        imaginary = []
-        for item in data:
-            values = item.split()
-            real.append(float(values[0]))
-            imaginary.append(float(values[1]))
-        # add exception handling
-        return real, imaginary
 
     def kill(self):
         self.vna.disconnect()
