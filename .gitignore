@@ -24,29 +24,10 @@ __pycache__/*
 tags
 
 # Package files
-*.egg
-*.eggs/
-.installed.cfg
-*.egg-info
 
 # Unittest and coverage
-htmlcov/*
-.coverage
-.coverage.*
-.tox
-junit*.xml
-coverage.xml
-.pytest_cache/
 
 # Build and docs folder/files
-build/*
-dist/*
-sdist/*
-docs/api/*
-docs/_rst/*
-docs/_build/*
-cover/*
-MANIFEST
 **/_version.py
 .flatpak-builder/*
 
