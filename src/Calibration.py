@@ -16,7 +16,7 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import logging
+
 import cmath
 import math
 import os
@@ -61,8 +61,6 @@ RXP_CAL_LINE = re.compile(
 """,
     re.VERBOSE,
 )
-
-logger = logging.getLogger(__name__)
 
 
 def correct_delay(d: Datapoint, delay: float, reflect: bool = False):
@@ -164,7 +162,7 @@ class CalDataSet(UserDict):
         cal = m.groupdict()
         columns = {col[:-1] for col in cal.keys() if cal[col] and col != "freq"}
         if "through" in columns and header == "sol":
-            logger.warning("Through data with sol header. %i: %s", line_nr, line)
+            print("Through data with sol header. %i: %s", line_nr, line)
         # fix short data (without thrurefl)
         if "thrurefl" in columns and "isolation" not in columns:
             cal["isolationr"] = cal["thrureflr"]
@@ -194,7 +192,7 @@ class CalDataSet(UserDict):
                 continue
             if m := RXP_CAL_HEADER.search(line):
                 if header:
-                    logger.warning("Duplicate header in cal data. %i: %s", i, line)
+                    print("Duplicate header in cal data. %i: %s", i, line)
                 header = "through" if m.group("through") else "sol"
                 continue
             if not line or line.startswith("#"):
@@ -202,10 +200,10 @@ class CalDataSet(UserDict):
 
             m = RXP_CAL_LINE.search(line)
             if not m:
-                logger.warning("Illegal caldata. Line %i: %s", i, line)
+                print("Illegal caldata. Line %i: %s", i, line)
                 continue
             if not header:
-                logger.warning("Caldata without having read header: %i: %s", i, line)
+                print("Caldata without having read header: %i: %s", i, line)
             self._append_match(m, header, line, i)
         return self
 
@@ -328,12 +326,12 @@ class Calibration:
 
     def calc_corrections(self):
         if not self.isValid1Port():
-            logger.warning("Tried to calibrate from insufficient data.")
+            print("Tried to calibrate from insufficient data.")
             raise ValueError(
                 "All of short, open and load calibration steps"
                 "must be completed for calibration to be applied."
             )
-        logger.debug("Calculating calibration for %d points.", self.size())
+        print("Calculating calibration for %d points.", self.size())
 
         for freq, caldata in self.dataset.items():
             try:
@@ -342,7 +340,7 @@ class Calibration:
                     self._calc_port_2(freq, caldata)
             except ZeroDivisionError as exc:
                 self.isCalculated = False
-                logger.error(
+                print(
                     "Division error - did you use the same measurement"
                     " for two of short, open and load?"
                 )
@@ -353,12 +351,12 @@ class Calibration:
 
         self.gen_interpolation()
         self.isCalculated = True
-        logger.debug("Calibration correctly calculated.")
+        print("Calibration correctly calculated.")
 
     def gamma_short(self, freq: int) -> complex:
         if self.cal_element.short_is_ideal:
             return IDEAL_SHORT
-        logger.debug("Using short calibration set values.")
+        print("Using short calibration set values.")
         cal_element = self.cal_element
         Zsp = complex(
             0.0,
@@ -382,7 +380,7 @@ class Calibration:
     def gamma_open(self, freq: int) -> complex:
         if self.cal_element.open_is_ideal:
             return IDEAL_OPEN
-        logger.debug("Using open calibration set values.")
+        print("Using open calibration set values.")
         cal_element = self.cal_element
         Zop = complex(
             0.0,
@@ -403,7 +401,7 @@ class Calibration:
     def gamma_load(self, freq: int) -> complex:
         if self.cal_element.load_is_ideal:
             return IDEAL_LOAD
-        logger.debug("Using load calibration set values.")
+        print("Using load calibration set values.")
         cal_element = self.cal_element
         Zl = complex(cal_element.load_r, 0.0)
         if cal_element.load_c > 0.0:
@@ -422,7 +420,7 @@ class Calibration:
     def gamma_through(self, freq: int) -> complex:
         if self.cal_element.through_is_ideal:
             return IDEAL_THROUGH
-        logger.debug("Using through calibration set values.")
+        print("Using through calibration set values.")
         cal_element = self.cal_element
         return cmath.exp(
             complex(0.0, -2.0 * math.pi * cal_element.through_length * freq)
