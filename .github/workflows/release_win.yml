@@ -20,7 +20,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: 3.11
+        python-version: 3.12
         architecture: ${{ matrix.arch }}
     - name: Install dependencies and pyinstall
       run: |
@@ -30,8 +30,8 @@ jobs:
         python3 -m pip install -U setuptools setuptools-scm
         python3 -m pip install -r requirements.txt
         python3 -m pip install PyInstaller==6.3.0
-        python3 -m pip uninstall -y PyQt6-sip
-        python3 -m pip install PyQt6-sip==13.6.0
+        python3 -m pip install -U PyQt6-sip
+        python3 -m pip install -U PyQt6
     - name: Build binary
       run: |
         .\venv\Scripts\activate
