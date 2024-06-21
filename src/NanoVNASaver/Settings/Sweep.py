@@ -18,7 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 from enum import Enum
-from math import log
+from math import exp, log
 from threading import Lock
 from typing import Iterator, NamedTuple
 
@@ -145,12 +145,12 @@ class Sweep:
             raise ValueError(f"Illegal sweep settings: {self}")
 
     def _exp_factor(self, index: int) -> float:
-        return 1 - log(self.segments + 1 - index) / log(self.segments + 1)
+        return exp(log((self.start + self.span)/self.start) / self.segments * index)
 
     def get_index_range(self, index: int) -> tuple[int, int]:
         if self.properties.logarithmic:
-            start = round(self.start + self.span * self._exp_factor(index))
-            end = round(self.start + self.span * self._exp_factor(index + 1))
+            start = round(self.start * self._exp_factor(index))
+            end = round(self.start * self._exp_factor(index + 1))
         else:
             start = self.start + index * self.points * self.stepsize
             end = start + (self.points - 1) * self.stepsize
@@ -160,7 +160,7 @@ class Sweep:
     def get_frequencies(self) -> Iterator[int]:
         for i in range(self.segments):
             start, stop = self.get_index_range(i)
-            step = (stop - start) / self.points
+            step = (stop - start) / (self.points - 1)
             freq = start
             for _ in range(self.points):
                 yield round(freq)
