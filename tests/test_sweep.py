@@ -44,12 +44,12 @@ class TestCases(unittest.TestCase):
         self.assertEqual(sweep.get_index_range(1), (12429117, 21170817))
         data = list(sweep.get_frequencies())
         self.assertEqual(data[0], 3600000)
-        self.assertEqual(data[-1], 29913383)
+        self.assertEqual(data[-1], 29999934) # should be close to 30000000
         sweep = Sweep(segments=3, properties=Properties(logarithmic=True))
-        self.assertEqual(sweep.get_index_range(1), (9078495, 16800000))
+        self.assertEqual(sweep.get_index_range(1), (7298642, 14797272))
         data = list(sweep.get_frequencies())
         self.assertEqual(data[0], 3600000)
-        self.assertEqual(data[-1], 29869307)
+        self.assertEqual(data[-1], 30000000)
 
         sweep2 = sweep.copy()
         self.assertEqual(sweep, sweep2)
