@@ -539,6 +539,13 @@ class CalibrationWindow(QtWidgets.QWidget):
             )
             return
 
+        if not self.app.calibration.isValid1Port():
+            self.app.showError(
+                "Not enough data to apply calibration."
+                " Please complete SOL calibration and try again."
+            )
+            return
+        
         cal_element.short_is_ideal = True
         cal_element.open_is_ideal = True
         cal_element.load_is_ideal = True
@@ -633,18 +640,20 @@ class CalibrationWindow(QtWidgets.QWidget):
                     self.app.sweepSource,
                 )
                 self.app.worker.signals.updated.emit()
+
         except ValueError as e:
-            if logger.isEnabledFor(logging.DEBUG):
-                raise
             # showError here hides the calibration window,
             # so we need to pop up our own
-            QtWidgets.QMessageBox.warning(
-                self, "Error applying calibration", str(e)
-            )
             self.calibration_status_label.setText(
                 "Applying calibration failed."
             )
             self.calibration_source_label.setText(self.app.calibration.source)
+            self.app.showError(
+                f"{e}"
+                " Please complete SOL calibration and try again."
+            )
+            self.reset()
+            return
 
     def loadCalibration(self):
         filename, _ = QtWidgets.QFileDialog.getOpenFileName(
