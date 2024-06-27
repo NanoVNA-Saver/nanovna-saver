@@ -58,11 +58,11 @@ or
 
 `make rpm` builds an (untested) rpm package that can be installed on your system the usual way.
 
-## Ubuntu 20.04 / 22.04
+## Ubuntu 20.04 / 22.04 / 24.04
 
 1. Install python3 and pip
 
-        sudo apt install python3 python3-pip
+        sudo apt install python3 python3-pip libxcb-cursor-dev
         python3 -m venv ~/.venv_nano
         . ~/.venv_nano/bin/activate
         pip install -U pip
