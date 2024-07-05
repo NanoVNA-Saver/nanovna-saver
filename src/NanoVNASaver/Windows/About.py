@@ -146,7 +146,7 @@ class AboutWindow(QtWidgets.QWidget):
                 line = line.decode("utf-8")
                 found_latest_version = TAGS_KEY in line
                 if found_latest_version:
-                    latest_version = Version(re.search("(\\d+\\.\\d+\\.\\d+)", line).group())
+                    latest_version = Version(re.search(r"(\d+\.\d+\.\d+)", line).group())
                     break
         except error.HTTPError as e:
             logger.exception(
