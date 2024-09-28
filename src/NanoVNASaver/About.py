@@ -19,7 +19,7 @@
 
 from setuptools_scm import get_version
 try:
-    version = get_version(root='..', relative_to=__file__)
+    version = get_version(root='../..', relative_to=__file__)
 except LookupError:
     from NanoVNASaver._version import version
 
