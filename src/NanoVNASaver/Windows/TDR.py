@@ -138,14 +138,23 @@ class TDRWindow(QtWidgets.QWidget):
             return
 
         s11 = [complex(d.re, d.im) for d in self.app.data.s11]
-        window = np.blackman(len(self.app.data.s11))
+        s11 = np.array(s11)
+        s11 = np.concatenate([s11, np.conj(s11[-1:0:-1])]) # Include negative frequencies
+        s11 = np.fft.fftshift(s11)
+        
+        window = np.blackman(len(s11))
+        windowed_s11 = window * s11 # Now windowing eliminates higher frequencies while leaving low frequencies untouched
+        
+        pad_points = (FFT_POINTS - len(windowed_s11)) // 2
+        windowed_s11 = np.pad(windowed_s11, [pad_points + 1, pad_points]) # Pad array to length FFT_POINTS
+        windowed_s11 = np.fft.ifftshift(windowed_s11)
 
-        windowed_s11 = window * s11
-        td = np.abs(np.fft.ifft(windowed_s11, FFT_POINTS))
+        td = np.fft.ifft(windowed_s11)
+
         step = np.ones(FFT_POINTS)
         step_response = convolve(td, step)
 
-        self.step_response_Z = 50 * (1 + step_response) / (1 - step_response)
+        self.step_response_Z = np.abs(50 * (1 + step_response) / (1 - step_response)) #Can plot impedance in terms of real and imaginary too
 
         time_axis = np.linspace(0, 1 / step_size, FFT_POINTS)
         self.distance_axis = time_axis * v * speed_of_light
