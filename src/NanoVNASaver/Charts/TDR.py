@@ -282,7 +282,7 @@ class TDRChart(Chart):
             self.update()
 
     def copy(self):
-        new_charChart = super().copy()
+        new_chart: TDRChart = super().copy()
         new_chart.tdrWindow = self.tdrWindow
         new_chart.minDisplayLength = self.minDisplayLength
         new_chart.maxDisplayLength = self.maxDisplayLength
