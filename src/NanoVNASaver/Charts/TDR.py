@@ -37,14 +37,27 @@ from NanoVNASaver.Charts.Chart import Chart
 
 logger = logging.getLogger(__name__)
 
+MIN_IMPEDANCE = 0
+MAX_IMPEDANCE = 1000
+
+MIN_S11 = -60
+MAX_S11 = 0
+
+MIN_VSWR = 1
+MAX_VSWR = 10
 
 class TDRChart(Chart):
     maxDisplayLength = 50
     minDisplayLength = 0
     fixedSpan = False
 
-    minImpedance = 0
-    maxImpedance = 1000
+    minYlim = 0
+    maxYlim = 1000
+
+    decimals = 1
+
+    formatString = ""
+    
     fixedValues = False
 
     markerLocation = -1
@@ -105,7 +118,7 @@ class TDRChart(Chart):
         self.x_menu.addAction(self.action_set_fixed_start)
         self.x_menu.addAction(self.action_set_fixed_stop)
 
-        self.y_menu = QMenu("Impedance axis")
+        self.y_menu = QMenu("Y axis")
         self.y_mode_group = QActionGroup(self.y_menu)
         self.y_action_automatic = QAction("Automatic")
         self.y_action_automatic.setCheckable(True)
@@ -125,17 +138,17 @@ class TDRChart(Chart):
         self.y_menu.addSeparator()
 
         self.y_action_set_fixed_maximum = QAction(
-            f"Maximum ({self.maxImpedance})"
+            f"Maximum ({self.maxYlim})"
         )
         self.y_action_set_fixed_maximum.triggered.connect(
-            self.setMaximumImpedance
+            self.setMaximumY
         )
 
         self.y_action_set_fixed_minimum = QAction(
-            f"Minimum ({self.minImpedance})"
+            f"Minimum ({self.minYlim})"
         )
         self.y_action_set_fixed_minimum.triggered.connect(
-            self.setMinimumImpedance
+            self.setMinimumY
         )
 
         self.y_menu.addAction(self.y_action_set_fixed_maximum)
@@ -154,14 +167,15 @@ class TDRChart(Chart):
         self.dim.width = self.width() - self.leftMargin - self.rightMargin
         self.dim.height = self.height() - self.bottomMargin - self.topMargin
 
+
     def contextMenuEvent(self, event):
         self.action_set_fixed_start.setText(f"Start ({self.minDisplayLength})")
         self.action_set_fixed_stop.setText(f"Stop ({self.maxDisplayLength})")
         self.y_action_set_fixed_minimum.setText(
-            f"Minimum ({self.minImpedance})"
+            f"Minimum ({self.minYlim})"
         )
         self.y_action_set_fixed_maximum.setText(
-            f"Maximum ({self.maxImpedance})"
+            f"Maximum ({self.maxYlim})"
         )
         self.menu.exec(event.globalPos())
 
@@ -171,13 +185,30 @@ class TDRChart(Chart):
             and self.topMargin <= y <= self.height() - self.bottomMargin
         )
 
+    def _configureGraphFromFormat(self):
+        TDR_format = self.tdrWindow.format_dropdown.currentText()
+        if TDR_format == "|Z|":
+            self.minYlim = MIN_IMPEDANCE
+            self.maxYlim = MAX_IMPEDANCE
+            self.formatString = "impedance (\N{OHM SIGN})"
+            self.decimals = 1
+        elif TDR_format == "S11":
+            self.minYlim = MIN_S11
+            self.maxYlim = MAX_S11
+            self.formatString = "S11 (dB)"
+            self.decimals = 1
+        elif TDR_format == "VSWR":
+            self.minYlim = MIN_VSWR
+            self.maxYlim = MAX_VSWR
+            self.formatString = "VSWR"
+            self.decimals = 2
+
     def resetDisplayLimits(self):
+        self._configureGraphFromFormat()
         self.fixedSpan = False
         self.minDisplayLength = 0
         self.maxDisplayLength = 100
         self.fixedValues = False
-        self.minImpedance = 0
-        self.maxImpedance = 1000
         self.update()
 
     def setFixedSpan(self, fixed_span):
@@ -205,7 +236,7 @@ class TDRChart(Chart):
             self,
             "Stop length (m)",
             "Set stop length (m)",
-            value=self.minDisplayLength,
+            value=self.maxDisplayLength,
             min=0.1,
             decimals=1,
         )
@@ -220,46 +251,44 @@ class TDRChart(Chart):
         self.fixedValues = fixed_values
         self.update()
 
-    def setMinimumImpedance(self):
+    def setMinimumY(self):
         min_val, selected = QInputDialog.getDouble(
             self,
-            "Minimum impedance (\N{OHM SIGN})",
-            "Set minimum impedance (\N{OHM SIGN})",
-            value=self.minDisplayLength,
-            min=0,
-            decimals=1,
+            "Minimum " + self.formatString,
+            "Set minimum "+ self.formatString,
+            value=self.minYlim,
+            decimals=self.decimals,
         )
         if not selected:
             return
-        if not (self.fixedValues and min_val >= self.maxImpedance):
-            self.minImpedance = min_val
+        if not (self.fixedValues and min_val >= self.maxYlim):
+            self.minYlim = min_val
         if self.fixedValues:
             self.update()
 
-    def setMaximumImpedance(self):
+    def setMaximumY(self):
         max_val, selected = QInputDialog.getDouble(
             self,
-            "Maximum impedance (\N{OHM SIGN})",
-            "Set maximum impedance (\N{OHM SIGN})",
-            value=self.minDisplayLength,
-            min=0.1,
-            decimals=1,
+            "Maximum "+ self.formatString,
+            "Set maximum "+ self.formatString,
+            value=self.maxYlim,
+            decimals=self.decimals,
         )
         if not selected:
             return
-        if not (self.fixedValues and max_val <= self.minImpedance):
-            self.maxImpedance = max_val
+        if not (self.fixedValues and max_val <= self.minYlim):
+            self.maxYlim = max_val
         if self.fixedValues:
             self.update()
 
     def copy(self):
-        new_chart: TDRChart = super().copy()
+        new_charChart = super().copy()
         new_chart.tdrWindow = self.tdrWindow
         new_chart.minDisplayLength = self.minDisplayLength
         new_chart.maxDisplayLength = self.maxDisplayLength
         new_chart.fixedSpan = self.fixedSpan
-        new_chart.minImpedance = self.minImpedance
-        new_chart.maxImpedance = self.maxImpedance
+        new_chart.minYlim = self.minYlim
+        new_chart.maxYlim = self.maxYlim
         new_chart.fixedValues = self.fixedValues
         self.tdrWindow.updated.connect(new_chart.update)
         return new_chart
@@ -337,7 +366,7 @@ class TDRChart(Chart):
         qp.drawText(
             self.leftMargin - 10,
             self.topMargin + height + 15,
-            f"{str(round(self.tdrWindow.distance_axis[min_index] / 2, 1))}m",
+            f"{str(round(self.tdrWindow.distance_axis[min_index] / 2, self.decimals))}m",
         )
 
     def _draw_y_ticks(self, height, width, min_impedance, max_impedance):
@@ -351,10 +380,10 @@ class TDRChart(Chart):
             qp.drawLine(self.leftMargin, y, self.leftMargin + width, y)
             y_val = max_impedance - y_step * i * y_tick_step
             qp.setPen(Chart.color.text)
-            qp.drawText(3, y + 3, str(round(y_val, 1)))
+            qp.drawText(3, y + 3, str(round(y_val, self.decimals)))
         qp.setPen(Chart.color.text)
         qp.drawText(
-            3, self.topMargin + height + 3, f"{round(min_impedance, 1)}"
+            3, self.topMargin + height + 3, f"{round(min_impedance, self.decimals)}"
         )
 
     def _draw_max_point(self, height, x_step, y_step, min_index):
@@ -412,11 +441,14 @@ class TDRChart(Chart):
         x_step = (max_index - min_index) / width
 
         # TODO: Limit the search to the selected span?
-        min_impedance = max(0, np.min(self.tdrWindow.step_response_Z) / 1.05)
-        max_impedance = min(1000, np.max(self.tdrWindow.step_response_Z) * 1.05)
+        min_Z = np.min(self.tdrWindow.step_response_Z)
+        max_Z = np.max(self.tdrWindow.step_response_Z)
+        # Ensure that everything works even if limits are negative
+        min_impedance = max(self.minYlim, min_Z - 0.05 * np.abs(min_Z)) 
+        max_impedance = min(self.maxYlim, max_Z + 0.05 * np.abs(max_Z))
         if self.fixedValues:
-            min_impedance = max(0, self.minImpedance)
-            max_impedance = max(0.1, self.maxImpedance)
+            min_impedance = self.minYlim
+            max_impedance = self.maxYlim
 
         y_step = max(self.tdrWindow.td) * 1.1 / height or 1.0e-30
 
@@ -495,15 +527,14 @@ class TDRChart(Chart):
             height = self.height() - self.topMargin - self.bottomMargin
             absy = (self.height() - y) - self.bottomMargin
             if self.fixedValues:
-                min_impedance = self.minImpedance
-                max_impedance = self.maxImpedance
+                min_impedance = self.minYlim
+                max_impedance = self.maxYlim
             else:
-                min_impedance = max(
-                    0, np.min(self.tdrWindow.step_response_Z) / 1.05
-                )
-                max_impedance = min(
-                    1000, np.max(self.tdrWindow.step_response_Z) * 1.05
-                )
+                min_Z = np.min(self.tdrWindow.step_response_Z)
+                max_Z = np.max(self.tdrWindow.step_response_Z)
+                # Ensure that everything works even if limits are negative
+                min_impedance = max(self.minYlim, min_Z - 0.05 * np.abs(min_Z)) 
+                max_impedance = min(self.maxYlim, max_Z + 0.05 * np.abs(max_Z))
             y_step = (max_impedance - min_impedance) / height
             return y_step * absy + min_impedance
         return 0
@@ -540,8 +571,8 @@ class TDRChart(Chart):
         val2 = self.valueAtPosition(y2)
 
         if val1 != val2:
-            self.minImpedance = round(min(val1, val2), 3)
-            self.maxImpedance = round(max(val1, val2), 3)
+            self.minYlim = round(min(val1, val2), 3)
+            self.maxYlim = round(max(val1, val2), 3)
             self.setFixedValues(True)
 
         len1 = max(0, self.lengthAtPosition(x1, limit=False))
