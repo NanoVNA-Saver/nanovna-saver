@@ -98,6 +98,6 @@ class Value:
                 ]
 
         self.freq = s11[1].freq
-        self.s11 = s11[index - 1 : index + 2]
+        self.s11 = s11[index - 1: index + 2]
         if s21:
-            self.s21 = s21[index - 1 : index + 2]
+            self.s21 = s21[index - 1: index + 2]
