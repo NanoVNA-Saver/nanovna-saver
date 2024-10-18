@@ -1,8 +1,8 @@
 pyserial==3.5
 PyQt6==6.7.1
 PyQt6-sip==13.8.0
-sip==6.8.4
-numpy==1.26.4
+sip==6.8.6
+numpy==2.1.2
 scipy==1.14.1
 Cython==3.0.11
 setuptools==75.2.0
