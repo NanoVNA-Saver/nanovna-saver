@@ -170,7 +170,7 @@ class TDRWindow(QtWidgets.QWidget):
         step = np.ones(FFT_POINTS)
         step_response = convolve(td, step)
         # calculate step response based on the format that the user selected
-        TDR_format = self.format_dropdown.currentText();
+        TDR_format = self.format_dropdown.currentText()
         step_Z = 50 * (1 + step_response) / (1 - step_response)
         step_refl_coefficient = np.abs((step_Z - 50)/(step_Z + 50))
         if TDR_format == "|Z|":

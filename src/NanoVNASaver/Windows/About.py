@@ -205,7 +205,7 @@ class AboutWindow(QtWidgets.QWidget):
             # if we get here, something may have changed in the way github creates
             # the .../latest web page.
             self.updateLabel.setText(
-                f"ERROR - Unable to determine what the latest version is! "
+                "ERROR - Unable to determine what the latest version is!"
             )
             logger.error(f"Can't find {TAGS_KEY} in {TAGS_URL} content.")
         return
