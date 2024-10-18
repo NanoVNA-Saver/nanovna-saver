@@ -89,7 +89,9 @@ class AboutWindow(QtWidgets.QWidget):
         lower_layout = QtWidgets.QVBoxLayout()
         top_layout.addLayout(lower_layout)
 
-        btn_check_version = QtWidgets.QPushButton("Check for NanoVNASaver updates")
+        btn_check_version = QtWidgets.QPushButton(
+            "Check for NanoVNASaver updates"
+        )
         btn_check_version.clicked.connect(self.findUpdates)
 
         self.updateLabel = QtWidgets.QLabel()
@@ -129,14 +131,14 @@ class AboutWindow(QtWidgets.QWidget):
                     "NanoVNA Firmware Version: Not connected."
                 )
 
-# attempt to scan the TAGS_URL web page for something that looks like
-# a version tag. assume the first match with a line containing the TAGS_KEY
-# will contain the latest version substring since it appears at the top
-# of the web page.
-#
-# this routine can also allow the application to automatically perform a
-# check-for-updates and display a pop-up if any are found when this
-# function is called with automatic=True.
+    # attempt to scan the TAGS_URL web page for something that looks like
+    # a version tag. assume the first match with a line containing the TAGS_KEY
+    # will contain the latest version substring since it appears at the top
+    # of the web page.
+    #
+    # this routine can also allow the application to automatically perform a
+    # check-for-updates and display a pop-up if any are found when this
+    # function is called with automatic=True.
 
     def findUpdates(self, automatic=False):
         try:
@@ -146,7 +148,9 @@ class AboutWindow(QtWidgets.QWidget):
                 line = line.decode("utf-8")
                 found_latest_version = TAGS_KEY in line
                 if found_latest_version:
-                    latest_version = Version(re.search(r"(\d+\.\d+\.\d+)", line).group())
+                    latest_version = Version(
+                        re.search(r"(\d+\.\d+\.\d+)", line).group()
+                    )
                     break
         except error.HTTPError as e:
             logger.exception(

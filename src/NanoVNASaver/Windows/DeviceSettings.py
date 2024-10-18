@@ -101,8 +101,10 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         self.custom_points_checkBox.stateChanged.connect(self.customPoint_check)
         self.custom_points_Eidt = QtWidgets.QLineEdit("101")
         self.custom_points_Eidt.setValidator(
-            QIntValidator(self.app.vna.sweep_points_min,
-                          self.app.vna.sweep_points_max))
+            QIntValidator(
+                self.app.vna.sweep_points_min, self.app.vna.sweep_points_max
+            )
+        )
         self.custom_points_Eidt.textEdited.connect(self.updatecustomPoint)
         self.custom_points_Eidt.setDisabled(True)
 
@@ -156,8 +158,10 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         if "Customizable data points" in features:
             self.datapoints.clear()
             self.custom_points_Eidt.setValidator(
-                QIntValidator(self.app.vna.sweep_points_min,
-                              self.app.vna.sweep_points_max))
+                QIntValidator(
+                    self.app.vna.sweep_points_min, self.app.vna.sweep_points_max
+                )
+            )
             cur_dps = self.app.vna.datapoints
             for d in sorted(self.app.vna.valid_datapoints):
                 self.datapoints.addItem(str(d))

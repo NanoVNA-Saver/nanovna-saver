@@ -125,9 +125,7 @@ def norm_to_impedance(z: complex, ref_impedance: float = 50) -> complex:
 def parallel_to_serial(z: complex) -> complex:
     """Convert parallel impedance to serial impedance equivalent"""
     z_sq_sum = z.real**2 + z.imag**2 or 10.0e-30
-    return complex(
-        z.real * z.imag**2 / z_sq_sum, z.real**2 * z.imag / z_sq_sum
-    )
+    return complex(z.real * z.imag**2 / z_sq_sum, z.real**2 * z.imag / z_sq_sum)
 
 
 def reflection_coefficient(z: complex, ref_impedance: float = 50) -> complex:

@@ -544,7 +544,8 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         color = getattr(Chart.color, attr)
         color = QtWidgets.QColorDialog.getColor(
-            color, options=QtWidgets.QColorDialog.ColorDialogOption.ShowAlphaChannel
+            color,
+            options=QtWidgets.QColorDialog.ColorDialogOption.ShowAlphaChannel,
         )
 
         if not color.isValid():

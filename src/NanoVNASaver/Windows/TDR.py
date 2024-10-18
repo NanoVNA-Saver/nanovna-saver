@@ -94,11 +94,13 @@ class TDRWindow(QtWidgets.QWidget):
         self.tdr_velocity_dropdown = QtWidgets.QComboBox()
         for cable_name, velocity in CABLE_PARAMETERS:
             self.tdr_velocity_dropdown.addItem(cable_name, velocity)
-        self.tdr_velocity_dropdown.insertSeparator(self.tdr_velocity_dropdown.count())
+        self.tdr_velocity_dropdown.insertSeparator(
+            self.tdr_velocity_dropdown.count()
+        )
         self.tdr_velocity_dropdown.addItem("Custom", -1)
         self.tdr_velocity_dropdown.setCurrentIndex(1)  # Default to PE (0.66)
         self.tdr_velocity_dropdown.currentIndexChanged.connect(self.updateTDR)
-        
+
         dropdown_layout.addWidget(self.tdr_velocity_dropdown)
 
         self.format_dropdown = QtWidgets.QComboBox()
@@ -154,16 +156,22 @@ class TDRWindow(QtWidgets.QWidget):
             return
 
         s11 = [complex(d.re, d.im) for d in self.app.data.s11]
-        
+
         s11 = np.array(s11)
-        s11 = np.concatenate([s11, np.conj(s11[-1:0:-1])]) # Include negative frequencies
+        s11 = np.concatenate(
+            [s11, np.conj(s11[-1:0:-1])]
+        )  # Include negative frequencies
         s11 = np.fft.fftshift(s11)
-        
+
         window = np.blackman(len(s11))
-        windowed_s11 = window * s11 #Now windowing eliminates higher frequencies while leaving low frequencies untouched
-        
+        windowed_s11 = (
+            window * s11
+        )  # Now windowing eliminates higher frequencies while leaving low frequencies untouched
+
         pad_points = (FFT_POINTS - len(windowed_s11)) // 2
-        windowed_s11 = np.pad(windowed_s11, [pad_points + 1, pad_points]) # Pad array to length FFT_POINTS
+        windowed_s11 = np.pad(
+            windowed_s11, [pad_points + 1, pad_points]
+        )  # Pad array to length FFT_POINTS
         windowed_s11 = np.fft.ifftshift(windowed_s11)
 
         td = np.fft.ifft(windowed_s11)
@@ -172,13 +180,15 @@ class TDRWindow(QtWidgets.QWidget):
         # calculate step response based on the format that the user selected
         TDR_format = self.format_dropdown.currentText()
         step_Z = 50 * (1 + step_response) / (1 - step_response)
-        step_refl_coefficient = np.abs((step_Z - 50)/(step_Z + 50))
+        step_refl_coefficient = np.abs((step_Z - 50) / (step_Z + 50))
         if TDR_format == "|Z|":
             self.step_response_Z = np.abs(step_Z)
         elif TDR_format == "S11":
             self.step_response_Z = 20 * np.log10(step_refl_coefficient)
         elif TDR_format == "VSWR":
-            self.step_response_Z = np.abs((1 + step_refl_coefficient)/(1 - step_refl_coefficient))
+            self.step_response_Z = np.abs(
+                (1 + step_refl_coefficient) / (1 - step_refl_coefficient)
+            )
         time_axis = np.linspace(0, 1 / step_size, FFT_POINTS)
         self.distance_axis = time_axis * v * speed_of_light
         # peak = np.max(td)
