@@ -37,7 +37,7 @@ rpm: clean
 # remove all package build artifacts (keep the *.deb)
 .PHONY: clean
 clean:
-	python setup.py clean
+	python3 setup.py clean
 	-rm -rf build deb_dist dist *.tar.gz *.egg*
 
 
