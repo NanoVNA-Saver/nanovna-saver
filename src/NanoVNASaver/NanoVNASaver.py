@@ -467,7 +467,9 @@ class NanoVNASaver(QWidget):
 
         logger.debug("Finished building interface")
 
-    def auto_connect(self):  # connect if there is exactly one detected serial device
+    def auto_connect(
+        self,
+    ):  # connect if there is exactly one detected serial device
         if self.serial_control.inp_port.count() == 1:
             self.serial_control.connect_device()
 
@@ -510,9 +512,9 @@ class NanoVNASaver(QWidget):
         if source is not None:
             self.sweepSource = source
         else:
-            time = strftime('%Y-%m-%d %H:%M:%S', localtime())
-            name = self.sweep.properties.name or 'nanovna'
-            self.sweepSource = f'{name}_{time}'
+            time = strftime("%Y-%m-%d %H:%M:%S", localtime())
+            name = self.sweep.properties.name or "nanovna"
+            self.sweepSource = f"{name}_{time}"
 
     def markerUpdated(self, marker: Marker):
         with self.dataLock:

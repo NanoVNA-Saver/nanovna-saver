@@ -17,3 +17,6 @@ write_to = "src/NanoVNASaver/_version.py"
 pythonpath = [
   ".", "src",
 ]
+
+[tool.black]
+line-length = 80

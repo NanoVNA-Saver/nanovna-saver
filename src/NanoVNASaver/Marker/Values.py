@@ -71,7 +71,7 @@ class Value:
     """Contains the data area to calculate marker values from"""
 
     def __init__(
-            self,
+        self,
     ):
         self.freq: int = 0
         self.s11: list[Datapoint] = []

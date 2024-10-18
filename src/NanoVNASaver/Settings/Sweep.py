@@ -39,13 +39,14 @@ class Properties(NamedTuple):
 
 
 class Sweep:
-    def __init__(self,
-                 start: int = 3600000,
-                 end: int = 30000000,
-                 points: int = 101,
-                 segments: int = 1,
-                 properties: "Properties" = Properties(),
-                 ):
+    def __init__(
+        self,
+        start: int = 3600000,
+        end: int = 30000000,
+        points: int = 101,
+        segments: int = 1,
+        properties: "Properties" = Properties(),
+    ):
         self._start = start
         self._end = end
         self._points = points
@@ -56,21 +57,41 @@ class Sweep:
         logger.debug("%s", self)
 
     def __repr__(self) -> str:
-        return 'Sweep(' + ', '.join(map(str, (
-            self.start, self.end, self.points, self.segments, self.properties
-        ))) + ')'
+        return (
+            "Sweep("
+            + ", ".join(
+                map(
+                    str,
+                    (
+                        self.start,
+                        self.end,
+                        self.points,
+                        self.segments,
+                        self.properties,
+                    ),
+                )
+            )
+            + ")"
+        )
 
     def __eq__(self, other) -> bool:
-        return (self.start == other.start
-                and self.end == other.end
-                and self.points == other.points
-                and self.segments == other.segments
-                and self.properties == other.properties)
+        return (
+            self.start == other.start
+            and self.end == other.end
+            and self.points == other.points
+            and self.segments == other.segments
+            and self.properties == other.properties
+        )
 
     def copy(self) -> "Sweep":
         with self._lock:
-            return Sweep(self.start, self.end, self.points, self.segments,
-                         self._properties)
+            return Sweep(
+                self.start,
+                self.end,
+                self.points,
+                self.segments,
+                self._properties,
+            )
 
     # Getters for attributes, either private or computed.
 
@@ -128,7 +149,9 @@ class Sweep:
 
     def set_averages(self, amount: int, truncates: int) -> None:
         with self._lock:
-            self._properties = self.properties._replace(averages=(amount, truncates))
+            self._properties = self.properties._replace(
+                averages=(amount, truncates)
+            )
 
     def set_logarithmic(self, logarithmic: bool) -> None:
         with self._lock:
@@ -145,7 +168,9 @@ class Sweep:
             raise ValueError(f"Illegal sweep settings: {self}")
 
     def _exp_factor(self, index: int) -> float:
-        return exp(log((self.start + self.span)/self.start) / self.segments * index)
+        return exp(
+            log((self.start + self.span) / self.start) / self.segments * index
+        )
 
     def get_index_range(self, index: int) -> tuple[int, int]:
         if self.properties.logarithmic:

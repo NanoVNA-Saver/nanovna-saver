@@ -46,6 +46,7 @@ MAX_S11 = 0
 MIN_VSWR = 1
 MAX_VSWR = 10
 
+
 class TDRChart(Chart):
     maxDisplayLength = 50
     minDisplayLength = 0
@@ -57,7 +58,7 @@ class TDRChart(Chart):
     decimals = 1
 
     formatString = ""
-    
+
     fixedValues = False
 
     markerLocation = -1
@@ -137,19 +138,11 @@ class TDRChart(Chart):
         self.y_menu.addAction(self.y_action_fixed)
         self.y_menu.addSeparator()
 
-        self.y_action_set_fixed_maximum = QAction(
-            f"Maximum ({self.maxYlim})"
-        )
-        self.y_action_set_fixed_maximum.triggered.connect(
-            self.setMaximumY
-        )
+        self.y_action_set_fixed_maximum = QAction(f"Maximum ({self.maxYlim})")
+        self.y_action_set_fixed_maximum.triggered.connect(self.setMaximumY)
 
-        self.y_action_set_fixed_minimum = QAction(
-            f"Minimum ({self.minYlim})"
-        )
-        self.y_action_set_fixed_minimum.triggered.connect(
-            self.setMinimumY
-        )
+        self.y_action_set_fixed_minimum = QAction(f"Minimum ({self.minYlim})")
+        self.y_action_set_fixed_minimum.triggered.connect(self.setMinimumY)
 
         self.y_menu.addAction(self.y_action_set_fixed_maximum)
         self.y_menu.addAction(self.y_action_set_fixed_minimum)
@@ -167,16 +160,11 @@ class TDRChart(Chart):
         self.dim.width = self.width() - self.leftMargin - self.rightMargin
         self.dim.height = self.height() - self.bottomMargin - self.topMargin
 
-
     def contextMenuEvent(self, event):
         self.action_set_fixed_start.setText(f"Start ({self.minDisplayLength})")
         self.action_set_fixed_stop.setText(f"Stop ({self.maxDisplayLength})")
-        self.y_action_set_fixed_minimum.setText(
-            f"Minimum ({self.minYlim})"
-        )
-        self.y_action_set_fixed_maximum.setText(
-            f"Maximum ({self.maxYlim})"
-        )
+        self.y_action_set_fixed_minimum.setText(f"Minimum ({self.minYlim})")
+        self.y_action_set_fixed_maximum.setText(f"Maximum ({self.maxYlim})")
         self.menu.exec(event.globalPos())
 
     def isPlotable(self, x, y):
@@ -255,7 +243,7 @@ class TDRChart(Chart):
         min_val, selected = QInputDialog.getDouble(
             self,
             "Minimum " + self.formatString,
-            "Set minimum "+ self.formatString,
+            "Set minimum " + self.formatString,
             value=self.minYlim,
             decimals=self.decimals,
         )
@@ -269,8 +257,8 @@ class TDRChart(Chart):
     def setMaximumY(self):
         max_val, selected = QInputDialog.getDouble(
             self,
-            "Maximum "+ self.formatString,
-            "Set maximum "+ self.formatString,
+            "Maximum " + self.formatString,
+            "Set maximum " + self.formatString,
             value=self.maxYlim,
             decimals=self.decimals,
         )
@@ -383,7 +371,9 @@ class TDRChart(Chart):
             qp.drawText(3, y + 3, str(round(y_val, self.decimals)))
         qp.setPen(Chart.color.text)
         qp.drawText(
-            3, self.topMargin + height + 3, f"{round(min_impedance, self.decimals)}"
+            3,
+            self.topMargin + height + 3,
+            f"{round(min_impedance, self.decimals)}",
         )
 
     def _draw_max_point(self, height, x_step, y_step, min_index):
@@ -444,7 +434,7 @@ class TDRChart(Chart):
         min_Z = np.min(self.tdrWindow.step_response_Z)
         max_Z = np.max(self.tdrWindow.step_response_Z)
         # Ensure that everything works even if limits are negative
-        min_impedance = max(self.minYlim, min_Z - 0.05 * np.abs(min_Z)) 
+        min_impedance = max(self.minYlim, min_Z - 0.05 * np.abs(min_Z))
         max_impedance = min(self.maxYlim, max_Z + 0.05 * np.abs(max_Z))
         if self.fixedValues:
             min_impedance = self.minYlim
@@ -533,7 +523,7 @@ class TDRChart(Chart):
                 min_Z = np.min(self.tdrWindow.step_response_Z)
                 max_Z = np.max(self.tdrWindow.step_response_Z)
                 # Ensure that everything works even if limits are negative
-                min_impedance = max(self.minYlim, min_Z - 0.05 * np.abs(min_Z)) 
+                min_impedance = max(self.minYlim, min_Z - 0.05 * np.abs(min_Z))
                 max_impedance = min(self.maxYlim, max_Z + 0.05 * np.abs(max_Z))
             y_step = (max_impedance - min_impedance) / height
             return y_step * absy + min_impedance
