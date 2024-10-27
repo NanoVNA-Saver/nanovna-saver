@@ -49,8 +49,12 @@ cover/*
 MANIFEST
 **/_version.py
 .flatpak-builder/*
+macbuildenv/*
+NanoVNASaver.spec
 
 # Per-project virtualenvs
 .venv*/
 .conda*/
 .python-version
+
+

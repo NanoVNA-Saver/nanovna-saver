@@ -8,9 +8,9 @@ python3 -m venv ${VENV_DIR}
 . ./${VENV_DIR}/bin/activate
 
 # install required dependencies (pyqt libs must be installed on the system)
-python3 -m pip install pip==23.0.1 setuptools==67.6.0
+python3 -m pip install pip==24.2 setuptools==75.2.0
 pip install -r requirements.txt
-pip install PyInstaller==5.9.0
+pip install PyInstaller==6.11.0
 
 python3 setup.py -V
 
