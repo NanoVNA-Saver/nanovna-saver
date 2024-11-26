@@ -104,9 +104,11 @@ class TDRWindow(QtWidgets.QWidget):
         dropdown_layout.addWidget(self.tdr_velocity_dropdown)
 
         self.format_dropdown = QtWidgets.QComboBox()
-        self.format_dropdown.addItem("|Z|")
-        self.format_dropdown.addItem("S11")
-        self.format_dropdown.addItem("VSWR")
+        self.format_dropdown.addItem("|Z| (lowpass)")
+        self.format_dropdown.addItem("S11 (lowpass)")
+        self.format_dropdown.addItem("VSWR (lowpass)")
+        self.format_dropdown.addItem("Refl (lowpass)")
+        self.format_dropdown.addItem("Refl (bandpass)")
 
         self.format_dropdown.currentIndexChanged.connect(self.updateFormat)
 
@@ -132,6 +134,7 @@ class TDRWindow(QtWidgets.QWidget):
     def updateTDR(self):
         # TODO: Let the user select whether to use high or low resolution TDR?
         FFT_POINTS = 2**14
+        TDR_format = self.format_dropdown.currentText()
 
         if len(self.app.data.s11) < 2:
             return
@@ -158,37 +161,64 @@ class TDRWindow(QtWidgets.QWidget):
         s11 = [complex(d.re, d.im) for d in self.app.data.s11]
 
         s11 = np.array(s11)
-        s11 = np.concatenate(
-            [s11, np.conj(s11[-1:0:-1])]
-        )  # Include negative frequencies
-        s11 = np.fft.fftshift(s11)
+
+        # In lowpass mode, the frequency is measured down to DC. Because the
+        # impulse response is real, we can flip over the frequency data so
+        # the output of the IFFT is a real signal.
+        #
+        # In bandpass mode, the low frequency information is missing, so we
+        # can't flip the frequency data. We need to keep everything complex.
+        # We are only able to determine the magnitude of the impulse
+        # response in this mode.
+
+        
+        if "lowpass" in TDR_format:
+            s11 = np.concatenate(
+                [s11, np.conj(s11[-1:0:-1])]
+            )  # Include negative frequencies
+            s11 = np.fft.fftshift(s11)
 
         window = np.blackman(len(s11))
-        windowed_s11 = (
-            window * s11
-        )  # Now windowing eliminates higher frequencies while leaving low frequencies untouched
+        windowed_s11 = (window * s11)
+        
+        if "lowpass" in TDR_format:
+            pad_points = (FFT_POINTS - len(windowed_s11)) // 2
+            windowed_s11 = np.pad(
+                windowed_s11, [pad_points + 1, pad_points]
+            )  # Pad array to length FFT_POINTS 
+            windowed_s11 = np.fft.ifftshift(windowed_s11)
 
-        pad_points = (FFT_POINTS - len(windowed_s11)) // 2
-        windowed_s11 = np.pad(
-            windowed_s11, [pad_points + 1, pad_points]
-        )  # Pad array to length FFT_POINTS
-        windowed_s11 = np.fft.ifftshift(windowed_s11)
+            td = np.fft.ifft(windowed_s11)
+            step = np.ones(FFT_POINTS)
+            step_response = convolve(td, step)
+            step_response_rev = convolve(td[::-1], step)
+            
+            #This fixes the issue with the impedance being wrong when the length is zero
+            step_response = step_response + step_response_rev
 
-        td = np.fft.ifft(windowed_s11)
-        step = np.ones(FFT_POINTS)
-        step_response = convolve(td, step)
-        # calculate step response based on the format that the user selected
-        TDR_format = self.format_dropdown.currentText()
-        step_Z = 50 * (1 + step_response) / (1 - step_response)
-        step_refl_coefficient = np.abs((step_Z - 50) / (step_Z + 50))
-        if TDR_format == "|Z|":
-            self.step_response_Z = np.abs(step_Z)
-        elif TDR_format == "S11":
-            self.step_response_Z = 20 * np.log10(step_refl_coefficient)
-        elif TDR_format == "VSWR":
-            self.step_response_Z = np.abs(
-                (1 + step_refl_coefficient) / (1 - step_refl_coefficient)
-            )
+            # calculate step response based on the format that the user selected
+            step_Z = 50 * (1 + step_response) / (1 - step_response)
+            step_refl_coefficient = np.abs((step_Z - 50) / (step_Z + 50))
+            if TDR_format == "|Z| (lowpass)":
+                self.step_response_Z = np.abs(step_Z)
+            elif TDR_format == "S11 (lowpass)":
+                self.step_response_Z = 20 * np.log10(step_refl_coefficient)
+            elif TDR_format == "VSWR (lowpass)":
+                self.step_response_Z = np.abs(
+                    (1 + step_refl_coefficient) / (1 - step_refl_coefficient)
+                )
+            elif TDR_format == "Refl (lowpass)":
+                # The 1/0.42 is the Amplitude Correction Factor for the
+                # Blackman window. 0.42 is the average amplitude of the
+                # window across its range.
+                self.step_response_Z = np.real(td * FFT_POINTS / len(s11) * 1/0.42)
+        else:
+            td = np.abs(np.fft.ifft(windowed_s11, FFT_POINTS))
+            # Convolving with a step function is unnecessary, we can only get
+            # the magnitude of impulse response
+            if TDR_format == "Refl (bandpass)":
+                self.step_response_Z = td * FFT_POINTS / len(s11) * 1/0.42
+            
         time_axis = np.linspace(0, 1 / step_size, FFT_POINTS)
         self.distance_axis = time_axis * v * speed_of_light
         # peak = np.max(td)

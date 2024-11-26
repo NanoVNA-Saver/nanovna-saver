@@ -175,21 +175,33 @@ class TDRChart(Chart):
 
     def _configureGraphFromFormat(self):
         TDR_format = self.tdrWindow.format_dropdown.currentText()
-        if TDR_format == "|Z|":
+        if TDR_format == "|Z| (lowpass)":
             self.minYlim = MIN_IMPEDANCE
             self.maxYlim = MAX_IMPEDANCE
             self.formatString = "impedance (\N{OHM SIGN})"
             self.decimals = 1
-        elif TDR_format == "S11":
+        elif TDR_format == "S11 (lowpass)":
             self.minYlim = MIN_S11
             self.maxYlim = MAX_S11
             self.formatString = "S11 (dB)"
             self.decimals = 1
-        elif TDR_format == "VSWR":
+        elif TDR_format == "VSWR (lowpass)":
             self.minYlim = MIN_VSWR
             self.maxYlim = MAX_VSWR
             self.formatString = "VSWR"
             self.decimals = 2
+        elif TDR_format == "Refl (lowpass)":
+            self.minYlim = -1
+            self.maxYlim = 1
+            self.formatString = "U"
+            self.decimals = 2
+        elif TDR_format == "Refl (bandpass)":
+            self.minYlim = 0
+            self.maxYlim = 1
+            self.formatString = "U"
+            self.decimals = 2
+        
+        
 
     def resetDisplayLimits(self):
         self._configureGraphFromFormat()
