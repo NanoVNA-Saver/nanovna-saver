@@ -337,7 +337,6 @@ class Calibration:
         cal.e10e01 = cal.e00 * cal.e11 - cal.delta_e
         cal.e22 = gm7 / (gm7 * cal.e11 * gt**2 + cal.e10e01 * gt**2)
         cal.e10e32 = (gm4 - gm6) * (1 - cal.e11 * cal.e22 * gt**2) / gt
-        
 
     def calc_corrections(self):
         if not self.isValid1Port():
@@ -400,7 +399,7 @@ class Calibration:
 
     def gamma_open(self, freq: int) -> complex:
         if self.cal_element.open_state == "IDEAL":
-            return IDEAL_SHORT
+            return IDEAL_OPEN
         if self.cal_element.open_state == "FILE":
             self.cal_element.open_touchstone.gen_interpolation_s11()
             dp = self.cal_element.open_touchstone.s_freq("11", freq)
@@ -425,7 +424,7 @@ class Calibration:
 
     def gamma_load(self, freq: int) -> complex:
         if self.cal_element.load_state == "IDEAL":
-            return IDEAL_SHORT
+            return IDEAL_LOAD
         if self.cal_element.load_state == "FILE":
             self.cal_element.load_touchstone.gen_interpolation_s11()
             dp = self.cal_element.load_touchstone.s_freq("11", freq)
@@ -455,8 +454,7 @@ class Calibration:
         cal_element = self.cal_element
         return cmath.exp(
             complex(0.0, -2.0 * math.pi * cal_element.through_length * freq)
-        )
-    
+        )    
 
     def gen_interpolation(self):
         (freq, e00, e11, delta_e, e10e01, e30, e22, e10e32) = zip(
