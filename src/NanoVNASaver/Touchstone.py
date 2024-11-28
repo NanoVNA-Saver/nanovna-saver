@@ -187,6 +187,34 @@ class Touchstone:
                     fill_value=(imag[0], imag[-1]),
                 ),
             }
+            
+    def gen_interpolation_s11(self):
+        freq = []
+        real = []
+        imag = []
+        for dp in self.s("11"):
+            freq.append(dp.freq)
+            real.append(dp.re)
+            imag.append(dp.im)
+
+        self._interp["11"] = {
+            "real": interp1d(
+                freq,
+                real,
+                kind="slinear",
+                bounds_error=False,
+                fill_value=(real[0], real[-1]),
+            ),
+            "imag": interp1d(
+                freq,
+                imag,
+                kind="slinear",
+                bounds_error=False,
+                fill_value=(imag[0], imag[-1]),
+            ),
+        }
+            
+
 
     def _parse_comments(self, fp) -> str:
         for line in fp:

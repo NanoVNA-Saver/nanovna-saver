@@ -25,6 +25,8 @@ from PyQt6 import QtWidgets, QtCore, QtGui
 from NanoVNASaver.Calibration import Calibration
 from NanoVNASaver.Settings.Sweep import SweepMode
 from NanoVNASaver.Windows.Defaults import make_scrollable
+from NanoVNASaver.Touchstone import Touchstone
+
 
 logger = logging.getLogger(__name__)
 
@@ -165,11 +167,40 @@ class CalibrationWindow(QtWidgets.QWidget):
 
         cal_standard_box = QtWidgets.QGroupBox("Calibration standards")
         cal_standard_layout = QtWidgets.QFormLayout(cal_standard_box)
-        self.use_ideal_values = QtWidgets.QCheckBox("Use ideal values")
-        self.use_ideal_values.setChecked(True)
-        self.use_ideal_values.stateChanged.connect(self.idealCheckboxChanged)
-        cal_standard_layout.addRow(self.use_ideal_values)
+        self.use_ideal_values = QtWidgets.QRadioButton("Use ideal values")
+        self.use_s1p_files = QtWidgets.QRadioButton("Use s1p files")
+        self.use_coefficients = QtWidgets.QRadioButton("Use coefficients")
 
+
+        self.use_ideal_values.setChecked(True)
+        self.radio_group = QtWidgets.QButtonGroup(self)
+        self.radio_group.addButton(self.use_ideal_values)
+        self.radio_group.addButton(self.use_s1p_files)
+        self.radio_group.addButton(self.use_coefficients)
+        self.radio_group.buttonClicked.connect(self.calStandardChanged)
+
+        self.radio_layout = QtWidgets.QHBoxLayout()
+        self.radio_layout.addWidget(self.use_ideal_values)
+        self.radio_layout.addWidget(self.use_s1p_files)
+        self.radio_layout.addWidget(self.use_coefficients)
+        cal_standard_layout.addRow(self.radio_layout)
+
+
+        self.file_button_short = QtWidgets.QPushButton("Short S1P file")
+        self.file_button_open = QtWidgets.QPushButton("Open S1P file")
+        self.file_button_load = QtWidgets.QPushButton("Load S1P file")
+        self.file_button_short.setEnabled(False)
+        self.file_button_open.setEnabled(False)
+        self.file_button_load.setEnabled(False)
+
+        cal_standard_layout.addRow(self.file_button_short)
+        cal_standard_layout.addRow(self.file_button_open)
+        cal_standard_layout.addRow(self.file_button_load)
+        
+        self.file_button_open.clicked.connect(self.select_file_open)
+        self.file_button_short.clicked.connect(self.select_file_short)
+        self.file_button_load.clicked.connect(self.select_file_load)
+        
         self.cal_short_box = QtWidgets.QGroupBox("Short")
         cal_short_form = QtWidgets.QFormLayout(self.cal_short_box)
         self.cal_short_box.setDisabled(True)
@@ -188,7 +219,8 @@ class CalibrationWindow(QtWidgets.QWidget):
         cal_short_form.addRow("L2 (H(e-33))", self.short_l2_input)
         cal_short_form.addRow("L3 (H(e-42))", self.short_l3_input)
         cal_short_form.addRow("Offset Delay (ps)", self.short_length)
-
+        
+        
         self.cal_open_box = QtWidgets.QGroupBox("Open")
         cal_open_form = QtWidgets.QFormLayout(self.cal_open_box)
         self.cal_open_box.setDisabled(True)
@@ -208,6 +240,7 @@ class CalibrationWindow(QtWidgets.QWidget):
         cal_open_form.addRow("C3 (F(e-45))", self.open_c3_input)
         cal_open_form.addRow("Offset Delay (ps)", self.open_length)
 
+
         self.cal_load_box = QtWidgets.QGroupBox("Load")
         cal_load_form = QtWidgets.QFormLayout(self.cal_load_box)
         self.cal_load_box.setDisabled(True)
@@ -224,6 +257,8 @@ class CalibrationWindow(QtWidgets.QWidget):
         cal_load_form.addRow("Inductance (H(e-12))", self.load_inductance)
         cal_load_form.addRow("Capacitance (F(e-15))", self.load_capacitance)
         cal_load_form.addRow("Offset Delay (ps)", self.load_length)
+
+
 
         self.cal_through_box = QtWidgets.QGroupBox("Through")
         cal_through_form = QtWidgets.QFormLayout(self.cal_through_box)
@@ -264,6 +299,9 @@ class CalibrationWindow(QtWidgets.QWidget):
 
         cal_standard_layout.addWidget(self.cal_standard_save_box)
         right_layout.addWidget(cal_standard_box)
+        self.open_touchstone = None
+        self.short_touchstone = None
+        self.load_touchstone = None
 
     def checkExpertUser(self):
         if not self.app.settings.value("ExpertCalibrationUser", False, bool):
@@ -499,6 +537,9 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.calibration_status_label.setText("Device calibration")
         self.calibration_source_label.setText("Device")
         self.notes_textedit.clear()
+        self.short_touchstone = None
+        self.open_touchstone = None
+        self.load_touchstone = None
 
         if len(self.app.worker.rawData11) > 0:
             # There's raw data, so we can get corrected data
@@ -546,16 +587,16 @@ class CalibrationWindow(QtWidgets.QWidget):
             )
             return
 
-        cal_element.short_is_ideal = True
-        cal_element.open_is_ideal = True
-        cal_element.load_is_ideal = True
+        cal_element.short_state = "IDEAL"
+        cal_element.open_state = "IDEAL"
+        cal_element.load_state = "IDEAL"
         cal_element.through_is_ideal = True
 
         # TODO: all ideal or not?
-        if not self.use_ideal_values.isChecked():
-            cal_element.short_is_ideal = False
-            cal_element.open_is_ideal = False
-            cal_element.load_is_ideal = False
+        if self.radio_group.checkedButton() == self.use_coefficients:
+            cal_element.short_state = "COEFF"
+            cal_element.open_state = "COEFF"
+            cal_element.load_state = "COEFF"
             cal_element.through_is_ideal = False
 
             # We are using custom calibration standards
@@ -603,6 +644,20 @@ class CalibrationWindow(QtWidgets.QWidget):
                 getFloatValue(self.load_length.text()) / 1.0e12
             )
 
+            cal_element.through_length = (
+                getFloatValue(self.through_length.text()) / 1.0e12
+            )
+        elif self.radio_group.checkedButton() == self.use_s1p_files:
+            if (self.short_touchstone is not None):
+                cal_element.short_state = "FILE"
+                cal_element.short_touchstone = self.short_touchstone
+            if (self.open_touchstone is not None):
+                cal_element.open_state = "FILE"
+                cal_element.open_touchstone = self.open_touchstone
+            if (self.load_touchstone is not None):
+                cal_element.load_state = "FILE"
+                cal_element.load_touchstone = self.load_touchstone
+            cal_element.through_is_ideal = False
             cal_element.through_length = (
                 getFloatValue(self.through_length.text()) / 1.0e12
             )
@@ -704,15 +759,34 @@ class CalibrationWindow(QtWidgets.QWidget):
             logger.error("Calibration save failed!")
             self.app.showError("Calibration save failed.")
 
-    def idealCheckboxChanged(self):
-        self.cal_short_box.setDisabled(self.use_ideal_values.isChecked())
-        self.cal_open_box.setDisabled(self.use_ideal_values.isChecked())
-        self.cal_load_box.setDisabled(self.use_ideal_values.isChecked())
-        self.cal_through_box.setDisabled(self.use_ideal_values.isChecked())
-        self.cal_standard_save_box.setDisabled(
-            self.use_ideal_values.isChecked()
-        )
-
+    def calStandardChanged(self, button):
+        if button == self.use_ideal_values:
+            self.cal_short_box.setDisabled(True)
+            self.cal_open_box.setDisabled(True)
+            self.cal_load_box.setDisabled(True)
+            self.cal_through_box.setDisabled(True)
+            self.cal_standard_save_box.setDisabled(True)
+            self.file_button_short.setDisabled(True)
+            self.file_button_open.setDisabled(True)
+            self.file_button_load.setDisabled(True)
+        elif button == self.use_s1p_files:
+            self.cal_short_box.setDisabled(True)
+            self.cal_open_box.setDisabled(True)
+            self.cal_load_box.setDisabled(True)
+            self.cal_through_box.setDisabled(False)
+            self.cal_standard_save_box.setDisabled(True)
+            self.file_button_short.setDisabled(False)
+            self.file_button_open.setDisabled(False)
+            self.file_button_load.setDisabled(False)
+        elif button == self.use_coefficients:
+            self.cal_short_box.setDisabled(False)
+            self.cal_open_box.setDisabled(False)
+            self.cal_load_box.setDisabled(False)
+            self.cal_through_box.setDisabled(False)
+            self.cal_standard_save_box.setDisabled(False)
+            self.file_button_short.setDisabled(True)
+            self.file_button_open.setDisabled(True)
+            self.file_button_load.setDisabled(True)            
     def automaticCalibration(self):
         self.btn_automatic.setDisabled(True)
         introduction = QtWidgets.QMessageBox(
@@ -970,3 +1044,20 @@ class CalibrationWindow(QtWidgets.QWidget):
                 self.automaticCalibrationStep
             )
             return
+    def select_file_open(self):
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Select Open S1P", "", "Touchstone Files (*.s1p)")
+        if filename != "":
+            self.open_touchstone = Touchstone(filename)
+            self.open_touchstone.load()            
+
+    def select_file_short(self):
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Select Short S1P", "", "Touchstone Files (*.s1p)")
+        if filename != "":
+            self.short_touchstone = Touchstone(filename)
+            self.short_touchstone.load()
+            
+    def select_file_load(self):
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Select Load S1P", "", "Touchstone Files (*.s1p)")
+        if filename != "":
+            self.load_touchstone = Touchstone(filename)
+            self.load_touchstone.load()   
