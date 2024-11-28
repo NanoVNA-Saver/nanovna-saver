@@ -368,8 +368,12 @@ class Calibration:
         logger.debug("Calibration correctly calculated.")
 
     def gamma_short(self, freq: int) -> complex:
-        if self.cal_element.short_is_ideal:
+        if self.cal_element.short_state == "IDEAL":
             return IDEAL_SHORT
+        if self.cal_element.short_state == "FILE":
+            self.cal_element.short_touchstone.gen_interpolation_s11()
+            dp = self.cal_element.short_touchstone.s_freq("11", freq)
+            return complex(dp.re, dp.im)
         logger.debug("Using short calibration set values.")
         cal_element = self.cal_element
         Zsp = complex(
@@ -394,8 +398,12 @@ class Calibration:
         )
 
     def gamma_open(self, freq: int) -> complex:
-        if self.cal_element.open_is_ideal:
+        if self.cal_element.open_state == "IDEAL":
             return IDEAL_OPEN
+        if self.cal_element.open_state == "FILE":
+            self.cal_element.open_touchstone.gen_interpolation_s11()
+            dp = self.cal_element.open_touchstone.s_freq("11", freq)
+            return complex(dp.re, dp.im)
         logger.debug("Using open calibration set values.")
         cal_element = self.cal_element
         Zop = complex(
@@ -415,8 +423,12 @@ class Calibration:
         )
 
     def gamma_load(self, freq: int) -> complex:
-        if self.cal_element.load_is_ideal:
+        if self.cal_element.load_state == "IDEAL":
             return IDEAL_LOAD
+        if self.cal_element.load_state == "FILE":
+            self.cal_element.load_touchstone.gen_interpolation_s11()
+            dp = self.cal_element.load_touchstone.s_freq("11", freq)
+            return complex(dp.re, dp.im)
         logger.debug("Using load calibration set values.")
         cal_element = self.cal_element
         Zl = complex(cal_element.load_r, 0.0)
@@ -442,7 +454,7 @@ class Calibration:
         cal_element = self.cal_element
         return cmath.exp(
             complex(0.0, -2.0 * math.pi * cal_element.through_length * freq)
-        )
+        )    
 
     def gen_interpolation(self):
         (freq, e00, e11, delta_e, e10e01, e30, e22, e10e32) = zip(
