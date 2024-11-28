@@ -85,6 +85,19 @@ or
         . ~/.venv_nano/bin/activate
         python3 nanovna-saver.py
 
+## Automated MacOS Build Script
+
+1. If needed, install dependencies
+
+        brew install python pyqt
+2. Run the automated build script
+
+        ./build-macos-app.sh
+3. Open the completed app
+
+        open ./dist/NanoVNASaver/NanoVNASaver.app
+   or double-click on NanoVNASaver.app in finder. 
+
 ## MacPorts
 
 Via a MacPorts distribution maintained by @ra1nb0w.
