@@ -45,7 +45,7 @@ class BandsWindow(QtWidgets.QWidget):
 
         btn_add_row = QtWidgets.QPushButton("Add row")
         btn_delete_row = QtWidgets.QPushButton("Delete row")
-        btn_reset_bands = QtWidgets.QPushButton("Reset bands")
+        btn_reset_bands = QtWidgets.QPushButton("Reset bands/Select region")
         btn_layout = QtWidgets.QHBoxLayout()
         btn_layout.addWidget(btn_add_row)
         btn_layout.addWidget(btn_delete_row)
@@ -62,12 +62,24 @@ class BandsWindow(QtWidgets.QWidget):
             self.app.bands.removeRow(row.row())
 
     def resetBands(self):
-        confirm = QtWidgets.QMessageBox(
+        confirmBox = QtWidgets.QMessageBox(
             QtWidgets.QMessageBox.Icon.Warning,
             "Confirm reset",
             "Are you sure you want to reset the bands to default?",
-            QtWidgets.QMessageBox.StandardButton.Yes
-            | QtWidgets.QMessageBox.StandardButton.Cancel,
-        ).exec()
-        if confirm == QtWidgets.QMessageBox.StandardButton.Yes:
-            self.app.bands.resetBands()
+            QtWidgets.QMessageBox.StandardButton.Cancel,
+        )
+        region_1_defaults_button = QtWidgets.QPushButton("Reset to Region 1 defaults", confirmBox)
+        region_2_defaults_button = QtWidgets.QPushButton("Reset to Region 2 defaults", confirmBox)
+        region_3_defaults_button = QtWidgets.QPushButton("Reset to Region 3 defaults", confirmBox)
+        confirmBox.addButton(region_1_defaults_button, QtWidgets.QMessageBox.ButtonRole.AcceptRole)
+        confirmBox.addButton(region_2_defaults_button, QtWidgets.QMessageBox.ButtonRole.AcceptRole)
+        confirmBox.addButton(region_3_defaults_button, QtWidgets.QMessageBox.ButtonRole.AcceptRole)
+        confirm = confirmBox.exec()
+
+        clicked_button = confirmBox.clickedButton()
+        if clicked_button == region_1_defaults_button:
+            self.app.bands.resetBands(1)
+        elif clicked_button == region_2_defaults_button:
+            self.app.bands.resetBands(2)
+        elif clicked_button == region_3_defaults_button:
+            self.app.bands.resetBands(3)

@@ -23,7 +23,29 @@ import typing
 from PyQt6 import QtCore, QtGui
 from PyQt6.QtCore import QModelIndex, Qt
 
-_DEFAULT_BANDS = (
+_DEFAULT_REGION_1_BANDS = (
+    "2200 m;135700;137800",
+    "630 m;472000;479000",
+    "160 m;1800000;2000000",
+    "80 m;3500000;3800000",
+    "60 m;5250000;5450000",
+    "40 m;7000000;7200000",
+    "30 m;10100000;10150000",
+    "20 m;14000000;14350000",
+    "17 m;18068000;18168000",
+    "15 m;21000000;21450000",
+    "12 m;24890000;24990000",
+    "10 m;28000000;29700000",
+    "6 m;50000000;52000000",
+    "4 m;69887500;70512500",
+    "2 m;144000000;146000000",
+    "70 cm;430000000;440000000",
+    "23 cm;1240000000;1300000000",
+    "13 cm;2300000000;2450000000",
+    "5 cm;5650000000;5850000000",
+)
+
+_DEFAULT_REGION_2_BANDS = (
     "2200 m;135700;137800",
     "630 m;472000;479000",
     "160 m;1800000;2000000",
@@ -41,11 +63,37 @@ _DEFAULT_BANDS = (
     "2 m;144000000;148000000",
     "1.25 m;222000000;225000000",
     "70 cm;420000000;450000000",
+    "33 cm;902000000;928000000",
     "23 cm;1240000000;1300000000",
     "13 cm;2300000000;2450000000",
     "9 cm;3300000000;3500000000",
     "5 cm;5650000000;5925000000",
 )
+
+_DEFAULT_REGION_3_BANDS = (
+    "2200 m;135700;137800",
+    "630 m;472000;479000",
+    "160 m;1800000;2000000",
+    "80 m;3500000;3900000",
+    "60 m;5250000;5450000",
+    "40 m;7000000;7200000",
+    "30 m;10100000;10150000",
+    "20 m;14000000;14350000",
+    "17 m;18068000;18168000",
+    "15 m;21000000;21450000",
+    "12 m;24890000;24990000",
+    "10 m;28000000;29700000",
+    "6 m;50000000;54000000",
+    "4 m;69887500;70512500",
+    "2 m;144000000;148000000",
+    "70 cm;430000000;440000000",
+    "23 cm;1240000000;1300000000",
+    "13 cm;2300000000;2450000000",
+    "9 cm;3300000000;3500000000",
+    "5 cm;5650000000;5850000000",
+)
+
+
 
 _HEADER_DATA = ("Band", "Start (Hz)", "End (Hz)")
 
@@ -69,7 +117,7 @@ class BandsModel(QtCore.QAbstractTableModel):
         self.enabled = self.settings.value("ShowBands", False, bool)
         self.bands = [
             band.split(";")
-            for band in self.settings.value("bands", _DEFAULT_BANDS)
+            for band in self.settings.value("bands", _DEFAULT_REGION_1_BANDS)
         ]
 
     def saveSettings(self):
@@ -79,8 +127,15 @@ class BandsModel(QtCore.QAbstractTableModel):
         )
         self.settings.sync()
 
-    def resetBands(self):
-        self.bands = [band.split(";") for band in _DEFAULT_BANDS]
+    def resetBands(self, regionIndex=1):
+        defaultBands = _DEFAULT_REGION_1_BANDS
+        #if(regionIndex == 1):   #implicit default
+        #    defaultBands = _DEFAULT_REGION_1_BANDS
+        if(regionIndex == 2):
+            defaultBands = _DEFAULT_REGION_2_BANDS
+        if(regionIndex == 3):
+            defaultBands = _DEFAULT_REGION_3_BANDS
+        self.bands = [band.split(";") for band in defaultBands]
         self.layoutChanged.emit()
         self.saveSettings()
 
