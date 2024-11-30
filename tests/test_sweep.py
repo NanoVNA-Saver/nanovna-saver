@@ -19,7 +19,7 @@
 import unittest
 
 # Import targets to be tested
-from NanoVNASaver.Settings.Sweep import Sweep, Properties, SweepMode
+from NanoVNASaver.Settings.Sweep import Properties, Sweep, SweepMode
 
 
 class TestCases(unittest.TestCase):
@@ -32,7 +32,7 @@ class TestCases(unittest.TestCase):
         self.assertEqual(sweep.segments, 1)
 
         properties = sweep.properties
-        self.assertEqual(properties.name, '')
+        self.assertEqual(properties.name, "")
         self.assertEqual(properties.mode, SweepMode.SINGLE)
         self.assertEqual(properties.averages, (3, 0))
         self.assertFalse(properties.logarithmic)
@@ -44,7 +44,7 @@ class TestCases(unittest.TestCase):
         self.assertEqual(sweep.get_index_range(1), (12429117, 21170817))
         data = list(sweep.get_frequencies())
         self.assertEqual(data[0], 3600000)
-        self.assertEqual(data[-1], 29999934) # should be close to 30000000
+        self.assertEqual(data[-1], 29999934)  # should be close to 30000000
         sweep = Sweep(segments=3, properties=Properties(logarithmic=True))
         self.assertEqual(sweep.get_index_range(1), (7298642, 14797272))
         data = list(sweep.get_frequencies())
@@ -56,5 +56,5 @@ class TestCases(unittest.TestCase):
 
         sweep.set_points(14)
         self.assertEqual(sweep.points, 14)
-        sweep.set_name('bla')
-        self.assertEqual(sweep.properties.name, 'bla')
+        sweep.set_name("bla")
+        self.assertEqual(sweep.properties.name, "bla")

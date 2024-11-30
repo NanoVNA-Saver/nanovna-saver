@@ -21,14 +21,14 @@ import logging
 
 from PyQt6 import QtWidgets
 
-import NanoVNASaver.AnalyticTools as at
+import NanoVNASaver.AnalyticTools as At
 from NanoVNASaver.Analysis.ResonanceAnalysis import (
     ResonanceAnalysis,
     format_resistence_neg,
 )
 from NanoVNASaver.Formatting import (
-    format_frequency,
     format_complex_imp,
+    format_frequency,
     format_frequency_short,
 )
 
@@ -47,7 +47,7 @@ class EFHWAnalysis(ResonanceAnalysis):
     def do_resonance_analysis(self):
         s11 = self.app.data.s11
         maximums = sorted(
-            at.maxima([d.impedance().real for d in s11], threshold=500)
+            At.maxima([d.impedance().real for d in s11], threshold=500)
         )
         extended_data = {}
         logger.info("TO DO: find near data")

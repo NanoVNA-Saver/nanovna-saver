@@ -21,7 +21,7 @@ from time import sleep
 
 import numpy as np
 from PyQt6 import QtCore, QtWidgets
-from PyQt6.QtCore import pyqtSlot, pyqtSignal
+from PyQt6.QtCore import pyqtSignal, pyqtSlot
 
 from NanoVNASaver.Calibration import correct_delay
 from NanoVNASaver.RFTools import Datapoint

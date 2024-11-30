@@ -20,10 +20,10 @@ import logging
 
 from PyQt6 import QtGui
 
-from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Charts.Frequency import FrequencyChart
 from NanoVNASaver.Charts.LogMag import LogMagChart
+from NanoVNASaver.RFTools import Datapoint
 
 logger = logging.getLogger(__name__)
 

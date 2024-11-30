@@ -16,20 +16,20 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import math
 import logging
+import math
 
 import numpy as np
-from PyQt6 import QtWidgets, QtGui, QtCore
+from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt
 
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Formatting import (
-    parse_frequency,
-    parse_value,
     format_frequency_chart,
     format_frequency_chart_2,
     format_y_axis,
+    parse_frequency,
+    parse_value,
 )
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.SITools import Format, Value
@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 
 class FrequencyChart(Chart):
-    def __init__(self, name):
+    def __init__(self, name):  # noqa: PLR0915
         super().__init__(name)
         self.maxFrequency = 100000000
         self.minFrequency = 1000000
@@ -628,7 +628,9 @@ class FrequencyChart(Chart):
         ticks = math.floor(self.dim.width / 100)
 
         # try to adapt format to span
-        if self.fstart == 0 or int(fspan / ticks / self.fstart * 10000) > 2:
+        if (
+            self.fstart == 0 or int(fspan / ticks / self.fstart * 10000) > 2
+        ):
             my_format_frequency = format_frequency_chart
         else:
             my_format_frequency = format_frequency_chart_2
@@ -662,10 +664,10 @@ class FrequencyChart(Chart):
     def drawBands(self, qp, fstart, fstop):
         qp.setBrush(self.bands.color)
         qp.setPen(QtGui.QColor(128, 128, 128, 0))  # Don't outline the bands
-        for _, start, end in self.bands.bands:
+        for _, s, e in self.bands.bands:
             try:
-                start = int(start)
-                end = int(end)
+                start = int(s)
+                end = int(e)
             except ValueError:
                 continue
             # don't draw if either band not in chart or completely in band

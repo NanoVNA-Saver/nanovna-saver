@@ -16,14 +16,14 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import math
 import logging
+import math
 
 from PyQt6 import QtGui
 
-from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Charts.Frequency import FrequencyChart
+from NanoVNASaver.RFTools import Datapoint
 
 logger = logging.getLogger(__name__)
 
@@ -70,8 +70,7 @@ class VSWRChart(FrequencyChart):
             maxVSWR = 3
             for d in self.data:
                 vswr = d.vswr
-                if vswr > maxVSWR:
-                    maxVSWR = vswr
+                maxVSWR = max(vswr, maxVSWR)
             try:
                 maxVSWR = min(self.maxDisplayValue, math.ceil(maxVSWR))
             except OverflowError:

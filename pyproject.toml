@@ -1,22 +1,64 @@
 [build-system]
 # AVOID CHANGING REQUIRES: IT WILL BE UPDATED BY PYSCAFFOLD!
-requires = ["setuptools>=46.1.0", "setuptools_scm[toml]>=6.2"]
-build-backend = "setuptools.build_meta"
+requires = [
+  'pyinstaller==6.11.1',
+  'setuptools==75.6.0',
+  'setuptools_scm[toml]==8.1.0',
+  'uv==0.5.5',
+]
+build-backend = 'setuptools.build_meta'
 
-[NanoVNASaver]
-dynamic = ["version"]
+[project]
+name='NanoVNASaver'
+dependencies=[
+  'pyserial==3.5',
+  'PyQt6==6.7.1',
+  'PyQt6-sip==13.8.0',
+  'sip==6.8.6',
+  'numpy==2.1.3',
+  'scipy==1.14.1',
+  'Cython==3.0.11',
+]
+dynamic=['version']
 
 [tool.setuptools_scm]
 # For smarter version schemes and other configuration options,
 # check out https://github.com/pypa/setuptools_scm
-root="."
-version_scheme = "no-guess-dev"
-write_to = "src/NanoVNASaver/_version.py"
+root='.'
+version_scheme = 'no-guess-dev'
+write_to = 'src/NanoVNASaver/_version.py'
 
 [tool.pytest.ini_options]
 pythonpath = [
-  ".", "src",
+  '.', 'src',
 ]
 
 [tool.black]
 line-length = 80
+
+[tool.ruff]
+line-length = 80
+target-version = 'py311'
+fix = true
+show-fixes = true
+unsafe-fixes = false
+
+[tool.ruff.lint]
+select = [
+    'E', 'W',   # pycodestyle (E(rror), W(arning))
+    'F',        # Pyflakes
+    'B',        # flake8-bugbear
+    'I',        # isort
+    'N',        # pep8-naming
+    'PL',       # pylint
+    'C90',      # mccabe
+    'RUF100',   # unused suppresions
+]
+ignore = [
+  'N802',
+  'N806',
+  'N999',
+]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10

@@ -20,9 +20,9 @@ import logging
 
 from PyQt6 import QtGui
 
+from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Formatting import format_frequency_chart
 from NanoVNASaver.RFTools import Datapoint
-from NanoVNASaver.Charts.Chart import Chart
 
 from .RI import RealImaginaryChart
 

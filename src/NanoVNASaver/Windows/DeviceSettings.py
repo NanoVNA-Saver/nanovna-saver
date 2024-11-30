@@ -18,8 +18,8 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
+from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtGui import QIntValidator
-from PyQt6 import QtWidgets, QtCore, QtGui
 
 from NanoVNASaver.Windows.Defaults import make_scrollable
 from NanoVNASaver.Windows.Screenshot import ScreenshotWindow
@@ -28,10 +28,10 @@ logger = logging.getLogger(__name__)
 
 
 class DeviceSettingsWindow(QtWidgets.QWidget):
-    custom_points_checkBox = QtWidgets.QCheckBox
-    custom_points_Eidt = QtWidgets.QLineEdit
+    custom_points_checkbox = QtWidgets.QCheckBox
+    custom_points_edit = QtWidgets.QLineEdit
 
-    def __init__(self, app: QtWidgets.QWidget):
+    def __init__(self, app: QtWidgets.QWidget):  # noqa: PLR0915
         super().__init__()
 
         self.app = app
@@ -97,16 +97,16 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         self.datapoints.addItem(str(self.app.vna.datapoints))
         self.datapoints.currentIndexChanged.connect(self.updateNrDatapoints)
 
-        self.custom_points_checkBox = QtWidgets.QCheckBox("Custom points")
-        self.custom_points_checkBox.stateChanged.connect(self.customPoint_check)
-        self.custom_points_Eidt = QtWidgets.QLineEdit("101")
-        self.custom_points_Eidt.setValidator(
+        self.custom_points_checkbox = QtWidgets.QCheckBox("Custom points")
+        self.custom_points_checkbox.stateChanged.connect(self.customPoint_check)
+        self.custom_points_edit = QtWidgets.QLineEdit("101")
+        self.custom_points_edit.setValidator(
             QIntValidator(
                 self.app.vna.sweep_points_min, self.app.vna.sweep_points_max
             )
         )
-        self.custom_points_Eidt.textEdited.connect(self.updatecustomPoint)
-        self.custom_points_Eidt.setDisabled(True)
+        self.custom_points_edit.textEdited.connect(self.updatecustomPoint)
+        self.custom_points_edit.setDisabled(True)
 
         self.bandwidth = QtWidgets.QComboBox()
         self.bandwidth.addItem(str(self.app.vna.bandwidth))
@@ -114,7 +114,7 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
 
         form_layout = QtWidgets.QFormLayout()
         form_layout.addRow(QtWidgets.QLabel("Datapoints"), self.datapoints)
-        form_layout.addRow(self.custom_points_checkBox, self.custom_points_Eidt)
+        form_layout.addRow(self.custom_points_checkbox, self.custom_points_edit)
         form_layout.addRow(QtWidgets.QLabel("Bandwidth"), self.bandwidth)
         right_layout.addWidget(settings_box)
         settings_layout.addRow(form_layout)
@@ -157,7 +157,7 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
 
         if "Customizable data points" in features:
             self.datapoints.clear()
-            self.custom_points_Eidt.setValidator(
+            self.custom_points_edit.setValidator(
                 QIntValidator(
                     self.app.vna.sweep_points_min, self.app.vna.sweep_points_max
                 )
@@ -209,10 +209,10 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
 
     def customPoint_check(self, validate_data: bool):
         self.datapoints.setDisabled(validate_data)
-        self.custom_points_Eidt.setDisabled(not validate_data)
+        self.custom_points_edit.setDisabled(not validate_data)
 
     def updatecustomPoint(self, points_str: str):
-        if self.custom_points_checkBox.isChecked():
+        if self.custom_points_checkbox.isChecked():
             # points_str = self.custom_points_Eidt.text()
             if len(points_str) == 0:
                 return
@@ -227,4 +227,4 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
                 self.app.vna.datapoints = points
                 self.app.sweep.set_points(self.app.vna.datapoints)
                 self.app.sweep_control.update_step_size()
-                self.custom_points_Eidt.setText(str(points))
+                self.custom_points_edit.setText(str(points))

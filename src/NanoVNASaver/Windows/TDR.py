@@ -20,12 +20,11 @@ import logging
 import math
 
 import numpy as np
+from PyQt6 import QtCore, QtGui, QtWidgets
+from scipy.constants import speed_of_light
 
 # pylint: disable=import-error, no-name-in-module
 from scipy.signal import convolve
-from scipy.constants import speed_of_light
-
-from PyQt6 import QtWidgets, QtCore, QtGui
 
 from NanoVNASaver.Windows.Defaults import make_scrollable
 
@@ -68,6 +67,11 @@ CABLE_PARAMETERS = (
     ("LMR400UF (0.83)", 0.83),
     ("Davis Bury-FLEX (0.82)", 0.82),
 )
+
+MIN_DATA_LENGHT = 2
+
+# TODO: Let the user select whether to use high or low resolution TDR?
+FFT_POINTS = 2**14
 
 
 class TDRWindow(QtWidgets.QWidget):
@@ -132,12 +136,10 @@ class TDRWindow(QtWidgets.QWidget):
         self.updateTDR()
 
     def updateTDR(self):
-        # TODO: Let the user select whether to use high or low resolution TDR?
-        FFT_POINTS = 2**14
-        TDR_format = self.format_dropdown.currentText()
-
-        if len(self.app.data.s11) < 2:
+        if len(self.app.data.s11) < MIN_DATA_LENGHT:
             return
+
+        TDR_format = self.format_dropdown.currentText()
 
         if self.tdr_velocity_dropdown.currentData() == -1:
             self.tdr_velocity_input.setDisabled(False)
@@ -158,9 +160,7 @@ class TDRWindow(QtWidgets.QWidget):
             logger.info("Cannot compute cable length at 0 span")
             return
 
-        s11 = [complex(d.re, d.im) for d in self.app.data.s11]
-
-        s11 = np.array(s11)
+        s11 = np.array([complex(d.re, d.im) for d in self.app.data.s11])
 
         # In lowpass mode, the frequency is measured down to DC. Because the
         # impulse response is real, we can flip over the frequency data so
@@ -170,55 +170,24 @@ class TDRWindow(QtWidgets.QWidget):
         # can't flip the frequency data. We need to keep everything complex.
         # We are only able to determine the magnitude of the impulse
         # response in this mode.
-
-        
         if "lowpass" in TDR_format:
-            s11 = np.concatenate(
-                [s11, np.conj(s11[-1:0:-1])]
-            )  # Include negative frequencies
-            s11 = np.fft.fftshift(s11)
+            s11 = np.fft.fftshift(
+                # Include negative frequencies
+                np.concatenate([s11, np.conj(s11[-1:0:-1])])
+            )
 
         window = np.blackman(len(s11))
-        windowed_s11 = (window * s11)
-        
+        windowed_s11 = window * s11
+
         if "lowpass" in TDR_format:
-            pad_points = (FFT_POINTS - len(windowed_s11)) // 2
-            windowed_s11 = np.pad(
-                windowed_s11, [pad_points + 1, pad_points]
-            )  # Pad array to length FFT_POINTS 
-            windowed_s11 = np.fft.ifftshift(windowed_s11)
-
-            td = np.fft.ifft(windowed_s11)
-            step = np.ones(FFT_POINTS)
-            step_response = convolve(td, step)
-            step_response_rev = convolve(td[::-1], step)
-            
-            #This fixes the issue with the impedance being wrong when the length is zero
-            step_response = step_response + step_response_rev
-
-            # calculate step response based on the format that the user selected
-            step_Z = 50 * (1 + step_response) / (1 - step_response)
-            step_refl_coefficient = np.abs((step_Z - 50) / (step_Z + 50))
-            if TDR_format == "|Z| (lowpass)":
-                self.step_response_Z = np.abs(step_Z)
-            elif TDR_format == "S11 (lowpass)":
-                self.step_response_Z = 20 * np.log10(step_refl_coefficient)
-            elif TDR_format == "VSWR (lowpass)":
-                self.step_response_Z = np.abs(
-                    (1 + step_refl_coefficient) / (1 - step_refl_coefficient)
-                )
-            elif TDR_format == "Refl (lowpass)":
-                # The 1/0.42 is the Amplitude Correction Factor for the
-                # Blackman window. 0.42 is the average amplitude of the
-                # window across its range.
-                self.step_response_Z = np.real(td * FFT_POINTS / len(s11) * 1/0.42)
+            windowed_s11 = self._tdr_lowpass(TDR_format, s11, windowed_s11)
         else:
             td = np.abs(np.fft.ifft(windowed_s11, FFT_POINTS))
             # Convolving with a step function is unnecessary, we can only get
             # the magnitude of impulse response
             if TDR_format == "Refl (bandpass)":
-                self.step_response_Z = td * FFT_POINTS / len(s11) * 1/0.42
-            
+                self.step_response_Z = td * FFT_POINTS / len(s11) * 1 / 0.42
+
         time_axis = np.linspace(0, 1 / step_size, FFT_POINTS)
         self.distance_axis = time_axis * v * speed_of_light
         # peak = np.max(td)
@@ -234,3 +203,42 @@ class TDRWindow(QtWidgets.QWidget):
         self.app.tdr_result_label.setText(f"{cable_len}m")
         self.td = list(td)
         self.updated.emit()
+
+    def _tdr_lowpass(self, tdr_format, s11, windowed_s11):
+        pad_points = (FFT_POINTS - len(windowed_s11)) // 2
+        windowed_s11 = np.pad(
+            windowed_s11, [pad_points + 1, pad_points]
+        )  # Pad array to length FFT_POINTS
+        windowed_s11 = np.fft.ifftshift(windowed_s11)
+
+        td = np.fft.ifft(windowed_s11)
+        step = np.ones(FFT_POINTS)
+        step_response = convolve(td, step)
+        step_response_rev = convolve(td[::-1], step)
+
+        # This fixes the issue with the impedance being wrong when the
+        # length is zero
+        step_response = step_response + step_response_rev
+
+        # calculate step response based on the format that the user selected
+        step_Z = 50 * (1 + step_response) / (1 - step_response)
+        step_refl_coefficient = np.abs((step_Z - 50) / (step_Z + 50))
+        if tdr_format == "|Z| (lowpass)":
+            self.step_response_Z = np.abs(step_Z)
+            return windowed_s11
+        if tdr_format == "S11 (lowpass)":
+            self.step_response_Z = 20 * np.log10(step_refl_coefficient)
+            return windowed_s11
+        if tdr_format == "VSWR (lowpass)":
+            self.step_response_Z = np.abs(
+                (1 + step_refl_coefficient) / (1 - step_refl_coefficient)
+            )
+            return windowed_s11
+        if tdr_format == "Refl (lowpass)":
+            # The 1/0.42 is the Amplitude Correction Factor for the
+            # Blackman window. 0.42 is the average amplitude of the
+            # window across its range.
+            self.step_response_Z = np.real(
+                td * FFT_POINTS / len(s11) * 1 / 0.42
+            )
+        return windowed_s11

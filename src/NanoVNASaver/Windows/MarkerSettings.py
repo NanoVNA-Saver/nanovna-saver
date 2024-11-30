@@ -18,23 +18,23 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from PyQt6 import QtWidgets, QtCore, QtGui
+from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt
 
-from NanoVNASaver.RFTools import Datapoint
-from NanoVNASaver.Marker.Widget import Marker
 from NanoVNASaver.Marker.Values import TYPES, default_label_ids
+from NanoVNASaver.Marker.Widget import Marker
+from NanoVNASaver.RFTools import Datapoint
 
 logger = logging.getLogger(__name__)
 
 
 class MarkerSettingsWindow(QtWidgets.QWidget):
-    exampleData11 = [
+    EXAMPLE_DATA11 = [
         Datapoint(123000000, 0.89, -0.11),
         Datapoint(123500000, 0.9, -0.1),
         Datapoint(124000000, 0.91, -0.95),
     ]
-    exampleData21 = [
+    EXAMPLE_DATA21 = [
         Datapoint(123000000, -0.25, 0.49),
         Datapoint(123456000, -0.3, 0.5),
         Datapoint(124000000, -0.2, 0.5),
@@ -111,9 +111,11 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
             self.checkboxColouredMarker.isChecked()
         )
         self.exampleMarker.setFieldSelection(self.currentFieldSelection)
-        self.exampleMarker.findLocation(self.exampleData11)
+        self.exampleMarker.findLocation(self.EXAMPLE_DATA11)
         self.exampleMarker.resetLabels()
-        self.exampleMarker.updateLabels(self.exampleData11, self.exampleData21)
+        self.exampleMarker.updateLabels(
+            self.EXAMPLE_DATA11, self.EXAMPLE_DATA21
+        )
 
     def updateField(self, field: QtGui.QStandardItem):
         if field.checkState() == Qt.CheckState.Checked:

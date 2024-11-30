@@ -30,7 +30,7 @@ import sys
 
 from PyQt6 import QtWidgets
 
-from NanoVNASaver.About import version, INFO
+from NanoVNASaver.About import INFO, version
 from NanoVNASaver.NanoVNASaver import NanoVNASaver
 from NanoVNASaver.Touchstone import Touchstone
 

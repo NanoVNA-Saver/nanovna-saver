@@ -17,12 +17,16 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import unittest
+from decimal import Decimal  # noqa: F401
 from math import inf, nan
-from decimal import Decimal  # Needed for test_representation()
 
 # Import targets to be tested
 from NanoVNASaver.SITools import (
-    Format, Value, round_floor, round_ceil, log_floor_125
+    Format,
+    Value,
+    log_floor_125,
+    round_ceil,
+    round_floor,
 )
 
 F_DEFAULT = Format()
@@ -34,10 +38,12 @@ F_ASSERT_OFFSET_2 = Format(max_offset=11)
 F_ASSERT_OFFSET_3 = Format(min_offset=11)
 F_ASSERT_CLAMP = Format(parse_clamp_min=10, parse_clamp_max=9)
 
-F_DIGITS_1 = Format(max_nr_digits=1, min_offset=-2,
-                    max_offset=2, assume_infinity=False)
-F_DIGITS_3 = Format(max_nr_digits=3, min_offset=-2,
-                    max_offset=2, assume_infinity=False)
+F_DIGITS_1 = Format(
+    max_nr_digits=1, min_offset=-2, max_offset=2, assume_infinity=False
+)
+F_DIGITS_3 = Format(
+    max_nr_digits=3, min_offset=-2, max_offset=2, assume_infinity=False
+)
 F_DIGITS_4 = Format(max_nr_digits=4)
 F_DIGITS_31 = Format(max_nr_digits=31)
 
@@ -87,14 +93,14 @@ class TestSIToolsValue(unittest.TestCase):
         self.assertEqual(str(Value(-1e34)), "-\N{INFINITY}")
         self.assertEqual(str(Value(nan)), "-")
         self.assertEqual(float(Value(1e27)), 1e27)
+        self.assertEqual(str(Value(11, fmt=Format(printable_max=10))), "")
         self.assertEqual(
-            str(Value(11, fmt=Format(printable_max=10))), '')
-        self.assertEqual(
-            str(Value(11, fmt=Format(allways_signed=True))), '+11.0000')
+            str(Value(11, fmt=Format(allways_signed=True))), "+11.0000"
+        )
 
-        self.assertEqual(str(Value(.1)), "100.000m")
-        self.assertEqual(str(Value(.01)), "10.0000m")
-        self.assertEqual(str(Value(.001)), "1.00000m")
+        self.assertEqual(str(Value(0.1)), "100.000m")
+        self.assertEqual(str(Value(0.01)), "10.0000m")
+        self.assertEqual(str(Value(0.001)), "1.00000m")
         self.assertEqual(str(Value(1e-6)), "1.00000µ")
         self.assertEqual(str(Value(1e-9)), "1.00000n")
         self.assertEqual(str(Value(1e-12)), "1.00000p")
@@ -170,6 +176,7 @@ class TestSIToolsValue(unittest.TestCase):
         self.assertEqual(round_ceil(123.456, 1), 123.5)
         self.assertEqual(round_ceil(123.456, -1), 130)
 
+
 # TODO: test F_DIGITS_31
 #            F_WITH_SPACE
 #            F_WITH_UNDERSCORE
@@ -184,9 +191,9 @@ class TestSIToolsFunctions(unittest.TestCase):
         self.assertEqual(log_floor_125(1000), 1000)
         self.assertEqual(log_floor_125(2000), 2000)
         self.assertEqual(log_floor_125(5000), 5000)
-        self.assertEqual(log_floor_125(.01), .01)
-        self.assertEqual(log_floor_125(.02), .02)
-        self.assertEqual(log_floor_125(.05), .05)
+        self.assertEqual(log_floor_125(0.01), 0.01)
+        self.assertEqual(log_floor_125(0.02), 0.02)
+        self.assertEqual(log_floor_125(0.05), 0.05)
         self.assertEqual(log_floor_125(1.9), 1)
         self.assertEqual(log_floor_125(4.5), 2)
         self.assertEqual(log_floor_125(9.9), 5)

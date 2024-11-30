@@ -28,9 +28,9 @@ jobs:
       run: |
         python3.11 -m venv build
         . build/bin/activate
-        python -m pip install pip==24.2 setuptools==75.2.0
+        python -m pip install pip==24.3.1 setuptools==75.6.0
         pip install -r requirements.txt
-        pip install PyInstaller==6.11.0
+        pip install PyInstaller==6.11.1
         python3 -m pip install -U PyQt6-sip
         python3 -m pip install -U PyQt6
     - name: Build binary

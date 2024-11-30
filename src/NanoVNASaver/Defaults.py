@@ -21,7 +21,7 @@ import dataclasses as DC
 import logging
 from ast import literal_eval
 
-from PyQt6.QtCore import QSettings, QByteArray
+from PyQt6.QtCore import QByteArray, QSettings
 from PyQt6.QtGui import QColor, QColorConstants
 
 logger = logging.getLogger(__name__)
