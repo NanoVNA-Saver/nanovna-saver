@@ -25,7 +25,6 @@ from PyQt6 import QtWidgets
 
 from NanoVNASaver.Analysis.VSWRAnalysis import VSWRAnalysis
 
-
 logger = logging.getLogger(__name__)
 
 

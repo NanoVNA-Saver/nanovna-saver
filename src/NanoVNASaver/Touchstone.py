@@ -16,10 +16,10 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import logging
-import math
 import cmath
 import io
+import logging
+import math
 from operator import attrgetter
 
 from scipy.interpolate import interp1d
@@ -187,7 +187,7 @@ class Touchstone:
                     fill_value=(imag[0], imag[-1]),
                 ),
             }
-            
+
     def gen_interpolation_s11(self):
         freq = []
         real = []
@@ -213,12 +213,10 @@ class Touchstone:
                 fill_value=(imag[0], imag[-1]),
             ),
         }
-            
-
 
     def _parse_comments(self, fp) -> str:
-        for line in fp:
-            line = line.strip()
+        for ln in fp:
+            line = ln.strip()
             if line.startswith("!"):
                 logger.info(line)
                 self.comments.append(line)
@@ -267,8 +265,8 @@ class Touchstone:
 
             prev_freq = 0.0
             prev_len = 0
-            for line in file:
-                line = line.strip()
+            for ln in file:
+                line = ln.strip()
                 # ignore empty lines (even if not specified)
                 if line == "":
                     continue

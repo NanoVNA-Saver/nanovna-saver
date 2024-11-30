@@ -20,62 +20,63 @@ import contextlib
 import logging
 import sys
 import threading
-from time import strftime, localtime
+from time import localtime, strftime
 
-from PyQt6 import QtWidgets, QtCore, QtGui
+from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import QObject
 from PyQt6.QtWidgets import QWidget
 
 from NanoVNASaver import Defaults
-from .Windows import (
-    AboutWindow,
-    AnalysisWindow,
-    CalibrationWindow,
-    DeviceSettingsWindow,
-    DisplaySettingsWindow,
-    SweepSettingsWindow,
-    TDRWindow,
-    FilesWindow,
-)
-from .Controls.MarkerControl import MarkerControl
-from .Controls.SweepControl import SweepControl
-from .Controls.SerialControl import SerialControl
-from .Formatting import format_frequency, format_vswr, format_gain
-from .Hardware.Hardware import Interface
-from .Hardware.VNA import VNA
-from .RFTools import corr_att_data
-from .Charts.Chart import Chart
+
+from .About import version
+from .Calibration import Calibration
 from .Charts import (
     CapacitanceChart,
     CombinedLogMagChart,
     GroupDelayChart,
     InductanceChart,
     LogMagChart,
-    PhaseChart,
     MagnitudeChart,
     MagnitudeZChart,
-    MagnitudeZShuntChart,
     MagnitudeZSeriesChart,
-    QualityFactorChart,
-    VSWRChart,
+    MagnitudeZShuntChart,
     PermeabilityChart,
+    PhaseChart,
     PolarChart,
+    QualityFactorChart,
     RealImaginaryMuChart,
     RealImaginaryZChart,
-    RealImaginaryZShuntChart,
     RealImaginaryZSeriesChart,
+    RealImaginaryZShuntChart,
     SmithChart,
     SParameterChart,
     TDRChart,
+    VSWRChart,
 )
-from .Calibration import Calibration
-from .Marker.Widget import Marker
+from .Charts.Chart import Chart
+from .Controls.MarkerControl import MarkerControl
+from .Controls.SerialControl import SerialControl
+from .Controls.SweepControl import SweepControl
+from .Formatting import format_frequency, format_gain, format_vswr
+from .Hardware.Hardware import Interface
+from .Hardware.VNA import VNA
 from .Marker.Delta import DeltaMarker
-from .SweepWorker import SweepWorker
+from .Marker.Widget import Marker
+from .RFTools import corr_att_data
 from .Settings.Bands import BandsModel
 from .Settings.Sweep import Sweep
+from .SweepWorker import SweepWorker
 from .Touchstone import Touchstone
-from .About import version
+from .Windows import (
+    AboutWindow,
+    AnalysisWindow,
+    CalibrationWindow,
+    DeviceSettingsWindow,
+    DisplaySettingsWindow,
+    FilesWindow,
+    SweepSettingsWindow,
+    TDRWindow,
+)
 
 logger = logging.getLogger(__name__)
 

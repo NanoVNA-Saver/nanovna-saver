@@ -34,7 +34,6 @@ from NanoVNASaver.Formatting import (
     format_vswr,
     format_wavelength,
 )
-
 from NanoVNASaver.Marker.Widget import Marker
 
 

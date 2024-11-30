@@ -16,13 +16,14 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import unittest
 import logging
 import os
+import unittest
+
+from NanoVNASaver.RFTools import Datapoint
 
 # Import targets to be tested
 from NanoVNASaver.Touchstone import Options, Touchstone
-from NanoVNASaver.RFTools import Datapoint
 
 
 class TestTouchstoneOptions(unittest.TestCase):
@@ -39,21 +40,27 @@ class TestTouchstoneOptions(unittest.TestCase):
 
     def test_parse(self):
         self.assertRaisesRegex(
-            TypeError, "Not an option line:",
-            self.opts.parse, "")
+            TypeError, "Not an option line:", self.opts.parse, ""
+        )
         self.assertRaisesRegex(
-            TypeError, "Not an option line: !",
-            self.opts.parse, "!")
+            TypeError, "Not an option line: !", self.opts.parse, "!"
+        )
         self.assertRaisesRegex(
-            TypeError, "Illegal option line: # ILLEGAL",
-            self.opts.parse, "# ILLEGAL")
+            TypeError,
+            "Illegal option line: # ILLEGAL",
+            self.opts.parse,
+            "# ILLEGAL",
+        )
         self.assertRaisesRegex(
-            TypeError, "Illegal option line: # GHz mhz",
-            self.opts.parse, "# GHz mhz")
-        self.opts.parse('# khz')
+            TypeError,
+            "Illegal option line: # GHz mhz",
+            self.opts.parse,
+            "# GHz mhz",
+        )
+        self.opts.parse("# khz")
         self.assertEqual(str(self.opts), "# KHZ S MA R 50")
         self.assertEqual(self.opts.factor, 1000)
-        self.opts.parse('# r 123 ri hz y')
+        self.opts.parse("# r 123 ri hz y")
         self.assertEqual(str(self.opts), "# HZ Y RI R 123")
         self.assertEqual(self.opts.factor, 1)
 
@@ -79,11 +86,13 @@ class TestTouchstoneTouchstone(unittest.TestCase):
         self.assertIn("! Vector Network Analyzer VNA R2", ts.comments)
         self.assertEqual(ts.min_freq(), 500000)
         self.assertEqual(ts.max_freq(), 900000000)
-        self.assertEqual(ts.s_freq("11", 1),
-                         Datapoint(1, -3.33238E-001, 1.80018E-004))
-        self.assertEqual(ts.s_freq("11", 750000),
-                         Datapoint(750000, -0.3331754099382822,
-                                   0.00032433255669243524))
+        self.assertEqual(
+            ts.s_freq("11", 1), Datapoint(1, -3.33238e-001, 1.80018e-004)
+        )
+        self.assertEqual(
+            ts.s_freq("11", 750000),
+            Datapoint(750000, -0.3331754099382822, 0.00032433255669243524),
+        )
 
         ts = Touchstone("./tests/data/ma.s2p")
         ts.load()
@@ -124,31 +133,35 @@ class TestTouchstoneTouchstone(unittest.TestCase):
         ts_ma = Touchstone("./tests/data/attenuator-0643_MA.s2p")
         ts_ma.load()
         self.assertEqual(len(ts_db.s11), len(ts_ri.s11))
-        for dps_db, dps_ri in zip(ts_db.s11, ts_ri.s11):
+        for dps_db, dps_ri in zip(ts_db.s11, ts_ri.s11, strict=False):
             self.assertAlmostEqual(dps_db.z, dps_ri.z, places=5)
 
         self.assertEqual(len(ts_db.s11), len(ts_ma.s11))
-        for dps_db, dps_ma in zip(ts_db.s11, ts_ma.s11):
+        for dps_db, dps_ma in zip(ts_db.s11, ts_ma.s11, strict=False):
             self.assertAlmostEqual(dps_db.z, dps_ma.z, places=5)
 
     def test_load_scikit(self):
         ts = Touchstone("./tests/data/scikit_unordered.s2p")
         with self.assertLogs(level=logging.WARNING) as cm:
             ts.load()
-        self.assertEqual(cm.output, [
-            'WARNING:NanoVNASaver.Touchstone:'
-            'Non integer resistance value: 50.0',
-            'WARNING:NanoVNASaver.Touchstone:Comment after header:'
-            ' !freq ReS11 ImS11 ReS21 ImS21 ReS12 ImS12 ReS22 ImS22',
-            'WARNING:NanoVNASaver.Touchstone:Frequency not ascending:'
-            ' 15000000.0 0.849810063 -0.4147357 -0.000306106 0.0041482'
-            ' 0.0 0.0 0.0 0.0',
-            'WARNING:NanoVNASaver.Touchstone:Reordering data',
-        ])
+        self.assertEqual(
+            cm.output,
+            [
+                "WARNING:NanoVNASaver.Touchstone:"
+                "Non integer resistance value: 50.0",
+                "WARNING:NanoVNASaver.Touchstone:Comment after header:"
+                " !freq ReS11 ImS11 ReS21 ImS21 ReS12 ImS12 ReS22 ImS22",
+                "WARNING:NanoVNASaver.Touchstone:Frequency not ascending:"
+                " 15000000.0 0.849810063 -0.4147357 -0.000306106 0.0041482"
+                " 0.0 0.0 0.0 0.0",
+                "WARNING:NanoVNASaver.Touchstone:Reordering data",
+            ],
+        )
         self.assertEqual(str(ts.opts), "# HZ S RI R 50")
         self.assertEqual(len(ts.s11), 101)
-        self.assertIn("!freq ReS11 ImS11 ReS21 ImS21 ReS12 ImS12 ReS22 ImS22",
-                      ts.comments)
+        self.assertIn(
+            "!freq ReS11 ImS11 ReS21 ImS21 ReS12 ImS12 ReS22 ImS22", ts.comments
+        )
 
     def test_setter(self):
         ts = Touchstone("")
@@ -173,17 +186,21 @@ class TestTouchstoneTouchstone(unittest.TestCase):
         lines = ts.saves().splitlines()
         self.assertEqual(len(lines), 1021)
         self.assertEqual(lines[0], "# HZ S RI R 50")
-        self.assertEqual(lines[1], '500000 -0.333238 0.000180018')
-        self.assertEqual(lines[-1], '900000000 -0.127646 0.31969')
+        self.assertEqual(lines[1], "500000 -0.333238 0.000180018")
+        self.assertEqual(lines[-1], "900000000 -0.127646 0.31969")
         lines = ts.saves(4).splitlines()
         self.assertEqual(len(lines), 1021)
         self.assertEqual(lines[0], "# HZ S RI R 50")
-        self.assertEqual(lines[1],
-                         '500000 -0.333238 0.000180018 0.67478 -8.1951e-07'
-                         ' 0.67529 -8.20129e-07 -0.333238 0.000308078')
-        self.assertEqual(lines[-1],
-                         '900000000 -0.127646 0.31969 0.596287 -0.503453'
-                         ' 0.599076 -0.50197 -0.122713 0.326965')
+        self.assertEqual(
+            lines[1],
+            "500000 -0.333238 0.000180018 0.67478 -8.1951e-07"
+            " 0.67529 -8.20129e-07 -0.333238 0.000308078",
+        )
+        self.assertEqual(
+            lines[-1],
+            "900000000 -0.127646 0.31969 0.596287 -0.503453"
+            " 0.599076 -0.50197 -0.122713 0.326965",
+        )
         ts.filename = "./tests/data/output.s2p"
         ts.save(4)
         os.remove(ts.filename)
@@ -192,4 +209,5 @@ class TestTouchstoneTouchstone(unittest.TestCase):
 
         ts.s11[0] = Datapoint(100, 0.1, 0.1)
         self.assertRaisesRegex(
-            LookupError, "Frequencies of sdata not correlated", ts.saves, 4)
+            LookupError, "Frequencies of sdata not correlated", ts.saves, 4
+        )

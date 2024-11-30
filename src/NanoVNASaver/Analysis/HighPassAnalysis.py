@@ -21,8 +21,8 @@ import math
 
 from PyQt6 import QtWidgets
 
-import NanoVNASaver.AnalyticTools as at
-from NanoVNASaver.Analysis.Base import Analysis, CUTOFF_VALS
+import NanoVNASaver.AnalyticTools as At
+from NanoVNASaver.Analysis.Base import CUTOFF_VALS, Analysis
 from NanoVNASaver.Formatting import format_frequency
 
 logger = logging.getLogger(__name__)
@@ -82,7 +82,7 @@ class HighPassAnalysis(Analysis):
         logger.debug("Cuttoff frequencies: %s", cutoff_freq)
         logger.debug("Cuttoff gains: %s", cutoff_gain)
 
-        octave, decade = at.calculate_rolloff(
+        octave, decade = At.calculate_rolloff(
             s21, cutoff_pos["10.0dB"], cutoff_pos["20.0dB"]
         )
 
@@ -114,12 +114,12 @@ class HighPassAnalysis(Analysis):
         if marker.location < 0:
             self.set_result(f"Please place {marker.name} in the passband.")
             return -1
-        return at.center_from_idx(gains, marker.location)
+        return At.center_from_idx(gains, marker.location)
 
     def find_cutoffs(
         self, gains: list[float], peak: int, peak_db: float
     ) -> dict[str, int]:
         return {
-            f"{attn:.1f}dB": at.cut_off_left(gains, peak, peak_db, attn)
+            f"{attn:.1f}dB": At.cut_off_left(gains, peak, peak_db, attn)
             for attn in CUTOFF_VALS
         }

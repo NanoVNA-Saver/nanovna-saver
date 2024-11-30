@@ -18,17 +18,19 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from PyQt6 import QtWidgets, QtCore
+from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtGui import QColor, QColorConstants, QPalette, QShortcut
 
 from NanoVNASaver import Defaults
 from NanoVNASaver.Charts.Chart import Chart, ChartColors
+from NanoVNASaver.Marker.Widget import Marker
 from NanoVNASaver.Windows.Bands import BandsWindow
 from NanoVNASaver.Windows.Defaults import make_scrollable
 from NanoVNASaver.Windows.MarkerSettings import MarkerSettingsWindow
-from NanoVNASaver.Marker.Widget import Marker
 
 logger = logging.getLogger(__name__)
+
+MIN_MARKERS_FOR_DELTA = 2
 
 
 class DisplaySettingsWindow(QtWidgets.QWidget):
@@ -596,14 +598,14 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         )
         self.btn_remove_marker.setDisabled(False)
 
-        if Marker.count() >= 2:
+        if Marker.count() >= MIN_MARKERS_FOR_DELTA:
             self.app.marker_control.check_delta.setDisabled(False)
 
     def removeMarker(self):
         # keep at least one marker
         if Marker.count() <= 1:
             return
-        if Marker.count() == 2:
+        if Marker.count() == MIN_MARKERS_FOR_DELTA:
             self.btn_remove_marker.setDisabled(True)
             self.app.delta_marker_layout.setVisible(False)
             self.app.marker_control.check_delta.setDisabled(True)

@@ -20,16 +20,16 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: 3.12
+        python-version: 3.13
         architecture: ${{ matrix.arch }}
     - name: Install dependencies and pyinstall
       run: |
         python3 -m venv venv
         .\venv\Scripts\activate
-        python3 -m pip install pip==24.2
+        python3 -m pip install pip==24.3.1
         python3 -m pip install -U setuptools setuptools-scm
         python3 -m pip install -r requirements.txt
-        python3 -m pip install PyInstaller==6.11.0
+        python3 -m pip install PyInstaller==6.11.1
         python3 -m pip install -U PyQt6-sip
         python3 -m pip install -U PyQt6
     - name: Build binary

@@ -1,8 +1,8 @@
 #  NanoVNASaver
 #
 #  A python program to view and export Touchstone data from a NanoVNA
-#  Copyright (C) 2019, 2020  Rune B. Broberg
-#  Copyright (C) 2020,2021 NanoVNA-Saver Authors
+#  Copyright (C) 2019, 2020 Rune B. Broberg
+#  Copyright (C) 2020-2024 NanoVNA-Saver Authors
 #
 #  This program is free software: you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from PyQt6 import QtWidgets, QtCore, QtGui
+from PyQt6 import QtCore, QtGui, QtWidgets
 
 logger = logging.getLogger(__name__)
 
@@ -68,13 +68,28 @@ class BandsWindow(QtWidgets.QWidget):
             "Are you sure you want to reset the bands to default?",
             QtWidgets.QMessageBox.StandardButton.Cancel,
         )
-        region_1_defaults_button = QtWidgets.QPushButton("Reset to Region 1 defaults", confirmBox)
-        region_2_defaults_button = QtWidgets.QPushButton("Reset to Region 2 defaults", confirmBox)
-        region_3_defaults_button = QtWidgets.QPushButton("Reset to Region 3 defaults", confirmBox)
-        confirmBox.addButton(region_1_defaults_button, QtWidgets.QMessageBox.ButtonRole.AcceptRole)
-        confirmBox.addButton(region_2_defaults_button, QtWidgets.QMessageBox.ButtonRole.AcceptRole)
-        confirmBox.addButton(region_3_defaults_button, QtWidgets.QMessageBox.ButtonRole.AcceptRole)
-        confirm = confirmBox.exec()
+        region_1_defaults_button = QtWidgets.QPushButton(
+            "Reset to Region 1 defaults", confirmBox
+        )
+        region_2_defaults_button = QtWidgets.QPushButton(
+            "Reset to Region 2 defaults", confirmBox
+        )
+        region_3_defaults_button = QtWidgets.QPushButton(
+            "Reset to Region 3 defaults", confirmBox
+        )
+        confirmBox.addButton(
+            region_1_defaults_button,
+            QtWidgets.QMessageBox.ButtonRole.AcceptRole,
+        )
+        confirmBox.addButton(
+            region_2_defaults_button,
+            QtWidgets.QMessageBox.ButtonRole.AcceptRole,
+        )
+        confirmBox.addButton(
+            region_3_defaults_button,
+            QtWidgets.QMessageBox.ButtonRole.AcceptRole,
+        )
+        confirmBox.exec()
 
         clicked_button = confirmBox.clickedButton()
         if clicked_button == region_1_defaults_button:

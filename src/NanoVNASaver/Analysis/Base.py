@@ -17,6 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
+
 from PyQt6 import QtWidgets
 
 logger = logging.getLogger(__name__)

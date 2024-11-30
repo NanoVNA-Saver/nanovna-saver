@@ -17,8 +17,8 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from NanoVNASaver.Hardware.Serial import Interface
 from NanoVNASaver.Hardware.NanoVNA_H import NanoVNA_H
+from NanoVNASaver.Hardware.Serial import Interface
 
 logger = logging.getLogger(__name__)
 

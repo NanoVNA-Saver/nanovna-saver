@@ -19,6 +19,7 @@
 import logging
 
 from NanoVNASaver.RFTools import Datapoint
+
 from .MagnitudeZ import MagnitudeZChart
 
 logger = logging.getLogger(__name__)

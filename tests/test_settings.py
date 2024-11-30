@@ -29,7 +29,9 @@ class TConfig:
     my_str: str = "Hello World"
     my_bool: bool = True
     my_list: list = field(default_factory=lambda: [1, 2, 3])
-    my_bytearray: bytearray = field(default_factory=lambda: bytearray((1, 2, 3)))
+    my_bytearray: bytearray = field(
+        default_factory=lambda: bytearray((1, 2, 3))
+    )
 
 
 class TestCases(unittest.TestCase):
@@ -38,25 +40,34 @@ class TestCases(unittest.TestCase):
         self.settings_1 = CFG.AppSettings(
             CFG.QSettings.Format.IniFormat,
             CFG.QSettings.Scope.UserScope,
-            "NanoVNASaver", "Test_1")
+            "NanoVNASaver",
+            "Test_1",
+        )
         self.settings_2 = CFG.AppSettings(
             CFG.QSettings.Format.IniFormat,
             CFG.QSettings.Scope.UserScope,
-            "NanoVNASaver", "Test_2")
+            "NanoVNASaver",
+            "Test_2",
+        )
         self.config_1 = TConfig()
         self.config_2 = TConfig(
             my_int=4,
             my_float=3.0,
             my_str="Goodbye World",
             my_bool=False,
-            my_list=[4, 5, 6])
+            my_list=[4, 5, 6],
+        )
 
     def test_store_dataclass(self):
         self.settings_1.store_dataclass("Section1", self.config_1)
         self.settings_1.store_dataclass("Section2", self.config_2)
         illegal_config = TConfig(
-            my_int=4, my_float=3.0, my_str="Goodbye World",
-            my_bool="False", my_list=(4, 5, 6))
+            my_int=4,
+            my_float=3.0,
+            my_str="Goodbye World",
+            my_bool="False",
+            my_list=(4, 5, 6),
+        )
         with self.assertRaises(TypeError):
             self.settings_1.store_dataclass("SectionX", illegal_config)
 

@@ -17,7 +17,8 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-from PyQt6 import QtGui, QtCore
+
+from PyQt6 import QtCore, QtGui
 
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Charts.Square import SquareChart

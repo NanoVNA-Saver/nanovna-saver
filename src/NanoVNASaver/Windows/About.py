@@ -20,13 +20,12 @@
 import contextlib
 import logging
 import re
+from time import localtime, strftime
+from urllib import error, request
 
-from time import strftime, localtime
-from urllib import request, error
+from PyQt6 import QtCore, QtGui, QtWidgets
 
-from PyQt6 import QtWidgets, QtCore, QtGui
-
-from NanoVNASaver.About import INFO_URL, LATEST_URL, TAGS_URL, TAGS_KEY
+from NanoVNASaver.About import INFO_URL, LATEST_URL, TAGS_KEY, TAGS_URL
 from NanoVNASaver.Version import Version
 from NanoVNASaver.Windows.Defaults import make_scrollable
 
@@ -112,7 +111,7 @@ class AboutWindow(QtWidgets.QWidget):
         lower_layout.addStretch()
 
         btn_ok = QtWidgets.QPushButton("Ok")
-        btn_ok.clicked.connect(lambda: self.close())  # noqa
+        btn_ok.clicked.connect(lambda: self.close())
         lower_layout.addWidget(btn_ok)
 
     def show(self):
@@ -144,8 +143,8 @@ class AboutWindow(QtWidgets.QWidget):
         try:
             req = request.Request(TAGS_URL)
             req.add_header("User-Agent", f"NanoVNASaver/{self.app.version}")
-            for line in request.urlopen(req, timeout=3):
-                line = line.decode("utf-8")
+            for ln in request.urlopen(req, timeout=3):
+                line = ln.decode("utf-8")
                 found_latest_version = TAGS_KEY in line
                 if found_latest_version:
                     latest_version = Version(
@@ -193,7 +192,8 @@ class AboutWindow(QtWidgets.QWidget):
                         f"Version {latest_version}\n\n",
                     )
                 self.updateLabel.setText(
-                    f'<a href="{LATEST_URL}">View release page for version {latest_version} in browser</a>'
+                    f'<a href="{LATEST_URL}">View release page for version '
+                    f"{latest_version} in browser</a>"
                 )
                 self.updateLabel.setOpenExternalLinks(True)
             else:
@@ -205,9 +205,9 @@ class AboutWindow(QtWidgets.QWidget):
                     f"{strftime('%Y-%m-%d %H:%M:%S', localtime())}"
                 )
         else:
-            # not good. was not able to find TAGS_KEY in file in TAGS_URL content!
-            # if we get here, something may have changed in the way github creates
-            # the .../latest web page.
+            # not good. was gw able to find TAGS_KEY in file in TAGS_URL
+            # content! if we get here, something may have changed in the way
+            # github creates the .../latest web page.
             self.updateLabel.setText(
                 "ERROR - Unable to determine what the latest version is!"
             )

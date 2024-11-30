@@ -16,8 +16,8 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import math
 import logging
+import math
 
 import numpy as np
 from PyQt6.QtCore import QPoint, QRect, Qt
@@ -25,9 +25,9 @@ from PyQt6.QtGui import (
     QAction,
     QActionGroup,
     QMouseEvent,
-    QPalette,
     QPainter,
     QPaintEvent,
+    QPalette,
     QPen,
     QResizeEvent,
 )
@@ -48,22 +48,20 @@ MAX_VSWR = 10
 
 
 class TDRChart(Chart):
-    maxDisplayLength = 50
-    minDisplayLength = 0
-    fixedSpan = False
+    max_display_length = 50
+    min_display_length = 0
+    fixed_span = False
 
-    minYlim = 0
-    maxYlim = 1000
+    min_y_lim = 0
+    max_y_lim = 1000
 
     decimals = 1
 
-    formatString = ""
+    format_string = ""
+    fixed_values = False
+    marker_location = -1
 
-    fixedValues = False
-
-    markerLocation = -1
-
-    def __init__(self, name):
+    def __init__(self, name):  # noqa: PLR0915
         super().__init__(name)
         self.tdrWindow = None
 
@@ -109,11 +107,13 @@ class TDRChart(Chart):
         self.x_menu.addSeparator()
 
         self.action_set_fixed_start = QAction(
-            f"Start ({self.minDisplayLength})"
+            f"Start ({self.min_display_length})"
         )
         self.action_set_fixed_start.triggered.connect(self.setMinimumLength)
 
-        self.action_set_fixed_stop = QAction(f"Stop ({self.maxDisplayLength})")
+        self.action_set_fixed_stop = QAction(
+            f"Stop ({self.max_display_length})"
+        )
         self.action_set_fixed_stop.triggered.connect(self.setMaximumLength)
 
         self.x_menu.addAction(self.action_set_fixed_start)
@@ -138,10 +138,10 @@ class TDRChart(Chart):
         self.y_menu.addAction(self.y_action_fixed)
         self.y_menu.addSeparator()
 
-        self.y_action_set_fixed_maximum = QAction(f"Maximum ({self.maxYlim})")
+        self.y_action_set_fixed_maximum = QAction(f"Maximum ({self.max_y_lim})")
         self.y_action_set_fixed_maximum.triggered.connect(self.setMaximumY)
 
-        self.y_action_set_fixed_minimum = QAction(f"Minimum ({self.minYlim})")
+        self.y_action_set_fixed_minimum = QAction(f"Minimum ({self.min_y_lim})")
         self.y_action_set_fixed_minimum.triggered.connect(self.setMinimumY)
 
         self.y_menu.addAction(self.y_action_set_fixed_maximum)
@@ -161,10 +161,12 @@ class TDRChart(Chart):
         self.dim.height = self.height() - self.bottomMargin - self.topMargin
 
     def contextMenuEvent(self, event):
-        self.action_set_fixed_start.setText(f"Start ({self.minDisplayLength})")
-        self.action_set_fixed_stop.setText(f"Stop ({self.maxDisplayLength})")
-        self.y_action_set_fixed_minimum.setText(f"Minimum ({self.minYlim})")
-        self.y_action_set_fixed_maximum.setText(f"Maximum ({self.maxYlim})")
+        self.action_set_fixed_start.setText(
+            f"Start ({self.min_display_length})"
+        )
+        self.action_set_fixed_stop.setText(f"Stop ({self.max_display_length})")
+        self.y_action_set_fixed_minimum.setText(f"Minimum ({self.min_y_lim})")
+        self.y_action_set_fixed_maximum.setText(f"Maximum ({self.max_y_lim})")
         self.menu.exec(event.globalPos())
 
     def isPlotable(self, x, y):
@@ -176,43 +178,41 @@ class TDRChart(Chart):
     def _configureGraphFromFormat(self):
         TDR_format = self.tdrWindow.format_dropdown.currentText()
         if TDR_format == "|Z| (lowpass)":
-            self.minYlim = MIN_IMPEDANCE
-            self.maxYlim = MAX_IMPEDANCE
-            self.formatString = "impedance (\N{OHM SIGN})"
+            self.min_y_lim = MIN_IMPEDANCE
+            self.max_y_lim = MAX_IMPEDANCE
+            self.format_string = "impedance (\N{OHM SIGN})"
             self.decimals = 1
         elif TDR_format == "S11 (lowpass)":
-            self.minYlim = MIN_S11
-            self.maxYlim = MAX_S11
-            self.formatString = "S11 (dB)"
+            self.min_y_lim = MIN_S11
+            self.max_y_lim = MAX_S11
+            self.format_string = "S11 (dB)"
             self.decimals = 1
         elif TDR_format == "VSWR (lowpass)":
-            self.minYlim = MIN_VSWR
-            self.maxYlim = MAX_VSWR
-            self.formatString = "VSWR"
+            self.min_y_lim = MIN_VSWR
+            self.max_y_lim = MAX_VSWR
+            self.format_string = "VSWR"
             self.decimals = 2
         elif TDR_format == "Refl (lowpass)":
-            self.minYlim = -1
-            self.maxYlim = 1
-            self.formatString = "U"
+            self.min_y_lim = -1
+            self.max_y_lim = 1
+            self.format_string = "U"
             self.decimals = 2
         elif TDR_format == "Refl (bandpass)":
-            self.minYlim = 0
-            self.maxYlim = 1
-            self.formatString = "U"
+            self.min_y_lim = 0
+            self.max_y_lim = 1
+            self.format_string = "U"
             self.decimals = 2
-        
-        
 
     def resetDisplayLimits(self):
         self._configureGraphFromFormat()
-        self.fixedSpan = False
-        self.minDisplayLength = 0
-        self.maxDisplayLength = 100
-        self.fixedValues = False
+        self.fixed_span = False
+        self.min_display_length = 0
+        self.max_display_length = 100
+        self.fixed_values = False
         self.update()
 
     def setFixedSpan(self, fixed_span):
-        self.fixedSpan = fixed_span
+        self.fixed_span = fixed_span
         self.update()
 
     def setMinimumLength(self):
@@ -220,15 +220,15 @@ class TDRChart(Chart):
             self,
             "Start length (m)",
             "Set start length (m)",
-            value=self.minDisplayLength,
+            value=self.min_display_length,
             min=0,
             decimals=1,
         )
         if not selected:
             return
-        if not (self.fixedSpan and min_val >= self.maxDisplayLength):
-            self.minDisplayLength = min_val
-        if self.fixedSpan:
+        if not (self.fixed_span and min_val >= self.max_display_length):
+            self.min_display_length = min_val
+        if self.fixed_span:
             self.update()
 
     def setMaximumLength(self):
@@ -236,60 +236,60 @@ class TDRChart(Chart):
             self,
             "Stop length (m)",
             "Set stop length (m)",
-            value=self.maxDisplayLength,
+            value=self.max_display_length,
             min=0.1,
             decimals=1,
         )
         if not selected:
             return
-        if not (self.fixedSpan and max_val <= self.minDisplayLength):
-            self.maxDisplayLength = max_val
-        if self.fixedSpan:
+        if not (self.fixed_span and max_val <= self.min_display_length):
+            self.max_display_length = max_val
+        if self.fixed_span:
             self.update()
 
     def setFixedValues(self, fixed_values):
-        self.fixedValues = fixed_values
+        self.fixed_values = fixed_values
         self.update()
 
     def setMinimumY(self):
         min_val, selected = QInputDialog.getDouble(
             self,
-            "Minimum " + self.formatString,
-            "Set minimum " + self.formatString,
-            value=self.minYlim,
+            "Minimum " + self.format_string,
+            "Set minimum " + self.format_string,
+            value=self.min_y_lim,
             decimals=self.decimals,
         )
         if not selected:
             return
-        if not (self.fixedValues and min_val >= self.maxYlim):
-            self.minYlim = min_val
-        if self.fixedValues:
+        if not (self.fixed_values and min_val >= self.max_y_lim):
+            self.min_y_lim = min_val
+        if self.fixed_values:
             self.update()
 
     def setMaximumY(self):
         max_val, selected = QInputDialog.getDouble(
             self,
-            "Maximum " + self.formatString,
-            "Set maximum " + self.formatString,
-            value=self.maxYlim,
+            "Maximum " + self.format_string,
+            "Set maximum " + self.format_string,
+            value=self.max_y_lim,
             decimals=self.decimals,
         )
         if not selected:
             return
-        if not (self.fixedValues and max_val <= self.minYlim):
-            self.maxYlim = max_val
-        if self.fixedValues:
+        if not (self.fixed_values and max_val <= self.min_y_lim):
+            self.max_y_lim = max_val
+        if self.fixed_values:
             self.update()
 
     def copy(self):
         new_chart: TDRChart = super().copy()
         new_chart.tdrWindow = self.tdrWindow
-        new_chart.minDisplayLength = self.minDisplayLength
-        new_chart.maxDisplayLength = self.maxDisplayLength
-        new_chart.fixedSpan = self.fixedSpan
-        new_chart.minYlim = self.minYlim
-        new_chart.maxYlim = self.maxYlim
-        new_chart.fixedValues = self.fixedValues
+        new_chart.min_display_length = self.min_display_length
+        new_chart.max_display_length = self.max_display_length
+        new_chart.fixed_span = self.fixed_span
+        new_chart.min_y_lim = self.min_y_lim
+        new_chart.max_y_lim = self.max_y_lim
+        new_chart.fixed_values = self.fixed_values
         self.tdrWindow.updated.connect(new_chart.update)
         return new_chart
 
@@ -329,19 +329,19 @@ class TDRChart(Chart):
         a0.accept()
         width = self.width() - self.leftMargin - self.rightMargin
         if self.tdrWindow.td:
-            if self.fixedSpan:
+            if self.fixed_span:
                 max_index = np.searchsorted(
-                    self.tdrWindow.distance_axis, self.maxDisplayLength * 2
+                    self.tdrWindow.distance_axis, self.max_display_length * 2
                 )
                 min_index = np.searchsorted(
-                    self.tdrWindow.distance_axis, self.minDisplayLength * 2
+                    self.tdrWindow.distance_axis, self.min_display_length * 2
                 )
                 x_step = (max_index - min_index) / width
             else:
                 max_index = math.ceil(len(self.tdrWindow.distance_axis) / 2)
                 x_step = max_index / width
 
-            self.markerLocation = int(round(absx * x_step))
+            self.marker_location = int(round(absx * x_step))
             self.update()
         return
 
@@ -366,7 +366,9 @@ class TDRChart(Chart):
         qp.drawText(
             self.leftMargin - 10,
             self.topMargin + height + 15,
-            f"{str(round(self.tdrWindow.distance_axis[min_index] / 2, self.decimals))}m",
+            f"""{str(round(
+                self.tdrWindow.distance_axis[min_index] / 2, self.decimals))
+                }m""",
         )
 
     def _draw_y_ticks(self, height, width, min_impedance, max_impedance):
@@ -409,9 +411,9 @@ class TDRChart(Chart):
     def _draw_marker(self, height, x_step, y_step, min_index):
         qp = QPainter(self)
         marker_point = QPoint(
-            self.leftMargin + int((self.markerLocation - min_index) / x_step),
+            self.leftMargin + int((self.marker_location - min_index) / x_step),
             (self.topMargin + height)
-            - int(self.tdrWindow.td[self.markerLocation] / y_step),
+            - int(self.tdrWindow.td[self.marker_location] / y_step),
         )
         qp.setPen(Chart.color.text)
         qp.drawEllipse(marker_point, 2, 2)
@@ -419,7 +421,7 @@ class TDRChart(Chart):
             marker_point.x() - 10,
             marker_point.y() - 5,
             f"""{round(
-                    self.tdrWindow.distance_axis[self.markerLocation] / 2,
+                    self.tdrWindow.distance_axis[self.marker_location] / 2,
                     2)}m""",
         )
 
@@ -427,13 +429,13 @@ class TDRChart(Chart):
         min_index = 0
         max_index = math.ceil(len(self.tdrWindow.distance_axis) / 2)
 
-        if self.fixedSpan:
-            max_length = max(0.1, self.maxDisplayLength)
+        if self.fixed_span:
+            max_length = max(0.1, self.max_display_length)
             max_index = np.searchsorted(
                 self.tdrWindow.distance_axis, max_length * 2
             )
             min_index = np.searchsorted(
-                self.tdrWindow.distance_axis, self.minDisplayLength * 2
+                self.tdrWindow.distance_axis, self.min_display_length * 2
             )
             if max_index == min_index:
                 if max_index < len(self.tdrWindow.distance_axis) - 1:
@@ -446,11 +448,11 @@ class TDRChart(Chart):
         min_Z = np.min(self.tdrWindow.step_response_Z)
         max_Z = np.max(self.tdrWindow.step_response_Z)
         # Ensure that everything works even if limits are negative
-        min_impedance = max(self.minYlim, min_Z - 0.05 * np.abs(min_Z))
-        max_impedance = min(self.maxYlim, max_Z + 0.05 * np.abs(max_Z))
-        if self.fixedValues:
-            min_impedance = self.minYlim
-            max_impedance = self.maxYlim
+        min_impedance = max(self.min_y_lim, min_Z - 0.05 * np.abs(min_Z))
+        max_impedance = min(self.max_y_lim, max_Z + 0.05 * np.abs(max_Z))
+        if self.fixed_values:
+            min_impedance = self.min_y_lim
+            max_impedance = self.max_y_lim
 
         y_step = max(self.tdrWindow.td) * 1.1 / height or 1.0e-30
 
@@ -482,7 +484,7 @@ class TDRChart(Chart):
 
         self._draw_max_point(height, x_step, y_step, min_index)
 
-        if self.markerLocation != -1:
+        if self.marker_location != -1:
             self._draw_marker(height, x_step, y_step, min_index)
 
     def paintEvent(self, _: QPaintEvent) -> None:
@@ -528,15 +530,19 @@ class TDRChart(Chart):
         if self.tdrWindow.td:
             height = self.height() - self.topMargin - self.bottomMargin
             absy = (self.height() - y) - self.bottomMargin
-            if self.fixedValues:
-                min_impedance = self.minYlim
-                max_impedance = self.maxYlim
+            if self.fixed_values:
+                min_impedance = self.min_y_lim
+                max_impedance = self.max_y_lim
             else:
                 min_Z = np.min(self.tdrWindow.step_response_Z)
                 max_Z = np.max(self.tdrWindow.step_response_Z)
                 # Ensure that everything works even if limits are negative
-                min_impedance = max(self.minYlim, min_Z - 0.05 * np.abs(min_Z))
-                max_impedance = min(self.maxYlim, max_Z + 0.05 * np.abs(max_Z))
+                min_impedance = max(
+                    self.min_y_lim, min_Z - 0.05 * np.abs(min_Z)
+                )
+                max_impedance = min(
+                    self.max_y_lim, max_Z + 0.05 * np.abs(max_Z)
+                )
             y_step = (max_impedance - min_impedance) / height
             return y_step * absy + min_impedance
         return 0
@@ -546,10 +552,10 @@ class TDRChart(Chart):
             return 0
         width = self.width() - self.leftMargin - self.rightMargin
         absx = x - self.leftMargin
-        min_length = self.minDisplayLength if self.fixedSpan else 0
+        min_length = self.min_display_length if self.fixed_span else 0
         max_length = (
-            self.maxDisplayLength
-            if self.fixedSpan
+            self.max_display_length
+            if self.fixed_span
             else (
                 self.tdrWindow.distance_axis[
                     math.ceil(len(self.tdrWindow.distance_axis) / 2)
@@ -573,16 +579,16 @@ class TDRChart(Chart):
         val2 = self.valueAtPosition(y2)
 
         if val1 != val2:
-            self.minYlim = round(min(val1, val2), 3)
-            self.maxYlim = round(max(val1, val2), 3)
+            self.min_y_lim = round(min(val1, val2), 3)
+            self.max_y_lim = round(max(val1, val2), 3)
             self.setFixedValues(True)
 
         len1 = max(0, self.lengthAtPosition(x1, limit=False))
         len2 = max(0, self.lengthAtPosition(x2, limit=False))
 
         if len1 >= 0 and len2 >= 0 and len1 != len2:
-            self.minDisplayLength = min(len1, len2)
-            self.maxDisplayLength = max(len1, len2)
+            self.min_display_length = min(len1, len2)
+            self.max_display_length = max(len1, len2)
             self.setFixedSpan(True)
 
         self.update()

@@ -34,36 +34,36 @@ class TestCases(unittest.TestCase):
 
     def test_basicSIUnits(self):
         # simple well-formed integers with correct SI units
-        self.assertEqual(parse_frequency('123Hz'), 123)
-        self.assertEqual(parse_frequency('123kHz'), 123000)
-        self.assertEqual(parse_frequency('123456kHz'), 123456000)
-        self.assertEqual(parse_frequency('123456Hz'), 123456)
-        self.assertEqual(parse_frequency('123MHz'), 123000000)
-        self.assertEqual(parse_frequency('123456MHz'), 123456000000)
-        self.assertEqual(parse_frequency('123GHz'), 123000000000)
-        self.assertEqual(parse_frequency('123456GHz'), 123456000000000)
+        self.assertEqual(parse_frequency("123Hz"), 123)
+        self.assertEqual(parse_frequency("123kHz"), 123000)
+        self.assertEqual(parse_frequency("123456kHz"), 123456000)
+        self.assertEqual(parse_frequency("123456Hz"), 123456)
+        self.assertEqual(parse_frequency("123MHz"), 123000000)
+        self.assertEqual(parse_frequency("123456MHz"), 123456000000)
+        self.assertEqual(parse_frequency("123GHz"), 123000000000)
+        self.assertEqual(parse_frequency("123456GHz"), 123456000000000)
 
     def test_commonMistakeKHz_vs_kHz(self):
         # some poorly formatted values that still work as expected
-        self.assertEqual(parse_frequency('123kHz'), 123000)
-        self.assertEqual(parse_frequency('123KHz'), 123000)
+        self.assertEqual(parse_frequency("123kHz"), 123000)
+        self.assertEqual(parse_frequency("123KHz"), 123000)
 
     def test_illegalInputValues(self):
         # poorly formatted inputs that are identified as illegal
-        self.assertEqual(parse_frequency('Junk'), -1)
-        self.assertEqual(parse_frequency('Garbage'), -1)
-        self.assertEqual(parse_frequency('123.Junk'), -1)
+        self.assertEqual(parse_frequency("Junk"), -1)
+        self.assertEqual(parse_frequency("Garbage"), -1)
+        self.assertEqual(parse_frequency("123.Junk"), -1)
 
     def test_missingDigitsAfterPeriod(self):
         # some poorly formatted values that still work as expected
-        self.assertEqual(parse_frequency('123.'), 123)
-        self.assertEqual(parse_frequency('123.Hz'), 123)
-        self.assertEqual(parse_frequency('123.kHz'), 123000)
-        self.assertEqual(parse_frequency('123.MHz'), 123000000)
-        self.assertEqual(parse_frequency('123.GHz'), 123000000000)
-        self.assertEqual(parse_frequency('123.KHz'), 123000)
-        self.assertEqual(parse_frequency('123.mHz'), 123000000)
-        self.assertEqual(parse_frequency('123.gHz'), 123000000000)
+        self.assertEqual(parse_frequency("123."), 123)
+        self.assertEqual(parse_frequency("123.Hz"), 123)
+        self.assertEqual(parse_frequency("123.kHz"), 123000)
+        self.assertEqual(parse_frequency("123.MHz"), 123000000)
+        self.assertEqual(parse_frequency("123.GHz"), 123000000000)
+        self.assertEqual(parse_frequency("123.KHz"), 123000)
+        self.assertEqual(parse_frequency("123.mHz"), 123000000)
+        self.assertEqual(parse_frequency("123.gHz"), 123000000000)
 
     def test_unusualSIUnits(self):
         #######################################################################
@@ -73,17 +73,17 @@ class TestCases(unittest.TestCase):
         # PREFIXES = ("y", "z", "a", "f", "p", "n", "µ", "m",
         #            "", "k", "M", "G", "T", "P", "E", "Z", "Y")
         #######################################################################
-        self.assertEqual(parse_frequency('123EHz'), 123000000000000000000)
-        self.assertEqual(parse_frequency('123PHz'), 123000000000000000)
-        self.assertEqual(parse_frequency('123THz'), 123000000000000)
-        self.assertEqual(parse_frequency('123YHz'), 123000000000000000000000000)
-        self.assertEqual(parse_frequency('123ZHz'), 123000000000000000000000)
-        self.assertEqual(parse_frequency('123aHz'), 0)
-        self.assertEqual(parse_frequency('123fHz'), 0)
-        self.assertEqual(parse_frequency('123nHz'), 0)
-        self.assertEqual(parse_frequency('123pHz'), 0)
-        self.assertEqual(parse_frequency('123yHz'), 0)
-        self.assertEqual(parse_frequency('123zHz'), 0)
+        self.assertEqual(parse_frequency("123EHz"), 123000000000000000000)
+        self.assertEqual(parse_frequency("123PHz"), 123000000000000000)
+        self.assertEqual(parse_frequency("123THz"), 123000000000000)
+        self.assertEqual(parse_frequency("123YHz"), 123000000000000000000000000)
+        self.assertEqual(parse_frequency("123ZHz"), 123000000000000000000000)
+        self.assertEqual(parse_frequency("123aHz"), 0)
+        self.assertEqual(parse_frequency("123fHz"), 0)
+        self.assertEqual(parse_frequency("123nHz"), 0)
+        self.assertEqual(parse_frequency("123pHz"), 0)
+        self.assertEqual(parse_frequency("123yHz"), 0)
+        self.assertEqual(parse_frequency("123zHz"), 0)
 
         #######################################################################
         # Recommend: Reducing the legal SI values defined in SITools (see
@@ -91,7 +91,7 @@ class TestCases(unittest.TestCase):
         # failure code instead of being interpreted as an SI unit.
         # PREFIXES = ("", "k", "M", "G")
         #######################################################################
-        '''
+        """
         self.assertEqual(parseFrequency('123EHz'), -1)
         self.assertEqual(parseFrequency('123PHz'), -1)
         self.assertEqual(parseFrequency('123THz'), -1)
@@ -104,7 +104,7 @@ class TestCases(unittest.TestCase):
         self.assertEqual(parseFrequency('123pHz'), -1)
         self.assertEqual(parseFrequency('123yHz'), -1)
         self.assertEqual(parseFrequency('123zHz'), -1)
-    '''
+    """
 
     def test_partialHzText(self):
         #######################################################################
@@ -113,40 +113,40 @@ class TestCases(unittest.TestCase):
         # After reduction of legal SI values in SITools, this would return
         # a -1 failure code instead.
         #######################################################################
-        self.assertEqual(parse_frequency('123z'), 0)
-        self.assertEqual(parse_frequency('123.z'), 0)
-        self.assertEqual(parse_frequency('1.23z'), 0)
-        '''
+        self.assertEqual(parse_frequency("123z"), 0)
+        self.assertEqual(parse_frequency("123.z"), 0)
+        self.assertEqual(parse_frequency("1.23z"), 0)
+        """
         self.assertEqual(parseFrequency('123z'), -1)
         self.assertEqual(parseFrequency('123.z'), -1)
         self.assertEqual(parseFrequency('1.23z'), -1)
-        '''
+        """
 
     def test_basicExponentialNotation(self):
         # check basic exponential notation
-        self.assertEqual(parse_frequency('123e3'), 123000)
-        self.assertEqual(parse_frequency('123e6'), 123000000)
-        self.assertEqual(parse_frequency('123e9'), 123000000000)
-        self.assertEqual(parse_frequency('123e4'), 1230000)
-        self.assertEqual(parse_frequency('123e12'), 123000000000000)
-        self.assertEqual(parse_frequency('123e18'), 123000000000000000000)
+        self.assertEqual(parse_frequency("123e3"), 123000)
+        self.assertEqual(parse_frequency("123e6"), 123000000)
+        self.assertEqual(parse_frequency("123e9"), 123000000000)
+        self.assertEqual(parse_frequency("123e4"), 1230000)
+        self.assertEqual(parse_frequency("123e12"), 123000000000000)
+        self.assertEqual(parse_frequency("123e18"), 123000000000000000000)
 
     def test_negativeExponentialNotation(self):
         # negative exponential values resulting in N < 0, return 0
-        self.assertEqual(parse_frequency('123e-3'), 0)
-        self.assertEqual(parse_frequency('1234e-4'), 0)
-        self.assertEqual(parse_frequency('12345e-5'), 0)
-        self.assertEqual(parse_frequency('12345678e-8'), 0)
+        self.assertEqual(parse_frequency("123e-3"), 0)
+        self.assertEqual(parse_frequency("1234e-4"), 0)
+        self.assertEqual(parse_frequency("12345e-5"), 0)
+        self.assertEqual(parse_frequency("12345678e-8"), 0)
         # negative exponential values resulting in N > 0, return N
-        self.assertEqual(parse_frequency('100000e-5'), 1)
-        self.assertEqual(parse_frequency('100000e-4'), 10)
-        self.assertEqual(parse_frequency('100000e-3'), 100)
-        self.assertEqual(parse_frequency('100000e-2'), 1000)
-        self.assertEqual(parse_frequency('100000e-1'), 10000)
+        self.assertEqual(parse_frequency("100000e-5"), 1)
+        self.assertEqual(parse_frequency("100000e-4"), 10)
+        self.assertEqual(parse_frequency("100000e-3"), 100)
+        self.assertEqual(parse_frequency("100000e-2"), 1000)
+        self.assertEqual(parse_frequency("100000e-1"), 10000)
 
     def test_multiplePeriods(self):
         # multiple periods are properly detected as bad
-        self.assertEqual(parse_frequency('123..Hz'), -1)
-        self.assertEqual(parse_frequency('123...Hz'), -1)
-        self.assertEqual(parse_frequency('123....Hz'), -1)
-        self.assertEqual(parse_frequency('1.23.Hz'), -1)
+        self.assertEqual(parse_frequency("123..Hz"), -1)
+        self.assertEqual(parse_frequency("123...Hz"), -1)
+        self.assertEqual(parse_frequency("123....Hz"), -1)
+        self.assertEqual(parse_frequency("1.23.Hz"), -1)

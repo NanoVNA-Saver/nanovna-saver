@@ -18,7 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-import NanoVNASaver.AnalyticTools as at
+import NanoVNASaver.AnalyticTools as At
 from NanoVNASaver.Analysis.Base import CUTOFF_VALS
 from NanoVNASaver.Analysis.HighPassAnalysis import HighPassAnalysis
 
@@ -35,6 +35,6 @@ class LowPassAnalysis(HighPassAnalysis):
         self, gains: list[float], peak: int, peak_db: float
     ) -> dict[str, int]:
         return {
-            f"{attn:.1f}dB": at.cut_off_right(gains, peak, peak_db, attn)
+            f"{attn:.1f}dB": At.cut_off_right(gains, peak, peak_db, attn)
             for attn in CUTOFF_VALS
         }

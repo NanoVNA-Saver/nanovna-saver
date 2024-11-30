@@ -18,12 +18,12 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from PyQt6 import QtWidgets, QtCore
+from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtWidgets import QCheckBox, QSizePolicy
 
 from NanoVNASaver import Defaults
-from NanoVNASaver.Marker.Widget import Marker
 from NanoVNASaver.Controls.Control import Control
+from NanoVNASaver.Marker.Widget import Marker
 
 logger = logging.getLogger(__name__)
 
