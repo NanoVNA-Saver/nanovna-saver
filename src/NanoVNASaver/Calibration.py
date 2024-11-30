@@ -16,18 +16,18 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import logging
 import cmath
+import logging
 import math
 import os
 import re
-from collections import defaultdict, UserDict
+from collections import UserDict, defaultdict
 from dataclasses import dataclass
 
 from scipy.interpolate import interp1d
 
 from NanoVNASaver.RFTools import Datapoint
-
+from NanoVNASaver.Touchstone import Touchstone
 
 IDEAL_SHORT = complex(-1, 0)
 IDEAL_OPEN = complex(1, 0)
@@ -111,6 +111,8 @@ class CalData:
 @dataclass
 class CalElement:
     # pylint: disable=too-many-instance-attributes
+    short_state: str = ""
+    short_touchstone: Touchstone = None
     short_is_ideal: bool = True
     short_l0: float = 5.7e-12
     short_l1: float = -8.96e-20
@@ -118,6 +120,8 @@ class CalElement:
     short_l3: float = -4.12e-37
     short_length: float = -34.2  # ps
 
+    open_state: str = ""
+    open_touchstone: Touchstone = None
     open_is_ideal: bool = True
     open_c0: float = 2.1e-14
     open_c1: float = 5.67e-23
@@ -125,6 +129,8 @@ class CalElement:
     open_c3: float = 2.0e-40
     open_length: float = 0.0
 
+    load_state: str = ""
+    load_touchstone: Touchstone = None
     load_is_ideal: bool = True
     load_r: float = 50.0
     load_l: float = 0.0
@@ -194,7 +200,7 @@ class CalDataSet(UserDict):
         header = ""
         # parse text
         for i, line in enumerate(text.splitlines(), 1):
-            line = line.strip()
+            line = line.strip()  # noqa: PLW2901
 
             if line.startswith("!"):
                 self.notes += f"{line[2:]}\n"
@@ -454,7 +460,7 @@ class Calibration:
         cal_element = self.cal_element
         return cmath.exp(
             complex(0.0, -2.0 * math.pi * cal_element.through_length * freq)
-        )    
+        )
 
     def gen_interpolation(self):
         (freq, e00, e11, delta_e, e10e01, e30, e22, e10e32) = zip(
@@ -470,7 +476,8 @@ class Calibration:
                     c.e10e32,
                 )
                 for c in self.dataset.values()
-            ]
+            ],
+            strict=False,
         )
 
         self.interp = {

@@ -26,7 +26,7 @@ class TestCases(unittest.TestCase):
 
     def test_version(self):
         ver = Version("v1.2.3-test")
-        self.assertEqual(str(ver), '1.2.3-test')
+        self.assertEqual(str(ver), "1.2.3-test")
         self.assertLessEqual(ver, Version("1.2.4"))
         self.assertFalse(ver > Version("1.2.4"))
         self.assertFalse(ver > Version("1.2.3-u"))
@@ -36,6 +36,6 @@ class TestCases(unittest.TestCase):
         self.assertEqual(ver.major, 1)
         self.assertEqual(ver.minor, 2)
         self.assertEqual(ver.revision, 3)
-        self.assertEqual(ver.note, '-test')
+        self.assertEqual(ver.note, "-test")
         Version("asdasd")
         Version("1.2.invalid")

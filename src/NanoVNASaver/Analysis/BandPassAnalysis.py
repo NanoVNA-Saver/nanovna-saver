@@ -21,8 +21,8 @@ import math
 
 from PyQt6 import QtWidgets
 
-import NanoVNASaver.AnalyticTools as at
-from NanoVNASaver.Analysis.Base import Analysis, CUTOFF_VALS
+import NanoVNASaver.AnalyticTools as At
+from NanoVNASaver.Analysis.Base import CUTOFF_VALS, Analysis
 from NanoVNASaver.Formatting import format_frequency
 
 logger = logging.getLogger(__name__)
@@ -120,10 +120,10 @@ class BandPassAnalysis(Analysis):
         }
         result["q_factor"] = result["freq_center"] / result["span_3.0dB"]
 
-        result["octave_l"], result["decade_l"] = at.calculate_rolloff(
+        result["octave_l"], result["decade_l"] = At.calculate_rolloff(
             s21, cutoff_pos["10.0dB_l"], cutoff_pos["20.0dB_l"]
         )
-        result["octave_r"], result["decade_r"] = at.calculate_rolloff(
+        result["octave_r"], result["decade_r"] = At.calculate_rolloff(
             s21, cutoff_pos["10.0dB_r"], cutoff_pos["20.0dB_r"]
         )
 
@@ -200,7 +200,7 @@ class BandPassAnalysis(Analysis):
             return -1
 
         # find center of passband based on marker pos
-        if (peak := at.center_from_idx(gains, marker.location)) < 0:
+        if (peak := At.center_from_idx(gains, marker.location)) < 0:
             self.set_result("Bandpass center not found")
             return -1
         return peak
@@ -210,10 +210,10 @@ class BandPassAnalysis(Analysis):
     ) -> dict[str, int]:
         cutoff_pos = {}
         for attn in CUTOFF_VALS:
-            cutoff_pos[f"{attn:.1f}dB_l"] = at.cut_off_left(
+            cutoff_pos[f"{attn:.1f}dB_l"] = At.cut_off_left(
                 gains, peak, peak_db, attn
             )
-            cutoff_pos[f"{attn:.1f}dB_r"] = at.cut_off_right(
+            cutoff_pos[f"{attn:.1f}dB_r"] = At.cut_off_right(
                 gains, peak, peak_db, attn
             )
         return cutoff_pos

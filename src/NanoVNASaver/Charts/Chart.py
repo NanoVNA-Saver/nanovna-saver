@@ -17,17 +17,16 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-
 from dataclasses import dataclass, field, replace
-from typing import ClassVar, Any
+from typing import Any, ClassVar
 
-from PyQt6 import QtWidgets, QtGui, QtCore
-from PyQt6.QtCore import pyqtSignal, Qt
-from PyQt6.QtGui import QColor, QColorConstants, QAction
+from PyQt6 import QtCore, QtGui, QtWidgets
+from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtGui import QAction, QColor, QColorConstants
 
 from NanoVNASaver import Defaults
-from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.Marker.Widget import Marker
+from NanoVNASaver.RFTools import Datapoint
 
 logger = logging.getLogger(__name__)
 

@@ -18,9 +18,10 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from PyQt6 import QtWidgets, QtCore, QtGui
-from NanoVNASaver.Touchstone import Touchstone
+from PyQt6 import QtCore, QtGui, QtWidgets
+
 from NanoVNASaver.RFTools import Datapoint
+from NanoVNASaver.Touchstone import Touchstone
 from NanoVNASaver.Windows.Defaults import make_scrollable
 
 logger = logging.getLogger(__name__)

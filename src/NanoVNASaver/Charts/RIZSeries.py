@@ -19,6 +19,7 @@
 import logging
 
 from NanoVNASaver.RFTools import Datapoint
+
 from .RIZ import RealImaginaryZChart
 
 logger = logging.getLogger(__name__)

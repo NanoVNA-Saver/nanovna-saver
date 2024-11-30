@@ -20,7 +20,7 @@ import logging
 
 from PyQt6 import QtWidgets
 
-import NanoVNASaver.AnalyticTools as at
+import NanoVNASaver.AnalyticTools as At
 from NanoVNASaver.Analysis.Base import Analysis, QHLine
 from NanoVNASaver.Formatting import format_frequency, format_vswr
 
@@ -63,7 +63,7 @@ class VSWRAnalysis(Analysis):
         data = [d.vswr for d in s11]
         threshold = self.input_vswr_limit.value()
 
-        minima = sorted(at.minima(data, threshold), key=lambda i: data[i])[
+        minima = sorted(At.minima(data, threshold), key=lambda i: data[i])[
             : VSWRAnalysis.max_dips_shown
         ]
         self.minimums = minima
@@ -86,7 +86,7 @@ class VSWRAnalysis(Analysis):
             return
 
         for idx in minima:
-            rng = at.take_from_idx(data, idx, lambda i: i[1] < threshold)
+            rng = At.take_from_idx(data, idx, lambda i: i[1] < threshold)
             begin, end = rng[0], rng[-1]
             self.layout.addRow(
                 "Start", QtWidgets.QLabel(format_frequency(s11[begin].freq))

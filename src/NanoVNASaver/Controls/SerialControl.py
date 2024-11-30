@@ -21,8 +21,8 @@ from time import sleep
 
 from PyQt6 import QtWidgets
 
-from NanoVNASaver.Hardware.Hardware import Interface, get_interfaces, get_VNA
 from NanoVNASaver.Controls.Control import Control
+from NanoVNASaver.Hardware.Hardware import Interface, get_interfaces, get_VNA
 
 logger = logging.getLogger(__name__)
 

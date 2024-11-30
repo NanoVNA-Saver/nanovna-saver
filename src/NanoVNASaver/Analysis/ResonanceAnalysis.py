@@ -16,13 +16,13 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import os
 import csv
 import logging
+import os
 
 from PyQt6 import QtWidgets
 
-import NanoVNASaver.AnalyticTools as at
+import NanoVNASaver.AnalyticTools as At
 from NanoVNASaver.Analysis.Base import Analysis, QHLine
 from NanoVNASaver.Formatting import format_frequency, format_resistance
 from NanoVNASaver.RFTools import reflection_coefficient
@@ -94,7 +94,7 @@ class ResonanceAnalysis(Analysis):
             self.layout.removeRow(self.layout.rowCount() - 1)
 
         self.crossings = sorted(
-            set(at.zero_crossings([d.phase for d in self.app.data.s11]))
+            set(At.zero_crossings([d.phase for d in self.app.data.s11]))
         )
         logger.debug("Found %d sections ", len(self.crossings))
         if not self.crossings:

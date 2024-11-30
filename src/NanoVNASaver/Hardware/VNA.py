@@ -22,8 +22,8 @@ from typing import Iterator
 
 from PyQt6 import QtGui
 
-from NanoVNASaver.Version import Version
 from NanoVNASaver.Hardware.Serial import Interface, drain_serial
+from NanoVNASaver.Version import Version
 
 logger = logging.getLogger(__name__)
 

@@ -20,13 +20,12 @@
 import logging
 from functools import partial
 
-from PyQt6 import QtWidgets, QtCore, QtGui
+from PyQt6 import QtCore, QtGui, QtWidgets
 
 from NanoVNASaver.Calibration import Calibration
 from NanoVNASaver.Settings.Sweep import SweepMode
-from NanoVNASaver.Windows.Defaults import make_scrollable
 from NanoVNASaver.Touchstone import Touchstone
-
+from NanoVNASaver.Windows.Defaults import make_scrollable
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +42,7 @@ def getFloatValue(text: str) -> float:
 
 
 class CalibrationWindow(QtWidgets.QWidget):
-    nextStep = -1
+    next_step = -1
 
     def __init__(self, app: QtWidgets.QWidget):
         super().__init__()
@@ -171,7 +170,6 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.use_s1p_files = QtWidgets.QRadioButton("Use s1p files")
         self.use_coefficients = QtWidgets.QRadioButton("Use coefficients")
 
-
         self.use_ideal_values.setChecked(True)
         self.radio_group = QtWidgets.QButtonGroup(self)
         self.radio_group.addButton(self.use_ideal_values)
@@ -185,7 +183,6 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.radio_layout.addWidget(self.use_coefficients)
         cal_standard_layout.addRow(self.radio_layout)
 
-
         self.file_button_short = QtWidgets.QPushButton("Short S1P file")
         self.file_button_open = QtWidgets.QPushButton("Open S1P file")
         self.file_button_load = QtWidgets.QPushButton("Load S1P file")
@@ -196,11 +193,11 @@ class CalibrationWindow(QtWidgets.QWidget):
         cal_standard_layout.addRow(self.file_button_short)
         cal_standard_layout.addRow(self.file_button_open)
         cal_standard_layout.addRow(self.file_button_load)
-        
+
         self.file_button_open.clicked.connect(self.select_file_open)
         self.file_button_short.clicked.connect(self.select_file_short)
         self.file_button_load.clicked.connect(self.select_file_load)
-        
+
         self.cal_short_box = QtWidgets.QGroupBox("Short")
         cal_short_form = QtWidgets.QFormLayout(self.cal_short_box)
         self.cal_short_box.setDisabled(True)
@@ -219,8 +216,7 @@ class CalibrationWindow(QtWidgets.QWidget):
         cal_short_form.addRow("L2 (H(e-33))", self.short_l2_input)
         cal_short_form.addRow("L3 (H(e-42))", self.short_l3_input)
         cal_short_form.addRow("Offset Delay (ps)", self.short_length)
-        
-        
+
         self.cal_open_box = QtWidgets.QGroupBox("Open")
         cal_open_form = QtWidgets.QFormLayout(self.cal_open_box)
         self.cal_open_box.setDisabled(True)
@@ -240,7 +236,6 @@ class CalibrationWindow(QtWidgets.QWidget):
         cal_open_form.addRow("C3 (F(e-45))", self.open_c3_input)
         cal_open_form.addRow("Offset Delay (ps)", self.open_length)
 
-
         self.cal_load_box = QtWidgets.QGroupBox("Load")
         cal_load_form = QtWidgets.QFormLayout(self.cal_load_box)
         self.cal_load_box.setDisabled(True)
@@ -257,8 +252,6 @@ class CalibrationWindow(QtWidgets.QWidget):
         cal_load_form.addRow("Inductance (H(e-12))", self.load_inductance)
         cal_load_form.addRow("Capacitance (F(e-15))", self.load_capacitance)
         cal_load_form.addRow("Offset Delay (ps)", self.load_length)
-
-
 
         self.cal_through_box = QtWidgets.QGroupBox("Through")
         cal_through_form = QtWidgets.QFormLayout(self.cal_through_box)
@@ -648,13 +641,13 @@ class CalibrationWindow(QtWidgets.QWidget):
                 getFloatValue(self.through_length.text()) / 1.0e12
             )
         elif self.radio_group.checkedButton() == self.use_s1p_files:
-            if (self.short_touchstone is not None):
+            if self.short_touchstone is not None:
                 cal_element.short_state = "FILE"
                 cal_element.short_touchstone = self.short_touchstone
-            if (self.open_touchstone is not None):
+            if self.open_touchstone is not None:
                 cal_element.open_state = "FILE"
                 cal_element.open_touchstone = self.open_touchstone
-            if (self.load_touchstone is not None):
+            if self.load_touchstone is not None:
                 cal_element.load_state = "FILE"
                 cal_element.load_touchstone = self.load_touchstone
             cal_element.through_is_ideal = False
@@ -786,7 +779,8 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.cal_standard_save_box.setDisabled(False)
             self.file_button_short.setDisabled(True)
             self.file_button_open.setDisabled(True)
-            self.file_button_load.setDisabled(True)            
+            self.file_button_load.setDisabled(True)
+
     def automaticCalibration(self):
         self.btn_automatic.setDisabled(True)
         introduction = QtWidgets.QMessageBox(
@@ -856,22 +850,22 @@ class CalibrationWindow(QtWidgets.QWidget):
             return
         self.reset()
         self.app.calibration.source = "Calibration assistant"
-        self.nextStep = 0
+        self.next_step = 0
         self.app.worker.signals.finished.connect(self.automaticCalibrationStep)
         self.app.sweep_start()
         return
 
     def automaticCalibrationStep(self):
-        if self.nextStep == -1:
+        if self.next_step == -1:
             self.app.worker.signals.finished.disconnect(
                 self.automaticCalibrationStep
             )
             return
 
-        if self.nextStep == 0:
+        if self.next_step == 0:
             # Short
             self.cal_save("short")
-            self.nextStep = 1
+            self.next_step = 1
 
             open_step = QtWidgets.QMessageBox(
                 QtWidgets.QMessageBox.Icon.Information,
@@ -889,7 +883,7 @@ class CalibrationWindow(QtWidgets.QWidget):
 
             response = open_step.exec()
             if response != QtWidgets.QMessageBox.StandardButton.Ok:
-                self.nextStep = -1
+                self.next_step = -1
                 self.btn_automatic.setDisabled(False)
                 self.app.worker.signals.finished.disconnect(
                     self.automaticCalibrationStep
@@ -898,10 +892,10 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.app.sweep_start()
             return
 
-        if self.nextStep == 1:
+        if self.next_step == 1:
             # Open
             self.cal_save("open")
-            self.nextStep = 2
+            self.next_step = 2
             load_step = QtWidgets.QMessageBox(
                 QtWidgets.QMessageBox.Icon.Information,
                 "Calibrate load",
@@ -917,7 +911,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             response = load_step.exec()
             if response != QtWidgets.QMessageBox.StandardButton.Ok:
                 self.btn_automatic.setDisabled(False)
-                self.nextStep = -1
+                self.next_step = -1
                 self.app.worker.signals.finished.disconnect(
                     self.automaticCalibrationStep
                 )
@@ -925,10 +919,10 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.app.sweep_start()
             return
 
-        if self.nextStep == 2:
+        if self.next_step == 2:  # noqa: PLR2004
             # Load
             self.cal_save("load")
-            self.nextStep = 3
+            self.next_step = 3
             continue_step = QtWidgets.QMessageBox(
                 QtWidgets.QMessageBox.Icon.Information,
                 "1-port calibration complete",
@@ -947,7 +941,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             response = continue_step.exec()
             if response == QtWidgets.QMessageBox.StandardButton.Apply:
                 self.calculate()
-                self.nextStep = -1
+                self.next_step = -1
                 self.app.worker.signals.finished.disconnect(
                     self.automaticCalibrationStep
                 )
@@ -955,7 +949,7 @@ class CalibrationWindow(QtWidgets.QWidget):
                 return
             if response != QtWidgets.QMessageBox.StandardButton.Yes:
                 self.btn_automatic.setDisabled(False)
-                self.nextStep = -1
+                self.next_step = -1
                 self.app.worker.signals.finished.disconnect(
                     self.automaticCalibrationStep
                 )
@@ -978,7 +972,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             response = isolation_step.exec()
             if response != QtWidgets.QMessageBox.StandardButton.Ok:
                 self.btn_automatic.setDisabled(False)
-                self.nextStep = -1
+                self.next_step = -1
                 self.app.worker.signals.finished.disconnect(
                     self.automaticCalibrationStep
                 )
@@ -986,10 +980,10 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.app.sweep_start()
             return
 
-        if self.nextStep == 3:
+        if self.next_step == 3:  # noqa: PLR2004
             # Isolation
             self.cal_save("isolation")
-            self.nextStep = 4
+            self.next_step = 4
             through_step = QtWidgets.QMessageBox(
                 QtWidgets.QMessageBox.Icon.Information,
                 "Calibrate through",
@@ -1005,7 +999,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             response = through_step.exec()
             if response != QtWidgets.QMessageBox.StandardButton.Ok:
                 self.btn_automatic.setDisabled(False)
-                self.nextStep = -1
+                self.next_step = -1
                 self.app.worker.signals.finished.disconnect(
                     self.automaticCalibrationStep
                 )
@@ -1013,7 +1007,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.app.sweep_start()
             return
 
-        if self.nextStep == 4:
+        if self.next_step == 4:  # noqa: PLR2004
             # Done
             self.cal_save("thrurefl")
             self.cal_save("through")
@@ -1031,7 +1025,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             response = apply_step.exec()
             if response != QtWidgets.QMessageBox.StandardButton.Apply:
                 self.btn_automatic.setDisabled(False)
-                self.nextStep = -1
+                self.next_step = -1
                 self.app.worker.signals.finished.disconnect(
                     self.automaticCalibrationStep
                 )
@@ -1039,25 +1033,32 @@ class CalibrationWindow(QtWidgets.QWidget):
 
             self.calculate()
             self.btn_automatic.setDisabled(False)
-            self.nextStep = -1
+            self.next_step = -1
             self.app.worker.signals.finished.disconnect(
                 self.automaticCalibrationStep
             )
             return
+
     def select_file_open(self):
-        filename, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Select Open S1P", "", "Touchstone Files (*.s1p)")
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Select Open S1P", "", "Touchstone Files (*.s1p)"
+        )
         if filename != "":
             self.open_touchstone = Touchstone(filename)
-            self.open_touchstone.load()            
+            self.open_touchstone.load()
 
     def select_file_short(self):
-        filename, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Select Short S1P", "", "Touchstone Files (*.s1p)")
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Select Short S1P", "", "Touchstone Files (*.s1p)"
+        )
         if filename != "":
             self.short_touchstone = Touchstone(filename)
             self.short_touchstone.load()
-            
+
     def select_file_load(self):
-        filename, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Select Load S1P", "", "Touchstone Files (*.s1p)")
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Select Load S1P", "", "Touchstone Files (*.s1p)"
+        )
         if filename != "":
             self.load_touchstone = Touchstone(filename)
-            self.load_touchstone.load()   
+            self.load_touchstone.load()

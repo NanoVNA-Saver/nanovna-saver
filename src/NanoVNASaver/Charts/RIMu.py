@@ -16,17 +16,17 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import math
-import numpy as np
 import logging
+import math
+
+import numpy as np
+from PyQt6 import QtGui, QtWidgets
 from scipy.constants import mu_0
 
-from PyQt6 import QtWidgets, QtGui
-
-from NanoVNASaver.Formatting import format_frequency_chart
-from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Charts.RI import RealImaginaryChart
+from NanoVNASaver.Formatting import format_frequency_chart
+from NanoVNASaver.RFTools import Datapoint
 
 logger = logging.getLogger(__name__)
 

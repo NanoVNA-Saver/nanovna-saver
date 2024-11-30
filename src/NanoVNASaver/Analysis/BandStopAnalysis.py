@@ -18,9 +18,9 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-import NanoVNASaver.AnalyticTools as at
-from NanoVNASaver.Analysis.Base import CUTOFF_VALS
+import NanoVNASaver.AnalyticTools as At
 from NanoVNASaver.Analysis.BandPassAnalysis import BandPassAnalysis
+from NanoVNASaver.Analysis.Base import CUTOFF_VALS
 
 logger = logging.getLogger(__name__)
 
@@ -41,5 +41,5 @@ class BandStopAnalysis(BandPassAnalysis):
             (
                 cutoff_pos[f"{attn:.1f}dB_l"],
                 cutoff_pos[f"{attn:.1f}dB_r"],
-            ) = at.dip_cut_offs(gains, peak_db, attn)
+            ) = At.dip_cut_offs(gains, peak_db, attn)
         return cutoff_pos

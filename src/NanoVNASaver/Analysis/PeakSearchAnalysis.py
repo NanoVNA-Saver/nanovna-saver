@@ -18,8 +18,8 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from PyQt6 import QtWidgets
 import numpy as np
+from PyQt6 import QtWidgets
 
 # pylint: disable=import-error, no-name-in-module
 from scipy.signal import find_peaks, peak_prominences
@@ -28,9 +28,7 @@ from NanoVNASaver.Analysis.Base import QHLine
 from NanoVNASaver.Analysis.SimplePeakSearchAnalysis import (
     SimplePeakSearchAnalysis,
 )
-
 from NanoVNASaver.Formatting import format_frequency_short
-
 
 logger = logging.getLogger(__name__)
 

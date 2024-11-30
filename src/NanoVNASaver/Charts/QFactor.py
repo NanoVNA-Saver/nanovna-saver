@@ -16,14 +16,14 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import math
 import logging
+import math
 
 from PyQt6 import QtGui
 
-from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Charts.Frequency import FrequencyChart
+from NanoVNASaver.RFTools import Datapoint
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +43,8 @@ class QualityFactorChart(FrequencyChart):
         self.maxDisplayValue = 100
 
     def drawChart(self, qp: QtGui.QPainter):
+        ROUND_ONE_DIGIT = 20
+        ROUND_TWO_DIGITS = 10
         super().drawChart(qp)
 
         # Make up some sensible scaling here
@@ -71,11 +73,12 @@ class QualityFactorChart(FrequencyChart):
             y = self.topMargin + int(
                 (self.maxQ - q) / self.span * self.dim.height
             )
-            q = round(q)
-            if q < 10:
+            if q < ROUND_TWO_DIGITS:
                 q = round(q, 2)
-            if q < 20:
+            if q < ROUND_ONE_DIGIT:
                 q = round(q, 1)
+            else:
+                q = round(q)
             qp.setPen(QtGui.QPen(Chart.color.text))
             qp.drawText(3, y + 3, str(q))
             qp.setPen(QtGui.QPen(Chart.color.foreground))
@@ -90,11 +93,12 @@ class QualityFactorChart(FrequencyChart):
         )
         qp.setPen(Chart.color.text)
 
-        max_q = round(maxQ)
-        if maxQ < 10:
+        if maxQ < ROUND_TWO_DIGITS:
             max_q = round(maxQ, 2)
-        elif maxQ < 20:
+        elif maxQ < ROUND_ONE_DIGIT:
             max_q = round(maxQ, 1)
+        else:
+            max_q = round(maxQ)
         qp.drawText(3, 35, f"{max_q}")
 
     def drawValues(self, qp: QtGui.QPainter):

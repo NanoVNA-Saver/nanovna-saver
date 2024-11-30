@@ -19,7 +19,7 @@
 import logging
 import math
 
-from PyQt6 import QtGui, QtCore, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.RFTools import Datapoint

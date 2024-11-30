@@ -18,15 +18,15 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from PyQt6 import QtWidgets, QtCore
+from PyQt6 import QtCore, QtWidgets
 
+from NanoVNASaver.Controls.Control import Control
 from NanoVNASaver.Formatting import (
-    format_frequency_sweep,
     format_frequency_short,
+    format_frequency_sweep,
     parse_frequency,
 )
 from NanoVNASaver.Inputs import FrequencyInputWidget
-from NanoVNASaver.Controls.Control import Control
 
 logger = logging.getLogger(__name__)
 

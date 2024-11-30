@@ -19,11 +19,11 @@
 import logging
 import struct
 
-import serial
 import numpy as np
+import serial
 from PyQt6.QtGui import QImage, QPixmap
 
-from NanoVNASaver.Hardware.Serial import drain_serial, Interface
+from NanoVNASaver.Hardware.Serial import Interface, drain_serial
 from NanoVNASaver.Hardware.VNA import VNA
 from NanoVNASaver.Version import Version
 
