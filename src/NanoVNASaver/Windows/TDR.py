@@ -82,6 +82,7 @@ class TDRWindow(QtWidgets.QWidget):
         self.app = app
 
         self.td = []
+        self.windowed_s11 = np.ndarray([])
         self.distance_axis = []
         self.step_response_Z = []
 
@@ -176,13 +177,12 @@ class TDRWindow(QtWidgets.QWidget):
                 np.concatenate([s11, np.conj(s11[-1:0:-1])])
             )
 
-        window = np.blackman(len(s11))
-        windowed_s11 = window * s11
+        self.windowed_s11 = np.blackman(len(s11)) * s11
 
         if "lowpass" in TDR_format:
-            windowed_s11, td = self._tdr_lowpass(TDR_format, s11, windowed_s11)
+            td = self._tdr_lowpass(TDR_format, s11)
         else:
-            td = np.abs(np.fft.ifft(windowed_s11, FFT_POINTS))
+            td = np.abs(np.fft.ifft(self.windowed_s11, FFT_POINTS))
             # Convolving with a step function is unnecessary, we can only get
             # the magnitude of impulse response
             if TDR_format == "Refl (bandpass)":
@@ -204,14 +204,14 @@ class TDRWindow(QtWidgets.QWidget):
         self.td = list(td)
         self.updated.emit()
 
-    def _tdr_lowpass(self, tdr_format, s11, windowed_s11):
-        pad_points = (FFT_POINTS - len(windowed_s11)) // 2
-        windowed_s11 = np.pad(
-            windowed_s11, [pad_points + 1, pad_points]
+    def _tdr_lowpass(self, tdr_format, s11) -> np.ndarray:
+        pad_points = (FFT_POINTS - len(self.windowed_s11)) // 2
+        self.windowed_s11 = np.pad(
+            self.windowed_s11, [pad_points + 1, pad_points]
         )  # Pad array to length FFT_POINTS
-        windowed_s11 = np.fft.ifftshift(windowed_s11)
+        self.windowed_s11 = np.fft.ifftshift(self.windowed_s11)
 
-        td = np.fft.ifft(windowed_s11)
+        td = np.fft.ifft(self.windowed_s11)
         step = np.ones(FFT_POINTS)
         step_response = convolve(td, step)
         step_response_rev = convolve(td[::-1], step)
@@ -225,15 +225,15 @@ class TDRWindow(QtWidgets.QWidget):
         step_refl_coefficient = np.abs((step_Z - 50) / (step_Z + 50))
         if tdr_format == "|Z| (lowpass)":
             self.step_response_Z = np.abs(step_Z)
-            return (windowed_s11, td)
+            return td
         if tdr_format == "S11 (lowpass)":
             self.step_response_Z = 20 * np.log10(step_refl_coefficient)
-            return (windowed_s11, td)
+            return td
         if tdr_format == "VSWR (lowpass)":
             self.step_response_Z = np.abs(
                 (1 + step_refl_coefficient) / (1 - step_refl_coefficient)
             )
-            return (windowed_s11, td)
+            return td
         if tdr_format == "Refl (lowpass)":
             # The 1/0.42 is the Amplitude Correction Factor for the
             # Blackman window. 0.42 is the average amplitude of the
@@ -241,4 +241,4 @@ class TDRWindow(QtWidgets.QWidget):
             self.step_response_Z = np.real(
                 td * FFT_POINTS / len(s11) * 1 / 0.42
             )
-        return (windowed_s11, td)
+        return td
