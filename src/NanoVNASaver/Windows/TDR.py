@@ -180,7 +180,7 @@ class TDRWindow(QtWidgets.QWidget):
         windowed_s11 = window * s11
 
         if "lowpass" in TDR_format:
-            windowed_s11 = self._tdr_lowpass(TDR_format, s11, windowed_s11)
+            windowed_s11, td = self._tdr_lowpass(TDR_format, s11, windowed_s11)
         else:
             td = np.abs(np.fft.ifft(windowed_s11, FFT_POINTS))
             # Convolving with a step function is unnecessary, we can only get
@@ -225,15 +225,15 @@ class TDRWindow(QtWidgets.QWidget):
         step_refl_coefficient = np.abs((step_Z - 50) / (step_Z + 50))
         if tdr_format == "|Z| (lowpass)":
             self.step_response_Z = np.abs(step_Z)
-            return windowed_s11
+            return (windowed_s11, td)
         if tdr_format == "S11 (lowpass)":
             self.step_response_Z = 20 * np.log10(step_refl_coefficient)
-            return windowed_s11
+            return (windowed_s11, td)
         if tdr_format == "VSWR (lowpass)":
             self.step_response_Z = np.abs(
                 (1 + step_refl_coefficient) / (1 - step_refl_coefficient)
             )
-            return windowed_s11
+            return (windowed_s11, td)
         if tdr_format == "Refl (lowpass)":
             # The 1/0.42 is the Amplitude Correction Factor for the
             # Blackman window. 0.42 is the average amplitude of the
@@ -241,4 +241,4 @@ class TDRWindow(QtWidgets.QWidget):
             self.step_response_Z = np.real(
                 td * FFT_POINTS / len(s11) * 1 / 0.42
             )
-        return windowed_s11
+        return (windowed_s11, td)
