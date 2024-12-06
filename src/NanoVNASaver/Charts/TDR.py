@@ -396,7 +396,8 @@ class TDRChart(Chart):
 
         max_point = QPoint(
             self.leftMargin + int((id_max - min_index) / x_step),
-            (self.topMargin + height) - int(self.tdrWindow.td[id_max] / y_step),
+            (self.topMargin + height)
+            - int(np.real(self.tdrWindow.td[id_max]) / y_step),
         )
 
         qp.setPen(self.markers[0].color)
@@ -467,7 +468,9 @@ class TDRChart(Chart):
         y_step = (max_impedance - min_impedance) / height
         for i in range(min_index, max_index):
             x = self.leftMargin + int((i - min_index) / x_step)
-            y = (self.topMargin + height) - int(self.tdrWindow.td[i] / y_step)
+            y = (self.topMargin + height) - int(
+                np.real(self.tdrWindow.td[i]) / y_step
+            )
             if self.isPlotable(x, y):
                 pen.setColor(Chart.color.sweep)
                 qp.setPen(pen)
