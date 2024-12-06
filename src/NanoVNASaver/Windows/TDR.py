@@ -20,11 +20,10 @@ import logging
 import math
 
 import numpy as np
+import numpy.typing as npt
 from PyQt6 import QtCore, QtGui, QtWidgets
-from scipy.constants import speed_of_light
-
-# pylint: disable=import-error, no-name-in-module
-from scipy.signal import convolve
+from scipy.constants import speed_of_light  # type: ignore
+from scipy.signal import convolve  # type: ignore
 
 from NanoVNASaver.Windows.Defaults import make_scrollable
 
@@ -81,10 +80,10 @@ class TDRWindow(QtWidgets.QWidget):
         super().__init__()
         self.app = app
 
-        self.td = []
-        self.windowed_s11 = np.ndarray([])
-        self.distance_axis = []
-        self.step_response_Z = []
+        self.td: npt.NDArray[np.float64]
+        self.windowed_s11: npt.NDArray[np.complex128]
+        self.distance_axis: npt.NDArray[np.float64]
+        self.step_response_Z: npt.NDArray[np.float64]
 
         self.setWindowTitle("TDR")
         self.setWindowIcon(self.app.icon)
@@ -129,7 +128,6 @@ class TDRWindow(QtWidgets.QWidget):
 
         self.tdr_result_label = QtWidgets.QLabel()
         layout.addRow("Estimated cable length:", self.tdr_result_label)
-
         layout.addRow(self.app.tdr_chart)
 
     def updateFormat(self):

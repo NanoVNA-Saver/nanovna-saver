@@ -87,9 +87,9 @@ class Communicate(QObject):
 
 class NanoVNASaver(QWidget):
     version = version
-    scaleFactor = 1
+    scale_factor = 1.0
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.communicate = Communicate()
         self.s21att = 0.0
@@ -115,7 +115,7 @@ class NanoVNASaver(QWidget):
 
         self.worker.signals.updated.connect(self.dataUpdated)
         self.worker.signals.finished.connect(self.sweepFinished)
-        self.worker.signals.sweepError.connect(self.showSweepError)
+        self.worker.signals.sweep_error.connect(self.showSweepError)
 
         self.markers = []
         self.marker_ref = False
@@ -132,7 +132,7 @@ class NanoVNASaver(QWidget):
         self.bands = BandsModel()
 
         self.interface = Interface("serial", "None")
-        self.vna = VNA(self.interface)
+        self.vna: type[VNA] = VNA(self.interface)
 
         self.dataLock = threading.Lock()
         self.data = Touchstone()
@@ -711,17 +711,17 @@ class NanoVNASaver(QWidget):
         standard_string = "0.123456789 0.123456789 MHz \N{OHM SIGN}"
         new_width = qf_new.horizontalAdvance(standard_string)
         old_width = qf_normal.horizontalAdvance(standard_string)
-        self.scaleFactor = new_width / old_width
+        self.scale_factor = new_width / old_width
         logger.debug(
             "New font width: %f, normal font: %f, factor: %f",
             new_width,
             old_width,
-            self.scaleFactor,
+            self.scale_factor,
         )
         # TODO: Update all the fixed widths to account for the scaling
         for m in self.markers:
             m.get_data_layout().setFont(font)
-            m.setScale(self.scaleFactor)
+            m.setScale(self.scale_factor)
 
     def update_sweep_title(self):
         for c in self.subscribing_charts:
