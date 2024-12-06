@@ -19,16 +19,19 @@
 import logging
 from enum import Enum
 from time import sleep
+from typing import TYPE_CHECKING
 
 import numpy as np
 from PyQt6 import QtCore
 from PyQt6.QtCore import pyqtSignal, pyqtSlot
 
 from NanoVNASaver.Calibration import correct_delay
-from NanoVNASaver.Hardware.VNA import VNA
-from NanoVNASaver.NanoVNASaver import NanoVNASaver as NanoVNA
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.Settings.Sweep import Sweep, SweepMode
+
+if TYPE_CHECKING:
+    from NanoVNASaver.Hardware.VNA import VNA
+    from NanoVNASaver.NanoVNASaver import NanoVNASaver as NanoVNA
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +68,7 @@ class SweepState(Enum):
 
 
 class SweepWorker(QtCore.QRunnable):
-    def __init__(self, app: type[NanoVNA]) -> None:
+    def __init__(self, app: 'NanoVNA') -> None:
         super().__init__()
         logger.info("Initializing SweepWorker")
         self.signals = WorkerSignals()
@@ -291,7 +294,7 @@ class SweepWorker(QtCore.QRunnable):
         return frequencies, values11, values21
 
     def readData(self, data) -> list[tuple[float, float]]:
-        vna: type[VNA] = self.app.vna  # shortcut to device
+        vna: 'VNA' = self.app.vna  # shortcut to device
         logger.debug("Reading %s", data)
         done = False
         result = []
