@@ -25,6 +25,9 @@ dependencies=[
 ]
 dynamic=['version', 'readme']
 
+[project.scripts]
+NanoVNASaver = 'NanoVNASaver.__main__:main'
+
 [tool.setuptools_scm]
 # For smarter version schemes and other configuration options,
 # check out https://github.com/pypa/setuptools_scm
