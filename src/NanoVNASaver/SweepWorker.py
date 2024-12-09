@@ -17,17 +17,27 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
+from enum import Enum
 from time import sleep
+from typing import TYPE_CHECKING
 
 import numpy as np
-from PyQt6 import QtCore, QtWidgets
+from PyQt6 import QtCore
 from PyQt6.QtCore import pyqtSignal, pyqtSlot
 
 from NanoVNASaver.Calibration import correct_delay
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.Settings.Sweep import Sweep, SweepMode
 
+if TYPE_CHECKING:
+    from NanoVNASaver.Hardware.VNA import VNA
+    from NanoVNASaver.NanoVNASaver import NanoVNASaver as NanoVNA
+
 logger = logging.getLogger(__name__)
+
+VALUE_MAX = 9.5
+RETRIES_RECONNECT = 5
+RETRIES_MAX = 10
 
 
 def truncate(values: list[list[tuple]], count: int) -> list[list[tuple]]:
@@ -49,25 +59,29 @@ def truncate(values: list[list[tuple]], count: int) -> list[list[tuple]]:
 class WorkerSignals(QtCore.QObject):
     updated = pyqtSignal()
     finished = pyqtSignal()
-    sweepError = pyqtSignal()
+    sweep_error = pyqtSignal()
+
+
+class SweepState(Enum):
+    STOPPED = 0
+    RUNNING = 1
 
 
 class SweepWorker(QtCore.QRunnable):
-    def __init__(self, app: QtWidgets.QWidget):
+    def __init__(self, app: 'NanoVNA') -> None:
         super().__init__()
         logger.info("Initializing SweepWorker")
         self.signals = WorkerSignals()
         self.app = app
         self.sweep = Sweep()
         self.setAutoDelete(False)
-        self.percentage = 0
+        self.percentage: float = 0.0
         self.data11: list[Datapoint] = []
         self.data21: list[Datapoint] = []
         self.rawData11: list[Datapoint] = []
         self.rawData21: list[Datapoint] = []
         self.init_data()
-        self.stopped = False
-        self.running = False
+        self.state = SweepState.STOPPED
         self.error_message = ""
         self.offsetDelay = 0
 
@@ -76,6 +90,7 @@ class SweepWorker(QtCore.QRunnable):
         try:
             self._run()
         except BaseException as exc:  # pylint: disable=broad-except
+            self.state = SweepState.STOPPED
             logger.exception("%s", exc)
             self.gui_error(f"ERROR during sweep\n\nStopped\n\n{exc}")
             if logger.isEnabledFor(logging.DEBUG):
@@ -87,11 +102,10 @@ class SweepWorker(QtCore.QRunnable):
             logger.debug(
                 "Attempted to run without being connected to the NanoVNA"
             )
-            self.running = False
             return
 
-        self.running = True
-        self.percentage = 0
+        self.state = SweepState.RUNNING
+        self.percentage = 0.0
 
         sweep = self.app.sweep.copy()
 
@@ -109,10 +123,10 @@ class SweepWorker(QtCore.QRunnable):
             )
             self.app.vna.resetSweep(start, end)
 
-        self.percentage = 100
+        self.percentage = 100.0
         logger.debug('Sending "finished" signal')
         self.signals.finished.emit()
-        self.running = False
+        self.state = SweepState.STOPPED
 
     def _run_loop(self) -> None:
         sweep = self.sweep
@@ -126,7 +140,7 @@ class SweepWorker(QtCore.QRunnable):
         while True:
             for i in range(sweep.segments):
                 logger.debug("Sweep segment no %d", i)
-                if self.stopped:
+                if self.state == SweepState.STOPPED:
                     logger.debug("Stopping sweeping as signalled")
                     break
                 start, stop = sweep.get_index_range(i)
@@ -136,7 +150,10 @@ class SweepWorker(QtCore.QRunnable):
                 )
                 self.percentage = (i + 1) * 100 / sweep.segments
                 self.updateData(freq, values11, values21, i)
-            if sweep.properties.mode != SweepMode.CONTINOUS or self.stopped:
+            if (
+                sweep.properties.mode != SweepMode.CONTINOUS
+                or self.state == SweepState.STOPPED
+            ):
                 break
 
     def init_data(self):
@@ -224,7 +241,7 @@ class SweepWorker(QtCore.QRunnable):
             "Reading from %d to %d. Averaging %d values", start, stop, averages
         )
         for i in range(averages):
-            if self.stopped:
+            if self.state == SweepState.STOPPED:
                 logger.debug("Stopping averaging as signalled.")
                 if averages == 1:
                     break
@@ -234,7 +251,7 @@ class SweepWorker(QtCore.QRunnable):
             retry = 0
             tmp11 = []
             tmp21 = []
-            while not tmp11 and retry < 5:
+            while not tmp11 and retry < RETRIES_RECONNECT:
                 sleep(0.5 * retry)
                 retry += 1
                 freq, tmp11, tmp21 = self.readSegment(start, stop)
@@ -276,28 +293,29 @@ class SweepWorker(QtCore.QRunnable):
             return [], [], []
         return frequencies, values11, values21
 
-    def readData(self, data):
+    def readData(self, data) -> list[tuple[float, float]]:
+        vna: 'VNA' = self.app.vna  # shortcut to device
         logger.debug("Reading %s", data)
         done = False
-        returndata = []
+        result = []
         count = 0
         while not done:
             done = True
-            returndata = []
-            tmpdata = self.app.vna.readValues(data)
+            result = []
+            tmpdata = vna.readValues(data)
             logger.debug("Read %d values", len(tmpdata))
             for d in tmpdata:
                 a, b = d.split(" ")
                 try:
-                    if self.app.vna.validateInput and (
-                        abs(float(a)) > 9.5 or abs(float(b)) > 9.5
+                    if vna.validateInput and (
+                        abs(float(a)) > VALUE_MAX or abs(float(b)) > VALUE_MAX
                     ):
                         logger.warning(
                             "Got a non plausible data value: (%s)", d
                         )
                         done = False
                         break
-                    returndata.append((float(a), float(b)))
+                    result.append((float(a), float(b)))
                 except ValueError as exc:
                     logger.exception(
                         "An exception occurred reading %s: %s", data, exc
@@ -307,13 +325,13 @@ class SweepWorker(QtCore.QRunnable):
                 logger.debug("Re-reading %s", data)
                 sleep(0.2)
                 count += 1
-                if count == 5:
+                if count == RETRIES_RECONNECT:
                     logger.error(
                         "Tried and failed to read %s %d times.", data, count
                     )
                     logger.debug("trying to reconnect")
-                    self.app.vna.reconnect()
-                if count >= 10:
+                    vna.reconnect()
+                if count >= RETRIES_MAX:
                     logger.critical(
                         "Tried and failed to read %s %d times. Giving up.",
                         data,
@@ -326,10 +344,9 @@ class SweepWorker(QtCore.QRunnable):
                         f"You can disable data validation on the"
                         f"device settings screen."
                     )
-        return returndata
+        return result
 
     def gui_error(self, message: str):
         self.error_message = message
-        self.stopped = True
-        self.running = False
-        self.signals.sweepError.emit()
+        self.state = SweepState.STOPPED
+        self.signals.sweep_error.emit()

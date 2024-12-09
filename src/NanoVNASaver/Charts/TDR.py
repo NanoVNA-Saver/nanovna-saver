@@ -48,20 +48,20 @@ MAX_VSWR = 10
 
 
 class TDRChart(Chart):
-    max_display_length = 50
-    min_display_length = 0
-    fixed_span = False
+    max_display_length: int = 50
+    min_display_length: int = 0
+    fixed_span: bool = False
 
-    min_y_lim = 0
-    max_y_lim = 1000
+    min_y_lim: float = 0.0
+    max_y_lim: float = 1000.0
 
-    decimals = 1
+    decimals: int = 1
 
-    format_string = ""
-    fixed_values = False
-    marker_location = -1
+    format_string: str = ""
+    fixed_values: bool = False
+    marker_location: int = -1
 
-    def __init__(self, name):  # noqa: PLR0915
+    def __init__(self, name) -> None:  # noqa: PLR0915
         super().__init__(name)
         self.tdrWindow = None
 
@@ -160,7 +160,7 @@ class TDRChart(Chart):
         self.dim.width = self.width() - self.leftMargin - self.rightMargin
         self.dim.height = self.height() - self.bottomMargin - self.topMargin
 
-    def contextMenuEvent(self, event):
+    def contextMenuEvent(self, event) -> None:
         self.action_set_fixed_start.setText(
             f"Start ({self.min_display_length})"
         )
@@ -169,41 +169,30 @@ class TDRChart(Chart):
         self.y_action_set_fixed_maximum.setText(f"Maximum ({self.max_y_lim})")
         self.menu.exec(event.globalPos())
 
-    def isPlotable(self, x, y):
+    def isPlotable(self, x, y) -> bool:
         return (
             self.leftMargin <= x <= self.width() - self.rightMargin
             and self.topMargin <= y <= self.height() - self.bottomMargin
         )
 
-    def _configureGraphFromFormat(self):
-        TDR_format = self.tdrWindow.format_dropdown.currentText()
-        if TDR_format == "|Z| (lowpass)":
-            self.min_y_lim = MIN_IMPEDANCE
-            self.max_y_lim = MAX_IMPEDANCE
-            self.format_string = "impedance (\N{OHM SIGN})"
-            self.decimals = 1
-        elif TDR_format == "S11 (lowpass)":
-            self.min_y_lim = MIN_S11
-            self.max_y_lim = MAX_S11
-            self.format_string = "S11 (dB)"
-            self.decimals = 1
-        elif TDR_format == "VSWR (lowpass)":
-            self.min_y_lim = MIN_VSWR
-            self.max_y_lim = MAX_VSWR
-            self.format_string = "VSWR"
-            self.decimals = 2
-        elif TDR_format == "Refl (lowpass)":
-            self.min_y_lim = -1
-            self.max_y_lim = 1
-            self.format_string = "U"
-            self.decimals = 2
-        elif TDR_format == "Refl (bandpass)":
-            self.min_y_lim = 0
-            self.max_y_lim = 1
-            self.format_string = "U"
-            self.decimals = 2
+    def _configureGraphFromFormat(self) -> None:
+        FORMAT_DEFAULTS = {
+            "|Z| (lowpass)": (
+                MIN_IMPEDANCE,
+                MAX_IMPEDANCE,
+                "impedance (\N{OHM SIGN})",
+                1,
+            ),
+            "S11 (lowpass)": (MIN_S11, MIN_S11, "S11 (dB)", 1),
+            "VSWR (lowpass)": (MIN_VSWR, MIN_VSWR, "VSWR", 2),
+            "Refl (lowpass)": (-1, 1, "U", 2),
+            "Refl (bandpass)": (0, 1, "U", 2),
+        }
+        self.min_y_lim, self.max_y_lim, self.format_string, self.decimals = (
+            FORMAT_DEFAULTS[self.tdrWindow.format_dropdown.currentText()]
+        )
 
-    def resetDisplayLimits(self):
+    def resetDisplayLimits(self) -> None:
         self._configureGraphFromFormat()
         self.fixed_span = False
         self.min_display_length = 0
@@ -211,11 +200,11 @@ class TDRChart(Chart):
         self.fixed_values = False
         self.update()
 
-    def setFixedSpan(self, fixed_span):
+    def setFixedSpan(self, fixed_span) -> None:
         self.fixed_span = fixed_span
         self.update()
 
-    def setMinimumLength(self):
+    def setMinimumLength(self) -> None:
         min_val, selected = QInputDialog.getDouble(
             self,
             "Start length (m)",
@@ -231,7 +220,7 @@ class TDRChart(Chart):
         if self.fixed_span:
             self.update()
 
-    def setMaximumLength(self):
+    def setMaximumLength(self) -> None:
         max_val, selected = QInputDialog.getDouble(
             self,
             "Stop length (m)",
@@ -247,11 +236,11 @@ class TDRChart(Chart):
         if self.fixed_span:
             self.update()
 
-    def setFixedValues(self, fixed_values):
+    def setFixedValues(self, fixed_values) -> None:
         self.fixed_values = fixed_values
         self.update()
 
-    def setMinimumY(self):
+    def setMinimumY(self) -> None:
         min_val, selected = QInputDialog.getDouble(
             self,
             "Minimum " + self.format_string,
@@ -266,7 +255,7 @@ class TDRChart(Chart):
         if self.fixed_values:
             self.update()
 
-    def setMaximumY(self):
+    def setMaximumY(self) -> None:
         max_val, selected = QInputDialog.getDouble(
             self,
             "Maximum " + self.format_string,
@@ -281,7 +270,7 @@ class TDRChart(Chart):
         if self.fixed_values:
             self.update()
 
-    def copy(self):
+    def copy(self) -> "TDRChart":
         new_chart: TDRChart = super().copy()
         new_chart.tdrWindow = self.tdrWindow
         new_chart.min_display_length = self.min_display_length
@@ -294,6 +283,8 @@ class TDRChart(Chart):
         return new_chart
 
     def mouseMoveEvent(self, a0: QMouseEvent) -> None:
+        if not hasattr(self.tdrWindow, "td"):
+            return
         if a0.buttons() == Qt.MouseButton.RightButton:
             a0.ignore()
             return
@@ -328,24 +319,21 @@ class TDRChart(Chart):
             return
         a0.accept()
         width = self.width() - self.leftMargin - self.rightMargin
-        if self.tdrWindow.td:
-            if self.fixed_span:
-                max_index = np.searchsorted(
-                    self.tdrWindow.distance_axis, self.max_display_length * 2
-                )
-                min_index = np.searchsorted(
-                    self.tdrWindow.distance_axis, self.min_display_length * 2
-                )
-                x_step = (max_index - min_index) / width
-            else:
-                max_index = math.ceil(len(self.tdrWindow.distance_axis) / 2)
-                x_step = max_index / width
+        if self.fixed_span:
+            max_index = np.searchsorted(
+                self.tdrWindow.distance_axis, self.max_display_length * 2
+            )
+            min_index = np.searchsorted(
+                self.tdrWindow.distance_axis, self.min_display_length * 2
+            )
+            x_step = (max_index - min_index) / width
+        else:
+            x_step = math.ceil(len(self.tdrWindow.distance_axis) / 2) / width
 
-            self.marker_location = int(round(absx * x_step))
-            self.update()
-        return
+        self.marker_location = int(round(absx * x_step))
+        self.update()
 
-    def _draw_ticks(self, height, width, x_step, min_index):
+    def _draw_ticks(self, height, width, x_step, min_index) -> None:
         ticks = (self.width() - self.leftMargin) // 100
         qp = QPainter(self)
         for i in range(ticks):
@@ -371,7 +359,9 @@ class TDRChart(Chart):
                 }m""",
         )
 
-    def _draw_y_ticks(self, height, width, min_impedance, max_impedance):
+    def _draw_y_ticks(
+        self, height, width, min_impedance, max_impedance
+    ) -> None:
         qp = QPainter(self)
         y_step = (max_impedance - min_impedance) / height
         y_ticks = math.floor(height / 60)
@@ -390,7 +380,7 @@ class TDRChart(Chart):
             f"{round(min_impedance, self.decimals)}",
         )
 
-    def _draw_max_point(self, height, x_step, y_step, min_index):
+    def _draw_max_point(self, height, x_step, y_step, min_index) -> None:
         qp = QPainter(self)
         id_max = np.argmax(self.tdrWindow.td)
 
@@ -514,7 +504,7 @@ class TDRChart(Chart):
         # Number of ticks does not include the origin
         self.drawTitle(qp)
 
-        if self.tdrWindow.td:
+        if hasattr(self.tdrWindow, "td"):
             self._draw_graph(height, width)
 
         if self.dragbox.state and self.dragbox.pos[0] != -1:
@@ -529,29 +519,29 @@ class TDRChart(Chart):
 
         qp.end()
 
-    def valueAtPosition(self, y):
-        if self.tdrWindow.td:
+    def valueAtPosition(self, y: int) -> float:
+        if hasattr(self.tdrWindow, "td"):
             height = self.height() - self.topMargin - self.bottomMargin
             absy = (self.height() - y) - self.bottomMargin
             if self.fixed_values:
                 min_impedance = self.min_y_lim
                 max_impedance = self.max_y_lim
             else:
-                min_Z = np.min(self.tdrWindow.step_response_Z)
-                max_Z = np.max(self.tdrWindow.step_response_Z)
+                min_Z = float(np.min(self.tdrWindow.step_response_Z))
+                max_Z = float(np.max(self.tdrWindow.step_response_Z))
                 # Ensure that everything works even if limits are negative
                 min_impedance = max(
-                    self.min_y_lim, min_Z - 0.05 * np.abs(min_Z)
+                    self.min_y_lim, min_Z - 0.05 * float(np.abs(min_Z))
                 )
                 max_impedance = min(
-                    self.max_y_lim, max_Z + 0.05 * np.abs(max_Z)
+                    self.max_y_lim, max_Z + 0.05 * float(np.abs(max_Z))
                 )
             y_step = (max_impedance - min_impedance) / height
             return y_step * absy + min_impedance
-        return 0
+        return 0.0
 
-    def lengthAtPosition(self, x, limit=True):
-        if not self.tdrWindow.td:
+    def lengthAtPosition(self, x: int, limit=True):
+        if not hasattr(self.tdrWindow, "td"):
             return 0
         width = self.width() - self.leftMargin - self.rightMargin
         absx = x - self.leftMargin
@@ -567,14 +557,14 @@ class TDRChart(Chart):
             )
         )
 
-        x_step = (max_length - min_length) / width
+        x_step = float(max_length - min_length) / width
         if limit and absx < 0:
-            return min_length
-        return (
+            return float(min_length)
+        return float(
             max_length if limit and absx > width else absx * x_step + min_length
         )
 
-    def zoomTo(self, x1, y1, x2, y2):
+    def zoomTo(self, x1, y1, x2, y2) -> None:
         logger.debug(
             "Zoom to (x,y) by (x,y): (%d, %d) by (%d, %d)", x1, y1, x2, y2
         )

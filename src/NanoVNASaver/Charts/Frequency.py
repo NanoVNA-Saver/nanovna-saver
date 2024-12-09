@@ -628,9 +628,7 @@ class FrequencyChart(Chart):
         ticks = math.floor(self.dim.width / 100)
 
         # try to adapt format to span
-        if (
-            self.fstart == 0 or int(fspan / ticks / self.fstart * 10000) > 2
-        ):
+        if self.fstart == 0 or int(fspan / ticks / self.fstart * 10000) > 2:
             my_format_frequency = format_frequency_chart
         else:
             my_format_frequency = format_frequency_chart_2
