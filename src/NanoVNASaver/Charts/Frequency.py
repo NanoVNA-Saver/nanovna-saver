@@ -47,10 +47,10 @@ class FrequencyChart(Chart):
         self.logarithmicX = False
         self.logarithmicY = False
 
-        self.leftMargin = 30
-        self.rightMargin = 20
-        self.bottomMargin = 20
-        self.topMargin = 30
+        self.leftMargin: int = 30
+        self.rightMargin: int = 20
+        self.bottomMargin: int = 20
+        self.topMargin: int = 30
 
         self.dim.width = 250
         self.dim.height = 250
@@ -182,7 +182,7 @@ class FrequencyChart(Chart):
         self.menu.addAction(self.action_save_screenshot)
         self.action_popout = QtGui.QAction("Popout chart")
         self.action_popout.triggered.connect(
-            lambda: self.popoutRequested.emit(self)
+            lambda: self.popout_requested.emit(self)
         )
         self.menu.addAction(self.action_popout)
         self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
@@ -628,7 +628,10 @@ class FrequencyChart(Chart):
         ticks = math.floor(self.dim.width / 100)
 
         # try to adapt format to span
-        if self.fstart == 0 or int(fspan / ticks / self.fstart * 10000) > 2:
+        if (
+            self.fstart == 0
+            or int(fspan / ticks / self.fstart * 10000) > 2  # noqa: PLR2004
+        ):
             my_format_frequency = format_frequency_chart
         else:
             my_format_frequency = format_frequency_chart_2

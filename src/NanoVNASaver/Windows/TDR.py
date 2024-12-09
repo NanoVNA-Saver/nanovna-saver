@@ -80,7 +80,7 @@ class TDRWindow(QtWidgets.QWidget):
         super().__init__()
         self.app = app
 
-        self.td: npt.NDArray[np.float64]
+        self.td: npt.NDArray[np.complex128]
         self.windowed_s11: npt.NDArray[np.complex128]
         self.distance_axis: npt.NDArray[np.float64]
         self.step_response_Z: npt.NDArray[np.float64]

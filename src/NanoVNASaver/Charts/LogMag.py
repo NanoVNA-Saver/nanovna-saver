@@ -48,19 +48,19 @@ def span2ticks(span: float, min_val: float) -> TickVal:
 
 
 class LogMagChart(FrequencyChart):
-    def __init__(self, name=""):
+    def __init__(self, name="") -> None:
         super().__init__(name)
 
-        self.name_unit = "dB"
+        self.name_unit: str = "dB"
 
-        self.minDisplayValue = -80
-        self.maxDisplayValue = 10
+        self.minDisplayValue: int = -80
+        self.maxDisplayValue: int = 10
 
-        self.minValue = 0.0
-        self.maxValue = 1.0
-        self.span = 1.0
+        self.minValue: float = 0.0
+        self.maxValue: float = 1.0
+        self.span: float = 1.0
 
-        self.isInverted = False
+        self.isInverted: bool = False
 
     def drawValues(self, qp: QtGui.QPainter) -> None:
         if len(self.data) == 0 and len(self.reference) == 0:
@@ -126,17 +126,17 @@ class LogMagChart(FrequencyChart):
         self.drawFrequencyTicks(qp)
         self.draw_swr_markers(qp)
 
-    def draw_db_lines(self, qp, maxValue, minValue, ticks) -> None:
+    def draw_db_lines(self, qp, max_value: int, min_value: int, ticks) -> None:
         for i in range(ticks.count):
             db = ticks.first + i * ticks.step
             y = self.topMargin + round(
-                (maxValue - db) / self.span * self.dim.height
+                (max_value - db) / self.span * self.dim.height
             )
             qp.setPen(QtGui.QPen(Chart.color.foreground))
             qp.drawLine(
                 self.leftMargin - 5, y, self.leftMargin + self.dim.width, y
             )
-            if db > minValue and db != maxValue:
+            if db > min_value and db != max_value:
                 qp.setPen(QtGui.QPen(Chart.color.text))
                 qp.drawText(
                     3, y + 4, f"{round(db, 1)}" if ticks.step < 1 else f"{db}"

@@ -21,7 +21,7 @@ import math
 
 from PyQt6 import QtGui, QtWidgets
 
-from NanoVNASaver.Charts.Chart import Chart
+from NanoVNASaver.Charts.Chart import Chart, ChartPosition
 from NanoVNASaver.Charts.Frequency import FrequencyChart
 from NanoVNASaver.Formatting import format_frequency_chart
 from NanoVNASaver.Marker.Widget import Marker
@@ -82,12 +82,14 @@ class RealImaginaryChart(FrequencyChart):
         new_chart.minDisplayImag = self.minDisplayImag
         return new_chart
 
-    def drawValues(self, qp: QtGui.QPainter):
+    def drawValues(self, qp: QtGui.QPainter) -> None:
         if not self.data and not self.reference:
             return
 
-        pen = QtGui.QPen(Chart.color.sweep)
-        pen.setWidth(self.dim.point)
+        primary_pen = QtGui.QPen(Chart.color.sweep)
+        primary_pen.setWidth(self.dim.point)
+        secondary_pen = QtGui.QPen(Chart.color.sweep_secondary)
+        secondary_pen.setWidth(self.dim.point)
         line_pen = QtGui.QPen(Chart.color.sweep)
         line_pen.setWidth(self.dim.line)
         highlighter = QtGui.QPen(QtGui.QColor(20, 0, 255))
@@ -121,98 +123,56 @@ class RealImaginaryChart(FrequencyChart):
 
         self.drawFrequencyTicks(qp)
 
-        primary_pen = pen
-        secondary_pen = QtGui.QPen(Chart.color.sweep_secondary)
-        if self.data:
-            c = QtGui.QColor(Chart.color.sweep)
-            c.setAlpha(255)
-            pen = QtGui.QPen(c)
-            pen.setWidth(2)
-            qp.setPen(pen)
-            qp.drawLine(20, 9, 25, 9)
-            c = QtGui.QColor(Chart.color.sweep_secondary)
-            c.setAlpha(255)
-            pen.setColor(c)
-            qp.setPen(pen)
-            qp.drawLine(
-                self.leftMargin + self.dim.width,
-                9,
-                self.leftMargin + self.dim.width + 5,
-                9,
-            )
+        self._draw_ri_labels(qp)
+        self._draw_data(qp, line_pen, primary_pen, secondary_pen)
 
-        primary_pen.setWidth(self.dim.point)
-        secondary_pen.setWidth(self.dim.point)
-        line_pen.setWidth(self.dim.line)
-
-        for i, data in enumerate(self.data):
-            x = self.getXPosition(data)
-            y_re = self.getReYPosition(data)
-            y_im = self.getImYPosition(data)
-            qp.setPen(primary_pen)
-            if self.isPlotable(x, y_re):
-                qp.drawPoint(x, y_re)
-            qp.setPen(secondary_pen)
-            if self.isPlotable(x, y_im):
-                qp.drawPoint(x, y_im)
-            if self.flag.draw_lines and i > 0:
-                prev_x = self.getXPosition(self.data[i - 1])
-                prev_y_re = self.getReYPosition(self.data[i - 1])
-                prev_y_im = self.getImYPosition(self.data[i - 1])
-
-                # Real part first
-                line_pen.setColor(Chart.color.sweep)
-                qp.setPen(line_pen)
-                if self.isPlotable(x, y_re):
-                    if self.isPlotable(prev_x, prev_y_re):
-                        qp.drawLine(x, y_re, prev_x, prev_y_re)
-                    else:
-                        new_x, new_y = self.getPlotable(
-                            x, y_re, prev_x, prev_y_re
-                        )
-                        qp.drawLine(x, y_re, new_x, new_y)
-                elif self.isPlotable(prev_x, prev_y_re):
-                    new_x, new_y = self.getPlotable(prev_x, prev_y_re, x, y_re)
-                    qp.drawLine(prev_x, prev_y_re, new_x, new_y)
-
-                # Imag part second
-                line_pen.setColor(Chart.color.sweep_secondary)
-                qp.setPen(line_pen)
-                if self.isPlotable(x, y_im):
-                    if self.isPlotable(prev_x, prev_y_im):
-                        qp.drawLine(x, y_im, prev_x, prev_y_im)
-                    else:
-                        new_x, new_y = self.getPlotable(
-                            x, y_im, prev_x, prev_y_im
-                        )
-                        qp.drawLine(x, y_im, new_x, new_y)
-                elif self.isPlotable(prev_x, prev_y_im):
-                    new_x, new_y = self.getPlotable(prev_x, prev_y_im, x, y_im)
-                    qp.drawLine(prev_x, prev_y_im, new_x, new_y)
-
-        primary_pen.setColor(Chart.color.reference)
-        line_pen.setColor(Chart.color.reference)
-        secondary_pen.setColor(Chart.color.reference_secondary)
-        qp.setPen(primary_pen)
         if self.reference:
-            c = QtGui.QColor(Chart.color.reference)
-            c.setAlpha(255)
-            pen = QtGui.QPen(c)
-            pen.setWidth(2)
-            qp.setPen(pen)
-            qp.drawLine(20, 14, 25, 14)
-            c = QtGui.QColor(Chart.color.reference_secondary)
-            c.setAlpha(255)
-            pen = QtGui.QPen(c)
-            pen.setWidth(2)
-            qp.setPen(pen)
-            qp.drawLine(
-                self.leftMargin + self.dim.width,
-                14,
-                self.leftMargin + self.dim.width + 5,
-                14,
-            )
+            primary_pen.setColor(Chart.color.reference)
+            line_pen.setColor(Chart.color.reference)
+            secondary_pen.setColor(Chart.color.reference_secondary)
+            self._draw_ri_labels(qp, is_reference=True)
+            self._draw_ref_data(qp, line_pen, primary_pen, secondary_pen)
 
+        # Now draw the markers
+        for m in self.markers:
+            if m.location != -1:
+                x = self.getXPosition(self.data[m.location])
+                y_re = self.getReYPosition(self.data[m.location])
+                y_im = self.getImYPosition(self.data[m.location])
+
+                self.drawMarker(x, y_re, qp, m.color, self.markers.index(m) + 1)
+                self.drawMarker(x, y_im, qp, m.color, self.markers.index(m) + 1)
+
+    def _draw_ri_labels(self, qp: QtGui.QPainter, is_reference=False) -> None:
+        c1, c2 = (
+            (
+                QtGui.QColor(Chart.color.sweep),
+                QtGui.QColor(Chart.color.sweep_secondary),
+            )
+            if not is_reference
+            else (
+                QtGui.QColor(Chart.color.reference),
+                QtGui.QColor(Chart.color.reference_secondary),
+            )
+        )
+        y = 9 if not is_reference else 14
+        c1.setAlpha(255)
+        c2.setAlpha(255)
+        pen = QtGui.QPen(c1)
+        pen.setWidth(4)
+        qp.setPen(pen)
+        qp.drawLine(20, y, 25, y)
+
+        pen.setColor(c2)
+        qp.setPen(pen)
+        qp.drawLine(
+            self.leftMargin + self.dim.width,
+            y,
+            self.leftMargin + self.dim.width + 5,
+            y,
+        )
+
+    def _draw_ref_data(self, qp, line_pen, primary_pen, secondary_pen):
         for i, reference in enumerate(self.reference):
             if reference.freq < self.fstart or reference.freq > self.fstop:
                 continue
@@ -230,45 +190,53 @@ class RealImaginaryChart(FrequencyChart):
                 prev_y_re = self.getReYPosition(self.reference[i - 1])
                 prev_y_im = self.getImYPosition(self.reference[i - 1])
 
-                line_pen.setColor(Chart.color.reference)
-                qp.setPen(line_pen)
                 # Real part first
-                if self.isPlotable(x, y_re):
-                    if self.isPlotable(prev_x, prev_y_re):
-                        qp.drawLine(x, y_re, prev_x, prev_y_re)
-                    else:
-                        new_x, new_y = self.getPlotable(
-                            x, y_re, prev_x, prev_y_re
-                        )
-                        qp.drawLine(x, y_re, new_x, new_y)
-                elif self.isPlotable(prev_x, prev_y_re):
-                    new_x, new_y = self.getPlotable(prev_x, prev_y_re, x, y_re)
-                    qp.drawLine(prev_x, prev_y_re, new_x, new_y)
+                line_pen.setColor(Chart.color.reference)
+                self._draw_line(qp, line_pen, (x, y_re), (prev_x, prev_y_re))
 
-                line_pen.setColor(Chart.color.reference_secondary)
-                qp.setPen(line_pen)
                 # Imag part second
-                if self.isPlotable(x, y_im):
-                    if self.isPlotable(prev_x, prev_y_im):
-                        qp.drawLine(x, y_im, prev_x, prev_y_im)
-                    else:
-                        new_x, new_y = self.getPlotable(
-                            x, y_im, prev_x, prev_y_im
-                        )
-                        qp.drawLine(x, y_im, new_x, new_y)
-                elif self.isPlotable(prev_x, prev_y_im):
-                    new_x, new_y = self.getPlotable(prev_x, prev_y_im, x, y_im)
-                    qp.drawLine(prev_x, prev_y_im, new_x, new_y)
+                line_pen.setColor(Chart.color.reference_secondary)
+                self._draw_line(qp, line_pen, (x, y_im), (prev_x, prev_y_im))
 
-        # Now draw the markers
-        for m in self.markers:
-            if m.location != -1:
-                x = self.getXPosition(self.data[m.location])
-                y_re = self.getReYPosition(self.data[m.location])
-                y_im = self.getImYPosition(self.data[m.location])
+    def _draw_data(self, qp, line_pen, primary_pen, secondary_pen) -> None:
+        for i, data in enumerate(self.data):
+            x = self.getXPosition(data)
+            y_re = self.getReYPosition(data)
+            y_im = self.getImYPosition(data)
+            qp.setPen(primary_pen)
+            if self.isPlotable(x, y_re):
+                qp.drawPoint(x, y_re)
+            qp.setPen(secondary_pen)
+            if self.isPlotable(x, y_im):
+                qp.drawPoint(x, y_im)
+            if self.flag.draw_lines and i > 0:
+                prev_x = self.getXPosition(self.data[i - 1])
+                prev_y_re = self.getReYPosition(self.data[i - 1])
+                prev_y_im = self.getImYPosition(self.data[i - 1])
 
-                self.drawMarker(x, y_re, qp, m.color, self.markers.index(m) + 1)
-                self.drawMarker(x, y_im, qp, m.color, self.markers.index(m) + 1)
+                # Real part first
+                line_pen.setColor(Chart.color.sweep)
+                self._draw_line(qp, line_pen, (x, y_re), (prev_x, prev_y_re))
+
+                # Imag part second
+                line_pen.setColor(Chart.color.sweep_secondary)
+                self._draw_line(qp, line_pen, (x, y_im), (prev_x, prev_y_im))
+
+    def _draw_line(
+        self, qp, line_pen, p: ChartPosition, prev_p: ChartPosition
+    ) -> None:
+        x, y = p
+        prev_x, prev_y = prev_p
+        qp.setPen(line_pen)
+        if self.isPlotable(x, y):
+            if self.isPlotable(prev_x, prev_y):
+                qp.drawLine(x, y, prev_x, prev_y)
+            else:
+                new_x, new_y = self.getPlotable(x, y, prev_x, prev_y)
+                qp.drawLine(x, y, new_x, new_y)
+        elif self.isPlotable(prev_x, prev_y):
+            new_x, new_y = self.getPlotable(prev_x, prev_y, x, y)
+            qp.drawLine(prev_x, prev_y, new_x, new_y)
 
     def drawHorizontalTicks(self, qp):
         # We want one horizontal tick per 50 pixels, at most
@@ -334,17 +302,19 @@ class RealImaginaryChart(FrequencyChart):
         return min_real, max_real, min_imag, max_imag
 
     def imag_scaling_constraints(self, min_imag, max_imag):
-        if max_imag - min_imag < 8:
+        if max_imag - min_imag < 8:  # noqa: PLR2004
             missing = 8 - (max_imag - min_imag)
             max_imag += math.ceil(missing / 2)
             min_imag -= math.floor(missing / 2)
 
-        if 0 > max_imag > -2:
+        if 0 > max_imag > -2:  # noqa: PLR2004
             max_imag = 0
-        if 0 < min_imag < 2:
+        if 0 < min_imag < 2:  # noqa: PLR2004
             min_imag = 0
 
-        if (max_imag - min_imag) > 8 and min_imag < 0 < max_imag:
+        if (
+            max_imag - min_imag
+        ) > 8 and min_imag < 0 < max_imag:  # noqa: PLR2004
             # We should show a "0" line for the reactive part
             span = max_imag - min_imag
             step_size = span / 8
@@ -389,7 +359,7 @@ class RealImaginaryChart(FrequencyChart):
         val1 = self.valueAtPosition(y1)
         val2 = self.valueAtPosition(y2)
 
-        if len(val1) == len(val2) == 2 and val1[0] != val2[0]:
+        if len(val1) == len(val2) == 2 and val1[0] != val2[0]:  # noqa: PLR2004
             self.minDisplayReal = round(min(val1[0], val2[0]), 2)
             self.maxDisplayReal = round(max(val1[0], val2[0]), 2)
             self.minDisplayImag = round(min(val1[1], val2[1]), 2)

@@ -4,7 +4,7 @@ requires = [
   'pyinstaller==6.11.1',
   'setuptools==75.6.0',
   'setuptools_scm[toml]==8.1.0',
-  'uv==0.5.5',
+  'uv==0.5.7',
 ]
 build-backend = 'setuptools.build_meta'
 

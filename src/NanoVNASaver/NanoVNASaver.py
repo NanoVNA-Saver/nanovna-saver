@@ -242,7 +242,7 @@ class NanoVNASaver(QWidget):
         self.subscribing_charts.append(self.tdr_chart)
 
         for c in self.subscribing_charts:
-            c.popoutRequested.connect(self.popoutChart)
+            c.popout_requested.connect(self.popoutChart)
 
         self.charts_layout = QtWidgets.QGridLayout()
 
@@ -536,7 +536,7 @@ class NanoVNASaver(QWidget):
                 else:
                     logger.warning("No reference data for marker")
 
-            elif Marker.count() >= 2:
+            elif Marker.count() >= 2:  # noqa: PLR2004
                 m2 = self.markers[1]
 
             if m2 is None:
@@ -682,7 +682,7 @@ class NanoVNASaver(QWidget):
             self.s21charts.append(new_chart)
         if chart in self.combinedCharts:
             self.combinedCharts.append(new_chart)
-        new_chart.popoutRequested.connect(self.popoutChart)
+        new_chart.popout_requested.connect(self.popoutChart)
         return new_chart
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
