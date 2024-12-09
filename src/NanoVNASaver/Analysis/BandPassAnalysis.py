@@ -22,14 +22,14 @@ import math
 from PyQt6 import QtWidgets
 
 import NanoVNASaver.AnalyticTools as At
-from NanoVNASaver.Analysis.Base import CUTOFF_VALS, Analysis
+from NanoVNASaver.Analysis.Base import CUTOFF_VALS, MIN_CUTOFF_DAMPING, Analysis
 from NanoVNASaver.Formatting import format_frequency
 
 logger = logging.getLogger(__name__)
 
 
 class BandPassAnalysis(Analysis):
-    def __init__(self, app):
+    def __init__(self, app) -> None:
         super().__init__(app)
 
         for label in (
@@ -81,7 +81,7 @@ class BandPassAnalysis(Analysis):
 
         self.set_titel("Band pass filter analysis")
 
-    def runAnalysis(self):
+    def runAnalysis(self) -> None:
         if not self.app.data.s21:
             logger.debug("No data to analyse")
             self.set_result("No data to analyse.")
@@ -142,7 +142,10 @@ class BandPassAnalysis(Analysis):
         self.app.markers[1].setFrequency(f"{cutoff_freq['3.0dB_l']}")
         self.app.markers[2].setFrequency(f"{cutoff_freq['3.0dB_r']}")
 
-        if cutoff_gain["3.0dB_l"] < -4 or cutoff_gain["3.0dB_r"] < -4:
+        if (
+            cutoff_gain["3.0dB_l"] < MIN_CUTOFF_DAMPING
+            or cutoff_gain["3.0dB_r"] < MIN_CUTOFF_DAMPING
+        ):
             logger.warning(
                 "Data points insufficient for true -3 dB points."
                 "Cutoff gains: %fdB, %fdB",
@@ -158,7 +161,7 @@ class BandPassAnalysis(Analysis):
 
     def derive_60dB(
         self, cutoff_pos: dict[str, int], cutoff_freq: dict[str, float]
-    ):
+    ) -> None:
         """derive 60dB cutoff if needed an possible
 
         Args:

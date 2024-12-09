@@ -4,7 +4,7 @@ requires = [
   'pyinstaller==6.11.1',
   'setuptools==75.6.0',
   'setuptools_scm[toml]==8.1.0',
-  'uv==0.5.5',
+  'uv==0.5.7',
 ]
 build-backend = 'setuptools.build_meta'
 
@@ -24,6 +24,9 @@ dependencies=[
   'Cython==3.0.11',
 ]
 dynamic=['version', 'readme']
+
+[project.scripts]
+NanoVNASaver = 'NanoVNASaver.__main__:main'
 
 [tool.setuptools_scm]
 # For smarter version schemes and other configuration options,

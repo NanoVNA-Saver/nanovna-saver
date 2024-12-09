@@ -22,7 +22,7 @@ import math
 from PyQt6 import QtWidgets
 
 import NanoVNASaver.AnalyticTools as At
-from NanoVNASaver.Analysis.Base import CUTOFF_VALS, Analysis
+from NanoVNASaver.Analysis.Base import CUTOFF_VALS, MIN_CUTOFF_DAMPING, Analysis
 from NanoVNASaver.Formatting import format_frequency
 
 logger = logging.getLogger(__name__)
@@ -86,7 +86,7 @@ class HighPassAnalysis(Analysis):
             s21, cutoff_pos["10.0dB"], cutoff_pos["20.0dB"]
         )
 
-        if cutoff_gain["3.0dB"] < -4:
+        if cutoff_gain["3.0dB"] < MIN_CUTOFF_DAMPING:
             logger.debug(
                 "Cutoff frequency found at %f dB"
                 " - insufficient data points for true -3 dB point.",

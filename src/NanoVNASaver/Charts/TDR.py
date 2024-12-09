@@ -153,7 +153,7 @@ class TDRChart(Chart):
         self.menu.addAction(self.action_save_screenshot)
         self.action_popout = QAction("Popout chart")
         self.action_popout.triggered.connect(
-            lambda: self.popoutRequested.emit(self)
+            lambda: self.popout_requested.emit(self)
         )
         self.menu.addAction(self.action_popout)
 
@@ -404,7 +404,7 @@ class TDRChart(Chart):
         marker_point = QPoint(
             self.leftMargin + int((self.marker_location - min_index) / x_step),
             (self.topMargin + height)
-            - int(self.tdrWindow.td[self.marker_location] / y_step),
+            - int(float(self.tdrWindow.td[self.marker_location]) / y_step),
         )
         qp.setPen(Chart.color.text)
         qp.drawEllipse(marker_point, 2, 2)

@@ -18,7 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 from dataclasses import dataclass, field, replace
-from typing import Any, ClassVar
+from typing import Any, ClassVar, NamedTuple
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtCore import Qt, pyqtSignal
@@ -54,6 +54,13 @@ class ChartColors:  # pylint: disable=too-many-instance-attributes
     bands: QColor = field(default_factory=lambda: QColor(128, 128, 128, 48))
 
 
+class ChartPosition(NamedTuple):
+    """just a point in the chart"""
+
+    x: int
+    y: int
+
+
 @dataclass
 class ChartDimensions:
     height: int = 200
@@ -66,8 +73,8 @@ class ChartDimensions:
 
 @dataclass
 class ChartDragBox:
-    pos: tuple[int] = (-1, -1)
-    pos_start: tuple[int] = (0, 0)
+    pos: ChartPosition = (-1, -1)
+    pos_start: ChartPosition = (0, 0)
     state: bool = False
     move_x: int = -1
     move_y: int = -1
@@ -108,13 +115,13 @@ class ChartMarker(QtWidgets.QWidget):
 
 class Chart(QtWidgets.QWidget):
     bands: ClassVar[Any] = None
-    popoutRequested: ClassVar[Any] = pyqtSignal(object)
+    popout_requested: ClassVar[pyqtSignal] = pyqtSignal(object)
     color: ClassVar[ChartColors] = ChartColors()
 
-    def __init__(self, name):
+    def __init__(self, name) -> None:
         super().__init__()
-        self.name = name
-        self.sweepTitle = ""
+        self.name: str = name
+        self.sweepTitle: str = ""
 
         self.leftMargin = 30
         self.rightMargin = 20
@@ -135,7 +142,7 @@ class Chart(QtWidgets.QWidget):
 
         self.action_popout = QAction("Popout chart")
         self.action_popout.triggered.connect(
-            lambda: self.popoutRequested.emit(self)
+            lambda: self.popout_requested.emit(self)
         )
         self.addAction(self.action_popout)
 
@@ -145,37 +152,37 @@ class Chart(QtWidgets.QWidget):
 
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.ActionsContextMenu)
 
-    def setReference(self, data):
+    def setReference(self, data) -> None:
         self.reference = data
         self.update()
 
-    def resetReference(self):
+    def resetReference(self) -> None:
         self.reference = []
         self.update()
 
-    def setData(self, data):
+    def setData(self, data) -> None:
         self.data = data
         self.update()
 
-    def setMarkers(self, markers):
+    def setMarkers(self, markers) -> None:
         self.markers = markers
 
-    def setBands(self, bands):
+    def setBands(self, bands) -> None:
         self.bands = bands
 
-    def setLineThickness(self, thickness):
+    def setLineThickness(self, thickness) -> None:
         self.dim.line = thickness
         self.update()
 
-    def setPointSize(self, size):
+    def setPointSize(self, size) -> None:
         self.dim.point = size
         self.update()
 
-    def setMarkerSize(self, size):
+    def setMarkerSize(self, size) -> None:
         Defaults.cfg.chart.marker_size = size
         self.update()
 
-    def setSweepTitle(self, title):
+    def setSweepTitle(self, title) -> None:
         self.sweepTitle = title
         self.update()
 
@@ -191,7 +198,7 @@ class Chart(QtWidgets.QWidget):
             None,
         )
 
-    def getNearestMarker(self, x, y) -> Marker | None:
+    def getNearestMarker(self, x, y) -> None | Marker:
         if not self.data:
             return None
         shortest = 10**6
@@ -207,7 +214,7 @@ class Chart(QtWidgets.QWidget):
     def getPosition(self, d: Datapoint) -> tuple[int, int]:
         return self.getXPosition(d), self.getYPosition(d)
 
-    def setDrawLines(self, draw_lines):
+    def setDrawLines(self, draw_lines) -> None:
         self.flag.draw_lines = draw_lines
         self.update()
 
@@ -235,7 +242,7 @@ class Chart(QtWidgets.QWidget):
             )
         self.mouseMoveEvent(event)
 
-    def mouseReleaseEvent(self, a0: QtGui.QMouseEvent):
+    def mouseReleaseEvent(self, a0: QtGui.QMouseEvent) -> None:
         self.draggedMarker = None
         if self.dragbox.state:
             self.zoomTo(
@@ -282,7 +289,7 @@ class Chart(QtWidgets.QWidget):
     def zoomTo(self, x1, y1, x2, y2):
         raise NotImplementedError()
 
-    def saveScreenshot(self):
+    def saveScreenshot(self) -> None:
         logger.info("Saving %s to file...", self.name)
         filename, _ = QtWidgets.QFileDialog.getSaveFileName(
             parent=self,
@@ -297,7 +304,7 @@ class Chart(QtWidgets.QWidget):
             filename += ".png"
         self.grab().save(filename)
 
-    def copy(self):
+    def copy(self) -> "Chart":
         new_chart = self.__class__(self.name)
         new_chart.data = self.data
         new_chart.reference = self.reference
@@ -312,11 +319,11 @@ class Chart(QtWidgets.QWidget):
         new_chart.setLineThickness(self.dim.line)
         return new_chart
 
-    def addSWRMarker(self, swr: float):
+    def addSWRMarker(self, swr: float) -> None:
         self.swrMarkers.add(swr)
         self.update()
 
-    def removeSWRMarker(self, swr: float):
+    def removeSWRMarker(self, swr: float) -> None:
         try:
             self.swrMarkers.remove(swr)
         except KeyError:
@@ -324,18 +331,20 @@ class Chart(QtWidgets.QWidget):
         finally:
             self.update()
 
-    def clearSWRMarkers(self):
+    def clearSWRMarkers(self) -> None:
         self.swrMarkers.clear()
         self.update()
 
     @staticmethod
     def drawMarker(
         x: int, y: int, qp: QtGui.QPainter, color: QtGui.QColor, number: int = 0
-    ):
+    ) -> None:
         cmarker = ChartMarker(qp)
         cmarker.draw(x, y, color, f"{number}")
 
-    def drawTitle(self, qp: QtGui.QPainter, position: QtCore.QPoint = None):
+    def drawTitle(
+        self, qp: QtGui.QPainter, position: QtCore.QPoint = None
+    ) -> None:
         qp.setPen(Chart.color.text)
         if position is None:
             qf = QtGui.QFontMetricsF(self.font())
@@ -343,7 +352,7 @@ class Chart(QtWidgets.QWidget):
             position = QtCore.QPointF(self.width() / 2 - width / 2, 15)
         qp.drawText(position, self.sweepTitle)
 
-    def update(self):
+    def update(self) -> None:
         pal = self.palette()
         pal.setColor(QtGui.QPalette.ColorRole.Window, Chart.color.background)
         self.setPalette(pal)

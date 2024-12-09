@@ -22,7 +22,8 @@ from PyQt6 import QtWidgets
 
 logger = logging.getLogger(__name__)
 
-CUTOFF_VALS = (3.0, 6.0, 10.0, 20.0, 60.0)
+CUTOFF_VALS: tuple[float, ...] = (3.0, 6.0, 10.0, 20.0, 60.0)
+MIN_CUTOFF_DAMPING: float = -4.0
 
 
 class QHLine(QtWidgets.QFrame):

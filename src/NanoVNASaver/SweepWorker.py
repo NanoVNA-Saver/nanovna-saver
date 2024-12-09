@@ -68,7 +68,7 @@ class SweepState(Enum):
 
 
 class SweepWorker(QtCore.QRunnable):
-    def __init__(self, app: 'NanoVNA') -> None:
+    def __init__(self, app: "NanoVNA") -> None:
         super().__init__()
         logger.info("Initializing SweepWorker")
         self.signals = WorkerSignals()
@@ -294,7 +294,7 @@ class SweepWorker(QtCore.QRunnable):
         return frequencies, values11, values21
 
     def readData(self, data) -> list[tuple[float, float]]:
-        vna: 'VNA' = self.app.vna  # shortcut to device
+        vna: "VNA" = self.app.vna  # shortcut to device
         logger.debug("Reading %s", data)
         done = False
         result = []
