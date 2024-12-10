@@ -39,7 +39,7 @@ RETRIES_RECONNECT: int = 5
 RETRIES_MAX: int = 10
 
 
-def truncate(values: list[list[tuple]], count: int) -> list[list[tuple]]:
+def truncate(values: list[list[complex]], count: int) -> list[list[complex]]:
     """truncate drops extrema from data list if averaging is active"""
     keep = len(values) - count
     logger.debug("Truncating from %d values to %d", len(values), keep)
@@ -48,9 +48,9 @@ def truncate(values: list[list[tuple]], count: int) -> list[list[tuple]]:
         return values
     truncated = []
     for valueset in np.swapaxes(values, 0, 1).tolist():
-        avg = complex(*np.average(valueset, 0))
+        avg = np.average(valueset)
         truncated.append(
-            sorted(valueset, key=lambda v, a=avg: abs(a - complex(*v)))[:keep]
+            sorted(valueset, key=lambda v, a=avg: abs(a - v))[:keep]
         )
     return np.swapaxes(truncated, 0, 1).tolist()
 
@@ -82,7 +82,7 @@ class SweepWorker(QRunnable):
         self.init_data()
         self.state: "SweepState" = SweepState.STOPPED
         self.error_message: str = ""
-        self.offsetDelay = 0
+        self.offsetDelay: float = 0.0
 
     @pyqtSlot()
     def run(self) -> None:
@@ -229,7 +229,7 @@ class SweepWorker(QRunnable):
         else:
             data21 = raw_data21
 
-        if self.offsetDelay != 0:
+        if self.offsetDelay != 0.0:
             data11 = [
                 correct_delay(dp, self.offsetDelay, reflect=True)
                 for dp in data11
@@ -238,7 +238,9 @@ class SweepWorker(QRunnable):
 
         return data11, data21
 
-    def read_averaged_segment(self, start: int, stop: int, averages: int = 1):
+    def read_averaged_segment(
+        self, start: int, stop: int, averages: int = 1
+    ) -> tuple[list[int], list[complex], list[complex]]:
         logger.info(
             "Reading from %d to %d. Averaging %d values", start, stop, averages
         )
@@ -261,11 +263,13 @@ class SweepWorker(QRunnable):
             while retries and not tmp_11:
                 if retries < RETRIES_RECONNECT:
                     logger.warning("retry readSegment(%s,%s)", start, stop)
+                    sleep(0.5)
                 retries -= 1
                 freq, tmp_11, tmp_21 = self.read_segment(start, stop)
-                sleep(0.5)
+
             if not tmp_11:
                 raise IOError("Invalid data during swwep")
+
             values11.append(tmp_11)
             values21.append(tmp_21)
             self.percentage += 100 / (self.sweep.segments * averages)
@@ -281,9 +285,8 @@ class SweepWorker(QRunnable):
             values21 = truncate(values21, truncates)
 
         logger.debug("Averaging %d values", len(values11))
-        values11 = np.average(values11, 0).tolist()
-        values21 = np.average(values21, 0).tolist()
-
+        values11: list[complex] = np.average(values11, axis=0).tolist()
+        values21: list[complex] = np.average(values21, axis=0).tolist()
         return freq, values11, values21
 
     def read_segment(
