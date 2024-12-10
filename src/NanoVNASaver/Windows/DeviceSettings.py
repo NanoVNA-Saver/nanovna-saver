@@ -21,6 +21,7 @@ import logging
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtGui import QIntValidator
 
+from NanoVNASaver.SweepWorker import SweepState
 from NanoVNASaver.Windows.Defaults import make_scrollable
 from NanoVNASaver.Windows.Screenshot import ScreenshotWindow
 
@@ -31,7 +32,7 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
     custom_points_checkbox = QtWidgets.QCheckBox
     custom_points_edit = QtWidgets.QLineEdit
 
-    def __init__(self, app: QtWidgets.QWidget):  # noqa: PLR0915
+    def __init__(self, app: QtWidgets.QWidget) -> None:  # noqa: PLR0915
         super().__init__()
 
         self.app = app
@@ -119,10 +120,10 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         right_layout.addWidget(settings_box)
         settings_layout.addRow(form_layout)
 
-    def _set_datapoint_index(self, dpoints: int):
+    def _set_datapoint_index(self, dpoints: int) -> None:
         self.datapoints.setCurrentIndex(self.datapoints.findText(str(dpoints)))
 
-    def _set_bandwidth_index(self, bw: int):
+    def _set_bandwidth_index(self, bw: int) -> None:
         self.bandwidth.setCurrentIndex(self.bandwidth.findText(str(bw)))
 
     def show(self):
@@ -143,7 +144,7 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         self.label["firmware"].setText(
             f"{self.app.vna.name} v{self.app.vna.version}"
         )
-        if self.app.worker.running:
+        if self.app.worker.state == SweepState.RUNNING:
             self.label["calibration"].setText("(Sweep running)")
         else:
             self.label["calibration"].setText(self.app.vna.getCalibration())
@@ -180,12 +181,12 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         else:
             self.bandwidth.setDisabled(True)
 
-    def updateValidation(self, validate_data: bool):
+    def updateValidation(self, validate_data: bool) -> None:
         self.app.vna.validateInput = validate_data
         self.app.settings.setValue("SerialInputValidation", validate_data)
 
-    def captureScreenshot(self):
-        if not self.app.worker.running:
+    def captureScreenshot(self) -> None:
+        if self.app.worker.state != SweepState.RUNNING:
             pixmap = self.app.vna.getScreenshot()
             self.screenshotWindow.setScreenshot(pixmap)
             self.screenshotWindow.show()
@@ -193,25 +194,25 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         # TODO: Consider having a list of widgets that want to be
         #       disabled when a sweep is running?
 
-    def updateNrDatapoints(self, i):
-        if i < 0 or self.app.worker.running:
+    def updateNrDatapoints(self, i) -> None:
+        if i < 0 or self.app.worker.state == SweepState.RUNNING:
             return
         logger.debug("DP: %s", self.datapoints.itemText(i))
         self.app.vna.datapoints = int(self.datapoints.itemText(i))
         self.app.sweep.set_points(self.app.vna.datapoints)
         self.app.sweep_control.update_step_size()
 
-    def updateBandwidth(self, i):
-        if i < 0 or self.app.worker.running:
+    def updateBandwidth(self, i) -> None:
+        if i < 0 or self.app.worker.state == SweepState.RUNNING:
             return
         logger.debug("Bandwidth: %s", self.bandwidth.itemText(i))
         self.app.vna.set_bandwidth(int(self.bandwidth.itemText(i)))
 
-    def customPoint_check(self, validate_data: bool):
+    def customPoint_check(self, validate_data: bool) -> None:
         self.datapoints.setDisabled(validate_data)
         self.custom_points_edit.setDisabled(not validate_data)
 
-    def updatecustomPoint(self, points_str: str):
+    def updatecustomPoint(self, points_str: str) -> None:
         if self.custom_points_checkbox.isChecked():
             # points_str = self.custom_points_Eidt.text()
             if len(points_str) == 0:

@@ -78,7 +78,7 @@ class FilesWindow(QtWidgets.QWidget):
                 self, "No data to save", "There is no data to save."
             )
             return
-        if nr_params > 2 and len(self.app.data.s21) == 0:
+        if nr_params > 2 and len(self.app.data.s21) == 0:  # noqa: PLR2004
             QtWidgets.QMessageBox.warning(
                 self, "No S21 data to save", "There is no S21 data to save."
             )

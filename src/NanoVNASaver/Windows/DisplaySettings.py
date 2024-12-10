@@ -17,6 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
+from typing import TYPE_CHECKING
 
 from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtGui import QColor, QColorConstants, QPalette, QShortcut
@@ -28,16 +29,19 @@ from NanoVNASaver.Windows.Bands import BandsWindow
 from NanoVNASaver.Windows.Defaults import make_scrollable
 from NanoVNASaver.Windows.MarkerSettings import MarkerSettingsWindow
 
+if TYPE_CHECKING:
+    from NanoVNASaver.NanoVNASaver import NanoVNASaver as NanoVNA
+
 logger = logging.getLogger(__name__)
 
 MIN_MARKERS_FOR_DELTA = 2
 
 
 class DisplaySettingsWindow(QtWidgets.QWidget):
-    def __init__(self, app: QtWidgets.QWidget):
+    def __init__(self, app: "NanoVNA") -> None:
         super().__init__()
 
-        self.app = app
+        self.app: "NanoVNA" = app
         self.setWindowTitle("Display settings")
         self.setWindowIcon(self.app.icon)
         self.marker_window = MarkerSettingsWindow(self.app)
@@ -327,84 +331,30 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         right_layout.addStretch(1)
         self.update()
 
-    def _chart_selection(self, charts_layout, selections):
-        chart00_selection = QtWidgets.QComboBox()
-        chart00_selection.setMinimumHeight(30)
-        chart00_selection.addItems(selections)
-        chart00 = self.app.settings.value("Chart00", "S11 Smith Chart")
-        if chart00_selection.findText(chart00) > -1:
-            chart00_selection.setCurrentText(chart00)
-        else:
-            chart00_selection.setCurrentText("S11 Smith Chart")
-        chart00_selection.currentTextChanged.connect(
-            lambda: self.changeChart(0, 0, chart00_selection.currentText())
-        )
-        charts_layout.addWidget(chart00_selection, 0, 0)
+    def _chart_selection(self, charts_layout, selections) -> None:
+        def _combo_box(
+            key: str, val: str, x: int, y: int
+        ) -> QtWidgets.QComboBox:
+            box = QtWidgets.QComboBox()
+            box.setMinimumHeight(30)
+            box.addItems(selections)
+            chart = self.app.settings.value(key, val)
+            if box.findText(chart) > -1:
+                box.setCurrentText(chart)
+            else:
+                box.setCurrentText(val)
+            box.currentTextChanged.connect(
+                lambda: self.changeChart(x, y, box.currentText())
+            )
+            charts_layout.addWidget(box, x, y)
+            return box
 
-        chart01_selection = QtWidgets.QComboBox()
-        chart01_selection.setMinimumHeight(30)
-        chart01_selection.addItems(selections)
-        chart01 = self.app.settings.value("Chart01", "S11 Return Loss")
-        if chart01_selection.findText(chart01) > -1:
-            chart01_selection.setCurrentText(chart01)
-        else:
-            chart01_selection.setCurrentText("S11 Return Loss")
-        chart01_selection.currentTextChanged.connect(
-            lambda: self.changeChart(0, 1, chart01_selection.currentText())
-        )
-        charts_layout.addWidget(chart01_selection, 0, 1)
-
-        chart02_selection = QtWidgets.QComboBox()
-        chart02_selection.setMinimumHeight(30)
-        chart02_selection.addItems(selections)
-        chart02 = self.app.settings.value("Chart02", "None")
-        if chart02_selection.findText(chart02) > -1:
-            chart02_selection.setCurrentText(chart02)
-        else:
-            chart02_selection.setCurrentText("None")
-        chart02_selection.currentTextChanged.connect(
-            lambda: self.changeChart(0, 2, chart02_selection.currentText())
-        )
-        charts_layout.addWidget(chart02_selection, 0, 2)
-
-        chart10_selection = QtWidgets.QComboBox()
-        chart10_selection.setMinimumHeight(30)
-        chart10_selection.addItems(selections)
-        chart10 = self.app.settings.value("Chart10", "S21 Polar Plot")
-        if chart10_selection.findText(chart10) > -1:
-            chart10_selection.setCurrentText(chart10)
-        else:
-            chart10_selection.setCurrentText("S21 Polar Plot")
-        chart10_selection.currentTextChanged.connect(
-            lambda: self.changeChart(1, 0, chart10_selection.currentText())
-        )
-        charts_layout.addWidget(chart10_selection, 1, 0)
-
-        chart11_selection = QtWidgets.QComboBox()
-        chart11_selection.setMinimumHeight(30)
-        chart11_selection.addItems(selections)
-        chart11 = self.app.settings.value("Chart11", "S21 Gain")
-        if chart11_selection.findText(chart11) > -1:
-            chart11_selection.setCurrentText(chart11)
-        else:
-            chart11_selection.setCurrentText("S21 Gain")
-        chart11_selection.currentTextChanged.connect(
-            lambda: self.changeChart(1, 1, chart11_selection.currentText())
-        )
-        charts_layout.addWidget(chart11_selection, 1, 1)
-
-        chart12_selection = QtWidgets.QComboBox()
-        chart12_selection.setMinimumHeight(30)
-        chart12_selection.addItems(selections)
-        chart12 = self.app.settings.value("Chart12", "None")
-        if chart12_selection.findText(chart12) > -1:
-            chart12_selection.setCurrentText(chart12)
-        else:
-            chart12_selection.setCurrentText("None")
-        chart12_selection.currentTextChanged.connect(
-            lambda: self.changeChart(1, 2, chart12_selection.currentText())
-        )
-        charts_layout.addWidget(chart12_selection, 1, 2)
+        chart00_selection = _combo_box("Chart00", "S11 Smith Chart", 0, 0)
+        chart01_selection = _combo_box("Chart01", "S11 Return Loss", 0, 1)
+        chart02_selection = _combo_box("Chart02", "None", 0, 2)
+        chart10_selection = _combo_box("Chart10", "S21 Polar Plot", 1, 0)
+        chart11_selection = _combo_box("Chart11", "S21 Gain", 1, 1)
+        chart12_selection = _combo_box("Chart12", "None", 1, 2)
 
         self.changeChart(0, 0, chart00_selection.currentText())
         self.changeChart(0, 1, chart01_selection.currentText())
@@ -413,7 +363,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.changeChart(1, 1, chart11_selection.currentText())
         self.changeChart(1, 2, chart12_selection.currentText())
 
-    def trace_colors(self, layout: QtWidgets.QLayout):
+    def trace_colors(self, layout: QtWidgets.QLayout) -> None:
         for setting, name, attr in (
             ("SweepColor", "Sweep color", "sweep"),
             ("SecondarySweepColor", "Second sweep color", "sweep_secondary"),
@@ -427,7 +377,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             cp = self.color_picker(setting, attr)
             layout.addRow(name, cp)
 
-    def custom_colors(self, layout: QtWidgets.QLayout):
+    def custom_colors(self, layout: QtWidgets.QLayout) -> None:
         for setting, name, attr in (
             ("BackgroundColor", "Chart background", "background"),
             ("ForegroundColor", "Chart foreground", "foreground"),
@@ -452,7 +402,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         cp.setPalette(p)
         return cp
 
-    def changeChart(self, x, y, chart):
+    def changeChart(self, x, y, chart) -> None:
         found = None
         for c in self.app.selectable_charts:
             if c.name == chart:
@@ -471,7 +421,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             if found.isHidden():
                 found.show()
 
-    def changeReturnLoss(self):
+    def changeReturnLoss(self) -> None:
         state = self.returnloss_is_positive.isChecked()
         Defaults.cfg.chart.returnloss_is_positive = bool(state)
         for m in self.app.markers:
@@ -482,13 +432,13 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.app.charts["s11"]["log_mag"].isInverted = state
         self.app.charts["s11"]["log_mag"].update()
 
-    def changeShowLines(self):
+    def changeShowLines(self) -> None:
         state = self.show_lines_option.isChecked()
         Defaults.cfg.chart.show_lines = bool(state)
         for c in self.app.subscribing_charts:
             c.setDrawLines(state)
 
-    def changeShowMarkerNumber(self):
+    def changeShowMarkerNumber(self) -> None:
         Defaults.cfg.chart.marker_label = bool(
             self.show_marker_number_option.isChecked()
         )
@@ -500,26 +450,26 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         )
         self.updateCharts()
 
-    def changeMarkerAtTip(self):
+    def changeMarkerAtTip(self) -> None:
         Defaults.cfg.chart.marker_at_tip = bool(self.marker_at_tip.isChecked())
         self.updateCharts()
 
-    def changePointSize(self, size: int):
+    def changePointSize(self, size: int) -> None:
         Defaults.cfg.chart.point_size = size
         for c in self.app.subscribing_charts:
             c.setPointSize(size)
 
-    def changeLineThickness(self, size: int):
+    def changeLineThickness(self, size: int) -> None:
         Defaults.cfg.chart.line_thickness = size
         for c in self.app.subscribing_charts:
             c.setLineThickness(size)
 
-    def changeMarkerSize(self, size: int):
+    def changeMarkerSize(self, size: int) -> None:
         Defaults.cfg.chart.marker_size = size
         self.markerSizeInput.setValue(size)
         self.updateCharts()
 
-    def changeDarkMode(self):
+    def changeDarkMode(self) -> None:
         state = self.dark_mode_option.isChecked()
         Defaults.cfg.gui.dark_mode = bool(state)
         Chart.color.foreground = QColor(QColorConstants.LightGray)
@@ -532,13 +482,13 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         Chart.color.swr = Chart.color.swr
         self.updateCharts()
 
-    def changeSetting(self, setting: str, value: str):
+    def changeSetting(self, setting: str, value: str) -> None:
         logger.debug("Setting %s: %s", setting, value)
         self.app.settings.setValue(setting, value)
         self.app.settings.sync()
         self.updateCharts()
 
-    def setColor(self):
+    def setColor(self) -> None:
         sender = self.sender()
         logger.debug("Sender %s", sender)
         setting, attr = self.callback_params[sender]
@@ -560,14 +510,14 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         sender.setPalette(palette)
         self.changeSetting(setting, color)
 
-    def setShowBands(self, show_bands):
+    def setShowBands(self, show_bands) -> None:
         self.app.bands.enabled = show_bands
         self.app.bands.settings.setValue("ShowBands", show_bands)
         self.app.bands.settings.sync()
         for c in self.app.subscribing_charts:
             c.update()
 
-    def changeFont(self):
+    def changeFont(self) -> None:
         font_size = int(self.font_dropdown.currentText())
         Defaults.cfg.gui.font_size = font_size
         app: QtWidgets.QApplication = QtWidgets.QApplication.instance()
@@ -576,15 +526,15 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         app.setFont(font)
         self.app.changeFont(font)
 
-    def displayBandsWindow(self):
+    def displayBandsWindow(self) -> None:
         self.bandsWindow.show()
         QtWidgets.QApplication.setActiveWindow(self.bandsWindow)
 
-    def displayMarkerWindow(self):
+    def displayMarkerWindow(self) -> None:
         self.marker_window.show()
         QtWidgets.QApplication.setActiveWindow(self.marker_window)
 
-    def addMarker(self):
+    def addMarker(self) -> None:
         new_marker = Marker("", self.app.settings)
         new_marker.setScale(self.app.scaleFactor)
         self.app.markers.append(new_marker)
@@ -601,7 +551,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         if Marker.count() >= MIN_MARKERS_FOR_DELTA:
             self.app.marker_control.check_delta.setDisabled(False)
 
-    def removeMarker(self):
+    def removeMarker(self) -> None:
         # keep at least one marker
         if Marker.count() <= 1:
             return
@@ -621,7 +571,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         label, _ = last_marker.getRow()
         label.hide()
 
-    def addVSWRMarker(self):
+    def addVSWRMarker(self) -> None:
         value, selected = QtWidgets.QInputDialog.getDouble(
             self,
             "Add VSWR Marker",
@@ -639,7 +589,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
                 c.addSWRMarker(value)
             self.app.settings.setValue("VSWRMarkers", self.vswrMarkers)
 
-    def removeVSWRMarker(self):
+    def removeVSWRMarker(self) -> None:
         value_str = self.vswr_marker_dropdown.currentText()
         if value_str != "None":
             value = float(value_str)
@@ -655,7 +605,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             for c in self.app.s11charts:
                 c.removeSWRMarker(value)
 
-    def updateCharts(self):
+    def updateCharts(self) -> None:
         for c in self.app.subscribing_charts:
             c.update()
         Defaults.store(self.app.settings, Defaults.cfg)

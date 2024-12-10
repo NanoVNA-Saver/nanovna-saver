@@ -104,8 +104,9 @@ class SerialControl(Control):
         self.btn_toggle.setText("Disconnect")
         self.btn_toggle.repaint()
 
-        frequencies = self.app.vna.readFrequencies()
-        if not frequencies:
+        try:
+            frequencies = self.app.vna.read_frequencies()
+        except ValueError:
             logger.warning("No frequencies read")
             return
         logger.info(
