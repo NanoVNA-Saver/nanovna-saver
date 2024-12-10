@@ -17,6 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
+from typing import TYPE_CHECKING
 
 from PyQt6 import QtWidgets
 
@@ -24,14 +25,17 @@ import NanoVNASaver.AnalyticTools as At
 from NanoVNASaver.Analysis.Base import Analysis, QHLine
 from NanoVNASaver.Formatting import format_frequency, format_vswr
 
+if TYPE_CHECKING:
+    from NanoVNASaver.NanoVNASaver import NanoVNASaver as NanoVNA
+
 logger = logging.getLogger(__name__)
 
 
 class VSWRAnalysis(Analysis):
-    max_dips_shown = 3
-    vswr_limit_value = 1.5
+    MAX_DIPS_SHOWN: int = 3
+    vswr_limit_value: float = 1.5
 
-    def __init__(self, app):
+    def __init__(self, app: "NanoVNA") -> None:
         super().__init__(app)
 
         self._widget = QtWidgets.QWidget()
@@ -55,7 +59,7 @@ class VSWRAnalysis(Analysis):
 
         self.minimums: list[int] = []
 
-    def runAnalysis(self):
+    def runAnalysis(self) -> None:
         if not self.app.data.s11:
             return
         s11 = self.app.data.s11
@@ -64,7 +68,7 @@ class VSWRAnalysis(Analysis):
         threshold = self.input_vswr_limit.value()
 
         minima = sorted(At.minima(data, threshold), key=lambda i: data[i])[
-            : VSWRAnalysis.max_dips_shown
+            : VSWRAnalysis.MAX_DIPS_SHOWN
         ]
         self.minimums = minima
 

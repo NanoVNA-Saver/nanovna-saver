@@ -159,13 +159,13 @@ class VNA:
             raise IOError(f"set_bandwith({bandwidth}: {result}")
         self.bandwidth = bandwidth
 
-    def readFrequencies(self) -> list[int]:
-        return [int(f) for f in self.readValues("frequencies")]
+    def read_frequencies(self) -> list[int]:
+        return [int(f.real) for f in self.readValues("frequencies")]
 
     def resetSweep(self, start: int, stop: int):
         pass
 
-    def _get_running_frequencies(self):
+    def _get_running_frequencies(self) -> tuple[int, int]:
         """
         If possible, read frequencies already running
         if not return default values
@@ -200,9 +200,11 @@ class VNA:
         logger.debug("result:\n%s", result)
         return result
 
-    def readValues(self, value) -> list[str]:
+    def readValues(self, value) -> list[complex]:
         logger.debug("VNA reading %s", value)
-        result = list(self.exec_command(value))
+        result = [
+            complex(*map(float, s.split())) for s in self.exec_command(value)
+        ]
         logger.debug("VNA done reading %s (%d values)", value, len(result))
         return result
 

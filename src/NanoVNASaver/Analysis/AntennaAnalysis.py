@@ -35,25 +35,25 @@ class MagLoopAnalysis(VSWRAnalysis):
 
     """
 
-    max_dips_shown = 1
+    MAX_DIPS_SHOWN: int = 1
 
-    vswr_bandwith_value = 2.56  # -3 dB ?!?
-    bandwith = 25000  # 25 kHz
+    vswr_bandwith_value: float = 2.56  # -3 dB ?!?
+    bandwith: int = 25000  # 25 kHz
 
-    def __init__(self, app):
+    def __init__(self, app) -> None:
         # app.sweep_control.get_start() return -1 ?!?
         # will populate first runAnalysis()
-        self.min_freq = None  # app.sweep_control.get_start()
-        self.max_freq = None  # app.sweep_control.get_end()
-        self.vswr_limit_value = self.vswr_bandwith_value
+        self.min_freq: int = 0  # app.sweep_control.get_start()
+        self.max_freq: int = 0  # app.sweep_control.get_end()
+        self.vswr_limit_value: float = self.vswr_bandwith_value
 
         super().__init__(app)
 
-    def runAnalysis(self):
+    def runAnalysis(self) -> None:
         super().runAnalysis()
         new_start = self.app.sweep_control.get_start()
         new_end = self.app.sweep_control.get_end()
-        if self.min_freq is None:
+        if not self.min_freq:
             self.min_freq = new_start
             self.max_freq = new_end
             logger.debug(

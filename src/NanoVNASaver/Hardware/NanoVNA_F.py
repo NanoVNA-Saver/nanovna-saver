@@ -24,7 +24,7 @@ from NanoVNASaver.Hardware.Serial import Interface
 logger = logging.getLogger(__name__)
 
 
-class NanoVNA_F(NanoVNA):
+class NanoVNA_F(NanoVNA):  # noqa: N801
     name = "NanoVNA-F"
     screenwidth = 800
     screenheight = 480

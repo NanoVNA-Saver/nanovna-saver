@@ -48,7 +48,7 @@ class NanoVNA(VNA):
         logger.debug("Reading values: frequencies")
         try:
             frequencies = super().readValues("frequencies")
-            return frequencies[0], frequencies[-1]
+            return int(frequencies[0].real), int(frequencies[-1].real)
         except Exception as e:
             logger.warning("%s reading frequencies", e)
             logger.info("falling back to generic")
@@ -122,10 +122,10 @@ class NanoVNA(VNA):
             self.features.add("Scan command")
             self.sweep_method = "scan"
 
-    def readFrequencies(self) -> list[int]:
+    def read_frequencies(self) -> list[int]:
         logger.debug("readFrequencies: %s", self.sweep_method)
         if self.sweep_method != "scan_mask":
-            return super().readFrequencies()
+            return super().read_frequencies()
         return [
             int(line)
             for line in self.exec_command(
@@ -133,7 +133,7 @@ class NanoVNA(VNA):
             )
         ]
 
-    def readValues(self, value) -> list[str]:
+    def readValues(self, value) -> list[complex]:
         if self.sweep_method != "scan_mask":
             return super().readValues(value)
         logger.debug("readValue with scan mask (%s)", value)
@@ -144,9 +144,9 @@ class NanoVNA(VNA):
             for line in self.exec_command(
                 f"scan {self.start} {self.stop} {self.datapoints} 0b110"
             ):
-                data = line.split()
+                d = list(map(float, line.split()))
                 self._sweepdata.append(
-                    (f"{data[0]} {data[1]}", f"{data[2]} {data[3]}")
+                    (complex(d[0], d[1]), complex(d[2], d[3]))
                 )
         if value == "data 0":
             return [x[0] for x in self._sweepdata]

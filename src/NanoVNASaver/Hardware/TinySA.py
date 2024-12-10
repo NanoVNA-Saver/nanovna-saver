@@ -48,7 +48,7 @@ class TinySA(VNA):
         logger.debug("Reading values: frequencies")
         try:
             frequencies = super().readValues("frequencies")
-            return frequencies[0], frequencies[-1]
+            return int(frequencies[0]), int(frequencies[-1])
         except Exception as e:
             logger.warning("%s reading frequencies", e)
             logger.info("falling back to generic")
@@ -108,27 +108,26 @@ class TinySA(VNA):
         list(self.exec_command(f"sweep {start} {stop} {self.datapoints}"))
         list(self.exec_command("trigger auto"))
 
-    def readFrequencies(self) -> list[int]:
+    def read_frequencies(self) -> list[int]:
         logger.debug("readFrequencies")
-        return [int(line) for line in self.exec_command("frequencies")]
+        return [int(line.real) for line in self.exec_command("frequencies")]
 
-    def readValues(self, value) -> list[str]:
-        def conv2float(data: str) -> float:
+    def readValues(self, value) -> list[complex]:
+        def conv2complex(data: str) -> complex:
             try:
-                return 10 ** (float(data.strip()) / 20)
+                return complex(10 ** (float(data.strip()) / 20), 0.0)
             except ValueError:
-                return 0.0
+                return complex(0.0, 0.0)
 
         logger.debug("Read: %s", value)
         if value == "data 0":
             self._sweepdata = [
-                f"{conv2float(line)} 0.0"
-                for line in self.exec_command("data 0")
+                conv2complex(line) for line in self.exec_command("data 0")
             ]
         return self._sweepdata
 
 
-class TinySA_Ultra(TinySA):
+class TinySA_Ultra(TinySA):  # noqa: N801
     name = "tinySA Ultra"
     screenwidth = 480
     screenheight = 320

@@ -101,7 +101,7 @@ def get_interfaces() -> list[Interface]:
     # serial like usb interfaces
     for d in list_ports.comports():
         if platform.system() == "Windows" and d.vid is None:
-            d = _fix_v2_hwinfo(d)
+            d = _fix_v2_hwinfo(d)  # noqa: PLW2901
         if not (typename := usb_typename(d)):
             continue
         logger.debug(

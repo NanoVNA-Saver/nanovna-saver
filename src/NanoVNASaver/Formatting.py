@@ -85,7 +85,7 @@ def format_gain(val: float, invert: bool = False) -> str:
 
 
 def format_q_factor(val: float, allow_negative: bool = False) -> str:
-    if (not allow_negative and val < 0) or abs(val > 10000.0):
+    if (not allow_negative and val < 0) or abs(val > 10000.0):  # noqa: PLR2004
         return "\N{INFINITY}"
     return str(SITools.Value(val, fmt=FMT_Q_FACTOR))
 
