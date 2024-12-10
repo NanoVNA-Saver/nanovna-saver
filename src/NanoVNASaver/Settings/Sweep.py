@@ -51,7 +51,7 @@ class Sweep:
         self._end = end
         self._points = points
         self._segments = segments
-        self._properties = Properties()
+        self._properties = properties or Properties()
         self._lock = Lock()
         self.check()
         logger.debug("%s", self)
