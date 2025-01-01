@@ -240,9 +240,9 @@ class NanoVNA_V2(VNA):  # noqa: N801
             raise IOError("Timeout reading version registers")
         return Version.build(resp[0], 0, resp[1])
 
-    def readVersion(self) -> Version:
+    def read_fw_version(self) -> Version:
         result = self._read_version(_ADDR_FW_MAJOR, _ADDR_FW_MINOR)
-        logger.debug("readVersion: %s", result)
+        logger.debug("Firmware Version: %s", result)
         return result
 
     def read_board_revision(self) -> Version:

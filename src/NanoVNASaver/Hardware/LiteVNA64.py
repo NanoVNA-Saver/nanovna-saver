@@ -14,6 +14,7 @@ from .NanoVNA_V2 import (
     _ADDR_FW_MINOR,
     _ADDR_HARDWARE_REVISION,
     _CMD_READ,
+    WRITE_SLEEP,
     NanoVNA_V2,
 )
 
@@ -36,8 +37,12 @@ class LiteVNA64(NanoVNA_V2):
     def __init__(self, iface: Interface):
         super().__init__(iface)
 
+    def read_fw_version(self) -> Version:
+        with self.serial.lock:
+            return LiteVNA64._get_fw_revision_serial(self.serial)
+
     @staticmethod
-    def _read_major_minor_version(
+    def _get_major_minor_version_serial(
         cmd_major_version: int, cmd_minor_version: int, serial: Serial
     ) -> Version:
         cmd = pack(
@@ -56,16 +61,16 @@ class LiteVNA64(NanoVNA_V2):
         return Version.build(resp[0], resp[1])
 
     @staticmethod
-    def read_fw_version(serial: Serial) -> Version:
-        result = LiteVNA64._read_major_minor_version(
+    def _get_fw_revision_serial(serial: Serial) -> Version:
+        result = LiteVNA64._get_major_minor_version_serial(
             _ADDR_FW_MAJOR, _ADDR_FW_MINOR, serial
         )
         logger.debug("Firmware version: %s", result)
         return result
 
     @staticmethod
-    def read_hw_revision(serial: Serial) -> Version:
-        result = LiteVNA64._read_major_minor_version(
+    def _get_hw_revision_serial(serial: Serial) -> Version:
+        result = LiteVNA64._get_major_minor_version_serial(
             _ADDR_DEVICE_VARIANT, _ADDR_HARDWARE_REVISION, serial
         )
         logger.debug(
@@ -76,8 +81,8 @@ class LiteVNA64(NanoVNA_V2):
 
     @staticmethod
     def is_lite_vna_64(serial: Serial) -> bool:
-        hw_version = LiteVNA64.read_hw_revision(serial)
-        fw_version = LiteVNA64.read_fw_version(serial)
+        hw_version = LiteVNA64._get_hw_revision_serial(serial)
+        fw_version = LiteVNA64._get_fw_revision_serial(serial)
         return (
             hw_version == EXPECTED_HW_VERSION
             and fw_version == EXPECTED_FW_VERSION

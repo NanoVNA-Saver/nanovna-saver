@@ -72,7 +72,7 @@ class VNA:
         # frequency. Put default output power first.
         self.txPowerRanges = []
         if self.connected():
-            self.version = self.readVersion()
+            self.version = self.read_fw_version()
             self.read_features()
             logger.debug("Features: %s", self.features)
             #  cannot read current bandwidth, so set to highest
@@ -208,9 +208,9 @@ class VNA:
         logger.debug("VNA done reading %s (%d values)", value, len(result))
         return result
 
-    def readVersion(self) -> Version:
+    def read_fw_version(self) -> Version:
         result = list(self.exec_command("version"))
-        logger.debug("result:\n%s", result)
+        logger.debug("Firmware Version:\n%s", result)
         return Version.parse(result[0])
 
     def setSweep(self, start, stop):
