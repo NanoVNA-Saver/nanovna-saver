@@ -49,7 +49,7 @@ Current features
 
 
 * Reading data from a NanoVNA -- Compatible devices: NanoVNA, NanoVNA-H,
-  NanoVNA-H4, NanoVNA-F, AVNA via Teensy
+  NanoVNA-H4, NanoVNA-F, AVNA via Teensy, LiteVNA
 * Reading data from a TinySA
 * Splitting a frequency range into multiple segments to increase resolution
   (tried up to >10k points)

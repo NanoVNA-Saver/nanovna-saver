@@ -1,0 +1,25 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: NanoVNASaver",
+            "type": "python",
+            "request": "launch",
+            "module": "NanoVNASaver",
+            "justMyCode": true,
+            "args": ["-d", "-D NanoVNASaver-debug.log"],
+            "env": {"PYTHONPATH":"./src"}
+        },
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
+    ]
+}

@@ -37,6 +37,7 @@ from NanoVNASaver.Hardware.Serial import Interface, drain_serial
 from NanoVNASaver.Hardware.SV4401A import SV4401A
 from NanoVNASaver.Hardware.SV6301A import SV6301A
 from NanoVNASaver.Hardware.TinySA import TinySA, TinySA_Ultra
+from NanoVNASaver.Hardware.litevna_64 import LiteVNA64
 from NanoVNASaver.Hardware.VNA import VNA
 
 logger = logging.getLogger(__name__)
@@ -65,6 +66,7 @@ NAME2DEVICE = {
     "JNCRadio": JNCRadio_VNA_3G,
     "SV4401A": SV4401A,
     "SV6301A": SV6301A,
+    "LiteVNA64": LiteVNA64,
     "Unknown": NanoVNA,
 }
 
@@ -148,6 +150,8 @@ def get_comment(iface: Interface) -> str:
 
     if vna_version == "v2":
         return "S-A-A-2"
+    elif vna_version == "lite_vna_64":
+        return "LiteVNA64"
 
     logger.info("Finding firmware variant...")
     info = get_info(iface)
@@ -189,7 +193,7 @@ def detect_version(serial_port: serial.Serial) -> str:
         if data.startswith("\r\n?\r\nch> "):
             return "vh"
         if data.startswith("2"):
-            return "v2"
+            return "lite_vna_64" if LiteVNA64.is_lite_vna_64(serial_port) else "v2"
         logger.debug("Retry detection: %s", i + 1)
     logger.error("No VNA detected. Hardware responded to CR with: %s", data)
     return ""

@@ -20,7 +20,7 @@ __pycache__/*
 .pydevproject
 .settings
 .idea
-.vscode
+!.vscode
 tags
 
 # Package files
@@ -58,3 +58,4 @@ NanoVNASaver.spec
 .python-version
 
 
+!.vscode/launch.json
