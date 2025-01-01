@@ -65,7 +65,7 @@ class LiteVNA64(NanoVNA_V2):
             return LiteVNA64._get_fw_revision_serial(self.serial)
 
     def init_features(self) -> None:
-        # VBat state will be added dynamicly in getFeatures()
+        # VBat state will be added dynamicly in get_features()
 
         self.features.add("Customizable data points")
 
@@ -84,7 +84,7 @@ class LiteVNA64(NanoVNA_V2):
             ),
         ]
 
-    def getFeatures(self) -> set[str]:
+    def get_features(self) -> set[str]:
         result = set(self.features)
         result.add(f"Vbat: {self.read_vbat()}V")
         return result

@@ -150,7 +150,7 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
             self.label["calibration"].setText(self.app.vna.getCalibration())
         self.label["SN"].setText(self.app.vna.SN)
         self.featureList.clear()
-        features = self.app.vna.getFeatures()
+        features = self.app.vna.get_features()
         for item in features:
             self.featureList.addItem(item)
 

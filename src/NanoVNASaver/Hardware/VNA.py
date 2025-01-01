@@ -178,7 +178,7 @@ class VNA:
     def connected(self) -> bool:
         return self.serial.is_open
 
-    def getFeatures(self) -> set[str]:
+    def get_features(self) -> set[str]:
         return self.features
 
     def getCalibration(self) -> str:
