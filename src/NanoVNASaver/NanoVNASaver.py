@@ -125,14 +125,15 @@ class NanoVNASaver(QWidget):
         self.marker_column.setContentsMargins(0, 0, 0, 0)
         self.marker_frame.setLayout(self.marker_column)
 
+        self.interface = Interface("serial", "None")
+        self.vna: type[VNA] = VNA(self.interface)
+        
         self.sweep_control = SweepControl(self)
         self.marker_control = MarkerControl(self)
         self.serial_control = SerialControl(self)
+        self.serial_control.connected.connect(self.sweep_control.update_sweep_btn)
 
         self.bands = BandsModel()
-
-        self.interface = Interface("serial", "None")
-        self.vna: type[VNA] = VNA(self.interface)
 
         self.dataLock = threading.Lock()
         self.data = Touchstone()

@@ -19,7 +19,7 @@
 import logging
 from time import sleep
 
-from PyQt6 import QtWidgets
+from PyQt6 import QtCore, QtWidgets
 
 from NanoVNASaver.Controls.Control import Control
 from NanoVNASaver.Hardware.Hardware import Interface, get_interfaces, get_VNA
@@ -28,6 +28,10 @@ logger = logging.getLogger(__name__)
 
 
 class SerialControl(Control):
+
+    # true when serial port was connected and false when it was disconnected
+    connected = QtCore.pyqtSignal(bool)
+    
     def __init__(self, app: QtWidgets.QWidget):
         super().__init__(app, "Serial port control")
 
@@ -36,6 +40,7 @@ class SerialControl(Control):
         self.inp_port.setMinimumHeight(20)
         self.rescanSerialPort()
         self.inp_port.setEditable(True)
+        self.inp_port.currentIndexChanged.connect(self.update_connect_btn_state)
         self.btn_rescan = QtWidgets.QPushButton("Rescan")
         self.btn_rescan.setMinimumHeight(20)
         self.btn_rescan.setFixedWidth(60)
@@ -63,6 +68,11 @@ class SerialControl(Control):
         button_layout.addWidget(self.btn_settings, stretch=0)
         self.layout.addRow(button_layout)
 
+        # Assuming serial is disconnected
+        self.update_settings_state(False)
+
+        self.connected.connect(self.update_settings_state)
+
     def rescanSerialPort(self):
         self.inp_port.clear()
         for iface in get_interfaces():
@@ -77,7 +87,10 @@ class SerialControl(Control):
 
     def connect_device(self):
         with self.interface.lock:
-            self.interface = self.inp_port.currentData()
+            new_interface = self.inp_port.currentData()
+            if not new_interface:
+                return
+            self.interface = new_interface
             logger.info("Connection %s", self.interface)
             try:
                 self.interface.open()
@@ -104,6 +117,8 @@ class SerialControl(Control):
         self.btn_toggle.setText("Disconnect")
         self.btn_toggle.repaint()
 
+        self.connected.emit(True)
+        
         try:
             frequencies = self.app.vna.read_frequencies()
         except ValueError:
@@ -139,3 +154,20 @@ class SerialControl(Control):
             self.interface.close()
             self.btn_toggle.setText("Connect to device")
             self.btn_toggle.repaint()
+
+            self.connected.emit(False)
+
+    def update_connect_btn_state(self) -> None:
+        # Eanble Connect/Dicsonnect button only if:
+        # a) serial was already connected
+        # b) serial is disconnected AND inp_port was selected
+        port_selected = self.inp_port.currentData() is not None
+        self.btn_toggle.setEnabled(self.is_vna_connected() or port_selected)
+
+    def is_vna_connected(self)  -> bool:
+        return self.app.vna and self.app.vna.connected()
+
+    def update_settings_state(self, was_connected: bool) -> None:
+        self.btn_rescan.setEnabled(not was_connected)
+        self.btn_settings.setEnabled(was_connected)
+        self.update_connect_btn_state()

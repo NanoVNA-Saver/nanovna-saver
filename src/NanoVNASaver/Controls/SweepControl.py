@@ -114,6 +114,8 @@ class SweepControl(Control):
         self.btn_start.setShortcut(
             QtCore.Qt.Key.Key_Control + QtCore.Qt.Key.Key_W
         )
+        # Will be enabled when VNA is connected
+        self.btn_start.setEnabled(False)
         self.btn_stop = QtWidgets.QPushButton("Stop")
         self.btn_stop.setFixedHeight(20)
         self.btn_stop.clicked.connect(self.app.sweep_stop)
@@ -222,3 +224,6 @@ class SweepControl(Control):
             segments=self.get_segments(),
             points=self.app.vna.datapoints,
         )
+
+    def update_sweep_btn(self, enabled: bool) -> None:
+        self.btn_start.setEnabled(enabled)
