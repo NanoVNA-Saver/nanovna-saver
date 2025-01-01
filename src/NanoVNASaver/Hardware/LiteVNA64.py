@@ -30,7 +30,7 @@ EXPECTED_FW_VERSION = Version.build(2, 2, 0)
 
 class LiteVNA64(NanoVNA_V2):
     name = "LiteVNA-64"
-    valid_datapoints = (101, 11, 51, 201, 301, 501, 1023, 2047, 4095)
+    valid_datapoints = (51, 101, 201, 401, 801, 1024, 1601, 3201, 4501, 6401, 12801, 25601)
     screenwidth = 480
     screenheight = 320
     sweep_points_max = 65535
@@ -38,6 +38,8 @@ class LiteVNA64(NanoVNA_V2):
 
     def __init__(self, iface: Interface):
         super().__init__(iface)
+
+        self.datapoints = 1024
 
     def read_fw_version(self) -> Version:
         with self.serial.lock:
