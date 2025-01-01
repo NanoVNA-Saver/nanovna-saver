@@ -13,8 +13,10 @@ from .NanoVNA_V2 import (
     _ADDR_FW_MAJOR,
     _ADDR_FW_MINOR,
     _ADDR_HARDWARE_REVISION,
+    _ADDR_RAW_SAMPLES_MODE,
     _ADF4350_TXPOWER_DESC_MAP,
     _CMD_READ,
+    _CMD_WRITE,
     WRITE_SLEEP,
     NanoVNA_V2,
 )
@@ -110,3 +112,13 @@ class LiteVNA64(NanoVNA_V2):
             hw_version == EXPECTED_HW_VERSION
             and fw_version == EXPECTED_FW_VERSION
         )
+
+    def disconnect(self):
+        logger.info("disconnect %s", self.serial)
+        with self.serial.lock:
+            self.serial.write(
+                pack("<BBB", _CMD_WRITE, _ADDR_RAW_SAMPLES_MODE, 2)
+            )
+            sleep(WRITE_SLEEP)
+
+            self.serial.close()

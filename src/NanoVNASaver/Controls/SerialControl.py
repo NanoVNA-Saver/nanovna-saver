@@ -151,6 +151,11 @@ class SerialControl(Control):
     def disconnect_device(self):
         with self.interface.lock:
             logger.info("Closing connection to %s", self.interface)
+            try:
+                self.app.vna.disconnect()
+            except IOError as exc:
+                logger.error("Unable to disconnect from VNA: %s", exc)
+
             self.interface.close()
             self.btn_toggle.setText("Connect to device")
             self.btn_toggle.repaint()
