@@ -100,7 +100,7 @@ class NanoVNA_V2(VNA):  # noqa: N801
     def getCalibration(self) -> str:
         return "Unknown"
 
-    def read_features(self):
+    def init_features(self) -> None:
         self.features.add("Customizable data points")
         # TODO: more than one dp per freq
         self.features.add("Multi data points")

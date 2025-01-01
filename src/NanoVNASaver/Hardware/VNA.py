@@ -62,7 +62,7 @@ class VNA:
     def __init__(self, iface: Interface):
         self.serial = iface
         self.version = Version.parse("0.0.0")
-        self.features = set()
+        self.features: set[str] = {}
         self.validateInput = False
         self.datapoints = self.valid_datapoints[0]
         self.bandwidth = 1000
@@ -73,7 +73,7 @@ class VNA:
         self.txPowerRanges = []
         if self.connected():
             self.version = self.read_fw_version()
-            self.read_features()
+            self.init_features()
             logger.debug("Features: %s", self.features)
             #  cannot read current bandwidth, so set to highest
             #  to get initial sweep fast
@@ -121,7 +121,7 @@ class VNA:
                     break
                 yield line
 
-    def read_features(self):
+    def init_features(self) -> None:
         result = " ".join(self.exec_command("help")).split()
         logger.debug("result:\n%s", result)
         if "capture" in result:
