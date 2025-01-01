@@ -13,6 +13,7 @@ from .NanoVNA_V2 import (
     _ADDR_FW_MAJOR,
     _ADDR_FW_MINOR,
     _ADDR_HARDWARE_REVISION,
+    _ADF4350_TXPOWER_DESC_MAP,
     _CMD_READ,
     WRITE_SLEEP,
     NanoVNA_V2,
@@ -33,6 +34,7 @@ class LiteVNA64(NanoVNA_V2):
     screenwidth = 480
     screenheight = 320
     sweep_points_max = 65535
+    sweep_max_freq_Hz = 6300e6
 
     def __init__(self, iface: Interface):
         super().__init__(iface)
@@ -40,6 +42,26 @@ class LiteVNA64(NanoVNA_V2):
     def read_fw_version(self) -> Version:
         with self.serial.lock:
             return LiteVNA64._get_fw_revision_serial(self.serial)
+
+    def init_features(self) -> None:
+        self.features.add("Customizable data points")
+        # TODO: more than one dp per freq
+        self.features.add("Multi data points")
+
+        # TODO review this part, which was copy-pasted from NanoVNA_V2
+        self.features.add("Set Average")
+        self.features.add("Set TX power partial")
+        # Can only set ADF4350 power, i.e. for >= 140MHz
+        # See https://groups.io/g/liteVNA/message/318 for more details
+        self.txPowerRanges = [
+            (
+                (140e6, self.sweep_max_freq_Hz),
+                [
+                    _ADF4350_TXPOWER_DESC_MAP[value]
+                    for value in (3, 2, 1, 0)
+                ],
+            ),
+        ]
 
     @staticmethod
     def _get_major_minor_version_serial(

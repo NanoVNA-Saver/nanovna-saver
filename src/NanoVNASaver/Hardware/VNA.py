@@ -58,19 +58,21 @@ class VNA:
     SN = "NOT SUPPORTED"
     sweep_points_max = 101
     sweep_points_min = 11
+    
+    # Must be initilized in child classes
+    sweep_max_freq_Hz = 0.0
 
     def __init__(self, iface: Interface):
         self.serial = iface
         self.version = Version.parse("0.0.0")
-        self.features: set[str] = {}
+        self.features: set[str] = set()
         self.validateInput = False
         self.datapoints = self.valid_datapoints[0]
         self.bandwidth = 1000
         self.bw_method = "ttrftech"
-        self.sweep_max_freq_Hz = None
-        # [((min_freq, max_freq), [description]]. Order by increasing
+        # [((min_freq, max_freq), [description])]. Order by increasing
         # frequency. Put default output power first.
-        self.txPowerRanges = []
+        self.txPowerRanges: list[tuple[tuple[float, float], list[str]]] = []
         if self.connected():
             self.version = self.read_fw_version()
             self.init_features()
