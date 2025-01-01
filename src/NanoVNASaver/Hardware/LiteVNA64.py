@@ -50,8 +50,7 @@ class LiteVNA64(NanoVNA_V2):
         )
 
         serial.write(cmd)
-        # sleep(WRITE_SLEEP)
-        sleep(2.0)  # could fix bug #585 but shoud be done
+        sleep(WRITE_SLEEP)
         # in a more predictive way
         resp = serial.read(2)
 
