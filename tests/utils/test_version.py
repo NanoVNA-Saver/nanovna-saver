@@ -19,7 +19,7 @@
 import unittest
 
 # Import targets to be tested
-from NanoVNASaver.Version import Version
+from NanoVNASaver.utils import Version
 
 
 class TestCases(unittest.TestCase):

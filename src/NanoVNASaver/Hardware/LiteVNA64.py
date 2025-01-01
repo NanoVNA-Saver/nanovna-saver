@@ -1,11 +1,13 @@
 import logging
+import platform
 from struct import pack
 from time import sleep
 
 from serial import Serial
 
-from ..Version import Version as parse_version
-from ..Version import _Version as Version
+from NanoVNASaver.Hardware.Serial import Interface
+
+from ..utils.version import Version
 from .NanoVNA_V2 import (
     _ADDR_DEVICE_VARIANT,
     _ADDR_FW_MAJOR,
@@ -14,12 +16,14 @@ from .NanoVNA_V2 import (
     _CMD_READ,
     NanoVNA_V2,
 )
-from .Serial import Interface
+
+if platform.system() != "Windows":
+    pass
 
 logger = logging.getLogger(__name__)
 
-EXPECTED_HW_VERSION = Version(2, 2, 0, "")
-EXPECTED_FW_VERSION = Version(2, 2, 0, "")
+EXPECTED_HW_VERSION = Version.build(2, 2, 0)
+EXPECTED_FW_VERSION = Version.build(2, 2, 0)
 
 
 class LiteVNA64(NanoVNA_V2):
@@ -49,7 +53,7 @@ class LiteVNA64(NanoVNA_V2):
         if len(resp) != 2:  # noqa: PLR2004
             logger.error("Timeout reading version registers. Got: %s", resp)
             raise IOError("Timeout reading version registers")
-        return parse_version(f"{resp[0]}.{resp[1]}")
+        return Version.build(resp[0], resp[1])
 
     @staticmethod
     def read_fw_version(serial: Serial) -> Version:

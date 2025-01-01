@@ -23,7 +23,7 @@ from typing import Iterator
 from PyQt6 import QtGui
 
 from NanoVNASaver.Hardware.Serial import Interface, drain_serial
-from NanoVNASaver.Version import Version
+from ..utils import Version
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +61,7 @@ class VNA:
 
     def __init__(self, iface: Interface):
         self.serial = iface
-        self.version = Version("0.0.0")
+        self.version = Version.parse("0.0.0")
         self.features = set()
         self.validateInput = False
         self.datapoints = self.valid_datapoints[0]
@@ -208,10 +208,10 @@ class VNA:
         logger.debug("VNA done reading %s (%d values)", value, len(result))
         return result
 
-    def readVersion(self) -> "Version":
+    def readVersion(self) -> Version:
         result = list(self.exec_command("version"))
         logger.debug("result:\n%s", result)
-        return Version(result[0])
+        return Version.parse(result[0])
 
     def setSweep(self, start, stop):
         list(self.exec_command(f"sweep {start} {stop} {self.datapoints}"))
