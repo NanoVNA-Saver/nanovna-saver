@@ -1,23 +1,20 @@
-from .NanoVNA_V2 import (
-    NanoVNA_V2,
-    _CMD_READ,
-    _ADDR_FW_MAJOR,
-    _ADDR_FW_MINOR,
-    _ADDR_DEVICE_VARIANT,
-    _ADDR_HARDWARE_REVISION,
-)
 import logging
-import platform
-from struct import pack, unpack_from
+from struct import pack
 from time import sleep
 
-from NanoVNASaver.Hardware.Serial import Interface
-from NanoVNASaver.Hardware.VNA import VNA
-from NanoVNASaver.Version import _Version as Version, Version as parse_version
 from serial import Serial
 
-if platform.system() != "Windows":
-    import tty
+from ..Version import Version as parse_version
+from ..Version import _Version as Version
+from .NanoVNA_V2 import (
+    _ADDR_DEVICE_VARIANT,
+    _ADDR_FW_MAJOR,
+    _ADDR_FW_MINOR,
+    _ADDR_HARDWARE_REVISION,
+    _CMD_READ,
+    NanoVNA_V2,
+)
+from .Serial import Interface
 
 logger = logging.getLogger(__name__)
 
