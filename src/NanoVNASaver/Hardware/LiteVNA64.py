@@ -32,7 +32,20 @@ EXPECTED_FW_VERSION = Version.build(2, 2, 0)
 
 class LiteVNA64(NanoVNA_V2):
     name = "LiteVNA-64"
-    valid_datapoints = [51, 101, 201, 401, 801, 1024, 1601, 3201, 4501, 6401, 12801, 25601]
+    valid_datapoints = [
+        51,
+        101,
+        201,
+        401,
+        801,
+        1024,
+        1601,
+        3201,
+        4501,
+        6401,
+        12801,
+        25601,
+    ]
     screenwidth = 480
     screenheight = 320
     sweep_points_max = 65535
@@ -60,10 +73,7 @@ class LiteVNA64(NanoVNA_V2):
         self.txPowerRanges = [
             (
                 (140e6, self.sweep_max_freq_Hz),
-                [
-                    _ADF4350_TXPOWER_DESC_MAP[value]
-                    for value in (3, 2, 1, 0)
-                ],
+                [_ADF4350_TXPOWER_DESC_MAP[value] for value in (3, 2, 1, 0)],
             ),
         ]
 
