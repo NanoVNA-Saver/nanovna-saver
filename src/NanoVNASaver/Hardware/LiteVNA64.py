@@ -16,6 +16,7 @@ from .NanoVNA_V2 import (
     _ADDR_RAW_SAMPLES_MODE,
     _ADF4350_TXPOWER_DESC_MAP,
     _CMD_READ,
+    _CMD_READ2,
     _CMD_WRITE,
     WRITE_SLEEP,
     NanoVNA_V2,
@@ -28,6 +29,9 @@ logger = logging.getLogger(__name__)
 
 EXPECTED_HW_VERSION = Version.build(2, 2, 0)
 EXPECTED_FW_VERSION = Version.build(2, 2, 0)
+
+
+_ADDR_VBAT_MILIVOLTS = 0x5C
 
 
 class LiteVNA64(NanoVNA_V2):
@@ -61,7 +65,10 @@ class LiteVNA64(NanoVNA_V2):
             return LiteVNA64._get_fw_revision_serial(self.serial)
 
     def init_features(self) -> None:
+        # VBat state will be added dynamicly in getFeatures()
+
         self.features.add("Customizable data points")
+
         # TODO: more than one dp per freq
         self.features.add("Multi data points")
 
@@ -76,6 +83,25 @@ class LiteVNA64(NanoVNA_V2):
                 [_ADF4350_TXPOWER_DESC_MAP[value] for value in (3, 2, 1, 0)],
             ),
         ]
+
+    def getFeatures(self) -> set[str]:
+        result = set(self.features)
+        result.add(f"Vbat: {self.read_vbat()}V")
+        return result
+
+    def read_vbat(self) -> str:
+        with self.serial.lock:
+            cmd = pack("<BB", _CMD_READ2, _ADDR_VBAT_MILIVOLTS)
+
+            self.serial.write(cmd)
+            sleep(WRITE_SLEEP)
+            # in a more predictive way
+            resp = self.serial.read(2)
+            vbat = int.from_bytes(resp, "little") / 1000.0
+
+            logger.debug("Vbat: %sV", vbat)
+
+            return f"{vbat}"
 
     @staticmethod
     def _get_major_minor_version_serial(
