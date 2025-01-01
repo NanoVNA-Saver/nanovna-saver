@@ -27,7 +27,7 @@ class NanoVNA_H4(NanoVNA_H):
     name = "NanoVNA-H4"
     screenwidth = 480
     screenheight = 320
-    valid_datapoints = (101, 11, 51, 201, 401)
+    valid_datapoints = [101, 11, 51, 201, 401]
 
     def __init__(self, iface: Interface):
         super().__init__(iface)
@@ -42,4 +42,4 @@ class NanoVNA_H4(NanoVNA_H):
     #     if self.readFirmware().find("DiSlord") > 0:
     #         self.features.add("Customizable data points")
     #         logger.info("VNA has 201 datapoints capability")
-    #         self.valid_datapoints = (201, 11, 51,101)
+    #         self.valid_datapoints = [201, 11, 51, 101]

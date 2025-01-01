@@ -53,7 +53,7 @@ def _max_retries(bandwidth: int, datapoints: int) -> int:
 
 class VNA:
     name = "VNA"
-    valid_datapoints = (101, 51, 11)
+    valid_datapoints: list[int] = [101, 51, 11]
     wait = 0.05
     SN = "NOT SUPPORTED"
     sweep_points_max = 101
