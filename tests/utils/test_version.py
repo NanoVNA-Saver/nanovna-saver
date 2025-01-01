@@ -16,26 +16,59 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-import unittest
 
 # Import targets to be tested
 from NanoVNASaver.utils import Version
 
 
-class TestCases(unittest.TestCase):
+class TestCases:
 
-    def test_version(self):
-        ver = Version.parse("v1.2.3-test")
-        self.assertEqual(str(ver), "1.2.3-test")
-        self.assertLessEqual(ver, Version.parse("1.2.4"))
-        self.assertFalse(ver > Version.parse("1.2.4"))
-        self.assertFalse(ver > Version.parse("1.2.3-u"))
-        self.assertTrue(Version.parse("1.2.4") >= ver)
-        self.assertTrue(ver < Version.parse("1.2.4"))
-        self.assertFalse(Version.parse("0.0.0") == Version.parse("0.0.0-rc"))
-        self.assertEqual(ver.major, 1)
-        self.assertEqual(ver.minor, 2)
-        self.assertEqual(ver.revision, 3)
-        self.assertEqual(ver.note, "-test")
-        Version.parse("asdasd")
-        Version.parse("1.2.invalid")
+    @staticmethod
+    def test_str() -> None:
+        assert str(Version(1, 0, 0, "")) == "1.0.0"
+        assert str(Version(1, 2, 0, "")) == "1.2.0"
+        assert str(Version(1, 2, 3, "")) == "1.2.3"
+        assert str(Version(1, 2, 3, "-test")) == "1.2.3-test"
+
+    @staticmethod
+    def test_repr() -> None:
+        ver = Version(1, 2, 3, "-test")
+
+        assert f"{ver}" == "1.2.3-test"
+
+    @staticmethod
+    def test_parse_normal_case() -> None:
+        # At least major and minot components must be specified
+        assert Version.parse("v1.2") == Version(1, 2, 0, "")
+        assert Version.parse("v1.2.3") == Version(1, 2, 3, "")
+        assert Version.parse("v1.2.3-test") == Version(1, 2, 3, "-test")
+
+        # At least major and minot components must be specified
+        assert Version.parse("1.2") == Version(1, 2, 0, "")
+        assert Version.parse("1.2.3") == Version(1, 2, 3, "")
+        assert Version.parse("1.2.3-test") == Version(1, 2, 3, "-test")
+
+    @staticmethod
+    def test_parse_invalid_values() -> None:
+        assert Version.parse("asdasd") == Version(0, 0, 0, "")
+        assert Version.parse("1.2.invalid") == Version(1, 2, 0, "invalid")
+
+        # At least major and minot components must be specified
+        assert Version.parse("v1") == Version(0, 0, 0, "")
+        assert Version.parse("1") == Version(0, 0, 0, "")
+
+    @staticmethod
+    def test_build_normal_case() -> None:
+
+        assert Version.build(1, 2) == Version(1, 2, 0, "")
+        assert Version.build(1, 2, 3) == Version(1, 2, 3, "")
+        assert Version.build(1, 2, 3, "test") == Version(1, 2, 3, "test")
+
+    @staticmethod
+    def test_comparation() -> None:
+        assert Version(1, 2, 3, "test") > Version(1, 2, 3, "")
+        assert Version(1, 2, 3, "test") < Version(1, 2, 4, "")
+
+        assert Version(1, 2, 3, "test") <= Version(1, 2, 4, "u")
+
+        assert Version(0, 0, 0, "0") != Version(0, 0, 0, "-rc")
