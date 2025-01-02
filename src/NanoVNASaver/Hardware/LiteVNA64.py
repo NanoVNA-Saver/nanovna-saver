@@ -159,3 +159,21 @@ class LiteVNA64(NanoVNA_V2):
                 pack("<BBB", _CMD_WRITE, _ADDR_RAW_SAMPLES_MODE, 2)
             )
             sleep(WRITE_SLEEP)
+
+    def readValues(self, value) -> list[complex]:
+        result = super().readValues(value)
+        self._exit_usb_mode()
+        return result
+
+    def setSweep(self, start, stop):
+        # Device loose these value after going to idle mode
+        # Do not try to cache them locally
+        step = (stop - start) / (self.datapoints - 1)
+        self.sweepStartHz = start
+        self.sweepStepHz = step
+        logger.info(
+            "NanoVNAV2: set sweep start %d step %d",
+            self.sweepStartHz,
+            self.sweepStepHz,
+        )
+        self._updateSweep()
