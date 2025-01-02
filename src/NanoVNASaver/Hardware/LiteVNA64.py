@@ -150,11 +150,12 @@ class LiteVNA64(NanoVNA_V2):
         )
 
     def disconnect(self):
-        logger.info("disconnect %s", self.serial)
+        self._exit_usb_mode()
+        super().disconnect()
+
+    def _exit_usb_mode(self) -> None:
         with self.serial.lock:
             self.serial.write(
                 pack("<BBB", _CMD_WRITE, _ADDR_RAW_SAMPLES_MODE, 2)
             )
             sleep(WRITE_SLEEP)
-
-            self.serial.close()
