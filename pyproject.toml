@@ -6,6 +6,19 @@ authors = ["Rune B. Broberg <NanoVNA-Saver@users.noreply.github.com>"]
 readme = "README.rst"
 license = "GPL-3.0-or-later"
 
+homepage = "https://github.com/NanoVNA-Saver/nanovna-saver"
+repository = "https://github.com/NanoVNA-Saver/nanovna-saver"
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Topic :: Communications :: Ham Radio",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Telecommunications Industry"
+]
+keywords = ["Communications", "Ham Radio", "nanovna"]
+
+
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -18,19 +31,6 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 
-classifiers =[
-  'Development Status :: 4 - Beta',
-  'Topic :: Communications :: Ham Radio'  ,
-  'Intended Audience :: Science/Research',
-  'Intended Audience :: Science/Research',
-  'Intended Audience :: Telecommunications Industry',
-  'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
-  'Programming Language :: Python :: 3.9',
-  'Programming Language :: Python :: 3.10',
-  'Programming Language :: Python :: 3.11',
-  'Programming Language :: Python :: 3.12',
-  'Programming Language :: Python :: 3.13',
-]
 
 dependencies=[
   'pyserial==3.5',
