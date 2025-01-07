@@ -18,6 +18,15 @@ classifiers = [
 ]
 keywords = ["Communications", "Ham Radio", "nanovna"]
 
+packages = [
+    { include = "NanoVNASaver", from = "src" },
+]
+include = [
+  "icon_*.*",
+  "NanoVNASaver*.*",
+  "flatpak.manifest.yml",
+  "Makefile"
+]
 
 
 [tool.poetry.dependencies]
