@@ -1,16 +1,15 @@
+[tool.poetry]
+name="NanoVNASaver"
+description="GUI for the NanoVNA and derivates"
+version = "0.0.0"
+authors = ["Rune B. Broberg <NanoVNA-Saver@users.noreply.github.com>"]
+readme = "README.rst"
+
 [build-system]
-# AVOID CHANGING REQUIRES: IT WILL BE UPDATED BY PYSCAFFOLD!
-requires = [
-  'pyinstaller==6.11.1',
-  'setuptools==75.6.0',
-  'setuptools_scm[toml]==8.1.0',
-  'uv==0.5.7',
-]
-build-backend = 'setuptools.build_meta'
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
 
 [project]
-name='NanoVNASaver'
-description='GUI for the NanoVNA and derivates'
 requires-python = ">=3.9"
 license={file = 'LICENSE'}
 
@@ -44,6 +43,7 @@ NanoVNASaver = 'NanoVNASaver.__main__:main'
 
 [project.gui-scripts]
 NanoVNASaver-gui = 'NanoVNASaver.__main__:main'
+
 
 [tool.setuptools_scm]
 # For smarter version schemes and other configuration options,
