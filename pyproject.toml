@@ -4,6 +4,7 @@ description="GUI for the NanoVNA and derivates"
 version = "0.0.0"
 authors = ["Rune B. Broberg <NanoVNA-Saver@users.noreply.github.com>"]
 readme = "README.rst"
+license = "GPL-3.0-or-later"
 
 
 [tool.poetry.dependencies]
@@ -16,7 +17,6 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [project]
-license={file = 'LICENSE'}
 
 classifiers =[
   'Development Status :: 4 - Beta',
