@@ -30,7 +30,7 @@ include = [
 
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = ">=3.10,<3.14"
 
 pyserial = "^3.5"
 PyQt6 = "^6.7.1"
@@ -50,6 +50,9 @@ pylint = "^3.3.3"
 pytest = "^8.3.4"
 pytest-cov = "^6.0.0"
 tox = "^4.23.2"
+
+# Prepare installation packages
+pyinstaller = "^6.11.1"
 
 
 
@@ -83,6 +86,10 @@ NanoVNASaver-gui = 'NanoVNASaver.__main__:main'
 test = "pytest ."
 test-cov = "pytest --cov=src ."
 test-full = "tox"
+
+build-pkg-win   = "pyinstaller --onefile -p src -n nanovna-saver.exe nanovna-saver.py --noconsole -i icon_48x48.ico"
+build-pkg-linux = "pyinstaller --onefile -p src -n nanovna-saver     nanovna-saver.py"
+build-pkg-macos = "pyinstaller --onedir  -p src -n NanoVNASaver      nanovna-saver.py --window --clean  -y -i icon_48x48.icns && tar -C dist -zcf ./dist/NanoVNASaver.app-`uname -m`.tar.gz  NanoVNASaver.app"
 
 [tool.poe.tasks.clean]
 shell = """

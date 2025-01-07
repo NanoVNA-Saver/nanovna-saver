@@ -32,9 +32,54 @@ A few usefull commands:
 
 ## Build Process
 
+### Python packages
+
 A `poetry build` may be used to prepare python packages. Version would be taken from git repository.
 
-🚧 TODO: build platform specific artefacts: deb, native bin, flatpack packages
+### Windows Exeutables
+
+Pre requirements:
+
+* Python 3.10-3.12
+* Poetry + preinstalled plugins (see `Local Development Environment` for more details)
+
+Execute `poetry poe build-pkg-win` to get `dist\nanovna-sever*.exe` file.
+
+### Linux Executables
+
+Pre requirements:
+
+* Python 3.10-3.12
+* Poetry + preinstalled plugins (see `Local Development Environment` for more details)
+* Some X11 packages preinstalled
+
+An example for Ubuntu 22.04:
+
+```
+sudo add-apt-repository ppa:deadsnakes/ppa
+sudo apt-get update
+sudo apt install -y python3.11 python3-pip python3.11-venv \
+    python3.11-dev \
+    '^libxcb.*-dev' libx11-xcb-dev \
+    libglu1-mesa-dev libxrender-dev libxi-dev \
+    libxkbcommon-dev libxkbcommon-x11-dev
+```
+
+Execute `poetry poe build-pkg-linux` to get `dist/nanovna-sever*` file.
+
+### Linux Flatpack
+
+🚧 TODO: describe me
+
+### MacOS Package
+
+Pre requirements:
+
+* Python 3.10-3.12
+* Poetry + preinstalled plugins (see `Local Development Environment` for more details)
+* PyQt >=6.4 installed (`brew install pyqt`)
+
+Execute `poetry poe build-pkg-macos` to get `dist/NanoVNASaver.app*.exe` file.
 
 ## Publish Process
 
