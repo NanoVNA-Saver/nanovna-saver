@@ -5,12 +5,17 @@ version = "0.0.0"
 authors = ["Rune B. Broberg <NanoVNA-Saver@users.noreply.github.com>"]
 readme = "README.rst"
 
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [project]
-requires-python = ">=3.9"
 license={file = 'LICENSE'}
 
 classifiers =[
