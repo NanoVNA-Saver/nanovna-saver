@@ -38,6 +38,13 @@ python = "^3.10"
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
+
+[tool.poetry.scripts]
+NanoVNASaver = 'NanoVNASaver.__main__:main'
+NanoVNASaver-gui = 'NanoVNASaver.__main__:main'
+
+
+
 [project]
 
 
@@ -51,12 +58,6 @@ dependencies=[
   'Cython==3.0.11',
 ]
 dynamic=['version', 'readme']
-
-[project.scripts]
-NanoVNASaver = 'NanoVNASaver.__main__:main'
-
-[project.gui-scripts]
-NanoVNASaver-gui = 'NanoVNASaver.__main__:main'
 
 
 [tool.setuptools_scm]
