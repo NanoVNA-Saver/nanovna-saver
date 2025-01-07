@@ -507,17 +507,6 @@ files = [
 ]
 
 [[package]]
-name = "pyenv-inspect"
-version = "0.4.0"
-description = "An auxiliary library for the virtualenv-pyenv and tox-pyenv-redux plugins"
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "pyenv-inspect-0.4.0.tar.gz", hash = "sha256:ec429d1d81b67ab0b08a0408414722a79d24fd1845a5b264267e44e19d8d60f0"},
-    {file = "pyenv_inspect-0.4.0-py3-none-any.whl", hash = "sha256:618683ae7d3e6db14778d58aa0fc6b3170180d944669b5d35a8aa4fb7db550d2"},
-]
-
-[[package]]
 name = "pyflakes"
 version = "3.2.0"
 description = "passive checker of Python programs"
@@ -872,21 +861,6 @@ virtualenv = ">=20.26.6"
 test = ["devpi-process (>=1.0.2)", "pytest (>=8.3.3)", "pytest-mock (>=3.14)"]
 
 [[package]]
-name = "tox-pyenv-redux"
-version = "1.1.0"
-description = "A tox Python discovery plugin for pyenv-installed interpreters"
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "tox-pyenv-redux-1.1.0.tar.gz", hash = "sha256:bbfe47a8cdeadcb4f96762f18220946714a76cb53ab285b5ae8e83e3ea617b3e"},
-    {file = "tox_pyenv_redux-1.1.0-py3-none-any.whl", hash = "sha256:cf45ca73634163bd04fa41f2ba6c6852d6099afa8324ddbe4ad06a467c7ea730"},
-]
-
-[package.dependencies]
-tox = ">=4"
-virtualenv-pyenv = ">=0.5,<0.6"
-
-[[package]]
 name = "typing-extensions"
 version = "4.12.2"
 description = "Backported and Experimental Type Hints for Python 3.8+"
@@ -917,22 +891,7 @@ platformdirs = ">=3.9.1,<5"
 docs = ["furo (>=2023.7.26)", "proselint (>=0.13)", "sphinx (>=7.1.2,!=7.3)", "sphinx-argparse (>=0.4)", "sphinxcontrib-towncrier (>=0.2.1a0)", "towncrier (>=23.6)"]
 test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess (>=1)", "flaky (>=3.7)", "packaging (>=23.1)", "pytest (>=7.4)", "pytest-env (>=0.8.2)", "pytest-freezer (>=0.4.8)", "pytest-mock (>=3.11.1)", "pytest-randomly (>=3.12)", "pytest-timeout (>=2.1)", "setuptools (>=68)", "time-machine (>=2.10)"]
 
-[[package]]
-name = "virtualenv-pyenv"
-version = "0.5.0"
-description = "A virtualenv Python discovery plugin for pyenv-installed interpreters"
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "virtualenv-pyenv-0.5.0.tar.gz", hash = "sha256:7b0e5fe3dfbdf484f4cf9b01e1f98111e398db6942237910f666356e6293597f"},
-    {file = "virtualenv_pyenv-0.5.0-py3-none-any.whl", hash = "sha256:21750247e36c55b3c547cfdeb08f51a3867fe7129922991a4f9c96980c0a4a5d"},
-]
-
-[package.dependencies]
-pyenv-inspect = ">=0.4,<0.5"
-virtualenv = "*"
-
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "2764e7744036050a74697815e96009fe28f6cd7da4736f97d701481c8175f816"
+content-hash = "94fd030b9755feaeb9bbcac91168dddb415b173e5d6a3532c5e5b577e0e67c15"

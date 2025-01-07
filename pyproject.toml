@@ -52,7 +52,6 @@ pylint = "^3.3.3"
 pytest = "^8.3.4"
 pytest-cov = "^6.0.0"
 tox = "^4.23.2"
-tox-pyenv-redux="^1.1.0"
 
 
 
@@ -81,6 +80,20 @@ initial-content = """
 NanoVNASaver = 'NanoVNASaver.__main__:main'
 NanoVNASaver-gui = 'NanoVNASaver.__main__:main'
 
+
+[tool.poe.tasks]
+test = "pytest ."
+test-cov = "pytest --cov=src ."
+test-full = "tox"
+
+[tool.poe.tasks.clean]
+shell = """
+  rm -r dist &
+  rm -r build &
+  python -Bc "import pathlib; [p.unlink() for p in pathlib.Path('.').rglob('*.py[co]')]" &
+  python -Bc "import pathlib; [p.unlink() for p in pathlib.Path('.').rglob('*.log')]" &
+  python -Bc "import pathlib; [p.rmdir() for p in pathlib.Path('.').rglob('__pycache__')]"
+"""
 
 
 [tool.pytest.ini_options]

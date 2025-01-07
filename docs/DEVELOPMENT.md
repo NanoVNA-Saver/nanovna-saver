@@ -17,7 +17,10 @@ Following commands to prepare local env and run application or run tests:
 
 * `poetry install` - prepare virtual environment and install prod and dev dependencies
 * `poetry run NanoVNASaver` - run local instance
-* 🚧 TODO: testing and cleaning tasks
+* `poetry poe test` - run unit tests in current venv
+* `poetry poe test-cov` - run unit tests in current venv and display test coverage report
+* `poetry poe test-full` - run unit tests for all avialable python versions
+* `poetry poe clean` - remove temporally artifacts (dist, build, *.pyc etc)
  
 ## Development Routines
 
