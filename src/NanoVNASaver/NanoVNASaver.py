@@ -28,7 +28,7 @@ from PyQt6.QtWidgets import QWidget
 
 from NanoVNASaver import Defaults
 
-from .About import version
+from .About import VERSION
 from .Calibration import Calibration
 from .Charts import (
     CapacitanceChart,
@@ -86,7 +86,7 @@ class Communicate(QObject):
 
 
 class NanoVNASaver(QWidget):
-    version = version
+    version = VERSION
     scale_factor = 1.0
 
     def __init__(self) -> None:
