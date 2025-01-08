@@ -225,5 +225,4 @@ class VNA:
         raise NotImplementedError()
 
     def getSerialNumber(self) -> str:
-        # return " ".join(list(self.exec_command("sn")))
-        return " ".join(list(self.exec_command("SN")))
+        return " ".join(list(self.exec_command("SN"))) if 'SN:' in " ".join(self.exec_command("help")).split() else " ".join(list(self.exec_command("sn")))
