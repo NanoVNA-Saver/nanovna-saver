@@ -28,7 +28,7 @@ import argparse
 import logging
 import sys
 
-from PyQt6 import QtWidgets
+from PySide6 import QtWidgets
 
 from NanoVNASaver.About import INFO, VERSION
 from NanoVNASaver.utils import get_lib_versions

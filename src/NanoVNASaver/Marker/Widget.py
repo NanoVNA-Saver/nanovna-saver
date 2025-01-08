@@ -18,9 +18,9 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
 
-from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtGui import QColorConstants
+from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6.QtCore import Signal
+from PySide6.QtGui import QColorConstants
 
 from NanoVNASaver import RFTools
 from NanoVNASaver.Formatting import (
@@ -64,7 +64,7 @@ class Marker(QtCore.QObject, Value):
     coloredText = True
     location = -1
     returnloss_is_positive = False
-    updated = pyqtSignal(object)
+    updated = Signal(object)
     active_labels = []
 
     @classmethod

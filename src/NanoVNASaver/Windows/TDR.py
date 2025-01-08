@@ -21,7 +21,7 @@ import math
 
 import numpy as np
 import numpy.typing as npt
-from PyQt6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 from scipy.constants import speed_of_light  # type: ignore
 from scipy.signal import convolve  # type: ignore
 
@@ -74,7 +74,7 @@ FFT_POINTS = 2**14
 
 
 class TDRWindow(QtWidgets.QWidget):
-    updated = QtCore.pyqtSignal()
+    updated = QtCore.Signal()
 
     def __init__(self, app: QtWidgets.QWidget):
         super().__init__()

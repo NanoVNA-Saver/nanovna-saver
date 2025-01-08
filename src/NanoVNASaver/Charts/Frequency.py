@@ -20,8 +20,8 @@ import logging
 import math
 
 import numpy as np
-from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtCore import Qt
+from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6.QtCore import Qt
 
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Formatting import (

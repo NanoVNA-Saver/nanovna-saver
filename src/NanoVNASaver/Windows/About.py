@@ -23,7 +23,7 @@ import re
 from time import localtime, strftime
 from urllib import error, request
 
-from PyQt6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from NanoVNASaver.About import INFO_URL, LATEST_URL, TAGS_KEY, TAGS_URL
 from NanoVNASaver.Windows.Defaults import make_scrollable

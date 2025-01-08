@@ -20,8 +20,8 @@ import logging
 import math
 
 import numpy as np
-from PyQt6.QtCore import QPoint, QRect, Qt
-from PyQt6.QtGui import (
+from PySide6.QtCore import QPoint, QRect, Qt
+from PySide6.QtGui import (
     QAction,
     QActionGroup,
     QMouseEvent,
@@ -31,7 +31,7 @@ from PyQt6.QtGui import (
     QPen,
     QResizeEvent,
 )
-from PyQt6.QtWidgets import QInputDialog, QMenu, QSizePolicy
+from PySide6.QtWidgets import QInputDialog, QMenu, QSizePolicy
 
 from NanoVNASaver.Charts.Chart import Chart
 

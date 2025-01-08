@@ -18,8 +18,8 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtGui import QIntValidator
+from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6.QtGui import QIntValidator
 
 from NanoVNASaver.SweepWorker import SweepState
 from NanoVNASaver.Windows.Defaults import make_scrollable

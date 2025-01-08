@@ -18,7 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from PyQt6 import QtGui
+from PySide6 import QtGui
 
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Formatting import format_frequency_chart

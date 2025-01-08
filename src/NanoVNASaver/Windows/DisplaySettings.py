@@ -19,8 +19,8 @@
 import logging
 from typing import TYPE_CHECKING
 
-from PyQt6 import QtCore, QtWidgets
-from PyQt6.QtGui import QColor, QColorConstants, QPalette, QShortcut
+from PySide6 import QtCore, QtWidgets
+from PySide6.QtGui import QColor, QColorConstants, QPalette, QShortcut
 
 from NanoVNASaver import Defaults
 from NanoVNASaver.Charts.Chart import Chart, ChartColors

@@ -19,7 +19,7 @@
 import logging
 from typing import TYPE_CHECKING
 
-from PyQt6 import QtWidgets
+from PySide6 import QtWidgets
 
 if TYPE_CHECKING:
     from NanoVNASaver.NanoVNASaver import NanoVNASaver as NanoVNA

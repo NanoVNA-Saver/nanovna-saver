@@ -20,7 +20,7 @@
 import logging
 from functools import partial
 
-from PyQt6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from NanoVNASaver.Calibration import Calibration
 from NanoVNASaver.Settings.Sweep import SweepMode

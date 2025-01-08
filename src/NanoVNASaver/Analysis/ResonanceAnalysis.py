@@ -20,7 +20,7 @@ import csv
 import logging
 import os
 
-from PyQt6 import QtWidgets
+from PySide6 import QtWidgets
 
 import NanoVNASaver.AnalyticTools as At
 from NanoVNASaver.Analysis.Base import Analysis, QHLine

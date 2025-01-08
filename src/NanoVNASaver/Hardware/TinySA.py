@@ -21,7 +21,7 @@ import struct
 
 import numpy as np
 import serial
-from PyQt6.QtGui import QImage, QPixmap
+from PySide6.QtGui import QImage, QPixmap
 
 from NanoVNASaver.Hardware.Serial import Interface, drain_serial
 from NanoVNASaver.Hardware.VNA import VNA

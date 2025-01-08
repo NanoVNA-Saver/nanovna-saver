@@ -19,7 +19,9 @@
 import logging
 from time import sleep
 
-from PyQt6 import QtCore, QtWidgets
+from PySide6 import QtWidgets
+from PySide6.QtCore import Signal
+
 
 from NanoVNASaver.Controls.Control import Control
 from NanoVNASaver.Hardware.Hardware import Interface, get_interfaces, get_VNA
@@ -30,7 +32,7 @@ logger = logging.getLogger(__name__)
 class SerialControl(Control):
 
     # true when serial port was connected and false when it was disconnected
-    connected = QtCore.pyqtSignal(bool)
+    connected = Signal(bool)
 
     def __init__(self, app: QtWidgets.QWidget):
         super().__init__(app, "Serial port control")

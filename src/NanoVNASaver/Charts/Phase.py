@@ -20,7 +20,7 @@ import logging
 import math
 
 import numpy as np
-from PyQt6.QtGui import QAction, QPainter, QPen
+from PySide6.QtGui import QAction, QPainter, QPen
 
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Charts.Frequency import FrequencyChart

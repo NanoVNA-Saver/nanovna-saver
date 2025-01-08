@@ -20,7 +20,7 @@ import logging
 import math
 
 import numpy as np
-from PyQt6 import QtGui, QtWidgets
+from PySide6 import QtGui, QtWidgets
 from scipy.constants import mu_0
 
 from NanoVNASaver.Charts.Chart import Chart

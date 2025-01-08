@@ -18,8 +18,8 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtCore import Qt
+from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6.QtCore import Qt
 
 from NanoVNASaver.Analysis.AntennaAnalysis import MagLoopAnalysis
 from NanoVNASaver.Analysis.BandPassAnalysis import BandPassAnalysis

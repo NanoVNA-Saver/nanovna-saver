@@ -22,9 +22,9 @@ import sys
 import threading
 from time import localtime, strftime
 
-from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtCore import QObject
-from PyQt6.QtWidgets import QWidget
+from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6.QtCore import QObject
+from PySide6.QtWidgets import QWidget
 
 from NanoVNASaver import Defaults
 
@@ -82,7 +82,7 @@ logger = logging.getLogger(__name__)
 
 
 class Communicate(QObject):
-    data_available = QtCore.pyqtSignal()
+    data_available = QtCore.Signal()
 
 
 class NanoVNASaver(QWidget):
