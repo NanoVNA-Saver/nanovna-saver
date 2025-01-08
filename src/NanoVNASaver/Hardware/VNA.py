@@ -56,7 +56,6 @@ class VNA:
     valid_datapoints = (101, 51, 11)
     wait = 0.05
     SN = "NOT SUPPORTED"
-
     sweep_points_max = 101
     sweep_points_min = 11
 
