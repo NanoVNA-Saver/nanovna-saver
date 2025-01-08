@@ -128,11 +128,9 @@ class VNA:
         if "capture" in result:
             self.features.add("Screenshots")
 
-        #mod#
         if "sn:" or "SN:" in result:
             self.features.add("SN")
             self.SN = self.getSerialNumber()
-        #end-mod#
 
         if "bandwidth" in result:
             self.features.add("Bandwidth")
