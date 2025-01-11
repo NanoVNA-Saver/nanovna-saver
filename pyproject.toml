@@ -31,8 +31,6 @@ dependencies=[
   'numpy~=2.1',
   'scipy~=1.14',
   'Cython~=3.0',
-  'setuptools~=75.6',
-  'setuptools_scm[toml]~=8.1',
 ]
 
 
@@ -48,6 +46,9 @@ dev = [
   "pytest-cov~=6.0",
   "tox~=4.23",
   "tox-pyenv-redux~=1.1",
+
+  # Build helpers
+  "setuptools-scm>=8",
 ]
 
 
@@ -59,23 +60,24 @@ Issues = "https://github.com/NanoVNA-Saver/nanovna-saver/issues"
 
 
 
-[build-system]
-# AVOID CHANGING REQUIRES: IT WILL BE UPDATED BY PYSCAFFOLD!
-requires = [
-  'pyinstaller==6.11.1',
-  'setuptools==75.6.0',
-  'setuptools_scm[toml]==8.1.0',
-  'uv==0.5.7',
-]
-build-backend = 'setuptools.build_meta'
-
-
-
 [project.scripts]
 NanoVNASaver = 'NanoVNASaver.__main__:main'
 
 [project.gui-scripts]
 NanoVNASaver-gui = 'NanoVNASaver.__main__:main'
+
+
+
+[build-system]
+# AVOID CHANGING REQUIRES: IT WILL BE UPDATED BY PYSCAFFOLD!
+requires = [
+  'pyinstaller~=6.11',
+  "setuptools>=64",
+  "setuptools-scm>=8"
+]
+build-backend = 'setuptools.build_meta'
+
+
 
 [tool.setuptools_scm]
 # For smarter version schemes and other configuration options,

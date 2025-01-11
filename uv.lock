@@ -284,7 +284,7 @@ wheels = [
 
 [[package]]
 name = "nanovnasaver"
-version = "0.6.8.post1.dev7+g429d7c6.d20250111"
+version = "0.6.8.post1.dev8+g424aa47.d20250111"
 source = { editable = "." }
 dependencies = [
     { name = "cython" },
@@ -293,8 +293,6 @@ dependencies = [
     { name = "pyqt6-sip" },
     { name = "pyserial" },
     { name = "scipy" },
-    { name = "setuptools" },
-    { name = "setuptools-scm" },
     { name = "sip" },
 ]
 
@@ -305,6 +303,7 @@ dev = [
     { name = "pylint" },
     { name = "pytest" },
     { name = "pytest-cov" },
+    { name = "setuptools-scm" },
     { name = "tox" },
     { name = "tox-pyenv-redux" },
 ]
@@ -317,8 +316,6 @@ requires-dist = [
     { name = "pyqt6-sip", specifier = "~=13.8" },
     { name = "pyserial", specifier = "~=3.5" },
     { name = "scipy", specifier = "~=1.14" },
-    { name = "setuptools", specifier = "~=75.6" },
-    { name = "setuptools-scm", extras = ["toml"], specifier = "~=8.1" },
     { name = "sip", specifier = "~=6.8" },
 ]
 
@@ -329,7 +326,8 @@ dev = [
     { name = "pylint", specifier = "~=3.3" },
     { name = "pytest", specifier = "~=8.3" },
     { name = "pytest-cov", specifier = "~=6.0" },
-    { name = "tox", specifier = "~=4.21" },
+    { name = "setuptools-scm", specifier = ">=8" },
+    { name = "tox", specifier = "~=4.23" },
     { name = "tox-pyenv-redux", specifier = "~=1.1" },
 ]
 
