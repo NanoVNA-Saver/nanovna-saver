@@ -45,10 +45,11 @@ dev = [
   "pytest~=8.3",
   "pytest-cov~=6.0",
   "tox~=4.23",
-  "tox-pyenv-redux~=1.1",
+  "tox-uv~=1.17", 
 
   # Build helpers
   "setuptools-scm>=8",
+  "taskipy~=1.14",
 ]
 
 
@@ -85,6 +86,22 @@ build-backend = 'setuptools.build_meta'
 root='.'
 version_scheme = 'no-guess-dev'
 write_to = 'src/NanoVNASaver/_version.py'
+
+
+
+[tool.taskipy.tasks]
+test = "pytest ."
+test-cov = "pytest --cov=src ."
+test-full = "tox"
+
+clean = "task clean_dist & task clean_build & task clean_py & task clean_logs & task clean_pycache"
+clean_dist = "rm -r dist"
+clean_build = "rm -r build"
+clean_py = "python -Bc \"import pathlib; [p.unlink() for p in pathlib.Path('.').rglob('*.py[co]')]\""
+clean_logs = "python -Bc \"import pathlib; [p.unlink() for p in pathlib.Path('.').rglob('*.log')]\""
+clean_pycache = " python -Bc \"import pathlib; [p.rmdir() for p in pathlib.Path('.').rglob('__pycache__')]\""
+
+
 
 [tool.pytest.ini_options]
 pythonpath = [

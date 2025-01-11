@@ -13,7 +13,10 @@ Following commands to prepare local env and run application or run tests:
 
 * `uv sync` - prepare virtual environment and install prod and dev dependencies
 * `uv run NanoVNASaver` - run local instance
-* 🚧 TODO: testing and cleaning tasks
+* `uv run task test` - run unit tests in current venv
+* `uv run task test-cov` - run unit tests in current venv and display test coverage report
+* `uv run task test-full` - run unit tests for all avialable python versions
+* `uv run task clean` - remove temporally artifacts (dist, build, *.pyc etc)
  
 ## Development Routines
 
