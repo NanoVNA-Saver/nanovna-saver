@@ -12,7 +12,11 @@ build-backend = 'setuptools.build_meta'
 name='NanoVNASaver'
 description='GUI for the NanoVNA and derivates'
 requires-python = ">=3.9"
+authors = [
+    { name = "Rune B. Broberg", email = "NanoVNA-Saver@users.noreply.github.com" }
+]
 license={file = 'LICENSE'}
+readme = "README.rst"
 
 classifiers =[
   'Development Status :: 4 - Beta',
@@ -37,7 +41,7 @@ dependencies=[
   'scipy==1.14.1',
   'Cython==3.0.11',
 ]
-dynamic=['version', 'readme']
+dynamic=['version']
 
 [project.scripts]
 NanoVNASaver = 'NanoVNASaver.__main__:main'
