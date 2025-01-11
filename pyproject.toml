@@ -77,6 +77,12 @@ build-backend = 'setuptools.build_meta'
 
 
 
+[tool.setuptools.packages.find]
+# See https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html for more details
+where = ["src"]
+
+
+
 [tool.setuptools_scm]
 # For smarter version schemes and other configuration options,
 # check out https://github.com/pypa/setuptools_scm
