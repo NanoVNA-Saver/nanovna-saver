@@ -20,6 +20,8 @@ classifiers =[
   'Programming Language :: Python :: 3.12',
   'Programming Language :: Python :: 3.13',
 ]
+keywords = ["Communications", "Ham Radio", "nanovna"]
+dynamic=['version']
 
 dependencies=[
   'pyserial==3.5',
@@ -30,7 +32,14 @@ dependencies=[
   'scipy==1.14.1',
   'Cython==3.0.11',
 ]
-dynamic=['version']
+
+
+
+[project.urls]
+homepage = "https://github.com/NanoVNA-Saver/nanovna-saver"
+repository = "https://github.com/NanoVNA-Saver/nanovna-saver"
+Issues = "https://github.com/NanoVNA-Saver/nanovna-saver/issues"
+
 
 
 [build-system]
@@ -42,6 +51,7 @@ requires = [
   'uv==0.5.7',
 ]
 build-backend = 'setuptools.build_meta'
+
 
 
 [project.scripts]
