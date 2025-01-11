@@ -11,10 +11,10 @@ build-backend = 'setuptools.build_meta'
 [project]
 name='NanoVNASaver'
 description='GUI for the NanoVNA and derivates'
-requires-python = ">=3.9"
 authors = [
     { name = "Rune B. Broberg", email = "NanoVNA-Saver@users.noreply.github.com" }
 ]
+requires-python = ">=3.10"
 license={file = 'LICENSE'}
 readme = "README.rst"
 
@@ -25,7 +25,6 @@ classifiers =[
   'Intended Audience :: Science/Research',
   'Intended Audience :: Telecommunications Industry',
   'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
-  'Programming Language :: Python :: 3.9',
   'Programming Language :: Python :: 3.10',
   'Programming Language :: Python :: 3.11',
   'Programming Language :: Python :: 3.12',
