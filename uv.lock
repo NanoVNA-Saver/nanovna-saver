@@ -284,7 +284,7 @@ wheels = [
 
 [[package]]
 name = "nanovnasaver"
-version = "0.6.8.post1.dev6+g3f655b4.d20250111"
+version = "0.6.8.post1.dev7+g429d7c6.d20250111"
 source = { editable = "." }
 dependencies = [
     { name = "cython" },
@@ -311,26 +311,26 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "cython", specifier = "==3.0.11" },
-    { name = "numpy", specifier = "==2.1.3" },
-    { name = "pyqt6", specifier = "==6.7.1" },
-    { name = "pyqt6-sip", specifier = "==13.8.0" },
-    { name = "pyserial", specifier = ">=3.5" },
-    { name = "scipy", specifier = "==1.14.1" },
-    { name = "setuptools", specifier = "==75.6.0" },
-    { name = "setuptools-scm", extras = ["toml"], specifier = "==8.1.0" },
-    { name = "sip", specifier = "==6.8.6" },
+    { name = "cython", specifier = "~=3.0" },
+    { name = "numpy", specifier = "~=2.1" },
+    { name = "pyqt6", specifier = "~=6.7" },
+    { name = "pyqt6-sip", specifier = "~=13.8" },
+    { name = "pyserial", specifier = "~=3.5" },
+    { name = "scipy", specifier = "~=1.14" },
+    { name = "setuptools", specifier = "~=75.6" },
+    { name = "setuptools-scm", extras = ["toml"], specifier = "~=8.1" },
+    { name = "sip", specifier = "~=6.8" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "black", specifier = ">=24.10.0" },
-    { name = "flake8", specifier = ">=7.1.1" },
-    { name = "pylint", specifier = ">=3.3.3" },
-    { name = "pytest", specifier = ">=8.3.4" },
-    { name = "pytest-cov", specifier = ">=6.0.0" },
-    { name = "tox", specifier = ">=4.23.2" },
-    { name = "tox-pyenv-redux", specifier = ">=1.1.0" },
+    { name = "black", specifier = "~=24.10" },
+    { name = "flake8", specifier = "~=7.1" },
+    { name = "pylint", specifier = "~=3.3" },
+    { name = "pytest", specifier = "~=8.3" },
+    { name = "pytest-cov", specifier = "~=6.0" },
+    { name = "tox", specifier = "~=4.21" },
+    { name = "tox-pyenv-redux", specifier = "~=1.1" },
 ]
 
 [[package]]
