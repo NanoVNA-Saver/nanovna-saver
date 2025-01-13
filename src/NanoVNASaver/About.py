@@ -17,15 +17,12 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from setuptools_scm import get_version
+from .app_version import APP_VERSION
 
-try:
-    version = get_version(root="../..", relative_to=__file__)
-except LookupError:
-    from NanoVNASaver._version import version
 
+VERSION = APP_VERSION
 INFO_URL = "https://github.com/NanoVNA-Saver/nanovna-saver"
-INFO = f"""NanoVNASaver {version}
+INFO = f"""NanoVNASaver {APP_VERSION}
 
 Copyright (C) 2019, 2020 Rune B. Broberg
 Copyright (C) 2020ff NanoVNA-Saver Authors
