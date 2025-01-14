@@ -26,7 +26,7 @@ jobs:
           libxkbcommon-dev libxkbcommon-x11-dev
     - name: Install dependencies and pyinstall
       run: |
-        python3.11 -m venv build
+        python3.12 -m venv build
         . build/bin/activate
         python -m pip install uv
         uv sync
