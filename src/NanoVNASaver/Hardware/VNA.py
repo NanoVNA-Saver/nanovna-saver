@@ -126,11 +126,9 @@ class VNA:
         logger.debug("result:\n%s", result)
         if "capture" in result:
             self.features.add("Screenshots")
-
         if "sn:" in result:
             self.features.add("SN")
             self.SN = self.getSerialNumber()
-
         if "bandwidth" in result:
             self.features.add("Bandwidth")
             result = " ".join(list(self.exec_command("bandwidth")))
