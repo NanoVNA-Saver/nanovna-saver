@@ -182,7 +182,6 @@ def detect_version(serial_port: serial.Serial) -> str:
         sleep(0.05)
 
         data = serial_port.read(128).decode("ascii")
-
         if data.startswith("ch> "):
             return "v1"
         # -H versions
