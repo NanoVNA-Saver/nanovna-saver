@@ -31,9 +31,9 @@ class NanoVNA_F_V3(NanoVNA):
     name = "NanoVNA-F_V3"
     screenwidth = 800
     screenheight = 480
-    valid_datapoints = (101, 11, 51, 201, 301, 401, 501, 601, 701, 801, 1023, 2047, 4095)
+    valid_datapoints = (101, 11, 51, 201, 301, 401, 501, 601, 701, 801)
     sweep_points_min = 11
-    sweep_points_max = 65535
+    sweep_points_max = 801
 
     def __init__(self, iface: Interface):
         super().__init__(iface)
@@ -56,3 +56,13 @@ class NanoVNA_F_V3(NanoVNA):
         except serial.SerialException as exc:
             logger.exception("Exception while capturing screenshot: %s", exc)
         return QPixmap()
+    
+    def read_features(self):
+        super().read_features()
+        result = " ".join(self.exec_command("help")).split()
+        if "sn:" or "SN:" in result:
+            self.features.add("SN")
+            self.SN = self.getSerialNumber()
+            
+    def getSerialNumber(self) -> str:
+        return " ".join(list(self.exec_command("SN"))) if 'SN:' in " ".join(self.exec_command("help")).split() else " ".join(list(self.exec_command("sn")))

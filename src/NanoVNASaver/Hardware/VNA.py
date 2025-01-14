@@ -127,7 +127,7 @@ class VNA:
         if "capture" in result:
             self.features.add("Screenshots")
 
-        if "sn:" or "SN:" in result:
+        if "sn:" in result:
             self.features.add("SN")
             self.SN = self.getSerialNumber()
 
@@ -222,4 +222,4 @@ class VNA:
         raise NotImplementedError()
 
     def getSerialNumber(self) -> str:
-        return " ".join(list(self.exec_command("SN"))) if 'SN:' in " ".join(self.exec_command("help")).split() else " ".join(list(self.exec_command("sn")))
+        return " ".join(list(self.exec_command("sn")))
