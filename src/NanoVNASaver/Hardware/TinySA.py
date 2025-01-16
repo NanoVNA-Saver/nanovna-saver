@@ -156,6 +156,7 @@ class TinySA_Ultra(TinySA):  # noqa: N801
             self.name = "tinySA Ultra ZS-405"
             self.sweep_max_freq_Hz = 5.3e9
         else:
+            # version 0.3.x is for tinySA
             self.name = "tinySA"
             self.sweep_max_freq_Hz = 0.96e9
             
