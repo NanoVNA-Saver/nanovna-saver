@@ -19,14 +19,14 @@ jobs:
       run: |
         sudo add-apt-repository ppa:deadsnakes/ppa
         sudo apt-get update
-        sudo apt install -y python3.11 python3-pip python3.11-venv \
-          python3.11-dev \
+        sudo apt install -y python3.13 python3-pip python3.13-venv \
+          python3.13-dev \
           '^libxcb.*-dev' libx11-xcb-dev \
           libglu1-mesa-dev libxrender-dev libxi-dev \
           libxkbcommon-dev libxkbcommon-x11-dev
     - name: Install dependencies and pyinstall
       run: |
-        python3.11 -m venv build
+        python3.13 -m venv build
         . build/bin/activate
         python -m pip install uv
         uv sync

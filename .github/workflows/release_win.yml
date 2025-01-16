@@ -26,17 +26,12 @@ jobs:
       run: |
         python3 -m venv venv
         .\venv\Scripts\activate
-        python3 -m pip install pip==24.3.1
-        python3 -m pip install -U setuptools setuptools-scm
-        python3 -m pip install -r requirements.txt
-        python3 -m pip install PyInstaller==6.11.1
-        python3 -m pip install -U PyQt6-sip
-        python3 -m pip install -U PyQt6
+        python3 -m pip install uv
+        uv sync      
     - name: Build binary
       run: |
         .\venv\Scripts\activate
-        python3 setup.py -V
-        pyinstaller --onefile --noconsole -i icon_48x48.ico -p src -n nanovna-saver.exe nanovna-saver.py
+        uv run task build-pkg-win
     - name: Archive production artifacts
       uses: actions/upload-artifact@v4
       with:
