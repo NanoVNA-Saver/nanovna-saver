@@ -127,11 +127,13 @@ class NanoVNASaver(QWidget):
 
         self.interface = Interface("serial", "None")
         self.vna: type[VNA] = VNA(self.interface)
-        
+
         self.sweep_control = SweepControl(self)
         self.marker_control = MarkerControl(self)
         self.serial_control = SerialControl(self)
-        self.serial_control.connected.connect(self.sweep_control.update_sweep_btn)
+        self.serial_control.connected.connect(
+            self.sweep_control.update_sweep_btn
+        )
 
         self.bands = BandsModel()
 

@@ -31,7 +31,7 @@ class SerialControl(Control):
 
     # true when serial port was connected and false when it was disconnected
     connected = QtCore.pyqtSignal(bool)
-    
+
     def __init__(self, app: QtWidgets.QWidget):
         super().__init__(app, "Serial port control")
 
@@ -118,7 +118,7 @@ class SerialControl(Control):
         self.btn_toggle.repaint()
 
         self.connected.emit(True)
-        
+
         try:
             frequencies = self.app.vna.read_frequencies()
         except ValueError:
@@ -164,7 +164,7 @@ class SerialControl(Control):
         port_selected = self.inp_port.currentData() is not None
         self.btn_toggle.setEnabled(self.is_vna_connected() or port_selected)
 
-    def is_vna_connected(self)  -> bool:
+    def is_vna_connected(self) -> bool:
         return self.app.vna and self.app.vna.connected()
 
     def update_settings_state(self, was_connected: bool) -> None:
