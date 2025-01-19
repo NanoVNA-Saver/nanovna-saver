@@ -1,18 +1,12 @@
-[build-system]
-# AVOID CHANGING REQUIRES: IT WILL BE UPDATED BY PYSCAFFOLD!
-requires = [
-  'pyinstaller==6.11.1',
-  'setuptools==75.6.0',
-  'setuptools_scm[toml]==8.1.0',
-  'uv==0.5.7',
-]
-build-backend = 'setuptools.build_meta'
-
 [project]
 name='NanoVNASaver'
 description='GUI for the NanoVNA and derivates'
-requires-python = ">=3.9"
-license={file = 'LICENSE'}
+authors = [
+    { name = "Rune B. Broberg", email = "NanoVNA-Saver@users.noreply.github.com" }
+]
+requires-python = ">=3.10"
+license = {text = "GPL-3.0-or-later"}
+readme = "README.rst"
 
 classifiers =[
   'Development Status :: 4 - Beta',
@@ -21,23 +15,50 @@ classifiers =[
   'Intended Audience :: Science/Research',
   'Intended Audience :: Telecommunications Industry',
   'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
-  'Programming Language :: Python :: 3.9',
   'Programming Language :: Python :: 3.10',
   'Programming Language :: Python :: 3.11',
   'Programming Language :: Python :: 3.12',
   'Programming Language :: Python :: 3.13',
 ]
+keywords = ["Communications", "Ham Radio", "nanovna"]
+dynamic=['version']
 
 dependencies=[
-  'pyserial==3.5',
-  'PyQt6==6.7.1',
-  'PyQt6-sip==13.8.0',
-  'sip==6.8.6',
-  'numpy==2.1.3',
-  'scipy==1.14.1',
-  'Cython==3.0.11',
+  'pyserial~=3.5',
+  'PyQt6~=6.8',
+  'PyQt6-sip~=13.8',
+  'numpy~=2.1',
+  'scipy~=1.14',
 ]
-dynamic=['version', 'readme']
+
+
+[dependency-groups]
+dev = [
+  # Static Code Analysis tools
+  "black~=24.10",
+  "flake8~=7.1",
+  "pylint~=3.3",
+
+  # Testing
+  "pytest~=8.3",
+  "pytest-cov~=6.0",
+  "tox~=4.23",
+  "tox-uv~=1.17", 
+
+  # Build helpers
+  "setuptools-scm>=8",
+  "taskipy~=1.14",
+  "pyinstaller~=6.11.1",
+]
+
+
+
+[project.urls]
+homepage = "https://github.com/NanoVNA-Saver/nanovna-saver"
+repository = "https://github.com/NanoVNA-Saver/nanovna-saver"
+Issues = "https://github.com/NanoVNA-Saver/nanovna-saver/issues"
+
+
 
 [project.scripts]
 NanoVNASaver = 'NanoVNASaver.__main__:main'
@@ -45,12 +66,49 @@ NanoVNASaver = 'NanoVNASaver.__main__:main'
 [project.gui-scripts]
 NanoVNASaver-gui = 'NanoVNASaver.__main__:main'
 
+
+
+[build-system]
+requires = [
+  "setuptools>=64",
+  "setuptools-scm>=8"
+]
+build-backend = 'setuptools.build_meta'
+
+
+
+[tool.setuptools.packages.find]
+# See https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html for more details
+where = ["src"]
+
+
+
 [tool.setuptools_scm]
 # For smarter version schemes and other configuration options,
 # check out https://github.com/pypa/setuptools_scm
 root='.'
 version_scheme = 'no-guess-dev'
 write_to = 'src/NanoVNASaver/_version.py'
+
+
+
+[tool.taskipy.tasks]
+test = "pytest ."
+test-cov = "pytest --cov=src ."
+test-full = "tox"
+
+clean = "task clean_dist & task clean_build & task clean_py & task clean_logs & task clean_pycache"
+clean_dist = "rm -r dist"
+clean_build = "rm -r build"
+clean_py = "python -Bc \"import pathlib; [p.unlink() for p in pathlib.Path('.').rglob('*.py[co]')]\""
+clean_logs = "python -Bc \"import pathlib; [p.unlink() for p in pathlib.Path('.').rglob('*.log')]\""
+clean_pycache = " python -Bc \"import pathlib; [p.rmdir() for p in pathlib.Path('.').rglob('__pycache__')]\""
+
+build-pkg-win   = "pyinstaller --onefile -p src -n nanovna-saver.exe nanovna-saver.py --noconsole -i icon_48x48.ico --add-data \"icon_48x48.png:.\""
+build-pkg-linux = "pyinstaller --onefile -p src -n nanovna-saver     nanovna-saver.py --add-data \"icon_48x48.png:.\""
+build-pkg-macos = "pyinstaller --onedir  -p src -n NanoVNASaver      nanovna-saver.py --window --clean  -y -i icon_48x48.icns --add-data \"icon_48x48.png:.\"  && tar -C dist -zcf ./dist/NanoVNASaver.app-`uname -m`.tar.gz  NanoVNASaver.app"
+
+
 
 [tool.pytest.ini_options]
 pythonpath = [

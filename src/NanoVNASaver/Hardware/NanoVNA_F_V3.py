@@ -56,13 +56,17 @@ class NanoVNA_F_V3(NanoVNA):
         except serial.SerialException as exc:
             logger.exception("Exception while capturing screenshot: %s", exc)
         return QPixmap()
-    
+
     def read_features(self):
         super().read_features()
         result = " ".join(self.exec_command("help")).split()
         if "sn:" or "SN:" in result:
             self.features.add("SN")
             self.SN = self.getSerialNumber()
-            
+
     def getSerialNumber(self) -> str:
-        return " ".join(list(self.exec_command("SN"))) if 'SN:' in " ".join(self.exec_command("help")).split() else " ".join(list(self.exec_command("sn")))
+        return (
+            " ".join(list(self.exec_command("SN")))
+            if "SN:" in " ".join(self.exec_command("help")).split()
+            else " ".join(list(self.exec_command("sn")))
+        )
