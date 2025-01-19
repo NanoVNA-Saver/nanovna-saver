@@ -23,6 +23,7 @@ from PyQt6.QtGui import QImage, QPixmap
 
 from NanoVNASaver.Hardware.NanoVNA import NanoVNA
 from NanoVNASaver.Hardware.Serial import Interface
+from NanoVNASaver.Version import Version
 
 logger = logging.getLogger(__name__)
 
@@ -31,10 +32,25 @@ class NanoVNA_F_V2(NanoVNA):
     name = "NanoVNA-F_V2"
     screenwidth = 800
     screenheight = 480
-
+    valid_datapoints = (101, 11, 51, 201, 301)
+    sweep_points_min = 11
+    sweep_points_max = 301
+    
     def __init__(self, iface: Interface):
         super().__init__(iface)
         self.sweep_max_freq_Hz = 3e9
+        self.version = self.read_firmware_version()
+        # max datapoints reach up to 301 since version 0.5.0
+        if self.version >= Version("0.5.0"):
+            pass
+        # max datapoints reach up to 201 since version 0.2.0
+        elif self.version >= Version("0.2.0"):
+            self.valid_datapoints = (101, 11, 51, 201)
+            self.sweep_points_max = 201
+        # max datapoints reach up to 101 before version 0.2.0
+        else:
+            self.valid_datapoints = (101, 11, 51)
+            self.sweep_points_max = 101
 
     def getScreenshot(self) -> QPixmap:
         logger.debug("Capturing screenshot...")
@@ -53,3 +69,25 @@ class NanoVNA_F_V2(NanoVNA):
         except serial.SerialException as exc:
             logger.exception("Exception while capturing screenshot: %s", exc)
         return QPixmap()
+
+    def read_firmware_version(self) -> "Version":
+        """For example, command version in NanoVNA_F_V2 and NanoVNA_F_V3 returns as this
+        0.5.8
+        """
+        result = list(self.exec_command("version"))
+        logger.debug("firmware version result:\n%s", result[0])
+        return Version(result[0])
+
+    def read_features(self):
+        super().read_features()
+        result = " ".join(self.exec_command("help")).split()
+        if "sn:" or "SN:" in result:
+            self.features.add("SN")
+            self.SN = self.getSerialNumber()
+
+    def getSerialNumber(self) -> str:
+        return (
+            " ".join(list(self.exec_command("SN")))
+            if "SN:" in " ".join(self.exec_command("help")).split()
+            else " ".join(list(self.exec_command("sn")))
+        )
