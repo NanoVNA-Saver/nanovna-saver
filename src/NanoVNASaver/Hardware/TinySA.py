@@ -159,19 +159,20 @@ class TinySA_Ultra(TinySA):  # noqa: N801
             # version 0.3.x is for tinySA
             self.name = "tinySA"
             self.sweep_max_freq_Hz = 0.96e9
-            
-        
+
     def read_firmware_version(self) -> "Version":
-        '''For example, command version in TinySA returns as this
+        """For example, command version in TinySA returns as this
         tinySA4_v1.4-193-g6ff182b
         HW Version:V0.5.4 max2871
-        '''
+        """
         result = list(self.exec_command("version"))
         logger.debug("firmware version result:\n%s", result[0])
         # transform from tinySA4_v1.4-193-g6ff182b to 1.4.193
-        major_minor_version, revision_version, hash  = result[0].split("_v")[1].split("-")
+        major_minor_version, revision_version, hash = (
+            result[0].split("_v")[1].split("-")
+        )
         revision_version = revision_version.split("-")[0]
-        return Version(major_minor_version+"."+revision_version)
+        return Version(major_minor_version + "." + revision_version)
 
     def read_hardware_revision(self) -> str:
         result = list(self.exec_command("version"))
