@@ -30,6 +30,7 @@ from NanoVNASaver.Hardware.JNCRadio_VNA_3G import JNCRadio_VNA_3G
 from NanoVNASaver.Hardware.NanoVNA import NanoVNA
 from NanoVNASaver.Hardware.NanoVNA_F import NanoVNA_F
 from NanoVNASaver.Hardware.NanoVNA_F_V2 import NanoVNA_F_V2
+from NanoVNASaver.Hardware.NanoVNA_F_V3 import NanoVNA_F_V3
 from NanoVNASaver.Hardware.NanoVNA_H import NanoVNA_H
 from NanoVNASaver.Hardware.NanoVNA_H4 import NanoVNA_H4
 from NanoVNASaver.Hardware.NanoVNA_V2 import NanoVNA_V2
@@ -58,6 +59,7 @@ NAME2DEVICE = {
     "H4": NanoVNA_H4,
     "H": NanoVNA_H,
     "F_V2": NanoVNA_F_V2,
+    "F_V3": NanoVNA_F_V3,
     "F": NanoVNA_F,
     "NanoVNA": NanoVNA,
     "tinySA": TinySA,
@@ -140,12 +142,10 @@ def get_VNA(iface: Interface) -> VNA:
     # serial_port.timeout = TIMEOUT
     return NAME2DEVICE[iface.comment](iface)
 
-
 def get_comment(iface: Interface) -> str:
     logger.info("Finding correct VNA type...")
     with iface.lock:
         vna_version = detect_version(iface)
-
     if vna_version == "v2":
         return "S-A-A-2"
 
@@ -156,6 +156,7 @@ def get_comment(iface: Interface) -> str:
         ("NanoVNA-H 4", "H4"),
         ("NanoVNA-H", "H"),
         ("NanoVNA-F_V2", "F_V2"),
+        ("NanoVNA-F_V3", "F_V3"),
         ("NanoVNA-F", "F"),
         ("NanoVNA", "NanoVNA"),
         ("tinySA4", "tinySA_Ultra"),
