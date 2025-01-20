@@ -44,6 +44,7 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         self.label = {
             "status": QtWidgets.QLabel("Not connected."),
             "firmware": QtWidgets.QLabel("Not connected."),
+            "hardware": QtWidgets.QLabel("Not connected."),
             "calibration": QtWidgets.QLabel("Not connected."),
             "SN": QtWidgets.QLabel("Not connected."),
         }
@@ -60,6 +61,7 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
 
         status_layout.addRow("Status:", self.label["status"])
         status_layout.addRow("Firmware:", self.label["firmware"])
+        status_layout.addRow("Hardware:", self.label["hardware"])
         status_layout.addRow("Calibration:", self.label["calibration"])
         status_layout.addRow("SN:", self.label["SN"])
 
@@ -134,6 +136,7 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         if not self.app.vna.connected():
             self.label["status"].setText("Not connected.")
             self.label["firmware"].setText("Not connected.")
+            self.label["hardware"].setText("Not connected.")
             self.label["calibration"].setText("Not connected.")
             self.label["SN"].setText("Not connected.")
             self.featureList.clear()
@@ -143,6 +146,9 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         self.label["status"].setText(f"Connected to {self.app.vna.name}.")
         self.label["firmware"].setText(
             f"{self.app.vna.name} v{self.app.vna.version}"
+        )
+        self.label["hardware"].setText(
+            f"{self.app.vna.hardware_revision}"
         )
         if self.app.worker.state == SweepState.RUNNING:
             self.label["calibration"].setText("(Sweep running)")
