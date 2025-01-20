@@ -133,7 +133,6 @@ class TinySA_Ultra(TinySA):  # noqa: N801
     screenwidth = 480
     screenheight = 320
     valid_datapoints = (450, 51, 101, 145, 290)
-    hardware_revision = None
 
     def __init__(self, iface: Interface):
         super().__init__(iface)
