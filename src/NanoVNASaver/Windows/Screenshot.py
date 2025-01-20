@@ -19,6 +19,9 @@
 import logging
 
 from PyQt6 import QtCore, QtGui, QtWidgets
+from PyQt6.QtCore import QTimer,QDateTime
+from NanoVNASaver.SweepWorker import SweepState
+from PyQt6.QtCore import Qt
 
 logger = logging.getLogger(__name__)
 
@@ -116,3 +119,20 @@ class ScreenshotWindow(QtWidgets.QLabel):
             self.pix.size().height() * scale,
         )
         self.resize(width, height)
+
+class LiveViewWindow(ScreenshotWindow):
+    def __init__(self, qtwidgets: QtWidgets.QTableWidget):
+        super().__init__()
+        self.setWindowTitle("Live View")
+        self.qtwidgets = qtwidgets
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_screenshot)
+        
+    def start(self):
+        self.timer.start(500) # Update every 500ms
+                
+    def update_screenshot(self):
+        if self.qtwidgets.app.worker.state != SweepState.RUNNING:  # Check if worker is not running
+            pixmap = self.qtwidgets.app.vna.getScreenshot()
+            self.qtwidgets.liveViewWindow.setScreenshot(pixmap)
+            self.qtwidgets.liveViewWindow.show()
