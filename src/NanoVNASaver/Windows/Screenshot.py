@@ -129,7 +129,7 @@ class LiveViewWindow(ScreenshotWindow):
         self.timer.timeout.connect(self.update_screenshot)
         
     def start(self):
-        self.timer.start(500) # Update every 500ms
+        self.timer.start(2000) # Update every 2000ms (this will not burn the little chip too much on nanovna & tinysa)
                 
     def update_screenshot(self):
         if self.qtwidgets.app.worker.state != SweepState.RUNNING:  # Check if worker is not running
