@@ -23,7 +23,7 @@ from PyQt6.QtGui import QIntValidator
 
 from NanoVNASaver.SweepWorker import SweepState
 from NanoVNASaver.Windows.Defaults import make_scrollable
-from NanoVNASaver.Windows.Screenshot import ScreenshotWindow, LiveViewWindow
+from NanoVNASaver.Windows.Screenshot import ScreenshotWindow
 
 logger = logging.getLogger(__name__)
 
@@ -92,13 +92,7 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         self.btnCaptureScreenshot = QtWidgets.QPushButton("Screenshot")
         self.btnCaptureScreenshot.clicked.connect(self.captureScreenshot)
         control_layout.addWidget(self.btnCaptureScreenshot)
-        
-        self.liveViewWindow = LiveViewWindow(self)
-        self.btnLiveView = QtWidgets.QPushButton("Live view")
-        self.btnLiveView.clicked.connect(self.liveView)
-        self.liveViewWindow.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose)
-        control_layout.addWidget(self.btnLiveView)
-        
+
         left_layout.addWidget(status_box)
         left_layout.addLayout(control_layout)
 
@@ -147,7 +141,6 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
             self.label["SN"].setText("Not connected.")
             self.featureList.clear()
             self.btnCaptureScreenshot.setDisabled(True)
-            self.btnLiveView.setDisabled(True)
             return
 
         self.label["status"].setText(f"Connected to {self.app.vna.name}.")
@@ -168,7 +161,6 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
             self.featureList.addItem(item)
 
         self.btnCaptureScreenshot.setDisabled("Screenshots" not in features)
-        self.btnLiveView.setDisabled("Screenshots" not in features)
 
         if "Customizable data points" in features:
             self.datapoints.clear()
@@ -208,11 +200,6 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         # TODO: Consider having a list of widgets that want to be
         #       disabled when a sweep is running?
 
-        
-    def liveView(self) -> None:
-        if self.app.worker.state != SweepState.RUNNING:
-            self.liveViewWindow.start()
-    
     def updateNrDatapoints(self, i) -> None:
         if i < 0 or self.app.worker.state == SweepState.RUNNING:
             return
