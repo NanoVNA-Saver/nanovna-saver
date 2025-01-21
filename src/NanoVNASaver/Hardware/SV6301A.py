@@ -31,7 +31,7 @@ class SV6301A(NanoVNA):
     name = "SV6301A"
     screenwidth = 1024
     screenheight = 600
-    valid_datapoints = (501, 101, 1001)
+    valid_datapoints = [501, 101, 1001]
     sweep_points_min = 101
     sweep_points_max = 1001
 

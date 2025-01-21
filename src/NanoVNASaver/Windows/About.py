@@ -26,7 +26,7 @@ from urllib import error, request
 from PyQt6 import QtCore, QtGui, QtWidgets
 
 from NanoVNASaver.About import INFO_URL, LATEST_URL, TAGS_KEY, TAGS_URL
-from NanoVNASaver.Version import Version
+from ..utils import Version
 from NanoVNASaver.Windows.Defaults import make_scrollable
 
 logger = logging.getLogger(__name__)
@@ -147,7 +147,7 @@ class AboutWindow(QtWidgets.QWidget):
                 line = ln.decode("utf-8")
                 found_latest_version = TAGS_KEY in line
                 if found_latest_version:
-                    latest_version = Version(
+                    latest_version = Version.parse(
                         re.search(r"(\d+\.\d+\.\d+)", line).group()
                     )
                     break

@@ -25,7 +25,7 @@ from PyQt6.QtGui import QImage, QPixmap
 
 from NanoVNASaver.Hardware.Serial import Interface, drain_serial
 from NanoVNASaver.Hardware.VNA import VNA
-from NanoVNASaver.Version import Version
+from ..utils import Version
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ class NanoVNA(VNA):
     def __init__(self, iface: Interface):
         super().__init__(iface)
         self.sweep_method = "sweep"
-        self.read_features()
+        self.init_features()
         logger.debug("Setting initial start,stop")
         self.start, self.stop = self._get_running_frequencies()
         self.sweep_max_freq_Hz = 300e6
@@ -111,13 +111,13 @@ class NanoVNA(VNA):
         elif self.sweep_method == "scan":
             list(self.exec_command(f"scan {start} {stop} {self.datapoints}"))
 
-    def read_features(self):
-        super().read_features()
-        if self.version >= Version("0.7.1"):
+    def init_features(self) -> None:
+        super().init_features()
+        if self.version >= Version.parse("0.7.1"):
             logger.debug("Using scan mask command.")
             self.features.add("Scan mask command")
             self.sweep_method = "scan_mask"
-        elif self.version >= Version("0.2.0"):
+        elif self.version >= Version.parse("0.2.0"):
             logger.debug("Using new scan command.")
             self.features.add("Scan command")
             self.sweep_method = "scan"

@@ -23,7 +23,7 @@ from time import sleep
 
 from NanoVNASaver.Hardware.Serial import Interface
 from NanoVNASaver.Hardware.VNA import VNA
-from NanoVNASaver.Version import Version
+from ..utils import Version
 
 if platform.system() != "Windows":
     import tty
@@ -69,7 +69,7 @@ _ADF4350_TXPOWER_DESC_REV_MAP = {
 
 class NanoVNA_V2(VNA):  # noqa: N801
     name = "NanoVNA-V2"
-    valid_datapoints = (101, 11, 51, 201, 301, 501, 1023)
+    valid_datapoints = [101, 11, 51, 201, 301, 501, 1023]
     screenwidth = 320
     screenheight = 240
 
@@ -89,7 +89,7 @@ class NanoVNA_V2(VNA):  # noqa: N801
             raise IOError("Device is in DFU mode")
 
         if "S21 hack" in self.features:
-            self.valid_datapoints = (101, 11, 51, 201, 301, 501, 1021)
+            self.valid_datapoints = [101, 11, 51, 201, 301, 501, 1021]
 
         self.sweepStartHz = 200e6
         self.sweepStepHz = 1e6
@@ -100,19 +100,19 @@ class NanoVNA_V2(VNA):  # noqa: N801
     def getCalibration(self) -> str:
         return "Unknown"
 
-    def read_features(self):
+    def init_features(self) -> None:
         self.features.add("Customizable data points")
         # TODO: more than one dp per freq
         self.features.add("Multi data points")
         self.board_revision = self.read_board_revision()
-        if self.board_revision >= Version("2.0.4"):
+        if self.board_revision >= Version.parse("2.0.4"):
             self.sweep_max_freq_Hz = 4400e6
         else:
             self.sweep_max_freq_Hz = 3000e6
-        if self.version <= Version("1.0.1"):
+        if self.version <= Version.parse("1.0.1"):
             logger.debug("Hack for s21 oddity in first sweeppoint")
             self.features.add("S21 hack")
-        if self.version >= Version("1.0.2"):
+        if self.version >= Version.parse("1.0.2"):
             self.features.update({"Set TX power partial", "Set Average"})
             # Can only set ADF4350 power, i.e. for >= 140MHz
             self.txPowerRanges = [
@@ -227,7 +227,7 @@ class NanoVNA_V2(VNA):  # noqa: N801
     def resetSweep(self, start: int, stop: int):
         self.setSweep(start, stop)
 
-    def _read_version(self, cmd_0: int, cmd_1: int):
+    def _read_version(self, cmd_0: int, cmd_1: int) -> Version:
         cmd = pack("<BBBB", _CMD_READ, cmd_0, _CMD_READ, cmd_1)
         with self.serial.lock:
             self.serial.write(cmd)
@@ -238,14 +238,14 @@ class NanoVNA_V2(VNA):  # noqa: N801
         if len(resp) != 2:  # noqa: PLR2004
             logger.error("Timeout reading version registers. Got: %s", resp)
             raise IOError("Timeout reading version registers")
-        return Version(f"{resp[0]}.0.{resp[1]}")
+        return Version.build(resp[0], 0, resp[1])
 
-    def readVersion(self) -> "Version":
+    def read_fw_version(self) -> Version:
         result = self._read_version(_ADDR_FW_MAJOR, _ADDR_FW_MINOR)
-        logger.debug("readVersion: %s", result)
+        logger.debug("Firmware Version: %s", result)
         return result
 
-    def read_board_revision(self) -> "Version":
+    def read_board_revision(self) -> Version:
         result = self._read_version(
             _ADDR_DEVICE_VARIANT, _ADDR_HARDWARE_REVISION
         )

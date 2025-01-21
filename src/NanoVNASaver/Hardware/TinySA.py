@@ -25,7 +25,7 @@ from PyQt6.QtGui import QImage, QPixmap
 
 from NanoVNASaver.Hardware.Serial import Interface, drain_serial
 from NanoVNASaver.Hardware.VNA import VNA
-from NanoVNASaver.Version import Version
+from ..utils import Version
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +34,7 @@ class TinySA(VNA):
     name = "tinySA"
     screenwidth = 320
     screenheight = 240
-    valid_datapoints = (290,)
+    valid_datapoints = [290]
 
     def __init__(self, iface: Interface):
         super().__init__(iface)
@@ -132,7 +132,7 @@ class TinySA_Ultra(TinySA):  # noqa: N801
     name = "tinySA Ultra"
     screenwidth = 480
     screenheight = 320
-    valid_datapoints = (450, 51, 101, 145, 290)
+    valid_datapoints = [450, 51, 101, 145, 290]
     hardware_revision = None
 
     def __init__(self, iface: Interface):

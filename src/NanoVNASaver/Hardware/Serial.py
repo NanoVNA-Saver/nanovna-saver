@@ -17,7 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-from threading import Lock
+from threading import RLock
 
 import serial
 
@@ -47,7 +47,7 @@ class Interface(serial.Serial):
         self.port = None
         self.baudrate = 115200
         self.timeout = 0.05
-        self.lock = Lock()
+        self.lock = RLock()
 
     def __str__(self):
         return f"{self.port} ({self.comment})"

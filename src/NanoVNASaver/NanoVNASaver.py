@@ -702,6 +702,9 @@ class NanoVNASaver(QWidget):
         Defaults.cfg.gui.splitter_sizes = self.splitter.saveState()
         Defaults.store(self.settings, Defaults.cfg)
 
+        # Dosconnect connected devices and release serial port
+        self.serial_control.disconnect_device()
+
         a0.accept()
         sys.exit()
 
