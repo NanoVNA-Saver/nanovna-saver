@@ -88,7 +88,6 @@ where = ["src"]
 # check out https://github.com/pypa/setuptools_scm
 root='.'
 version_scheme = 'no-guess-dev'
-write_to = 'src/NanoVNASaver/_version.py'
 
 
 
