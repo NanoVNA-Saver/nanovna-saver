@@ -53,12 +53,12 @@ def _max_retries(bandwidth: int, datapoints: int) -> int:
 
 class VNA:
     name = "VNA"
-    valid_datapoints: list[int] = [101, 51, 11]
+    valid_datapoints: tuple[int, ...] = (101, 51, 11)
     wait = 0.05
     SN = "NOT SUPPORTED"
     sweep_points_max = 101
     sweep_points_min = 11
-    
+
     # Must be initilized in child classes
     sweep_max_freq_Hz = 0.0
 

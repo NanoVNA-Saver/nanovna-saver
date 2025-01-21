@@ -85,7 +85,7 @@ class ScreenshotData:
 
 class LiteVNA64(NanoVNA_V2):
     name = "LiteVNA-64"
-    valid_datapoints = [
+    valid_datapoints: tuple[int, ...] = (
         51,
         101,
         201,
@@ -98,7 +98,7 @@ class LiteVNA64(NanoVNA_V2):
         6401,
         12801,
         25601,
-    ]
+    )
     screenwidth = 480
     screenheight = 320
     sweep_points_max = 65535

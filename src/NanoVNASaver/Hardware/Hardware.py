@@ -195,7 +195,9 @@ def detect_version(serial_port: serial.Serial) -> str:
         if data.startswith("\r\n?\r\nch> "):
             return "vh"
         if data.startswith("2"):
-            return "lite_vna_64" if LiteVNA64.is_lite_vna_64(serial_port) else "v2"
+            return (
+                "lite_vna_64" if LiteVNA64.is_lite_vna_64(serial_port) else "v2"
+            )
         logger.debug("Retry detection: %s", i + 1)
     logger.error("No VNA detected. Hardware responded to CR with: %s", data)
     return ""
