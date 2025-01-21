@@ -31,6 +31,7 @@ import sys
 from PyQt6 import QtWidgets
 
 from NanoVNASaver.About import INFO, VERSION
+from NanoVNASaver.utils import get_lib_versions
 from NanoVNASaver.NanoVNASaver import NanoVNASaver
 from NanoVNASaver.Touchstone import Touchstone
 
@@ -91,6 +92,11 @@ def main():
         fh.setLevel(file_log_level)
         fh.setFormatter(formatter)
         logger.addHandler(fh)
+
+    # Print diagnostic data
+    logger.debug("Used packages:")
+    for lib in get_lib_versions():
+        logger.debug(" - %s", lib)
 
     logger.info("Startup...")
 
