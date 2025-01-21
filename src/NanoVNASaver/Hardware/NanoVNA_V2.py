@@ -69,7 +69,15 @@ _ADF4350_TXPOWER_DESC_REV_MAP = {
 
 class NanoVNA_V2(VNA):  # noqa: N801
     name = "NanoVNA-V2"
-    valid_datapoints = [101, 11, 51, 201, 301, 501, 1023]
+    valid_datapoints: tuple[int, ...] = (
+        101,
+        11,
+        51,
+        201,
+        301,
+        501,
+        1023,
+    )
     screenwidth = 320
     screenheight = 240
 
@@ -89,7 +97,15 @@ class NanoVNA_V2(VNA):  # noqa: N801
             raise IOError("Device is in DFU mode")
 
         if "S21 hack" in self.features:
-            self.valid_datapoints = [101, 11, 51, 201, 301, 501, 1021]
+            self.valid_datapoints: tuple[int, ...] = [
+                101,
+                11,
+                51,
+                201,
+                301,
+                501,
+                1021,
+            ]
 
         self.sweepStartHz = 200e6
         self.sweepStepHz = 1e6
