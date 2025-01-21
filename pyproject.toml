@@ -103,9 +103,9 @@ clean_py = "python -Bc \"import pathlib; [p.unlink() for p in pathlib.Path('.').
 clean_logs = "python -Bc \"import pathlib; [p.unlink() for p in pathlib.Path('.').rglob('*.log')]\""
 clean_pycache = " python -Bc \"import pathlib; [p.rmdir() for p in pathlib.Path('.').rglob('__pycache__')]\""
 
-build-pkg-win   = "pyinstaller --onefile -p src -n nanovna-saver.exe nanovna-saver.py --noconsole -i icon_48x48.ico --add-data \"icon_48x48.png:.\""
-build-pkg-linux = "pyinstaller --onefile -p src -n nanovna-saver     nanovna-saver.py --add-data \"icon_48x48.png:.\""
-build-pkg-macos = "pyinstaller --onedir  -p src -n NanoVNASaver      nanovna-saver.py --window --clean  -y -i icon_48x48.icns --add-data \"icon_48x48.png:.\"  && tar -C dist -zcf ./dist/NanoVNASaver.app-`uname -m`.tar.gz  NanoVNASaver.app"
+build-pkg-win   = "pyinstaller --onefile -p src -n nanovna-saver.exe nanovna-saver.py --recursive-copy-metadata NanoVNASaver --noconsole -i icon_48x48.ico --add-data \"icon_48x48.png:.\""
+build-pkg-linux = "pyinstaller --onefile -p src -n nanovna-saver     nanovna-saver.py --recursive-copy-metadata NanoVNASaver --add-data \"icon_48x48.png:.\""
+build-pkg-macos = "pyinstaller --onedir  -p src -n NanoVNASaver      nanovna-saver.py --recursive-copy-metadata NanoVNASaver --window --clean  -y -i icon_48x48.icns --add-data \"icon_48x48.png:.\"  && tar -C dist -zcf ./dist/NanoVNASaver.app-`uname -m`.tar.gz  NanoVNASaver.app"
 
 
 
