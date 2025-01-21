@@ -107,7 +107,7 @@ class LiteVNA64(NanoVNA_V2):
     def __init__(self, iface: Interface):
         super().__init__(iface)
 
-        self.datapoints = 1024
+        self.datapoints = 201
 
     def read_fw_version(self) -> Version:
         with self.serial.lock:

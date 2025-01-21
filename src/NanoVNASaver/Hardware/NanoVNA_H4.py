@@ -42,7 +42,7 @@ class NanoVNA_H4(NanoVNA_H):
         if "Scan mask command" in self.features:
             self.sweep_method = "scan_mask"
 
-    # def read_features(self):
+    # def init_features(self) -> None:
     #     logger.debug("read_features")
     #     super().read_features()
     #     if self.readFirmware().find("DiSlord") > 0:

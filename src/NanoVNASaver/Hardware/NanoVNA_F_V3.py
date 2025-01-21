@@ -68,8 +68,8 @@ class NanoVNA_F_V3(NanoVNA):
             logger.exception("Exception while capturing screenshot: %s", exc)
         return QPixmap()
 
-    def read_features(self):
-        super().read_features()
+    def init_features(self) -> None:
+        super().init_features()
         result = " ".join(self.exec_command("help")).split()
         if "sn:" or "SN:" in result:
             self.features.add("SN")
