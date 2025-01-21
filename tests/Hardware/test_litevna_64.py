@@ -1,7 +1,7 @@
-
 from NanoVNASaver.Hardware.LiteVNA64 import ScreenshotData
 
-VALID_HEADER = b'\xe0\x01@\x01\x10'
+VALID_HEADER = b"\xe0\x01@\x01\x10"
+
 
 class TestScreenshotData:
 
@@ -16,13 +16,15 @@ class TestScreenshotData:
 
     @staticmethod
     def test_data_size() -> None:
-        assert  ScreenshotData(0,0,0).data_size() == 0
-        assert  ScreenshotData(480,320,16).data_size() == 307200
+        assert ScreenshotData(0, 0, 0).data_size() == 0
+        assert ScreenshotData(480, 320, 16).data_size() == 307200
 
     @staticmethod
     def test_repr() -> None:
-        assert  f"{ScreenshotData(0,0,0)}" == "0x0 0bits (0 Bytes)"
-        assert  f"{ScreenshotData(480,320,16)}" == "480x320 16bits (307200 Bytes)"
+        assert f"{ScreenshotData(0,0,0)}" == "0x0 0bits (0 Bytes)"
+        assert (
+            f"{ScreenshotData(480,320,16)}" == "480x320 16bits (307200 Bytes)"
+        )
 
     @staticmethod
     def test_rgb565_to_888() -> None:
@@ -37,5 +39,5 @@ class TestScreenshotData:
 
         result = img.get_rgb888_data()
 
-        assert len(result) == 3 *3
-        assert result == b'\x00\x00\x00\xFF\xFF\x00\xFF\xFF\xFF'
+        assert len(result) == 3 * 3
+        assert result == b"\x00\x00\x00\xFF\xFF\x00\xFF\xFF\xFF"

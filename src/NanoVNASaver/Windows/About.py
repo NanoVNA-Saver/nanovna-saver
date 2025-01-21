@@ -26,8 +26,9 @@ from urllib import error, request
 from PyQt6 import QtCore, QtGui, QtWidgets
 
 from NanoVNASaver.About import INFO_URL, LATEST_URL, TAGS_KEY, TAGS_URL
-from ..utils import Version
 from NanoVNASaver.Windows.Defaults import make_scrollable
+
+from ..utils import Version
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +112,9 @@ class AboutWindow(QtWidgets.QWidget):
         lower_layout.addStretch()
 
         btn_ok = QtWidgets.QPushButton("Ok")
-        btn_ok.clicked.connect(lambda: self.close())
+        btn_ok.clicked.connect(
+            lambda: self.close()
+        )  # pylint disable=unnecessary-lambda
         lower_layout.addWidget(btn_ok)
 
     def show(self):
@@ -172,7 +175,7 @@ class AboutWindow(QtWidgets.QWidget):
 
         if found_latest_version:
             logger.info("Latest version is %s", latest_version)
-            this_version = Version(self.app.version)
+            this_version = Version.parse(self.app.version)
             logger.info("This is %s", this_version)
             if latest_version > this_version:
                 logger.info("New update available: %s!", latest_version)
@@ -211,5 +214,5 @@ class AboutWindow(QtWidgets.QWidget):
             self.updateLabel.setText(
                 "ERROR - Unable to determine what the latest version is!"
             )
-            logger.error(f"Can't find {TAGS_KEY} in {TAGS_URL} content.")
+            logger.error("Can't find %s in %s content.", TAGS_KEY, TAGS_URL)
         return
