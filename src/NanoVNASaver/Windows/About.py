@@ -28,7 +28,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 from NanoVNASaver.About import INFO_URL, LATEST_URL, TAGS_KEY, TAGS_URL
 from NanoVNASaver.Windows.Defaults import make_scrollable
 
-from ..utils import Version
+from ..utils import Version, get_lib_versions
 
 logger = logging.getLogger(__name__)
 
@@ -108,6 +108,13 @@ class AboutWindow(QtWidgets.QWidget):
             "NanoVNA Firmware Version: Not connected."
         )
         lower_layout.addWidget(self.versionLabel)
+
+        self.libs_title = QtWidgets.QLabel("Used libs:")
+        lower_layout.addWidget(self.libs_title)
+        self.libs_list = QtWidgets.QTextEdit()
+        self.libs_list.setReadOnly(True)
+        self.libs_list.setText("\n".join(get_lib_versions()))
+        lower_layout.addWidget(self.libs_list)
 
         lower_layout.addStretch()
 
