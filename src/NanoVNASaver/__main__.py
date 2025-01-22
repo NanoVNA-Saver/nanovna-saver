@@ -31,7 +31,7 @@ import sys
 from PySide6 import QtWidgets
 
 from NanoVNASaver.About import INFO, VERSION
-from NanoVNASaver.utils import get_lib_versions
+from NanoVNASaver.utils import get_runtime_information
 from NanoVNASaver.NanoVNASaver import NanoVNASaver
 from NanoVNASaver.Touchstone import Touchstone
 
@@ -94,8 +94,8 @@ def main():
         logger.addHandler(fh)
 
     # Print diagnostic data
-    logger.debug("Used packages:")
-    for lib in get_lib_versions():
+    logger.debug("Runtime information:")
+    for lib in get_runtime_information():
         logger.debug(" - %s", lib)
 
     logger.info("Startup...")

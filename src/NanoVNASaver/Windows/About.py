@@ -27,7 +27,7 @@ from PySide6 import QtCore, QtWidgets
 
 from NanoVNASaver.About import LATEST_URL, TAGS_KEY, TAGS_URL
 
-from ..utils import Version, get_app_version, get_lib_versions
+from ..utils import Version, get_app_version, get_runtime_information
 from .ui.about import Ui_DialogAbout
 
 logger = logging.getLogger(__name__)
@@ -43,7 +43,7 @@ class AboutWindow(QtWidgets.QDialog):
 
         self.ui.l_app_version.setText(get_app_version())
 
-        self.ui.txt_runtime_info.setText("\n".join(get_lib_versions()))
+        self.ui.txt_runtime_info.setText("\n".join(get_runtime_information()))
         self.ui.btn_copy_runtime_info.clicked.connect(self.copy_runtime_info)
 
         self.ui.btn_updates.clicked.connect(self.find_updates)
