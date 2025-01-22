@@ -18,7 +18,7 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
 from PySide6.QtWidgets import (QApplication, QDialog, QFrame, QHBoxLayout,
     QLabel, QPushButton, QSizePolicy, QTextEdit,
     QVBoxLayout, QWidget)
-import main_rc
+from . import main_rc
 
 class Ui_DialogAbout(object):
     def setupUi(self, DialogAbout):
@@ -38,7 +38,7 @@ class Ui_DialogAbout(object):
         self._frm_info.setFrameShape(QFrame.Shape.NoFrame)
         self._frm_info.setFrameShadow(QFrame.Shadow.Raised)
         self.horizontalLayout_6 = QHBoxLayout(self._frm_info)
-        self.horizontalLayout_6.setSpacing(0)
+        self.horizontalLayout_6.setSpacing(9)
         self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
         self.horizontalLayout_6.setContentsMargins(0, 0, 0, 0)
         self._l_infor_icon = QLabel(self._frm_info)
@@ -50,6 +50,7 @@ class Ui_DialogAbout(object):
         self._l_infor_icon.setSizePolicy(sizePolicy)
         self._l_infor_icon.setMinimumSize(QSize(128, 128))
         self._l_infor_icon.setPixmap(QPixmap(u":/window/logo_128x128.png"))
+        self._l_infor_icon.setAlignment(Qt.AlignmentFlag.AlignLeading|Qt.AlignmentFlag.AlignLeft|Qt.AlignmentFlag.AlignTop)
 
         self.horizontalLayout_6.addWidget(self._l_infor_icon)
 
@@ -99,6 +100,22 @@ class Ui_DialogAbout(object):
 
 
         self.verticalLayout.addWidget(self._frm_app_version)
+
+        self._frm_updates_status = QFrame(DialogAbout)
+        self._frm_updates_status.setObjectName(u"_frm_updates_status")
+        self._frm_updates_status.setFrameShape(QFrame.Shape.StyledPanel)
+        self._frm_updates_status.setFrameShadow(QFrame.Shadow.Raised)
+        self.horizontalLayout_2 = QHBoxLayout(self._frm_updates_status)
+        self.horizontalLayout_2.setSpacing(0)
+        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
+        self.horizontalLayout_2.setContentsMargins(0, 0, 0, 0)
+        self.l_updates_status = QLabel(self._frm_updates_status)
+        self.l_updates_status.setObjectName(u"l_updates_status")
+
+        self.horizontalLayout_2.addWidget(self.l_updates_status)
+
+
+        self.verticalLayout.addWidget(self._frm_updates_status)
 
         self._frm_dev_version = QFrame(DialogAbout)
         self._frm_dev_version.setObjectName(u"_frm_dev_version")
@@ -178,8 +195,9 @@ class Ui_DialogAbout(object):
         self._l_info_text.setText(QCoreApplication.translate("DialogAbout", u"<html><head/><body><p>NanoVNASaver</p><p>\u00a9 Copyright 2019, 2020 Rune B. Broberg</p><p>\u00a9 Copyright 2020ff NanoVNA-Saver Authors</p><p>This program comes with ABSOLUTELY NO WARRANTY</p><p>This program is licensed under the GNU General Public License version 3</p><p>For further details, see: <a href=\"https://github.com/NanoVNA-Saver/nanovna-saver\"><span style=\" text-decoration: underline; color:#444444;\">https://github.com/NanoVNA-Saver/nanovna-saver</span></a></p></body></html>", None))
         self._l_app_name.setText(QCoreApplication.translate("DialogAbout", u"NanoVNA Saver: ", None))
         self.l_app_version.setText(QCoreApplication.translate("DialogAbout", u"v1.2.3", None))
-        self.btn_updates.setText(QCoreApplication.translate("DialogAbout", u"Check for NanoVNASaver updates", None))
-        self._l_dev_name.setText(QCoreApplication.translate("DialogAbout", u"NanoVNA Firmware Version: ", None))
+        self.btn_updates.setText(QCoreApplication.translate("DialogAbout", u"Check for updates", None))
+        self.l_updates_status.setText("")
+        self._l_dev_name.setText(QCoreApplication.translate("DialogAbout", u"NanoVNA Firmware: ", None))
         self.l_dev_version.setText(QCoreApplication.translate("DialogAbout", u"not connected.", None))
         self._l_runtime_title.setText(QCoreApplication.translate("DialogAbout", u"Runtime information", None))
         self.btn_copy_runtime_info.setText(QCoreApplication.translate("DialogAbout", u"Copy", None))
