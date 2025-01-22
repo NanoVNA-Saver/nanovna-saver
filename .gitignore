@@ -59,3 +59,4 @@ NanoVNASaver.spec
 
 
 *.spec
+*_rc.py
