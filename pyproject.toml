@@ -95,12 +95,7 @@ test = "pytest ."
 test-cov = "pytest --cov=src ."
 test-full = "tox"
 
-clean = "task clean_dist & task clean_build & task clean_py & task clean_logs & task clean_pycache"
-clean_dist = "rm -r dist"
-clean_build = "rm -r build"
-clean_py = "python -Bc \"import pathlib; [p.unlink() for p in pathlib.Path('.').rglob('*.py[co]')]\""
-clean_logs = "python -Bc \"import pathlib; [p.unlink() for p in pathlib.Path('.').rglob('*.log')]\""
-clean_pycache = " python -Bc \"import pathlib; [p.rmdir() for p in pathlib.Path('.').rglob('__pycache__')]\""
+clean = "python -m tools.project_clean"
 
 build-pkg-win   = "pyinstaller --onefile -p src -n nanovna-saver.exe nanovna-saver.py --recursive-copy-metadata NanoVNASaver --noconsole -i icon_48x48.ico --add-data \"icon_48x48.png:.\""
 build-pkg-linux = "pyinstaller --onefile -p src -n nanovna-saver     nanovna-saver.py --recursive-copy-metadata NanoVNASaver --add-data \"icon_48x48.png:.\""
