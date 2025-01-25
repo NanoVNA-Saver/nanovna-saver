@@ -20,6 +20,8 @@ import logging
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from .ui import get_window_icon
+
 logger = logging.getLogger(__name__)
 
 
@@ -29,7 +31,7 @@ class BandsWindow(QtWidgets.QWidget):
 
         self.app = app
         self.setWindowTitle("Manage bands")
-        self.setWindowIcon(self.app.icon)
+        self.setWindowIcon(get_window_icon())
 
         QtGui.QShortcut(QtCore.Qt.Key.Key_Escape, self, self.hide)
 

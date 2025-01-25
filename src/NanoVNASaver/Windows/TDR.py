@@ -26,6 +26,7 @@ from scipy.constants import speed_of_light  # type: ignore
 from scipy.signal import convolve  # type: ignore
 
 from NanoVNASaver.Windows.Defaults import make_scrollable
+from .ui import get_window_icon
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +87,7 @@ class TDRWindow(QtWidgets.QWidget):
         self.step_response_Z: npt.NDArray[np.float64]
 
         self.setWindowTitle("TDR")
-        self.setWindowIcon(self.app.icon)
+        self.setWindowIcon(get_window_icon())
 
         QtGui.QShortcut(QtCore.Qt.Key.Key_Escape, self, self.hide)
 

@@ -25,6 +25,8 @@ from NanoVNASaver.Marker.Values import TYPES, default_label_ids
 from NanoVNASaver.Marker.Widget import Marker
 from NanoVNASaver.RFTools import Datapoint
 
+from .ui import get_window_icon
+
 logger = logging.getLogger(__name__)
 
 
@@ -45,7 +47,7 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
         self.app = app
 
         self.setWindowTitle("Marker settings")
-        self.setWindowIcon(self.app.icon)
+        self.setWindowIcon(get_window_icon())
 
         QtGui.QShortcut(QtCore.Qt.Key.Key_Escape, self, self.cancelButtonClick)
 

@@ -77,6 +77,7 @@ from .Windows import (
     SweepSettingsWindow,
     TDRWindow,
 )
+from .Windows.ui import get_window_icon
 
 logger = logging.getLogger(__name__)
 
@@ -93,14 +94,7 @@ class NanoVNASaver(QWidget):
         super().__init__()
         self.communicate = Communicate()
         self.s21att = 0.0
-        if getattr(sys, "frozen", False):
-            logger.debug("Running from pyinstaller bundle")
-            self.icon = QtGui.QIcon(
-                f"{sys._MEIPASS}/icon_48x48.png"
-            )  # pylint: disable=no-member
-        else:
-            self.icon = QtGui.QIcon("icon_48x48.png")
-        self.setWindowIcon(self.icon)
+        self.setWindowIcon(get_window_icon())
         self.settings = Defaults.AppSettings(
             QtCore.QSettings.Format.IniFormat,
             QtCore.QSettings.Scope.UserScope,
