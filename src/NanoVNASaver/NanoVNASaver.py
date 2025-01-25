@@ -669,6 +669,7 @@ class NanoVNASaver(QWidget):
         new_chart.isPopout = True
         new_chart.show()
         new_chart.setWindowTitle(new_chart.name)
+        new_chart.setWindowIcon(get_window_icon())
 
     def copyChart(self, chart: Chart):
         new_chart = chart.copy()
