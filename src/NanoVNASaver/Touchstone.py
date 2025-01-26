@@ -21,6 +21,7 @@ import io
 import logging
 import math
 from operator import attrgetter
+from typing import ClassVar
 
 from scipy.interpolate import interp1d
 
@@ -32,7 +33,7 @@ logger = logging.getLogger(__name__)
 class Options:
     # Fun fact: In Touchstone 1.1 spec all params are optional unordered.
     # Just the line has to start with "#"
-    UNIT_TO_FACTOR = {
+    UNIT_TO_FACTOR: ClassVar[dict[str, int]] = {
         "ghz": 10**9,
         "mhz": 10**6,
         "khz": 10**3,

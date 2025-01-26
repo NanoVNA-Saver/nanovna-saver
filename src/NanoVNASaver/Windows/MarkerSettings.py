@@ -17,6 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
+from typing import ClassVar
 
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import Qt
@@ -32,12 +33,12 @@ logger = logging.getLogger(__name__)
 
 
 class MarkerSettingsWindow(QtWidgets.QWidget):
-    EXAMPLE_DATA11 = [
+    EXAMPLE_DATA11: ClassVar[list[Datapoint]] = [
         Datapoint(123000000, 0.89, -0.11),
         Datapoint(123500000, 0.9, -0.1),
         Datapoint(124000000, 0.91, -0.95),
     ]
-    EXAMPLE_DATA21 = [
+    EXAMPLE_DATA21: ClassVar[list[Datapoint]] = [
         Datapoint(123000000, -0.25, 0.49),
         Datapoint(123456000, -0.3, 0.5),
         Datapoint(124000000, -0.2, 0.5),
@@ -138,9 +139,7 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
         self.app.settings.setValue(
             "ColoredMarkerNames", self.checkboxColouredMarker.isChecked()
         )
-        for m in self.app.markers + [
-            self.app.delta_marker,
-        ]:
+        for m in [*self.app.markers, self.app.delta_marker]:
             m.setFieldSelection(self.savedFieldSelection)
             m.setColoredText(self.checkboxColouredMarker.isChecked())
 

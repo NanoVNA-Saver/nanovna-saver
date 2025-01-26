@@ -17,6 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
+from typing import ClassVar
 
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import Signal
@@ -65,7 +66,7 @@ class Marker(QtCore.QObject, Value):
     location = -1
     returnloss_is_positive = False
     updated = Signal(object)
-    active_labels: list[str] = []
+    active_labels: ClassVar[list[str]] = []
 
     @classmethod
     def count(cls):
