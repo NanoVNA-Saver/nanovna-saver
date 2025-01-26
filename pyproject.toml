@@ -151,6 +151,8 @@ ignore = [
     'N813',
     # TODO fix module naming
     'N999',
+    # TODO fix classes naming
+    'N801',
     # TODO review related code
     'C901',
     'PLR0915',
