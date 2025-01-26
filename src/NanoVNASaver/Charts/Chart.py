@@ -24,7 +24,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QAction, QColor, QColorConstants
 
-from NanoVNASaver import Defaults
+from NanoVNASaver.Defaults import app_config
 from NanoVNASaver.Marker.Widget import Marker
 from NanoVNASaver.RFTools import Datapoint
 
@@ -92,8 +92,8 @@ class ChartMarker(QtWidgets.QWidget):
         self.qp = qp
 
     def draw(self, x: int, y: int, color: QtGui.QColor, text: str = ""):
-        offset = int(Defaults.cfg.chart.marker_size // 2)
-        if Defaults.cfg.chart.marker_at_tip:
+        offset = int(app_config.chart.marker_size // 2)
+        if app_config.chart.marker_at_tip:
             y -= offset
         pen = QtGui.QPen(color)
         self.qp.setPen(pen)
@@ -103,12 +103,12 @@ class ChartMarker(QtWidgets.QWidget):
         qpp.lineTo(x + offset, y - offset)
         qpp.lineTo(x, y + offset)
 
-        if Defaults.cfg.chart.marker_filled:
+        if app_config.chart.marker_filled:
             self.qp.fillPath(qpp, color)
         else:
             self.qp.drawPath(qpp)
 
-        if text and Defaults.cfg.chart.marker_label:
+        if text and app_config.chart.marker_label:
             text_width = self.qp.fontMetrics().horizontalAdvance(text)
             self.qp.drawText(x - int(text_width // 2), y - 3 - offset, text)
 
@@ -179,7 +179,7 @@ class Chart(QtWidgets.QWidget):
         self.update()
 
     def setMarkerSize(self, size) -> None:
-        Defaults.cfg.chart.marker_size = size
+        app_config.chart.marker_size = size
         self.update()
 
     def setSweepTitle(self, title) -> None:

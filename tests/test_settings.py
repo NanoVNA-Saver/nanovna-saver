@@ -19,7 +19,7 @@
 import unittest
 from dataclasses import dataclass, field
 
-import NanoVNASaver.Defaults as CFG
+from NanoVNASaver.Defaults import AppConfig, AppSettings, GuiConfig, QSettings, restore_config, store_config
 
 
 @dataclass
@@ -37,15 +37,15 @@ class TConfig:
 class TestCases(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.settings_1 = CFG.AppSettings(
-            CFG.QSettings.Format.IniFormat,
-            CFG.QSettings.Scope.UserScope,
+        self.settings_1 = AppSettings(
+            QSettings.Format.IniFormat,
+            QSettings.Scope.UserScope,
             "NanoVNASaver",
             "Test_1",
         )
-        self.settings_2 = CFG.AppSettings(
-            CFG.QSettings.Format.IniFormat,
-            CFG.QSettings.Scope.UserScope,
+        self.settings_2 = AppSettings(
+            QSettings.Format.IniFormat,
+            QSettings.Scope.UserScope,
             "NanoVNASaver",
             "Test_2",
         )
@@ -90,10 +90,10 @@ class TestCases(unittest.TestCase):
         self.assertEqual(tc_3, TConfig())
 
     def test_store(self):
-        tc_1 = CFG.CFG()
+        tc_1 = AppConfig()
         tc_1.gui.dark_mode = not tc_1.gui.dark_mode
-        CFG.store(self.settings_2, tc_1)
-        tc_2 = CFG.restore(self.settings_2)
+        store_config(self.settings_2, tc_1)
+        tc_2 = restore_config(self.settings_2)
         print(f"\n{tc_1}\n{tc_2}\n")
         self.assertEqual(tc_1, tc_2)
-        self.assertNotEqual(tc_2.gui, CFG.GUI())
+        self.assertNotEqual(tc_2.gui, GuiConfig())

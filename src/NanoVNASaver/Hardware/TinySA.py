@@ -147,13 +147,13 @@ class TinySA_Ultra(TinySA):  # noqa: N801
         self.version = self.read_firmware_version()
         self.hardware_revision = self.read_hardware_revision()
         # detect model versions of tinySA Ultra including ZS-405, ZS406 (Ultra+), ZS407 (Ultra+)
-        if self.hardware_revision >= Version("0.5.3"):
+        if self.hardware_revision >= Version.parse("0.5.3"):
             self.name = "tinySA Ultra+ ZS-407"
             self.sweep_max_freq_Hz = 7.3e9
-        elif self.hardware_revision >= Version("0.4.6"):
+        elif self.hardware_revision >= Version.parse("0.4.6"):
             self.name = "tinySA Ultra+ ZS-406"
             self.sweep_max_freq_Hz = 5.4e9
-        elif self.hardware_revision >= Version("0.4.5"):
+        elif self.hardware_revision >= Version.parse("0.4.5"):
             self.name = "tinySA Ultra ZS-405"
             self.sweep_max_freq_Hz = 5.3e9
         else:
@@ -173,9 +173,9 @@ class TinySA_Ultra(TinySA):  # noqa: N801
             result[0].split("_v")[1].split("-")
         )
         revision_version = revision_version.split("-")[0]
-        return Version(major_minor_version + "." + revision_version)
+        return Version.parse(major_minor_version + "." + revision_version)
 
     def read_hardware_revision(self) -> str:
         result = list(self.exec_command("version"))
         logger.debug("hardware version result:\n%s", result[1])
-        return Version(result[1])
+        return Version.parse(result[1])

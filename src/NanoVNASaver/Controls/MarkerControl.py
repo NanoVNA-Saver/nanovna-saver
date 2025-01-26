@@ -21,7 +21,7 @@ import logging
 from PySide6 import QtCore, QtWidgets
 from PySide6.QtWidgets import QCheckBox, QSizePolicy
 
-from NanoVNASaver import Defaults
+from NanoVNASaver.Defaults import app_config
 from NanoVNASaver.Controls.Control import Control
 from NanoVNASaver.Marker.Widget import Marker
 
@@ -32,7 +32,7 @@ class ShowButton(QtWidgets.QPushButton):
     def setText(self, text: str = ""):
         if not text:
             text = (
-                "Show data" if Defaults.cfg.gui.markers_hidden else "Hide data"
+                "Show data" if app_config.gui.markers_hidden else "Hide data"
             )
         super().setText(text)
         self.setToolTip("Toggle visibility of marker readings area")
@@ -42,7 +42,7 @@ class MarkerControl(Control):
     def __init__(self, app: QtWidgets.QWidget):
         super().__init__(app, "Markers")
 
-        for i in range(Defaults.cfg.chart.marker_count):
+        for i in range(app_config.chart.marker_count):
             marker = Marker("", self.app.settings)
             # marker.setFixedHeight(20)
             marker.updated.connect(self.app.markerUpdated)
@@ -84,8 +84,8 @@ class MarkerControl(Control):
 
     def toggle_frame(self):
         def settings(hidden: bool):
-            Defaults.cfg.gui.markers_hidden = not hidden
-            self.app.marker_frame.setHidden(Defaults.cfg.gui.markers_hidden)
+            app_config.gui.markers_hidden = not hidden
+            self.app.marker_frame.setHidden(app_config.gui.markers_hidden)
             self.showMarkerButton.setText()
             self.showMarkerButton.repaint()
 
