@@ -20,17 +20,18 @@ import logging
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from NanoVNASaver.RFTools import Datapoint
-from NanoVNASaver.Touchstone import Touchstone
-from NanoVNASaver.Windows.Defaults import make_scrollable
+from NanoVNASaver import NanoVNASaver
 
+from ..RFTools import Datapoint
+from ..Touchstone import Touchstone
+from .Defaults import make_scrollable
 from .ui import get_window_icon
 
 logger = logging.getLogger(__name__)
 
 
 class FilesWindow(QtWidgets.QWidget):
-    def __init__(self, app: QtWidgets.QWidget):
+    def __init__(self, app: NanoVNASaver):
         super().__init__()
         self.app = app
 

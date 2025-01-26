@@ -19,7 +19,7 @@
 
 from typing import NamedTuple
 
-from NanoVNASaver.RFTools import Datapoint
+from ..RFTools import Datapoint
 
 
 class Label(NamedTuple):

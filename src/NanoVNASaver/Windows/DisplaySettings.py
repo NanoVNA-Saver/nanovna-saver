@@ -22,17 +22,16 @@ from typing import TYPE_CHECKING
 from PySide6 import QtCore, QtWidgets
 from PySide6.QtGui import QColor, QColorConstants, QPalette, QShortcut
 
-from NanoVNASaver.Defaults import app_config, store_config
-from NanoVNASaver.Charts.Chart import Chart, ChartColors
-from NanoVNASaver.Marker.Widget import Marker
-from NanoVNASaver.Windows.Bands import BandsWindow
-from NanoVNASaver.Windows.Defaults import make_scrollable
-from NanoVNASaver.Windows.MarkerSettings import MarkerSettingsWindow
-
+from ..Charts.Chart import Chart, ChartColors
+from ..Defaults import app_config, store_config
+from ..Marker.Widget import Marker
+from .Bands import BandsWindow
+from .Defaults import make_scrollable
+from .MarkerSettings import MarkerSettingsWindow
 from .ui import get_window_icon
 
 if TYPE_CHECKING:
-    from NanoVNASaver.NanoVNASaver import NanoVNASaver as NanoVNA
+    from NanoVNASaver import NanoVNASaver as NanoVNA
 
 logger = logging.getLogger(__name__)
 

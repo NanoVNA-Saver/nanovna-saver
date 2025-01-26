@@ -23,10 +23,10 @@ import numpy as np
 from PySide6 import QtGui, QtWidgets
 from scipy.constants import mu_0
 
-from NanoVNASaver.Charts.Chart import Chart
-from NanoVNASaver.Charts.RI import RealImaginaryChart
-from NanoVNASaver.Formatting import format_frequency_chart
-from NanoVNASaver.RFTools import Datapoint
+from ..Formatting import format_frequency_chart
+from ..RFTools import Datapoint
+from .Chart import Chart
+from .RI import RealImaginaryChart
 
 logger = logging.getLogger(__name__)
 

@@ -21,9 +21,9 @@ import logging
 from PySide6 import QtCore, QtWidgets
 from PySide6.QtWidgets import QCheckBox, QSizePolicy
 
-from NanoVNASaver.Defaults import app_config
-from NanoVNASaver.Controls.Control import Control
-from NanoVNASaver.Marker.Widget import Marker
+from ..Defaults import app_config
+from ..Marker.Widget import Marker
+from .Control import Control
 
 logger = logging.getLogger(__name__)
 

@@ -22,11 +22,10 @@ from functools import partial
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from NanoVNASaver.Calibration import Calibration
-from NanoVNASaver.Settings.Sweep import SweepMode
-from NanoVNASaver.Touchstone import Touchstone
-from NanoVNASaver.Windows.Defaults import make_scrollable
-
+from ..Calibration import Calibration
+from ..Settings.Sweep import SweepMode
+from ..Touchstone import Touchstone
+from .Defaults import make_scrollable
 from .ui import get_window_icon
 
 logger = logging.getLogger(__name__)

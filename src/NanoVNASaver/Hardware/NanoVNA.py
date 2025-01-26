@@ -23,10 +23,9 @@ import numpy as np
 import serial
 from PySide6.QtGui import QImage, QPixmap
 
-from NanoVNASaver.Hardware.Serial import Interface, drain_serial
-from NanoVNASaver.Hardware.VNA import VNA
-
 from ..utils import Version
+from .Serial import Interface, drain_serial
+from .VNA import VNA
 
 logger = logging.getLogger(__name__)
 

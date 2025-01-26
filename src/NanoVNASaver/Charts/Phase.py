@@ -22,9 +22,9 @@ import math
 import numpy as np
 from PySide6.QtGui import QAction, QPainter, QPen
 
-from NanoVNASaver.Charts.Chart import Chart
-from NanoVNASaver.Charts.Frequency import FrequencyChart
-from NanoVNASaver.RFTools import Datapoint
+from ..RFTools import Datapoint
+from .Chart import Chart
+from .Frequency import FrequencyChart
 
 logger = logging.getLogger(__name__)
 

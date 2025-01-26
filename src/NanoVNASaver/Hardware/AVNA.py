@@ -18,8 +18,8 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from NanoVNASaver.Hardware.Serial import Interface
-from NanoVNASaver.Hardware.VNA import VNA
+from .Serial import Interface
+from .VNA import VNA
 
 logger = logging.getLogger(__name__)
 

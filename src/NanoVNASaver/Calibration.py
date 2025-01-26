@@ -26,8 +26,8 @@ from dataclasses import dataclass
 
 from scipy.interpolate import interp1d
 
-from NanoVNASaver.RFTools import Datapoint
-from NanoVNASaver.Touchstone import Touchstone
+from .RFTools import Datapoint
+from .Touchstone import Touchstone
 
 IDEAL_SHORT = complex(-1, 0)
 IDEAL_OPEN = complex(1, 0)

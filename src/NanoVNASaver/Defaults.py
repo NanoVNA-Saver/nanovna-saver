@@ -17,9 +17,9 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from dataclasses import dataclass, fields, field, is_dataclass, replace
 import logging
 from ast import literal_eval
+from dataclasses import dataclass, field, fields, is_dataclass, replace
 
 from PySide6.QtCore import QByteArray, QSettings
 from PySide6.QtGui import QColor, QColorConstants

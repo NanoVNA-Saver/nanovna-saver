@@ -23,7 +23,7 @@ from time import sleep
 
 from PySide6 import QtWidgets
 
-from NanoVNASaver.Analysis.VSWRAnalysis import VSWRAnalysis
+from .VSWRAnalysis import VSWRAnalysis
 
 logger = logging.getLogger(__name__)
 

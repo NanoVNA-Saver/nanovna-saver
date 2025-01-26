@@ -21,10 +21,9 @@ import platform
 from struct import pack, unpack_from
 from time import sleep
 
-from NanoVNASaver.Hardware.Serial import Interface
-from NanoVNASaver.Hardware.VNA import VNA
-
 from ..utils import Version
+from .Serial import Interface
+from .VNA import VNA
 
 if platform.system() != "Windows":
     import tty

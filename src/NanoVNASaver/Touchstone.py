@@ -24,7 +24,7 @@ from operator import attrgetter
 
 from scipy.interpolate import interp1d
 
-from NanoVNASaver.RFTools import Datapoint
+from .RFTools import Datapoint
 
 logger = logging.getLogger(__name__)
 

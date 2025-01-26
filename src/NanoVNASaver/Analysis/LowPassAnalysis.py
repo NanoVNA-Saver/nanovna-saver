@@ -18,9 +18,9 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-import NanoVNASaver.AnalyticTools as At
-from NanoVNASaver.Analysis.Base import CUTOFF_VALS
-from NanoVNASaver.Analysis.HighPassAnalysis import HighPassAnalysis
+from .. import AnalyticTools as At
+from .Base import CUTOFF_VALS
+from .HighPassAnalysis import HighPassAnalysis
 
 logger = logging.getLogger(__name__)
 

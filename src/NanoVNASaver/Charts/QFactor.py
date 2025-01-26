@@ -21,9 +21,9 @@ import math
 
 from PySide6 import QtGui
 
-from NanoVNASaver.Charts.Chart import Chart
-from NanoVNASaver.Charts.Frequency import FrequencyChart
-from NanoVNASaver.RFTools import Datapoint
+from ..RFTools import Datapoint
+from .Chart import Chart
+from .Frequency import FrequencyChart
 
 logger = logging.getLogger(__name__)
 

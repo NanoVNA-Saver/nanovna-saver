@@ -22,10 +22,10 @@ from dataclasses import dataclass
 
 from PySide6 import QtGui
 
-from NanoVNASaver.Charts.Chart import Chart
-from NanoVNASaver.Charts.Frequency import FrequencyChart
-from NanoVNASaver.RFTools import Datapoint
-from NanoVNASaver.SITools import log_floor_125
+from ..RFTools import Datapoint
+from ..SITools import log_floor_125
+from .Chart import Chart
+from .Frequency import FrequencyChart
 
 logger = logging.getLogger(__name__)
 

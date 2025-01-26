@@ -33,7 +33,7 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import QInputDialog, QMenu, QSizePolicy
 
-from NanoVNASaver.Charts.Chart import Chart
+from .Chart import Chart
 
 logger = logging.getLogger(__name__)
 

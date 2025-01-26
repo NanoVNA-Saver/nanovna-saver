@@ -17,16 +17,14 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-from typing import TYPE_CHECKING
 
 from PySide6 import QtWidgets
 
-import NanoVNASaver.AnalyticTools as At
-from NanoVNASaver.Analysis.Base import Analysis, QHLine
-from NanoVNASaver.Formatting import format_frequency, format_vswr
+from NanoVNASaver import NanoVNASaver
 
-if TYPE_CHECKING:
-    from NanoVNASaver.NanoVNASaver import NanoVNASaver as NanoVNA
+from .. import AnalyticTools as At
+from ..Formatting import format_frequency, format_vswr
+from .Base import Analysis, QHLine
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +33,7 @@ class VSWRAnalysis(Analysis):
     MAX_DIPS_SHOWN: int = 3
     vswr_limit_value: float = 1.5
 
-    def __init__(self, app: "NanoVNA") -> None:
+    def __init__(self, app: NanoVNASaver) -> None:
         super().__init__(app)
 
         self._widget = QtWidgets.QWidget()

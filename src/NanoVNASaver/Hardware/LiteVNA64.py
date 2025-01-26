@@ -6,8 +6,6 @@ from time import sleep
 from PySide6.QtGui import QImage, QPixmap
 from serial import Serial, SerialException
 
-from NanoVNASaver.Hardware.Serial import Interface
-
 from ..utils.version import Version
 from .NanoVNA_V2 import (
     _ADDR_DEVICE_VARIANT,
@@ -22,6 +20,7 @@ from .NanoVNA_V2 import (
     WRITE_SLEEP,
     NanoVNA_V2,
 )
+from .Serial import Interface
 
 if platform.system() != "Windows":
     pass

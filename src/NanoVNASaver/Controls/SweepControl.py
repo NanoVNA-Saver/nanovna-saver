@@ -20,13 +20,13 @@ import logging
 
 from PySide6 import QtCore, QtWidgets
 
-from NanoVNASaver.Controls.Control import Control
-from NanoVNASaver.Formatting import (
+from ..Formatting import (
     format_frequency_short,
     format_frequency_sweep,
     parse_frequency,
 )
-from NanoVNASaver.Inputs import FrequencyInputWidget
+from ..Inputs import FrequencyInputWidget
+from .Control import Control
 
 logger = logging.getLogger(__name__)
 

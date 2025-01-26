@@ -18,8 +18,8 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 from PySide6 import QtCore
 
-from NanoVNASaver import RFTools
-from NanoVNASaver.Formatting import (
+from .. import RFTools
+from ..Formatting import (
     format_capacitance,
     format_complex_adm,
     format_complex_imp,
@@ -34,7 +34,7 @@ from NanoVNASaver.Formatting import (
     format_vswr,
     format_wavelength,
 )
-from NanoVNASaver.Marker.Widget import Marker
+from .Widget import Marker
 
 
 class DeltaMarker(Marker):

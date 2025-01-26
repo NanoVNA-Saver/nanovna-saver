@@ -22,8 +22,8 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QColorConstants
 
-from NanoVNASaver import RFTools
-from NanoVNASaver.Formatting import (
+from .. import RFTools
+from ..Formatting import (
     format_capacitance,
     format_complex_adm,
     format_complex_imp,
@@ -39,8 +39,8 @@ from NanoVNASaver.Formatting import (
     format_wavelength,
     parse_frequency,
 )
-from NanoVNASaver.Inputs import MarkerFrequencyInputWidget as FrequencyInput
-from NanoVNASaver.Marker.Values import TYPES, Value, default_label_ids
+from ..Inputs import MarkerFrequencyInputWidget as FrequencyInput
+from .Values import TYPES, Value, default_label_ids
 
 COLORS = (
     QtGui.QColor(QColorConstants.DarkGray),

@@ -21,9 +21,9 @@ import math
 
 from PySide6 import QtGui
 
-from NanoVNASaver.Charts.Chart import Chart
-from NanoVNASaver.Charts.LogMag import LogMagChart
-from NanoVNASaver.RFTools import Datapoint
+from ..RFTools import Datapoint
+from .Chart import Chart
+from .LogMag import LogMagChart
 
 logger = logging.getLogger(__name__)
 

@@ -25,7 +25,7 @@ import numpy as np
 # pylint: disable=import-error, no-name-in-module
 from scipy.signal import find_peaks
 
-from NanoVNASaver.RFTools import Datapoint
+from .RFTools import Datapoint
 
 
 def zero_crossings(data: list[float]) -> list[int]:

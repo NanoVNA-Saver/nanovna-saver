@@ -19,7 +19,7 @@
 import math
 from numbers import Number
 
-from NanoVNASaver import SITools
+from . import SITools
 
 FMT_FREQ = SITools.Format()
 FMT_FREQ_SHORT = SITools.Format(max_nr_digits=4)

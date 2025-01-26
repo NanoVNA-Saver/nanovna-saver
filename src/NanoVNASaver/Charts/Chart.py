@@ -24,9 +24,9 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QAction, QColor, QColorConstants
 
-from NanoVNASaver.Defaults import app_config
-from NanoVNASaver.Marker.Widget import Marker
-from NanoVNASaver.RFTools import Datapoint
+from ..Defaults import app_config
+from ..Marker.Widget import Marker
+from ..RFTools import Datapoint
 
 logger = logging.getLogger(__name__)
 

@@ -26,8 +26,6 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import QObject
 from PySide6.QtWidgets import QWidget
 
-from NanoVNASaver.Defaults import app_config, AppSettings, restore_config, store_config
-
 from .About import VERSION
 from .Calibration import Calibration
 from .Charts import (
@@ -57,6 +55,7 @@ from .Charts.Chart import Chart
 from .Controls.MarkerControl import MarkerControl
 from .Controls.SerialControl import SerialControl
 from .Controls.SweepControl import SweepControl
+from .Defaults import AppSettings, app_config, restore_config, store_config
 from .Formatting import format_frequency, format_gain, format_vswr
 from .Hardware.Hardware import Interface
 from .Hardware.VNA import VNA
