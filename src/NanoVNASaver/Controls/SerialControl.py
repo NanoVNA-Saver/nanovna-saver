@@ -22,7 +22,6 @@ from time import sleep
 from PySide6 import QtWidgets
 from PySide6.QtCore import Signal
 
-
 from NanoVNASaver.Controls.Control import Control
 from NanoVNASaver.Hardware.Hardware import Interface, get_interfaces, get_VNA
 

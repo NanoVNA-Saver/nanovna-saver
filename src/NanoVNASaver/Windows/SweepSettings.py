@@ -28,6 +28,7 @@ from NanoVNASaver.Formatting import (
 )
 from NanoVNASaver.Settings.Sweep import SweepMode
 from NanoVNASaver.Windows.Defaults import make_scrollable
+
 from .ui import get_window_icon
 
 logger = logging.getLogger(__name__)
@@ -230,12 +231,10 @@ class SweepSettingsWindow(QtWidgets.QWidget):
             self.band_list.currentIndex(), 2
         )
         start = int(
-            self.band_list.model()
-            .data(index_start, Qt.ItemDataRole.EditRole)
+            self.band_list.model().data(index_start, Qt.ItemDataRole.EditRole)
         )
         stop = int(
-            self.band_list.model()
-            .data(index_stop, Qt.ItemDataRole.EditRole)
+            self.band_list.model().data(index_stop, Qt.ItemDataRole.EditRole)
         )
 
         if self.padding > 0:

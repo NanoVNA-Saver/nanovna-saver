@@ -26,6 +26,7 @@ from scipy.constants import speed_of_light  # type: ignore
 from scipy.signal import convolve  # type: ignore
 
 from NanoVNASaver.Windows.Defaults import make_scrollable
+
 from .ui import get_window_icon
 
 logger = logging.getLogger(__name__)

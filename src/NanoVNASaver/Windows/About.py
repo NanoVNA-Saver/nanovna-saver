@@ -48,7 +48,6 @@ class AboutWindow(QtWidgets.QDialog):
 
         self.ui.btn_updates.clicked.connect(self.find_updates)
 
-
     def show(self):
         super().show()
         self.update_labels()
