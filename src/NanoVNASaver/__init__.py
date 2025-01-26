@@ -1,3 +1,3 @@
-from NanoVNASaver import NanoVNASaver
+from .NanoVNASaver import NanoVNASaver
 
 __all__ = ["NanoVNASaver"]

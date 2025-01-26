@@ -21,6 +21,8 @@ import logging
 from PySide6 import QtCore, QtWidgets
 from PySide6.QtWidgets import QCheckBox, QSizePolicy
 
+from NanoVNASaver import NanoVNASaver
+
 from ..Defaults import app_config
 from ..Marker.Widget import Marker
 from .Control import Control
@@ -39,7 +41,7 @@ class ShowButton(QtWidgets.QPushButton):
 
 
 class MarkerControl(Control):
-    def __init__(self, app: QtWidgets.QWidget):
+    def __init__(self, app: NanoVNASaver):
         super().__init__(app, "Markers")
 
         for i in range(app_config.chart.marker_count):

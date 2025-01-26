@@ -21,6 +21,7 @@ import logging
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import Qt
 
+from .. import NanoVNASaver
 from ..Analysis.AntennaAnalysis import MagLoopAnalysis
 from ..Analysis.BandPassAnalysis import BandPassAnalysis
 from ..Analysis.BandStopAnalysis import BandStopAnalysis
@@ -41,10 +42,9 @@ logger = logging.getLogger(__name__)
 
 
 class AnalysisWindow(QtWidgets.QWidget):
-    analyses = []
-    analysis: Analysis = None
+    analysis: Analysis | None = None
 
-    def __init__(self, app: QtWidgets.QWidget):
+    def __init__(self, app: NanoVNASaver):
         super().__init__()
 
         self.app = app
