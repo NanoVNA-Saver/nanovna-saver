@@ -17,7 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import dataclasses as DC  # noqa: N812
+from dataclasses import dataclass, fields, field, is_dataclass, replace
 import logging
 from ast import literal_eval
 
@@ -29,19 +29,19 @@ logger = logging.getLogger(__name__)
 
 # pylint: disable=too-few-public-methods
 # pylint: disable=too-many-instance-attributes
-@DC.dataclass
-class GUI:
+@dataclass
+class GuiConfig:
     window_height: int = 950
     window_width: int = 1433
     font_size: int = 8
     custom_colors: bool = False
     dark_mode: bool = False
-    splitter_sizes: QByteArray = DC.field(default_factory=QByteArray)
+    splitter_sizes: QByteArray = field(default_factory=QByteArray)
     markers_hidden: bool = False
 
 
-@DC.dataclass
-class ChartsSelected:
+@dataclass
+class ChartsSelectedConfig:
     chart_00: str = "S11 Smith Chart"
     chart_01: str = "S11 Return Loss"
     chart_02: str = "None"
@@ -50,8 +50,8 @@ class ChartsSelected:
     chart_12: str = "None"
 
 
-@DC.dataclass
-class Chart:
+@dataclass
+class ChartConfig:
     point_size: int = 2
     show_lines: bool = False
     line_thickness: int = 1
@@ -62,37 +62,37 @@ class Chart:
     marker_size: int = 8
     returnloss_is_positive: bool = False
     show_bands: bool = False
-    vswr_lines: list = DC.field(default_factory=list)
+    vswr_lines: list = field(default_factory=list)
 
 
-@DC.dataclass
-class ChartColors:  # pylint: disable=too-many-instance-attributes
-    background: QColor = DC.field(
+@dataclass
+class ChartColorsConfig:  # pylint: disable=too-many-instance-attributes
+    background: QColor = field(
         default_factory=lambda: QColor(QColorConstants.White)
     )
-    foreground: QColor = DC.field(
+    foreground: QColor = field(
         default_factory=lambda: QColor(QColorConstants.LightGray)
     )
-    reference: QColor = DC.field(default_factory=lambda: QColor(0, 0, 255, 64))
-    reference_secondary: QColor = DC.field(
+    reference: QColor = field(default_factory=lambda: QColor(0, 0, 255, 64))
+    reference_secondary: QColor = field(
         default_factory=lambda: QColor(0, 0, 192, 48)
     )
-    sweep: QColor = DC.field(
+    sweep: QColor = field(
         default_factory=lambda: QColor(QColorConstants.DarkYellow)
     )
-    sweep_secondary: QColor = DC.field(
+    sweep_secondary: QColor = field(
         default_factory=lambda: QColor(QColorConstants.DarkMagenta)
     )
-    swr: QColor = DC.field(default_factory=lambda: QColor(255, 0, 0, 128))
-    text: QColor = DC.field(
+    swr: QColor = field(default_factory=lambda: QColor(255, 0, 0, 128))
+    text: QColor = field(
         default_factory=lambda: QColor(QColorConstants.Black)
     )
-    bands: QColor = DC.field(default_factory=lambda: QColor(128, 128, 128, 48))
+    bands: QColor = field(default_factory=lambda: QColor(128, 128, 128, 48))
 
 
-@DC.dataclass
-class Markers:
-    active_labels: list = DC.field(
+@dataclass
+class MarkersConfig:
+    active_labels: list = field(
         default_factory=lambda: [
             "actualfreq",
             "impedance",
@@ -110,54 +110,54 @@ class Markers:
         ]
     )
     colored_names: bool = True
-    color_0: QColor = DC.field(
+    color_0: QColor = field(
         default_factory=lambda: QColor(QColorConstants.DarkGray)
     )
-    color_1: QColor = DC.field(default_factory=lambda: QColor(255, 0, 0))
-    color_2: QColor = DC.field(default_factory=lambda: QColor(0, 255, 0))
-    color_3: QColor = DC.field(default_factory=lambda: QColor(0, 0, 255))
-    color_4: QColor = DC.field(default_factory=lambda: QColor(0, 255, 255))
-    color_5: QColor = DC.field(default_factory=lambda: QColor(255, 0, 255))
-    color_6: QColor = DC.field(default_factory=lambda: QColor(255, 255, 0))
-    color_7: QColor = DC.field(
+    color_1: QColor = field(default_factory=lambda: QColor(255, 0, 0))
+    color_2: QColor = field(default_factory=lambda: QColor(0, 255, 0))
+    color_3: QColor = field(default_factory=lambda: QColor(0, 0, 255))
+    color_4: QColor = field(default_factory=lambda: QColor(0, 255, 255))
+    color_5: QColor = field(default_factory=lambda: QColor(255, 0, 255))
+    color_6: QColor = field(default_factory=lambda: QColor(255, 255, 0))
+    color_7: QColor = field(
         default_factory=lambda: QColor(QColorConstants.LightGray)
     )
 
 
-@DC.dataclass
-class CFG:
-    gui: object = DC.field(default_factory=GUI)
-    charts_selected: object = DC.field(default_factory=ChartsSelected)
-    chart: object = DC.field(default_factory=Chart)
-    chart_colors: object = DC.field(default_factory=ChartColors)
-    markers: object = DC.field(default_factory=Markers)
+@dataclass
+class AppConfig:
+    gui: GuiConfig = field(default_factory=GuiConfig)
+    charts_selected: ChartsSelectedConfig = field(default_factory=ChartsSelectedConfig)
+    chart: ChartConfig = field(default_factory=ChartConfig)
+    chart_colors: ChartColorsConfig = field(default_factory=ChartColorsConfig)
+    markers: MarkersConfig = field(default_factory=MarkersConfig)
 
 
-cfg = CFG()
+app_config = AppConfig()
 
 
-def restore(settings: "AppSettings") -> CFG:
-    result = CFG()
-    for field in DC.fields(result):
+def restore_config(settings: "AppSettings") -> AppConfig:
+    result = AppConfig()
+    for field_it in fields(result):
         value = settings.restore_dataclass(
-            field.name.upper(), getattr(result, field.name)
+            field_it.name.upper(), getattr(result, field_it.name)
         )
-        setattr(result, field.name, value)
+        setattr(result, field_it.name, value)
     logger.debug("restored\n(\n%s\n)", result)
     return result
 
 
-def store(settings: "AppSettings", data: CFG = None) -> None:
-    data = data or cfg
+def store_config(settings: "AppSettings", data: AppConfig | None = None) -> None:
+    data = data or app_config
     logger.debug("storing\n(\n%s\n)", data)
-    assert isinstance(data, CFG)
-    for field in DC.fields(data):
-        data_class = getattr(data, field.name)
-        assert DC.is_dataclass(data_class)
-        settings.store_dataclass(field.name.upper(), data_class)
+    assert isinstance(data, AppConfig)
+    for field_it in fields(data):
+        data_class = getattr(data, field_it.name)
+        assert is_dataclass(data_class)
+        settings.store_dataclass(field_it.name.upper(), data_class)
 
 
-def from_type(data) -> str:
+def _from_type(data) -> str:
     type_map = {
         bytearray: bytearray.hex,
         QColor: QColor.getRgb,
@@ -168,7 +168,7 @@ def from_type(data) -> str:
     )
 
 
-def to_type(data: object, data_type: type) -> object:
+def _to_type(data: object, data_type: type) -> object:
     type_map = {
         bool: lambda x: x.lower() == "true",
         bytearray: bytearray.fromhex,
@@ -185,38 +185,38 @@ def to_type(data: object, data_type: type) -> object:
 # noinspection PyDataclass
 class AppSettings(QSettings):
     def store_dataclass(self, name: str, data: object) -> None:
-        assert DC.is_dataclass(data)
+        assert is_dataclass(data)
         self.beginGroup(name)
-        for field in DC.fields(data):
-            value = getattr(data, field.name)
+        for field_it in fields(data):
+            value = getattr(data, field_it.name)
             try:
-                assert isinstance(value, field.type)
+                assert isinstance(value, field_it.type)
             except AssertionError as exc:
                 logger.error(
                     "%s: %s of type %s is not a %s",
                     name,
-                    field.name,
+                    field_it.name,
                     type(value),
-                    field.type,
+                    field_it.type,
                 )
                 raise TypeError from exc
-            self.setValue(field.name, from_type(value))
+            self.setValue(field_it.name, _from_type(value))
         self.endGroup()
 
     def restore_dataclass(self, name: str, data: object) -> object:
-        assert DC.is_dataclass(data)
+        assert is_dataclass(data)
 
-        result = DC.replace(data)
+        result = replace(data)
         self.beginGroup(name)
-        for field in DC.fields(data):
-            default = getattr(data, field.name)
-            value = self.value(field.name, type=str, defaultValue="")
+        for field_it in fields(data):
+            default = getattr(data, field_it.name)
+            value = self.value(field_it.name, type=str, defaultValue="")
             if not value:
-                setattr(result, field.name, default)
+                setattr(result, field_it.name, default)
                 continue
             try:
-                setattr(result, field.name, to_type(value, field.type))
+                setattr(result, field_it.name, _to_type(value, field_it.type))
             except TypeError:
-                setattr(result, field.name, default)
+                setattr(result, field_it.name, default)
         self.endGroup()
         return result
