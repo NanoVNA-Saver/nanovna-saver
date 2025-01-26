@@ -42,7 +42,7 @@ class TinySA(VNA):
         logger.debug("Setting initial start,stop")
         self.start, self.stop = self._get_running_frequencies()
         self.sweep_max_freq_hz = 950e6
-        self._sweepdata = []
+        self._sweepdata: list[complex] = []
         self.validateInput = False
 
     def _get_running_frequencies(self):
@@ -128,12 +128,12 @@ class TinySA(VNA):
         return self._sweepdata
 
 
-class TinySA_Ultra(TinySA):  # noqa: N801
+class TinySA_Ultra(TinySA):
     name = "tinySA Ultra"
     screenwidth = 480
     screenheight = 320
-    valid_datapoints: tuple[int, ...] = [450, 51, 101, 145, 290]
-    hardware_revision = None
+    valid_datapoints: tuple[int, ...] = (450, 51, 101, 145, 290)
+    hardware_revision: Version | None = None
 
     def __init__(self, iface: Interface):
         super().__init__(iface)
@@ -174,7 +174,7 @@ class TinySA_Ultra(TinySA):  # noqa: N801
         revision_version = revision_version.split("-")[0]
         return Version.parse(major_minor_version + "." + revision_version)
 
-    def read_hardware_revision(self) -> str:
+    def read_hardware_revision(self) -> Version:
         result = list(self.exec_command("version"))
         logger.debug("hardware version result:\n%s", result[1])
         return Version.parse(result[1])
