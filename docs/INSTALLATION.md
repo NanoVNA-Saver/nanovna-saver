@@ -96,7 +96,7 @@ or
 3. Open the completed app
 
         open ./dist/NanoVNASaver/NanoVNASaver.app
-   or double-click on NanoVNASaver.app in finder. 
+   or double-click on NanoVNASaver.app in finder.
 
 ## MacPorts
 
