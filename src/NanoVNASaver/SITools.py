@@ -66,9 +66,9 @@ def round_floor(value: Real, digits: int = 0) -> Real:
 def log_floor_125(x: float) -> float:
     log_base = 10 ** (math.floor(math.log10(x)))
     log_factor = x / log_base
-    if log_factor >= 5:  # noqa: PLR2004
+    if log_factor >= 5:
         return 5 * log_base
-    return 2 * log_base if log_factor >= 2 else log_base  # noqa: PLR2004
+    return 2 * log_base if log_factor >= 2 else log_base
 
 
 class Format(NamedTuple):
@@ -99,8 +99,8 @@ class Value:
     def __init__(
         self, value: Real = Decimal(0), unit: str = "", fmt=DEFAULT_FMT
     ) -> None:
-        assert 1 <= fmt.max_nr_digits <= 30  # noqa: PLR2004
-        assert -10 <= fmt.min_offset <= fmt.max_offset <= 10  # noqa: PLR2004
+        assert 1 <= fmt.max_nr_digits <= 30
+        assert -10 <= fmt.min_offset <= fmt.max_offset <= 10
         assert fmt.parse_clamp_min < fmt.parse_clamp_max
         assert fmt.printable_min < fmt.printable_max
         self._unit = unit
@@ -148,18 +148,18 @@ class Value:
 
         real = float(self._value) / (10 ** (offset * 3))
 
-        if fmt.max_nr_digits < 3:  # noqa: PLR2004
+        if fmt.max_nr_digits < 3:
             formstr = ".0f"
         else:
             max_digits = fmt.max_nr_digits + (
                 (
                     1
-                    if not fmt.fix_decimals and abs(real) < 10  # noqa: PLR2004
+                    if not fmt.fix_decimals and abs(real) < 10
                     else 0
                 )
                 + (
                     1
-                    if not fmt.fix_decimals and abs(real) < 100  # noqa: PLR2004
+                    if not fmt.fix_decimals and abs(real) < 100
                     else 0
                 )
             )

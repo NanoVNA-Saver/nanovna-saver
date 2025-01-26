@@ -920,7 +920,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.app.sweep_start()
             return
 
-        if self.next_step == 2:  # noqa: PLR2004
+        if self.next_step == 2:
             # Load
             self.cal_save("load")
             self.next_step = 3
@@ -981,7 +981,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.app.sweep_start()
             return
 
-        if self.next_step == 3:  # noqa: PLR2004
+        if self.next_step == 3:
             # Isolation
             self.cal_save("isolation")
             self.next_step = 4
@@ -1008,7 +1008,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.app.sweep_start()
             return
 
-        if self.next_step == 4:  # noqa: PLR2004
+        if self.next_step == 4:
             # Done
             self.cal_save("thrurefl")
             self.cal_save("through")

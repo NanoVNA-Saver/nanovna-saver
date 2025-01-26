@@ -61,7 +61,7 @@ class TDRChart(Chart):
     fixed_values: bool = False
     marker_location: int = -1
 
-    def __init__(self, name) -> None:  # noqa: PLR0915
+    def __init__(self, name) -> None:
         super().__init__(name)
         self.tdrWindow = None
 

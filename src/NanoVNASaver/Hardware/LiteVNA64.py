@@ -165,7 +165,7 @@ class LiteVNA64(NanoVNA_V2):
         # in a more predictive way
         resp = serial.read(2)
 
-        if len(resp) != 2:  # noqa: PLR2004
+        if len(resp) != 2:
             logger.error("Timeout reading version registers. Got: %s", resp)
             raise IOError("Timeout reading version registers")
         return Version.build(resp[0], resp[1])

@@ -67,7 +67,7 @@ _ADF4350_TXPOWER_DESC_REV_MAP = {
 }
 
 
-class NanoVNA_V2(VNA):  # noqa: N801
+class NanoVNA_V2(VNA):
     name = "NanoVNA-V2"
     valid_datapoints: tuple[int, ...] = (
         101,
@@ -93,7 +93,7 @@ class NanoVNA_V2(VNA):  # noqa: N801
             sleep(WRITE_SLEEP)
 
         # firmware major version of 0xff indicates dfu mode
-        if self.version.major == 0xFF:  # noqa: PLR2004
+        if self.version.major == 0xFF:
             raise IOError("Device is in DFU mode")
 
         if "S21 hack" in self.features:
@@ -251,7 +251,7 @@ class NanoVNA_V2(VNA):  # noqa: N801
             sleep(2.0)  # could fix bug #585 but shoud be done
             # in a more predictive way
             resp = self.serial.read(2)
-        if len(resp) != 2:  # noqa: PLR2004
+        if len(resp) != 2:
             logger.error("Timeout reading version registers. Got: %s", resp)
             raise IOError("Timeout reading version registers")
         return Version.build(resp[0], 0, resp[1])
@@ -302,7 +302,7 @@ class NanoVNA_V2(VNA):  # noqa: N801
             sleep(WRITE_SLEEP)
 
     def setTXPower(self, freq_range, power_desc):
-        if freq_range[0] != 140e6:  # noqa: PLR2004
+        if freq_range[0] != 140e6:
             raise ValueError("Invalid TX power frequency range")
         # 140MHz..max => ADF4350
         self._set_register(0x42, _ADF4350_TXPOWER_DESC_REV_MAP[power_desc], 1)
@@ -311,11 +311,11 @@ class NanoVNA_V2(VNA):  # noqa: N801
         packet = b""
         if size == 1:
             packet = pack("<BBB", _CMD_WRITE, addr, value)
-        elif size == 2:  # noqa: PLR2004
+        elif size == 2:
             packet = pack("<BBH", _CMD_WRITE2, addr, value)
-        elif size == 4:  # noqa: PLR2004
+        elif size == 4:
             packet = pack("<BBI", _CMD_WRITE4, addr, value)
-        elif size == 8:  # noqa: PLR2004
+        elif size == 8:
             packet = pack("<BBQ", _CMD_WRITE8, addr, value)
         self.serial.write(packet)
         logger.debug("set register %02x (size %d) to %x", addr, size, value)

@@ -302,19 +302,19 @@ class RealImaginaryChart(FrequencyChart):
         return min_real, max_real, min_imag, max_imag
 
     def imag_scaling_constraints(self, min_imag, max_imag):
-        if max_imag - min_imag < 8:  # noqa: PLR2004
+        if max_imag - min_imag < 8:
             missing = 8 - (max_imag - min_imag)
             max_imag += math.ceil(missing / 2)
             min_imag -= math.floor(missing / 2)
 
-        if 0 > max_imag > -2:  # noqa: PLR2004
+        if 0 > max_imag > -2:
             max_imag = 0
-        if 0 < min_imag < 2:  # noqa: PLR2004
+        if 0 < min_imag < 2:
             min_imag = 0
 
         if (
             max_imag - min_imag
-        ) > 8 and min_imag < 0 < max_imag:  # noqa: PLR2004
+        ) > 8 and min_imag < 0 < max_imag:
             # We should show a "0" line for the reactive part
             span = max_imag - min_imag
             step_size = span / 8
@@ -359,7 +359,7 @@ class RealImaginaryChart(FrequencyChart):
         val1 = self.valueAtPosition(y1)
         val2 = self.valueAtPosition(y2)
 
-        if len(val1) == len(val2) == 2 and val1[0] != val2[0]:  # noqa: PLR2004
+        if len(val1) == len(val2) == 2 and val1[0] != val2[0]:
             self.minDisplayReal = round(min(val1[0], val2[0]), 2)
             self.maxDisplayReal = round(max(val1[0], val2[0]), 2)
             self.minDisplayImag = round(min(val1[1], val2[1]), 2)

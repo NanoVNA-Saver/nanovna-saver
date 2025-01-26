@@ -532,7 +532,7 @@ class NanoVNASaver(QWidget):
                 else:
                     logger.warning("No reference data for marker")
 
-            elif Marker.count() >= 2:  # noqa: PLR2004
+            elif Marker.count() >= 2:
                 m2 = self.markers[1]
 
             if m2 is None:
