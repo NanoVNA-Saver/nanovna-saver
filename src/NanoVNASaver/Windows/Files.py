@@ -18,11 +18,13 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from PyQt6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from NanoVNASaver.RFTools import Datapoint
 from NanoVNASaver.Touchstone import Touchstone
 from NanoVNASaver.Windows.Defaults import make_scrollable
+
+from .ui import get_window_icon
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +35,7 @@ class FilesWindow(QtWidgets.QWidget):
         self.app = app
 
         self.setWindowTitle("Files")
-        self.setWindowIcon(self.app.icon)
+        self.setWindowIcon(get_window_icon())
         self.setMinimumWidth(200)
         QtGui.QShortcut(QtCore.Qt.Key.Key_Escape, self, self.hide)
 

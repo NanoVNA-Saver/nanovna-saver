@@ -20,8 +20,8 @@ import contextlib
 import logging
 import typing
 
-from PyQt6 import QtCore, QtGui
-from PyQt6.QtCore import QModelIndex, Qt
+from PySide6 import QtCore, QtGui
+from PySide6.QtCore import QModelIndex, Qt
 
 _DEFAULT_BANDS = (
     (
@@ -139,19 +139,17 @@ class BandsModel(QtCore.QAbstractTableModel):
     def rowCount(self, _) -> int:
         return len(self.bands)
 
-    def data(self, index: QModelIndex, role: int = ...) -> QtCore.QVariant:
+    def data(self, index: QModelIndex, role: int = ...) -> any:
         if role in [
             Qt.ItemDataRole.DisplayRole,
             Qt.ItemDataRole.EditRole,
         ]:
-            return QtCore.QVariant(self.bands[index.row()][index.column()])
+            return self.bands[index.row()][index.column()]
         if role == Qt.ItemDataRole.TextAlignmentRole:
             if index.column() == 0:
-                return QtCore.QVariant(Qt.AlignmentFlag.AlignCenter)
-            return QtCore.QVariant(
-                Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
-            )
-        return QtCore.QVariant()
+                return Qt.AlignmentFlag.AlignCenter
+            return Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        return ""
 
     def setData(
         self, index: QModelIndex, value: typing.Any, role: int = ...

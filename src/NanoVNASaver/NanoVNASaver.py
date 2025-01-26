@@ -22,9 +22,9 @@ import sys
 import threading
 from time import localtime, strftime
 
-from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtCore import QObject
-from PyQt6.QtWidgets import QWidget
+from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6.QtCore import QObject
+from PySide6.QtWidgets import QWidget
 
 from NanoVNASaver import Defaults
 
@@ -77,12 +77,13 @@ from .Windows import (
     SweepSettingsWindow,
     TDRWindow,
 )
+from .Windows.ui import get_window_icon
 
 logger = logging.getLogger(__name__)
 
 
 class Communicate(QObject):
-    data_available = QtCore.pyqtSignal()
+    data_available = QtCore.Signal()
 
 
 class NanoVNASaver(QWidget):
@@ -93,14 +94,7 @@ class NanoVNASaver(QWidget):
         super().__init__()
         self.communicate = Communicate()
         self.s21att = 0.0
-        if getattr(sys, "frozen", False):
-            logger.debug("Running from pyinstaller bundle")
-            self.icon = QtGui.QIcon(
-                f"{sys._MEIPASS}/icon_48x48.png"
-            )  # pylint: disable=no-member
-        else:
-            self.icon = QtGui.QIcon("icon_48x48.png")
-        self.setWindowIcon(self.icon)
+        self.setWindowIcon(get_window_icon())
         self.settings = Defaults.AppSettings(
             QtCore.QSettings.Format.IniFormat,
             QtCore.QSettings.Scope.UserScope,
@@ -675,6 +669,7 @@ class NanoVNASaver(QWidget):
         new_chart.isPopout = True
         new_chart.show()
         new_chart.setWindowTitle(new_chart.name)
+        new_chart.setWindowIcon(get_window_icon())
 
     def copyChart(self, chart: Chart):
         new_chart = chart.copy()

@@ -18,12 +18,14 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtGui import QIntValidator
+from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6.QtGui import QIntValidator
 
 from NanoVNASaver.SweepWorker import SweepState
 from NanoVNASaver.Windows.Defaults import make_scrollable
 from NanoVNASaver.Windows.Screenshot import ScreenshotWindow
+
+from .ui import get_window_icon
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +39,7 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
 
         self.app = app
         self.setWindowTitle("Device settings")
-        self.setWindowIcon(self.app.icon)
+        self.setWindowIcon(get_window_icon())
 
         QtGui.QShortcut(QtCore.Qt.Key.Key_Escape, self, self.hide)
 

@@ -19,8 +19,8 @@
 import logging
 from typing import TYPE_CHECKING
 
-from PyQt6 import QtCore, QtWidgets
-from PyQt6.QtGui import QColor, QColorConstants, QPalette, QShortcut
+from PySide6 import QtCore, QtWidgets
+from PySide6.QtGui import QColor, QColorConstants, QPalette, QShortcut
 
 from NanoVNASaver import Defaults
 from NanoVNASaver.Charts.Chart import Chart, ChartColors
@@ -28,6 +28,8 @@ from NanoVNASaver.Marker.Widget import Marker
 from NanoVNASaver.Windows.Bands import BandsWindow
 from NanoVNASaver.Windows.Defaults import make_scrollable
 from NanoVNASaver.Windows.MarkerSettings import MarkerSettingsWindow
+
+from .ui import get_window_icon
 
 if TYPE_CHECKING:
     from NanoVNASaver.NanoVNASaver import NanoVNASaver as NanoVNA
@@ -43,7 +45,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         self.app: "NanoVNA" = app
         self.setWindowTitle("Display settings")
-        self.setWindowIcon(self.app.icon)
+        self.setWindowIcon(get_window_icon())
         self.marker_window = MarkerSettingsWindow(self.app)
         self.callback_params = {}
 

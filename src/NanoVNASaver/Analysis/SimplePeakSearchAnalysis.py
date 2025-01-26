@@ -20,7 +20,7 @@ import logging
 from typing import Callable
 
 import numpy as np
-from PyQt6 import QtWidgets
+from PySide6 import QtWidgets
 
 from NanoVNASaver.Analysis.Base import Analysis, QHLine
 from NanoVNASaver.Formatting import (

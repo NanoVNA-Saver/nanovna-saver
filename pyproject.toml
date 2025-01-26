@@ -25,8 +25,7 @@ dynamic=['version']
 
 dependencies=[
   'pyserial~=3.5',
-  'PyQt6~=6.8',
-  'PyQt6-sip~=13.8',
+  'pyside6~=6.8',
   'numpy~=2.1',
   'scipy~=1.14',
 ]
@@ -73,14 +72,18 @@ requires = [
   "setuptools>=64",
   "setuptools-scm>=8"
 ]
-build-backend = 'setuptools.build_meta'
+# build-backend = 'setuptools.build_meta'
+# in-tree build backend, wrapper around setuptools, just to run ui-compile task
+# See also https://setuptools.pypa.io/en/latest/build_meta.html#dynamic-build-dependencies-and-other-build-meta-tweaks
+build-backend = "setuptools_wrapper"
+backend-path = ["src/tools"]
 
-
+[tool.setuptools.exclude-package-data]
+"*" = ['*.png', '*.ui', '*.qrc' ]
 
 [tool.setuptools.packages.find]
 # See https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html for more details
 where = ["src"]
-
 
 
 [tool.setuptools_scm]
@@ -96,16 +99,15 @@ test = "pytest ."
 test-cov = "pytest --cov=src ."
 test-full = "tox"
 
-clean = "task clean_dist & task clean_build & task clean_py & task clean_logs & task clean_pycache"
-clean_dist = "rm -r dist"
-clean_build = "rm -r build"
-clean_py = "python -Bc \"import pathlib; [p.unlink() for p in pathlib.Path('.').rglob('*.py[co]')]\""
-clean_logs = "python -Bc \"import pathlib; [p.unlink() for p in pathlib.Path('.').rglob('*.log')]\""
-clean_pycache = " python -Bc \"import pathlib; [p.rmdir() for p in pathlib.Path('.').rglob('__pycache__')]\""
+clean = "python -m tools.project_clean"
 
-build-pkg-win   = "pyinstaller --onefile -p src -n nanovna-saver.exe nanovna-saver.py --recursive-copy-metadata NanoVNASaver --noconsole -i icon_48x48.ico --add-data \"icon_48x48.png:.\""
-build-pkg-linux = "pyinstaller --onefile -p src -n nanovna-saver     nanovna-saver.py --recursive-copy-metadata NanoVNASaver --add-data \"icon_48x48.png:.\""
-build-pkg-macos = "pyinstaller --onedir  -p src -n NanoVNASaver      nanovna-saver.py --recursive-copy-metadata NanoVNASaver --window --clean  -y -i icon_48x48.icns --add-data \"icon_48x48.png:.\"  && tar -C dist -zcf ./dist/NanoVNASaver.app-`uname -m`.tar.gz  NanoVNASaver.app"
+ui-compile = "python -m tools.ui_compile"
+ui-designer = "pyside6-designer"
+
+
+build-pkg-win   = "pyinstaller --onefile -p src -n nanovna-saver.exe src/NanoVNASaver/__main__.py --recursive-copy-metadata NanoVNASaver --noconsole -i icon_48x48.ico"
+build-pkg-linux = "pyinstaller --onefile -p src -n nanovna-saver     src/NanoVNASaver/__main__.py --recursive-copy-metadata NanoVNASaver"
+build-pkg-macos = "pyinstaller --onedir  -p src -n NanoVNASaver      src/NanoVNASaver/__main__.py --recursive-copy-metadata NanoVNASaver --window --clean  -y -i icon_48x48.icns  && tar -C dist -zcf ./dist/NanoVNASaver.app-`uname -m`.tar.gz  NanoVNASaver.app"
 
 
 

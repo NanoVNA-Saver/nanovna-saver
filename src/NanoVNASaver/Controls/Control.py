@@ -18,13 +18,13 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from PyQt6 import QtCore, QtWidgets
+from PySide6 import QtCore, QtWidgets
 
 logger = logging.getLogger(__name__)
 
 
 class Control(QtWidgets.QGroupBox):
-    updated = QtCore.pyqtSignal(object)
+    updated = QtCore.Signal(object)
 
     def __init__(self, app: QtWidgets.QWidget, title: str = ""):
         super().__init__()

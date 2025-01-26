@@ -18,8 +18,8 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtCore import Qt
+from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6.QtCore import Qt
 
 from NanoVNASaver.Analysis.AntennaAnalysis import MagLoopAnalysis
 from NanoVNASaver.Analysis.BandPassAnalysis import BandPassAnalysis
@@ -36,6 +36,8 @@ from NanoVNASaver.Analysis.SimplePeakSearchAnalysis import (
 from NanoVNASaver.Analysis.VSWRAnalysis import VSWRAnalysis
 from NanoVNASaver.Windows.Defaults import make_scrollable
 
+from .ui import get_window_icon
+
 logger = logging.getLogger(__name__)
 
 
@@ -48,7 +50,7 @@ class AnalysisWindow(QtWidgets.QWidget):
 
         self.app = app
         self.setWindowTitle("Sweep analysis")
-        self.setWindowIcon(self.app.icon)
+        self.setWindowIcon(get_window_icon())
 
         QtGui.QShortcut(QtCore.Qt.Key.Key_Escape, self, self.hide)
 

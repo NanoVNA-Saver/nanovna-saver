@@ -22,7 +22,7 @@ from time import sleep
 from typing import TYPE_CHECKING
 
 import numpy as np
-from PyQt6.QtCore import QObject, QRunnable, pyqtSignal, pyqtSlot
+from PySide6.QtCore import QObject, QRunnable, Signal, Slot
 
 from NanoVNASaver.Calibration import correct_delay
 from NanoVNASaver.RFTools import Datapoint
@@ -56,9 +56,9 @@ def truncate(values: list[list[complex]], count: int) -> list[list[complex]]:
 
 
 class WorkerSignals(QObject):
-    updated = pyqtSignal()
-    finished = pyqtSignal()
-    sweep_error = pyqtSignal()
+    updated = Signal()
+    finished = Signal()
+    sweep_error = Signal()
 
 
 class SweepState(Enum):
@@ -84,7 +84,7 @@ class SweepWorker(QRunnable):
         self.error_message: str = ""
         self.offsetDelay: float = 0.0
 
-    @pyqtSlot()
+    @Slot()
     def run(self) -> None:
         try:
             self._run()

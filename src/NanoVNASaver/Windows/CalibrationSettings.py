@@ -20,12 +20,14 @@
 import logging
 from functools import partial
 
-from PyQt6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
 from NanoVNASaver.Calibration import Calibration
 from NanoVNASaver.Settings.Sweep import SweepMode
 from NanoVNASaver.Touchstone import Touchstone
 from NanoVNASaver.Windows.Defaults import make_scrollable
+
+from .ui import get_window_icon
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +52,7 @@ class CalibrationWindow(QtWidgets.QWidget):
 
         self.setMinimumWidth(450)
         self.setWindowTitle("Calibration")
-        self.setWindowIcon(self.app.icon)
+        self.setWindowIcon(get_window_icon())
         self.setSizePolicy(
             QtWidgets.QSizePolicy.Policy.MinimumExpanding,
             QtWidgets.QSizePolicy.Policy.MinimumExpanding,

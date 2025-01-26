@@ -18,12 +18,14 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtCore import Qt
+from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6.QtCore import Qt
 
 from NanoVNASaver.Marker.Values import TYPES, default_label_ids
 from NanoVNASaver.Marker.Widget import Marker
 from NanoVNASaver.RFTools import Datapoint
+
+from .ui import get_window_icon
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +47,7 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
         self.app = app
 
         self.setWindowTitle("Marker settings")
-        self.setWindowIcon(self.app.icon)
+        self.setWindowIcon(get_window_icon())
 
         QtGui.QShortcut(QtCore.Qt.Key.Key_Escape, self, self.cancelButtonClick)
 

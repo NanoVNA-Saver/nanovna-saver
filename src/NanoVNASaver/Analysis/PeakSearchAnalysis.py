@@ -19,7 +19,7 @@
 import logging
 
 import numpy as np
-from PyQt6 import QtWidgets
+from PySide6 import QtWidgets
 
 # pylint: disable=import-error, no-name-in-module
 from scipy.signal import find_peaks, peak_prominences

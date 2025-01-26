@@ -20,7 +20,7 @@ import logging
 from time import sleep
 from typing import Iterator
 
-from PyQt6 import QtGui
+from PySide6 import QtGui
 
 from NanoVNASaver.Hardware.Serial import Interface, drain_serial
 from ..utils import Version

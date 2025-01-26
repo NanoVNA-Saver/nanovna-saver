@@ -19,7 +19,7 @@
 import logging
 import math
 
-from PyQt6 import QtGui
+from PySide6 import QtGui
 
 from NanoVNASaver.Charts.Chart import Chart
 from NanoVNASaver.Charts.Frequency import FrequencyChart

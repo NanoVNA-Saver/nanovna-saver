@@ -19,8 +19,8 @@
 import logging
 from functools import partial
 
-from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtCore import Qt
+from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6.QtCore import Qt
 
 from NanoVNASaver.Formatting import (
     format_frequency_short,
@@ -28,6 +28,7 @@ from NanoVNASaver.Formatting import (
 )
 from NanoVNASaver.Settings.Sweep import SweepMode
 from NanoVNASaver.Windows.Defaults import make_scrollable
+from .ui import get_window_icon
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,7 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         self.padding = 0
 
         self.setWindowTitle("Sweep settings")
-        self.setWindowIcon(self.app.icon)
+        self.setWindowIcon(get_window_icon())
 
         QtGui.QShortcut(QtCore.Qt.Key.Key_Escape, self, self.hide)
 
@@ -231,12 +232,10 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         start = int(
             self.band_list.model()
             .data(index_start, Qt.ItemDataRole.EditRole)
-            .value()
         )
         stop = int(
             self.band_list.model()
             .data(index_stop, Qt.ItemDataRole.EditRole)
-            .value()
         )
 
         if self.padding > 0:

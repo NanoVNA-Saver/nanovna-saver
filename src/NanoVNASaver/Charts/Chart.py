@@ -20,9 +20,9 @@ import logging
 from dataclasses import dataclass, field, replace
 from typing import Any, ClassVar, NamedTuple
 
-from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QAction, QColor, QColorConstants
+from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QAction, QColor, QColorConstants
 
 from NanoVNASaver import Defaults
 from NanoVNASaver.Marker.Widget import Marker
@@ -115,7 +115,7 @@ class ChartMarker(QtWidgets.QWidget):
 
 class Chart(QtWidgets.QWidget):
     bands: ClassVar[Any] = None
-    popout_requested: ClassVar[pyqtSignal] = pyqtSignal(object)
+    popout_requested: ClassVar[Signal] = Signal(object)
     color: ClassVar[ChartColors] = ChartColors()
 
     def __init__(self, name) -> None:

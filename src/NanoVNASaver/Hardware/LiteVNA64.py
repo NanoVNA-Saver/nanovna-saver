@@ -3,7 +3,7 @@ import platform
 from struct import iter_unpack, pack, unpack
 from time import sleep
 
-from PyQt6.QtGui import QImage, QPixmap, QColor
+from PySide6.QtGui import QImage, QPixmap
 from serial import Serial, SerialException
 
 from NanoVNASaver.Hardware.Serial import Interface
