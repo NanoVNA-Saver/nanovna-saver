@@ -29,4 +29,4 @@ class NanoVNA_H(NanoVNA):
 
     def __init__(self, iface: Interface):
         super().__init__(iface)
-        self.sweep_max_freq_Hz = 1500e6
+        self.sweep_max_freq_hz = 1500e6

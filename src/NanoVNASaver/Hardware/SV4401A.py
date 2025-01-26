@@ -41,7 +41,7 @@ class SV4401A(NanoVNA):
 
     def __init__(self, iface: Interface):
         super().__init__(iface)
-        self.sweep_max_freq_Hz = 4.4e9
+        self.sweep_max_freq_hz = 4.4e9
 
     def getScreenshot(self) -> QPixmap:
         logger.debug("Capturing screenshot...")

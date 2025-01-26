@@ -42,7 +42,7 @@ class JNCRadio_VNA_3G(NanoVNA):
 
     def __init__(self, iface: Interface):
         super().__init__(iface)
-        self.sweep_max_freq_Hz = 3e9
+        self.sweep_max_freq_hz = 3e9
 
     def getScreenshot(self) -> QPixmap:
         logger.debug("Capturing screenshot...")

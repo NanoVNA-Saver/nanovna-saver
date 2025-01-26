@@ -41,7 +41,7 @@ class TinySA(VNA):
         self.features = {"Screenshots"}
         logger.debug("Setting initial start,stop")
         self.start, self.stop = self._get_running_frequencies()
-        self.sweep_max_freq_Hz = 950e6
+        self.sweep_max_freq_hz = 950e6
         self._sweepdata = []
         self.validateInput = False
 
@@ -140,7 +140,7 @@ class TinySA_Ultra(TinySA):  # noqa: N801
         self.features = {"Screenshots", "Customizable data points"}
         logger.debug("Setting initial start,stop")
         self.start, self.stop = self._get_running_frequencies()
-        self.sweep_max_freq_Hz = 5.4e9
+        self.sweep_max_freq_hz = 5.4e9
         self._sweepdata = []
         self.validateInput = False
         self.version = self.read_firmware_version()
@@ -148,17 +148,17 @@ class TinySA_Ultra(TinySA):  # noqa: N801
         # detect model versions of tinySA Ultra including ZS-405, ZS406 (Ultra+), ZS407 (Ultra+)
         if self.hardware_revision >= Version.parse("0.5.3"):
             self.name = "tinySA Ultra+ ZS-407"
-            self.sweep_max_freq_Hz = 7.3e9
+            self.sweep_max_freq_hz = 7.3e9
         elif self.hardware_revision >= Version.parse("0.4.6"):
             self.name = "tinySA Ultra+ ZS-406"
-            self.sweep_max_freq_Hz = 5.4e9
+            self.sweep_max_freq_hz = 5.4e9
         elif self.hardware_revision >= Version.parse("0.4.5"):
             self.name = "tinySA Ultra ZS-405"
-            self.sweep_max_freq_Hz = 5.3e9
+            self.sweep_max_freq_hz = 5.3e9
         else:
             # version 0.3.x is for tinySA
             self.name = "tinySA"
-            self.sweep_max_freq_Hz = 0.96e9
+            self.sweep_max_freq_hz = 0.96e9
 
     def read_firmware_version(self) -> "Version":
         """For example, command version in TinySA returns as this

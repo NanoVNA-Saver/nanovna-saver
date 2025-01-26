@@ -101,7 +101,7 @@ class LiteVNA64(NanoVNA_V2):
     screenwidth = 480
     screenheight = 320
     sweep_points_max = 65535
-    sweep_max_freq_Hz = 6300e6
+    sweep_max_freq_hz = 6300e6
 
     def __init__(self, iface: Interface):
         super().__init__(iface)
@@ -128,7 +128,7 @@ class LiteVNA64(NanoVNA_V2):
         # See https://groups.io/g/liteVNA/message/318 for more details
         self.txPowerRanges = [
             (
-                (140e6, self.sweep_max_freq_Hz),
+                (140e6, self.sweep_max_freq_hz),
                 [_ADF4350_TXPOWER_DESC_MAP[value] for value in (3, 2, 1, 0)],
             ),
         ]
