@@ -98,6 +98,11 @@ version_scheme = 'no-guess-dev'
 test = "pytest ."
 test-cov = "pytest --cov=src ."
 test-full = "tox"
+# TODO enable task lint-mypy when related issues are solved
+#lint = "task lint-format || task lint-mypy"
+lint = "task lint-format"
+lint-format = "pre-commit run --all-files || pre-commit run --all-files"
+lint-mypy = "mypy --non-interactive --install-types ."
 
 clean = "python -m tools.project_clean"
 
