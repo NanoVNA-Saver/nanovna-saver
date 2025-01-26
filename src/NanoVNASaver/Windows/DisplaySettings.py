@@ -17,10 +17,11 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-from typing import TYPE_CHECKING
 
 from PySide6 import QtCore, QtWidgets
 from PySide6.QtGui import QColor, QColorConstants, QPalette, QShortcut
+
+from NanoVNASaver import NanoVNASaver
 
 from ..Charts.Chart import Chart, ChartColors
 from ..Defaults import app_config, store_config
@@ -30,19 +31,16 @@ from .Defaults import make_scrollable
 from .MarkerSettings import MarkerSettingsWindow
 from .ui import get_window_icon
 
-if TYPE_CHECKING:
-    from NanoVNASaver import NanoVNASaver as NanoVNA
-
 logger = logging.getLogger(__name__)
 
 MIN_MARKERS_FOR_DELTA = 2
 
 
 class DisplaySettingsWindow(QtWidgets.QWidget):
-    def __init__(self, app: "NanoVNA") -> None:
+    def __init__(self, app: NanoVNASaver) -> None:
         super().__init__()
 
-        self.app: "NanoVNA" = app
+        self.app = app
         self.setWindowTitle("Display settings")
         self.setWindowIcon(get_window_icon())
         self.marker_window = MarkerSettingsWindow(self.app)
