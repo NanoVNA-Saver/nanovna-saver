@@ -354,9 +354,9 @@ class TDRChart(Chart):
         qp.drawText(
             self.leftMargin - 10,
             self.topMargin + height + 15,
-            f"""{str(round(
-                self.tdrWindow.distance_axis[min_index] / 2, self.decimals))
-                }m""",
+            f"""{round(
+                self.tdrWindow.distance_axis[min_index] / 2, self.decimals)
+                !s}m""",
         )
 
     def _draw_y_ticks(

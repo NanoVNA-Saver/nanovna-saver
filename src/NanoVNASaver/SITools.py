@@ -115,7 +115,7 @@ class Value:
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}("
-            f"{repr(self._value)}, '{self._unit}', {self.fmt})"
+            f"{self._value!r}, '{self._unit}', {self.fmt})"
         )
 
     def __str__(self) -> str:
