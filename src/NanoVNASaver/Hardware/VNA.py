@@ -23,6 +23,7 @@ from typing import Iterator
 from PySide6 import QtGui
 
 from NanoVNASaver.Hardware.Serial import Interface, drain_serial
+
 from ..utils import Version
 
 logger = logging.getLogger(__name__)

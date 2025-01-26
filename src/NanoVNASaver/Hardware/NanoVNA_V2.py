@@ -23,6 +23,7 @@ from time import sleep
 
 from NanoVNASaver.Hardware.Serial import Interface
 from NanoVNASaver.Hardware.VNA import VNA
+
 from ..utils import Version
 
 if platform.system() != "Windows":

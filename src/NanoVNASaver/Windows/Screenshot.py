@@ -20,7 +20,7 @@ import logging
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
-#from .ui import get_window_icon
+# from .ui import get_window_icon
 
 logger = logging.getLogger(__name__)
 

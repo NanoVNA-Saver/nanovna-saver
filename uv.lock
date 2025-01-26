@@ -273,7 +273,7 @@ wheels = [
 
 [[package]]
 name = "nanovnasaver"
-version = "0.6.8.post1.dev16+g2e3883e.d20250121"
+version = "0.6.8.post1.dev13+g9ca8d0f.d20250126"
 source = { editable = "." }
 dependencies = [
     { name = "numpy" },

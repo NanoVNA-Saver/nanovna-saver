@@ -27,6 +27,7 @@ from serial.tools.list_ports_common import ListPortInfo
 
 from NanoVNASaver.Hardware.AVNA import AVNA
 from NanoVNASaver.Hardware.JNCRadio_VNA_3G import JNCRadio_VNA_3G
+from NanoVNASaver.Hardware.LiteVNA64 import LiteVNA64
 from NanoVNASaver.Hardware.NanoVNA import NanoVNA
 from NanoVNASaver.Hardware.NanoVNA_F import NanoVNA_F
 from NanoVNASaver.Hardware.NanoVNA_F_V2 import NanoVNA_F_V2
@@ -38,7 +39,6 @@ from NanoVNASaver.Hardware.Serial import Interface, drain_serial
 from NanoVNASaver.Hardware.SV4401A import SV4401A
 from NanoVNASaver.Hardware.SV6301A import SV6301A
 from NanoVNASaver.Hardware.TinySA import TinySA, TinySA_Ultra
-from NanoVNASaver.Hardware.LiteVNA64 import LiteVNA64
 from NanoVNASaver.Hardware.VNA import VNA
 
 logger = logging.getLogger(__name__)

@@ -31,9 +31,9 @@ import sys
 from PySide6 import QtWidgets
 
 from NanoVNASaver.About import INFO, VERSION
-from NanoVNASaver.utils import get_runtime_information
 from NanoVNASaver.NanoVNASaver import NanoVNASaver
 from NanoVNASaver.Touchstone import Touchstone
+from NanoVNASaver.utils import get_runtime_information
 
 
 def main():

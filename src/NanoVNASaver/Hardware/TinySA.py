@@ -25,6 +25,7 @@ from PySide6.QtGui import QImage, QPixmap
 
 from NanoVNASaver.Hardware.Serial import Interface, drain_serial
 from NanoVNASaver.Hardware.VNA import VNA
+
 from ..utils import Version
 
 logger = logging.getLogger(__name__)
