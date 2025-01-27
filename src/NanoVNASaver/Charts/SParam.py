@@ -20,10 +20,10 @@ import logging
 
 from PySide6 import QtGui
 
-from NanoVNASaver.Charts.Chart import Chart
-from NanoVNASaver.Charts.Frequency import FrequencyChart
-from NanoVNASaver.Charts.LogMag import LogMagChart
-from NanoVNASaver.RFTools import Datapoint
+from ..RFTools import Datapoint
+from .Chart import Chart
+from .Frequency import FrequencyChart
+from .LogMag import LogMagChart
 
 logger = logging.getLogger(__name__)
 

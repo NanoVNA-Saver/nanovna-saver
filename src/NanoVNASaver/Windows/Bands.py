@@ -20,13 +20,15 @@ import logging
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from NanoVNASaver import NanoVNASaver
+
 from .ui import get_window_icon
 
 logger = logging.getLogger(__name__)
 
 
 class BandsWindow(QtWidgets.QWidget):
-    def __init__(self, app: QtWidgets.QWidget):
+    def __init__(self, app: NanoVNASaver):
         super().__init__()
 
         self.app = app

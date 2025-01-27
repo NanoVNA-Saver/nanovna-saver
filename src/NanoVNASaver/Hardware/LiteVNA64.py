@@ -6,8 +6,6 @@ from time import sleep
 from PySide6.QtGui import QImage, QPixmap
 from serial import Serial, SerialException
 
-from NanoVNASaver.Hardware.Serial import Interface
-
 from ..utils.version import Version
 from .NanoVNA_V2 import (
     _ADDR_DEVICE_VARIANT,
@@ -22,6 +20,7 @@ from .NanoVNA_V2 import (
     WRITE_SLEEP,
     NanoVNA_V2,
 )
+from .Serial import Interface
 
 if platform.system() != "Windows":
     pass
@@ -102,7 +101,7 @@ class LiteVNA64(NanoVNA_V2):
     screenwidth = 480
     screenheight = 320
     sweep_points_max = 65535
-    sweep_max_freq_Hz = 6300e6
+    sweep_max_freq_hz = 6300e6
 
     def __init__(self, iface: Interface):
         super().__init__(iface)
@@ -129,7 +128,7 @@ class LiteVNA64(NanoVNA_V2):
         # See https://groups.io/g/liteVNA/message/318 for more details
         self.txPowerRanges = [
             (
-                (140e6, self.sweep_max_freq_Hz),
+                (140e6, self.sweep_max_freq_hz),
                 [_ADF4350_TXPOWER_DESC_MAP[value] for value in (3, 2, 1, 0)],
             ),
         ]
@@ -166,7 +165,7 @@ class LiteVNA64(NanoVNA_V2):
         # in a more predictive way
         resp = serial.read(2)
 
-        if len(resp) != 2:  # noqa: PLR2004
+        if len(resp) != 2:
             logger.error("Timeout reading version registers. Got: %s", resp)
             raise IOError("Timeout reading version registers")
         return Version.build(resp[0], resp[1])

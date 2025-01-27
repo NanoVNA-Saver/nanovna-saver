@@ -18,8 +18,8 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from NanoVNASaver.Hardware.NanoVNA import NanoVNA
-from NanoVNASaver.Hardware.Serial import Interface
+from .NanoVNA import NanoVNA
+from .Serial import Interface
 
 logger = logging.getLogger(__name__)
 
@@ -29,4 +29,4 @@ class NanoVNA_H(NanoVNA):
 
     def __init__(self, iface: Interface):
         super().__init__(iface)
-        self.sweep_max_freq_Hz = 1500e6
+        self.sweep_max_freq_hz = 1500e6

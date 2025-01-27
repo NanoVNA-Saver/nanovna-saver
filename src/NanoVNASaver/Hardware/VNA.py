@@ -22,9 +22,8 @@ from typing import Iterator
 
 from PySide6 import QtGui
 
-from NanoVNASaver.Hardware.Serial import Interface, drain_serial
-
 from ..utils import Version
+from .Serial import Interface, drain_serial
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +60,7 @@ class VNA:
     sweep_points_min = 11
 
     # Must be initilized in child classes
-    sweep_max_freq_Hz = 0.0
+    sweep_max_freq_hz = 0.0
 
     def __init__(self, iface: Interface):
         self.serial = iface

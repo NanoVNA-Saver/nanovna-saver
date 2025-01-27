@@ -21,10 +21,11 @@ import logging
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtGui import QIntValidator
 
-from NanoVNASaver.SweepWorker import SweepState
-from NanoVNASaver.Windows.Defaults import make_scrollable
-from NanoVNASaver.Windows.Screenshot import ScreenshotWindow
+from NanoVNASaver import NanoVNASaver
 
+from ..SweepWorker import SweepState
+from .Defaults import make_scrollable
+from .Screenshot import ScreenshotWindow
 from .ui import get_window_icon
 
 logger = logging.getLogger(__name__)
@@ -34,7 +35,7 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
     custom_points_checkbox = QtWidgets.QCheckBox
     custom_points_edit = QtWidgets.QLineEdit
 
-    def __init__(self, app: QtWidgets.QWidget) -> None:  # noqa: PLR0915
+    def __init__(self, app: NanoVNASaver) -> None:
         super().__init__()
 
         self.app = app

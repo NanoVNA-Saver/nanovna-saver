@@ -19,18 +19,16 @@
 import logging
 from enum import Enum
 from time import sleep
-from typing import TYPE_CHECKING
 
 import numpy as np
 from PySide6.QtCore import QObject, QRunnable, Signal, Slot
 
-from NanoVNASaver.Calibration import correct_delay
-from NanoVNASaver.RFTools import Datapoint
-from NanoVNASaver.Settings.Sweep import Sweep, SweepMode
+from NanoVNASaver import NanoVNASaver
 
-if TYPE_CHECKING:
-    from NanoVNASaver.Hardware.VNA import VNA
-    from NanoVNASaver.NanoVNASaver import NanoVNASaver as NanoVNA
+from .Calibration import correct_delay
+from .Hardware.VNA import VNA
+from .RFTools import Datapoint
+from .Settings.Sweep import Sweep, SweepMode
 
 logger = logging.getLogger(__name__)
 
@@ -67,11 +65,11 @@ class SweepState(Enum):
 
 
 class SweepWorker(QRunnable):
-    def __init__(self, app: "NanoVNA") -> None:
+    def __init__(self, app: NanoVNASaver) -> None:
         super().__init__()
         logger.info("Initializing SweepWorker")
         self.signals: WorkerSignals = WorkerSignals()
-        self.app: NanoVNA = app
+        self.app = app
         self.sweep = Sweep()
         self.setAutoDelete(False)
         self.percentage: float = 0.0

@@ -22,13 +22,13 @@ from typing import Callable
 import numpy as np
 from PySide6 import QtWidgets
 
-from NanoVNASaver.Analysis.Base import Analysis, QHLine
-from NanoVNASaver.Formatting import (
+from ..Formatting import (
     format_frequency,
     format_gain,
     format_resistance,
     format_vswr,
 )
+from .Base import Analysis, QHLine
 
 logger = logging.getLogger(__name__)
 

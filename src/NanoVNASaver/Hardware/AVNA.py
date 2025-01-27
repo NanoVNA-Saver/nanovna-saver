@@ -18,8 +18,8 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from NanoVNASaver.Hardware.Serial import Interface
-from NanoVNASaver.Hardware.VNA import VNA
+from .Serial import Interface
+from .VNA import VNA
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ class AVNA(VNA):
 
     def __init__(self, iface: Interface):
         super().__init__(iface)
-        self.sweep_max_freq_Hz = 40e3
+        self.sweep_max_freq_hz = 40e3
         self.features.add("Customizable data points")
 
     def isValid(self):

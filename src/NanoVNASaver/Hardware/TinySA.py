@@ -23,10 +23,9 @@ import numpy as np
 import serial
 from PySide6.QtGui import QImage, QPixmap
 
-from NanoVNASaver.Hardware.Serial import Interface, drain_serial
-from NanoVNASaver.Hardware.VNA import VNA
-
 from ..utils import Version
+from .Serial import Interface, drain_serial
+from .VNA import VNA
 
 logger = logging.getLogger(__name__)
 
@@ -42,8 +41,8 @@ class TinySA(VNA):
         self.features = {"Screenshots"}
         logger.debug("Setting initial start,stop")
         self.start, self.stop = self._get_running_frequencies()
-        self.sweep_max_freq_Hz = 950e6
-        self._sweepdata = []
+        self.sweep_max_freq_hz = 950e6
+        self._sweepdata: list[complex] = []
         self.validateInput = False
 
     def _get_running_frequencies(self):
@@ -129,37 +128,37 @@ class TinySA(VNA):
         return self._sweepdata
 
 
-class TinySA_Ultra(TinySA):  # noqa: N801
+class TinySA_Ultra(TinySA):
     name = "tinySA Ultra"
     screenwidth = 480
     screenheight = 320
-    valid_datapoints: tuple[int, ...] = [450, 51, 101, 145, 290]
-    hardware_revision = None
+    valid_datapoints: tuple[int, ...] = (450, 51, 101, 145, 290)
+    hardware_revision: Version | None = None
 
     def __init__(self, iface: Interface):
         super().__init__(iface)
         self.features = {"Screenshots", "Customizable data points"}
         logger.debug("Setting initial start,stop")
         self.start, self.stop = self._get_running_frequencies()
-        self.sweep_max_freq_Hz = 5.4e9
+        self.sweep_max_freq_hz = 5.4e9
         self._sweepdata = []
         self.validateInput = False
         self.version = self.read_firmware_version()
         self.hardware_revision = self.read_hardware_revision()
         # detect model versions of tinySA Ultra including ZS-405, ZS406 (Ultra+), ZS407 (Ultra+)
-        if self.hardware_revision >= Version("0.5.3"):
+        if self.hardware_revision >= Version.parse("0.5.3"):
             self.name = "tinySA Ultra+ ZS-407"
-            self.sweep_max_freq_Hz = 7.3e9
-        elif self.hardware_revision >= Version("0.4.6"):
+            self.sweep_max_freq_hz = 7.3e9
+        elif self.hardware_revision >= Version.parse("0.4.6"):
             self.name = "tinySA Ultra+ ZS-406"
-            self.sweep_max_freq_Hz = 5.4e9
-        elif self.hardware_revision >= Version("0.4.5"):
+            self.sweep_max_freq_hz = 5.4e9
+        elif self.hardware_revision >= Version.parse("0.4.5"):
             self.name = "tinySA Ultra ZS-405"
-            self.sweep_max_freq_Hz = 5.3e9
+            self.sweep_max_freq_hz = 5.3e9
         else:
             # version 0.3.x is for tinySA
             self.name = "tinySA"
-            self.sweep_max_freq_Hz = 0.96e9
+            self.sweep_max_freq_hz = 0.96e9
 
     def read_firmware_version(self) -> "Version":
         """For example, command version in TinySA returns as this
@@ -173,9 +172,9 @@ class TinySA_Ultra(TinySA):  # noqa: N801
             result[0].split("_v")[1].split("-")
         )
         revision_version = revision_version.split("-")[0]
-        return Version(major_minor_version + "." + revision_version)
+        return Version.parse(major_minor_version + "." + revision_version)
 
-    def read_hardware_revision(self) -> str:
+    def read_hardware_revision(self) -> Version:
         result = list(self.exec_command("version"))
         logger.debug("hardware version result:\n%s", result[1])
-        return Version(result[1])
+        return Version.parse(result[1])

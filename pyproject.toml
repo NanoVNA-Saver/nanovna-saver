@@ -34,15 +34,15 @@ dependencies=[
 [dependency-groups]
 dev = [
   # Static Code Analysis tools
-  "black~=24.10",
-  "flake8~=7.1",
-  "pylint~=3.3",
+  "ruff~=0.9",
+  "pre-commit~=4.1",
+  "mypy~=1.14",
 
   # Testing
   "pytest~=8.3",
   "pytest-cov~=6.0",
   "tox~=4.23",
-  "tox-uv~=1.17", 
+  "tox-uv~=1.17",
 
   # Build helpers
   "setuptools-scm>=8",
@@ -98,6 +98,11 @@ version_scheme = 'no-guess-dev'
 test = "pytest ."
 test-cov = "pytest --cov=src ."
 test-full = "tox"
+# TODO enable task lint-mypy when related issues are solved
+#lint = "task lint-format || task lint-mypy"
+lint = "task lint-format"
+lint-format = "pre-commit run --all-files || pre-commit run --all-files"
+lint-mypy = "mypy --non-interactive --install-types ."
 
 clean = "python -m tools.project_clean"
 
@@ -116,17 +121,19 @@ pythonpath = [
   '.', 'src',
 ]
 
-[tool.black]
-line-length = 80
 
 [tool.ruff]
-line-length = 80
+line-length = 120
 target-version = 'py311'
 fix = true
 show-fixes = true
 unsafe-fixes = false
+# TODO use https://docs.astral.sh/ruff/configuration/#config-file-discovery for test and UI generated files
+extend-exclude = ["ui/*.py"]
+
 
 [tool.ruff.lint]
+# https://docs.astral.sh/ruff/rules
 select = [
     'E', 'W',   # pycodestyle (E(rror), W(arning))
     'F',        # Pyflakes
@@ -134,13 +141,23 @@ select = [
     'I',        # isort
     'N',        # pep8-naming
     'PL',       # pylint
-    'C90',      # mccabe
-    'RUF100',   # unused suppresions
+    'C',        # mccabe
+    'RUF',      # Ruff
 ]
 ignore = [
-  'N802',
-  'N806',
-  'N999',
+    'PLR2004',
+    'N802',
+    'N806',
+    'N813',
+    # TODO fix module naming
+    'N999',
+    # TODO fix classes naming
+    'N801',
+    # TODO review related code
+    'C901',
+    'PLR0915',
+    'PLR0911',
+    'PLR0912'
 ]
 
 [tool.ruff.lint.mccabe]

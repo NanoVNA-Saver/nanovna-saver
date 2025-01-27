@@ -23,22 +23,22 @@ import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import Qt
 
-from NanoVNASaver.Charts.Chart import Chart
-from NanoVNASaver.Formatting import (
+from ..Formatting import (
     format_frequency_chart,
     format_frequency_chart_2,
     format_y_axis,
     parse_frequency,
     parse_value,
 )
-from NanoVNASaver.RFTools import Datapoint
-from NanoVNASaver.SITools import Format, Value
+from ..RFTools import Datapoint
+from ..SITools import Format, Value
+from .Chart import Chart
 
 logger = logging.getLogger(__name__)
 
 
 class FrequencyChart(Chart):
-    def __init__(self, name):  # noqa: PLR0915
+    def __init__(self, name):
         super().__init__(name)
         self.maxFrequency = 100000000
         self.minFrequency = 1000000
@@ -630,7 +630,7 @@ class FrequencyChart(Chart):
         # try to adapt format to span
         if (
             self.fstart == 0
-            or int(fspan / ticks / self.fstart * 10000) > 2  # noqa: PLR2004
+            or int(fspan / ticks / self.fstart * 10000) > 2
         ):
             my_format_frequency = format_frequency_chart
         else:

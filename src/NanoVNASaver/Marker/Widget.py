@@ -17,13 +17,14 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
+from typing import ClassVar
 
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QColorConstants
 
-from NanoVNASaver import RFTools
-from NanoVNASaver.Formatting import (
+from .. import RFTools
+from ..Formatting import (
     format_capacitance,
     format_complex_adm,
     format_complex_imp,
@@ -39,8 +40,8 @@ from NanoVNASaver.Formatting import (
     format_wavelength,
     parse_frequency,
 )
-from NanoVNASaver.Inputs import MarkerFrequencyInputWidget as FrequencyInput
-from NanoVNASaver.Marker.Values import TYPES, Value, default_label_ids
+from ..Inputs import MarkerFrequencyInputWidget as FrequencyInput
+from .Values import TYPES, Value, default_label_ids
 
 COLORS = (
     QtGui.QColor(QColorConstants.DarkGray),
@@ -61,11 +62,11 @@ class MarkerLabel(QtWidgets.QLabel):
 
 class Marker(QtCore.QObject, Value):
     _instances = 0
-    coloredText = True
+    colored_text = True
     location = -1
     returnloss_is_positive = False
     updated = Signal(object)
-    active_labels = []
+    active_labels: ClassVar[list[str]] = []
 
     @classmethod
     def count(cls):
@@ -182,7 +183,7 @@ class Marker(QtCore.QObject, Value):
         self.label["actualfreq"].setMinimumWidth(int(100 * scale))
         self.label["actualfreq"].setMinimumWidth(int(100 * scale))
         self.label["returnloss"].setMinimumWidth(int(80 * scale))
-        if self.coloredText:
+        if self.colored_text:
             self.group_box.setStyleSheet(
                 f"QGroupBox {{ color: {self.color.name()}; "
                 f"font-size: {self._size_str()}}};"
@@ -231,7 +232,7 @@ class Marker(QtCore.QObject, Value):
             p = self.btnColorPicker.palette()
             p.setColor(QtGui.QPalette.ColorRole.ButtonText, self.color)
             self.btnColorPicker.setPalette(p)
-        if self.coloredText:
+        if self.colored_text:
             self.group_box.setStyleSheet(
                 f"QGroupBox {{ color: {color.name()}; "
                 f"font-size: {self._size_str()}}};"
@@ -242,7 +243,7 @@ class Marker(QtCore.QObject, Value):
             )
 
     def setColoredText(self, colored_text):
-        self.coloredText = colored_text
+        self.colored_text = colored_text
         self.setColor(self.color)
 
     def getRow(self):
@@ -350,7 +351,7 @@ class Marker(QtCore.QObject, Value):
         self.label["s11mag"].setText(format_magnitude(abs(_s11.z)))
         self.label["s11phase"].setText(format_phase(_s11.phase))
         self.label["s11polar"].setText(
-            f"{str(round(abs(_s11.z), 2))}∠{format_phase(_s11.phase)}"
+            f"{round(abs(_s11.z), 2)!s}∠{format_phase(_s11.phase)}"
         )
 
         self.label["s11q"].setText(format_q_factor(_s11.qFactor()))
@@ -370,7 +371,7 @@ class Marker(QtCore.QObject, Value):
             self.label["s21mag"].setText(format_magnitude(abs(_s21.z)))
             self.label["s21phase"].setText(format_phase(_s21.phase))
             self.label["s21polar"].setText(
-                f"{str(round(abs(_s21.z), 2))}∠{format_phase(_s21.phase)}"
+                f"{round(abs(_s21.z), 2)!s}∠{format_phase(_s21.phase)}"
             )
             self.label["s21magshunt"].setText(
                 format_magnitude(abs(_s21.shuntImpedance()))

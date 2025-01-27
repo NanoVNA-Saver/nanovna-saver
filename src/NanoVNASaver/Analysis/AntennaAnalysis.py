@@ -23,7 +23,7 @@ from time import sleep
 
 from PySide6 import QtWidgets
 
-from NanoVNASaver.Analysis.VSWRAnalysis import VSWRAnalysis
+from .VSWRAnalysis import VSWRAnalysis
 
 logger = logging.getLogger(__name__)
 
@@ -102,7 +102,7 @@ class MagLoopAnalysis(VSWRAnalysis):
             new_end = new_end + 5 * self.bandwith
             if (
                 all((new_start <= self.min_freq, new_end >= self.max_freq))
-                and self.vswr_limit_value < 10  # noqa: PLR2004
+                and self.vswr_limit_value < 10
             ):
                 self.vswr_limit_value += 2
                 self.input_vswr_limit.setValue(self.vswr_limit_value)

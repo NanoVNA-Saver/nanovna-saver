@@ -19,7 +19,7 @@
 
 from typing import NamedTuple
 
-from NanoVNASaver.RFTools import Datapoint
+from ..RFTools import Datapoint
 
 
 class Label(NamedTuple):
@@ -82,13 +82,9 @@ class Value:
         # handle boundaries
         if index == 0:
             index = 1
-            s11 = [
-                s11[0],
-            ] + s11
+            s11 = [s11[0], *s11]
             if s21:
-                s21 = [
-                    s21[0],
-                ] + s21
+                s21 = [s21[0], *s21]
         if index == len(s11):
             s11 += [
                 s11[-1],

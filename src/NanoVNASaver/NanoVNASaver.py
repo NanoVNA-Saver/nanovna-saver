@@ -26,8 +26,6 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import QObject
 from PySide6.QtWidgets import QWidget
 
-from NanoVNASaver import Defaults
-
 from .About import VERSION
 from .Calibration import Calibration
 from .Charts import (
@@ -57,6 +55,7 @@ from .Charts.Chart import Chart
 from .Controls.MarkerControl import MarkerControl
 from .Controls.SerialControl import SerialControl
 from .Controls.SweepControl import SweepControl
+from .Defaults import AppSettings, app_config, restore_config, store_config
 from .Formatting import format_frequency, format_gain, format_vswr
 from .Hardware.Hardware import Interface
 from .Hardware.VNA import VNA
@@ -95,14 +94,14 @@ class NanoVNASaver(QWidget):
         self.communicate = Communicate()
         self.s21att = 0.0
         self.setWindowIcon(get_window_icon())
-        self.settings = Defaults.AppSettings(
+        self.settings = AppSettings(
             QtCore.QSettings.Format.IniFormat,
             QtCore.QSettings.Scope.UserScope,
             "NanoVNASaver",
             "NanoVNASaver",
         )
         logger.info("Settings from: %s", self.settings.fileName())
-        Defaults.cfg = Defaults.restore(self.settings)
+        app_config = restore_config(self.settings)
         self.threadpool = QtCore.QThreadPool()
         self.sweep = Sweep()
         self.worker = SweepWorker(self)
@@ -154,7 +153,7 @@ class NanoVNASaver(QWidget):
         self.setLayout(outer)
         scrollarea.setWidgetResizable(True)
         self.resize(
-            Defaults.cfg.gui.window_width, Defaults.cfg.gui.window_height
+            app_config.gui.window_width, app_config.gui.window_height
         )
         scrollarea.setSizePolicy(
             QtWidgets.QSizePolicy.Policy.MinimumExpanding,
@@ -252,14 +251,14 @@ class NanoVNASaver(QWidget):
         left_column = QtWidgets.QVBoxLayout()
         right_column = QtWidgets.QVBoxLayout()
         right_column.addLayout(self.charts_layout)
-        self.marker_frame.setHidden(Defaults.cfg.gui.markers_hidden)
+        self.marker_frame.setHidden(app_config.gui.markers_hidden)
         chart_widget = QWidget()
         chart_widget.setLayout(right_column)
         self.splitter = QtWidgets.QSplitter()
         self.splitter.addWidget(self.marker_frame)
         self.splitter.addWidget(chart_widget)
 
-        self.splitter.restoreState(Defaults.cfg.gui.splitter_sizes)
+        self.splitter.restoreState(app_config.gui.splitter_sizes)
 
         layout.addLayout(left_column)
         layout.addWidget(self.splitter, 2)
@@ -533,7 +532,7 @@ class NanoVNASaver(QWidget):
                 else:
                     logger.warning("No reference data for marker")
 
-            elif Marker.count() >= 2:  # noqa: PLR2004
+            elif Marker.count() >= 2:
                 m2 = self.markers[1]
 
             if m2 is None:
@@ -691,11 +690,11 @@ class NanoVNASaver(QWidget):
         self.bands.saveSettings()
         self.threadpool.waitForDone(2500)
 
-        Defaults.cfg.chart.marker_count = Marker.count()
-        Defaults.cfg.gui.window_width = self.width()
-        Defaults.cfg.gui.window_height = self.height()
-        Defaults.cfg.gui.splitter_sizes = self.splitter.saveState()
-        Defaults.store(self.settings, Defaults.cfg)
+        app_config.chart.marker_count = Marker.count()
+        app_config.gui.window_width = self.width()
+        app_config.gui.window_height = self.height()
+        app_config.gui.splitter_sizes = self.splitter.saveState()
+        store_config(self.settings, app_config)
 
         # Dosconnect connected devices and release serial port
         self.serial_control.disconnect_device()

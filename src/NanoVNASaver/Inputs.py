@@ -19,7 +19,7 @@
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from NanoVNASaver.Formatting import format_frequency_inputs
+from .Formatting import format_frequency_inputs
 
 
 class FrequencyInputWidget(QtWidgets.QLineEdit):

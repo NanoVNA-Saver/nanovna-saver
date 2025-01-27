@@ -17,8 +17,8 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from NanoVNASaver.Hardware.NanoVNA_H import NanoVNA_H
-from NanoVNASaver.Hardware.Serial import Interface
+from .NanoVNA_H import NanoVNA_H
+from .Serial import Interface
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ class NanoVNA_H4(NanoVNA_H):
 
     def __init__(self, iface: Interface):
         super().__init__(iface)
-        self.sweep_max_freq_Hz = 1500e6
+        self.sweep_max_freq_hz = 1500e6
         self.sweep_method = "scan"
         if "Scan mask command" in self.features:
             self.sweep_method = "scan_mask"

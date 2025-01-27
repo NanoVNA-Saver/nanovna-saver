@@ -20,7 +20,7 @@ import cmath
 import math
 from typing import NamedTuple
 
-from NanoVNASaver.SITools import Format, clamp_value
+from .SITools import Format, clamp_value
 
 FMT_FREQ = Format()
 FMT_SHORT = Format(max_nr_digits=4)

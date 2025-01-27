@@ -23,10 +23,9 @@ import numpy as np
 import serial
 from PySide6.QtGui import QImage, QPixmap
 
-from NanoVNASaver.Hardware.Serial import Interface, drain_serial
-from NanoVNASaver.Hardware.VNA import VNA
-
 from ..utils import Version
+from .Serial import Interface, drain_serial
+from .VNA import VNA
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +41,7 @@ class NanoVNA(VNA):
         self.init_features()
         logger.debug("Setting initial start,stop")
         self.start, self.stop = self._get_running_frequencies()
-        self.sweep_max_freq_Hz = 300e6
+        self.sweep_max_freq_hz = 300e6
         self._sweepdata = []
 
     def _get_running_frequencies(self):

@@ -22,20 +22,21 @@ from functools import partial
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import Qt
 
-from NanoVNASaver.Formatting import (
+from NanoVNASaver import NanoVNASaver
+
+from ..Formatting import (
     format_frequency_short,
     format_frequency_sweep,
 )
-from NanoVNASaver.Settings.Sweep import SweepMode
-from NanoVNASaver.Windows.Defaults import make_scrollable
-
+from ..Settings.Sweep import SweepMode
+from .Defaults import make_scrollable
 from .ui import get_window_icon
 
 logger = logging.getLogger(__name__)
 
 
 class SweepSettingsWindow(QtWidgets.QWidget):
-    def __init__(self, app: QtWidgets.QWidget):
+    def __init__(self, app: NanoVNASaver):
         super().__init__()
         self.app = app
         self.padding = 0

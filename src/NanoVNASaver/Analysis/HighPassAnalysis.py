@@ -21,9 +21,9 @@ import math
 
 from PySide6 import QtWidgets
 
-import NanoVNASaver.AnalyticTools as At
-from NanoVNASaver.Analysis.Base import CUTOFF_VALS, MIN_CUTOFF_DAMPING, Analysis
-from NanoVNASaver.Formatting import format_frequency
+from .. import AnalyticTools as At
+from ..Formatting import format_frequency
+from .Base import CUTOFF_VALS, MIN_CUTOFF_DAMPING, Analysis
 
 logger = logging.getLogger(__name__)
 

@@ -20,19 +20,21 @@ import logging
 
 from PySide6 import QtCore, QtWidgets
 
-from NanoVNASaver.Controls.Control import Control
-from NanoVNASaver.Formatting import (
+from NanoVNASaver import NanoVNASaver
+
+from ..Formatting import (
     format_frequency_short,
     format_frequency_sweep,
     parse_frequency,
 )
-from NanoVNASaver.Inputs import FrequencyInputWidget
+from ..Inputs import FrequencyInputWidget
+from .Control import Control
 
 logger = logging.getLogger(__name__)
 
 
 class SweepControl(Control):
-    def __init__(self, app: QtWidgets.QWidget):
+    def __init__(self, app: NanoVNASaver):
         super().__init__(app, "Sweep control")
 
         line = QtWidgets.QFrame()

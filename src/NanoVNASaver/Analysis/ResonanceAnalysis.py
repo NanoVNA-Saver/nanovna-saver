@@ -22,10 +22,10 @@ import os
 
 from PySide6 import QtWidgets
 
-import NanoVNASaver.AnalyticTools as At
-from NanoVNASaver.Analysis.Base import Analysis, QHLine
-from NanoVNASaver.Formatting import format_frequency, format_resistance
-from NanoVNASaver.RFTools import reflection_coefficient
+from .. import AnalyticTools as At
+from ..Formatting import format_frequency, format_resistance
+from ..RFTools import reflection_coefficient
+from .Base import Analysis, QHLine
 
 logger = logging.getLogger(__name__)
 
