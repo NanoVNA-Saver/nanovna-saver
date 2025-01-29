@@ -123,6 +123,13 @@ class MarkersConfig:
         default_factory=lambda: QColor(QColorConstants.LightGray)
     )
 
+@dataclass
+class SweepConfig:
+    start: str = ""
+    end: str = ""
+    center: str = ""
+    span: str = ""
+    segments: str = "1"
 
 @dataclass
 class AppConfig:
@@ -131,6 +138,7 @@ class AppConfig:
     chart: ChartConfig = field(default_factory=ChartConfig)
     chart_colors: ChartColorsConfig = field(default_factory=ChartColorsConfig)
     markers: MarkersConfig = field(default_factory=MarkersConfig)
+    sweep_settings: SweepConfig = field(default_factory=SweepConfig)
 
 
 # noinspection PyDataclass
@@ -182,7 +190,7 @@ def get_app_config() -> AppConfig:
 
 def restore_config(settings: AppSettings) -> AppConfig:
     logger.info("Loading settings from: %s", settings.fileName())
-    
+
     result = AppConfig()
     for field_it in fields(result):
         value = settings.restore_dataclass(
@@ -190,14 +198,14 @@ def restore_config(settings: AppSettings) -> AppConfig:
         )
         setattr(result, field_it.name, value)
     logger.debug("restored\n(\n%s\n)", result)
-    global _app_config
+    global _app_config #noqa PLW0603
     _app_config = result
     return _app_config
 
 
 def store_config(settings: AppSettings) -> None:
     logger.info("Saving settings to: %s", settings.fileName())
-    
+
     logger.debug("storing\n(\n%s\n)", _app_config)
     for field_it in fields(_app_config):
         data_class = getattr(_app_config, field_it.name)
@@ -228,6 +236,3 @@ def _to_type(data: object, data_type: type) -> object:
     return (
         type_map[data_type](data) if data_type in type_map else data_type(data)
     )
-
-
-

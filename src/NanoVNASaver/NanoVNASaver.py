@@ -490,8 +490,6 @@ class NanoVNASaver(QWidget):
         self.s21_max_gain_label.setText("")
         self.tdr_result_label.setText("")
 
-        self.settings.setValue("Segments", self.sweep_control.get_segments())
-
         logger.debug("Starting worker thread")
         self.threadpool.start(self.worker)
 
@@ -693,6 +691,9 @@ class NanoVNASaver(QWidget):
         app_config.gui.window_width = self.width()
         app_config.gui.window_height = self.height()
         app_config.gui.splitter_sizes = self.splitter.saveState()
+
+        self.sweep_control.store_settings()
+
         store_config(self.settings)
 
         # Dosconnect connected devices and release serial port

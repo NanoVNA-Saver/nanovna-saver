@@ -22,6 +22,7 @@ from PySide6 import QtCore, QtWidgets
 
 from NanoVNASaver import NanoVNASaver
 
+from ..Defaults import SweepConfig, get_app_config
 from ..Formatting import (
     format_frequency_short,
     format_frequency_sweep,
@@ -37,6 +38,7 @@ class SweepControl(Control):
     def __init__(self, app: NanoVNASaver):
         super().__init__(app, "Sweep control")
 
+        sweep_settings = self.get_settings()
         line = QtWidgets.QFrame()
         line.setFrameShape(QtWidgets.QFrame.Shape.VLine)
 
@@ -48,7 +50,7 @@ class SweepControl(Control):
         input_layout.addLayout(input_right_layout)
         self.layout.addRow(input_layout)
 
-        self.input_start = FrequencyInputWidget()
+        self.input_start = FrequencyInputWidget(sweep_settings.start)
         self.input_start.setFixedHeight(20)
         self.input_start.setMinimumWidth(60)
         self.input_start.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
@@ -56,14 +58,14 @@ class SweepControl(Control):
         self.input_start.textChanged.connect(self.update_step_size)
         input_left_layout.addRow(QtWidgets.QLabel("Start"), self.input_start)
 
-        self.input_end = FrequencyInputWidget()
+        self.input_end = FrequencyInputWidget(sweep_settings.end)
         self.input_end.setFixedHeight(20)
         self.input_end.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
         self.input_end.textEdited.connect(self.update_center_span)
         self.input_end.textChanged.connect(self.update_step_size)
         input_left_layout.addRow(QtWidgets.QLabel("Stop"), self.input_end)
 
-        self.input_center = FrequencyInputWidget()
+        self.input_center = FrequencyInputWidget(sweep_settings.center)
         self.input_center.setFixedHeight(20)
         self.input_center.setMinimumWidth(60)
         self.input_center.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
@@ -71,16 +73,14 @@ class SweepControl(Control):
 
         input_right_layout.addRow(QtWidgets.QLabel("Center"), self.input_center)
 
-        self.input_span = FrequencyInputWidget()
+        self.input_span = FrequencyInputWidget(sweep_settings.span)
         self.input_span.setFixedHeight(20)
         self.input_span.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
         self.input_span.textEdited.connect(self.update_start_end)
 
         input_right_layout.addRow(QtWidgets.QLabel("Span"), self.input_span)
 
-        self.input_segments = QtWidgets.QLineEdit(
-            self.app.settings.value("Segments", "1")
-        )
+        self.input_segments = QtWidgets.QLineEdit(sweep_settings.segments)
         self.input_segments.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
         self.input_segments.setFixedHeight(20)
         self.input_segments.setFixedWidth(60)
@@ -229,3 +229,14 @@ class SweepControl(Control):
 
     def update_sweep_btn(self, enabled: bool) -> None:
         self.btn_start.setEnabled(enabled)
+
+    def get_settings(self) -> SweepConfig:
+        return get_app_config().sweep_settings
+
+    def store_settings(self) -> None:
+        settings = self.get_settings()
+        settings.start = self.input_start.text()
+        settings.end = self.input_end.text()
+        settings.center = self.input_center.text()
+        settings.span = self.input_span.text()
+        settings.segments = self.input_segments.text()
