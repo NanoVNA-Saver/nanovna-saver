@@ -185,7 +185,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         self.font_dropdown.setMinimumHeight(20)
         self.font_dropdown.addItems(["7", "8", "9", "10", "11", "12"])
         self.font_dropdown.setCurrentText(str(app_config.gui.font_size))
-        self.changeFont()
+        self.changeFont(str(app_config.gui.font_size))
 
         self.font_dropdown.currentTextChanged.connect(self.changeFont)
         font_options_layout.addRow("Font size", self.font_dropdown)
@@ -516,8 +516,9 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         for c in self.app.subscribing_charts:
             c.update()
 
-    def changeFont(self) -> None:
-        font_size = int(self.font_dropdown.currentText())
+    def changeFont(self, new_font_size: str) -> None:
+        font_size = int(new_font_size)
+        app_config = get_app_config()
         app_config.gui.font_size = font_size
         app: QtWidgets.QApplication = QtWidgets.QApplication.instance()
         font = app.font()
