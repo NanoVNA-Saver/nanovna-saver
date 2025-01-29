@@ -24,7 +24,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QAction, QColor, QColorConstants
 
-from ..Defaults import app_config
+from ..Defaults import get_app_config
 from ..Marker.Widget import Marker
 from ..RFTools import Datapoint
 
@@ -92,6 +92,7 @@ class ChartMarker(QtWidgets.QWidget):
         self.qp = qp
 
     def draw(self, x: int, y: int, color: QtGui.QColor, text: str = ""):
+        app_config = get_app_config()
         offset = int(app_config.chart.marker_size // 2)
         if app_config.chart.marker_at_tip:
             y -= offset
@@ -179,7 +180,7 @@ class Chart(QtWidgets.QWidget):
         self.update()
 
     def setMarkerSize(self, size) -> None:
-        app_config.chart.marker_size = size
+        get_app_config().chart.marker_size = size
         self.update()
 
     def setSweepTitle(self, title) -> None:

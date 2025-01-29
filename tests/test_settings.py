@@ -19,7 +19,14 @@
 import unittest
 from dataclasses import dataclass, field
 
-from NanoVNASaver.Defaults import AppConfig, AppSettings, GuiConfig, QSettings, restore_config, store_config
+from NanoVNASaver.Defaults import (
+    AppSettings,
+    GuiConfig,
+    QSettings,
+    get_app_config,
+    restore_config,
+    store_config,
+)
 
 
 @dataclass
@@ -90,9 +97,10 @@ class TestCases(unittest.TestCase):
         self.assertEqual(tc_3, TConfig())
 
     def test_store(self):
-        tc_1 = AppConfig()
+        tc_1 = get_app_config()
         tc_1.gui.dark_mode = not tc_1.gui.dark_mode
-        store_config(self.settings_2, tc_1)
+
+        store_config(self.settings_2)
         tc_2 = restore_config(self.settings_2)
         print(f"\n{tc_1}\n{tc_2}\n")
         self.assertEqual(tc_1, tc_2)

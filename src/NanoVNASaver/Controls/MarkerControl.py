@@ -23,7 +23,7 @@ from PySide6.QtWidgets import QCheckBox, QSizePolicy
 
 from NanoVNASaver import NanoVNASaver
 
-from ..Defaults import app_config
+from ..Defaults import get_app_config
 from ..Marker.Widget import Marker
 from .Control import Control
 
@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 
 class ShowButton(QtWidgets.QPushButton):
     def setText(self, text: str = ""):
+        app_config = get_app_config()
         if not text:
             text = (
                 "Show data" if app_config.gui.markers_hidden else "Hide data"
@@ -44,6 +45,7 @@ class MarkerControl(Control):
     def __init__(self, app: NanoVNASaver):
         super().__init__(app, "Markers")
 
+        app_config = get_app_config()
         for i in range(app_config.chart.marker_count):
             marker = Marker("", self.app.settings)
             # marker.setFixedHeight(20)
@@ -86,6 +88,7 @@ class MarkerControl(Control):
 
     def toggle_frame(self):
         def settings(hidden: bool):
+            app_config = get_app_config()
             app_config.gui.markers_hidden = not hidden
             self.app.marker_frame.setHidden(app_config.gui.markers_hidden)
             self.showMarkerButton.setText()

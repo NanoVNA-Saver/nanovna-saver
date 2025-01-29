@@ -24,7 +24,7 @@ from PySide6.QtGui import QColor, QColorConstants, QPalette, QShortcut
 from NanoVNASaver import NanoVNASaver
 
 from ..Charts.Chart import Chart, ChartColors
-from ..Defaults import app_config, store_config
+from ..Defaults import get_app_config
 from ..Marker.Widget import Marker
 from .Bands import BandsWindow
 from .Defaults import make_scrollable
@@ -68,6 +68,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
         )
         display_options_layout.addRow("", self.returnloss_is_positive)
 
+        app_config = get_app_config()
         self.returnloss_is_positive.setChecked(
             app_config.chart.returnloss_is_positive
         )
@@ -422,6 +423,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
     def changeReturnLoss(self) -> None:
         state = self.returnloss_is_positive.isChecked()
+        app_config = get_app_config()
         app_config.chart.returnloss_is_positive = bool(state)
         for m in self.app.markers:
             m.returnloss_is_positive = state
@@ -433,43 +435,51 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
     def changeShowLines(self) -> None:
         state = self.show_lines_option.isChecked()
+        app_config = get_app_config()
         app_config.chart.show_lines = bool(state)
         for c in self.app.subscribing_charts:
             c.setDrawLines(state)
 
     def changeShowMarkerNumber(self) -> None:
+        app_config = get_app_config()
         app_config.chart.marker_label = bool(
             self.show_marker_number_option.isChecked()
         )
         self.updateCharts()
 
     def changeFilledMarkers(self):
+        app_config = get_app_config()
         app_config.chart.marker_filled = bool(
             self.filled_marker_option.isChecked()
         )
         self.updateCharts()
 
     def changeMarkerAtTip(self) -> None:
+        app_config = get_app_config()
         app_config.chart.marker_at_tip = bool(self.marker_at_tip.isChecked())
         self.updateCharts()
 
     def changePointSize(self, size: int) -> None:
+        app_config = get_app_config()
         app_config.chart.point_size = size
         for c in self.app.subscribing_charts:
             c.setPointSize(size)
 
     def changeLineThickness(self, size: int) -> None:
+        app_config = get_app_config()
         app_config.chart.line_thickness = size
         for c in self.app.subscribing_charts:
             c.setLineThickness(size)
 
     def changeMarkerSize(self, size: int) -> None:
+        app_config = get_app_config()
         app_config.chart.marker_size = size
         self.markerSizeInput.setValue(size)
         self.updateCharts()
 
     def changeDarkMode(self) -> None:
         state = self.dark_mode_option.isChecked()
+        app_config = get_app_config()
         app_config.gui.dark_mode = bool(state)
         Chart.color.foreground = QColor(QColorConstants.LightGray)
         if state:
@@ -608,4 +618,4 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
     def updateCharts(self) -> None:
         for c in self.app.subscribing_charts:
             c.update()
-        store_config(self.app.settings, app_config)
+        self.app.settings.sync()

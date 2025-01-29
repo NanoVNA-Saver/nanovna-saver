@@ -133,55 +133,6 @@ class AppConfig:
     markers: MarkersConfig = field(default_factory=MarkersConfig)
 
 
-app_config = AppConfig()
-
-
-def restore_config(settings: "AppSettings") -> AppConfig:
-    result = AppConfig()
-    for field_it in fields(result):
-        value = settings.restore_dataclass(
-            field_it.name.upper(), getattr(result, field_it.name)
-        )
-        setattr(result, field_it.name, value)
-    logger.debug("restored\n(\n%s\n)", result)
-    return result
-
-
-def store_config(settings: "AppSettings", data: AppConfig | None = None) -> None:
-    data = data or app_config
-    logger.debug("storing\n(\n%s\n)", data)
-    assert isinstance(data, AppConfig)
-    for field_it in fields(data):
-        data_class = getattr(data, field_it.name)
-        assert is_dataclass(data_class)
-        settings.store_dataclass(field_it.name.upper(), data_class)
-
-
-def _from_type(data) -> str:
-    type_map = {
-        bytearray: bytearray.hex,
-        QColor: QColor.getRgb,
-        QByteArray: QByteArray.toHex,
-    }
-    return (
-        f"{type_map[type(data)](data)}" if type(data) in type_map else f"{data}"
-    )
-
-
-def _to_type(data: object, data_type: type) -> object:
-    type_map = {
-        bool: lambda x: x.lower() == "true",
-        bytearray: bytearray.fromhex,
-        list: literal_eval,
-        tuple: literal_eval,
-        QColor: lambda x: QColor.fromRgb(*literal_eval(x)),
-        QByteArray: lambda x: QByteArray.fromHex(literal_eval(x)),
-    }
-    return (
-        type_map[data_type](data) if data_type in type_map else data_type(data)
-    )
-
-
 # noinspection PyDataclass
 class AppSettings(QSettings):
     def store_dataclass(self, name: str, data: object) -> None:
@@ -220,3 +171,63 @@ class AppSettings(QSettings):
                 setattr(result, field_it.name, default)
         self.endGroup()
         return result
+
+
+
+_app_config = AppConfig()
+
+def get_app_config() -> AppConfig:
+    return _app_config
+
+
+def restore_config(settings: AppSettings) -> AppConfig:
+    logger.info("Loading settings from: %s", settings.fileName())
+    
+    result = AppConfig()
+    for field_it in fields(result):
+        value = settings.restore_dataclass(
+            field_it.name.upper(), getattr(result, field_it.name)
+        )
+        setattr(result, field_it.name, value)
+    logger.debug("restored\n(\n%s\n)", result)
+    global _app_config
+    _app_config = result
+    return _app_config
+
+
+def store_config(settings: AppSettings) -> None:
+    logger.info("Saving settings to: %s", settings.fileName())
+    
+    logger.debug("storing\n(\n%s\n)", _app_config)
+    for field_it in fields(_app_config):
+        data_class = getattr(_app_config, field_it.name)
+        assert is_dataclass(data_class)
+        settings.store_dataclass(field_it.name.upper(), data_class)
+
+
+def _from_type(data) -> str:
+    type_map = {
+        bytearray: bytearray.hex,
+        QColor: QColor.getRgb,
+        QByteArray: QByteArray.toHex,
+    }
+    return (
+        f"{type_map[type(data)](data)}" if type(data) in type_map else f"{data}"
+    )
+
+
+def _to_type(data: object, data_type: type) -> object:
+    type_map = {
+        bool: lambda x: x.lower() == "true",
+        bytearray: bytearray.fromhex,
+        list: literal_eval,
+        tuple: literal_eval,
+        QColor: lambda x: QColor.fromRgb(*literal_eval(x)),
+        QByteArray: lambda x: QByteArray.fromHex(literal_eval(x)),
+    }
+    return (
+        type_map[data_type](data) if data_type in type_map else data_type(data)
+    )
+
+
+
