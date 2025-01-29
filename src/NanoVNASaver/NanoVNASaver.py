@@ -700,7 +700,6 @@ class NanoVNASaver(QWidget):
         self.serial_control.disconnect_device()
 
         a0.accept()
-        sys.exit()
 
     def changeFont(self, font: QtGui.QFont) -> None:
         qf_new = QtGui.QFontMetricsF(font)
