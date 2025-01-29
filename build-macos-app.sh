@@ -14,7 +14,7 @@ pip install PyInstaller==6.11.0
 
 python3 setup.py -V
 
-pyinstaller --onedir -p src -n NanoVNASaver src/NanoVNASaver/__main__.py --recursive-copy-metadata NanoVNASaver --window --clean  -y -i icon_48x48.icns --recursive-copy-metadata NanoVNASaver
+pyinstaller --onedir -p src -n NanoVNASaver src/NanoVNASaver/__main__.py --recursive-copy-metadata NanoVNASaver --window --clean  -y -i NanoVNASaver_48x48.icns --recursive-copy-metadata NanoVNASaver
 tar -C dist -zcf ./dist/NanoVNASaver.app-`uname -m`.tar.gz  NanoVNASaver.app
 
 deactivate
