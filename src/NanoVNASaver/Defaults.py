@@ -154,7 +154,7 @@ class AppSettings(QSettings):
         self._app_config = AppConfig()
 
     def get_app_config(self) -> AppConfig:
-        return _app_config
+        return self._app_config
 
     def _store_dataclass(self, name: str, data: object) -> None:
         assert is_dataclass(data)
@@ -204,15 +204,15 @@ class AppSettings(QSettings):
             setattr(result, field_it.name, value)
         logger.debug("restored\n(\n%s\n)", result)
         self._app_config = result
-        return get_app_config()
+        return self.get_app_config()
 
 
     def store_config(self) -> None:
         logger.info("Saving settings to: %s", self.fileName())
 
-        logger.debug("storing\n(\n%s\n)", _app_config)
-        for field_it in fields(_app_config):
-            data_class = getattr(_app_config, field_it.name)
+        logger.debug("storing\n(\n%s\n)", self._app_config)
+        for field_it in fields(self._app_config):
+            data_class = getattr(self._app_config, field_it.name)
             assert is_dataclass(data_class)
             self._store_dataclass(field_it.name.upper(), data_class)
 
@@ -243,8 +243,6 @@ class AppSettings(QSettings):
 
 
 APP_SETTINGS = AppSettings()
-
-_app_config = AppConfig()
 
 def get_app_config() -> AppConfig:
     return APP_SETTINGS.get_app_config()
