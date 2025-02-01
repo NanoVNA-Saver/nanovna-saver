@@ -546,7 +546,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
     def addMarker(self) -> None:
         new_marker = Marker("", self.app.settings)
-        new_marker.setScale(self.app.scaleFactor)
+        new_marker.setScale(self.app.scale_factor)
         self.app.markers.append(new_marker)
         self.app.marker_data_layout.addWidget(new_marker.get_data_layout())
         self.app.marker_frame.adjustSize()
