@@ -18,7 +18,6 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import contextlib
 import logging
-import sys
 import threading
 from time import localtime, strftime
 
@@ -55,7 +54,7 @@ from .Charts.Chart import Chart
 from .Controls.MarkerControl import MarkerControl
 from .Controls.SerialControl import SerialControl
 from .Controls.SweepControl import SweepControl
-from .Defaults import AppSettings, app_config, restore_config, store_config
+from .Defaults import AppSettings, get_app_config
 from .Formatting import format_frequency, format_gain, format_vswr
 from .Hardware.Hardware import Interface
 from .Hardware.VNA import VNA
@@ -94,14 +93,8 @@ class NanoVNASaver(QWidget):
         self.communicate = Communicate()
         self.s21att = 0.0
         self.setWindowIcon(get_window_icon())
-        self.settings = AppSettings(
-            QtCore.QSettings.Format.IniFormat,
-            QtCore.QSettings.Scope.UserScope,
-            "NanoVNASaver",
-            "NanoVNASaver",
-        )
-        logger.info("Settings from: %s", self.settings.fileName())
-        app_config = restore_config(self.settings)
+        self.settings = AppSettings()
+        app_config = self.settings.restore_config()
         self.threadpool = QtCore.QThreadPool()
         self.sweep = Sweep()
         self.worker = SweepWorker(self)
@@ -492,8 +485,6 @@ class NanoVNASaver(QWidget):
         self.s21_max_gain_label.setText("")
         self.tdr_result_label.setText("")
 
-        self.settings.setValue("Segments", self.sweep_control.get_segments())
-
         logger.debug("Starting worker thread")
         self.threadpool.start(self.worker)
 
@@ -690,17 +681,20 @@ class NanoVNASaver(QWidget):
         self.bands.saveSettings()
         self.threadpool.waitForDone(2500)
 
+        app_config = get_app_config()
         app_config.chart.marker_count = Marker.count()
         app_config.gui.window_width = self.width()
         app_config.gui.window_height = self.height()
         app_config.gui.splitter_sizes = self.splitter.saveState()
-        store_config(self.settings, app_config)
+
+        self.sweep_control.store_settings()
+
+        self.settings.store_config()
 
         # Dosconnect connected devices and release serial port
         self.serial_control.disconnect_device()
 
         a0.accept()
-        sys.exit()
 
     def changeFont(self, font: QtGui.QFont) -> None:
         qf_new = QtGui.QFontMetricsF(font)

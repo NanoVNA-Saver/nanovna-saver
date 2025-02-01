@@ -19,7 +19,7 @@
 import unittest
 from dataclasses import dataclass, field
 
-from NanoVNASaver.Defaults import AppConfig, AppSettings, GuiConfig, QSettings, restore_config, store_config
+from NanoVNASaver.Defaults import AppSettings, GuiConfig
 
 
 @dataclass
@@ -38,14 +38,10 @@ class TestCases(unittest.TestCase):
 
     def setUp(self) -> None:
         self.settings_1 = AppSettings(
-            QSettings.Format.IniFormat,
-            QSettings.Scope.UserScope,
             "NanoVNASaver",
             "Test_1",
         )
         self.settings_2 = AppSettings(
-            QSettings.Format.IniFormat,
-            QSettings.Scope.UserScope,
             "NanoVNASaver",
             "Test_2",
         )
@@ -59,8 +55,8 @@ class TestCases(unittest.TestCase):
         )
 
     def test_store_dataclass(self):
-        self.settings_1.store_dataclass("Section1", self.config_1)
-        self.settings_1.store_dataclass("Section2", self.config_2)
+        self.settings_1._store_dataclass("Section1", self.config_1)
+        self.settings_1._store_dataclass("Section2", self.config_2)
         illegal_config = TConfig(
             my_int=4,
             my_float=3.0,
@@ -69,11 +65,11 @@ class TestCases(unittest.TestCase):
             my_list=(4, 5, 6),
         )
         with self.assertRaises(TypeError):
-            self.settings_1.store_dataclass("SectionX", illegal_config)
+            self.settings_1._store_dataclass("SectionX", illegal_config)
 
     def test_restore_dataclass(self):
-        tc_1 = self.settings_1.restore_dataclass("Section1", self.config_1)
-        tc_2 = self.settings_1.restore_dataclass("Section2", self.config_2)
+        tc_1 = self.settings_1._restore_dataclass("Section1", self.config_1)
+        tc_2 = self.settings_1._restore_dataclass("Section2", self.config_2)
         self.assertNotEqual(tc_1, tc_2)
         self.assertEqual(tc_1, self.config_1)
         self.assertEqual(tc_2, self.config_2)
@@ -86,14 +82,15 @@ class TestCases(unittest.TestCase):
         self.assertIsInstance(tc_2.my_float, float)
 
     def test_restore_empty(self):
-        tc_3 = self.settings_1.restore_dataclass("Section3", TConfig())
+        tc_3 = self.settings_1._restore_dataclass("Section3", TConfig())
         self.assertEqual(tc_3, TConfig())
 
     def test_store(self):
-        tc_1 = AppConfig()
+        tc_1 = self.settings_2.get_app_config()
         tc_1.gui.dark_mode = not tc_1.gui.dark_mode
-        store_config(self.settings_2, tc_1)
-        tc_2 = restore_config(self.settings_2)
+
+        self.settings_2.store_config()
+        tc_2 = self.settings_2.restore_config()
         print(f"\n{tc_1}\n{tc_2}\n")
         self.assertEqual(tc_1, tc_2)
         self.assertNotEqual(tc_2.gui, GuiConfig())
