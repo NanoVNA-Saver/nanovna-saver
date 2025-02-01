@@ -110,9 +110,9 @@ ui-compile = "python -m tools.ui_compile"
 ui-designer = "pyside6-designer"
 
 
-build-pkg-win   = "pyinstaller --onefile -p src -n nanovna-saver.exe src/NanoVNASaver/__main__.py --recursive-copy-metadata NanoVNASaver --noconsole -i icon_48x48.ico"
+build-pkg-win   = "pyinstaller --onefile -p src -n nanovna-saver.exe src/NanoVNASaver/__main__.py --recursive-copy-metadata NanoVNASaver --noconsole -i NanoVNASaver_48x48.ico"
 build-pkg-linux = "pyinstaller --onefile -p src -n nanovna-saver     src/NanoVNASaver/__main__.py --recursive-copy-metadata NanoVNASaver"
-build-pkg-macos = "pyinstaller --onedir  -p src -n NanoVNASaver      src/NanoVNASaver/__main__.py --recursive-copy-metadata NanoVNASaver --window --clean  -y -i icon_48x48.icns  && tar -C dist -zcf ./dist/NanoVNASaver.app-`uname -m`.tar.gz  NanoVNASaver.app"
+build-pkg-macos = "pyinstaller --onedir  -p src -n NanoVNASaver      src/NanoVNASaver/__main__.py --recursive-copy-metadata NanoVNASaver --window --clean  -y -i NanoVNASaver_48x48.icns  && tar -C dist -zcf ./dist/NanoVNASaver.app-`uname -m`.tar.gz  NanoVNASaver.app"
 
 
 
