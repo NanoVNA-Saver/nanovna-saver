@@ -21,7 +21,7 @@ from enum import Enum
 from time import sleep
 
 import numpy as np
-from PySide6.QtCore import QObject, QRunnable, Signal, Slot
+from PySide6.QtCore import QObject, QThread, Signal, Slot
 
 from NanoVNASaver import NanoVNASaver
 
@@ -59,28 +59,36 @@ class WorkerSignals(QObject):
     sweep_error = Signal()
 
 
+# TODO do we need it for QThread?
 class SweepState(Enum):
     STOPPED = 0
     RUNNING = 1
 
 
-class SweepWorker(QRunnable):
+class SweepWorker(QThread):
+
+
     def __init__(self, app: NanoVNASaver) -> None:
         super().__init__()
         logger.info("Initializing SweepWorker")
         self.signals: WorkerSignals = WorkerSignals()
         self.app = app
         self.sweep = Sweep()
-        self.setAutoDelete(False)
+        #self.setAutoDelete(False)
         self.percentage: float = 0.0
         self.data11: list[Datapoint] = []
         self.data21: list[Datapoint] = []
         self.rawData11: list[Datapoint] = []
         self.rawData21: list[Datapoint] = []
         self.init_data()
-        self.state: "SweepState" = SweepState.STOPPED
+        self.state = SweepState.STOPPED
         self.error_message: str = ""
         self.offsetDelay: float = 0.0
+
+    @Slot()
+    def quit(self) -> None:
+       self.state = SweepState.STOPPED
+       super().quit()
 
     @Slot()
     def run(self) -> None:

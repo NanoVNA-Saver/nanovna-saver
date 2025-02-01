@@ -79,6 +79,7 @@ from .Windows.ui import get_window_icon
 
 logger = logging.getLogger(__name__)
 
+WORKING_KILL_TIME_MS = 10 * 1000
 
 class Communicate(QObject):
     data_available = QtCore.Signal()
@@ -473,7 +474,7 @@ class NanoVNASaver(QWidget):
         # Run the device data update
         if not self.vna.connected():
             return
-        self.worker.stopped = False
+        self.worker.start()
 
         self._sweep_control(start=True)
 
@@ -487,9 +488,6 @@ class NanoVNASaver(QWidget):
 
         logger.debug("Starting worker thread")
         self.threadpool.start(self.worker)
-
-    def sweep_stop(self):
-        self.worker.stopped = True
 
     def saveData(self, data, data21, source=None):
         with self.dataLock:
@@ -674,7 +672,8 @@ class NanoVNASaver(QWidget):
         return new_chart
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
-        self.worker.stopped = True
+        self.worker.quit()
+        self.worker.wait(WORKING_KILL_TIME_MS)
         for marker in self.markers:
             marker.update_settings()
         self.settings.sync()

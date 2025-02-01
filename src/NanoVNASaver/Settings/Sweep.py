@@ -113,7 +113,7 @@ class Sweep:
 
     # Properties are immutable, this does not circumvent the accessors.
     @property
-    def properties(self) -> "Properties":
+    def properties(self) -> Properties:
         return self._properties
 
     @property
