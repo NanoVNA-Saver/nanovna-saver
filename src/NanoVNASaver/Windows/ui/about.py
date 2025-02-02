@@ -103,7 +103,7 @@ class Ui_DialogAbout(object):
 
         self._frm_updates_status = QFrame(DialogAbout)
         self._frm_updates_status.setObjectName(u"_frm_updates_status")
-        self._frm_updates_status.setFrameShape(QFrame.Shape.StyledPanel)
+        self._frm_updates_status.setFrameShape(QFrame.Shape.NoFrame)
         self._frm_updates_status.setFrameShadow(QFrame.Shadow.Raised)
         self.horizontalLayout_2 = QHBoxLayout(self._frm_updates_status)
         self.horizontalLayout_2.setSpacing(0)
@@ -149,7 +149,7 @@ class Ui_DialogAbout(object):
         self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
         self._frm_runtime_info_1 = QFrame(self._frm_runtime_info)
         self._frm_runtime_info_1.setObjectName(u"_frm_runtime_info_1")
-        self._frm_runtime_info_1.setFrameShape(QFrame.Shape.StyledPanel)
+        self._frm_runtime_info_1.setFrameShape(QFrame.Shape.NoFrame)
         self._frm_runtime_info_1.setFrameShadow(QFrame.Shadow.Raised)
         self.horizontalLayout = QHBoxLayout(self._frm_runtime_info_1)
         self.horizontalLayout.setSpacing(0)
