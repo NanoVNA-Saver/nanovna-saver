@@ -54,7 +54,7 @@ from .Charts.Chart import Chart
 from .Controls.MarkerControl import MarkerControl
 from .Controls.SerialControl import SerialControl
 from .Controls.SweepControl import SweepControl
-from .Defaults import AppSettings, get_app_config
+from .Defaults import APP_SETTINGS, get_app_config
 from .Formatting import format_frequency, format_gain, format_vswr
 from .Hardware.Hardware import Interface
 from .Hardware.VNA import VNA
@@ -93,7 +93,8 @@ class NanoVNASaver(QWidget):
         self.communicate = Communicate()
         self.s21att = 0.0
         self.setWindowIcon(get_window_icon())
-        self.settings = AppSettings()
+        # TODO APP_SETTINGS should be used instead app.setting\
+        self.settings = APP_SETTINGS
         app_config = self.settings.restore_config()
         self.threadpool = QtCore.QThreadPool()
         self.sweep = Sweep()

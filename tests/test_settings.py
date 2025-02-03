@@ -88,8 +88,8 @@ class TestCases(unittest.TestCase):
     def test_store(self):
         tc_1 = self.settings_2.get_app_config()
         tc_1.gui.dark_mode = not tc_1.gui.dark_mode
-
         self.settings_2.store_config()
+
         tc_2 = self.settings_2.restore_config()
         print(f"\n{tc_1}\n{tc_2}\n")
         self.assertEqual(tc_1, tc_2)
