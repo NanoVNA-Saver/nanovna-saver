@@ -14,8 +14,8 @@ def get_window_icon() -> QIcon:
 
 
 __all__ = [
-    "qInitResources",
-    "Ui_DialogAbout",
     "WINDOW_ICON_RES",
+    "Ui_DialogAbout",
     "get_window_icon",
+    "qInitResources",
 ]
