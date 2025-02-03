@@ -123,7 +123,7 @@ pythonpath = [
 
 
 [tool.ruff]
-line-length = 120
+line-length = 80
 target-version = 'py311'
 fix = true
 show-fixes = true
