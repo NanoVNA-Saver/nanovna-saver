@@ -120,7 +120,7 @@ class SweepControl(Control):
         self.btn_start.setEnabled(False)
         self.btn_stop = QtWidgets.QPushButton("Stop")
         self.btn_stop.setFixedHeight(20)
-        self.btn_stop.clicked.connect(self.app.sweep_stop)
+        self.btn_stop.clicked.connect(self.app.worker.quit)
         self.btn_stop.setShortcut(QtCore.Qt.Key.Key_Escape)
         self.btn_stop.setDisabled(True)
         btn_layout = QtWidgets.QHBoxLayout()
