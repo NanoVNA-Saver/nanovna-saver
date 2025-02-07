@@ -116,6 +116,7 @@ class NanoVNASaver(QWidget):
         self.interface = Interface("serial", "None")
         self.vna: type[VNA] = VNA(self.interface)
 
+        self.calibration: Calibration = Calibration()
         self.sweep_control = SweepControl(self)
         self.marker_control = MarkerControl(self)
         self.serial_control = SerialControl(self)
@@ -131,8 +132,6 @@ class NanoVNASaver(QWidget):
 
         self.sweepSource = ""
         self.referenceSource = ""
-
-        self.calibration = Calibration()
 
         logger.debug("Building user interface")
 

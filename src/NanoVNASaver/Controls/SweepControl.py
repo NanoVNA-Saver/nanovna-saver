@@ -147,6 +147,7 @@ class SweepControl(Control):
 
     def set_end(self, end: int):
         self.input_end.setText(format_frequency_sweep(end))
+        self.input_end.setText(format_frequency_sweep(end))
         self.input_end.textEdited.emit(self.input_end.text())
         self.updated.emit(self)
 
@@ -192,8 +193,9 @@ class SweepControl(Control):
         fcenter = round((fstart + fstop) / 2)
         if fspan < 0 or fstart < 0 or fstop < 0:
             return
-        self.input_span.setText(fspan)
         self.input_center.setText(fcenter)
+        self.input_span.setText(fspan)
+        self.update_text()
         self.update_sweep()
 
     def update_start_end(self):
@@ -207,6 +209,7 @@ class SweepControl(Control):
             return
         self.input_start.setText(fstart)
         self.input_end.setText(fstop)
+        self.update_text()
         self.update_sweep()
 
     def update_step_size(self):
@@ -240,3 +243,27 @@ class SweepControl(Control):
         settings.center = self.input_center.text()
         settings.span = self.input_span.text()
         settings.segments = self.input_segments.text()
+
+    def update_text(self) -> None:
+        OOR_TEXT="Out of calibration range"
+        cal_ds = self.app.calibration.dataset
+        start = self.get_start()
+        end = self.get_end()
+        self.input_start.setStyleSheet("QLineEdit {}")
+        self.input_end.setStyleSheet("QLineEdit {}")
+        self.input_start.setToolTip("")
+        self.input_end.setToolTip("")
+        if not cal_ds.data:
+            self.input_start.setToolTip(OOR_TEXT)
+            self.input_start.setStyleSheet("QLineEdit { color: red; }")
+            self.input_end.setToolTip(OOR_TEXT)
+            self.input_end.setStyleSheet("QLineEdit { color: red; }")
+        else:
+            if start < cal_ds.freq_min():
+                self.input_start.setToolTip(OOR_TEXT)
+                self.input_start.setStyleSheet("QLineEdit { color: red; }")
+            if end > cal_ds.freq_max():
+                self.input_end.setToolTip(OOR_TEXT)
+                self.input_end.setStyleSheet("QLineEdit { color: red; }")
+        self.input_start.repaint()
+        self.input_end.repaint()
