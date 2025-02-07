@@ -40,7 +40,7 @@ from ..Formatting import (
     format_wavelength,
     parse_frequency,
 )
-from ..Inputs import MarkerFrequencyInputWidget as FrequencyInput
+from ..Controls.SweepControl import FrequencyInputWidget
 from .Values import TYPES, Value, default_label_ids
 
 COLORS = (
@@ -53,6 +53,24 @@ COLORS = (
     QtGui.QColor(255, 255, 0),
 )
 
+
+class MarkerFrequencyInputWidget(FrequencyInputWidget):
+    def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
+        if a0.type() == QtGui.QKeyEvent.Type.KeyPress:
+            if a0.key() == QtCore.Qt.Key.Key_Up and self.nextFrequency != -1:
+                a0.accept()
+                self.setText(str(self.nextFrequency))
+                self.editingFinished.emit()  # self.text())
+                return
+            if (
+                a0.key() == QtCore.Qt.Key.Key_Down
+                and self.previousFrequency != -1
+            ):
+                a0.accept()
+                self.setText(str(self.previousFrequency))
+                self.editingFinished.emit()  # self.text())
+                return
+        super().keyPressEvent(a0)
 
 class MarkerLabel(QtWidgets.QLabel):
     def __init__(self, name):
@@ -89,12 +107,12 @@ class Marker(QtCore.QObject, Value):
         if not self.name:
             self.name = f"Marker {Marker._instances}"
 
-        self.frequencyInput = FrequencyInput()
+        self.frequencyInput = FrequencyInputWidget()
         self.frequencyInput.setMinimumHeight(20)
         self.frequencyInput.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
         self.frequencyInput.editingFinished.connect(
             lambda: self.setFrequency(
-                parse_frequency(self.frequencyInput.text())
+                self.frequencyInput.get_freq()
             )
         )
 
