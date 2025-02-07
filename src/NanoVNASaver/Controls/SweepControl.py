@@ -51,39 +51,24 @@ class SweepControl(Control):
         self.layout.addRow(input_layout)
 
         self.input_start = FrequencyInputWidget(sweep_settings.start)
-        self.input_start.setFixedHeight(20)
-        self.input_start.setMinimumWidth(60)
-        self.input_start.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
         self.input_start.textEdited.connect(self.update_center_span)
         self.input_start.textChanged.connect(self.update_step_size)
         input_left_layout.addRow(QtWidgets.QLabel("Start"), self.input_start)
 
         self.input_end = FrequencyInputWidget(sweep_settings.end)
-        self.input_end.setFixedHeight(20)
-        self.input_end.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
         self.input_end.textEdited.connect(self.update_center_span)
         self.input_end.textChanged.connect(self.update_step_size)
         input_left_layout.addRow(QtWidgets.QLabel("Stop"), self.input_end)
 
         self.input_center = FrequencyInputWidget(sweep_settings.center)
-        self.input_center.setFixedHeight(20)
-        self.input_center.setMinimumWidth(60)
-        self.input_center.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
         self.input_center.textEdited.connect(self.update_start_end)
-
         input_right_layout.addRow(QtWidgets.QLabel("Center"), self.input_center)
 
         self.input_span = FrequencyInputWidget(sweep_settings.span)
-        self.input_span.setFixedHeight(20)
-        self.input_span.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
         self.input_span.textEdited.connect(self.update_start_end)
-
         input_right_layout.addRow(QtWidgets.QLabel("Span"), self.input_span)
 
         self.input_segments = QtWidgets.QLineEdit(sweep_settings.segments)
-        self.input_segments.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
-        self.input_segments.setFixedHeight(20)
-        self.input_segments.setFixedWidth(60)
         self.input_segments.textEdited.connect(self.update_step_size)
 
         self.label_step = QtWidgets.QLabel("Hz/step")

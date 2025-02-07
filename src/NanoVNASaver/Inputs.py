@@ -27,6 +27,9 @@ class FrequencyInputWidget(QtWidgets.QLineEdit):
         super().__init__(text)
         self.nextFrequency = -1
         self.previousFrequency = -1
+        self.setFixedHeight(20)
+        self.setMinimumWidth(60)
+        self.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
 
     def setText(self, text: str) -> None:
         super().setText(format_frequency_inputs(text))
