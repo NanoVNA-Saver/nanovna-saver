@@ -17,22 +17,9 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtGui
 
-from .Formatting import format_frequency_inputs
-
-
-class FrequencyInputWidget(QtWidgets.QLineEdit):
-    def __init__(self, text=""):
-        super().__init__(text)
-        self.nextFrequency = -1
-        self.previousFrequency = -1
-        self.setFixedHeight(20)
-        self.setMinimumWidth(60)
-        self.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
-
-    def setText(self, text: str) -> None:
-        super().setText(format_frequency_inputs(text))
+from .Controls.SweepControl import FrequencyInputWidget
 
 
 class MarkerFrequencyInputWidget(FrequencyInputWidget):
