@@ -256,25 +256,32 @@ class SweepControl(Control):
         settings.segments = self.input_segments.text()
 
     def update_text(self) -> None:
-        OOR_TEXT="Out of calibration range"
         cal_ds = self.app.calibration.dataset
         start = self.get_start()
-        end = self.get_end()
+        stop = self.get_end()
+        if cal_ds.data:
+            oor_text=(
+                f"Out of calibration range ("
+                f"{format_frequency_inputs(cal_ds.freq_min())} - "
+                f"{format_frequency_inputs(cal_ds.freq_max())})"
+            )
+        else:
+            oor_text="No calibration data"
         self.inputs["Start"].setStyleSheet("QLineEdit {}")
         self.inputs["Stop"].setStyleSheet("QLineEdit {}")
         self.inputs["Start"].setToolTip("")
         self.inputs["Stop"].setToolTip("")
         if not cal_ds.data:
-            self.inputs["Start"].setToolTip(OOR_TEXT)
+            self.inputs["Start"].setToolTip(oor_text)
             self.inputs["Start"].setStyleSheet("QLineEdit { color: red; }")
-            self.inputs["Stop"].setToolTip(OOR_TEXT)
+            self.inputs["Stop"].setToolTip(oor_text)
             self.inputs["Stop"].setStyleSheet("QLineEdit { color: red; }")
         else:
             if start < cal_ds.freq_min():
-                self.inputs["Start"].setToolTip(OOR_TEXT)
+                self.inputs["Start"].setToolTip(oor_text)
                 self.inputs["Start"].setStyleSheet("QLineEdit { color: red; }")
-            if end > cal_ds.freq_max():
-                self.inputs["Stop"].setToolTip(OOR_TEXT)
+            if stop > cal_ds.freq_max():
+                self.inputs["Stop"].setToolTip(oor_text)
                 self.inputs["Stop"].setStyleSheet("QLineEdit { color: red; }")
         self.inputs["Start"].repaint()
         self.inputs["Stop"].repaint()

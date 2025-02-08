@@ -24,6 +24,7 @@ from PySide6.QtCore import Signal
 from PySide6.QtGui import QColorConstants
 
 from .. import RFTools
+from ..Controls.SweepControl import FrequencyInputWidget
 from ..Formatting import (
     format_capacitance,
     format_complex_adm,
@@ -40,7 +41,6 @@ from ..Formatting import (
     format_wavelength,
     parse_frequency,
 )
-from ..Controls.SweepControl import FrequencyInputWidget
 from .Values import TYPES, Value, default_label_ids
 
 COLORS = (
