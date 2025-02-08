@@ -24,66 +24,68 @@ from NanoVNASaver import NanoVNASaver
 
 from ..Defaults import SweepConfig, get_app_config
 from ..Formatting import (
+    format_frequency_inputs,
     format_frequency_short,
     format_frequency_sweep,
     parse_frequency,
 )
-from ..Inputs import FrequencyInputWidget
 from .Control import Control
 
 logger = logging.getLogger(__name__)
 
+class FrequencyInputWidget(QtWidgets.QLineEdit):
+    def __init__(self, text=""):
+        super().__init__(text)
+        self.nextFrequency = -1
+        self.previousFrequency = -1
+        self.setFixedHeight(20)
+        self.setMinimumWidth(60)
+        self.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
+
+    def setText(self, text: str) -> None:
+        super().setText(format_frequency_inputs(text))
+
+    def get_freq(self) -> int:
+        return parse_frequency(self.text())
 
 class SweepControl(Control):
     def __init__(self, app: NanoVNASaver):
         super().__init__(app, "Sweep control")
 
         sweep_settings = self.get_settings()
+
         line = QtWidgets.QFrame()
         line.setFrameShape(QtWidgets.QFrame.Shape.VLine)
 
         input_layout = QtWidgets.QHBoxLayout()
-        input_left_layout = QtWidgets.QFormLayout()
-        input_right_layout = QtWidgets.QFormLayout()
-        input_layout.addLayout(input_left_layout)
+        input_layout_l = QtWidgets.QFormLayout()
+        input_layout_r = QtWidgets.QFormLayout()
+
+        input_layout.addLayout(input_layout_l)
         input_layout.addWidget(line)
-        input_layout.addLayout(input_right_layout)
+        input_layout.addLayout(input_layout_r)
+
         self.layout.addRow(input_layout)
 
-        self.input_start = FrequencyInputWidget(sweep_settings.start)
-        self.input_start.setFixedHeight(20)
-        self.input_start.setMinimumWidth(60)
-        self.input_start.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
-        self.input_start.textEdited.connect(self.update_center_span)
-        self.input_start.textChanged.connect(self.update_step_size)
-        input_left_layout.addRow(QtWidgets.QLabel("Start"), self.input_start)
+        self.inputs: dict[str, FrequencyInputWidget] = {
+            "Start": FrequencyInputWidget(sweep_settings.start),
+            "Stop": FrequencyInputWidget(sweep_settings.end),
+            "Center": FrequencyInputWidget(sweep_settings.center),
+            "Span": FrequencyInputWidget(sweep_settings.span),
+        }
+        self.inputs["Start"].textEdited.connect(self.update_center_span)
+        self.inputs["Start"].textChanged.connect(self.update_step_size)
+        self.inputs["Stop"].textEdited.connect(self.update_center_span)
+        self.inputs["Stop"].textChanged.connect(self.update_step_size)
+        self.inputs["Center"].textEdited.connect(self.update_start_end)
+        self.inputs["Span"].textEdited.connect(self.update_start_end)
 
-        self.input_end = FrequencyInputWidget(sweep_settings.end)
-        self.input_end.setFixedHeight(20)
-        self.input_end.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
-        self.input_end.textEdited.connect(self.update_center_span)
-        self.input_end.textChanged.connect(self.update_step_size)
-        input_left_layout.addRow(QtWidgets.QLabel("Stop"), self.input_end)
-
-        self.input_center = FrequencyInputWidget(sweep_settings.center)
-        self.input_center.setFixedHeight(20)
-        self.input_center.setMinimumWidth(60)
-        self.input_center.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
-        self.input_center.textEdited.connect(self.update_start_end)
-
-        input_right_layout.addRow(QtWidgets.QLabel("Center"), self.input_center)
-
-        self.input_span = FrequencyInputWidget(sweep_settings.span)
-        self.input_span.setFixedHeight(20)
-        self.input_span.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
-        self.input_span.textEdited.connect(self.update_start_end)
-
-        input_right_layout.addRow(QtWidgets.QLabel("Span"), self.input_span)
+        input_layout_l.addRow(QtWidgets.QLabel("Start"), self.inputs["Start"])
+        input_layout_l.addRow(QtWidgets.QLabel("Stop"), self.inputs["Stop"])
+        input_layout_r.addRow(QtWidgets.QLabel("Center"), self.inputs["Center"])
+        input_layout_r.addRow(QtWidgets.QLabel("Span"), self.inputs["Span"])
 
         self.input_segments = QtWidgets.QLineEdit(sweep_settings.segments)
-        self.input_segments.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
-        self.input_segments.setFixedHeight(20)
-        self.input_segments.setFixedWidth(60)
         self.input_segments.textEdited.connect(self.update_step_size)
 
         self.label_step = QtWidgets.QLabel("Hz/step")
@@ -110,19 +112,9 @@ class SweepControl(Control):
         self.progress_bar.setValue(0)
         self.layout.addRow(self.progress_bar)
 
-        self.btn_start = QtWidgets.QPushButton("Sweep")
-        self.btn_start.setFixedHeight(20)
-        self.btn_start.clicked.connect(self.app.sweep_start)
-        self.btn_start.setShortcut(
-            QtCore.Qt.Key.Key_Control + QtCore.Qt.Key.Key_W
-        )
-        # Will be enabled when VNA is connected
-        self.btn_start.setEnabled(False)
-        self.btn_stop = QtWidgets.QPushButton("Stop")
-        self.btn_stop.setFixedHeight(20)
-        self.btn_stop.clicked.connect(self.app.worker.quit)
-        self.btn_stop.setShortcut(QtCore.Qt.Key.Key_Escape)
-        self.btn_stop.setDisabled(True)
+        self.btn_start = self._build_start_button()
+        self.btn_stop = self._build_stop_button()
+
         btn_layout = QtWidgets.QHBoxLayout()
         btn_layout.addWidget(self.btn_start)
         btn_layout.addWidget(self.btn_stop)
@@ -131,31 +123,51 @@ class SweepControl(Control):
         btn_layout_widget.setLayout(btn_layout)
         self.layout.addRow(btn_layout_widget)
 
-        self.input_start.textEdited.emit(self.input_start.text())
-        self.input_start.textChanged.emit(self.input_start.text())
+        self.inputs["Start"].textEdited.emit(self.inputs["Start"].text())
+        self.inputs["Start"].textChanged.emit(self.inputs["Start"].text())
+
+    def _build_start_button(self) -> QtWidgets.QPushButton:
+        btn = QtWidgets.QPushButton("Sweep")
+        btn.setFixedHeight(20)
+        btn.clicked.connect(self.app.sweep_start)
+        btn.setShortcut(
+            QtCore.Qt.Key.Key_Control + QtCore.Qt.Key.Key_W
+        )
+        # Will be enabled when VNA is connected
+        btn.setEnabled(False)
+        return btn
+
+    def _build_stop_button(self) -> QtWidgets.QPushButton:
+        btn = QtWidgets.QPushButton("Stop")
+        btn.setFixedHeight(20)
+        btn.clicked.connect(self.app.worker.quit)
+        btn.setShortcut(QtCore.Qt.Key.Key_Escape)
+        btn.setDisabled(True)
+        return btn
 
     def get_start(self) -> int:
-        return parse_frequency(self.input_start.text())
+        return self.inputs["Start"].get_freq()
 
     def set_start(self, start: int):
-        self.input_start.setText(format_frequency_sweep(start))
-        self.input_start.textEdited.emit(self.input_start.text())
+        self.inputs["Start"].setText(format_frequency_sweep(start))
+        self.inputs["Start"].textEdited.emit(self.inputs["Start"].text())
         self.updated.emit(self)
 
     def get_end(self) -> int:
-        return parse_frequency(self.input_end.text())
+        return self.inputs["Stop"].get_freq()
 
     def set_end(self, end: int):
-        self.input_end.setText(format_frequency_sweep(end))
-        self.input_end.textEdited.emit(self.input_end.text())
+        self.inputs["Stop"].setText(format_frequency_sweep(end))
+        self.inputs["Stop"].setText(format_frequency_sweep(end))
+        self.inputs["Stop"].textEdited.emit(self.inputs["Stop"].text())
         self.updated.emit(self)
 
     def get_center(self) -> int:
-        return parse_frequency(self.input_center.text())
+        return self.inputs["Center"].get_freq()
 
     def set_center(self, center: int):
-        self.input_center.setText(format_frequency_sweep(center))
-        self.input_center.textEdited.emit(self.input_center.text())
+        self.inputs["Center"].setText(format_frequency_sweep(center))
+        self.inputs["Center"].textEdited.emit(self.inputs["Center"].text())
         self.updated.emit(self)
 
     def get_segments(self) -> int:
@@ -171,18 +183,18 @@ class SweepControl(Control):
         self.updated.emit(self)
 
     def get_span(self) -> int:
-        return parse_frequency(self.input_span.text())
+        return self.inputs["Span"].get_freq()
 
     def set_span(self, span: int):
-        self.input_span.setText(format_frequency_sweep(span))
-        self.input_span.textEdited.emit(self.input_span.text())
+        self.inputs["Span"].setText(format_frequency_sweep(span))
+        self.inputs["Span"].textEdited.emit(self.inputs["Span"].text())
         self.updated.emit(self)
 
     def toggle_settings(self, disabled):
-        self.input_start.setDisabled(disabled)
-        self.input_end.setDisabled(disabled)
-        self.input_span.setDisabled(disabled)
-        self.input_center.setDisabled(disabled)
+        self.inputs["Start"].setDisabled(disabled)
+        self.inputs["Stop"].setDisabled(disabled)
+        self.inputs["Span"].setDisabled(disabled)
+        self.inputs["Center"].setDisabled(disabled)
         self.input_segments.setDisabled(disabled)
 
     def update_center_span(self):
@@ -192,8 +204,9 @@ class SweepControl(Control):
         fcenter = round((fstart + fstop) / 2)
         if fspan < 0 or fstart < 0 or fstop < 0:
             return
-        self.input_span.setText(fspan)
-        self.input_center.setText(fcenter)
+        self.inputs["Center"].setText(fcenter)
+        self.inputs["Span"].setText(fspan)
+        self.update_text()
         self.update_sweep()
 
     def update_start_end(self):
@@ -205,8 +218,9 @@ class SweepControl(Control):
         fstop = round(fcenter + fspan / 2)
         if fstart < 0 or fstop < 0:
             return
-        self.input_start.setText(fstart)
-        self.input_end.setText(fstop)
+        self.inputs["Start"].setText(fstart)
+        self.inputs["Stop"].setText(fstop)
+        self.update_text()
         self.update_sweep()
 
     def update_step_size(self):
@@ -235,8 +249,39 @@ class SweepControl(Control):
 
     def store_settings(self) -> None:
         settings = self.get_settings()
-        settings.start = self.input_start.text()
-        settings.end = self.input_end.text()
-        settings.center = self.input_center.text()
-        settings.span = self.input_span.text()
+        settings.start = self.inputs["Start"].text()
+        settings.end = self.inputs["Stop"].text()
+        settings.center = self.inputs["Center"].text()
+        settings.span = self.inputs["Span"].text()
         settings.segments = self.input_segments.text()
+
+    def update_text(self) -> None:
+        cal_ds = self.app.calibration.dataset
+        start = self.get_start()
+        stop = self.get_end()
+        if cal_ds.data:
+            oor_text=(
+                f"Out of calibration range ("
+                f"{format_frequency_inputs(cal_ds.freq_min())} - "
+                f"{format_frequency_inputs(cal_ds.freq_max())})"
+            )
+        else:
+            oor_text="No calibration data"
+        self.inputs["Start"].setStyleSheet("QLineEdit {}")
+        self.inputs["Stop"].setStyleSheet("QLineEdit {}")
+        self.inputs["Start"].setToolTip("")
+        self.inputs["Stop"].setToolTip("")
+        if not cal_ds.data:
+            self.inputs["Start"].setToolTip(oor_text)
+            self.inputs["Start"].setStyleSheet("QLineEdit { color: red; }")
+            self.inputs["Stop"].setToolTip(oor_text)
+            self.inputs["Stop"].setStyleSheet("QLineEdit { color: red; }")
+        else:
+            if start < cal_ds.freq_min():
+                self.inputs["Start"].setToolTip(oor_text)
+                self.inputs["Start"].setStyleSheet("QLineEdit { color: red; }")
+            if stop > cal_ds.freq_max():
+                self.inputs["Stop"].setToolTip(oor_text)
+                self.inputs["Stop"].setStyleSheet("QLineEdit { color: red; }")
+        self.inputs["Start"].repaint()
+        self.inputs["Stop"].repaint()

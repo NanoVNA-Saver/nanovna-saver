@@ -544,6 +544,7 @@ class CalibrationWindow(QtWidgets.QWidget):
                 self.app.sweepSource,
             )
             self.app.worker.signals.updated.emit()
+        self.app.sweep_control.update_text()
 
     def setOffsetDelay(self, value: float):
         logger.debug("New offset delay value: %f ps", value)
@@ -702,6 +703,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             )
             self.reset()
             return
+        self.app.sweep_control.update_text()
 
     def loadCalibration(self):
         filename, _ = QtWidgets.QFileDialog.getOpenFileName(
@@ -726,6 +728,7 @@ class CalibrationWindow(QtWidgets.QWidget):
         for note in self.app.calibration.notes:
             self.notes_textedit.appendPlainText(note)
         self.app.settings.setValue("CalibrationFile", filename)
+        self.app.sweep_control.update_text()
 
     def saveCalibration(self):
         if not self.app.calibration.isCalculated:

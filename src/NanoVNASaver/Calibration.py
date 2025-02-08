@@ -243,6 +243,12 @@ class CalDataSet(UserDict):
     def frequencies(self) -> list[int]:
         return sorted(self.data.keys())
 
+    def freq_min(self) -> int:
+        return self.frequencies()[0] if self.frequencies() else 0
+
+    def freq_max(self) -> int:
+        return self.frequencies()[-1] if self.frequencies() else 0
+
     def get(self, key: int, default: CalData = None) -> CalData:
         return self.data.get(key, default)
 
