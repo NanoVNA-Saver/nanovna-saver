@@ -1,17 +1,30 @@
 app-id: io.github.zarath.nanovna-saver
 runtime: org.kde.Platform
-runtime-version: '6.5'
+runtime-version: '6.8'
 sdk: org.kde.Sdk
 command: /app/bin/NanoVNASaver
 build-options:
     build-args:
       - --share=network
 modules:
-  - name: nanonva-saver
+  - name: uv
     buildsystem: simple
     build-commands:
-      - pip3 install --prefix=/app wheel setuptools setuptools-scm
-      - pip3 install --prefix=/app git+https://github.com/NanoVNA-Saver/nanovna-saver.git
+      - find
+      - curl -LsSf https://astral.sh/uv/install.sh -o uv_install.sh
+      - HOME=${PWD} sh uv_install.sh
+      - install -Dm755 ${PWD}/.local/bin/uv* -t ${FLATPAK_DEST}/bin/
+  - name: nanonva-saver
+    sources:
+      - type: git
+        url: https://github.com/NanoVNA-Saver/nanovna-saver.git
+        tag: v0.7.0
+    buildsystem: simple
+    build-commands:
+      - uv run task ui-compile
+      - uv build
+      - pip install --prefix=/app dist/NanoVNASaver*whl
+      - find /app
 finish-args:
   # X11 + XShm access
   - --share=ipc
