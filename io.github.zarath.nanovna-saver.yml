@@ -2,7 +2,7 @@ app-id: io.github.zarath.nanovna-saver
 runtime: org.kde.Platform
 runtime-version: '6.8'
 sdk: org.kde.Sdk
-command: /app/bin/NanoVNASaver
+command: NanoVNASaver
 build-options:
     build-args:
       - --share=network
@@ -28,9 +28,8 @@ modules:
 finish-args:
   # X11 + XShm access
   - --share=ipc
-  - --socket=x11
-  # Wayland access
   - --socket=wayland
+  - --socket=fallback-x11
   # Needs access to NanoVNAs
   - --device=all
   # Needs to save files locally
