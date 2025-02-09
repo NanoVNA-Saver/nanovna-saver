@@ -134,7 +134,6 @@ class SweepWorker(QThread):
                 logger.debug("Sweep segment no %d", i)
                 if self._terminate:
                     logger.debug("Stopping sweeping as signalled")
-                    self._terminate = False
                     break
                 start, stop = sweep.get_index_range(i)
 
@@ -245,7 +244,6 @@ class SweepWorker(QThread):
         for i in range(averages):
             if self._terminate:
                 logger.debug("Stopping averaging as signalled.")
-                self._terminate = False
                 if averages == 1:
                     break
                 logger.warning("Stop during average. Discarding sweep result.")
