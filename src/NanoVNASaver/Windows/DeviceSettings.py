@@ -23,7 +23,6 @@ from PySide6.QtGui import QIntValidator
 
 from NanoVNASaver import NanoVNASaver
 
-from ..SweepWorker import SweepState
 from .Defaults import make_scrollable
 from .Screenshot import ScreenshotWindow
 from .ui import get_window_icon
@@ -147,7 +146,7 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         self.label["firmware"].setText(
             f"{self.app.vna.name} v{self.app.vna.version}"
         )
-        if self.app.worker.state == SweepState.RUNNING:
+        if self.app.worker.isRunning():
             self.label["calibration"].setText("(Sweep running)")
         else:
             self.label["calibration"].setText(self.app.vna.getCalibration())
@@ -189,7 +188,7 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         self.app.settings.setValue("SerialInputValidation", validate_data)
 
     def captureScreenshot(self) -> None:
-        if self.app.worker.state != SweepState.RUNNING:
+        if not self.app.worker.isRunning():
             pixmap = self.app.vna.getScreenshot()
             self.screenshotWindow.setScreenshot(pixmap)
             self.screenshotWindow.show()
@@ -198,7 +197,7 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         #       disabled when a sweep is running?
 
     def updateNrDatapoints(self, i) -> None:
-        if i < 0 or self.app.worker.state == SweepState.RUNNING:
+        if i < 0 or self.app.worker.isRunning():
             return
         logger.debug("DP: %s", self.datapoints.itemText(i))
         self.app.vna.datapoints = int(self.datapoints.itemText(i))
@@ -206,7 +205,7 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         self.app.sweep_control.update_step_size()
 
     def updateBandwidth(self, i) -> None:
-        if i < 0 or self.app.worker.state == SweepState.RUNNING:
+        if i < 0 or self.app.worker.isRunning():
             return
         logger.debug("Bandwidth: %s", self.bandwidth.itemText(i))
         self.app.vna.set_bandwidth(int(self.bandwidth.itemText(i)))

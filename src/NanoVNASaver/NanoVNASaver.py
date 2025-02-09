@@ -473,8 +473,6 @@ class NanoVNASaver(QWidget):
         # Run the device data update
         if not self.vna.connected():
             return
-        self.worker.start()
-
         self._sweep_control(start=True)
 
         for m in self.markers:
@@ -486,7 +484,10 @@ class NanoVNASaver(QWidget):
         self.tdr_result_label.setText("")
 
         logger.debug("Starting worker thread")
-        self.threadpool.start(self.worker)
+        self.worker.start()
+        # TODO: Rewrite to make worker a qrunnable with worker signals
+        # https://www.pythonguis.com/tutorials/multithreading-pyqt6-applications-qthreadpool/
+        # self.threadpool.start(self.worker)
 
     def saveData(self, data, data21, source=None):
         with self.dataLock:
