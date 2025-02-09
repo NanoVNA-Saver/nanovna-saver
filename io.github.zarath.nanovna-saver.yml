@@ -10,15 +10,12 @@ modules:
   - name: uv
     buildsystem: simple
     build-commands:
-      - find
-      - curl -LsSf https://astral.sh/uv/install.sh -o uv_install.sh
-      - HOME=${PWD} sh uv_install.sh
-      - install -Dm755 ${PWD}/.local/bin/uv* -t ${FLATPAK_DEST}/bin/
+      - pip install --prefix=/app uv
   - name: nanonva-saver
     sources:
       - type: git
         url: https://github.com/NanoVNA-Saver/nanovna-saver.git
-        tag: v0.7.0
+        branch: main
     buildsystem: simple
     build-commands:
       - uv run task ui-compile
