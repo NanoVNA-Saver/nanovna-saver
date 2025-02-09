@@ -42,7 +42,6 @@ Introduction
 This software connects to a NanoVNA and extracts the data for
 display on a computer and allows saving the sweep data to Touchstone files.
 
-:raw-html-m2r:`<a href="#current-features"></a>`
 
 Current features
 ^^^^^^^^^^^^^^^^
