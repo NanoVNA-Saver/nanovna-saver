@@ -4,7 +4,10 @@ description='GUI for the NanoVNA and derivates'
 authors = [
     { name = "Rune B. Broberg", email = "NanoVNA-Saver@users.noreply.github.com" }
 ]
-requires-python = ">=3.10"
+maintainers = [
+    { name = "Holger Mueller", email = "zarath@gmx.de" }
+]
+requires-python = ">=3.10,<3.13"
 license = {text = "GPL-3.0-or-later"}
 readme = "README.rst"
 
@@ -14,7 +17,6 @@ classifiers =[
   'Intended Audience :: Science/Research',
   'Intended Audience :: Science/Research',
   'Intended Audience :: Telecommunications Industry',
-  'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
   'Programming Language :: Python :: 3.10',
   'Programming Language :: Python :: 3.11',
   'Programming Language :: Python :: 3.12',

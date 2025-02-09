@@ -51,6 +51,7 @@ MANIFEST
 .flatpak-builder/*
 macbuildenv/*
 NanoVNASaver.spec
+src/NanoVNASaver/Windows/ui/about.py
 
 # Per-project virtualenvs
 .venv*/
