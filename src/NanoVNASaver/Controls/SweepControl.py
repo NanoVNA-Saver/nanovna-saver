@@ -33,6 +33,7 @@ from .Control import Control
 
 logger = logging.getLogger(__name__)
 
+
 class FrequencyInputWidget(QtWidgets.QLineEdit):
     def __init__(self, text=""):
         super().__init__(text)
@@ -47,6 +48,7 @@ class FrequencyInputWidget(QtWidgets.QLineEdit):
 
     def get_freq(self) -> int:
         return parse_frequency(self.text())
+
 
 class SweepControl(Control):
     def __init__(self, app: NanoVNASaver):
@@ -130,9 +132,7 @@ class SweepControl(Control):
         btn = QtWidgets.QPushButton("Sweep")
         btn.setFixedHeight(20)
         btn.clicked.connect(self.app.sweep_start)
-        btn.setShortcut(
-            QtCore.Qt.Key.Key_Control + QtCore.Qt.Key.Key_W
-        )
+        btn.setShortcut(QtCore.Qt.Key.Key_Control + QtCore.Qt.Key.Key_W)
         # Will be enabled when VNA is connected
         btn.setEnabled(False)
         return btn
@@ -260,13 +260,13 @@ class SweepControl(Control):
         start = self.get_start()
         stop = self.get_end()
         if cal_ds.data:
-            oor_text=(
+            oor_text = (
                 f"Out of calibration range ("
                 f"{format_frequency_inputs(cal_ds.freq_min())} - "
                 f"{format_frequency_inputs(cal_ds.freq_max())})"
             )
         else:
-            oor_text="No calibration data"
+            oor_text = "No calibration data"
         self.inputs["Start"].setStyleSheet("QLineEdit {}")
         self.inputs["Stop"].setStyleSheet("QLineEdit {}")
         self.inputs["Start"].setToolTip("")

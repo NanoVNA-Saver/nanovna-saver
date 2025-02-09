@@ -255,7 +255,9 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         self.app.sweep_control.inputs["Start"].setText(
             format_frequency_sweep(start)
         )
-        self.app.sweep_control.inputs["Stop"].setText(format_frequency_sweep(stop))
+        self.app.sweep_control.inputs["Stop"].setText(
+            format_frequency_sweep(stop)
+        )
         self.app.sweep_control.inputs["Stop"].textEdited.emit(
             self.app.sweep_control.input_end.text()
         )

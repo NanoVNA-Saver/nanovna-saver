@@ -312,9 +312,7 @@ class RealImaginaryChart(FrequencyChart):
         if 0 < min_imag < 2:
             min_imag = 0
 
-        if (
-            max_imag - min_imag
-        ) > 8 and min_imag < 0 < max_imag:
+        if (max_imag - min_imag) > 8 and min_imag < 0 < max_imag:
             # We should show a "0" line for the reactive part
             span = max_imag - min_imag
             step_size = span / 8

@@ -97,7 +97,7 @@ class NanoVNA_V2(VNA):
             raise IOError("Device is in DFU mode")
 
         if "S21 hack" in self.features:
-            self.valid_datapoints: tuple[int, ...] = [
+            self.valid_datapoints: tuple[int, ...] = (
                 101,
                 11,
                 51,
@@ -105,7 +105,7 @@ class NanoVNA_V2(VNA):
                 301,
                 501,
                 1021,
-            ]
+            )
 
         self.sweepStartHz = 200e6
         self.sweepStepHz = 1e6

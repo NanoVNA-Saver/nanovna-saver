@@ -699,7 +699,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             )
             self.calibration_source_label.setText(self.app.calibration.source)
             self.app.showError(
-                f"{e}" " Please complete SOL calibration and try again."
+                f"{e} Please complete SOL calibration and try again."
             )
             self.reset()
             return

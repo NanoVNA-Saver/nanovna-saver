@@ -81,6 +81,7 @@ logger = logging.getLogger(__name__)
 
 WORKING_KILL_TIME_MS = 10 * 1000
 
+
 class Communicate(QObject):
     data_available = QtCore.Signal()
 
@@ -146,9 +147,7 @@ class NanoVNASaver(QWidget):
         outer.addWidget(scrollarea)
         self.setLayout(outer)
         scrollarea.setWidgetResizable(True)
-        self.resize(
-            app_config.gui.window_width, app_config.gui.window_height
-        )
+        self.resize(app_config.gui.window_width, app_config.gui.window_height)
         scrollarea.setSizePolicy(
             QtWidgets.QSizePolicy.Policy.MinimumExpanding,
             QtWidgets.QSizePolicy.Policy.MinimumExpanding,
@@ -474,8 +473,6 @@ class NanoVNASaver(QWidget):
         # Run the device data update
         if not self.vna.connected():
             return
-        self.worker.start()
-
         self._sweep_control(start=True)
 
         for m in self.markers:
@@ -487,7 +484,10 @@ class NanoVNASaver(QWidget):
         self.tdr_result_label.setText("")
 
         logger.debug("Starting worker thread")
-        self.threadpool.start(self.worker)
+        self.worker.start()
+        # TODO: Rewrite to make worker a qrunnable with worker signals
+        # https://www.pythonguis.com/tutorials/multithreading-pyqt6-applications-qthreadpool/
+        # self.threadpool.start(self.worker)
 
     def saveData(self, data, data21, source=None):
         with self.dataLock:

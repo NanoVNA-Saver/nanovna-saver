@@ -31,7 +31,6 @@ logger = logging.getLogger(__name__)
 
 
 class SerialControl(Control):
-
     # true when serial port was connected and false when it was disconnected
     connected = Signal(bool)
 

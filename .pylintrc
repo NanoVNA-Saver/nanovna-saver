@@ -1,5 +1,5 @@
 [MESSAGES CONTROL]
-disable=W0614,C0410,C0321,C0111,I0011,C0103
+disable=W0614,C0410,C0321,C0111,I0011,C0103,R0401
 # allow _ for ignored variables
 # allow generic names like a,b,c and i,j,k,l,m,n and x,y,z
 # allow k,v for key/value

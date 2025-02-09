@@ -84,9 +84,7 @@ class ChartColorsConfig:  # pylint: disable=too-many-instance-attributes
         default_factory=lambda: QColor(QColorConstants.DarkMagenta)
     )
     swr: QColor = field(default_factory=lambda: QColor(255, 0, 0, 128))
-    text: QColor = field(
-        default_factory=lambda: QColor(QColorConstants.Black)
-    )
+    text: QColor = field(default_factory=lambda: QColor(QColorConstants.Black))
     bands: QColor = field(default_factory=lambda: QColor(128, 128, 128, 48))
 
 
@@ -123,6 +121,7 @@ class MarkersConfig:
         default_factory=lambda: QColor(QColorConstants.LightGray)
     )
 
+
 @dataclass
 class SweepConfig:
     start: str = ""
@@ -131,10 +130,13 @@ class SweepConfig:
     span: str = ""
     segments: str = "1"
 
+
 @dataclass
 class AppConfig:
     gui: GuiConfig = field(default_factory=GuiConfig)
-    charts_selected: ChartsSelectedConfig = field(default_factory=ChartsSelectedConfig)
+    charts_selected: ChartsSelectedConfig = field(
+        default_factory=ChartsSelectedConfig
+    )
     chart: ChartConfig = field(default_factory=ChartConfig)
     chart_colors: ChartColorsConfig = field(default_factory=ChartColorsConfig)
     markers: MarkersConfig = field(default_factory=MarkersConfig)
@@ -143,13 +145,17 @@ class AppConfig:
 
 # noinspection PyDataclass
 class AppSettings(QSettings):
-
-    def __init__(self, organization: str = "NanoVNASaver", application: str = "NanoVNASaver") -> None:
+    def __init__(
+        self,
+        organization: str = "NanoVNASaver",
+        application: str = "NanoVNASaver",
+    ) -> None:
         super().__init__(
             QSettings.Format.IniFormat,
             QSettings.Scope.UserScope,
             organization,
-            application)
+            application,
+        )
 
         self._app_config = AppConfig()
 
@@ -187,7 +193,11 @@ class AppSettings(QSettings):
                 setattr(result, field_it.name, default)
                 continue
             try:
-                setattr(result, field_it.name, AppSettings._to_type(value, field_it.type))
+                setattr(
+                    result,
+                    field_it.name,
+                    AppSettings._to_type(value, field_it.type),
+                )
             except TypeError:
                 setattr(result, field_it.name, default)
         self.endGroup()
@@ -206,7 +216,6 @@ class AppSettings(QSettings):
         self._app_config = result
         return self.get_app_config()
 
-
     def store_config(self) -> None:
         logger.info("Saving settings to: %s", self.fileName())
 
@@ -224,7 +233,9 @@ class AppSettings(QSettings):
             QByteArray: QByteArray.toHex,
         }
         return (
-            f"{type_map[type(data)](data)}" if type(data) in type_map else f"{data}"
+            f"{type_map[type(data)](data)}"
+            if type(data) in type_map
+            else f"{data}"
         )
 
     @staticmethod
@@ -238,11 +249,14 @@ class AppSettings(QSettings):
             QByteArray: lambda x: QByteArray.fromHex(literal_eval(x)),
         }
         return (
-            type_map[data_type](data) if data_type in type_map else data_type(data)
+            type_map[data_type](data)
+            if data_type in type_map
+            else data_type(data)
         )
 
 
 APP_SETTINGS = AppSettings()
+
 
 def get_app_config() -> AppConfig:
     return APP_SETTINGS.get_app_config()

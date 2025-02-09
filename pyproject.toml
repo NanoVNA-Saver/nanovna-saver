@@ -40,6 +40,7 @@ dev = [
   "pre-commit~=4.1",
   "mypy~=1.14",
   "pylint~=3.3",
+  "types-pyserial~=3.5",
 
   # Testing
   "pytest~=8.3",
@@ -132,7 +133,10 @@ fix = true
 show-fixes = true
 unsafe-fixes = false
 # TODO use https://docs.astral.sh/ruff/configuration/#config-file-discovery for test and UI generated files
-extend-exclude = ["ui/*.py"]
+extend-exclude = [
+  "**/ui/*.py",
+  "src/tools/setuptools_wrapper.py"
+]
 
 
 [tool.ruff.lint]

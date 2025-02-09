@@ -17,7 +17,6 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-from enum import Enum
 from time import sleep
 
 import numpy as np
@@ -58,44 +57,34 @@ class WorkerSignals(QObject):
     finished = Signal()
     sweep_error = Signal()
 
-
-# TODO do we need it for QThread?
-class SweepState(Enum):
-    STOPPED = 0
-    RUNNING = 1
-
-
 class SweepWorker(QThread):
-
-
     def __init__(self, app: NanoVNASaver) -> None:
         super().__init__()
         logger.info("Initializing SweepWorker")
         self.signals: WorkerSignals = WorkerSignals()
         self.app = app
         self.sweep = Sweep()
-        #self.setAutoDelete(False)
         self.percentage: float = 0.0
         self.data11: list[Datapoint] = []
         self.data21: list[Datapoint] = []
         self.rawData11: list[Datapoint] = []
         self.rawData21: list[Datapoint] = []
         self.init_data()
-        self.state = SweepState.STOPPED
         self.error_message: str = ""
         self.offsetDelay: float = 0.0
+        self._terminate: bool = False
 
     @Slot()
     def quit(self) -> None:
-       self.state = SweepState.STOPPED
-       super().quit()
+        logger.debug("Worker quit request")
+        self._terminate = True
 
     @Slot()
     def run(self) -> None:
+        self._terminate: bool = False
         try:
             self._run()
         except BaseException as exc:  # pylint: disable=broad-except
-            self.state = SweepState.STOPPED
             logger.exception("%s", exc)
             self.gui_error(f"ERROR during sweep\n\nStopped\n\n{exc}")
             if logger.isEnabledFor(logging.DEBUG):
@@ -109,7 +98,6 @@ class SweepWorker(QThread):
             )
             return
 
-        self.state = SweepState.RUNNING
         self.percentage = 0.0
 
         sweep = self.app.sweep.copy()
@@ -131,7 +119,6 @@ class SweepWorker(QThread):
         self.percentage = 100.0
         logger.debug('Sending "finished" signal')
         self.signals.finished.emit()
-        self.state = SweepState.STOPPED
 
     def _run_loop(self) -> None:
         sweep = self.sweep
@@ -145,7 +132,7 @@ class SweepWorker(QThread):
         while True:
             for i in range(sweep.segments):
                 logger.debug("Sweep segment no %d", i)
-                if self.state == SweepState.STOPPED:
+                if self._terminate:
                     logger.debug("Stopping sweeping as signalled")
                     break
                 start, stop = sweep.get_index_range(i)
@@ -157,8 +144,7 @@ class SweepWorker(QThread):
                 self.update_data(freq, values11, values21, i)
             if (
                 sweep.properties.mode != SweepMode.CONTINOUS
-                or self.state == SweepState.STOPPED
-            ):
+                or self._terminate):
                 break
 
     def init_data(self) -> None:
@@ -256,7 +242,7 @@ class SweepWorker(QThread):
         values21: list[complex] = []
 
         for i in range(averages):
-            if self.state == SweepState.STOPPED:
+            if self._terminate:
                 logger.debug("Stopping averaging as signalled.")
                 if averages == 1:
                     break
@@ -350,5 +336,4 @@ class SweepWorker(QThread):
 
     def gui_error(self, message: str) -> None:
         self.error_message = message
-        self.state = SweepState.STOPPED
         self.signals.sweep_error.emit()

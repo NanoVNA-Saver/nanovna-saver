@@ -24,6 +24,7 @@ NanoVNA, sweep frequency spans in segments to gain more
 data points, and generally display and analyze the
 resulting data.
 """
+
 import argparse
 import logging
 import sys
@@ -56,12 +57,12 @@ def main():
     parser.add_argument(
         "-f",
         "--file",
-        help="Touchstone file to load as sweep for off" " device usage",
+        help="Touchstone file to load as sweep for off device usage",
     )
     parser.add_argument(
         "-r",
         "--ref-file",
-        help="Touchstone file to load as reference for off" " device usage",
+        help="Touchstone file to load as reference for off device usage",
     )
     parser.add_argument(
         "--version", action="version", version=f"NanoVNASaver {VERSION}"

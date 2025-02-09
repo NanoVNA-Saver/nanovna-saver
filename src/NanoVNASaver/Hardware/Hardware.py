@@ -151,7 +151,7 @@ def get_comment(iface: Interface) -> str:
         vna_version = detect_version(iface)
     if vna_version == "v2":
         return "S-A-A-2"
-    elif vna_version == "lite_vna_64":
+    if vna_version == "lite_vna_64":
         return "LiteVNA64"
 
     logger.info("Finding firmware variant...")

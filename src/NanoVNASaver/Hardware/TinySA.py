@@ -17,13 +17,12 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-import struct
 
-import numpy as np
 import serial
-from PySide6.QtGui import QImage, QPixmap
+from PySide6.QtGui import QPixmap
 
 from ..utils import Version
+from .Convert import get_argb32_pixmap
 from .Serial import Interface, drain_serial
 from .VNA import VNA
 
@@ -70,32 +69,15 @@ class TinySA(VNA):
         self.serial.timeout = timeout
         return image_data
 
-    def _convert_data(self, image_data: bytes) -> bytes:
-        rgb_data = struct.unpack(
-            f">{self.screenwidth * self.screenheight}H", image_data
-        )
-        rgb_array = np.array(rgb_data, dtype=np.uint32)
-        return (
-            0xFF000000
-            + ((rgb_array & 0xF800) << 8)
-            + ((rgb_array & 0x07E0) << 5)
-            + ((rgb_array & 0x001F) << 3)
-        )
-
     def getScreenshot(self) -> QPixmap:
         logger.debug("Capturing screenshot...")
         if not self.connected():
             return QPixmap()
         try:
-            rgba_array = self._convert_data(self._capture_data())
-            image = QImage(
-                rgba_array,
-                self.screenwidth,
-                self.screenheight,
-                QImage.Format.Format_ARGB32,
-            )
             logger.debug("Captured screenshot")
-            return QPixmap(image)
+            return get_argb32_pixmap(
+                self._capture_data(), self.screenwidth, self.screenheight
+            )
         except serial.SerialException as exc:
             logger.exception("Exception while capturing screenshot: %s", exc)
         return QPixmap()
@@ -145,7 +127,8 @@ class TinySA_Ultra(TinySA):
         self.validateInput = False
         self.version = self.read_firmware_version()
         self.hardware_revision = self.read_hardware_revision()
-        # detect model versions of tinySA Ultra including ZS-405, ZS406 (Ultra+), ZS407 (Ultra+)
+        # detect model versions of tinySA Ultra including ZS-405,
+        # ZS406 (Ultra+), ZS407 (Ultra+)
         if self.hardware_revision >= Version.parse("0.5.3"):
             self.name = "tinySA Ultra+ ZS-407"
             self.sweep_max_freq_hz = 7.3e9
@@ -168,7 +151,7 @@ class TinySA_Ultra(TinySA):
         result = list(self.exec_command("version"))
         logger.debug("firmware version result:\n%s", result[0])
         # transform from tinySA4_v1.4-193-g6ff182b to 1.4.193
-        major_minor_version, revision_version, hash = (
+        major_minor_version, revision_version, _ = (
             result[0].split("_v")[1].split("-")
         )
         revision_version = revision_version.split("-")[0]
