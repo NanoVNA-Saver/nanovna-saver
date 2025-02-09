@@ -64,7 +64,6 @@ class SweepWorker(QThread):
         self.signals: WorkerSignals = WorkerSignals()
         self.app = app
         self.sweep = Sweep()
-        # self.setAutoDelete(False)
         self.percentage: float = 0.0
         self.data11: list[Datapoint] = []
         self.data21: list[Datapoint] = []
@@ -82,6 +81,7 @@ class SweepWorker(QThread):
 
     @Slot()
     def run(self) -> None:
+        self._terminate: bool = False
         try:
             self._run()
         except BaseException as exc:  # pylint: disable=broad-except
@@ -134,7 +134,6 @@ class SweepWorker(QThread):
                 logger.debug("Sweep segment no %d", i)
                 if self._terminate:
                     logger.debug("Stopping sweeping as signalled")
-                    self._terminate = False
                     break
                 start, stop = sweep.get_index_range(i)
 
@@ -146,7 +145,6 @@ class SweepWorker(QThread):
             if (
                 sweep.properties.mode != SweepMode.CONTINOUS
                 or self._terminate):
-                self._terminate = False
                 break
 
     def init_data(self) -> None:
@@ -246,7 +244,6 @@ class SweepWorker(QThread):
         for i in range(averages):
             if self._terminate:
                 logger.debug("Stopping averaging as signalled.")
-                self._terminate = False
                 if averages == 1:
                     break
                 logger.warning("Stop during average. Discarding sweep result.")
