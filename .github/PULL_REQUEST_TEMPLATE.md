@@ -6,13 +6,13 @@
 
 Please check the type of change your PR introduces:
 
-- [] Bugfix
-- [] Feature
-- [] Code style update (formatting, renaming)
-- [] Refactoring (no functional changes, no API changes)
-- [] Build-related changes
-- [] Documentation content changes
-- [] Other (please describe):
+- [ ] Bugfix
+- [ ] Feature
+- [ ] Code style update (formatting, renaming)
+- [ ] Refactoring (no functional changes, no API changes)
+- [ ] Build-related changes
+- [ ] Documentation content changes
+- [ ] Other (please describe):
 
 ## What is the current behavior?
 
@@ -30,8 +30,8 @@ Issue Number: N/A
 
 ## Does this introduce a breaking change?
 
-- [] Yes
-- [] No
+- [ ] Yes
+- [ ] No
 
 <!-- If this does introduce a breaking change, please describe the impact and migration path for existing applications below. -->
 
