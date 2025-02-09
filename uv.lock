@@ -264,6 +264,7 @@ dev = [
     { name = "taskipy" },
     { name = "tox" },
     { name = "tox-uv" },
+    { name = "types-pyserial" },
 ]
 
 [package.metadata]
@@ -287,6 +288,7 @@ dev = [
     { name = "taskipy", specifier = "~=1.14" },
     { name = "tox", specifier = "~=4.23" },
     { name = "tox-uv", specifier = "~=1.17" },
+    { name = "types-pyserial", specifier = "~=3.5" },
 ]
 
 [[package]]
@@ -789,6 +791,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/cb/ed/50e143cb7adabf2f777be639cb8fabec88c4bc4c896e805461c842765c00/tox_uv-1.22.1.tar.gz", hash = "sha256:1267e09b533ce41e86bf8335d7a60f381a9779fc72c6f45fded0337bc8348812", size = 19235 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ae/75/ce3617b183518f0b3f5fb8ebb6f265ea8bbf309678dc09e9025863e539eb/tox_uv-1.22.1-py3-none-any.whl", hash = "sha256:f326d2b06ec0e40fc035f7c27f9bfac41a3d5d9df18056552700acfe73a26146", size = 14783 },
+]
+
+[[package]]
+name = "types-pyserial"
+version = "3.5.0.20250130"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/aa/09/26350878b1f0e537e21b9493b4499c887785a29425a3e831efc50fe14a9a/types_pyserial-3.5.0.20250130.tar.gz", hash = "sha256:bc23c799bf27ff5105ee6b7cb973d47ba1f222ad8f0a4223c0b0a979bd671f3e", size = 19325 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/39/a1/75e2ab241987f678fe3ec19ee35145fad23140613c594820f0523259c86a/types_pyserial-3.5.0.20250130-py3-none-any.whl", hash = "sha256:cd5dccb65fe83e2741853aaf45caabeecfcd4c5d050107b5e56f586b3d0f46cd", size = 25041 },
 ]
 
 [[package]]

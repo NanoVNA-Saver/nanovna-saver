@@ -40,6 +40,7 @@ dev = [
   "pre-commit~=4.1",
   "mypy~=1.14",
   "pylint~=3.3",
+  "types-pyserial~=3.5",
 
   # Testing
   "pytest~=8.3",

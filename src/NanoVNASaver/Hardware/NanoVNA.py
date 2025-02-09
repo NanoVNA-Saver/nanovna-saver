@@ -17,13 +17,12 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-import struct
 
-import numpy as np
 import serial
-from PySide6.QtGui import QImage, QPixmap
+from PySide6.QtGui import QPixmap
 
 from ..utils import Version
+from .Convert import get_argb32_pixmap
 from .Serial import Interface, drain_serial
 from .VNA import VNA
 
@@ -69,32 +68,15 @@ class NanoVNA(VNA):
         self.serial.timeout = timeout
         return image_data
 
-    def _convert_data(self, image_data: bytes) -> bytes:
-        rgb_data = struct.unpack(
-            f">{self.screenwidth * self.screenheight}H", image_data
-        )
-        rgb_array = np.array(rgb_data, dtype=np.uint32)
-        return (
-            0xFF000000
-            + ((rgb_array & 0xF800) << 8)
-            + ((rgb_array & 0x07E0) << 5)
-            + ((rgb_array & 0x001F) << 3)
-        )
-
     def getScreenshot(self) -> QPixmap:
         logger.debug("Capturing screenshot...")
         if not self.connected():
             return QPixmap()
         try:
-            rgba_array = self._convert_data(self._capture_data())
-            image = QImage(
-                rgba_array,
-                self.screenwidth,
-                self.screenheight,
-                QImage.Format.Format_ARGB32,
-            )
             logger.debug("Captured screenshot")
-            return QPixmap(image)
+            return get_argb32_pixmap(
+                self._capture_data(), self.screenwidth, self.screenheight
+            )
         except serial.SerialException as exc:
             logger.exception("Exception while capturing screenshot: %s", exc)
         return QPixmap()
@@ -148,7 +130,7 @@ class NanoVNA(VNA):
                 self._sweepdata.append(
                     (complex(d[0], d[1]), complex(d[2], d[3]))
                 )
-        if value == "data 0":
-            return [x[0] for x in self._sweepdata]
         if value == "data 1":
             return [x[1] for x in self._sweepdata]
+        # default to data 0
+        return [x[0] for x in self._sweepdata]
