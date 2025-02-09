@@ -109,7 +109,6 @@ class TinySA(VNA):
             ]
         return self._sweepdata
 
-
 class TinySA_Ultra(TinySA):
     name = "tinySA Ultra"
     screenwidth = 480
