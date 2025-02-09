@@ -72,6 +72,7 @@ class MarkerFrequencyInputWidget(FrequencyInputWidget):
                 return
         super().keyPressEvent(a0)
 
+
 class MarkerLabel(QtWidgets.QLabel):
     def __init__(self, name):
         super().__init__("")
@@ -111,9 +112,7 @@ class Marker(QtCore.QObject, Value):
         self.frequencyInput.setMinimumHeight(20)
         self.frequencyInput.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
         self.frequencyInput.editingFinished.connect(
-            lambda: self.setFrequency(
-                self.frequencyInput.get_freq()
-            )
+            lambda: self.setFrequency(self.frequencyInput.get_freq())
         )
 
         ###############################################################

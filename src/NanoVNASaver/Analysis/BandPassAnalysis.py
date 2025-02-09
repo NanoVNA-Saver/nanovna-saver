@@ -129,7 +129,7 @@ class BandPassAnalysis(Analysis):
 
         for label, val in cutoff_freq.items():
             self.label[label].setText(
-                f"{format_frequency(val)}" f" ({cutoff_gain[label]:.1f} dB)"
+                f"{format_frequency(val)} ({cutoff_gain[label]:.1f} dB)"
             )
         for label in ("freq_center", "span_3.0dB", "span_6.0dB"):
             self.label[label].setText(format_frequency(result[label]))

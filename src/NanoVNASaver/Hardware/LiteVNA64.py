@@ -51,7 +51,9 @@ class ScreenshotData:
         return self.width * self.height * int(self.pixel_size / 8)
 
     def __repr__(self) -> str:
-        return f"{self.width}x{self.height} {self.pixel_size}bits ({self.data_size()} Bytes)"
+        return (
+            f"{self.width}x{self.height} {self.pixel_size}bits "
+            f"({self.data_size()} Bytes)")
 
     @staticmethod
     def from_header(header_data: bytes) -> "ScreenshotData":

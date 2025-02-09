@@ -81,6 +81,7 @@ logger = logging.getLogger(__name__)
 
 WORKING_KILL_TIME_MS = 10 * 1000
 
+
 class Communicate(QObject):
     data_available = QtCore.Signal()
 
@@ -146,9 +147,7 @@ class NanoVNASaver(QWidget):
         outer.addWidget(scrollarea)
         self.setLayout(outer)
         scrollarea.setWidgetResizable(True)
-        self.resize(
-            app_config.gui.window_width, app_config.gui.window_height
-        )
+        self.resize(app_config.gui.window_width, app_config.gui.window_height)
         scrollarea.setSizePolicy(
             QtWidgets.QSizePolicy.Policy.MinimumExpanding,
             QtWidgets.QSizePolicy.Policy.MinimumExpanding,

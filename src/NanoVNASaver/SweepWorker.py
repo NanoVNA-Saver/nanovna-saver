@@ -66,15 +66,13 @@ class SweepState(Enum):
 
 
 class SweepWorker(QThread):
-
-
     def __init__(self, app: NanoVNASaver) -> None:
         super().__init__()
         logger.info("Initializing SweepWorker")
         self.signals: WorkerSignals = WorkerSignals()
         self.app = app
         self.sweep = Sweep()
-        #self.setAutoDelete(False)
+        # self.setAutoDelete(False)
         self.percentage: float = 0.0
         self.data11: list[Datapoint] = []
         self.data21: list[Datapoint] = []
@@ -87,8 +85,8 @@ class SweepWorker(QThread):
 
     @Slot()
     def quit(self) -> None:
-       self.state = SweepState.STOPPED
-       super().quit()
+        self.state = SweepState.STOPPED
+        super().quit()
 
     @Slot()
     def run(self) -> None:

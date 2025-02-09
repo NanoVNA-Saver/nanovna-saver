@@ -354,9 +354,11 @@ class TDRChart(Chart):
         qp.drawText(
             self.leftMargin - 10,
             self.topMargin + height + 15,
-            f"""{round(
-                self.tdrWindow.distance_axis[min_index] / 2, self.decimals)
-                !s}m""",
+            f"""{
+                round(
+                    self.tdrWindow.distance_axis[min_index] / 2, self.decimals
+                )!s
+            }m""",
         )
 
     def _draw_y_ticks(
@@ -411,9 +413,9 @@ class TDRChart(Chart):
         qp.drawText(
             marker_point.x() - 10,
             marker_point.y() - 5,
-            f"""{round(
-                    self.tdrWindow.distance_axis[self.marker_location] / 2,
-                    2)}m""",
+            f"""{
+                round(self.tdrWindow.distance_axis[self.marker_location] / 2, 2)
+            }m""",
         )
 
     def _draw_graph(self, height, width):

@@ -66,8 +66,7 @@ class Options:
 
     def __str__(self) -> str:
         return (
-            f"# {self.unit} {self.parameter}"
-            f" {self.format} r {self.resistance}"
+            f"# {self.unit} {self.parameter} {self.format} r {self.resistance}"
         ).upper()
 
     def parse(self, line: str):

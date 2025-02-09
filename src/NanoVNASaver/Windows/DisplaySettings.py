@@ -307,9 +307,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
 
         self.dark_mode_option.setChecked(app_config.gui.dark_mode)
         self.show_lines_option.setChecked(app_config.chart.show_lines)
-        self.show_marker_number_option.setChecked(
-            app_config.chart.marker_label
-        )
+        self.show_marker_number_option.setChecked(app_config.chart.marker_label)
         self.filled_marker_option.setChecked(app_config.chart.marker_filled)
 
         if self.app.settings.value(

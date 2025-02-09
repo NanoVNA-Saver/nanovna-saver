@@ -132,7 +132,10 @@ fix = true
 show-fixes = true
 unsafe-fixes = false
 # TODO use https://docs.astral.sh/ruff/configuration/#config-file-discovery for test and UI generated files
-extend-exclude = ["ui/*.py"]
+extend-exclude = [
+  "**/ui/*.py",
+  "src/tools/setuptools_wrapper.py"
+]
 
 
 [tool.ruff.lint]

@@ -96,7 +96,7 @@ class HighPassAnalysis(Analysis):
 
         for label, val in cutoff_freq.items():
             self.label[label].setText(
-                f"{format_frequency(val)}" f" ({cutoff_gain[label]:.1f} dB)"
+                f"{format_frequency(val)} ({cutoff_gain[label]:.1f} dB)"
             )
 
         self.label["octave"].setText(f"{octave:.3f}dB/octave")

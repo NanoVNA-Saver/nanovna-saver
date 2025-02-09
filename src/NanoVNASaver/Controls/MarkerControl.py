@@ -34,9 +34,7 @@ class ShowButton(QtWidgets.QPushButton):
     def setText(self, text: str = ""):
         app_config = get_app_config()
         if not text:
-            text = (
-                "Show data" if app_config.gui.markers_hidden else "Hide data"
-            )
+            text = "Show data" if app_config.gui.markers_hidden else "Hide data"
         super().setText(text)
         self.setToolTip("Toggle visibility of marker readings area")
 

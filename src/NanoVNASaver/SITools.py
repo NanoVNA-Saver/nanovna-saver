@@ -152,16 +152,8 @@ class Value:
             formstr = ".0f"
         else:
             max_digits = fmt.max_nr_digits + (
-                (
-                    1
-                    if not fmt.fix_decimals and abs(real) < 10
-                    else 0
-                )
-                + (
-                    1
-                    if not fmt.fix_decimals and abs(real) < 100
-                    else 0
-                )
+                (1 if not fmt.fix_decimals and abs(real) < 10 else 0)
+                + (1 if not fmt.fix_decimals and abs(real) < 100 else 0)
             )
             formstr = f".{max_digits - 3}f"
 
