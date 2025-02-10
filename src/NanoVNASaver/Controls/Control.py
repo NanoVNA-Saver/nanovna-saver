@@ -20,7 +20,7 @@ import logging
 
 from PySide6 import QtCore, QtWidgets
 
-from NanoVNASaver import NanoVNASaver
+from NanoVNASaver import NanoVNASaver as vna_app
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 class Control(QtWidgets.QGroupBox):
     updated = QtCore.Signal(object)
 
-    def __init__(self, app: NanoVNASaver, title: str = ""):
+    def __init__(self, app: vna_app, title: str = ""):
         super().__init__()
         self.app = app
         self.setMaximumWidth(250)

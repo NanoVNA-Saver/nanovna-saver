@@ -22,10 +22,9 @@ from time import sleep
 import numpy as np
 from PySide6.QtCore import QObject, QThread, Signal, Slot
 
-from NanoVNASaver import NanoVNASaver
-
 from .Calibration import correct_delay
 from .Hardware.VNA import VNA
+from NanoVNASaver import NanoVNASaver as vna_app
 from .RFTools import Datapoint
 from .Settings.Sweep import Sweep, SweepMode
 
@@ -45,10 +44,12 @@ def truncate(values: list[list[complex]], count: int) -> list[list[complex]]:
         return values
     truncated = []
     for valueset in np.swapaxes(values, 0, 1).tolist():
-        avg = np.average(valueset)
-        truncated.append(
-            sorted(valueset, key=lambda v, a=avg: abs(a - v))[:keep]
-        )
+        avg = complex(np.average(valueset))
+
+        def cmp_fn(v: complex, avg=avg) -> float:
+            return float(abs(avg - v))
+
+        truncated.append(sorted(valueset, key=cmp_fn)[:keep])
     return np.swapaxes(truncated, 0, 1).tolist()
 
 
@@ -57,8 +58,9 @@ class WorkerSignals(QObject):
     finished = Signal()
     sweep_error = Signal()
 
+
 class SweepWorker(QThread):
-    def __init__(self, app: NanoVNASaver) -> None:
+    def __init__(self, app: vna_app) -> None:
         super().__init__()
         logger.info("Initializing SweepWorker")
         self.signals: WorkerSignals = WorkerSignals()
@@ -81,7 +83,7 @@ class SweepWorker(QThread):
 
     @Slot()
     def run(self) -> None:
-        self._terminate: bool = False
+        self._terminate = False
         try:
             self._run()
         except BaseException as exc:  # pylint: disable=broad-except
@@ -142,16 +144,14 @@ class SweepWorker(QThread):
                 )
                 self.percentage = (i + 1) * 100 / sweep.segments
                 self.update_data(freq, values11, values21, i)
-            if (
-                sweep.properties.mode != SweepMode.CONTINOUS
-                or self._terminate):
+            if sweep.properties.mode != SweepMode.CONTINOUS or self._terminate:
                 break
 
     def init_data(self) -> None:
-        self.data11: list[Datapoint] = []
-        self.data21: list[Datapoint] = []
-        self.rawData11: list[Datapoint] = []
-        self.rawData21: list[Datapoint] = []
+        self.data11 = []
+        self.data21 = []
+        self.rawData11 = []
+        self.rawData21 = []
         for freq in self.sweep.get_frequencies():
             self.data11.append(Datapoint(freq, 0.0, 0.0))
             self.data21.append(Datapoint(freq, 0.0, 0.0))
@@ -238,8 +238,8 @@ class SweepWorker(QThread):
         )
 
         freq: list[int] = []
-        values11: list[complex] = []
-        values21: list[complex] = []
+        values11: list[list[complex]] = []
+        values21: list[list[complex]] = []
 
         for i in range(averages):
             if self._terminate:
@@ -260,7 +260,7 @@ class SweepWorker(QThread):
                 freq, tmp_11, tmp_21 = self.read_segment(start, stop)
 
             if not tmp_11:
-                raise IOError("Invalid data during swwep")
+                raise IOError("Invalid data during sweep")
 
             values11.append(tmp_11)
             values21.append(tmp_21)
@@ -268,7 +268,7 @@ class SweepWorker(QThread):
             self.signals.updated.emit()
 
         if not values11:
-            raise IOError("Invalid data during swwep")
+            raise IOError("Invalid data during sweep")
 
         truncates = self.sweep.properties.averages[1]
         if truncates > 0 and averages > 1:
@@ -276,10 +276,12 @@ class SweepWorker(QThread):
             values11 = truncate(values11, truncates)
             values21 = truncate(values21, truncates)
 
-        logger.debug("Averaging %d values", len(values11))
-        values11: list[complex] = np.average(values11, axis=0).tolist()
-        values21: list[complex] = np.average(values21, axis=0).tolist()
-        return freq, values11, values21
+        logger.debug("Averaging %d values", len(values11[0]))
+        return (
+            freq,
+            np.average(values11, axis=0).tolist(),
+            np.average(values21, axis=0).tolist(),
+        )
 
     def read_segment(
         self, start: int, stop: int

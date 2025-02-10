@@ -20,7 +20,7 @@ import logging
 
 from PySide6 import QtCore, QtWidgets
 
-from NanoVNASaver import NanoVNASaver
+from NanoVNASaver import NanoVNASaver as vna_app
 
 from ..Defaults import SweepConfig, get_app_config
 from ..Formatting import (
@@ -51,7 +51,7 @@ class FrequencyInputWidget(QtWidgets.QLineEdit):
 
 
 class SweepControl(Control):
-    def __init__(self, app: NanoVNASaver):
+    def __init__(self, app: vna_app):
         super().__init__(app, "Sweep control")
 
         sweep_settings = self.get_settings()

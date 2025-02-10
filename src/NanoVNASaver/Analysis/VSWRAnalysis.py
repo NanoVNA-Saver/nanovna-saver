@@ -20,8 +20,7 @@ import logging
 
 from PySide6 import QtWidgets
 
-from NanoVNASaver import NanoVNASaver
-
+from NanoVNASaver import NanoVNASaver as vna_app
 from .. import AnalyticTools as At
 from ..Formatting import format_frequency, format_vswr
 from .Base import Analysis, QHLine
@@ -33,7 +32,7 @@ class VSWRAnalysis(Analysis):
     MAX_DIPS_SHOWN: int = 3
     vswr_limit_value: float = 1.5
 
-    def __init__(self, app: NanoVNASaver) -> None:
+    def __init__(self, app: vna_app) -> None:
         super().__init__(app)
 
         self._widget = QtWidgets.QWidget()

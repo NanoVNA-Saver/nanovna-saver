@@ -21,7 +21,7 @@ import logging
 from PySide6 import QtCore, QtWidgets
 from PySide6.QtWidgets import QCheckBox, QSizePolicy
 
-from NanoVNASaver import NanoVNASaver
+from NanoVNASaver import NanoVNASaver as vna_app
 
 from ..Defaults import get_app_config
 from ..Marker.Widget import Marker
@@ -40,7 +40,7 @@ class ShowButton(QtWidgets.QPushButton):
 
 
 class MarkerControl(Control):
-    def __init__(self, app: NanoVNASaver):
+    def __init__(self, app: vna_app):
         super().__init__(app, "Markers")
 
         app_config = get_app_config()

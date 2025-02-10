@@ -25,7 +25,7 @@ from urllib import error, request
 
 from PySide6 import QtCore, QtWidgets
 
-from NanoVNASaver import NanoVNASaver
+from NanoVNASaver import NanoVNASaver as vna_app
 
 from ..About import LATEST_URL, TAGS_KEY, TAGS_URL
 from ..utils import Version, get_app_version, get_runtime_information
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 
 class AboutWindow(QtWidgets.QDialog):
-    def __init__(self, app: NanoVNASaver):
+    def __init__(self, app: vna_app):
         super(AboutWindow, self).__init__()
         self.ui = Ui_DialogAbout()
         self.ui.setupUi(self)

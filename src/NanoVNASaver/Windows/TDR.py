@@ -25,7 +25,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from scipy.constants import speed_of_light  # type: ignore
 from scipy.signal import convolve  # type: ignore
 
-from NanoVNASaver import NanoVNASaver
+from NanoVNASaver import NanoVNASaver as vna_app
 
 from .Defaults import make_scrollable
 from .ui import get_window_icon
@@ -79,7 +79,7 @@ FFT_POINTS = 2**14
 class TDRWindow(QtWidgets.QWidget):
     updated = QtCore.Signal()
 
-    def __init__(self, app: NanoVNASaver):
+    def __init__(self, app: vna_app):
         super().__init__()
         self.app = app
 

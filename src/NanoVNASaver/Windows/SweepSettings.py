@@ -22,7 +22,7 @@ from functools import partial
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import Qt
 
-from NanoVNASaver import NanoVNASaver
+from NanoVNASaver import NanoVNASaver as vna_app
 
 from ..Formatting import (
     format_frequency_short,
@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 
 class SweepSettingsWindow(QtWidgets.QWidget):
-    def __init__(self, app: NanoVNASaver):
+    def __init__(self, app: vna_app):
         super().__init__()
         self.app = app
         self.padding = 0

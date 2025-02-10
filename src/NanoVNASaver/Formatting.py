@@ -17,7 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
-from numbers import Number
+from typing import SupportsFloat
 
 from . import SITools
 
@@ -50,77 +50,77 @@ FMT_PARSE_VALUE = SITools.Format(parse_sloppy_unit=True, parse_sloppy_kilo=True)
 FMT_VSWR = SITools.Format(max_nr_digits=3)
 
 
-def format_frequency(freq: Number) -> str:
+def format_frequency(freq: SupportsFloat) -> str:
     return str(SITools.Value(freq, "Hz", FMT_FREQ))
 
 
-def format_frequency_inputs(freq: Number | str) -> str:
+def format_frequency_inputs(freq: SupportsFloat | str) -> str:
     return str(SITools.Value(freq, "Hz", FMT_FREQ_INPUTS))
 
 
-def format_frequency_short(freq: Number) -> str:
+def format_frequency_short(freq: SupportsFloat) -> str:
     return str(SITools.Value(freq, "Hz", FMT_FREQ_SHORT))
 
 
-def format_frequency_chart(freq: Number) -> str:
+def format_frequency_chart(freq: SupportsFloat) -> str:
     return str(SITools.Value(freq, "", FMT_FREQ_SHORT))
 
 
-def format_frequency_chart_2(freq: Number) -> str:
+def format_frequency_chart_2(freq: SupportsFloat) -> str:
     return str(SITools.Value(freq, "", FMT_FREQ))
 
 
-def format_frequency_space(freq: float, fmt=FMT_FREQ_SPACE) -> str:
+def format_frequency_space(freq: SupportsFloat, fmt=FMT_FREQ_SPACE) -> str:
     return str(SITools.Value(freq, "Hz", fmt))
 
 
-def format_frequency_sweep(freq: Number) -> str:
+def format_frequency_sweep(freq: SupportsFloat) -> str:
     return str(SITools.Value(freq, "Hz", FMT_FREQ_SWEEP))
 
 
-def format_gain(val: float, invert: bool = False) -> str:
+def format_gain(val: SupportsFloat, invert: bool = False) -> str:
     if invert:
         val = -val
     return f"{val:.3f} dB"
 
 
-def format_q_factor(val: float, allow_negative: bool = False) -> str:
+def format_q_factor(val: SupportsFloat, allow_negative: bool = False) -> str:
     if (not allow_negative and val < 0) or abs(val > 10000.0):
         return "\N{INFINITY}"
     return str(SITools.Value(val, fmt=FMT_Q_FACTOR))
 
 
-def format_vswr(val: float) -> str:
+def format_vswr(val: SupportsFloat) -> str:
     return f"{val:.3f}"
 
 
-def format_magnitude(val: float) -> str:
+def format_magnitude(val: SupportsFloat) -> str:
     return f"{val:.3f}"
 
 
-def format_resistance(val: float, allow_negative: bool = False) -> str:
+def format_resistance(val: SupportsFloat, allow_negative: bool = False) -> str:
     if not allow_negative and val < 0:
         return "- \N{OHM SIGN}"
     return str(SITools.Value(val, "\N{OHM SIGN}", FMT_REACT))
 
 
-def format_capacitance(val: float, allow_negative: bool = True) -> str:
+def format_capacitance(val: SupportsFloat, allow_negative: bool = True) -> str:
     if not allow_negative and val < 0:
         return "- pF"
     return str(SITools.Value(val, "F", FMT_REACT))
 
 
-def format_inductance(val: float, allow_negative: bool = True) -> str:
+def format_inductance(val: SupportsFloat, allow_negative: bool = True) -> str:
     if not allow_negative and val < 0:
         return "- nH"
     return str(SITools.Value(val, "H", FMT_REACT))
 
 
-def format_group_delay(val: float) -> str:
+def format_group_delay(val: SupportsFloat) -> str:
     return str(SITools.Value(val, "s", FMT_GROUP_DELAY))
 
 
-def format_phase(val: float) -> str:
+def format_phase(val: SupportsFloat) -> str:
     return f"{math.degrees(val):.2f}\N{DEGREE SIGN}"
 
 
@@ -142,11 +142,11 @@ def format_complex_imp(z: complex, allow_negative: bool = False) -> str:
     return f"{re}{'-' if z.imag < 0 else '+'}j{im} \N{OHM SIGN}"
 
 
-def format_wavelength(length: Number) -> str:
+def format_wavelength(length: SupportsFloat) -> str:
     return str(SITools.Value(length, "m", FMT_WAVELENGTH))
 
 
-def format_y_axis(val: float, unit: str = "") -> str:
+def format_y_axis(val: SupportsFloat, unit: str = "") -> str:
     return str(SITools.Value(val, unit, FMT_SHORT))
 
 

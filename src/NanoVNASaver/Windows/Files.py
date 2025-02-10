@@ -20,7 +20,7 @@ import logging
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from NanoVNASaver import NanoVNASaver
+from NanoVNASaver import NanoVNASaver as vna_app
 
 from ..RFTools import Datapoint
 from ..Touchstone import Touchstone
@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 class FilesWindow(QtWidgets.QWidget):
-    def __init__(self, app: NanoVNASaver):
+    def __init__(self, app: vna_app):
         super().__init__()
         self.app = app
 

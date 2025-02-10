@@ -22,7 +22,7 @@ from typing import ClassVar
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import Qt
 
-from NanoVNASaver import NanoVNASaver
+from NanoVNASaver import NanoVNASaver as vna_app
 
 from ..Marker.Values import TYPES, default_label_ids
 from ..Marker.Widget import Marker
@@ -44,7 +44,7 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
         Datapoint(124000000, -0.2, 0.5),
     ]
 
-    def __init__(self, app: NanoVNASaver):
+    def __init__(self, app: vna_app):
         super().__init__()
         self.app = app
 

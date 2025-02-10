@@ -106,7 +106,7 @@ class NanoVNASaver(QWidget):
         self.worker.signals.finished.connect(self.sweepFinished)
         self.worker.signals.sweep_error.connect(self.showSweepError)
 
-        self.markers = []
+        self.markers: list[Marker] = []
         self.marker_ref = False
 
         self.marker_column = QtWidgets.QVBoxLayout()
@@ -115,7 +115,7 @@ class NanoVNASaver(QWidget):
         self.marker_frame.setLayout(self.marker_column)
 
         self.interface = Interface("serial", "None")
-        self.vna: type[VNA] = VNA(self.interface)
+        self.vna: VNA = VNA(self.interface)
 
         self.calibration: Calibration = Calibration()
         self.sweep_control = SweepControl(self)

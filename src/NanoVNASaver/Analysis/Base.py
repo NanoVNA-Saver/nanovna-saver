@@ -20,7 +20,7 @@ import logging
 
 from PySide6 import QtWidgets
 
-from NanoVNASaver import NanoVNASaver
+from NanoVNASaver import NanoVNASaver as vna_app
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ class QHLine(QtWidgets.QFrame):
 
 
 class Analysis:
-    def __init__(self, app: NanoVNASaver) -> None:
+    def __init__(self, app: vna_app) -> None:
         self.app = app
         self.label: dict[str, QtWidgets.QLabel] = {
             "titel": QtWidgets.QLabel(),

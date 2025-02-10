@@ -21,7 +21,7 @@ import logging
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtGui import QIntValidator
 
-from NanoVNASaver import NanoVNASaver
+from NanoVNASaver import NanoVNASaver as vna_app
 
 from .Defaults import make_scrollable
 from .Screenshot import ScreenshotWindow
@@ -34,7 +34,7 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
     custom_points_checkbox = QtWidgets.QCheckBox
     custom_points_edit = QtWidgets.QLineEdit
 
-    def __init__(self, app: NanoVNASaver) -> None:
+    def __init__(self, app: vna_app) -> None:
         super().__init__()
 
         self.app = app

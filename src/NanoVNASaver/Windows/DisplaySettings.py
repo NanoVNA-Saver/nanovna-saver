@@ -21,7 +21,7 @@ import logging
 from PySide6 import QtCore, QtWidgets
 from PySide6.QtGui import QColor, QColorConstants, QPalette, QShortcut
 
-from NanoVNASaver import NanoVNASaver
+from NanoVNASaver import NanoVNASaver as vna_app
 
 from ..Charts.Chart import Chart, ChartColors
 from ..Defaults import get_app_config
@@ -37,7 +37,7 @@ MIN_MARKERS_FOR_DELTA = 2
 
 
 class DisplaySettingsWindow(QtWidgets.QWidget):
-    def __init__(self, app: NanoVNASaver) -> None:
+    def __init__(self, app: vna_app) -> None:
         super().__init__()
 
         self.app = app
