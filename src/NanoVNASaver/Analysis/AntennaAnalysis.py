@@ -20,10 +20,14 @@
 
 import logging
 from time import sleep
+from typing import TYPE_CHECKING
 
 from PySide6 import QtWidgets
 
 from .VSWRAnalysis import VSWRAnalysis
+
+if TYPE_CHECKING:
+    from ..NanoVNASaver.NanoVNASaver import NanoVNASaver as vna_app
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +44,7 @@ class MagLoopAnalysis(VSWRAnalysis):
     vswr_bandwith_value: float = 2.56  # -3 dB ?!?
     bandwith: int = 25000  # 25 kHz
 
-    def __init__(self, app) -> None:
+    def __init__(self, app: "vna_app") -> None:
         # app.sweep_control.get_start() return -1 ?!?
         # will populate first runAnalysis()
         self.min_freq: int = 0  # app.sweep_control.get_start()
@@ -71,7 +75,7 @@ class MagLoopAnalysis(VSWRAnalysis):
 
         if len(self.minimums) == 1:
             m = self.minimums[0]
-            start, lowest, end = m
+            start = lowest = end = m
             if start == end:
                 new_start = self.app.data.s11[start].freq - 2 * self.bandwith
                 new_end = self.app.data.s11[end].freq + 2 * self.bandwith

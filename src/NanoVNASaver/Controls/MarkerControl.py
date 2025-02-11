@@ -17,15 +17,17 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
+from typing import TYPE_CHECKING
 
 from PySide6 import QtCore, QtWidgets
 from PySide6.QtWidgets import QCheckBox, QSizePolicy
 
-from NanoVNASaver import NanoVNASaver as vna_app
-
 from ..Defaults import get_app_config
 from ..Marker.Widget import Marker
 from .Control import Control
+
+if TYPE_CHECKING:
+    from ..NanoVNASaver.NanoVNASaver import NanoVNASaver as vna_app
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +42,7 @@ class ShowButton(QtWidgets.QPushButton):
 
 
 class MarkerControl(Control):
-    def __init__(self, app: vna_app):
+    def __init__(self, app: "vna_app"):
         super().__init__(app, "Markers")
 
         app_config = get_app_config()

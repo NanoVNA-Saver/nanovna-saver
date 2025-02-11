@@ -17,10 +17,12 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
+from typing import TYPE_CHECKING
 
 from PySide6 import QtCore, QtWidgets
 
-from NanoVNASaver import NanoVNASaver as vna_app
+if TYPE_CHECKING:
+    from ..NanoVNASaver.NanoVNASaver import NanoVNASaver as vna_app
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +30,7 @@ logger = logging.getLogger(__name__)
 class Control(QtWidgets.QGroupBox):
     updated = QtCore.Signal(object)
 
-    def __init__(self, app: vna_app, title: str = ""):
+    def __init__(self, app: "vna_app", title: str = ""):
         super().__init__()
         self.app = app
         self.setMaximumWidth(250)

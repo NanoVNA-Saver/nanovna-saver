@@ -17,7 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import math
-from typing import ClassVar
+from typing import Optional, ClassVar
 
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import Signal
@@ -91,7 +91,9 @@ class Marker(QtCore.QObject, Value):
     def count(cls):
         return cls._instances
 
-    def __init__(self, name: str = "", qsettings: QtCore.QSettings = None):
+    def __init__(
+        self, name: str = "", qsettings: Optional[QtCore.QSettings] = None
+    ):
         super().__init__()
         self.qsettings = qsettings
         self.name = name

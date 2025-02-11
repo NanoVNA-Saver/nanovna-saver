@@ -216,11 +216,21 @@ class RealImaginaryChart(FrequencyChart):
 
                 # Real part first
                 line_pen.setColor(Chart.color.sweep)
-                self._draw_line(qp, line_pen, (x, y_re), (prev_x, prev_y_re))
+                self._draw_line(
+                    qp,
+                    line_pen,
+                    ChartPosition(x, y_re),
+                    ChartPosition(prev_x, prev_y_re),
+                )
 
                 # Imag part second
                 line_pen.setColor(Chart.color.sweep_secondary)
-                self._draw_line(qp, line_pen, (x, y_im), (prev_x, prev_y_im))
+                self._draw_line(
+                    qp,
+                    line_pen,
+                    ChartPosition(x, y_im),
+                    ChartPosition(prev_x, prev_y_im),
+                )
 
     def _draw_line(
         self, qp, line_pen, p: ChartPosition, prev_p: ChartPosition

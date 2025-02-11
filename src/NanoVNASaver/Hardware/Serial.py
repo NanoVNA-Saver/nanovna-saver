@@ -49,5 +49,5 @@ class Interface(serial.Serial):
         self.timeout = 0.05
         self.lock = RLock()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.port} ({self.comment})"

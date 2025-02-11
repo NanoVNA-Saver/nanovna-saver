@@ -35,10 +35,13 @@ from ..Formatting import (
     format_wavelength,
 )
 from .Widget import Marker
+from typing import Optional
 
 
 class DeltaMarker(Marker):
-    def __init__(self, name: str = "", qsettings: QtCore.QSettings = None):
+    def __init__(
+        self, name: str = "", qsettings: Optional[QtCore.QSettings] = None
+    ):
         super().__init__(name, qsettings)
         self.marker_a = None
         self.marker_b = None

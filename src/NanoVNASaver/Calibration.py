@@ -22,12 +22,13 @@ import math
 import os
 import re
 from collections import UserDict, defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from scipy.interpolate import interp1d
 
 from .RFTools import Datapoint
 from .Touchstone import Touchstone
+from typing import Optional
 
 IDEAL_SHORT = complex(-1, 0)
 IDEAL_OPEN = complex(1, 0)
@@ -112,7 +113,7 @@ class CalData:
 class CalElement:
     # pylint: disable=too-many-instance-attributes
     short_state: str = ""
-    short_touchstone: Touchstone = None
+    short_touchstone: Touchstone = field(default_factory=Touchstone)
     short_is_ideal: bool = True
     short_l0: float = 5.7e-12
     short_l1: float = -8.96e-20
@@ -121,7 +122,7 @@ class CalElement:
     short_length: float = -34.2  # ps
 
     open_state: str = ""
-    open_touchstone: Touchstone = None
+    open_touchstone: Touchstone = field(default_factory=Touchstone)
     open_is_ideal: bool = True
     open_c0: float = 2.1e-14
     open_c1: float = 5.67e-23
@@ -130,7 +131,7 @@ class CalElement:
     open_length: float = 0.0
 
     load_state: str = ""
-    load_touchstone: Touchstone = None
+    load_touchstone: Touchstone = field(default_factory=Touchstone)
     load_is_ideal: bool = True
     load_r: float = 50.0
     load_l: float = 0.0
@@ -223,7 +224,7 @@ class CalDataSet(UserDict):
                 logger.warning(
                     "Caldata without having read header: %i: %s", i, line
                 )
-            self._append_match(m, header, line, i)
+            self._append_match(m, header, i, line)
         return self
 
     def insert(self, name: str, dp: Datapoint):
@@ -249,7 +250,7 @@ class CalDataSet(UserDict):
     def freq_max(self) -> int:
         return self.frequencies()[-1] if self.frequencies() else 0
 
-    def get(self, key: int, default: CalData = None) -> CalData:
+    def get(self, key: int, default: Optional[CalData] = None) -> CalData:
         return self.data.get(key, default)
 
     def items(self):

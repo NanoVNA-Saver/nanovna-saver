@@ -20,7 +20,7 @@ import logging
 from enum import Enum
 from math import exp, log
 from threading import Lock
-from typing import Iterator, NamedTuple
+from typing import Optional, Iterator, NamedTuple
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ class Sweep:
         end: int = 30000000,
         points: int = 101,
         segments: int = 1,
-        properties: "Properties" = None,
+        properties: Optional["Properties"] = None,
     ):
         self._start = start
         self._end = end

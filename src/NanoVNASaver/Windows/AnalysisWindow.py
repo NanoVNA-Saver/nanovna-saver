@@ -17,11 +17,11 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
+from typing import TYPE_CHECKING
 
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import Qt
 
-from .. import NanoVNASaver as vna_app
 from ..Analysis.AntennaAnalysis import MagLoopAnalysis
 from ..Analysis.BandPassAnalysis import BandPassAnalysis
 from ..Analysis.BandStopAnalysis import BandStopAnalysis
@@ -38,13 +38,16 @@ from ..Analysis.VSWRAnalysis import VSWRAnalysis
 from ..Windows.Defaults import make_scrollable
 from .ui import get_window_icon
 
+if TYPE_CHECKING:
+    from ..NanoVNASaver.NanoVNASaver import NanoVNASaver as vna_app
+
 logger = logging.getLogger(__name__)
 
 
 class AnalysisWindow(QtWidgets.QWidget):
     analysis: Analysis | None = None
 
-    def __init__(self, app: vna_app):
+    def __init__(self, app: "vna_app"):
         super().__init__()
 
         self.app = app

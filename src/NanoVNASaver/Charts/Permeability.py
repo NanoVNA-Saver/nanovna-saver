@@ -340,9 +340,9 @@ class PermeabilityChart(FrequencyChart):
 
     def getNearestMarker(self, x, y) -> Marker:
         if len(self.data) == 0:
-            return None
-        shortest = 10**6
-        nearest = None
+            return Marker()
+        shortest = 10.0**6
+        nearest = Marker()
         for m in self.markers:
             mx, _ = self.getPosition(self.data[m.location])
             myr = self.getReYPosition(self.data[m.location])

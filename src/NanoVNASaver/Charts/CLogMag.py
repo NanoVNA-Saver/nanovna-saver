@@ -159,14 +159,14 @@ class CombinedLogMagChart(LogMagChart):
             minValue = self.minDisplayValue
         else:
             # Find scaling
-            minValue = 100
-            maxValue = -100
+            min_val = 100.0
+            max_val = -100.0
             for d in self.data11 + self.data21:
                 logmag = self.logMag(d)
                 if math.isinf(logmag):
                     continue
-                maxValue = max(maxValue, logmag)
-                minValue = min(minValue, logmag)
+                max_val = max(max_val, logmag)
+                min_val = min(min_val, logmag)
 
             for d in self.reference11 + self.reference21:
                 if d.freq < self.fstart or d.freq > self.fstop:
@@ -174,11 +174,11 @@ class CombinedLogMagChart(LogMagChart):
                 logmag = self.logMag(d)
                 if math.isinf(logmag):
                     continue
-                maxValue = max(maxValue, logmag)
-                minValue = min(minValue, logmag)
+                max_val = max(max_val, logmag)
+                min_val = min(min_val, logmag)
 
-            minValue = 10 * math.floor(minValue / 10)
-            maxValue = 10 * math.ceil(maxValue / 10)
+            minValue = 10 * math.floor(min_val / 10)
+            maxValue = 10 * math.ceil(max_val / 10)
 
         self.minValue = minValue
         self.maxValue = maxValue

@@ -18,7 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 from dataclasses import dataclass, field, replace
-from typing import Any, ClassVar, NamedTuple
+from typing import Any, ClassVar, NamedTuple, Optional
 
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import Qt, Signal
@@ -73,8 +73,10 @@ class ChartDimensions:
 
 @dataclass
 class ChartDragBox:
-    pos: ChartPosition = (-1, -1)
-    pos_start: ChartPosition = (0, 0)
+    pos: ChartPosition = field(default_factory=lambda: ChartPosition(-1, -1))
+    pos_start: ChartPosition = field(
+        default_factory=lambda: ChartPosition(0, 0)
+    )
     state: bool = False
     move_x: int = -1
     move_y: int = -1
@@ -87,7 +89,7 @@ class ChartFlags:
 
 
 class ChartMarker(QtWidgets.QWidget):
-    def __init__(self, qp: QtGui.QPaintDevice):
+    def __init__(self, qp: QtGui.QPainter):
         super().__init__()
         self.qp = qp
 
@@ -133,7 +135,7 @@ class Chart(QtWidgets.QWidget):
         self.dragbox = ChartDragBox()
         self.flag = ChartFlags()
 
-        self.draggedMarker = None
+        self.draggedMarker = Marker()
 
         self.data: list[Datapoint] = []
         self.reference: list[Datapoint] = []
@@ -169,7 +171,7 @@ class Chart(QtWidgets.QWidget):
         self.markers = markers
 
     def setBands(self, bands) -> None:
-        self.bands = bands
+        Chart.bands = bands
 
     def setLineThickness(self, thickness) -> None:
         self.dim.line = thickness
@@ -199,11 +201,11 @@ class Chart(QtWidgets.QWidget):
             None,
         )
 
-    def getNearestMarker(self, x, y) -> None | Marker:
+    def getNearestMarker(self, x, y) -> Marker:
         if not self.data:
-            return None
-        shortest = 10**6
-        nearest = None
+            return Marker()
+        shortest = 10.0**6
+        nearest = Marker()
         for m in self.markers:
             mx, my = self.getPosition(self.data[m.location])
             distance = abs(complex(x - mx, y - my))
@@ -223,28 +225,25 @@ class Chart(QtWidgets.QWidget):
         if event.buttons() == Qt.MouseButton.RightButton:
             event.ignore()
             return
+        x = int(event.position().x())
+        y = int(event.position().y())
         if event.buttons() == Qt.MouseButton.MiddleButton:
             # Drag event
             event.accept()
-            self.dragbox.move_x = event.position().x()
-            self.dragbox.move_y = event.position().y()
+            self.dragbox.move_x = x
+            self.dragbox.move_y = y
             return
         if event.modifiers() == Qt.KeyboardModifier.ControlModifier:
             event.accept()
             self.dragbox.state = True
-            self.dragbox.pos_start = (
-                event.position().x(),
-                event.position().y(),
-            )
+            self.dragbox.pos_start = ChartPosition(x, y)
             return
         if event.modifiers() == Qt.KeyboardModifier.ShiftModifier:
-            self.draggedMarker = self.getNearestMarker(
-                event.position().x(), event.position().y()
-            )
+            self.draggedMarker = self.getNearestMarker(x, y)
         self.mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, a0: QtGui.QMouseEvent) -> None:
-        self.draggedMarker = None
+        self.draggedMarker = Marker()
         if self.dragbox.state:
             self.zoomTo(
                 self.dragbox.pos_start[0],
@@ -253,8 +252,8 @@ class Chart(QtWidgets.QWidget):
                 a0.position().y(),
             )
             self.dragbox.state = False
-            self.dragbox.pos = (-1, -1)
-            self.dragbox.pos_start = (0, 0)
+            self.dragbox.pos = ChartPosition(-1, -1)
+            self.dragbox.pos_start = ChartPosition(0, 0)
             self.update()
 
     def wheelEvent(self, a0: QtGui.QWheelEvent) -> None:
@@ -313,7 +312,6 @@ class Chart(QtWidgets.QWidget):
         new_chart.flag = replace(self.flag)
         new_chart.markers = self.markers
         new_chart.swrMarkers = self.swrMarkers
-        new_chart.bands = self.bands
 
         new_chart.resize(self.width(), self.height())
         new_chart.setPointSize(self.dim.point)
@@ -344,16 +342,16 @@ class Chart(QtWidgets.QWidget):
         cmarker.draw(x, y, color, f"{number}")
 
     def drawTitle(
-        self, qp: QtGui.QPainter, position: QtCore.QPoint = None
+        self, qp: QtGui.QPainter, position: Optional[QtCore.QPoint] = None
     ) -> None:
         qp.setPen(Chart.color.text)
         if position is None:
             qf = QtGui.QFontMetricsF(self.font())
             width = qf.boundingRect(self.sweepTitle).width()
-            position = QtCore.QPointF(self.width() / 2 - width / 2, 15)
+            position = QtCore.QPoint(int(self.width() / 2 - width / 2), 15)
         qp.drawText(position, self.sweepTitle)
 
-    def update(self) -> None:
+    def update(self, a=None, b=None, c=None, d=None) -> None:  # pylint: disable=unused-argument
         pal = self.palette()
         pal.setColor(QtGui.QPalette.ColorRole.Window, Chart.color.background)
         self.setPalette(pal)

@@ -17,11 +17,10 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
+from typing import TYPE_CHECKING
 
 from PySide6 import QtCore, QtWidgets
 from PySide6.QtGui import QColor, QColorConstants, QPalette, QShortcut
-
-from NanoVNASaver import NanoVNASaver as vna_app
 
 from ..Charts.Chart import Chart, ChartColors
 from ..Defaults import get_app_config
@@ -31,20 +30,23 @@ from .Defaults import make_scrollable
 from .MarkerSettings import MarkerSettingsWindow
 from .ui import get_window_icon
 
+if TYPE_CHECKING:
+    from ..NanoVNASaver.NanoVNASaver import NanoVNASaver as vna_app
+
 logger = logging.getLogger(__name__)
 
 MIN_MARKERS_FOR_DELTA = 2
 
 
 class DisplaySettingsWindow(QtWidgets.QWidget):
-    def __init__(self, app: vna_app) -> None:
+    def __init__(self, app: "vna_app") -> None:
         super().__init__()
 
         self.app = app
         self.setWindowTitle("Display settings")
         self.setWindowIcon(get_window_icon())
         self.marker_window = MarkerSettingsWindow(self.app)
-        self.callback_params = {}
+        self.callback_params: dict[str, tuple[str, str]] = {}
 
         QShortcut(QtCore.Qt.Key.Key_Escape, self, self.hide)
 
@@ -584,7 +586,7 @@ class DisplaySettingsWindow(QtWidgets.QWidget):
             self,
             "Add VSWR Marker",
             "VSWR value to show:",
-            min=1.001,
+            minValue=1.001,
             decimals=3,
         )
         if selected:

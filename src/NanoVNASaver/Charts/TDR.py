@@ -31,7 +31,7 @@ from PySide6.QtGui import (
     QPen,
     QResizeEvent,
 )
-from PySide6.QtWidgets import QInputDialog, QMenu, QSizePolicy
+from PySide6.QtWidgets import QInputDialog, QMenu, QSizePolicy, QDialog
 
 from .Chart import Chart
 
@@ -63,7 +63,7 @@ class TDRChart(Chart):
 
     def __init__(self, name) -> None:
         super().__init__(name)
-        self.tdrWindow = None
+        self.tdrWindow: QDialog = QDialog()
 
         self.bottomMargin = 25
         self.topMargin = 20

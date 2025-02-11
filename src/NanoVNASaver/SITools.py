@@ -51,6 +51,8 @@ PREFIXES = (
 
 
 V = TypeVar("V", int, Real)
+
+
 def clamp_value(value: V, rmin: V, rmax: V) -> V:
     assert rmin <= rmax
     return rmin if value < rmin else min(value, rmax)
