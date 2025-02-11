@@ -45,7 +45,7 @@ class DeltaMarker(Marker):
     ):
         super().__init__(name, qsettings)
         self.marker_a: Optional[Marker] = None
-        self.marker_b: Optional[Marker]= None
+        self.marker_b: Optional[Marker] = None
 
     def set_markers(self, marker_a: Marker, marker_b: Marker):
         self.marker_a = marker_a

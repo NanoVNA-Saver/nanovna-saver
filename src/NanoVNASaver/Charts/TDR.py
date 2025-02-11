@@ -31,9 +31,9 @@ from PySide6.QtGui import (
     QPen,
     QResizeEvent,
 )
-from PySide6.QtWidgets import QInputDialog, QMenu, QSizePolicy, QDialog
+from PySide6.QtWidgets import QDialog, QInputDialog, QMenu, QSizePolicy
 
-from .Chart import Chart
+from .Chart import Chart, ChartPosition
 
 logger = logging.getLogger(__name__)
 
@@ -89,15 +89,15 @@ class TDRChart(Chart):
 
         self.x_menu = QMenu("Length axis")
         self.mode_group = QActionGroup(self.x_menu)
+        self.action_fixed_span = QAction("Fixed span")
+        self.action_fixed_span.setCheckable(True)
+        self.action_fixed_span.changed.connect(
+            lambda: self.setFixedSpan(self.action_fixed_span.isChecked())
+        )
         self.action_automatic = QAction("Automatic")
         self.action_automatic.setCheckable(True)
         self.action_automatic.setChecked(True)
         self.action_automatic.changed.connect(
-            lambda: self.setFixedSpan(self.action_fixed_span.isChecked())
-        )
-        self.action_fixed_span = QAction("Fixed span")
-        self.action_fixed_span.setCheckable(True)
-        self.action_fixed_span.changed.connect(
             lambda: self.setFixedSpan(self.action_fixed_span.isChecked())
         )
         self.mode_group.addAction(self.action_automatic)
@@ -121,15 +121,15 @@ class TDRChart(Chart):
 
         self.y_menu = QMenu("Y axis")
         self.y_mode_group = QActionGroup(self.y_menu)
+        self.y_action_fixed = QAction("Fixed")
+        self.y_action_fixed.setCheckable(True)
+        self.y_action_fixed.changed.connect(
+            lambda: self.setFixedValues(self.y_action_fixed.isChecked())
+        )
         self.y_action_automatic = QAction("Automatic")
         self.y_action_automatic.setCheckable(True)
         self.y_action_automatic.setChecked(True)
         self.y_action_automatic.changed.connect(
-            lambda: self.setFixedValues(self.y_action_fixed.isChecked())
-        )
-        self.y_action_fixed = QAction("Fixed")
-        self.y_action_fixed.setCheckable(True)
-        self.y_action_fixed.changed.connect(
             lambda: self.setFixedValues(self.y_action_fixed.isChecked())
         )
         self.y_mode_group.addAction(self.y_action_automatic)
@@ -210,13 +210,13 @@ class TDRChart(Chart):
             "Start length (m)",
             "Set start length (m)",
             value=self.min_display_length,
-            min=0,
+            minValue=0,
             decimals=1,
         )
         if not selected:
             return
         if not (self.fixed_span and min_val >= self.max_display_length):
-            self.min_display_length = min_val
+            self.min_display_length = round(min_val)
         if self.fixed_span:
             self.update()
 
@@ -226,13 +226,13 @@ class TDRChart(Chart):
             "Stop length (m)",
             "Set stop length (m)",
             value=self.max_display_length,
-            min=0.1,
+            minValue=0.1,
             decimals=1,
         )
         if not selected:
             return
         if not (self.fixed_span and max_val <= self.min_display_length):
-            self.max_display_length = max_val
+            self.max_display_length = round(max_val)
         if self.fixed_span:
             self.update()
 
@@ -306,8 +306,12 @@ class TDRChart(Chart):
         if a0.modifiers() == Qt.KeyboardModifier.ControlModifier:
             # Dragging a box
             if not self.dragbox.state:
-                self.dragbox.pos_start = (a0.position().x(), a0.position().y())
-            self.dragbox.pos = (a0.position().x(), a0.position().y())
+                self.dragbox.pos_start = ChartPosition(
+                    a0.position().x(), a0.position().y()
+                )
+            self.dragbox.pos = ChartPosition(
+                a0.position().x(), a0.position().y()
+            )
             self.update()
             a0.accept()
             return
@@ -326,7 +330,7 @@ class TDRChart(Chart):
             min_index = np.searchsorted(
                 self.tdrWindow.distance_axis, self.min_display_length * 2
             )
-            x_step = (max_index - min_index) / width
+            x_step = float((max_index - min_index) / width)
         else:
             x_step = math.ceil(len(self.tdrWindow.distance_axis) / 2) / width
 
@@ -357,7 +361,8 @@ class TDRChart(Chart):
             f"""{
                 round(
                     self.tdrWindow.distance_axis[min_index] / 2, self.decimals
-                )!s}m""",
+                )!s
+            }m""",
         )
 
     def _draw_y_ticks(

@@ -85,7 +85,7 @@ class NanoVNA_V2(VNA):
         super().__init__(iface)
 
         if platform.system() != "Windows":
-            tty.setraw(self.serial.fd)
+            tty.setraw(self.serial.fd or 0)
 
         # reset protocol to known state
         with self.serial.lock:
