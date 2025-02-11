@@ -20,7 +20,7 @@ import logging
 from enum import Enum
 from math import exp, log
 from threading import Lock
-from typing import Optional, Iterator, NamedTuple
+from typing import Iterator, NamedTuple, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -186,7 +186,7 @@ class Sweep:
         for i in range(self.segments):
             start, stop = self.get_index_range(i)
             step = (stop - start) / (self.points - 1)
-            freq = start
+            freq = float(start)
             for _ in range(self.points):
                 yield round(freq)
                 freq += step

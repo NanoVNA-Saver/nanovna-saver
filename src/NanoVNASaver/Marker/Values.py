@@ -64,7 +64,7 @@ TYPES = (
 )
 
 
-def default_label_ids() -> str:
+def default_label_ids() -> list[str]:
     return [label.label_id for label in TYPES if label.default_active]
 
 

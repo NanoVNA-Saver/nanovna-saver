@@ -41,14 +41,14 @@ class NanoVNA(VNA):
         logger.debug("Setting initial start,stop")
         self.start, self.stop = self._get_running_frequencies()
         self.sweep_max_freq_hz = 300e6
-        self._sweepdata = []
+        self._sweepdata: list[tuple[complex, complex]] = []
 
     def _get_running_frequencies(self):
         logger.debug("Reading values: frequencies")
         try:
             frequencies = super().readValues("frequencies")
             return int(frequencies[0].real), int(frequencies[-1].real)
-        except Exception as e:
+        except serial.SerialException as e:
             logger.warning("%s reading frequencies", e)
             logger.info("falling back to generic")
 

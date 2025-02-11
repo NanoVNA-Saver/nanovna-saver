@@ -110,7 +110,7 @@ class NanoVNA_V2(VNA):
         self.sweepStartHz = 200e6
         self.sweepStepHz = 1e6
 
-        self._sweepdata = []
+        self._sweepdata: list[tuple[complex, complex]] = []
         self._updateSweep()
 
     def getCalibration(self) -> str:

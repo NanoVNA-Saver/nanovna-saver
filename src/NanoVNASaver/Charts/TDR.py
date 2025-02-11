@@ -357,8 +357,7 @@ class TDRChart(Chart):
             f"""{
                 round(
                     self.tdrWindow.distance_axis[min_index] / 2, self.decimals
-                )!s
-            }m""",
+                )!s}m""",
         )
 
     def _draw_y_ticks(

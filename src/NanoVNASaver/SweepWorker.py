@@ -18,15 +18,18 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 from time import sleep
+from typing import TYPE_CHECKING
 
 import numpy as np
 from PySide6.QtCore import QObject, QThread, Signal, Slot
 
 from .Calibration import correct_delay
 from .Hardware.VNA import VNA
-from NanoVNASaver import NanoVNASaver as vna_app
 from .RFTools import Datapoint
 from .Settings.Sweep import Sweep, SweepMode
+
+if TYPE_CHECKING:
+    from .NanoVNASaver.NanoVNASaver import NanoVNASaver as vna_app
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +63,7 @@ class WorkerSignals(QObject):
 
 
 class SweepWorker(QThread):
-    def __init__(self, app: vna_app) -> None:
+    def __init__(self, app: "vna_app") -> None:
         super().__init__()
         logger.info("Initializing SweepWorker")
         self.signals: WorkerSignals = WorkerSignals()

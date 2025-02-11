@@ -135,7 +135,7 @@ class Chart(QtWidgets.QWidget):
         self.dragbox = ChartDragBox()
         self.flag = ChartFlags()
 
-        self.draggedMarker = Marker()
+        self.draggedMarker: Marker | None = None
 
         self.data: list[Datapoint] = []
         self.reference: list[Datapoint] = []
@@ -189,7 +189,7 @@ class Chart(QtWidgets.QWidget):
         self.sweepTitle = title
         self.update()
 
-    def getActiveMarker(self) -> Marker:
+    def getActiveMarker(self) -> Marker | None:
         if self.draggedMarker is not None:
             return self.draggedMarker
         return next(
@@ -201,11 +201,11 @@ class Chart(QtWidgets.QWidget):
             None,
         )
 
-    def getNearestMarker(self, x, y) -> Marker:
+    def getNearestMarker(self, x, y) -> None | Marker:
         if not self.data:
-            return Marker()
+            return None
         shortest = 10.0**6
-        nearest = Marker()
+        nearest = None
         for m in self.markers:
             mx, my = self.getPosition(self.data[m.location])
             distance = abs(complex(x - mx, y - my))
@@ -225,8 +225,8 @@ class Chart(QtWidgets.QWidget):
         if event.buttons() == Qt.MouseButton.RightButton:
             event.ignore()
             return
-        x = int(event.position().x())
-        y = int(event.position().y())
+        x = event.position().x()
+        y = event.position().y()
         if event.buttons() == Qt.MouseButton.MiddleButton:
             # Drag event
             event.accept()
@@ -243,7 +243,7 @@ class Chart(QtWidgets.QWidget):
         self.mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, a0: QtGui.QMouseEvent) -> None:
-        self.draggedMarker = Marker()
+        self.draggedMarker = None
         if self.dragbox.state:
             self.zoomTo(
                 self.dragbox.pos_start[0],
@@ -348,7 +348,7 @@ class Chart(QtWidgets.QWidget):
         if position is None:
             qf = QtGui.QFontMetricsF(self.font())
             width = qf.boundingRect(self.sweepTitle).width()
-            position = QtCore.QPoint(int(self.width() / 2 - width / 2), 15)
+            position = QtCore.QPoint(round(self.width() / 2 - width / 2), 15)
         qp.drawText(position, self.sweepTitle)
 
     def update(self, a=None, b=None, c=None, d=None) -> None:  # pylint: disable=unused-argument

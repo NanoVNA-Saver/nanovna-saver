@@ -17,10 +17,9 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
+from typing import TYPE_CHECKING
 
 from PySide6 import QtCore, QtWidgets
-
-from NanoVNASaver import NanoVNASaver as vna_app
 
 from ..Defaults import SweepConfig, get_app_config
 from ..Formatting import (
@@ -30,6 +29,9 @@ from ..Formatting import (
     parse_frequency,
 )
 from .Control import Control
+
+if TYPE_CHECKING:
+    from ..NanoVNASaver.NanoVNASaver import NanoVNASaver as vna_app
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +53,7 @@ class FrequencyInputWidget(QtWidgets.QLineEdit):
 
 
 class SweepControl(Control):
-    def __init__(self, app: vna_app):
+    def __init__(self, app: "vna_app"):
         super().__init__(app, "Sweep control")
 
         sweep_settings = self.get_settings()

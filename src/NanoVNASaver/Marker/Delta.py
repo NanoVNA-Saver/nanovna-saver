@@ -16,6 +16,8 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+from typing import Optional
+
 from PySide6 import QtCore
 
 from .. import RFTools
@@ -35,7 +37,6 @@ from ..Formatting import (
     format_wavelength,
 )
 from .Widget import Marker
-from typing import Optional
 
 
 class DeltaMarker(Marker):
@@ -43,8 +44,8 @@ class DeltaMarker(Marker):
         self, name: str = "", qsettings: Optional[QtCore.QSettings] = None
     ):
         super().__init__(name, qsettings)
-        self.marker_a = None
-        self.marker_b = None
+        self.marker_a: Optional[Marker] = None
+        self.marker_b: Optional[Marker]= None
 
     def set_markers(self, marker_a: Marker, marker_b: Marker):
         self.marker_a = marker_a

@@ -18,6 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 import math
+from typing import TYPE_CHECKING
 
 import numpy as np
 import numpy.typing as npt
@@ -25,10 +26,11 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from scipy.constants import speed_of_light  # type: ignore
 from scipy.signal import convolve  # type: ignore
 
-from NanoVNASaver import NanoVNASaver as vna_app
-
 from .Defaults import make_scrollable
 from .ui import get_window_icon
+
+if TYPE_CHECKING:
+    from ..NanoVNASaver.NanoVNASaver import NanoVNASaver as vna_app
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +81,7 @@ FFT_POINTS = 2**14
 class TDRWindow(QtWidgets.QWidget):
     updated = QtCore.Signal()
 
-    def __init__(self, app: vna_app):
+    def __init__(self, app: "vna_app"):
         super().__init__()
         self.app = app
 

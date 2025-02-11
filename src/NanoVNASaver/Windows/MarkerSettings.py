@@ -17,17 +17,18 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import Qt
-
-from NanoVNASaver import NanoVNASaver as vna_app
 
 from ..Marker.Values import TYPES, default_label_ids
 from ..Marker.Widget import Marker
 from ..RFTools import Datapoint
 from .ui import get_window_icon
+
+if TYPE_CHECKING:
+    from ..NanoVNASaver.NanoVNASaver import NanoVNASaver as vna_app
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +45,7 @@ class MarkerSettingsWindow(QtWidgets.QWidget):
         Datapoint(124000000, -0.2, 0.5),
     ]
 
-    def __init__(self, app: vna_app):
+    def __init__(self, app: "vna_app"):
         super().__init__()
         self.app = app
 
