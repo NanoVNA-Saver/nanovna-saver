@@ -16,13 +16,19 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+import logging
 import struct
 
 import numpy as np
 from PySide6.QtGui import QImage, QPixmap
 
+logger = logging.getLogger(__name__)
+
 
 def get_argb32_pixmap(image_data: bytes, width, height) -> QPixmap:
+    logger.debug(
+        "dimenstion: %d x %d, buffer size: %d", width, height, len(image_data)
+    )
     rgb_data = struct.unpack(f">{width * height}H", image_data)
     rgb_array = np.array(rgb_data, dtype=np.uint32)
     rgba = (

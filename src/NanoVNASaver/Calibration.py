@@ -23,12 +23,12 @@ import os
 import re
 from collections import UserDict, defaultdict
 from dataclasses import dataclass, field
+from typing import Optional
 
 from scipy.interpolate import interp1d
 
 from .RFTools import Datapoint
 from .Touchstone import Touchstone
-from typing import Optional
 
 IDEAL_SHORT = complex(-1, 0)
 IDEAL_OPEN = complex(1, 0)
@@ -84,14 +84,14 @@ class CalData:
     thrurefl: complex = complex(0.0, 0.0)
     isolation: complex = complex(0.0, 0.0)
     freq: int = 0
-    e00: float = 0.0  # Directivity
-    e11: float = 0.0  # Port1 match
-    delta_e: float = 0.0  # Tracking
-    e10e01: float = 0.0  # Forward Reflection Tracking
+    e00: complex = complex(0.0)  # Directivity
+    e11: complex = complex(0.0)  # Port1 match
+    delta_e:complex = complex(0.0)  # Tracking
+    e10e01: complex = complex(0.0)  # Forward Reflection Tracking
     # 2 port
-    e30: float = 0.0  # Forward isolation
-    e22: float = 0.0  # Port2 match
-    e10e32: float = 0.0  # Forward transmission
+    e30: complex = complex(0.0)  # Forward isolation
+    e22: complex = complex(0.0)  # Port2 match
+    e10e32: complex = complex(0.0)  # Forward transmission
 
     def __str__(self):
         return (
@@ -250,8 +250,10 @@ class CalDataSet(UserDict):
     def freq_max(self) -> int:
         return self.frequencies()[-1] if self.frequencies() else 0
 
-    def get(self, key: int, default: Optional[CalData] = None) -> CalData:
-        return self.data.get(key, default)
+    def get(self, key: int, default: Optional[CalData] = None) -> CalData: # type: ignore[override]
+        if default:
+            return self.data.get(key, default)
+        return self.data[key]
 
     def items(self):
         yield from self.data.items()

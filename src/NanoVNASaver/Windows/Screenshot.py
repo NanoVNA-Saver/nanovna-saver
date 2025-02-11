@@ -17,6 +17,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
+from typing import Optional
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
@@ -26,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 class ScreenshotWindow(QtWidgets.QLabel):
-    pix = None
+    pix: Optional[QtGui.QPixmap] = None
 
     def __init__(self):
         super().__init__()
@@ -59,11 +60,11 @@ class ScreenshotWindow(QtWidgets.QLabel):
         self.addAction(self.action_save_screenshot)
 
     def setScreenshot(self, pixmap: QtGui.QPixmap):
-        if self.pix is None:
+        if ScreenshotWindow.pix is None:
             self.resize(pixmap.size())
-        self.pix = pixmap
+        ScreenshotWindow.pix = pixmap
         self.setPixmap(
-            self.pix.scaled(
+            ScreenshotWindow.pix.scaled(
                 self.size(),
                 QtCore.Qt.AspectRatioMode.KeepAspectRatio,
                 QtCore.Qt.TransformationMode.FastTransformation,
@@ -103,9 +104,9 @@ class ScreenshotWindow(QtWidgets.QLabel):
 
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
         super().resizeEvent(a0)
-        if self.pixmap() is not None:
+        if ScreenshotWindow.pix is not None:
             self.setPixmap(
-                self.pix.scaled(
+                ScreenshotWindow.pix.scaled(
                     self.size(),
                     QtCore.Qt.AspectRatioMode.KeepAspectRatio,
                     QtCore.Qt.TransformationMode.FastTransformation,
