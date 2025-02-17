@@ -17,24 +17,27 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
+from typing import TYPE_CHECKING
 
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtGui import QIntValidator
-
-from NanoVNASaver import NanoVNASaver
 
 from .Defaults import make_scrollable
 from .Screenshot import ScreenshotWindow
 from .ui import get_window_icon
 
+if TYPE_CHECKING:
+    from ..NanoVNASaver.NanoVNASaver import NanoVNASaver as vna_app
+
+
 logger = logging.getLogger(__name__)
 
 
 class DeviceSettingsWindow(QtWidgets.QWidget):
-    custom_points_checkbox = QtWidgets.QCheckBox
-    custom_points_edit = QtWidgets.QLineEdit
+    custom_points_checkbox: QtWidgets.QCheckBox
+    custom_points_edit: QtWidgets.QLineEdit
 
-    def __init__(self, app: NanoVNASaver) -> None:
+    def __init__(self, app: "vna_app") -> None:
         super().__init__()
 
         self.app = app

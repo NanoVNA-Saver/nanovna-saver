@@ -16,8 +16,9 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+import logging
 import math
-from typing import ClassVar
+from typing import ClassVar, Optional
 
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import Signal
@@ -42,6 +43,8 @@ from ..Formatting import (
     parse_frequency,
 )
 from .Values import TYPES, Value, default_label_ids
+
+logger = logging.getLogger(__name__)
 
 COLORS = (
     QtGui.QColor(QColorConstants.DarkGray),
@@ -91,7 +94,9 @@ class Marker(QtCore.QObject, Value):
     def count(cls):
         return cls._instances
 
-    def __init__(self, name: str = "", qsettings: QtCore.QSettings = None):
+    def __init__(
+        self, name: str = "", qsettings: Optional[QtCore.QSettings] = None
+    ):
         super().__init__()
         self.qsettings = qsettings
         self.name = name
@@ -101,8 +106,8 @@ class Marker(QtCore.QObject, Value):
         if self.qsettings:
             Marker._instances += 1
             Marker.active_labels = self.qsettings.value(
-                "MarkerFields", defaultValue=default_label_ids()
-            )
+                "MarkerFields", defaultValue=default_label_ids(), type=list
+            )  # type: ignore
             self.index = Marker._instances
 
         if not self.name:
@@ -156,13 +161,17 @@ class Marker(QtCore.QObject, Value):
         box_layout = QtWidgets.QHBoxLayout(self.group_box)
 
         try:
-            self.setColor(
-                self.qsettings.value(
-                    f"Marker{self.count()}Color", COLORS[self.count()]
+            if self.qsettings:
+                set_val = (
+                    self.qsettings.value(
+                        f"Marker{self.count()}Color",
+                        defaultValue=COLORS[self.count()],
+                    )
+                    or COLORS[1]
                 )
-            )
-        except AttributeError:  # happens when qsettings == None
-            self.setColor(COLORS[1])
+                self.setColor(set_val)
+            else:
+                self.setColor(COLORS[1])
         except IndexError:
             self.setColor(COLORS[0])
 
@@ -329,7 +338,7 @@ class Marker(QtCore.QObject, Value):
             self.location = 0
             return
 
-        self.frequencyInput.setText(_s11.freq)
+        self.frequencyInput.setText(str(_s11.freq))
         self.store(self.location, s11, s21)
 
         imp = _s11.impedance()

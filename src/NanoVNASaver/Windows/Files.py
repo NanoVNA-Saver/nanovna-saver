@@ -17,21 +17,22 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
+from typing import TYPE_CHECKING
 
 from PySide6 import QtCore, QtGui, QtWidgets
-
-from NanoVNASaver import NanoVNASaver
 
 from ..RFTools import Datapoint
 from ..Touchstone import Touchstone
 from .Defaults import make_scrollable
 from .ui import get_window_icon
 
+if TYPE_CHECKING:
+    from ..NanoVNASaver.NanoVNASaver import NanoVNASaver as vna_app
 logger = logging.getLogger(__name__)
 
 
 class FilesWindow(QtWidgets.QWidget):
-    def __init__(self, app: NanoVNASaver):
+    def __init__(self, app: "vna_app"):
         super().__init__()
         self.app = app
 

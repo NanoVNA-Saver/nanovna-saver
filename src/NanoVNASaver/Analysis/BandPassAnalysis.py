@@ -18,6 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 import math
+from typing import TYPE_CHECKING
 
 from PySide6 import QtWidgets as QtW
 
@@ -25,11 +26,14 @@ from .. import AnalyticTools as At
 from ..Formatting import format_frequency
 from .Base import CUTOFF_VALS, MIN_CUTOFF_DAMPING, Analysis
 
+if TYPE_CHECKING:
+    from ..NanoVNASaver.NanoVNASaver import NanoVNASaver as vna_app
+
 logger = logging.getLogger(__name__)
 
 
 class BandPassAnalysis(Analysis):
-    def __init__(self, app) -> None:
+    def __init__(self, app: "vna_app") -> None:
         super().__init__(app)
 
         for label in (

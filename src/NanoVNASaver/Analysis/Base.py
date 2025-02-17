@@ -17,10 +17,12 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
+from typing import TYPE_CHECKING
 
 from PySide6 import QtWidgets
 
-from NanoVNASaver import NanoVNASaver
+if TYPE_CHECKING:
+    from ..NanoVNASaver.NanoVNASaver import NanoVNASaver as vna_app
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +37,7 @@ class QHLine(QtWidgets.QFrame):
 
 
 class Analysis:
-    def __init__(self, app: NanoVNASaver) -> None:
+    def __init__(self, app: "vna_app") -> None:
         self.app = app
         self.label: dict[str, QtWidgets.QLabel] = {
             "titel": QtWidgets.QLabel(),

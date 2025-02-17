@@ -169,3 +169,15 @@ ignore = [
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10
+
+
+[tool.mypy]
+follow_imports = "skip"
+ignore_missing_imports = true
+files = "src/NanoVNASaver"  # directory mypy should analyze
+# Directories to exclude from mypy's analysis
+exclude = [
+#     "src/NanoVNASaver/somedir",
+#     "src/NanoVNASaver/somefile\\.py",
+  "docs",
+]

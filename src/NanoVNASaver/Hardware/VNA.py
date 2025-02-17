@@ -108,8 +108,7 @@ class VNA:
             max_retries = _max_retries(self.bandwidth, self.datapoints)
             logger.debug("Max retries: %s", max_retries)
             while True:
-                line = self.serial.readline()
-                line = line.decode("ascii").strip()
+                line = self.serial.readline().decode("ascii").strip()
                 if not line:
                     retries += 1
                     if retries > max_retries:
@@ -133,8 +132,8 @@ class VNA:
             self.SN = self.getSerialNumber()
         if "bandwidth" in result:
             self.features.add("Bandwidth")
-            result = " ".join(list(self.exec_command("bandwidth")))
-            if "Hz)" in result:
+            bwresult = " ".join(list(self.exec_command("bandwidth")))
+            if "Hz)" in bwresult:
                 self.bw_method = "dislord"
         if len(self.valid_datapoints) > 1:
             self.features.add("Customizable data points")

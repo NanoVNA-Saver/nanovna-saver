@@ -43,7 +43,7 @@ from .VNA import VNA
 
 logger = logging.getLogger(__name__)
 
-USBDevice = namedtuple("Device", "vid pid name")
+USBDevice = namedtuple("USBDevice", "vid pid name")
 
 USBDEVICETYPES = (
     USBDevice(0x0483, 0x5740, "NanoVNA"),
@@ -210,8 +210,7 @@ def get_info(serial_port: serial.Serial) -> str:
         lines = []
         retries = 0
         while True:
-            line = serial_port.readline()
-            line = line.decode("ascii").strip()
+            line = serial_port.readline().decode("ascii").strip()
             if not line:
                 retries += 1
                 if retries > RETRIES:
@@ -226,3 +225,4 @@ def get_info(serial_port: serial.Serial) -> str:
             lines.append(line)
         logger.debug("Info output: %s", lines)
         return "\n".join(lines)
+    return ""

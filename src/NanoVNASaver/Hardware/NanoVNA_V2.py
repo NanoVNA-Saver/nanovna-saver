@@ -85,7 +85,7 @@ class NanoVNA_V2(VNA):
         super().__init__(iface)
 
         if platform.system() != "Windows":
-            tty.setraw(self.serial.fd)
+            tty.setraw(self.serial.fd or 0)
 
         # reset protocol to known state
         with self.serial.lock:
@@ -110,7 +110,7 @@ class NanoVNA_V2(VNA):
         self.sweepStartHz = 200e6
         self.sweepStepHz = 1e6
 
-        self._sweepdata = []
+        self._sweepdata: list[tuple[complex, complex]] = []
         self._updateSweep()
 
     def getCalibration(self) -> str:

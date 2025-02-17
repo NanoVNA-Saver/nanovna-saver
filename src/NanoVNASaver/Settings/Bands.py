@@ -139,7 +139,7 @@ class BandsModel(QtCore.QAbstractTableModel):
     def rowCount(self, _) -> int:
         return len(self.bands)
 
-    def data(self, index: QModelIndex, role: int = ...) -> any:
+    def data(self, index: QModelIndex, role: int = ...) -> typing.Any:
         if role in [
             Qt.ItemDataRole.DisplayRole,
             Qt.ItemDataRole.EditRole,

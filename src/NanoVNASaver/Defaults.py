@@ -184,7 +184,7 @@ class AppSettings(QSettings):
     def _restore_dataclass(self, name: str, data: object) -> object:
         assert is_dataclass(data)
 
-        result = replace(data)
+        result = replace(data) if not isinstance(data, type) else data()
         self.beginGroup(name)
         for field_it in fields(data):
             default = getattr(data, field_it.name)

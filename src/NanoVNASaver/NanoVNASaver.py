@@ -54,7 +54,7 @@ from .Charts.Chart import Chart
 from .Controls.MarkerControl import MarkerControl
 from .Controls.SerialControl import SerialControl
 from .Controls.SweepControl import SweepControl
-from .Defaults import APP_SETTINGS, get_app_config
+from .Defaults import APP_SETTINGS, AppSettings, get_app_config
 from .Formatting import format_frequency, format_gain, format_vswr
 from .Hardware.Hardware import Interface
 from .Hardware.VNA import VNA
@@ -96,7 +96,7 @@ class NanoVNASaver(QWidget):
         self.s21att = 0.0
         self.setWindowIcon(get_window_icon())
         # TODO APP_SETTINGS should be used instead app.setting\
-        self.settings = APP_SETTINGS
+        self.settings: AppSettings = APP_SETTINGS
         app_config = self.settings.restore_config()
         self.threadpool = QtCore.QThreadPool()
         self.sweep = Sweep()
@@ -106,7 +106,7 @@ class NanoVNASaver(QWidget):
         self.worker.signals.finished.connect(self.sweepFinished)
         self.worker.signals.sweep_error.connect(self.showSweepError)
 
-        self.markers = []
+        self.markers: list[Marker] = []
         self.marker_ref = False
 
         self.marker_column = QtWidgets.QVBoxLayout()
@@ -115,7 +115,7 @@ class NanoVNASaver(QWidget):
         self.marker_frame.setLayout(self.marker_column)
 
         self.interface = Interface("serial", "None")
-        self.vna: type[VNA] = VNA(self.interface)
+        self.vna: VNA = VNA(self.interface)
 
         self.calibration: Calibration = Calibration()
         self.sweep_control = SweepControl(self)
@@ -125,11 +125,11 @@ class NanoVNASaver(QWidget):
             self.sweep_control.update_sweep_btn
         )
 
-        self.bands = BandsModel()
+        self.bands: BandsModel = BandsModel()
 
         self.dataLock = threading.Lock()
-        self.data = Touchstone()
-        self.ref_data = Touchstone()
+        self.data: Touchstone = Touchstone()
+        self.ref_data: Touchstone = Touchstone()
 
         self.sweepSource = ""
         self.referenceSource = ""
@@ -203,7 +203,7 @@ class NanoVNASaver(QWidget):
                 "log_mag": CombinedLogMagChart("S11 & S21 LogMag"),
             },
         }
-        self.tdr_chart = TDRChart("TDR")
+        self.tdr_chart: TDRChart = TDRChart("TDR")
         self.tdr_mainwindow_chart = TDRChart("TDR")
 
         # List of all the S11 charts, for selecting
@@ -260,9 +260,9 @@ class NanoVNASaver(QWidget):
         #  Windows
         ###############################################################
 
-        self.windows = {
+        self.windows: dict[str, QtWidgets.QDialog] = {
             "about": AboutWindow(self),
-            # "analysis": AnalysisWindow(self),
+            "analysis": AnalysisWindow(self),
             "calibration": CalibrationWindow(self),
             "device_settings": DeviceSettingsWindow(self),
             "file": FilesWindow(self),
@@ -341,7 +341,6 @@ class NanoVNASaver(QWidget):
 
         # self.marker_column.addStretch(1)
 
-        self.windows["analysis"] = AnalysisWindow(self)
         btn_show_analysis = QtWidgets.QPushButton("Analysis ...")
         btn_show_analysis.setMinimumHeight(20)
         btn_show_analysis.clicked.connect(

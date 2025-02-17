@@ -32,7 +32,7 @@ from ..Formatting import (
 )
 from ..RFTools import Datapoint
 from ..SITools import Format, Value
-from .Chart import Chart
+from .Chart import Chart, ChartPosition
 
 logger = logging.getLogger(__name__)
 
@@ -442,12 +442,14 @@ class FrequencyChart(Chart):
         if a0.buttons() == Qt.MouseButton.RightButton:
             a0.ignore()
             return
+        x = a0.position().x()
+        y = a0.position().y()
         if a0.buttons() == Qt.MouseButton.MiddleButton:
             # Drag the display
             a0.accept()
             if self.dragbox.move_x != -1 and self.dragbox.move_y != -1:
-                dx = self.dragbox.move_x - a0.position().x()
-                dy = self.dragbox.move_y - a0.position().y()
+                dx = self.dragbox.move_x - x
+                dy = self.dragbox.move_y - y
                 self.zoomTo(
                     self.leftMargin + dx,
                     self.topMargin + dy,
@@ -455,14 +457,14 @@ class FrequencyChart(Chart):
                     self.topMargin + self.dim.height + dy,
                 )
 
-            self.dragbox.move_x = a0.position().x()
-            self.dragbox.move_y = a0.position().y()
+            self.dragbox.move_x = x
+            self.dragbox.move_y = y
             return
         if a0.modifiers() == Qt.KeyboardModifier.ControlModifier:
             # Dragging a box
             if not self.dragbox.state:
-                self.dragbox.pos_start = (a0.position().x(), a0.position().y())
-            self.dragbox.pos = (a0.position().x(), a0.position().y())
+                self.dragbox.pos_start = ChartPosition(x, y)
+            self.dragbox.pos = ChartPosition(x, y)
             self.update()
             a0.accept()
             return

@@ -22,7 +22,7 @@ import math
 import numpy as np
 from PySide6 import QtGui
 
-from ..RFTools import Datapoint
+from ..RFTools import Datapoint, groupDelay
 from .Chart import Chart
 from .Frequency import FrequencyChart
 
@@ -103,15 +103,15 @@ class GroupDelayChart(FrequencyChart):
         line_pen = QtGui.QPen(Chart.color.sweep)
         line_pen.setWidth(self.dim.line)
 
-        if self.fixedValues:
-            min_delay = self.minDisplayValue
-            max_delay = self.maxDisplayValue
-        elif self.data:
-            min_delay = math.floor(np.min(self.groupDelay))
-            max_delay = math.ceil(np.max(self.groupDelay))
-        elif self.reference:
-            min_delay = math.floor(np.min(self.groupDelayReference))
-            max_delay = math.ceil(np.max(self.groupDelayReference))
+        min_delay = self.minDisplayValue
+        max_delay = self.maxDisplayValue
+        if not self.fixedValues:
+            if self.data:
+                min_delay = math.floor(np.min(self.groupDelay))
+                max_delay = math.ceil(np.max(self.groupDelay))
+            elif self.reference:
+                min_delay = math.floor(np.min(self.groupDelayReference))
+                max_delay = math.ceil(np.max(self.groupDelayReference))
 
         span = max_delay - min_delay
         if span == 0:
@@ -209,7 +209,7 @@ class GroupDelayChart(FrequencyChart):
                 delay = 0
         return self.getYPositionFromDelay(delay)
 
-    def getYPositionFromDelay(self, delay: float) -> int:
+    def getYPositionFromDelay(self, delay: Datapoint) -> int:
         return self.topMargin + int(
             (self.maxDelay - delay) / self.span * self.dim.height
         )
