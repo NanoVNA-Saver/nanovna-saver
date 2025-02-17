@@ -261,7 +261,7 @@ class SweepSettingsWindow(QtWidgets.QWidget):
             format_frequency_sweep(stop)
         )
         self.app.sweep_control.inputs["Stop"].textEdited.emit(
-            self.app.sweep_control.input_end.text()
+            self.app.sweep_control.inputs["Stop"].text()
         )
 
     def update_attenuator(self, value: "QtWidgets.QLineEdit"):
