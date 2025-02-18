@@ -179,7 +179,8 @@ class TDRWindow(QtWidgets.QWidget):
                 np.concatenate([s11, np.conj(s11[-1:0:-1])])
             )
 
-        self.windowed_s11 = np.blackman(len(s11)) * s11
+        # self.windowed_s11 = np.blackman(len(s11)) * s11
+        self.windowed_s11 = np.kaiser(len(s11), 0) * s11
 
         if "lowpass" in TDR_format:
             td = self._tdr_lowpass(TDR_format, s11)
