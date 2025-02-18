@@ -183,8 +183,8 @@ class TDRChart(Chart):
                 "impedance (\N{OHM SIGN})",
                 1,
             ),
-            "S11 (lowpass)": (MIN_S11, MIN_S11, "S11 (dB)", 1),
-            "VSWR (lowpass)": (MIN_VSWR, MIN_VSWR, "VSWR", 2),
+            "S11 (lowpass)": (MIN_S11, MAX_S11, "S11 (dB)", 1),
+            "VSWR (lowpass)": (MIN_VSWR, MAX_VSWR, "VSWR", 2),
             "Refl (lowpass)": (-1, 1, "U", 2),
             "Refl (bandpass)": (0, 1, "U", 2),
         }
@@ -444,6 +444,7 @@ class TDRChart(Chart):
         # TODO: Limit the search to the selected span?
         min_Z = np.min(self.tdrWindow.step_response_Z)
         max_Z = np.max(self.tdrWindow.step_response_Z)
+
         # Ensure that everything works even if limits are negative
         min_impedance = max(self.min_y_lim, min_Z - 0.05 * np.abs(min_Z))
         max_impedance = min(self.max_y_lim, max_Z + 0.05 * np.abs(max_Z))
@@ -460,7 +461,6 @@ class TDRChart(Chart):
         pen = QPen(Chart.color.sweep)
         pen.setWidth(self.dim.point)
         qp.setPen(pen)
-
         y_step = (max_impedance - min_impedance) / height
         for i in range(min_index, max_index):
             x = self.leftMargin + int((i - min_index) / x_step)
