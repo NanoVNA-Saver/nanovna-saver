@@ -140,11 +140,7 @@ class TDRWindow(QtWidgets.QWidget):
         self.updateTDR()
 
     def updateTDR(self):
-        if len(self.app.data.s11) < MIN_DATA_LENGHT:
-            return
-
         TDR_format = self.format_dropdown.currentText()
-
         if self.tdr_velocity_dropdown.currentData() == -1:
             self.tdr_velocity_input.setDisabled(False)
         else:
@@ -152,6 +148,9 @@ class TDRWindow(QtWidgets.QWidget):
             self.tdr_velocity_input.setText(
                 str(self.tdr_velocity_dropdown.currentData())
             )
+
+        if len(self.app.data.s11) < MIN_DATA_LENGHT:
+            return
 
         try:
             v = float(self.tdr_velocity_input.text())
