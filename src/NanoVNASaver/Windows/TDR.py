@@ -72,7 +72,7 @@ CABLE_PARAMETERS = (
     ("Davis Bury-FLEX (0.82)", 0.82),
 )
 
-MIN_DATA_LENGHT = 2
+MIN_DATA_LENGTH = 2
 
 # TODO: Let the user select whether to use high or low resolution TDR?
 FFT_POINTS = 2**14
@@ -149,12 +149,12 @@ class TDRWindow(QtWidgets.QWidget):
                 str(self.tdr_velocity_dropdown.currentData())
             )
 
-        if len(self.app.data.s11) < MIN_DATA_LENGHT:
-            return
-
         try:
             v = float(self.tdr_velocity_input.text())
         except ValueError:
+            return
+
+        if len(self.app.data.s11) < MIN_DATA_LENGTH:
             return
 
         step_size = self.app.data.s11[1].freq - self.app.data.s11[0].freq
