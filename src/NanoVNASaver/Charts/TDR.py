@@ -30,6 +30,7 @@ from PySide6.QtGui import (
     QPalette,
     QPen,
     QResizeEvent,
+    QWheelEvent,
 )
 from PySide6.QtWidgets import QDialog, QInputDialog, QMenu, QSizePolicy
 
@@ -282,7 +283,14 @@ class TDRChart(Chart):
         self.tdrWindow.updated.connect(new_chart.update)
         return new_chart
 
+    def wheelEvent(self, a0: QWheelEvent) -> None:
+        logger.debug(f"wheelEvent {a0.angleDelta().y()}")
+        a0.accept()
+        self.data = [0]  # A bit of cheating otherwise the super().wheelEvent() exits without doing anything.
+        super().wheelEvent(a0)
+
     def mouseMoveEvent(self, a0: QMouseEvent) -> None:
+        print(f"mouseMoveEvent: {Qt.MouseButton}")
         if not hasattr(self.tdrWindow, "td"):
             return
         if a0.buttons() == Qt.MouseButton.RightButton:
@@ -459,9 +467,11 @@ class TDRChart(Chart):
 
         qp = QPainter(self)
         pen = QPen(Chart.color.sweep)
-        pen.setWidth(self.dim.point)
+        pen.setWidth(self.dim.line if self.flag.draw_lines else self.dim.point)
         qp.setPen(pen)
         y_step = (max_impedance - min_impedance) / height
+        last_x_primary, last_y_primary = None, None
+        last_x_secondary, last_y_secondary = None, None
         for i in range(min_index, max_index):
             x = self.leftMargin + int((i - min_index) / x_step)
             y = (self.topMargin + height) - int(
@@ -470,7 +480,12 @@ class TDRChart(Chart):
             if self.isPlotable(x, y):
                 pen.setColor(Chart.color.sweep)
                 qp.setPen(pen)
-                qp.drawPoint(x, y)
+                if self.flag.draw_lines and last_x_primary is not None:
+                    qp.drawLine(last_x_primary, last_y_primary, x, y)
+                else:
+                    qp.drawPoint(x, y)
+            last_x_primary = x
+            last_y_primary = y
 
             x = self.leftMargin + int((i - min_index) / x_step)
             y = (self.topMargin + height) - int(
@@ -479,7 +494,12 @@ class TDRChart(Chart):
             if self.isPlotable(x, y):
                 pen.setColor(Chart.color.sweep_secondary)
                 qp.setPen(pen)
-                qp.drawPoint(x, y)
+                if self.flag.draw_lines and last_x_secondary is not None:
+                    qp.drawLine(last_x_secondary, last_y_secondary, x, y)
+                else:
+                    qp.drawPoint(x, y)
+            last_x_secondary = x
+            last_y_secondary = y
 
         self._draw_max_point(height, x_step, y_step, min_index)
 

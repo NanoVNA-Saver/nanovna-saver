@@ -258,8 +258,10 @@ class Chart(QtWidgets.QWidget):
 
     def wheelEvent(self, a0: QtGui.QWheelEvent) -> None:
         delta = a0.angleDelta().y()
+        logger.debug(f"wheelEvent {delta}, {self.data}, {self.reference}")
         if not delta or (not self.data and not self.reference):
             a0.ignore()
+            logger.debug("nothing to do, returning")
             return
         modifiers = a0.modifiers()
 
