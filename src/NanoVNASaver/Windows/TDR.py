@@ -34,13 +34,26 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+#
+# Amplitude correction for losses in the IFFT due to windowing and zero-padding
+# when using kaiser window (numpy.kaiser()). From Christian Zietz,
+# https://groups.io/g/nanovna-users/topic/should_the_builtin_tdr_mode/77043091
+#
+def kaiser_correction(lens11, arg):
+    factor = np.sum(np.kaiser(lens11, arg))
+    logger.debug(f"kaiser correction ({lens11}, {arg}) factor: {factor}")
+    return factor
+
 WINDOWING_FUNCTION = (
-    ("Hanning", np.hanning, lambda lens11, arg : lens11, None),
-    ("Blackman", np.blackman, lambda lens11, arg : lens11 * 1 / 0.42, None),
-    ("Minimal (Kaiser, \N{GREEK SMALL LETTER BETA}=0)", np.kaiser, lambda lens11, arg : np.sum(np.kaiser(lens11, arg)), 0),
-    ("Normal  (Kaiser, \N{GREEK SMALL LETTER BETA}=6)", np.kaiser, lambda lens11, arg : np.sum(np.kaiser(lens11, arg)), 6),
-    ("Strong  (Kaiser, \N{GREEK SMALL LETTER BETA}=13)", np.kaiser, lambda lens11, arg : np.sum(np.kaiser(lens11, arg)), 13),
-    ("Maximal (Kaiser, \N{GREEK SMALL LETTER BETA}=101)", np.kaiser, lambda lens11, arg : np.sum(np.kaiser(lens11, arg)), 101),
+    ("Hanning", np.hanning, lambda lens11, arg : lens11 / 2.0, None),
+    # The 1/0.42 is the Amplitude Correction Factor for the Blackman window.
+    # 0.42 is the average amplitude of the window across its range.
+    # ("Blackman", np.blackman, lambda lens11, arg : lens11 / 0.42, None),
+    ("Blackman", np.blackman, lambda lens11, arg : lens11 / (1 / 0.42), None),
+    ("Minimal (Kaiser, \N{GREEK SMALL LETTER BETA}=0)", np.kaiser, kaiser_correction, 0),
+    ("Normal  (Kaiser, \N{GREEK SMALL LETTER BETA}=6)", np.kaiser, kaiser_correction, 6),
+    ("Strong  (Kaiser, \N{GREEK SMALL LETTER BETA}=13)", np.kaiser, kaiser_correction, 13),
+    ("Maximal (Kaiser, \N{GREEK SMALL LETTER BETA}=100)", np.kaiser, kaiser_correction, 100),
 )
 
 CABLE_PARAMETERS = (
@@ -214,7 +227,7 @@ class TDRWindow(QtWidgets.QWidget):
             # Convolving with a step function is unnecessary, we can only get
             # the magnitude of impulse response
             if TDR_format == "Refl (bandpass)":
-                self.step_response_Z = td * FFT_POINTS / TDR_window['corr'](len(s11), None)  # len(s11) * 1 / 0.42
+                self.step_response_Z = td * FFT_POINTS / TDR_window['corr'](len(s11), TDR_window['arg'])
 
         time_axis = np.linspace(0, 1 / step_size, FFT_POINTS)
         self.distance_axis = time_axis * v * speed_of_light
@@ -263,9 +276,6 @@ class TDRWindow(QtWidgets.QWidget):
             )
             return td
         if tdr_format == "Refl (lowpass)":
-            # The 1/0.42 is the Amplitude Correction Factor for the
-            # Blackman window. 0.42 is the average amplitude of the
-            # window across its range.
             self.step_response_Z = np.real(
                 td * FFT_POINTS / TDR_window['corr'](len(s11), TDR_window['arg'])
             )
