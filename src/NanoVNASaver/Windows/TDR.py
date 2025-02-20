@@ -124,7 +124,7 @@ class TDRWindow(QtWidgets.QWidget):
         make_scrollable(self, layout)
 
         dropdown_layout = QtWidgets.QHBoxLayout()
-        dropdown_layout.addWidget(QtWidgets.QLabel("Velocity factor"))
+        dropdown_layout.addWidget(QtWidgets.QLabel("Velocity factor"), 0)
 
         self.tdr_velocity_dropdown = QtWidgets.QComboBox()
         for cable_name, velocity in CABLE_PARAMETERS:
@@ -136,17 +136,19 @@ class TDRWindow(QtWidgets.QWidget):
         self.tdr_velocity_dropdown.setCurrentIndex(1)  # Default to PE (0.66)
         self.tdr_velocity_dropdown.currentIndexChanged.connect(self.updateTDR)
 
-        dropdown_layout.addWidget(self.tdr_velocity_dropdown)
+        dropdown_layout.addWidget(self.tdr_velocity_dropdown, 1)
 
         self.tdr_velocity_input = QtWidgets.QLineEdit()
         self.tdr_velocity_input.setDisabled(True)
         self.tdr_velocity_input.setText("0.66")
         self.tdr_velocity_input.textChanged.connect(self.app.dataUpdated)
         self.tdr_velocity_input.setValidator(QtGui.QDoubleValidator(0.01, 1.0, 2))
-        dropdown_layout.addWidget(self.tdr_velocity_input)
+        dropdown_layout.addWidget(self.tdr_velocity_input, 0)
+        dropdown_layout.addWidget(QtWidgets.QLabel(), 1)
 
         layout.addRow(dropdown_layout)
 
+        format_window_layout = QtWidgets.QHBoxLayout()
         self.format_dropdown = QtWidgets.QComboBox()
         self.format_dropdown.addItem("|Z| (lowpass)")
         self.format_dropdown.addItem("S11 (lowpass)")
@@ -155,14 +157,21 @@ class TDRWindow(QtWidgets.QWidget):
         self.format_dropdown.addItem("Refl (bandpass)")
 
         self.format_dropdown.currentIndexChanged.connect(self.updateFormat)
-        layout.addRow("Format", self.format_dropdown)
+        format_window_layout.addWidget(QtWidgets.QLabel("Format"), 0)
+        format_window_layout.addWidget(self.format_dropdown, 1)
 
         self.window_dropdown = QtWidgets.QComboBox()
         for method_name, method_call, method_correction, method_arg in WINDOWING_FUNCTION:
-            self.window_dropdown.addItem(method_name, {'function': method_call, 'arg': method_arg, 'corr': method_correction})
+            self.window_dropdown.addItem(
+                method_name,
+                {'function': method_call, 'arg': method_arg, 'corr': method_correction})
         self.window_dropdown.currentIndexChanged.connect(self.updateTDR)
         self.window_dropdown.setCurrentIndex(0)
-        layout.addRow("Window", self.window_dropdown)
+
+        format_window_layout.addWidget(QtWidgets.QLabel("Window"), 0)
+        format_window_layout.addWidget(self.window_dropdown, 1)
+        format_window_layout.addWidget(QtWidgets.QLabel(" "), 1)
+        layout.addRow(format_window_layout)
 
         self.tdr_result_label = QtWidgets.QLabel()
         layout.addRow("Estimated cable length:", self.tdr_result_label)

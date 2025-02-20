@@ -301,13 +301,11 @@ class TDRChart(Chart):
         return new_chart
 
     def wheelEvent(self, a0: QWheelEvent) -> None:
-        logger.debug(f"wheelEvent {a0.angleDelta().y()}")
         a0.accept()
         self.data = [0]  # A bit of cheating otherwise the super().wheelEvent() exits without doing anything.
         super().wheelEvent(a0)
 
     def mouseMoveEvent(self, a0: QMouseEvent) -> None:
-        print(f"mouseMoveEvent: {Qt.MouseButton}")
         if not hasattr(self.tdrWindow, "td"):
             return
         if a0.buttons() == Qt.MouseButton.RightButton:
@@ -394,7 +392,6 @@ class TDRChart(Chart):
     def _draw_y_ticks(
         self, height, width, min_impedance, max_impedance, qp: QPainter
     ) -> None:
-        # qp = QPainter(self)
         y_step = (max_impedance - min_impedance) / height
         y_ticks = math.floor(height / 60)
         y_tick_step = height / y_ticks
@@ -413,7 +410,6 @@ class TDRChart(Chart):
         )
 
     def _draw_max_point(self, height, x_step, y_step, min_index, qp: QPainter) -> None:
-        # qp = QPainter(self)
         id_max = np.argmax(self.tdrWindow.td)
 
         max_point = QPoint(
@@ -432,7 +428,6 @@ class TDRChart(Chart):
         )
 
     def _draw_marker(self, height, x_step, y_step, min_index, qp: QPainter):
-        # qp = QPainter(self)
         marker_point = QPoint(
             self.leftMargin + int((self.marker_location - min_index) / x_step),
             (self.topMargin + height)
@@ -478,12 +473,9 @@ class TDRChart(Chart):
             min_impedance = self.min_y_lim
             max_impedance = self.max_y_lim
 
-        y_step = max(self.tdrWindow.td) * 1.1 / height or 1.0e-30
-
         self._draw_ticks(height, width, x_step, min_index, qp)
         self._draw_y_ticks(height, width, min_impedance, max_impedance, qp)
 
-        # qp = QPainter(self)
         pen = QPen(Chart.color.sweep)
         pen.setWidth(self.dim.line if self.flag.draw_lines else self.dim.point)
         qp.setPen(pen)
@@ -621,11 +613,8 @@ class TDRChart(Chart):
             "Zoom to (x,y) by (x,y): (%d, %d) by (%d, %d)", x1, y1, x2, y2
         )
 
-        logger.debug(f"min_display_length: {self.min_display_length} - {self.max_display_length}")
         val1 = self.valueAtPosition(y1)
         val2 = self.valueAtPosition(y2)
-
-        logger.debug(f"new val1={val1}, new val2={val2}")
 
         if val1 != val2:
             self.min_y_lim = round(min(val1, val2), 3)
@@ -643,8 +632,6 @@ class TDRChart(Chart):
 
         len1 = max(0, self.lengthAtPosition(x_min, limit=False))
         len2 = max(0, self.lengthAtPosition(x_max, limit=False))
-
-        logger.debug(f"new len1={len1}, new len2={len2}")
 
         if len1 >= 0 and len2 >= 0 and len1 != len2:
             self.min_display_length = min(len1, len2)
