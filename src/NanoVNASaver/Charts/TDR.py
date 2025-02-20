@@ -31,6 +31,7 @@ from PySide6.QtGui import (
     QPen,
     QResizeEvent,
     QWheelEvent,
+    QShortcut,
 )
 from PySide6.QtWidgets import QDialog, QInputDialog, QMenu, QSizePolicy
 
@@ -160,6 +161,35 @@ class TDRChart(Chart):
 
         self.dim.width = self.width() - self.leftMargin - self.rightMargin
         self.dim.height = self.height() - self.bottomMargin - self.topMargin
+
+        QShortcut(Qt.Key.Key_Up, self, lambda: self.pan_graph(0, 1))
+        QShortcut(Qt.Key.Key_Down, self, lambda: self.pan_graph(0, -1))
+        QShortcut(Qt.Key.Key_Left, self, lambda: self.pan_graph(1, 0))
+        QShortcut(Qt.Key.Key_Right, self, lambda: self.pan_graph(-1, 0))
+
+    def pan_graph(self, x, y):
+        logger.debug(f"Moving graph {x}, {y}")
+        dx = self.dim.width / 10 * x
+        dy = self.dim.height / 10 * y
+        self.zoomTo(
+            self.leftMargin + dx,
+            self.topMargin + dy,
+            self.leftMargin + self.dim.width + dx,
+            self.topMargin + self.dim.height + dy,
+        )
+
+        # if self.dragbox.move_x != -1 and self.dragbox.move_y != -1:
+        #     dx = self.dragbox.move_x - a0.position().x()
+        #     dy = self.dragbox.move_y - a0.position().y()
+        #     self.zoomTo(
+        #         self.leftMargin + dx,
+        #         self.topMargin + dy,
+        #         self.leftMargin + self.dim.width + dx,
+        #         self.topMargin + self.dim.height + dy,
+        #     )
+        # self.dragbox.move_x = a0.position().x()
+        # self.dragbox.move_y = a0.position().y()
+        # return
 
     def contextMenuEvent(self, event) -> None:
         self.action_set_fixed_start.setText(
@@ -590,20 +620,60 @@ class TDRChart(Chart):
             max_length if limit and absx > width else absx * x_step + min_length
         )
 
+    def positionAtLength(self, length, limit=True):
+        if not hasattr(self.tdrWindow, "td"):
+            return 0
+        width = self.width() - self.leftMargin - self.rightMargin
+        min_length = self.min_display_length if self.fixed_span else 0
+        max_length = (
+            self.max_display_length
+            if self.fixed_span
+            else (
+                self.tdrWindow.distance_axis[
+                    math.ceil(len(self.tdrWindow.distance_axis) / 2)
+                ]
+                / 2
+            )
+        )
+
+        x_step = float(max_length - min_length) / width
+        return ((length - min_length) / x_step) + self.leftMargin
+
     def zoomTo(self, x1, y1, x2, y2) -> None:
         logger.debug(
             "Zoom to (x,y) by (x,y): (%d, %d) by (%d, %d)", x1, y1, x2, y2
         )
+
+        logger.debug(f"min_display_length: {self.min_display_length} - {self.max_display_length}")
         val1 = self.valueAtPosition(y1)
         val2 = self.valueAtPosition(y2)
+
+        logger.debug(f"new val1={val1}, new val2={val2}")
 
         if val1 != val2:
             self.min_y_lim = round(min(val1, val2), 3)
             self.max_y_lim = round(max(val1, val2), 3)
             self.setFixedValues(True)
 
-        len1 = max(0, self.lengthAtPosition(x1, limit=False))
-        len2 = max(0, self.lengthAtPosition(x2, limit=False))
+        x_min = min(x1, x2)
+        x_max = max(x1, x2)
+
+        # if self.lengthAtPosition(x_min, limit=False) < 0:
+        #     # x_min_chop = self.valueAtPosition(self.lengthAtPosition(0) - self.lengthAtPosition(x_min))
+        #     # x_max_chop = x_max - (x_min - x_min_chop)
+        #     # logger.debug(f"x_min_chop: {x_min_chop}, x_max_chop: {x_max_chop}")
+        #     x_max =  x_max + x_min
+        #     x_min = 0
+        #     # self.update()
+        #     # return
+
+        xx = self.positionAtLength(self.lengthAtPosition(x_min, limit=False))
+        print(f"x_min={x_min}, xx={xx}")
+
+        len1 = max(0, self.lengthAtPosition(x_min, limit=False))
+        len2 = max(0, self.lengthAtPosition(x_max, limit=False))
+
+        logger.debug(f"new len1={len1}, new len2={len2}")
 
         if len1 >= 0 and len2 >= 0 and len1 != len2:
             self.min_display_length = min(len1, len2)

@@ -23,11 +23,14 @@ from typing import TYPE_CHECKING
 import numpy as np
 import numpy.typing as npt
 from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QShortcut
 from scipy.constants import speed_of_light  # type: ignore
 from scipy.signal import convolve  # type: ignore
 
 from .Defaults import make_scrollable
 from .ui import get_window_icon
+
 
 if TYPE_CHECKING:
     from ..NanoVNASaver.NanoVNASaver import NanoVNASaver as vna_app
@@ -115,7 +118,7 @@ class TDRWindow(QtWidgets.QWidget):
         self.setWindowTitle("TDR")
         self.setWindowIcon(get_window_icon())
 
-        QtGui.QShortcut(QtCore.Qt.Key.Key_Escape, self, self.hide)
+        QShortcut(Qt.Key.Key_Escape, self, self.hide)
 
         layout = QtWidgets.QFormLayout()
         make_scrollable(self, layout)
@@ -156,7 +159,7 @@ class TDRWindow(QtWidgets.QWidget):
 
         self.window_dropdown = QtWidgets.QComboBox()
         for method_name, method_call, method_correction, method_arg in WINDOWING_FUNCTION:
-            self.window_dropdown.addItem(method_name, {'call': method_call, 'arg': method_arg, 'corr': method_correction})
+            self.window_dropdown.addItem(method_name, {'function': method_call, 'arg': method_arg, 'corr': method_correction})
         self.window_dropdown.currentIndexChanged.connect(self.updateTDR)
         self.window_dropdown.setCurrentIndex(0)
         layout.addRow("Window", self.window_dropdown)
@@ -211,14 +214,9 @@ class TDRWindow(QtWidgets.QWidget):
             )
 
         if TDR_window['arg'] is None:
-            self.windowed_s11 = TDR_window['call'](len(s11)) * s11
+            self.windowed_s11 = TDR_window['function'](len(s11)) * s11
         else:
-            self.windowed_s11 = TDR_window['call'](len(s11), TDR_window['arg']) * s11
-
-        # self.windowed_s11 = np.blackman(len(s11)) * s11
-        # self.windowed_s11 = np.kaiser(len(s11), 6) * s11
-
-        # correction_kaiser = 20*log10(256/sum(kaiser(101,6)))
+            self.windowed_s11 = TDR_window['function'](len(s11), TDR_window['arg']) * s11
 
         if "lowpass" in TDR_format:
             td = self._tdr_lowpass(TDR_format, s11, TDR_window)
