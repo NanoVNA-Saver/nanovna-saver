@@ -796,6 +796,7 @@ class FrequencyChart(Chart):
         return new_chart
 
     def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
+        logger.debug("Key pressed: %s", a0.key())
         m = self.getActiveMarker()
         if m is not None and a0.modifiers() == Qt.KeyboardModifier.NoModifier:
             if a0.key() in [Qt.Key.Key_Down, Qt.Key.Key_Left]:
