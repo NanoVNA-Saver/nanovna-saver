@@ -51,7 +51,6 @@ WINDOWING_FUNCTION = (
     ("Hanning", np.hanning, lambda lens11, arg : lens11 / 2.0, None),
     # The 1/0.42 is the Amplitude Correction Factor for the Blackman window.
     # 0.42 is the average amplitude of the window across its range.
-    # ("Blackman", np.blackman, lambda lens11, arg : lens11 / 0.42, None),
     ("Blackman", np.blackman, lambda lens11, arg : lens11 / (1 / 0.42), None),
     ("Minimal (Kaiser, \N{GREEK SMALL LETTER BETA}=0)", np.kaiser, kaiser_correction, 0),
     ("Normal  (Kaiser, \N{GREEK SMALL LETTER BETA}=6)", np.kaiser, kaiser_correction, 6),

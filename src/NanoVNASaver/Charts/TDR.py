@@ -188,6 +188,8 @@ class TDRChart(Chart):
         self.menu.exec(event.globalPos())
 
     def isPlotable(self, x, y) -> bool:
+        if x is None or y is None:
+            return False
         return (
             self.leftMargin <= x <= self.width() - self.rightMargin
             and self.topMargin <= y <= self.height() - self.bottomMargin
@@ -445,7 +447,9 @@ class TDRChart(Chart):
 
     def _draw_graph(self, height, width, qp: QPainter) -> None:
         min_index = 0
-        max_index = math.ceil(len(self.tdrWindow.distance_axis) / 2)
+        # max_index = math.ceil(len(self.tdrWindow.distance_axis) / 2)
+        max_index = len(self.tdrWindow.td)
+        logger.debug(f"{min_index}-{max_index}")
 
         if self.fixed_span:
             max_length = max(0.1, self.max_display_length)
@@ -487,7 +491,7 @@ class TDRChart(Chart):
             y = (self.topMargin + height) - int(
                 np.real(self.tdrWindow.td[i]) / y_step
             )
-            if self.isPlotable(x, y):
+            if self.isPlotable(x, y) or (self.flag.draw_lines and self.isPlotable(last_x_primary, last_y_primary)):
                 pen.setColor(Chart.color.sweep)
                 qp.setPen(pen)
                 if self.flag.draw_lines and last_x_primary is not None:
@@ -501,7 +505,7 @@ class TDRChart(Chart):
             y = (self.topMargin + height) - int(
                 (self.tdrWindow.step_response_Z[i] - min_impedance) / y_step
             )
-            if self.isPlotable(x, y):
+            if self.isPlotable(x, y) or (self.flag.draw_lines and self.isPlotable(last_x_secondary, last_y_secondary)):
                 pen.setColor(Chart.color.sweep_secondary)
                 qp.setPen(pen)
                 if self.flag.draw_lines and last_x_secondary is not None:
