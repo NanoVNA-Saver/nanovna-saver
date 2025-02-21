@@ -447,9 +447,7 @@ class TDRChart(Chart):
 
     def _draw_graph(self, height, width, qp: QPainter) -> None:
         min_index = 0
-        # max_index = math.ceil(len(self.tdrWindow.distance_axis) / 2)
-        max_index = len(self.tdrWindow.td)
-        logger.debug(f"{min_index}-{max_index}")
+        max_index = math.ceil(len(self.tdrWindow.distance_axis) / 2)
 
         if self.fixed_span:
             max_length = max(0.1, self.max_display_length)
