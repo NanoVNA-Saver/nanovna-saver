@@ -513,16 +513,6 @@ class FrequencyChart(Chart):
                 "Data outside frequency span",
             )
 
-    def drawDragbog(self, qp: QtGui.QPainter):
-        dashed_pen = QtGui.QPen(Chart.color.foreground, 1, Qt.PenStyle.DashLine)
-        qp.setPen(dashed_pen)
-        top_left = QtCore.QPoint(
-            self.dragbox.pos_start[0], self.dragbox.pos_start[1]
-        )
-        bottom_right = QtCore.QPoint(self.dragbox.pos[0], self.dragbox.pos[1])
-        rect = QtCore.QRect(top_left, bottom_right)
-        qp.drawRect(rect)
-
     def drawChart(self, qp: QtGui.QPainter):
         qp.setPen(QtGui.QPen(Chart.color.text))
         headline = self.name
@@ -806,6 +796,7 @@ class FrequencyChart(Chart):
         return new_chart
 
     def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
+        logger.debug("Key pressed: %s", a0.key())
         m = self.getActiveMarker()
         if m is not None and a0.modifiers() == Qt.KeyboardModifier.NoModifier:
             if a0.key() in [Qt.Key.Key_Down, Qt.Key.Key_Left]:
