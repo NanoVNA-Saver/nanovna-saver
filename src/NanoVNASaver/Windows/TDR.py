@@ -200,6 +200,7 @@ class TDRWindow(QtWidgets.QWidget):
             return
 
         step_size = self.app.data.s11[1].freq - self.app.data.s11[0].freq
+        logger.debug(f"{self.app.data.s11[0].freq} Hz-{self.app.data.s11[1].freq} Hz, step_size: {step_size}")
         if step_size == 0:
             self.tdr_result_label.setText("")
             logger.info("Cannot compute cable length at 0 span")
@@ -236,7 +237,9 @@ class TDRWindow(QtWidgets.QWidget):
                 self.step_response_Z = td * FFT_POINTS / TDR_window['corr'](len(s11), TDR_window['arg'])
 
         time_axis = np.linspace(0, 1 / step_size, FFT_POINTS)
+        # logger.debug(f"time_axis:{time_axis[:2]}-{time_axis[-2:]}")
         self.distance_axis = time_axis * v * speed_of_light
+        # logger.debug(f"distance_axis:{self.distance_axis[:3]}-{self.distance_axis[-3:]}")
         # peak = np.max(td)
         # We should check that this is an actual *peak*, and not just
         # a vague maximum
@@ -249,6 +252,7 @@ class TDRWindow(QtWidgets.QWidget):
         self.tdr_result_label.setText(f"{cable_len}m ({feet}ft {inches}in)")
         self.app.tdr_result_label.setText(f"{cable_len}m")
         self.td = list(td)
+        # logger.debug(self.td)
         self.updated.emit()
 
     def _tdr_lowpass(self, tdr_format, s11, TDR_window) -> np.ndarray:
