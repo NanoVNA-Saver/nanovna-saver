@@ -192,12 +192,44 @@ class TDRChart(Chart):
         self.y_action_set_fixed_maximum.setText(f"Maximum ({self.max_y_lim})")
         self.menu.exec(event.globalPos())
 
-    def isPlotable(self, x, y) -> bool:
-        if x is None or y is None:
+
+    def isLinePlotable(self, p1, p2):
+        """
+        Test if the line could be drawn.
+        This is a very simple test. Even if the result is true,
+        the line could still be invisible. But if the result is false,
+        the line is guaranteed to be invisible.
+
+        Returns
+        -------
+        False, if the line is outside the current chart area. True otherwise.
+        """
+
+        if p1.x() is None or p1.y() is None or p2.x() is None or p2.y() is None:
+            return False
+
+        horizontal = [self.leftMargin, self.width() - self.rightMargin]
+        x1q = np.searchsorted(horizontal, p1.x())
+        x2q = np.searchsorted(horizontal, p2.x())
+        if x1q == x2q != 1:
+            return False
+
+        vertical = [self.topMargin, self.height() - self.bottomMargin]
+        y1q = np.searchsorted(vertical, p1.y())
+        y2q = np.searchsorted(vertical, p2.y())
+        if y1q == y2q != 1:
+            return False
+
+        return True
+
+
+
+    def isPlotable(self, p: QPoint) -> bool:
+        if p.x() is None or p.y() is None:
             return False
         return (
-            self.leftMargin <= x <= self.width() - self.rightMargin
-            and self.topMargin <= y <= self.height() - self.bottomMargin
+            self.leftMargin <= p.x() <= self.width() - self.rightMargin
+            and self.topMargin <= p.y() <= self.height() - self.bottomMargin
         )
 
     def _configureGraphFromFormat(self) -> None:
@@ -372,12 +404,13 @@ class TDRChart(Chart):
         min_length, max_length, m_per_pixel = self._get_chart_parameters()
         delta_length = max_length - min_length
 
-        delta_length_round = delta_length / 10.0 #  get approx 10 vertical ticks
-        decimals = math.ceil(abs(math.log10(delta_length_round)))
-        delta_length_step = math.floor(delta_length_round * (10 ** decimals)) / (10 ** decimals)
+        step_length = delta_length / 10.0 #  get approx 10 vertical ticks
+        decimals = math.ceil(abs(math.log10(step_length)))
+        delta_length_step = round(step_length * (10 ** decimals)) / (10 ** decimals)
 
-        start_length = math.floor(min_length * (10 ** decimals)) / (10 ** decimals)
-        start_length = start_length if start_length > min_length else min_length + delta_length_step
+        start_length = min_length - (min_length % delta_length_step) + delta_length_step
+
+        # logger.debug(f"delta_length: {delta_length}, decimals: {decimals}, delta_length_step: {delta_length_step}, start_length: {start_length}, min_length={min_length}, max_length={max_length}")
 
         for distance in np.arange(start_length, max_length, delta_length_step):
             x = self.leftMargin + round((distance - min_length) / m_per_pixel)
@@ -387,7 +420,7 @@ class TDRChart(Chart):
             qp.drawLine(x, self.topMargin, x, self.topMargin + height)
 
             # text
-            math.floor(distance * (10 ** decimals)) / (10 ** decimals)
+            # math.floor(distance * (10 ** decimals)) / (10 ** decimals)
             qp.setPen(QPen(Chart.color.text))
 
             self._draw_centered_hanging_text(qp, f"{{:.{decimals}f}} m".format(distance), x, self.topMargin + height)
@@ -487,36 +520,40 @@ class TDRChart(Chart):
         pen.setWidth(self.dim.line if self.flag.draw_lines else self.dim.point)
         qp.setPen(pen)
         y_step = (max_impedance - min_impedance) / height
-        last_x_primary, last_y_primary = None, None
-        last_x_secondary, last_y_secondary = None, None
-        for i in range(min_index, max_index):
-            x = self.leftMargin + int((i - min_index) / x_step)
-            y = (self.topMargin + height) - int(
-                np.real(self.tdrWindow.td[i]) / y_step
-            )
-            if self.isPlotable(x, y) or (self.flag.draw_lines and self.isPlotable(last_x_primary, last_y_primary)):
-                pen.setColor(Chart.color.sweep)
-                qp.setPen(pen)
-                if self.flag.draw_lines and last_x_primary is not None:
-                    qp.drawLine(last_x_primary, last_y_primary, x, y)
-                else:
-                    qp.drawPoint(x, y)
-            last_x_primary = x
-            last_y_primary = y
 
-            x = self.leftMargin + int((i - min_index) / x_step)
-            y = (self.topMargin + height) - int(
-                (self.tdrWindow.step_response_Z[i] - min_impedance) / y_step
-            )
-            if self.isPlotable(x, y) or (self.flag.draw_lines and self.isPlotable(last_x_secondary, last_y_secondary)):
-                pen.setColor(Chart.color.sweep_secondary)
-                qp.setPen(pen)
-                if self.flag.draw_lines and last_x_secondary is not None:
-                    qp.drawLine(last_x_secondary, last_y_secondary, x, y)
-                else:
-                    qp.drawPoint(x, y)
-            last_x_secondary = x
-            last_y_secondary = y
+        tdr_points = [
+            QPoint(
+                self.leftMargin + int((i - min_index) / x_step),
+                (self.topMargin + height) - int(np.real(self.tdrWindow.td[i]) / y_step)
+            ) for i in range(min_index, max_index)]
+        step_response_points = [
+            QPoint(
+                self.leftMargin + int((i - min_index) / x_step),
+                (self.topMargin + height) - int((self.tdrWindow.step_response_Z[i] - min_impedance) / y_step)
+            ) for i in range(min_index, max_index)]
+
+        pen.setColor(Chart.color.sweep)
+        qp.setPen(pen)
+
+        if self.flag.draw_lines:
+            last_pt = tdr_points[0]
+            for point in tdr_points[1:]:
+                if self.isLinePlotable(last_pt, point):
+                    qp.drawLine(last_pt, point)
+                last_pt = point
+
+            pen.setColor(Chart.color.sweep_secondary)
+            qp.setPen(pen)
+            last_pt = step_response_points[0]
+            for point in step_response_points[1:]:
+                if self.isLinePlotable(last_pt, point):
+                    qp.drawLine(last_pt, point)
+                last_pt = point
+        else:
+            [qp.drawPoint(p) for p in tdr_points if self.isPlotable(p)]
+            pen.setColor(Chart.color.sweep_secondary)
+            qp.setPen(pen)
+            [qp.drawPoint(p) for p in step_response_points if self.isPlotable(p)]
 
         self._draw_max_point(height, x_step, y_step, min_index, qp)
 
