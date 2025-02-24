@@ -154,7 +154,6 @@ class BandsModel(QtCore.QAbstractTableModel):
                     Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
                 )
             case _:
-                logger.debug("No data for role(%s)", role)
                 return None
 
     def setData(self, index: QModelIndex, value: str, role: int = -1) -> bool:
