@@ -49,9 +49,9 @@ class QualityFactorChart(FrequencyChart):
 
         # Make up some sensible scaling here
         if self.fixedValues:
-            maxQ = self.maxDisplayValue
+            maxQ = float(self.maxDisplayValue)
         else:
-            maxQ = 0
+            maxQ = 0.0
             for d in self.data:
                 Q = d.qFactor()
                 maxQ = max(maxQ, Q)

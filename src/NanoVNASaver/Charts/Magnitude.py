@@ -51,8 +51,8 @@ class MagnitudeChart(FrequencyChart):
             self.drawBands(qp, self.fstart, self.fstop)
 
         if self.fixedValues:
-            max_value = self.maxDisplayValue
-            min_value = self.minDisplayValue
+            max_value = float(self.maxDisplayValue)
+            min_value = float(self.minDisplayValue)
         else:
             # Find scaling
             min_value = 100

@@ -59,7 +59,7 @@ COLORS = (
 
 class MarkerFrequencyInputWidget(FrequencyInputWidget):
     def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
-        logger.debug(f"keyPressEvent: {a0.key()}")
+        logger.debug("keyPressEvent: %s", a0.key())
         if a0.type() == QtGui.QKeyEvent.Type.KeyPress:
             if a0.key() == QtCore.Qt.Key.Key_Up and self.nextFrequency != -1:
                 a0.accept()

@@ -143,7 +143,7 @@ class CalElement:
 
 
 class CalDataSet(UserDict):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.notes = ""
         self.data: defaultdict[int, CalData] = defaultdict(CalData)

@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 
 class FrequencyChart(Chart):
-    def __init__(self, name):
+    def __init__(self, name) -> None:
         super().__init__(name)
         self.maxFrequency = 100000000
         self.minFrequency = 1000000
@@ -64,9 +64,9 @@ class FrequencyChart(Chart):
         self.minDisplayValue = -1
         self.maxDisplayValue = 1
 
-        self.minValue = -1
-        self.maxValue = 1
-        self.span = 1
+        self.minValue = -1.0
+        self.maxValue = 1.0
+        self.span = 1.0
 
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.DefaultContextMenu)
         mode_group = QtGui.QActionGroup(self)
@@ -353,10 +353,12 @@ class FrequencyChart(Chart):
         self.update()
 
     def getXPosition(self, d: Datapoint) -> int:
-        span = self.fstop - self.fstart
+        span = float(self.fstop - self.fstart)
         if span > 0:
             if self.logarithmicX:
-                span = math.log(self.fstop) - math.log(self.fstart)
+                span = math.log(float(self.fstop)) - math.log(
+                    float(self.fstart)
+                )
                 return self.leftMargin + round(
                     self.dim.width
                     * (math.log(d.freq) - math.log(self.fstart))
@@ -554,7 +556,7 @@ class FrequencyChart(Chart):
         self.maxValue = max_value
         self.minValue = min_value
         span = max_value - min_value
-        if span == 0:
+        if span == 0.0:
             logger.info(
                 "Span is zero for %s-Chart, setting to a small value.",
                 self.name,

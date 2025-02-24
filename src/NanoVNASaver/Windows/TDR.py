@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 #
 def kaiser_correction(lens11, arg):
     factor = np.sum(np.kaiser(lens11, arg))
-    logger.debug(f"kaiser correction ({lens11}, {arg}) factor: {factor}")
+    logger.debug("kaiser correction (%s, %s) factor: %s", lens11, arg, factor)
     return factor
 
 
@@ -291,7 +291,7 @@ class TDRWindow(QtWidgets.QWidget):
         self.td = list(td)
         self.updated.emit()
 
-    def _tdr_lowpass(self, tdr_format, s11, TDR_window) -> np.ndarray:
+    def _tdr_lowpass(self, tdr_format, s11, tdr_window) -> np.ndarray:
         pad_points = (FFT_POINTS - len(self.windowed_s11)) // 2
         self.windowed_s11 = np.pad(
             self.windowed_s11, [pad_points + 1, pad_points]
@@ -325,6 +325,6 @@ class TDRWindow(QtWidgets.QWidget):
             self.step_response_Z = np.real(
                 td
                 * FFT_POINTS
-                / TDR_window["corr"](len(s11), TDR_window["arg"])
+                / tdr_window["corr"](len(s11), tdr_window["arg"])
             )
         return td
