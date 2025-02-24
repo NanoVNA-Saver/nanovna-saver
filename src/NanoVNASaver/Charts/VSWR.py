@@ -63,11 +63,11 @@ class VSWRChart(FrequencyChart):
 
         # Find scaling
         if self.fixedValues:
-            minVSWR = max(1, self.minDisplayValue)
-            maxVSWR = self.maxDisplayValue
+            minVSWR = max(1.0, self.minDisplayValue)
+            maxVSWR = float(self.maxDisplayValue)
         else:
-            minVSWR = 1
-            maxVSWR = 3
+            minVSWR = 1.0
+            maxVSWR = 3.0
             for d in self.data:
                 vswr = d.vswr
                 maxVSWR = max(vswr, maxVSWR)

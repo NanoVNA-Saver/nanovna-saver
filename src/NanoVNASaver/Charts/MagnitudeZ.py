@@ -145,7 +145,7 @@ class MagnitudeZChart(FrequencyChart):
     def logarithmicYAllowed(self) -> bool:
         return True
 
-    def copy(self):
+    def copy(self) -> "MagnitudeZChart":
         new_chart: LogMagChart = super().copy()
         new_chart.span = self.span
         return new_chart

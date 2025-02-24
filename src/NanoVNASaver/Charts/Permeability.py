@@ -89,11 +89,11 @@ class PermeabilityChart(FrequencyChart):
 
         # Find scaling
         if self.fixedValues:
-            min_val = self.minDisplayValue
-            max_val = self.maxDisplayValue
+            min_val = float(self.minDisplayValue)
+            max_val = float(self.maxDisplayValue)
         else:
-            min_val = 1000
-            max_val = -1000
+            min_val = 1000.0
+            max_val = -1000.0
             for d in self.data:
                 imp = d.impedance()
                 re, im = imp.real, imp.imag

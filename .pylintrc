@@ -13,3 +13,5 @@ disable=W0614,C0410,C0321,C0111,I0011,C0103,R0401
 good-names=_,a,b,c,dt,db,e,f,fn,fd,i,j,k,v,kv,kw,l,m,n,ls,t,t0,t1,t2,t3,w,h,x,y,z,it,op
 [MASTER]
 extension-pkg-allow-list=PySide6.QtWidgets,PySide6.QtGui,PySide6.QtCore
+ignore-paths=src/NanoVNASaver/Windows/ui/about.py
+

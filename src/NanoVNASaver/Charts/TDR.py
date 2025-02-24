@@ -20,7 +20,7 @@ import logging
 import math
 
 import numpy as np
-from PySide6.QtCore import QPoint, QRect, Qt
+from PySide6.QtCore import QPoint, Qt
 from PySide6.QtGui import (
     QAction,
     QActionGroup,
@@ -30,11 +30,12 @@ from PySide6.QtGui import (
     QPalette,
     QPen,
     QResizeEvent,
-    QWheelEvent,
     QShortcut,
+    QWheelEvent,
 )
 from PySide6.QtWidgets import QDialog, QInputDialog, QMenu, QSizePolicy
 
+from ..RFTools import Datapoint
 from .Chart import Chart, ChartPosition
 
 logger = logging.getLogger(__name__)
@@ -168,7 +169,7 @@ class TDRChart(Chart):
         QShortcut(Qt.Key.Key_Right, self, lambda: self.pan_graph(-1, 0))
 
     def pan_graph(self, x, y):
-        logger.debug(f"Moving graph {x}, {y}")
+        logger.debug("Moving graph %s, %s", x, y)
         dx = self.dim.width / 10 * x
         dy = self.dim.height / 10 * y
         self.zoomTo(
@@ -302,7 +303,10 @@ class TDRChart(Chart):
 
     def wheelEvent(self, a0: QWheelEvent) -> None:
         a0.accept()
-        self.data = [0]  # A bit of cheating otherwise the super().wheelEvent() exits without doing anything.
+        self.data = [
+            Datapoint(0, 0.0, 0.0)
+        ]  # A bit of cheating otherwise the super().wheelEvent() exits
+        # without doing anything.
         super().wheelEvent(a0)
 
     def mouseMoveEvent(self, a0: QMouseEvent) -> None:
@@ -361,7 +365,9 @@ class TDRChart(Chart):
         self.marker_location = int(round(absx * x_step))
         self.update()
 
-    def _draw_ticks(self, height, width, x_step, min_index, qp: QPainter) -> None:
+    def _draw_ticks(
+        self, height, width, x_step, min_index, qp: QPainter
+    ) -> None:
         ticks = (self.width() - self.leftMargin) // 100
         # qp = QPainter(self)
         for i in range(ticks):
@@ -409,7 +415,9 @@ class TDRChart(Chart):
             f"{round(min_impedance, self.decimals)}",
         )
 
-    def _draw_max_point(self, height, x_step, y_step, min_index, qp: QPainter) -> None:
+    def _draw_max_point(
+        self, height, x_step, y_step, min_index, qp: QPainter
+    ) -> None:
         id_max = np.argmax(self.tdrWindow.td)
 
         max_point = QPoint(
@@ -490,12 +498,15 @@ class TDRChart(Chart):
             if self.isPlotable(x, y):
                 pen.setColor(Chart.color.sweep)
                 qp.setPen(pen)
-                if self.flag.draw_lines and last_x_primary is not None:
+                if (
+                    self.flag.draw_lines
+                    and last_x_primary is not None
+                    and last_y_primary is not None
+                ):
                     qp.drawLine(last_x_primary, last_y_primary, x, y)
                 else:
                     qp.drawPoint(x, y)
-            last_x_primary = x
-            last_y_primary = y
+            last_x_primary, last_y_primary = x, y
 
             x = self.leftMargin + int((i - min_index) / x_step)
             y = (self.topMargin + height) - int(
@@ -504,12 +515,15 @@ class TDRChart(Chart):
             if self.isPlotable(x, y):
                 pen.setColor(Chart.color.sweep_secondary)
                 qp.setPen(pen)
-                if self.flag.draw_lines and last_x_secondary is not None:
+                if (
+                    self.flag.draw_lines
+                    and last_x_secondary is not None
+                    and last_y_secondary is not None
+                ):
                     qp.drawLine(last_x_secondary, last_y_secondary, x, y)
                 else:
                     qp.drawPoint(x, y)
-            last_x_secondary = x
-            last_y_secondary = y
+            last_x_secondary, last_y_secondary = x, y
 
         self._draw_max_point(height, x_step, y_step, min_index, qp)
 
@@ -590,6 +604,7 @@ class TDRChart(Chart):
         return min_length, max_length, x_step
 
     def lengthAtPosition(self, x: int, limit=True):
+        width = self.width() - self.leftMargin - self.rightMargin
         if not hasattr(self.tdrWindow, "td"):
             return 0
         min_length, max_length, x_step = self._get_chart_parameters()
@@ -603,7 +618,7 @@ class TDRChart(Chart):
     def positionAtLength(self, length, limit=True):
         if not hasattr(self.tdrWindow, "td"):
             return 0
-        min_length, max_length, x_step = self._get_chart_parameters()
+        min_length, _, x_step = self._get_chart_parameters()
         if limit:
             return self.leftMargin  # really? not sure how to handle this
         return ((length - min_length) / x_step) + self.leftMargin

@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 
 class CombinedLogMagChart(LogMagChart):
-    def __init__(self, name=""):
+    def __init__(self, name: str = ""):
         super().__init__(name)
 
         self.data11: list[Datapoint] = []
@@ -183,7 +183,7 @@ class CombinedLogMagChart(LogMagChart):
         self.minValue = minValue
         self.maxValue = maxValue
 
-    def copy(self):
+    def copy(self) -> "CombinedLogMagChart":
         new_chart: LogMagChart = super().copy()
         new_chart.isInverted = self.isInverted
         new_chart.span = self.span

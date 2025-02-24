@@ -19,6 +19,7 @@
 import csv
 import logging
 import os
+from typing import TYPE_CHECKING
 
 from PySide6 import QtWidgets
 
@@ -28,6 +29,9 @@ from ..RFTools import reflection_coefficient
 from .Base import Analysis, QHLine
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from ..NanoVNASaver.NanoVNASaver import NanoVNASaver as vna_app
 
 
 def format_resistence_neg(x):
@@ -41,7 +45,7 @@ def vswr_transformed(z, ratio=49) -> float:
 
 
 class ResonanceAnalysis(Analysis):
-    def __init__(self, app):
+    def __init__(self, app: "vna_app"):
         super().__init__(app)
         self.crossings: list[int] = []
         self.filename = ""

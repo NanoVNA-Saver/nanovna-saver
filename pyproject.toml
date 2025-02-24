@@ -32,7 +32,6 @@ dependencies=[
   'scipy~=1.14',
 ]
 
-
 [dependency-groups]
 dev = [
   # Static Code Analysis tools
@@ -54,22 +53,16 @@ dev = [
   "pyinstaller~=6.11.1",
 ]
 
-
-
 [project.urls]
 homepage = "https://github.com/NanoVNA-Saver/nanovna-saver"
 repository = "https://github.com/NanoVNA-Saver/nanovna-saver"
 Issues = "https://github.com/NanoVNA-Saver/nanovna-saver/issues"
-
-
 
 [project.scripts]
 NanoVNASaver = 'NanoVNASaver.__main__:main'
 
 [project.gui-scripts]
 NanoVNASaver-gui = 'NanoVNASaver.__main__:main'
-
-
 
 [build-system]
 requires = [
@@ -89,14 +82,11 @@ backend-path = ["src/tools"]
 # See https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html for more details
 where = ["src"]
 
-
 [tool.setuptools_scm]
 # For smarter version schemes and other configuration options,
 # check out https://github.com/pypa/setuptools_scm
 root='.'
 version_scheme = 'no-guess-dev'
-
-
 
 [tool.taskipy.tasks]
 test = "pytest ."
@@ -113,18 +103,14 @@ clean = "python -m tools.project_clean"
 ui-compile = "python -m tools.ui_compile"
 ui-designer = "pyside6-designer"
 
-
 build-pkg-win   = "pyinstaller --onefile -p src -n nanovna-saver.exe src/NanoVNASaver/__main__.py --recursive-copy-metadata NanoVNASaver --noconsole -i NanoVNASaver_48x48.ico"
 build-pkg-linux = "pyinstaller --onefile -p src -n nanovna-saver     src/NanoVNASaver/__main__.py --recursive-copy-metadata NanoVNASaver"
 build-pkg-macos = "pyinstaller --onedir  -p src -n NanoVNASaver      src/NanoVNASaver/__main__.py --recursive-copy-metadata NanoVNASaver --window --clean  -y -i NanoVNASaver_48x48.icns  && tar -C dist -zcf ./dist/NanoVNASaver.app-`uname -m`.tar.gz  NanoVNASaver.app"
-
-
 
 [tool.pytest.ini_options]
 pythonpath = [
   '.', 'src',
 ]
-
 
 [tool.ruff]
 line-length = 80
@@ -137,7 +123,6 @@ extend-exclude = [
   "**/ui/*.py",
   "src/tools/setuptools_wrapper.py"
 ]
-
 
 [tool.ruff.lint]
 # https://docs.astral.sh/ruff/rules
@@ -169,7 +154,6 @@ ignore = [
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10
-
 
 [tool.mypy]
 follow_imports = "skip"
