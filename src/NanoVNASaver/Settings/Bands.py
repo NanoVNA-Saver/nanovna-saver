@@ -158,19 +158,17 @@ class BandsModel(QtCore.QAbstractTableModel):
                 return None
 
     def setData(self, index: QModelIndex, value: str, role: int = -1) -> bool:
-        IDX_NAME, IDX_START, IDX_END = (1, 2, 3)
         row = index.row()
         col = index.column()
         if role != QtCore.Qt.ItemDataRole.EditRole or not index.isValid():
             return False
-        t = self.bands[row]
-        name, start, end = t[IDX_NAME], t[IDX_START], t[IDX_END]
+        name, start, end = self.bands[row]
         match col:
-            case IDX_NAME:
+            case 1:
                 name = value
-            case IDX_START:
+            case 2:
                 start = value
-            case IDX_END:
+            case 3:
                 end = value
         self.bands[index.row()] = (name, start, end)
         self.dataChanged.emit(index, index)
