@@ -22,7 +22,7 @@ import math
 import numpy as np
 from PySide6 import QtGui
 
-from ..RFTools import Datapoint, groupDelay
+from ..RFTools import Datapoint
 from .Chart import Chart
 from .Frequency import FrequencyChart
 

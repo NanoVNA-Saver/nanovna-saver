@@ -219,9 +219,7 @@ class SweepSettingsWindow(QtWidgets.QWidget):
                 partial(self.update_tx_power, freq_range)
             )
             self._power_layout.addRow(
-                "TX power {}..{}".format(
-                    *map(format_frequency_short, freq_range)
-                ),
+                f"TX power {format_frequency_short}..{freq_range}",
                 power_sel,
             )
 

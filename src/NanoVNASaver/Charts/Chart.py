@@ -368,5 +368,3 @@ class Chart(QtWidgets.QWidget):
         bottom_right = QtCore.QPoint(self.dragbox.pos[0], self.dragbox.pos[1])
         rect = QtCore.QRect(top_left, bottom_right)
         qp.drawRect(rect)
-
-

@@ -20,7 +20,7 @@ import logging
 import math
 
 import numpy as np
-from PySide6.QtCore import QPoint, QRect, Qt
+from PySide6.QtCore import QPoint, Qt
 from PySide6.QtGui import (
     QAction,
     QActionGroup,
@@ -30,12 +30,13 @@ from PySide6.QtGui import (
     QPalette,
     QPen,
     QResizeEvent,
-    QWheelEvent,
     QShortcut,
+    QWheelEvent,
 )
 from PySide6.QtWidgets import QDialog, QInputDialog, QMenu, QSizePolicy
 
 from .Chart import Chart, ChartPosition
+from ..RFTools import Datapoint
 
 logger = logging.getLogger(__name__)
 
@@ -302,7 +303,10 @@ class TDRChart(Chart):
 
     def wheelEvent(self, a0: QWheelEvent) -> None:
         a0.accept()
-        self.data = [0]  # A bit of cheating otherwise the super().wheelEvent() exits without doing anything.
+        self.data = [
+            Datapoint(0, 0.0, 0.0)
+        ]  # A bit of cheating otherwise the super().wheelEvent() exits
+        # without doing anything.
         super().wheelEvent(a0)
 
     def mouseMoveEvent(self, a0: QMouseEvent) -> None:
@@ -361,7 +365,9 @@ class TDRChart(Chart):
         self.marker_location = int(round(absx * x_step))
         self.update()
 
-    def _draw_ticks(self, height, width, x_step, min_index, qp: QPainter) -> None:
+    def _draw_ticks(
+        self, height, width, x_step, min_index, qp: QPainter
+    ) -> None:
         ticks = (self.width() - self.leftMargin) // 100
         # qp = QPainter(self)
         for i in range(ticks):
@@ -409,7 +415,9 @@ class TDRChart(Chart):
             f"{round(min_impedance, self.decimals)}",
         )
 
-    def _draw_max_point(self, height, x_step, y_step, min_index, qp: QPainter) -> None:
+    def _draw_max_point(
+        self, height, x_step, y_step, min_index, qp: QPainter
+    ) -> None:
         id_max = np.argmax(self.tdrWindow.td)
 
         max_point = QPoint(

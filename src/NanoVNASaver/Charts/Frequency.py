@@ -20,7 +20,7 @@ import logging
 import math
 
 import numpy as np
-from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtGui, QtWidgets
 from PySide6.QtCore import Qt
 
 from ..Formatting import (

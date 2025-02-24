@@ -86,7 +86,7 @@ class CalData:
     freq: int = 0
     e00: complex = complex(0.0)  # Directivity
     e11: complex = complex(0.0)  # Port1 match
-    delta_e:complex = complex(0.0)  # Tracking
+    delta_e: complex = complex(0.0)  # Tracking
     e10e01: complex = complex(0.0)  # Forward Reflection Tracking
     # 2 port
     e30: complex = complex(0.0)  # Forward isolation
@@ -250,7 +250,7 @@ class CalDataSet(UserDict):
     def freq_max(self) -> int:
         return self.frequencies()[-1] if self.frequencies() else 0
 
-    def get(self, key: int, default: Optional[CalData] = None) -> CalData: # type: ignore[override]
+    def get(self, key: int, default: Optional[CalData] = None) -> CalData:  # type: ignore[override]
         if default:
             return self.data.get(key, default)
         return self.data[key]

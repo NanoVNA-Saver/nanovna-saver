@@ -18,7 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import contextlib
 import logging
-import typing
+from typing import Optional
 
 from PySide6 import QtCore, QtGui
 from PySide6.QtCore import QModelIndex, Qt
@@ -139,42 +139,47 @@ class BandsModel(QtCore.QAbstractTableModel):
     def rowCount(self, _) -> int:
         return len(self.bands)
 
-    def data(self, index: QModelIndex, role: int = ...) -> typing.Any:
-        if role in [
-            Qt.ItemDataRole.DisplayRole,
-            Qt.ItemDataRole.EditRole,
-        ]:
-            return self.bands[index.row()][index.column()]
-        if role == Qt.ItemDataRole.TextAlignmentRole:
-            if index.column() == 0:
-                return Qt.AlignmentFlag.AlignCenter
-            return Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
-        return ""
+    def data(
+        self, index: QModelIndex, role: int = -1
+    ) -> str | Qt.AlignmentFlag | None:
+        row: int = index.row()
+        col: int = index.column()
+        match role:
+            case Qt.ItemDataRole.DisplayRole | Qt.ItemDataRole.EditRole:
+                return self.bands[row][col]
+            case Qt.ItemDataRole.TextAlignmentRole:
+                if col == 0:
+                    return Qt.AlignmentFlag.AlignCenter
+                return (
+                    Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+                )
+            case _:
+                logger.debug("No data for role(%s)", role)
+                return None
 
-    def setData(
-        self, index: QModelIndex, value: typing.Any, role: int = ...
-    ) -> bool:
-        IDX_NAME = 1
-        IDX_START = 2
-        IDX_END = 3
-        if role == QtCore.Qt.ItemDataRole.EditRole and index.isValid():
-            t = self.bands[index.row()]
-            name = t[IDX_NAME]
-            start = t[IDX_START]
-            end = t[IDX_END]
-            if index.column() == IDX_NAME:
+    def setData(self, index: QModelIndex, value: str, role: int = -1) -> bool:
+        IDX_NAME, IDX_START, IDX_END = (1, 2, 3)
+        row = index.row()
+        col = index.column()
+        if role != QtCore.Qt.ItemDataRole.EditRole or not index.isValid():
+            return False
+        t = self.bands[row]
+        name, start, end = t[IDX_NAME], t[IDX_START], t[IDX_END]
+        match col:
+            case IDX_NAME:
                 name = value
-            elif index.column() == IDX_START:
+            case IDX_START:
                 start = value
-            elif index.column() == IDX_END:
+            case IDX_END:
                 end = value
-            self.bands[index.row()] = (name, start, end)
-            self.dataChanged.emit(index, index)
-            self.saveSettings()
-            return True
-        return False
+        self.bands[index.row()] = (name, start, end)
+        self.dataChanged.emit(index, index)
+        self.saveSettings()
+        return True
 
-    def index(self, row: int, column: int, _: QModelIndex = ...) -> QModelIndex:
+    def index(
+        self, row: int, column: int, _: Optional[QModelIndex] = None
+    ) -> QModelIndex:
         return self.createIndex(row, column)
 
     def addRow(self):
@@ -184,14 +189,14 @@ class BandsModel(QtCore.QAbstractTableModel):
         )
         self.layoutChanged.emit()
 
-    def removeRow(self, row: int, _: QModelIndex = ...) -> bool:
+    def removeRow(self, row: int, _: Optional[QModelIndex] = None) -> bool:
         self.bands.remove(self.bands[row])
         self.layoutChanged.emit()
         self.saveSettings()
         return True
 
     def headerData(
-        self, section: int, orientation: Qt.Orientation, role: int = ...
+        self, section: int, orientation: Qt.Orientation, role: int = -1
     ):
         if (
             role == Qt.ItemDataRole.DisplayRole
