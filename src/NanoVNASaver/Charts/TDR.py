@@ -188,7 +188,6 @@ class TDRChart(Chart):
         self.y_action_set_fixed_maximum.setText(f"Maximum ({self.max_y_lim})")
         self.menu.exec(event.globalPos())
 
-
     def isLinePlotable(self, p1, p2):
         """
         Test if the line could be drawn.
@@ -204,18 +203,25 @@ class TDRChart(Chart):
         if p1.x() is None or p1.y() is None or p2.x() is None or p2.y() is None:
             return False
 
+        # logger.debug(f"P1 {p1}, {p2}")
+
         horizontal = [self.leftMargin, self.width() - self.rightMargin]
         x1q = np.searchsorted(horizontal, p1.x())
         x2q = np.searchsorted(horizontal, p2.x())
+        # logger.debug(f"x1 {x1q}, {x2q}, horizontal: {horizontal}")
         if x1q == x2q != 1:
+            # logger.debug(f"   -> FALSE")
             return False
 
         vertical = [self.topMargin, self.height() - self.bottomMargin]
         y1q = np.searchsorted(vertical, p1.y())
         y2q = np.searchsorted(vertical, p2.y())
+        # logger.debug(f"y1 {y1q}, {y2q}, vertical: {vertical}")
         if y1q == y2q != 1:
+            # logger.debug(f"   -> FALSE")
             return False
 
+        # logger.debug(f"   -> TRUE")
         return True
 
     def isPlotable(self, p: QPoint) -> bool:
@@ -444,11 +450,11 @@ class TDRChart(Chart):
         qp.setPen(self.markers[0].color)
         qp.drawEllipse(max_point, 2, 2)
         qp.setPen(Chart.color.text)
-        qp.drawText(
-            max_point.x() - 10,
-            max_point.y() - 5,
+        self._draw_centered_hanging_text(
+            qp,
             f"{round(self.tdrWindow.distance_axis[id_max] / 2, 2)}m",
-        )
+             max_point,
+            True)
 
     def _draw_marker(self, height, x_step, y_step, min_index, qp: QPainter):
         marker_point = QPoint(
@@ -689,7 +695,7 @@ class TDRChart(Chart):
         margin = 5
         rect = QRect(x - margin, y - text_height, text_width + 2 * margin, text_height)
         semi_transparent_bg = QColor(Chart.color.background)
-        semi_transparent_bg.setAlpha(150)  # Adjust alpha (0 = fully transparent, 255 = opaque)
+        semi_transparent_bg.setAlpha(150)
         qp.fillRect(rect, semi_transparent_bg)
 
         # draw the length
