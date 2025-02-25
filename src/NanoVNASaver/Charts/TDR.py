@@ -390,19 +390,16 @@ class TDRChart(Chart):
 
     def _draw_ticks(self, height, width, x_step, min_index, qp: QPainter) -> None:
         desired_steps = math.ceil((self.width() - self.leftMargin - self.rightMargin) / 100)
-
         min_length, max_length, m_per_pixel = self._get_chart_parameters()
         delta_length = max_length - min_length
 
-        step_length =  delta_length / desired_steps #  get approx 10 vertical ticks
-        # logger.debug(f"Step length: {step_length}, desired_steps={desired_steps}")
-        decimals = math.ceil(abs(math.log10(step_length))) - 1
-        delta_length_step = math.ceil(step_length * (10 ** decimals)) / (10 ** decimals)
-        # logger.debug(f"delta_length_step: {delta_length_step}, decimals: {decimals}")
+        step_length = delta_length / desired_steps
+        decimals = math.ceil(abs(math.log10(step_length)))
+        step_length_rounded = math.ceil(step_length * (10 ** decimals)) / (10 ** decimals)
 
-        start_length = min_length - (min_length % delta_length_step) + delta_length_step
+        start_length = min_length - (min_length % step_length_rounded) + step_length_rounded
 
-        for distance in np.arange(start_length, max_length, delta_length_step):
+        for distance in np.arange(start_length, max_length, step_length_rounded):
             x = self.leftMargin + round((distance - min_length) / m_per_pixel)
 
             # lines
