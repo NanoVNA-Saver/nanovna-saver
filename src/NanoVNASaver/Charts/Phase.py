@@ -85,12 +85,10 @@ class PhaseChart(FrequencyChart):
             minAngle = -180
             maxAngle = 180
 
-        span = maxAngle - minAngle
-        if span == 0:
-            span = 0.01
+        span = float(maxAngle - minAngle)
         self.minAngle = minAngle
         self.maxAngle = maxAngle
-        self.span = span
+        self.span = span if span != 0 else 0.01
 
         tickcount = math.floor(self.dim.height / 60)
 

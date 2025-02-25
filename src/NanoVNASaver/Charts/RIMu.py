@@ -92,7 +92,7 @@ class RealImaginaryMuChart(RealImaginaryChart):
         self.menu.addAction(self.action_set_core_area)
         self.menu.addAction(self.action_set_core_windings)
 
-    def copy(self):
+    def copy(self) -> "RealImaginaryMuChart":
         new_chart: RealImaginaryMuChart = super().copy()
 
         new_chart.coreLength = self.coreLength

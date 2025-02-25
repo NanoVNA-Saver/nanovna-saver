@@ -73,7 +73,7 @@ class RealImaginaryChart(FrequencyChart):
         self.y_menu.addAction(self.y_action_automatic)
         self.y_menu.addAction(self.y_action_fixed_span)
 
-    def copy(self):
+    def copy(self) -> "RealImaginaryChart":
         new_chart: RealImaginaryChart = super().copy()
 
         new_chart.maxDisplayReal = self.maxDisplayReal

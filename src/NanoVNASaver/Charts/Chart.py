@@ -258,7 +258,7 @@ class Chart(QtWidgets.QWidget):
 
     def wheelEvent(self, a0: QtGui.QWheelEvent) -> None:
         delta = a0.angleDelta().y()
-        logger.debug(f"wheelEvent {delta}, {self.data}, {self.reference}")
+        logger.debug("wheelEvent %s, %s, %s", delta, self.data, self.reference)
         if not delta or (not self.data and not self.reference):
             a0.ignore()
             logger.debug("nothing to do, returning")
@@ -368,5 +368,3 @@ class Chart(QtWidgets.QWidget):
         bottom_right = QtCore.QPoint(self.dragbox.pos[0], self.dragbox.pos[1])
         rect = QtCore.QRect(top_left, bottom_right)
         qp.drawRect(rect)
-
-

@@ -22,7 +22,7 @@ import math
 import numpy as np
 from PySide6 import QtGui
 
-from ..RFTools import Datapoint, groupDelay
+from ..RFTools import Datapoint
 from .Chart import Chart
 from .Frequency import FrequencyChart
 
@@ -52,7 +52,7 @@ class GroupDelayChart(FrequencyChart):
         self.minDisplayValue = -180
         self.maxDisplayValue = 180
 
-    def copy(self):
+    def copy(self) -> "GroupDelayChart":
         new_chart: GroupDelayChart = super().copy()
         new_chart.reflective = self.reflective
         new_chart.groupDelay = self.groupDelay.copy()
@@ -113,12 +113,10 @@ class GroupDelayChart(FrequencyChart):
                 min_delay = math.floor(np.min(self.groupDelayReference))
                 max_delay = math.ceil(np.max(self.groupDelayReference))
 
-        span = max_delay - min_delay
-        if span == 0:
-            span = 0.01
+        span = float(max_delay - min_delay)
         self.minDelay = min_delay
         self.maxDelay = max_delay
-        self.span = span
+        self.span = span if span != 0 else 0.01
 
         tickcount = math.floor(self.dim.height / 60)
         for i in range(tickcount):

@@ -20,7 +20,7 @@ import logging
 import math
 
 import numpy as np
-from PySide6.QtCore import QPoint, QRect, Qt
+from PySide6.QtCore import QPoint, Qt
 from PySide6.QtGui import (
     QAction,
     QActionGroup,
@@ -30,13 +30,14 @@ from PySide6.QtGui import (
     QPalette,
     QPen,
     QResizeEvent,
-    QWheelEvent,
     QShortcut,
+    QWheelEvent,
     QColor,
     QFontMetrics,
 )
 from PySide6.QtWidgets import QDialog, QInputDialog, QMenu, QSizePolicy
 
+from ..RFTools import Datapoint
 from .Chart import Chart, ChartPosition
 
 logger = logging.getLogger(__name__)
@@ -49,6 +50,7 @@ MAX_S11 = 0
 
 MIN_VSWR = 1
 MAX_VSWR = 10
+
 
 class TDRChart(Chart):
     max_display_length: int = 50
@@ -169,7 +171,7 @@ class TDRChart(Chart):
         QShortcut(Qt.Key.Key_Right, self, lambda: self.pan_graph(-1, 0))
 
     def pan_graph(self, x, y):
-        logger.debug(f"Moving graph {x}, {y}")
+        logger.debug("Moving graph %s, %s", x, y)
         dx = self.dim.width / 10 * x
         dy = self.dim.height / 10 * y
         self.zoomTo(
@@ -341,7 +343,10 @@ class TDRChart(Chart):
 
     def wheelEvent(self, a0: QWheelEvent) -> None:
         a0.accept()
-        self.data = [0]  # A bit of cheating otherwise the super().wheelEvent() exits without doing anything.
+        self.data = [
+            Datapoint(0, 0.0, 0.0)
+        ]  # A bit of cheating otherwise the super().wheelEvent() exits
+        # without doing anything.
         super().wheelEvent(a0)
 
     def mouseMoveEvent(self, a0: QMouseEvent) -> None:
@@ -388,7 +393,9 @@ class TDRChart(Chart):
         self.marker_location = self.lengthAtPosition(x, limit=False)
         self.update()
 
-    def _draw_ticks(self, height, width, x_step, min_index, qp: QPainter) -> None:
+    def _draw_ticks(
+        self, height, width, x_step, min_index, qp: QPainter
+    ) -> None:
         desired_steps = math.ceil((self.width() - self.leftMargin - self.rightMargin) / 100)
         min_length, max_length, m_per_pixel = self._get_chart_parameters()
         delta_length = max_length - min_length
@@ -408,12 +415,14 @@ class TDRChart(Chart):
 
             # text
             qp.setPen(QPen(Chart.color.text))
-            self._draw_centered_hanging_text(qp, f"{{:.{decimals}f}} m".format(distance), QPoint(x, self.topMargin + height), False)
+            self._draw_centered_hanging_text(qp, f"{{:.{decimals}f}} m".format(distance),
+                                             QPoint(x, self.topMargin + height), False)
 
         # text at origin
         qp.setPen(QPen(Chart.color.text))
         distance = self.tdrWindow.distance_axis[min_index] / 2
-        self._draw_centered_hanging_text(qp, f"{{:.{decimals}f}} m".format(distance), QPoint(self.leftMargin, self.topMargin + height), False)
+        self._draw_centered_hanging_text(qp, f"{{:.{decimals}f}} m".format(distance),
+                                         QPoint(self.leftMargin, self.topMargin + height), False)
 
     def _draw_y_ticks(
         self, height, width, min_impedance, max_impedance, qp: QPainter
@@ -435,7 +444,9 @@ class TDRChart(Chart):
             f"{round(min_impedance, self.decimals)}",
         )
 
-    def _draw_max_point(self, height, x_step, y_step, min_index, qp: QPainter) -> None:
+    def _draw_max_point(
+        self, height, x_step, y_step, min_index, qp: QPainter
+    ) -> None:
         id_max = np.argmax(self.tdrWindow.td)
 
         max_point = QPoint(
@@ -540,7 +551,6 @@ class TDRChart(Chart):
 
     def paintEvent(self, _: QPaintEvent) -> None:
         qp = QPainter(self)
-        # qp.setRenderHint(QPainter.Antialiasing)
         qp.setPen(QPen(Chart.color.text))
         qp.drawText(3, 15, self.name)
 
@@ -627,10 +637,9 @@ class TDRChart(Chart):
         )
 
     def positionAtLength(self, length, limit=True):
-        # logger.debug(f"positionAtLength(length={length}, limit={limit})")
         if not hasattr(self.tdrWindow, "td"):
             return 0
-        min_length, max_length, x_step = self._get_chart_parameters()
+        min_length, _, x_step = self._get_chart_parameters()
         if limit:
             return self.leftMargin  # really? not sure how to handle this
         pos = ((length - min_length) / x_step) + self.leftMargin
@@ -638,7 +647,7 @@ class TDRChart(Chart):
 
     def zoomTo(self, x1, y1, x2, y2) -> None:
         logger.debug(
-            f"Zoom to (x,y) by (x,y): ({x1}, {y1}) by ({x2}, {y2})"
+            "Zoom to (x,y) by (x,y): (%d, %d) by (%d, %d)", x1, y1, x2, y2
         )
 
         val1 = self.valueAtPosition(y1)

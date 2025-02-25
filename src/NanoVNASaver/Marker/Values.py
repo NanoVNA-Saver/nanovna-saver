@@ -71,9 +71,7 @@ def default_label_ids() -> list[str]:
 class Value:
     """Contains the data area to calculate marker values from"""
 
-    def __init__(
-        self,
-    ):
+    def __init__(self) -> None:
         self.freq: int = 0
         self.s11: list[Datapoint] = []
         self.s21: list[Datapoint] = []
