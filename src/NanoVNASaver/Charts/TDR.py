@@ -20,7 +20,7 @@ import logging
 import math
 
 import numpy as np
-from PySide6.QtCore import QPoint, Qt
+from PySide6.QtCore import QPoint, Qt, QRect
 from PySide6.QtGui import (
     QAction,
     QActionGroup,
