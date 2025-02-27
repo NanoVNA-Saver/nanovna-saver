@@ -119,3 +119,20 @@ class ScreenshotWindow(QtWidgets.QLabel):
             self.pix.size().height() * scale,
         )
         self.resize(width, height)
+
+class LiveViewWindow(ScreenshotWindow):
+    def __init__(self, qtwidgets: QtWidgets.QTableWidget):
+        super().__init__()
+        self.setWindowTitle("Live View")
+        self.qtwidgets = qtwidgets
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_screenshot)
+        
+    def start(self):
+        self.timer.start(2000) # Update every 2000ms (this will not burn the little chip too much on nanovna & tinysa)
+                
+    def update_screenshot(self):
+        if self.qtwidgets.app.worker.state != SweepState.RUNNING:  # Check if worker is not running
+            pixmap = self.qtwidgets.app.vna.getScreenshot()
+            self.qtwidgets.liveViewWindow.setScreenshot(pixmap)
+            self.qtwidgets.liveViewWindow.show()
