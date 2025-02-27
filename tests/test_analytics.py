@@ -28,7 +28,6 @@ SINEWAVE = [math.sin(x / 45 * math.pi) for x in range(360)]
 
 
 class AnalyticsTools(unittest.TestCase):
-
     def test_zero_crossings(self):
         self.assertEqual(
             At.zero_crossings(SINEWAVE), [45, 90, 135, 180, 225, 270, 315]

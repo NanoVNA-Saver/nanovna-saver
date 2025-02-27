@@ -1,5 +1,3 @@
-
-
 from NanoVNASaver.utils import (
     get_app_version,
     get_host_platform,
@@ -13,6 +11,7 @@ def test_get_app_version() -> None:
 
     assert result
     assert result != "unknown"
+
 
 def test_get_lib_versions() -> None:
     result = get_lib_versions()

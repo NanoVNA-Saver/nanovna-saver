@@ -41,11 +41,3 @@ class NanoVNA_H4(NanoVNA_H):
         self.sweep_method = "scan"
         if "Scan mask command" in self.features:
             self.sweep_method = "scan_mask"
-
-    # def init_features(self) -> None:
-    #     logger.debug("read_features")
-    #     super().read_features()
-    #     if self.readFirmware().find("DiSlord") > 0:
-    #         self.features.add("Customizable data points")
-    #         logger.info("VNA has 201 datapoints capability")
-    #         self.valid_datapoints: tuple[int, ...] = [201, 11, 51, 101]

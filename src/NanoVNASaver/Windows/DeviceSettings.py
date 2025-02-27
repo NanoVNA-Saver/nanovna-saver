@@ -23,7 +23,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtGui import QIntValidator
 
 from .Defaults import make_scrollable
-from .Screenshot import ScreenshotWindow, LiveViewWindow
+from .Screenshot import LiveViewWindow, ScreenshotWindow
 from .ui import get_window_icon
 
 if TYPE_CHECKING:
@@ -96,13 +96,15 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         self.btnCaptureScreenshot = QtWidgets.QPushButton("Screenshot")
         self.btnCaptureScreenshot.clicked.connect(self.captureScreenshot)
         control_layout.addWidget(self.btnCaptureScreenshot)
-        
+
         self.liveViewWindow = LiveViewWindow(self)
         self.btnLiveView = QtWidgets.QPushButton("Live view")
         self.btnLiveView.clicked.connect(self.liveView)
-        self.liveViewWindow.setAttribute(QtCore.Qt.WidgetAttribute.WA_DeleteOnClose)
+        self.liveViewWindow.setAttribute(
+            QtCore.Qt.WidgetAttribute.WA_DeleteOnClose
+        )
         control_layout.addWidget(self.btnLiveView)
-        
+
         left_layout.addWidget(status_box)
         left_layout.addLayout(control_layout)
 
@@ -158,9 +160,7 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         self.label["firmware"].setText(
             f"{self.app.vna.name} v{self.app.vna.version}"
         )
-        self.label["hardware"].setText(
-            f"{self.app.vna.hardware_revision}"
-        )
+        self.label["hardware"].setText(f"{self.app.vna.hardware_revision}")
         if self.app.worker.isRunning():
             self.label["calibration"].setText("(Sweep running)")
         else:
@@ -212,11 +212,10 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         # TODO: Consider having a list of widgets that want to be
         #       disabled when a sweep is running?
 
-        
     def liveView(self) -> None:
-        if self.app.worker.state != SweepState.RUNNING:
+        if not self.app.worker.isRunning():
             self.liveViewWindow.start()
-    
+
     def updateNrDatapoints(self, i) -> None:
         if i < 0 or self.app.worker.isRunning():
             return

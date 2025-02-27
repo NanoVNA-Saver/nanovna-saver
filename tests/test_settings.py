@@ -35,7 +35,6 @@ class TConfig:
 
 
 class TestCases(unittest.TestCase):
-
     def setUp(self) -> None:
         self.settings_1 = AppSettings(
             "NanoVNASaver",

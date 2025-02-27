@@ -20,10 +20,12 @@ import logging
 import math
 
 import numpy as np
-from PySide6.QtCore import QPoint, Qt, QRect
+from PySide6.QtCore import QPoint, QRect, Qt
 from PySide6.QtGui import (
     QAction,
     QActionGroup,
+    QColor,
+    QFontMetrics,
     QMouseEvent,
     QPainter,
     QPaintEvent,
@@ -32,8 +34,6 @@ from PySide6.QtGui import (
     QResizeEvent,
     QShortcut,
     QWheelEvent,
-    QColor,
-    QFontMetrics,
 )
 from PySide6.QtWidgets import QDialog, QInputDialog, QMenu, QSizePolicy
 
@@ -394,19 +394,29 @@ class TDRChart(Chart):
         self.update()
 
     def _draw_ticks(
-        self, height, width, x_step, min_index, qp: QPainter
+        self, height, _width, x_step, min_index, qp: QPainter
     ) -> None:
-        desired_steps = math.ceil((self.width() - self.leftMargin - self.rightMargin) / 100)
+        desired_steps = math.ceil(
+            (self.width() - self.leftMargin - self.rightMargin) / 100
+        )
         min_length, max_length, m_per_pixel = self._get_chart_parameters()
         delta_length = max_length - min_length
 
         step_length = delta_length / desired_steps
         decimals = math.ceil(abs(math.log10(step_length)))
-        step_length_rounded = math.ceil(step_length * (10 ** decimals)) / (10 ** decimals)
+        step_length_rounded = math.ceil(step_length * (10**decimals)) / (
+            10**decimals
+        )
 
-        start_length = min_length - (min_length % step_length_rounded) + step_length_rounded
+        start_length = (
+            min_length
+            - (min_length % step_length_rounded)
+            + step_length_rounded
+        )
 
-        for distance in np.arange(start_length, max_length, step_length_rounded):
+        for distance in np.arange(
+            start_length, max_length, step_length_rounded
+        ):
             x = self.leftMargin + round((distance - min_length) / m_per_pixel)
 
             # lines
@@ -415,14 +425,22 @@ class TDRChart(Chart):
 
             # text
             qp.setPen(QPen(Chart.color.text))
-            self._draw_centered_hanging_text(qp, f"{{:.{decimals}f}} m".format(distance),
-                                             QPoint(x, self.topMargin + height), False)
+            self._draw_centered_hanging_text(
+                qp,
+                f"{{:.{decimals}f}} m".format(distance),
+                QPoint(x, self.topMargin + height),
+                False,
+            )
 
         # text at origin
         qp.setPen(QPen(Chart.color.text))
         distance = self.tdrWindow.distance_axis[min_index] / 2
-        self._draw_centered_hanging_text(qp, f"{{:.{decimals}f}} m".format(distance),
-                                         QPoint(self.leftMargin, self.topMargin + height), False)
+        self._draw_centered_hanging_text(
+            qp,
+            f"{{:.{decimals}f}} m".format(distance),
+            QPoint(self.leftMargin, self.topMargin + height),
+            False,
+        )
 
     def _draw_y_ticks(
         self, height, width, min_impedance, max_impedance, qp: QPainter
@@ -461,17 +479,20 @@ class TDRChart(Chart):
         self._draw_centered_hanging_text(
             qp,
             f"{round(self.tdrWindow.distance_axis[id_max] / 2, 2)}m",
-             max_point,
-            True)
+            max_point,
+            True,
+        )
 
     def _draw_marker(self, height, x_step, y_step, min_index, qp: QPainter):
         marker_point = QPoint(
             self.positionAtLength(self.marker_location, limit=False),
-            (self.topMargin + height)
+            (self.topMargin + height),
         )
         qp.setPen(Chart.color.text)
         qp.drawEllipse(marker_point, 2, 2)
-        self._draw_centered_hanging_text(qp, f"{self.marker_location:.3f} m", marker_point, True)
+        self._draw_centered_hanging_text(
+            qp, f"{self.marker_location:.3f} m", marker_point, True
+        )
 
     def _draw_graph(self, height, width, qp: QPainter) -> None:
         min_index = 0
@@ -513,13 +534,21 @@ class TDRChart(Chart):
         tdr_points = [
             QPoint(
                 self.leftMargin + int((i - min_index) / x_step),
-                (self.topMargin + height) - int(np.real(self.tdrWindow.td[i]) / y_step)
-            ) for i in range(min_index, max_index)]
+                (self.topMargin + height)
+                - int(np.real(self.tdrWindow.td[i]) / y_step),
+            )
+            for i in range(min_index, max_index)
+        ]
         step_response_points = [
             QPoint(
                 self.leftMargin + int((i - min_index) / x_step),
-                (self.topMargin + height) - int((self.tdrWindow.step_response_Z[i] - min_impedance) / y_step)
-            ) for i in range(min_index, max_index)]
+                (self.topMargin + height)
+                - int(
+                    (self.tdrWindow.step_response_Z[i] - min_impedance) / y_step
+                ),
+            )
+            for i in range(min_index, max_index)
+        ]
 
         pen.setColor(Chart.color.sweep)
         qp.setPen(pen)
@@ -542,7 +571,11 @@ class TDRChart(Chart):
             [qp.drawPoint(p) for p in tdr_points if self.isPlotable(p)]
             pen.setColor(Chart.color.sweep_secondary)
             qp.setPen(pen)
-            [qp.drawPoint(p) for p in step_response_points if self.isPlotable(p)]
+            [
+                qp.drawPoint(p)
+                for p in step_response_points
+                if self.isPlotable(p)
+            ]
 
         self._draw_max_point(height, x_step, y_step, min_index, qp)
 
@@ -622,18 +655,20 @@ class TDRChart(Chart):
             )
         )
         x_step = float(max_length - min_length) / width_px
-        # logger.debug(f"min_length: {min_length}, max_length: {max_length}, x_step: {x_step}")
         return min_length, max_length, x_step
 
     def lengthAtPosition(self, x: int, limit=True):
         if not hasattr(self.tdrWindow, "td"):
             return 0
+        width_px = self.width() - self.leftMargin - self.rightMargin
         min_length, max_length, x_step = self._get_chart_parameters()
         absx = x - self.leftMargin
         if limit and absx < 0:
             return float(min_length)
         return float(
-            max_length if limit and absx > width else absx * x_step + min_length
+            max_length
+            if limit and absx > width_px
+            else absx * x_step + min_length
         )
 
     def positionAtLength(self, length, limit=True):
@@ -667,8 +702,12 @@ class TDRChart(Chart):
             x_max = x_max + (at_zero - x_min)
             x_min = at_zero
 
-        if self.lengthAtPosition(x_max, limit=False) > (self.tdrWindow.distance_axis[-1] / 2):
-            at_end = self.positionAtLength(self.tdrWindow.distance_axis[-1] / 2, limit=False)
+        if self.lengthAtPosition(x_max, limit=False) > (
+            self.tdrWindow.distance_axis[-1] / 2
+        ):
+            at_end = self.positionAtLength(
+                self.tdrWindow.distance_axis[-1] / 2, limit=False
+            )
             x_min = x_min + (at_end - x_max)
             x_max = at_end
 
@@ -687,7 +726,9 @@ class TDRChart(Chart):
         self.dim.width = self.width() - self.leftMargin - self.rightMargin
         self.dim.height = self.height() - self.bottomMargin - self.topMargin
 
-    def _draw_centered_hanging_text(self, qp, text, center: QPoint, above: bool):
+    def _draw_centered_hanging_text(
+        self, qp, text, center: QPoint, above: bool
+    ):
         # Measure text size
         fm = QFontMetrics(qp.font())
         text_width = fm.horizontalAdvance(text)
@@ -695,11 +736,13 @@ class TDRChart(Chart):
 
         # Compute top-left position for centered text
         x = center.x() - text_width // 2
-        y = center.y() + (- text_height / 4 if above else text_height)
+        y = round(center.y() + (-text_height / 4 if above else text_height))
 
         # enhance readability when drawn over ticks
         margin = 5
-        rect = QRect(x - margin, y - text_height, text_width + 2 * margin, text_height)
+        rect = QRect(
+            x - margin, y - text_height, text_width + 2 * margin, text_height
+        )
         semi_transparent_bg = QColor(Chart.color.background)
         semi_transparent_bg.setAlpha(150)
         qp.fillRect(rect, semi_transparent_bg)
@@ -713,4 +756,4 @@ class TDRChart(Chart):
         separate points a lower (but still very high resolution) makes
         the GUI more responsive.
         """
-        return 2 ** 12 if self.flag.draw_lines else 2 ** 14
+        return 2**12 if self.flag.draw_lines else 2**14

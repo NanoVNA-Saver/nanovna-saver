@@ -4,7 +4,6 @@ VALID_HEADER = b"\xe0\x01@\x01\x10"
 
 
 class TestScreenshotData:
-
     @staticmethod
     def test_from_header() -> None:
         result = ScreenshotData.from_header(VALID_HEADER)
@@ -21,9 +20,9 @@ class TestScreenshotData:
 
     @staticmethod
     def test_repr() -> None:
-        assert f"{ScreenshotData(0,0,0)}" == "0x0 0bits (0 Bytes)"
+        assert f"{ScreenshotData(0, 0, 0)}" == "0x0 0bits (0 Bytes)"
         assert (
-            f"{ScreenshotData(480,320,16)}" == "480x320 16bits (307200 Bytes)"
+            f"{ScreenshotData(480, 320, 16)}" == "480x320 16bits (307200 Bytes)"
         )
 
     @staticmethod
@@ -40,4 +39,4 @@ class TestScreenshotData:
         result = img.get_rgb888_data()
 
         assert len(result) == 3 * 3
-        assert result == b"\x00\x00\x00\xFF\xFF\x00\xFF\xFF\xFF"
+        assert result == b"\x00\x00\x00\xff\xff\x00\xff\xff\xff"
