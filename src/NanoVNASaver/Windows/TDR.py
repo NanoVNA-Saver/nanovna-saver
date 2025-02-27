@@ -262,7 +262,11 @@ class TDRWindow(QtWidgets.QWidget):
         if "lowpass" in TDR_format:
             td = self._tdr_lowpass(TDR_format, s11, TDR_window)
         else:
-            td = np.abs(np.fft.ifft(self.windowed_s11, self.app.tdr_chart.get_fft_points()))
+            td = np.abs(
+                np.fft.ifft(
+                    self.windowed_s11, self.app.tdr_chart.get_fft_points()
+                )
+            )
             # Convolving with a step function is unnecessary, we can only get
             # the magnitude of impulse response
             if TDR_format == "Refl (bandpass)":
@@ -272,7 +276,9 @@ class TDRWindow(QtWidgets.QWidget):
                     / TDR_window["corr"](len(s11), TDR_window["arg"])
                 )
 
-        time_axis = np.linspace(0, 1 / step_size, self.app.tdr_chart.get_fft_points())
+        time_axis = np.linspace(
+            0, 1 / step_size, self.app.tdr_chart.get_fft_points()
+        )
         self.distance_axis = time_axis * v * speed_of_light
         # peak = np.max(td)
         # We should check that this is an actual *peak*, and not just
@@ -289,7 +295,9 @@ class TDRWindow(QtWidgets.QWidget):
         self.updated.emit()
 
     def _tdr_lowpass(self, tdr_format, s11, tdr_window) -> np.ndarray:
-        pad_points = (self.app.tdr_chart.get_fft_points() - len(self.windowed_s11)) // 2
+        pad_points = (
+            self.app.tdr_chart.get_fft_points() - len(self.windowed_s11)
+        ) // 2
         self.windowed_s11 = np.pad(
             self.windowed_s11, [pad_points + 1, pad_points]
         )  # Pad array to length self.app.tdr_chart.get_fft_points()

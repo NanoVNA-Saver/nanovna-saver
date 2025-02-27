@@ -66,7 +66,6 @@ class TestTouchstoneOptions(unittest.TestCase):
 
 
 class TestTouchstoneTouchstone(unittest.TestCase):
-
     def test_load(self):
         ts = Touchstone("./tests/data/valid.s1p")
         ts.load()

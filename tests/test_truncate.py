@@ -64,7 +64,6 @@ DATA_TRUNCATED = [
 
 
 class TestSweepWorkerTruncate(unittest.TestCase):
-
     def test_truncate(self):
         x = truncate(DATA, 1)
         self.assertEqual(x, DATA_TRUNCATED)

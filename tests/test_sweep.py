@@ -23,7 +23,6 @@ from NanoVNASaver.Settings.Sweep import Properties, Sweep, SweepMode
 
 
 class TestCases(unittest.TestCase):
-
     def test_sweep(self):
         sweep = Sweep()
         self.assertEqual(sweep.start, 3600000)

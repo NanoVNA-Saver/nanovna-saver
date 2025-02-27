@@ -25,7 +25,6 @@ from NanoVNASaver.Formatting import format_frequency_sweep
 
 
 class TestCases(unittest.TestCase):
-
     def test_basicIntegerValues(self):
         # simple well-formed integers with no trailing zeros. Most importantly
         # there is no loss of accuracy in the result. Returned values are not

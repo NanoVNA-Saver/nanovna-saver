@@ -22,7 +22,6 @@ from NanoVNASaver.utils import Version
 
 
 class TestCases:
-
     @staticmethod
     def test_str() -> None:
         assert str(Version(1, 0, 0, "")) == "1.0.0"
@@ -59,7 +58,6 @@ class TestCases:
 
     @staticmethod
     def test_build_normal_case() -> None:
-
         assert Version.build(1, 2) == Version(1, 2, 0, "")
         assert Version.build(1, 2, 3) == Version(1, 2, 3, "")
         assert Version.build(1, 2, 3, "test") == Version(1, 2, 3, "test")

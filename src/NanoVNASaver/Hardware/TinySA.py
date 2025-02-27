@@ -115,7 +115,6 @@ class TinySA_Ultra(TinySA):
     screenwidth = 480
     screenheight = 320
     valid_datapoints: tuple[int, ...] = (450, 51, 101, 145, 290)
-    hardware_revision: Version | None = None
 
     def __init__(self, iface: Interface):
         super().__init__(iface)

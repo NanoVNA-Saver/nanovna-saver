@@ -23,7 +23,6 @@ from NanoVNASaver import Formatting as fmt
 
 
 class TestCases(unittest.TestCase):
-
     def test_format_frequency(self):
         self.assertEqual(fmt.format_frequency(1), "1.00000Hz")
         self.assertEqual(fmt.format_frequency(12), "12.0000Hz")

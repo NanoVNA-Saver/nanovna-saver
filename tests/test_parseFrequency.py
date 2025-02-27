@@ -31,7 +31,6 @@ from NanoVNASaver.Formatting import parse_frequency
 # the hardware developer already announced a successor
 # which will have different limits
 class TestCases(unittest.TestCase):
-
     def test_basicSIUnits(self):
         # simple well-formed integers with correct SI units
         self.assertEqual(parse_frequency("123Hz"), 123)

@@ -21,6 +21,7 @@ import logging
 import serial
 from PySide6.QtGui import QPixmap
 
+from ..utils import Version
 from .Convert import get_rgb16_pixmap
 from .NanoVNA import NanoVNA
 from .Serial import Interface
@@ -32,19 +33,19 @@ class NanoVNA_F_V2(NanoVNA):
     name = "NanoVNA-F_V2"
     screenwidth = 800
     screenheight = 480
-    valid_datapoints = (101, 11, 51, 201, 301)
+    valid_datapoints: tuple[int, ...] = (101, 11, 51, 201, 301)
     sweep_points_min = 11
     sweep_points_max = 301
-    
+
     def __init__(self, iface: Interface):
         super().__init__(iface)
         self.sweep_max_freq_hz = 3e9
         self.version = self.read_firmware_version()
         # max datapoints reach up to 301 since version 0.5.0
-        if self.version >= Version("0.5.0"):
+        if self.version >= Version.parse("0.5.0"):
             pass
         # max datapoints reach up to 201 since version 0.2.0
-        elif self.version >= Version("0.2.0"):
+        elif self.version >= Version.parse("0.2.0"):
             self.valid_datapoints = (101, 11, 51, 201)
             self.sweep_points_max = 201
         # max datapoints reach up to 101 before version 0.2.0
@@ -66,15 +67,15 @@ class NanoVNA_F_V2(NanoVNA):
         return QPixmap()
 
     def read_firmware_version(self) -> "Version":
-        """For example, command version in NanoVNA_F_V2 and NanoVNA_F_V3 returns as this
-        0.5.8
+        """For example, command version in NanoVNA_F_V2 and NanoVNA_F_V3
+        returns as this 0.5.8
         """
         result = list(self.exec_command("version"))
         logger.debug("firmware version result:\n%s", result[0])
-        return Version(result[0])
+        return Version.parse(result[0])
 
-    def read_features(self):
-        super().read_features()
+    def get_features(self):
+        super().get_features()
         result = " ".join(self.exec_command("help")).split()
         if "sn:" or "SN:" in result:
             self.features.add("SN")
