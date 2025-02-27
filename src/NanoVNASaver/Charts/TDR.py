@@ -394,7 +394,7 @@ class TDRChart(Chart):
         self.update()
 
     def _draw_ticks(
-        self, height, _width, x_step, min_index, qp: QPainter
+        self, height, _width, _x_step, min_index, qp: QPainter
     ) -> None:
         desired_steps = math.ceil(
             (self.width() - self.leftMargin - self.rightMargin) / 100
@@ -483,7 +483,7 @@ class TDRChart(Chart):
             True,
         )
 
-    def _draw_marker(self, height, x_step, y_step, min_index, qp: QPainter):
+    def _draw_marker(self, height, _x_step, _y_step, _min_index, qp: QPainter):
         marker_point = QPoint(
             self.positionAtLength(self.marker_location, limit=False),
             (self.topMargin + height),
@@ -568,14 +568,14 @@ class TDRChart(Chart):
                     qp.drawLine(last_pt, point)
                 last_pt = point
         else:
-            [qp.drawPoint(p) for p in tdr_points if self.isPlotable(p)]
+            for p in tdr_points:
+                if self.isPlotable(p):
+                    qp.drawPoint(p)
             pen.setColor(Chart.color.sweep_secondary)
             qp.setPen(pen)
-            [
-                qp.drawPoint(p)
-                for p in step_response_points
-                if self.isPlotable(p)
-            ]
+            for p in step_response_points:
+                if self.isPlotable(p):
+                    qp.drawPoint(p)
 
         self._draw_max_point(height, x_step, y_step, min_index, qp)
 
@@ -736,7 +736,7 @@ class TDRChart(Chart):
 
         # Compute top-left position for centered text
         x = center.x() - text_width // 2
-        y = round(center.y() + (-text_height / 4 if above else text_height))
+        y = center.y() + (-text_height / 4 if above else text_height)
 
         # enhance readability when drawn over ticks
         margin = 5
