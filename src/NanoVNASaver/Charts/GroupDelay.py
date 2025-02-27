@@ -20,11 +20,10 @@ import logging
 import math
 
 import numpy as np
-from PyQt6 import QtGui
+from PySide6 import QtGui
 
-from NanoVNASaver.Charts.Chart import Chart
-from NanoVNASaver.RFTools import Datapoint
-
+from ..RFTools import Datapoint
+from .Chart import Chart
 from .Frequency import FrequencyChart
 
 logger = logging.getLogger(__name__)
@@ -53,7 +52,7 @@ class GroupDelayChart(FrequencyChart):
         self.minDisplayValue = -180
         self.maxDisplayValue = 180
 
-    def copy(self):
+    def copy(self) -> "GroupDelayChart":
         new_chart: GroupDelayChart = super().copy()
         new_chart.reflective = self.reflective
         new_chart.groupDelay = self.groupDelay.copy()
@@ -104,22 +103,20 @@ class GroupDelayChart(FrequencyChart):
         line_pen = QtGui.QPen(Chart.color.sweep)
         line_pen.setWidth(self.dim.line)
 
-        if self.fixedValues:
-            min_delay = self.minDisplayValue
-            max_delay = self.maxDisplayValue
-        elif self.data:
-            min_delay = math.floor(np.min(self.groupDelay))
-            max_delay = math.ceil(np.max(self.groupDelay))
-        elif self.reference:
-            min_delay = math.floor(np.min(self.groupDelayReference))
-            max_delay = math.ceil(np.max(self.groupDelayReference))
+        min_delay = self.minDisplayValue
+        max_delay = self.maxDisplayValue
+        if not self.fixedValues:
+            if self.data:
+                min_delay = math.floor(np.min(self.groupDelay))
+                max_delay = math.ceil(np.max(self.groupDelay))
+            elif self.reference:
+                min_delay = math.floor(np.min(self.groupDelayReference))
+                max_delay = math.ceil(np.max(self.groupDelayReference))
 
-        span = max_delay - min_delay
-        if span == 0:
-            span = 0.01
+        span = float(max_delay - min_delay)
         self.minDelay = min_delay
         self.maxDelay = max_delay
-        self.span = span
+        self.span = span if span != 0 else 0.01
 
         tickcount = math.floor(self.dim.height / 60)
         for i in range(tickcount):
@@ -210,7 +207,7 @@ class GroupDelayChart(FrequencyChart):
                 delay = 0
         return self.getYPositionFromDelay(delay)
 
-    def getYPositionFromDelay(self, delay: float) -> int:
+    def getYPositionFromDelay(self, delay: Datapoint) -> int:
         return self.topMargin + int(
             (self.maxDelay - delay) / self.span * self.dim.height
         )

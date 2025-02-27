@@ -18,12 +18,12 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from PyQt6 import QtGui
+from PySide6 import QtGui
 
-from NanoVNASaver.Charts.Chart import Chart
-from NanoVNASaver.Charts.Frequency import FrequencyChart
-from NanoVNASaver.Charts.LogMag import LogMagChart
-from NanoVNASaver.RFTools import Datapoint
+from ..RFTools import Datapoint
+from .Chart import Chart
+from .Frequency import FrequencyChart
+from .LogMag import LogMagChart
 
 logger = logging.getLogger(__name__)
 
@@ -78,15 +78,15 @@ class SParameterChart(FrequencyChart):
             maxValue = 1
         self.minValue = minValue
         self.maxValue = maxValue
-        span = maxValue - minValue
-        if span == 0:
-            span = 0.01
-        self.span = span
+        span = float(maxValue - minValue)
+        self.span = span if span != 0.0 else 0.01
         tick_count = self.dim.height // 60
         tick_step = self.span / tick_count
         for i in range(tick_count):
             val = int(minValue + i * tick_step)
-            y = self.topMargin + (maxValue - val) // span * self.dim.height
+            y = round(
+                self.topMargin + (maxValue - val) // span * self.dim.height
+            )
             qp.setPen(QtGui.QPen(Chart.color.foreground))
             qp.drawLine(
                 self.leftMargin - 5, y, self.leftMargin + self.dim.width, y
@@ -149,7 +149,7 @@ class SParameterChart(FrequencyChart):
     def logMag(self, p: Datapoint) -> float:
         return -p.gain if self.isInverted else p.gain
 
-    def copy(self):
+    def copy(self) -> "SParameterChart":
         new_chart: LogMagChart = super().copy()
         new_chart.isInverted = self.isInverted
         new_chart.span = self.span

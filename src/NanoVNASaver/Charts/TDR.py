@@ -20,8 +20,8 @@ import logging
 import math
 
 import numpy as np
-from PyQt6.QtCore import QPoint, QRect, Qt
-from PyQt6.QtGui import (
+from PySide6.QtCore import QPoint, Qt
+from PySide6.QtGui import (
     QAction,
     QActionGroup,
     QMouseEvent,
@@ -30,10 +30,13 @@ from PyQt6.QtGui import (
     QPalette,
     QPen,
     QResizeEvent,
+    QShortcut,
+    QWheelEvent,
 )
-from PyQt6.QtWidgets import QInputDialog, QMenu, QSizePolicy
+from PySide6.QtWidgets import QDialog, QInputDialog, QMenu, QSizePolicy
 
-from NanoVNASaver.Charts.Chart import Chart
+from ..RFTools import Datapoint
+from .Chart import Chart, ChartPosition
 
 logger = logging.getLogger(__name__)
 
@@ -61,9 +64,9 @@ class TDRChart(Chart):
     fixed_values: bool = False
     marker_location: int = -1
 
-    def __init__(self, name) -> None:  # noqa: PLR0915
+    def __init__(self, name) -> None:
         super().__init__(name)
-        self.tdrWindow = None
+        self.tdrWindow: QDialog = QDialog()
 
         self.bottomMargin = 25
         self.topMargin = 20
@@ -89,15 +92,15 @@ class TDRChart(Chart):
 
         self.x_menu = QMenu("Length axis")
         self.mode_group = QActionGroup(self.x_menu)
+        self.action_fixed_span = QAction("Fixed span")
+        self.action_fixed_span.setCheckable(True)
+        self.action_fixed_span.changed.connect(
+            lambda: self.setFixedSpan(self.action_fixed_span.isChecked())
+        )
         self.action_automatic = QAction("Automatic")
         self.action_automatic.setCheckable(True)
         self.action_automatic.setChecked(True)
         self.action_automatic.changed.connect(
-            lambda: self.setFixedSpan(self.action_fixed_span.isChecked())
-        )
-        self.action_fixed_span = QAction("Fixed span")
-        self.action_fixed_span.setCheckable(True)
-        self.action_fixed_span.changed.connect(
             lambda: self.setFixedSpan(self.action_fixed_span.isChecked())
         )
         self.mode_group.addAction(self.action_automatic)
@@ -121,15 +124,15 @@ class TDRChart(Chart):
 
         self.y_menu = QMenu("Y axis")
         self.y_mode_group = QActionGroup(self.y_menu)
+        self.y_action_fixed = QAction("Fixed")
+        self.y_action_fixed.setCheckable(True)
+        self.y_action_fixed.changed.connect(
+            lambda: self.setFixedValues(self.y_action_fixed.isChecked())
+        )
         self.y_action_automatic = QAction("Automatic")
         self.y_action_automatic.setCheckable(True)
         self.y_action_automatic.setChecked(True)
         self.y_action_automatic.changed.connect(
-            lambda: self.setFixedValues(self.y_action_fixed.isChecked())
-        )
-        self.y_action_fixed = QAction("Fixed")
-        self.y_action_fixed.setCheckable(True)
-        self.y_action_fixed.changed.connect(
             lambda: self.setFixedValues(self.y_action_fixed.isChecked())
         )
         self.y_mode_group.addAction(self.y_action_automatic)
@@ -160,6 +163,22 @@ class TDRChart(Chart):
         self.dim.width = self.width() - self.leftMargin - self.rightMargin
         self.dim.height = self.height() - self.bottomMargin - self.topMargin
 
+        QShortcut(Qt.Key.Key_Up, self, lambda: self.pan_graph(0, 1))
+        QShortcut(Qt.Key.Key_Down, self, lambda: self.pan_graph(0, -1))
+        QShortcut(Qt.Key.Key_Left, self, lambda: self.pan_graph(1, 0))
+        QShortcut(Qt.Key.Key_Right, self, lambda: self.pan_graph(-1, 0))
+
+    def pan_graph(self, x, y):
+        logger.debug("Moving graph %s, %s", x, y)
+        dx = self.dim.width / 10 * x
+        dy = self.dim.height / 10 * y
+        self.zoomTo(
+            self.leftMargin + dx,
+            self.topMargin + dy,
+            self.leftMargin + self.dim.width + dx,
+            self.topMargin + self.dim.height + dy,
+        )
+
     def contextMenuEvent(self, event) -> None:
         self.action_set_fixed_start.setText(
             f"Start ({self.min_display_length})"
@@ -183,8 +202,8 @@ class TDRChart(Chart):
                 "impedance (\N{OHM SIGN})",
                 1,
             ),
-            "S11 (lowpass)": (MIN_S11, MIN_S11, "S11 (dB)", 1),
-            "VSWR (lowpass)": (MIN_VSWR, MIN_VSWR, "VSWR", 2),
+            "S11 (lowpass)": (MIN_S11, MAX_S11, "S11 (dB)", 1),
+            "VSWR (lowpass)": (MIN_VSWR, MAX_VSWR, "VSWR", 2),
             "Refl (lowpass)": (-1, 1, "U", 2),
             "Refl (bandpass)": (0, 1, "U", 2),
         }
@@ -210,13 +229,13 @@ class TDRChart(Chart):
             "Start length (m)",
             "Set start length (m)",
             value=self.min_display_length,
-            min=0,
+            minValue=0,
             decimals=1,
         )
         if not selected:
             return
         if not (self.fixed_span and min_val >= self.max_display_length):
-            self.min_display_length = min_val
+            self.min_display_length = round(min_val)
         if self.fixed_span:
             self.update()
 
@@ -226,13 +245,13 @@ class TDRChart(Chart):
             "Stop length (m)",
             "Set stop length (m)",
             value=self.max_display_length,
-            min=0.1,
+            minValue=0.1,
             decimals=1,
         )
         if not selected:
             return
         if not (self.fixed_span and max_val <= self.min_display_length):
-            self.max_display_length = max_val
+            self.max_display_length = round(max_val)
         if self.fixed_span:
             self.update()
 
@@ -282,6 +301,14 @@ class TDRChart(Chart):
         self.tdrWindow.updated.connect(new_chart.update)
         return new_chart
 
+    def wheelEvent(self, a0: QWheelEvent) -> None:
+        a0.accept()
+        self.data = [
+            Datapoint(0, 0.0, 0.0)
+        ]  # A bit of cheating otherwise the super().wheelEvent() exits
+        # without doing anything.
+        super().wheelEvent(a0)
+
     def mouseMoveEvent(self, a0: QMouseEvent) -> None:
         if not hasattr(self.tdrWindow, "td"):
             return
@@ -305,11 +332,16 @@ class TDRChart(Chart):
             return
         if a0.modifiers() == Qt.KeyboardModifier.ControlModifier:
             # Dragging a box
-            if not self.dragbox.state:
-                self.dragbox.pos_start = (a0.position().x(), a0.position().y())
-            self.dragbox.pos = (a0.position().x(), a0.position().y())
-            self.update()
             a0.accept()
+            if not self.dragbox.state:
+                self.dragbox.state = True
+                self.dragbox.pos_start = ChartPosition(
+                    a0.position().x(), a0.position().y()
+                )
+            self.dragbox.pos = ChartPosition(
+                a0.position().x(), a0.position().y()
+            )
+            self.update()
             return
 
         x = a0.position().x()
@@ -326,16 +358,18 @@ class TDRChart(Chart):
             min_index = np.searchsorted(
                 self.tdrWindow.distance_axis, self.min_display_length * 2
             )
-            x_step = (max_index - min_index) / width
+            x_step = float((max_index - min_index) / width)
         else:
             x_step = math.ceil(len(self.tdrWindow.distance_axis) / 2) / width
 
         self.marker_location = int(round(absx * x_step))
         self.update()
 
-    def _draw_ticks(self, height, width, x_step, min_index) -> None:
+    def _draw_ticks(
+        self, height, width, x_step, min_index, qp: QPainter
+    ) -> None:
         ticks = (self.width() - self.leftMargin) // 100
-        qp = QPainter(self)
+        # qp = QPainter(self)
         for i in range(ticks):
             x = self.leftMargin + round((i + 1) * width / ticks)
             qp.setPen(QPen(Chart.color.foreground))
@@ -354,15 +388,16 @@ class TDRChart(Chart):
         qp.drawText(
             self.leftMargin - 10,
             self.topMargin + height + 15,
-            f"""{str(round(
-                self.tdrWindow.distance_axis[min_index] / 2, self.decimals))
-                }m""",
+            f"""{
+                round(
+                    self.tdrWindow.distance_axis[min_index] / 2, self.decimals
+                )!s
+            }m""",
         )
 
     def _draw_y_ticks(
-        self, height, width, min_impedance, max_impedance
+        self, height, width, min_impedance, max_impedance, qp: QPainter
     ) -> None:
-        qp = QPainter(self)
         y_step = (max_impedance - min_impedance) / height
         y_ticks = math.floor(height / 60)
         y_tick_step = height / y_ticks
@@ -380,8 +415,9 @@ class TDRChart(Chart):
             f"{round(min_impedance, self.decimals)}",
         )
 
-    def _draw_max_point(self, height, x_step, y_step, min_index) -> None:
-        qp = QPainter(self)
+    def _draw_max_point(
+        self, height, x_step, y_step, min_index, qp: QPainter
+    ) -> None:
         id_max = np.argmax(self.tdrWindow.td)
 
         max_point = QPoint(
@@ -399,8 +435,7 @@ class TDRChart(Chart):
             f"{round(self.tdrWindow.distance_axis[id_max] / 2, 2)}m",
         )
 
-    def _draw_marker(self, height, x_step, y_step, min_index):
-        qp = QPainter(self)
+    def _draw_marker(self, height, x_step, y_step, min_index, qp: QPainter):
         marker_point = QPoint(
             self.leftMargin + int((self.marker_location - min_index) / x_step),
             (self.topMargin + height)
@@ -411,12 +446,12 @@ class TDRChart(Chart):
         qp.drawText(
             marker_point.x() - 10,
             marker_point.y() - 5,
-            f"""{round(
-                    self.tdrWindow.distance_axis[self.marker_location] / 2,
-                    2)}m""",
+            f"""{
+                round(self.tdrWindow.distance_axis[self.marker_location] / 2, 2)
+            }m""",
         )
 
-    def _draw_graph(self, height, width):
+    def _draw_graph(self, height, width, qp: QPainter) -> None:
         min_index = 0
         max_index = math.ceil(len(self.tdrWindow.distance_axis) / 2)
 
@@ -438,6 +473,7 @@ class TDRChart(Chart):
         # TODO: Limit the search to the selected span?
         min_Z = np.min(self.tdrWindow.step_response_Z)
         max_Z = np.max(self.tdrWindow.step_response_Z)
+
         # Ensure that everything works even if limits are negative
         min_impedance = max(self.min_y_lim, min_Z - 0.05 * np.abs(min_Z))
         max_impedance = min(self.max_y_lim, max_Z + 0.05 * np.abs(max_Z))
@@ -445,17 +481,15 @@ class TDRChart(Chart):
             min_impedance = self.min_y_lim
             max_impedance = self.max_y_lim
 
-        y_step = max(self.tdrWindow.td) * 1.1 / height or 1.0e-30
+        self._draw_ticks(height, width, x_step, min_index, qp)
+        self._draw_y_ticks(height, width, min_impedance, max_impedance, qp)
 
-        self._draw_ticks(height, width, x_step, min_index)
-        self._draw_y_ticks(height, width, min_impedance, max_impedance)
-
-        qp = QPainter(self)
         pen = QPen(Chart.color.sweep)
-        pen.setWidth(self.dim.point)
+        pen.setWidth(self.dim.line if self.flag.draw_lines else self.dim.point)
         qp.setPen(pen)
-
         y_step = (max_impedance - min_impedance) / height
+        last_x_primary, last_y_primary = None, None
+        last_x_secondary, last_y_secondary = None, None
         for i in range(min_index, max_index):
             x = self.leftMargin + int((i - min_index) / x_step)
             y = (self.topMargin + height) - int(
@@ -464,7 +498,15 @@ class TDRChart(Chart):
             if self.isPlotable(x, y):
                 pen.setColor(Chart.color.sweep)
                 qp.setPen(pen)
-                qp.drawPoint(x, y)
+                if (
+                    self.flag.draw_lines
+                    and last_x_primary is not None
+                    and last_y_primary is not None
+                ):
+                    qp.drawLine(last_x_primary, last_y_primary, x, y)
+                else:
+                    qp.drawPoint(x, y)
+            last_x_primary, last_y_primary = x, y
 
             x = self.leftMargin + int((i - min_index) / x_step)
             y = (self.topMargin + height) - int(
@@ -473,12 +515,20 @@ class TDRChart(Chart):
             if self.isPlotable(x, y):
                 pen.setColor(Chart.color.sweep_secondary)
                 qp.setPen(pen)
-                qp.drawPoint(x, y)
+                if (
+                    self.flag.draw_lines
+                    and last_x_secondary is not None
+                    and last_y_secondary is not None
+                ):
+                    qp.drawLine(last_x_secondary, last_y_secondary, x, y)
+                else:
+                    qp.drawPoint(x, y)
+            last_x_secondary, last_y_secondary = x, y
 
-        self._draw_max_point(height, x_step, y_step, min_index)
+        self._draw_max_point(height, x_step, y_step, min_index, qp)
 
         if self.marker_location != -1:
-            self._draw_marker(height, x_step, y_step, min_index)
+            self._draw_marker(height, x_step, y_step, min_index, qp)
 
     def paintEvent(self, _: QPaintEvent) -> None:
         qp = QPainter(self)
@@ -505,17 +555,10 @@ class TDRChart(Chart):
         self.drawTitle(qp)
 
         if hasattr(self.tdrWindow, "td"):
-            self._draw_graph(height, width)
+            self._draw_graph(height, width, qp)
 
         if self.dragbox.state and self.dragbox.pos[0] != -1:
-            dashed_pen = QPen(Chart.color.foreground, 1, Qt.PenStyle.DashLine)
-            qp.setPen(dashed_pen)
-            qp.drawRect(
-                QRect(
-                    QPoint(*self.dragbox.pos_start),
-                    QPoint(*self.dragbox.pos),
-                )
-            )
+            self.drawDragbog(qp)
 
         qp.end()
 
@@ -540,11 +583,12 @@ class TDRChart(Chart):
             return y_step * absy + min_impedance
         return 0.0
 
-    def lengthAtPosition(self, x: int, limit=True):
-        if not hasattr(self.tdrWindow, "td"):
-            return 0
+    #
+    # Get the currently displayed
+    # start end length in meter and the step size in m/pixel
+    #
+    def _get_chart_parameters(self):
         width = self.width() - self.leftMargin - self.rightMargin
-        absx = x - self.leftMargin
         min_length = self.min_display_length if self.fixed_span else 0
         max_length = (
             self.max_display_length
@@ -556,18 +600,34 @@ class TDRChart(Chart):
                 / 2
             )
         )
-
         x_step = float(max_length - min_length) / width
+        return min_length, max_length, x_step
+
+    def lengthAtPosition(self, x: int, limit=True):
+        width = self.width() - self.leftMargin - self.rightMargin
+        if not hasattr(self.tdrWindow, "td"):
+            return 0
+        min_length, max_length, x_step = self._get_chart_parameters()
+        absx = x - self.leftMargin
         if limit and absx < 0:
             return float(min_length)
         return float(
             max_length if limit and absx > width else absx * x_step + min_length
         )
 
+    def positionAtLength(self, length, limit=True):
+        if not hasattr(self.tdrWindow, "td"):
+            return 0
+        min_length, _, x_step = self._get_chart_parameters()
+        if limit:
+            return self.leftMargin  # really? not sure how to handle this
+        return ((length - min_length) / x_step) + self.leftMargin
+
     def zoomTo(self, x1, y1, x2, y2) -> None:
         logger.debug(
             "Zoom to (x,y) by (x,y): (%d, %d) by (%d, %d)", x1, y1, x2, y2
         )
+
         val1 = self.valueAtPosition(y1)
         val2 = self.valueAtPosition(y2)
 
@@ -576,8 +636,17 @@ class TDRChart(Chart):
             self.max_y_lim = round(max(val1, val2), 3)
             self.setFixedValues(True)
 
-        len1 = max(0, self.lengthAtPosition(x1, limit=False))
-        len2 = max(0, self.lengthAtPosition(x2, limit=False))
+        x_min = min(x1, x2)
+        x_max = max(x1, x2)
+
+        # test if we reach the negative length range -> adjust to zero
+        if self.lengthAtPosition(x_min, limit=False) < 0:
+            at_zero = self.positionAtLength(0, limit=False)
+            x_max = x_max + (at_zero - x_min)
+            x_min = at_zero
+
+        len1 = max(0, self.lengthAtPosition(x_min, limit=False))
+        len2 = max(0, self.lengthAtPosition(x_max, limit=False))
 
         if len1 >= 0 and len2 >= 0 and len1 != len2:
             self.min_display_length = min(len1, len2)

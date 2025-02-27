@@ -17,22 +17,22 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
+from typing import Optional
 
-from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtCore import QTimer,QDateTime
-from NanoVNASaver.SweepWorker import SweepState
-from PyQt6.QtCore import Qt
+from PySide6 import QtCore, QtGui, QtWidgets
+
+# from .ui import get_window_icon
 
 logger = logging.getLogger(__name__)
 
 
 class ScreenshotWindow(QtWidgets.QLabel):
-    pix = None
+    pix: Optional[QtGui.QPixmap] = None
 
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Screenshot")
-        # TODO : self.setWindowIcon(self.app.icon)
+        # TODO : self.setWindowIcon(get_window_icon())
 
         QtGui.QShortcut(QtCore.Qt.Key.Key_Escape, self, self.hide)
         self.setContextMenuPolicy(
@@ -60,11 +60,11 @@ class ScreenshotWindow(QtWidgets.QLabel):
         self.addAction(self.action_save_screenshot)
 
     def setScreenshot(self, pixmap: QtGui.QPixmap):
-        if self.pix is None:
+        if ScreenshotWindow.pix is None:
             self.resize(pixmap.size())
-        self.pix = pixmap
+        ScreenshotWindow.pix = pixmap
         self.setPixmap(
-            self.pix.scaled(
+            ScreenshotWindow.pix.scaled(
                 self.size(),
                 QtCore.Qt.AspectRatioMode.KeepAspectRatio,
                 QtCore.Qt.TransformationMode.FastTransformation,
@@ -104,9 +104,9 @@ class ScreenshotWindow(QtWidgets.QLabel):
 
     def resizeEvent(self, a0: QtGui.QResizeEvent) -> None:
         super().resizeEvent(a0)
-        if self.pixmap() is not None:
+        if ScreenshotWindow.pix is not None:
             self.setPixmap(
-                self.pix.scaled(
+                ScreenshotWindow.pix.scaled(
                     self.size(),
                     QtCore.Qt.AspectRatioMode.KeepAspectRatio,
                     QtCore.Qt.TransformationMode.FastTransformation,

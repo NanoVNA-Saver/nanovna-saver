@@ -19,11 +19,11 @@
 import logging
 import math
 
-from PyQt6 import QtGui
+from PySide6 import QtGui
 
-from NanoVNASaver.Charts.Chart import Chart
-from NanoVNASaver.Charts.Frequency import FrequencyChart
-from NanoVNASaver.RFTools import Datapoint
+from ..RFTools import Datapoint
+from .Chart import Chart
+from .Frequency import FrequencyChart
 
 logger = logging.getLogger(__name__)
 
@@ -49,9 +49,9 @@ class QualityFactorChart(FrequencyChart):
 
         # Make up some sensible scaling here
         if self.fixedValues:
-            maxQ = self.maxDisplayValue
+            maxQ = float(self.maxDisplayValue)
         else:
-            maxQ = 0
+            maxQ = 0.0
             for d in self.data:
                 Q = d.qFactor()
                 maxQ = max(maxQ, Q)

@@ -18,21 +18,26 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 from time import sleep
+from typing import TYPE_CHECKING
 
-from PyQt6 import QtCore, QtWidgets
+from PySide6 import QtWidgets
+from PySide6.QtCore import Signal
 
-from NanoVNASaver.Controls.Control import Control
-from NanoVNASaver.Hardware.Hardware import Interface, get_interfaces, get_VNA
+from ..Hardware.Hardware import Interface, get_interfaces, get_VNA
+from .Control import Control
+
+if TYPE_CHECKING:
+    from ..NanoVNASaver.NanoVNASaver import NanoVNASaver as vna_app
+
 
 logger = logging.getLogger(__name__)
 
 
 class SerialControl(Control):
-
     # true when serial port was connected and false when it was disconnected
-    connected = QtCore.pyqtSignal(bool)
+    connected = Signal(bool)
 
-    def __init__(self, app: QtWidgets.QWidget):
+    def __init__(self, app: "vna_app"):
         super().__init__(app, "Serial port control")
 
         self.interface = Interface("serial", "none")
@@ -151,6 +156,11 @@ class SerialControl(Control):
     def disconnect_device(self):
         with self.interface.lock:
             logger.info("Closing connection to %s", self.interface)
+            try:
+                self.app.vna.disconnect()
+            except IOError as exc:
+                logger.error("Unable to disconnect from VNA: %s", exc)
+
             self.interface.close()
             self.btn_toggle.setText("Connect to device")
             self.btn_toggle.repaint()

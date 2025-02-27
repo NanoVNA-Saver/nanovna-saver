@@ -18,15 +18,12 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import contextlib
 import logging
-import sys
 import threading
 from time import localtime, strftime
 
-from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtCore import QObject
-from PyQt6.QtWidgets import QWidget
-
-from NanoVNASaver import Defaults
+from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6.QtCore import QObject
+from PySide6.QtWidgets import QWidget
 
 from .About import VERSION
 from .Calibration import Calibration
@@ -57,6 +54,7 @@ from .Charts.Chart import Chart
 from .Controls.MarkerControl import MarkerControl
 from .Controls.SerialControl import SerialControl
 from .Controls.SweepControl import SweepControl
+from .Defaults import APP_SETTINGS, AppSettings, get_app_config
 from .Formatting import format_frequency, format_gain, format_vswr
 from .Hardware.Hardware import Interface
 from .Hardware.VNA import VNA
@@ -77,12 +75,15 @@ from .Windows import (
     SweepSettingsWindow,
     TDRWindow,
 )
+from .Windows.ui import get_window_icon
 
 logger = logging.getLogger(__name__)
 
+WORKING_KILL_TIME_MS = 10 * 1000
+
 
 class Communicate(QObject):
-    data_available = QtCore.pyqtSignal()
+    data_available = QtCore.Signal()
 
 
 class NanoVNASaver(QWidget):
@@ -93,22 +94,10 @@ class NanoVNASaver(QWidget):
         super().__init__()
         self.communicate = Communicate()
         self.s21att = 0.0
-        if getattr(sys, "frozen", False):
-            logger.debug("Running from pyinstaller bundle")
-            self.icon = QtGui.QIcon(
-                f"{sys._MEIPASS}/icon_48x48.png"
-            )  # pylint: disable=no-member
-        else:
-            self.icon = QtGui.QIcon("icon_48x48.png")
-        self.setWindowIcon(self.icon)
-        self.settings = Defaults.AppSettings(
-            QtCore.QSettings.Format.IniFormat,
-            QtCore.QSettings.Scope.UserScope,
-            "NanoVNASaver",
-            "NanoVNASaver",
-        )
-        logger.info("Settings from: %s", self.settings.fileName())
-        Defaults.cfg = Defaults.restore(self.settings)
+        self.setWindowIcon(get_window_icon())
+        # TODO APP_SETTINGS should be used instead app.setting\
+        self.settings: AppSettings = APP_SETTINGS
+        app_config = self.settings.restore_config()
         self.threadpool = QtCore.QThreadPool()
         self.sweep = Sweep()
         self.worker = SweepWorker(self)
@@ -117,7 +106,7 @@ class NanoVNASaver(QWidget):
         self.worker.signals.finished.connect(self.sweepFinished)
         self.worker.signals.sweep_error.connect(self.showSweepError)
 
-        self.markers = []
+        self.markers: list[Marker] = []
         self.marker_ref = False
 
         self.marker_column = QtWidgets.QVBoxLayout()
@@ -126,8 +115,9 @@ class NanoVNASaver(QWidget):
         self.marker_frame.setLayout(self.marker_column)
 
         self.interface = Interface("serial", "None")
-        self.vna: type[VNA] = VNA(self.interface)
+        self.vna: VNA = VNA(self.interface)
 
+        self.calibration: Calibration = Calibration()
         self.sweep_control = SweepControl(self)
         self.marker_control = MarkerControl(self)
         self.serial_control = SerialControl(self)
@@ -135,16 +125,14 @@ class NanoVNASaver(QWidget):
             self.sweep_control.update_sweep_btn
         )
 
-        self.bands = BandsModel()
+        self.bands: BandsModel = BandsModel()
 
         self.dataLock = threading.Lock()
-        self.data = Touchstone()
-        self.ref_data = Touchstone()
+        self.data: Touchstone = Touchstone()
+        self.ref_data: Touchstone = Touchstone()
 
         self.sweepSource = ""
         self.referenceSource = ""
-
-        self.calibration = Calibration()
 
         logger.debug("Building user interface")
 
@@ -159,9 +147,7 @@ class NanoVNASaver(QWidget):
         outer.addWidget(scrollarea)
         self.setLayout(outer)
         scrollarea.setWidgetResizable(True)
-        self.resize(
-            Defaults.cfg.gui.window_width, Defaults.cfg.gui.window_height
-        )
+        self.resize(app_config.gui.window_width, app_config.gui.window_height)
         scrollarea.setSizePolicy(
             QtWidgets.QSizePolicy.Policy.MinimumExpanding,
             QtWidgets.QSizePolicy.Policy.MinimumExpanding,
@@ -217,7 +203,7 @@ class NanoVNASaver(QWidget):
                 "log_mag": CombinedLogMagChart("S11 & S21 LogMag"),
             },
         }
-        self.tdr_chart = TDRChart("TDR")
+        self.tdr_chart: TDRChart = TDRChart("TDR")
         self.tdr_mainwindow_chart = TDRChart("TDR")
 
         # List of all the S11 charts, for selecting
@@ -258,14 +244,14 @@ class NanoVNASaver(QWidget):
         left_column = QtWidgets.QVBoxLayout()
         right_column = QtWidgets.QVBoxLayout()
         right_column.addLayout(self.charts_layout)
-        self.marker_frame.setHidden(Defaults.cfg.gui.markers_hidden)
+        self.marker_frame.setHidden(app_config.gui.markers_hidden)
         chart_widget = QWidget()
         chart_widget.setLayout(right_column)
         self.splitter = QtWidgets.QSplitter()
         self.splitter.addWidget(self.marker_frame)
         self.splitter.addWidget(chart_widget)
 
-        self.splitter.restoreState(Defaults.cfg.gui.splitter_sizes)
+        self.splitter.restoreState(app_config.gui.splitter_sizes)
 
         layout.addLayout(left_column)
         layout.addWidget(self.splitter, 2)
@@ -274,9 +260,9 @@ class NanoVNASaver(QWidget):
         #  Windows
         ###############################################################
 
-        self.windows = {
+        self.windows: dict[str, QtWidgets.QDialog] = {
             "about": AboutWindow(self),
-            # "analysis": AnalysisWindow(self),
+            "analysis": AnalysisWindow(self),
             "calibration": CalibrationWindow(self),
             "device_settings": DeviceSettingsWindow(self),
             "file": FilesWindow(self),
@@ -355,7 +341,6 @@ class NanoVNASaver(QWidget):
 
         # self.marker_column.addStretch(1)
 
-        self.windows["analysis"] = AnalysisWindow(self)
         btn_show_analysis = QtWidgets.QPushButton("Analysis ...")
         btn_show_analysis.setMinimumHeight(20)
         btn_show_analysis.clicked.connect(
@@ -487,8 +472,6 @@ class NanoVNASaver(QWidget):
         # Run the device data update
         if not self.vna.connected():
             return
-        self.worker.stopped = False
-
         self._sweep_control(start=True)
 
         for m in self.markers:
@@ -499,13 +482,11 @@ class NanoVNASaver(QWidget):
         self.s21_max_gain_label.setText("")
         self.tdr_result_label.setText("")
 
-        self.settings.setValue("Segments", self.sweep_control.get_segments())
-
         logger.debug("Starting worker thread")
-        self.threadpool.start(self.worker)
-
-    def sweep_stop(self):
-        self.worker.stopped = True
+        self.worker.start()
+        # TODO: Rewrite to make worker a qrunnable with worker signals
+        # https://www.pythonguis.com/tutorials/multithreading-pyqt6-applications-qthreadpool/
+        # self.threadpool.start(self.worker)
 
     def saveData(self, data, data21, source=None):
         with self.dataLock:
@@ -539,7 +520,7 @@ class NanoVNASaver(QWidget):
                 else:
                     logger.warning("No reference data for marker")
 
-            elif Marker.count() >= 2:  # noqa: PLR2004
+            elif Marker.count() >= 2:
                 m2 = self.markers[1]
 
             if m2 is None:
@@ -675,6 +656,7 @@ class NanoVNASaver(QWidget):
         new_chart.isPopout = True
         new_chart.show()
         new_chart.setWindowTitle(new_chart.name)
+        new_chart.setWindowIcon(get_window_icon())
 
     def copyChart(self, chart: Chart):
         new_chart = chart.copy()
@@ -689,21 +671,28 @@ class NanoVNASaver(QWidget):
         return new_chart
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
-        self.worker.stopped = True
+        self.worker.quit()
+        self.worker.wait(WORKING_KILL_TIME_MS)
         for marker in self.markers:
             marker.update_settings()
         self.settings.sync()
         self.bands.saveSettings()
         self.threadpool.waitForDone(2500)
 
-        Defaults.cfg.chart.marker_count = Marker.count()
-        Defaults.cfg.gui.window_width = self.width()
-        Defaults.cfg.gui.window_height = self.height()
-        Defaults.cfg.gui.splitter_sizes = self.splitter.saveState()
-        Defaults.store(self.settings, Defaults.cfg)
+        app_config = get_app_config()
+        app_config.chart.marker_count = Marker.count()
+        app_config.gui.window_width = self.width()
+        app_config.gui.window_height = self.height()
+        app_config.gui.splitter_sizes = self.splitter.saveState()
+
+        self.sweep_control.store_settings()
+
+        self.settings.store_config()
+
+        # Dosconnect connected devices and release serial port
+        self.serial_control.disconnect_device()
 
         a0.accept()
-        sys.exit()
 
     def changeFont(self, font: QtGui.QFont) -> None:
         qf_new = QtGui.QFontMetricsF(font)

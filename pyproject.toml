@@ -4,7 +4,10 @@ description='GUI for the NanoVNA and derivates'
 authors = [
     { name = "Rune B. Broberg", email = "NanoVNA-Saver@users.noreply.github.com" }
 ]
-requires-python = ">=3.10"
+maintainers = [
+    { name = "Holger Mueller", email = "zarath@gmx.de" }
+]
+requires-python = ">=3.10,<3.13"
 license = {text = "GPL-3.0-or-later"}
 readme = "README.rst"
 
@@ -14,7 +17,6 @@ classifiers =[
   'Intended Audience :: Science/Research',
   'Intended Audience :: Science/Research',
   'Intended Audience :: Telecommunications Industry',
-  'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
   'Programming Language :: Python :: 3.10',
   'Programming Language :: Python :: 3.11',
   'Programming Language :: Python :: 3.12',
@@ -25,25 +27,25 @@ dynamic=['version']
 
 dependencies=[
   'pyserial~=3.5',
-  'PyQt6~=6.8',
-  'PyQt6-sip~=13.8',
+  'pyside6~=6.8',
   'numpy~=2.1',
   'scipy~=1.14',
 ]
 
-
 [dependency-groups]
 dev = [
   # Static Code Analysis tools
-  "black~=24.10",
-  "flake8~=7.1",
+  "ruff~=0.9",
+  "pre-commit~=4.1",
+  "mypy~=1.14",
   "pylint~=3.3",
+  "types-pyserial~=3.5",
 
   # Testing
   "pytest~=8.3",
   "pytest-cov~=6.0",
   "tox~=4.23",
-  "tox-uv~=1.17", 
+  "tox-uv~=1.17",
 
   # Build helpers
   "setuptools-scm>=8",
@@ -51,14 +53,10 @@ dev = [
   "pyinstaller~=6.11.1",
 ]
 
-
-
 [project.urls]
 homepage = "https://github.com/NanoVNA-Saver/nanovna-saver"
 repository = "https://github.com/NanoVNA-Saver/nanovna-saver"
 Issues = "https://github.com/NanoVNA-Saver/nanovna-saver/issues"
-
-
 
 [project.scripts]
 NanoVNASaver = 'NanoVNASaver.__main__:main'
@@ -66,57 +64,53 @@ NanoVNASaver = 'NanoVNASaver.__main__:main'
 [project.gui-scripts]
 NanoVNASaver-gui = 'NanoVNASaver.__main__:main'
 
-
-
 [build-system]
 requires = [
   "setuptools>=64",
   "setuptools-scm>=8"
 ]
-build-backend = 'setuptools.build_meta'
+# build-backend = 'setuptools.build_meta'
+# in-tree build backend, wrapper around setuptools, just to run ui-compile task
+# See also https://setuptools.pypa.io/en/latest/build_meta.html#dynamic-build-dependencies-and-other-build-meta-tweaks
+build-backend = "setuptools_wrapper"
+backend-path = ["src/tools"]
 
-
+[tool.setuptools.exclude-package-data]
+"*" = ['*.png', '*.ui', '*.qrc' ]
 
 [tool.setuptools.packages.find]
 # See https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html for more details
 where = ["src"]
-
-
 
 [tool.setuptools_scm]
 # For smarter version schemes and other configuration options,
 # check out https://github.com/pypa/setuptools_scm
 root='.'
 version_scheme = 'no-guess-dev'
-write_to = 'src/NanoVNASaver/_version.py'
-
-
 
 [tool.taskipy.tasks]
 test = "pytest ."
 test-cov = "pytest --cov=src ."
 test-full = "tox"
+# TODO enable task lint-mypy when related issues are solved
+#lint = "task lint-format || task lint-mypy"
+lint = "task lint-format"
+lint-format = "pre-commit run --all-files || pre-commit run --all-files"
+lint-mypy = "mypy --non-interactive --install-types ."
 
-clean = "task clean_dist & task clean_build & task clean_py & task clean_logs & task clean_pycache"
-clean_dist = "rm -r dist"
-clean_build = "rm -r build"
-clean_py = "python -Bc \"import pathlib; [p.unlink() for p in pathlib.Path('.').rglob('*.py[co]')]\""
-clean_logs = "python -Bc \"import pathlib; [p.unlink() for p in pathlib.Path('.').rglob('*.log')]\""
-clean_pycache = " python -Bc \"import pathlib; [p.rmdir() for p in pathlib.Path('.').rglob('__pycache__')]\""
+clean = "python -m tools.project_clean"
 
-build-pkg-win   = "pyinstaller --onefile -p src -n nanovna-saver.exe nanovna-saver.py --noconsole -i icon_48x48.ico --add-data \"icon_48x48.png:.\""
-build-pkg-linux = "pyinstaller --onefile -p src -n nanovna-saver     nanovna-saver.py --add-data \"icon_48x48.png:.\""
-build-pkg-macos = "pyinstaller --onedir  -p src -n NanoVNASaver      nanovna-saver.py --window --clean  -y -i icon_48x48.icns --add-data \"icon_48x48.png:.\"  && tar -C dist -zcf ./dist/NanoVNASaver.app-`uname -m`.tar.gz  NanoVNASaver.app"
+ui-compile = "python -m tools.ui_compile"
+ui-designer = "pyside6-designer"
 
-
+build-pkg-win   = "pyinstaller --onefile -p src -n nanovna-saver.exe src/NanoVNASaver/__main__.py --recursive-copy-metadata NanoVNASaver --noconsole -i NanoVNASaver_48x48.ico"
+build-pkg-linux = "pyinstaller --onefile -p src -n nanovna-saver     src/NanoVNASaver/__main__.py --recursive-copy-metadata NanoVNASaver"
+build-pkg-macos = "pyinstaller --onedir  -p src -n NanoVNASaver      src/NanoVNASaver/__main__.py --recursive-copy-metadata NanoVNASaver --window --clean  -y -i NanoVNASaver_48x48.icns  && tar -C dist -zcf ./dist/NanoVNASaver.app-`uname -m`.tar.gz  NanoVNASaver.app"
 
 [tool.pytest.ini_options]
 pythonpath = [
   '.', 'src',
 ]
-
-[tool.black]
-line-length = 80
 
 [tool.ruff]
 line-length = 80
@@ -124,8 +118,14 @@ target-version = 'py311'
 fix = true
 show-fixes = true
 unsafe-fixes = false
+# TODO use https://docs.astral.sh/ruff/configuration/#config-file-discovery for test and UI generated files
+extend-exclude = [
+  "**/ui/*.py",
+  "src/tools/setuptools_wrapper.py"
+]
 
 [tool.ruff.lint]
+# https://docs.astral.sh/ruff/rules
 select = [
     'E', 'W',   # pycodestyle (E(rror), W(arning))
     'F',        # Pyflakes
@@ -133,14 +133,35 @@ select = [
     'I',        # isort
     'N',        # pep8-naming
     'PL',       # pylint
-    'C90',      # mccabe
-    'RUF100',   # unused suppresions
+    'C',        # mccabe
+    'RUF',      # Ruff
 ]
 ignore = [
-  'N802',
-  'N806',
-  'N999',
+    'PLR2004',
+    'N802',
+    'N806',
+    'N813',
+    # TODO fix module naming
+    'N999',
+    # TODO fix classes naming
+    'N801',
+    # TODO review related code
+    'C901',
+    'PLR0915',
+    'PLR0911',
+    'PLR0912'
 ]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10
+
+[tool.mypy]
+follow_imports = "skip"
+ignore_missing_imports = true
+files = "src/NanoVNASaver"  # directory mypy should analyze
+# Directories to exclude from mypy's analysis
+exclude = [
+#     "src/NanoVNASaver/somedir",
+#     "src/NanoVNASaver/somefile\\.py",
+  "docs",
+]

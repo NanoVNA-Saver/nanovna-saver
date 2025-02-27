@@ -90,13 +90,14 @@ master_doc = "index"
 project = "nanovna-saver"
 copyright = "2023, Holger Mueller"
 
+
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
 # version: The short X.Y version.
 # release: The full version, including alpha/beta/rc tags.
-# If you don’t need the separation provided between version and release,
+# If you don't need the separation provided between version and release,
 # just set them both to the same value.
 try:
     from NanoVNASaver import __version__ as version

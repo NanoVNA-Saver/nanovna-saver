@@ -20,10 +20,10 @@ import logging
 from time import sleep
 from typing import Iterator
 
-from PyQt6 import QtGui
+from PySide6 import QtGui
 
-from NanoVNASaver.Hardware.Serial import Interface, drain_serial
-from NanoVNASaver.Version import Version
+from ..utils import Version
+from .Serial import Interface, drain_serial
 
 logger = logging.getLogger(__name__)
 
@@ -53,28 +53,30 @@ def _max_retries(bandwidth: int, datapoints: int) -> int:
 
 class VNA:
     name = "VNA"
-    valid_datapoints = (101, 51, 11)
+    valid_datapoints: tuple[int, ...] = (101, 51, 11)
     wait = 0.05
     SN = "NOT SUPPORTED"
     hardware_revision = "NOT SUPPORTED"
     sweep_points_max = 101
     sweep_points_min = 11
 
+    # Must be initilized in child classes
+    sweep_max_freq_hz = 0.0
+
     def __init__(self, iface: Interface):
         self.serial = iface
-        self.version = Version("0.0.0")
-        self.features = set()
+        self.version = Version.parse("0.0.0")
+        self.features: set[str] = set()
         self.validateInput = False
         self.datapoints = self.valid_datapoints[0]
         self.bandwidth = 1000
         self.bw_method = "ttrftech"
-        self.sweep_max_freq_Hz = None
-        # [((min_freq, max_freq), [description]]. Order by increasing
+        # [((min_freq, max_freq), [description])]. Order by increasing
         # frequency. Put default output power first.
-        self.txPowerRanges = []
+        self.txPowerRanges: list[tuple[tuple[float, float], list[str]]] = []
         if self.connected():
-            self.version = self.readVersion()
-            self.read_features()
+            self.version = self.read_fw_version()
+            self.init_features()
             logger.debug("Features: %s", self.features)
             #  cannot read current bandwidth, so set to highest
             #  to get initial sweep fast
@@ -107,8 +109,7 @@ class VNA:
             max_retries = _max_retries(self.bandwidth, self.datapoints)
             logger.debug("Max retries: %s", max_retries)
             while True:
-                line = self.serial.readline()
-                line = line.decode("ascii").strip()
+                line = self.serial.readline().decode("ascii").strip()
                 if not line:
                     retries += 1
                     if retries > max_retries:
@@ -122,7 +123,7 @@ class VNA:
                     break
                 yield line
 
-    def read_features(self):
+    def init_features(self) -> None:
         result = " ".join(self.exec_command("help")).split()
         logger.debug("result:\n%s", result)
         if "capture" in result:
@@ -132,8 +133,8 @@ class VNA:
             self.SN = self.getSerialNumber()
         if "bandwidth" in result:
             self.features.add("Bandwidth")
-            result = " ".join(list(self.exec_command("bandwidth")))
-            if "Hz)" in result:
+            bwresult = " ".join(list(self.exec_command("bandwidth")))
+            if "Hz)" in bwresult:
                 self.bw_method = "dislord"
         if len(self.valid_datapoints) > 1:
             self.features.add("Customizable data points")
@@ -177,7 +178,7 @@ class VNA:
     def connected(self) -> bool:
         return self.serial.is_open
 
-    def getFeatures(self) -> set[str]:
+    def get_features(self) -> set[str]:
         return self.features
 
     def getCalibration(self) -> str:
@@ -209,10 +210,10 @@ class VNA:
         logger.debug("VNA done reading %s (%d values)", value, len(result))
         return result
 
-    def readVersion(self) -> "Version":
+    def read_fw_version(self) -> Version:
         result = list(self.exec_command("version"))
-        logger.debug("result:\n%s", result)
-        return Version(result[0])
+        logger.debug("Firmware Version:\n%s", result)
+        return Version.parse(result[0])
 
     def setSweep(self, start, stop):
         list(self.exec_command(f"sweep {start} {stop} {self.datapoints}"))

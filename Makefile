@@ -57,4 +57,3 @@ debinstall: deb
 .PHONY: debuninstall
 debuninstall:
 	sudo apt purge nanovnasaver
-

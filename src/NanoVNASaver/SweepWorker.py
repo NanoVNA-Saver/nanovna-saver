@@ -17,20 +17,19 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-from enum import Enum
 from time import sleep
 from typing import TYPE_CHECKING
 
 import numpy as np
-from PyQt6.QtCore import QObject, QRunnable, pyqtSignal, pyqtSlot
+from PySide6.QtCore import QObject, QThread, Signal, Slot
 
-from NanoVNASaver.Calibration import correct_delay
-from NanoVNASaver.RFTools import Datapoint
-from NanoVNASaver.Settings.Sweep import Sweep, SweepMode
+from .Calibration import correct_delay
+from .Hardware.VNA import VNA
+from .RFTools import Datapoint
+from .Settings.Sweep import Sweep, SweepMode
 
 if TYPE_CHECKING:
-    from NanoVNASaver.Hardware.VNA import VNA
-    from NanoVNASaver.NanoVNASaver import NanoVNASaver as NanoVNA
+    from .NanoVNASaver.NanoVNASaver import NanoVNASaver as vna_app
 
 logger = logging.getLogger(__name__)
 
@@ -48,48 +47,49 @@ def truncate(values: list[list[complex]], count: int) -> list[list[complex]]:
         return values
     truncated = []
     for valueset in np.swapaxes(values, 0, 1).tolist():
-        avg = np.average(valueset)
-        truncated.append(
-            sorted(valueset, key=lambda v, a=avg: abs(a - v))[:keep]
-        )
+        avg = complex(np.average(valueset))
+
+        def cmp_fn(v: complex, avg=avg) -> float:
+            return float(abs(avg - v))
+
+        truncated.append(sorted(valueset, key=cmp_fn)[:keep])
     return np.swapaxes(truncated, 0, 1).tolist()
 
 
 class WorkerSignals(QObject):
-    updated = pyqtSignal()
-    finished = pyqtSignal()
-    sweep_error = pyqtSignal()
+    updated = Signal()
+    finished = Signal()
+    sweep_error = Signal()
 
 
-class SweepState(Enum):
-    STOPPED = 0
-    RUNNING = 1
-
-
-class SweepWorker(QRunnable):
-    def __init__(self, app: "NanoVNA") -> None:
+class SweepWorker(QThread):
+    def __init__(self, app: "vna_app") -> None:
         super().__init__()
         logger.info("Initializing SweepWorker")
         self.signals: WorkerSignals = WorkerSignals()
-        self.app: NanoVNA = app
+        self.app = app
         self.sweep = Sweep()
-        self.setAutoDelete(False)
         self.percentage: float = 0.0
         self.data11: list[Datapoint] = []
         self.data21: list[Datapoint] = []
         self.rawData11: list[Datapoint] = []
         self.rawData21: list[Datapoint] = []
         self.init_data()
-        self.state: "SweepState" = SweepState.STOPPED
         self.error_message: str = ""
         self.offsetDelay: float = 0.0
+        self._terminate: bool = False
 
-    @pyqtSlot()
+    @Slot()
+    def quit(self) -> None:
+        logger.debug("Worker quit request")
+        self._terminate = True
+
+    @Slot()
     def run(self) -> None:
+        self._terminate = False
         try:
             self._run()
         except BaseException as exc:  # pylint: disable=broad-except
-            self.state = SweepState.STOPPED
             logger.exception("%s", exc)
             self.gui_error(f"ERROR during sweep\n\nStopped\n\n{exc}")
             if logger.isEnabledFor(logging.DEBUG):
@@ -103,7 +103,6 @@ class SweepWorker(QRunnable):
             )
             return
 
-        self.state = SweepState.RUNNING
         self.percentage = 0.0
 
         sweep = self.app.sweep.copy()
@@ -125,7 +124,6 @@ class SweepWorker(QRunnable):
         self.percentage = 100.0
         logger.debug('Sending "finished" signal')
         self.signals.finished.emit()
-        self.state = SweepState.STOPPED
 
     def _run_loop(self) -> None:
         sweep = self.sweep
@@ -139,7 +137,7 @@ class SweepWorker(QRunnable):
         while True:
             for i in range(sweep.segments):
                 logger.debug("Sweep segment no %d", i)
-                if self.state == SweepState.STOPPED:
+                if self._terminate:
                     logger.debug("Stopping sweeping as signalled")
                     break
                 start, stop = sweep.get_index_range(i)
@@ -149,17 +147,14 @@ class SweepWorker(QRunnable):
                 )
                 self.percentage = (i + 1) * 100 / sweep.segments
                 self.update_data(freq, values11, values21, i)
-            if (
-                sweep.properties.mode != SweepMode.CONTINOUS
-                or self.state == SweepState.STOPPED
-            ):
+            if sweep.properties.mode != SweepMode.CONTINOUS or self._terminate:
                 break
 
     def init_data(self) -> None:
-        self.data11: list[Datapoint] = []
-        self.data21: list[Datapoint] = []
-        self.rawData11: list[Datapoint] = []
-        self.rawData21: list[Datapoint] = []
+        self.data11 = []
+        self.data21 = []
+        self.rawData11 = []
+        self.rawData21 = []
         for freq in self.sweep.get_frequencies():
             self.data11.append(Datapoint(freq, 0.0, 0.0))
             self.data21.append(Datapoint(freq, 0.0, 0.0))
@@ -246,11 +241,11 @@ class SweepWorker(QRunnable):
         )
 
         freq: list[int] = []
-        values11: list[complex] = []
-        values21: list[complex] = []
+        values11: list[list[complex]] = []
+        values21: list[list[complex]] = []
 
         for i in range(averages):
-            if self.state == SweepState.STOPPED:
+            if self._terminate:
                 logger.debug("Stopping averaging as signalled.")
                 if averages == 1:
                     break
@@ -268,7 +263,7 @@ class SweepWorker(QRunnable):
                 freq, tmp_11, tmp_21 = self.read_segment(start, stop)
 
             if not tmp_11:
-                raise IOError("Invalid data during swwep")
+                raise IOError("Invalid data during sweep")
 
             values11.append(tmp_11)
             values21.append(tmp_21)
@@ -276,7 +271,7 @@ class SweepWorker(QRunnable):
             self.signals.updated.emit()
 
         if not values11:
-            raise IOError("Invalid data during swwep")
+            raise IOError("Invalid data during sweep")
 
         truncates = self.sweep.properties.averages[1]
         if truncates > 0 and averages > 1:
@@ -284,10 +279,12 @@ class SweepWorker(QRunnable):
             values11 = truncate(values11, truncates)
             values21 = truncate(values21, truncates)
 
-        logger.debug("Averaging %d values", len(values11))
-        values11: list[complex] = np.average(values11, axis=0).tolist()
-        values21: list[complex] = np.average(values21, axis=0).tolist()
-        return freq, values11, values21
+        logger.debug("Averaging %d values", len(values11[0]))
+        return (
+            freq,
+            np.average(values11, axis=0).tolist(),
+            np.average(values21, axis=0).tolist(),
+        )
 
     def read_segment(
         self, start: int, stop: int
@@ -344,5 +341,4 @@ class SweepWorker(QRunnable):
 
     def gui_error(self, message: str) -> None:
         self.error_message = message
-        self.state = SweepState.STOPPED
         self.signals.sweep_error.emit()
