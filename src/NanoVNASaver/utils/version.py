@@ -34,24 +34,39 @@ _RXP = re.compile(
 )
 
 
-class _Version(typing.NamedTuple):
+class Version(typing.NamedTuple):
+    """Represents four components version: MAJOR.MAIN.REV-NOTE
+    Plrease note:
+      - `-NOTE` part is optional
+      - please use #parse() or #build() hepler methods to prepare right version
+    """
+
     major: int
     minor: int
     revision: int
     note: str
 
+    @staticmethod
+    def parse(vstring: str = "0.0.0") -> "Version":
+        if (match := _RXP.search(vstring)) is None:
+            logger.error("Unable to parse version: %s", vstring)
+            return Version(0, 0, 0, "")
+
+        return Version(
+            int(match.group("major")),
+            int(match.group("minor")),
+            int(match.group("revision") or "0"),
+            match.group("note"),
+        )
+
+    @staticmethod
+    def build(
+        major: int, minor: int, revision: int = 0, note: str = ""
+    ) -> "Version":
+        return Version(major, minor, revision, note)
+
     def __str__(self) -> str:
-        return f"{self.major}.{self.minor}" f".{self.revision}{self.note}"
+        return f"{self.major}.{self.minor}.{self.revision}{self.note}"
 
-
-def Version(vstring: str = "0.0.0") -> "_Version":
-    if (match := _RXP.search(vstring)) is None:
-        logger.error("Unable to parse version: %s", vstring)
-        return _Version(0, 0, 0, "")
-
-    return _Version(
-        int(match.group("major")),
-        int(match.group("minor")),
-        int(match.group("revision") or "0"),
-        match.group("note"),
-    )
+    def __repr__(self) -> str:
+        return f"{self.major}.{self.minor}.{self.revision}{self.note}"

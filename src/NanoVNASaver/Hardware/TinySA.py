@@ -17,15 +17,14 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-import struct
 
-import numpy as np
 import serial
-from PyQt6.QtGui import QImage, QPixmap
+from PySide6.QtGui import QPixmap
 
-from NanoVNASaver.Hardware.Serial import Interface, drain_serial
-from NanoVNASaver.Hardware.VNA import VNA
-from NanoVNASaver.Version import Version
+from ..utils import Version
+from .Convert import get_argb32_pixmap
+from .Serial import Interface, drain_serial
+from .VNA import VNA
 
 logger = logging.getLogger(__name__)
 
@@ -34,15 +33,15 @@ class TinySA(VNA):
     name = "tinySA"
     screenwidth = 320
     screenheight = 240
-    valid_datapoints = (290,)
+    valid_datapoints: tuple[int, ...] = (290,)
 
     def __init__(self, iface: Interface):
         super().__init__(iface)
         self.features = {"Screenshots"}
         logger.debug("Setting initial start,stop")
         self.start, self.stop = self._get_running_frequencies()
-        self.sweep_max_freq_Hz = 950e6
-        self._sweepdata = []
+        self.sweep_max_freq_hz = 950e6
+        self._sweepdata: list[complex] = []
         self.validateInput = False
 
     def _get_running_frequencies(self):
@@ -70,32 +69,15 @@ class TinySA(VNA):
         self.serial.timeout = timeout
         return image_data
 
-    def _convert_data(self, image_data: bytes) -> bytes:
-        rgb_data = struct.unpack(
-            f">{self.screenwidth * self.screenheight}H", image_data
-        )
-        rgb_array = np.array(rgb_data, dtype=np.uint32)
-        return (
-            0xFF000000
-            + ((rgb_array & 0xF800) << 8)
-            + ((rgb_array & 0x07E0) << 5)
-            + ((rgb_array & 0x001F) << 3)
-        )
-
     def getScreenshot(self) -> QPixmap:
         logger.debug("Capturing screenshot...")
         if not self.connected():
             return QPixmap()
         try:
-            rgba_array = self._convert_data(self._capture_data())
-            image = QImage(
-                rgba_array,
-                self.screenwidth,
-                self.screenheight,
-                QImage.Format.Format_ARGB32,
-            )
             logger.debug("Captured screenshot")
-            return QPixmap(image)
+            return get_argb32_pixmap(
+                self._capture_data(), self.screenwidth, self.screenheight
+            )
         except serial.SerialException as exc:
             logger.exception("Exception while capturing screenshot: %s", exc)
         return QPixmap()
@@ -128,36 +110,37 @@ class TinySA(VNA):
         return self._sweepdata
 
 
-class TinySA_Ultra(TinySA):  # noqa: N801
+class TinySA_Ultra(TinySA):
     name = "tinySA Ultra"
     screenwidth = 480
     screenheight = 320
-    valid_datapoints = (450, 51, 101, 145, 290)
+    valid_datapoints: tuple[int, ...] = (450, 51, 101, 145, 290)
 
     def __init__(self, iface: Interface):
         super().__init__(iface)
         self.features = {"Screenshots", "Customizable data points"}
         logger.debug("Setting initial start,stop")
         self.start, self.stop = self._get_running_frequencies()
-        self.sweep_max_freq_Hz = 5.4e9
+        self.sweep_max_freq_hz = 5.4e9
         self._sweepdata = []
         self.validateInput = False
         self.version = self.read_firmware_version()
         self.hardware_revision = self.read_hardware_revision()
-        # detect model versions of tinySA Ultra including ZS-405, ZS406 (Ultra+), ZS407 (Ultra+)
-        if self.hardware_revision >= Version("0.5.3"):
+        # detect model versions of tinySA Ultra including ZS-405,
+        # ZS406 (Ultra+), ZS407 (Ultra+)
+        if self.hardware_revision >= Version.parse("0.5.3"):
             self.name = "tinySA Ultra+ ZS-407"
-            self.sweep_max_freq_Hz = 7.3e9
-        elif self.hardware_revision >= Version("0.4.6"):
+            self.sweep_max_freq_hz = 7.3e9
+        elif self.hardware_revision >= Version.parse("0.4.6"):
             self.name = "tinySA Ultra+ ZS-406"
-            self.sweep_max_freq_Hz = 5.4e9
-        elif self.hardware_revision >= Version("0.4.5"):
+            self.sweep_max_freq_hz = 5.4e9
+        elif self.hardware_revision >= Version.parse("0.4.5"):
             self.name = "tinySA Ultra ZS-405"
-            self.sweep_max_freq_Hz = 5.3e9
+            self.sweep_max_freq_hz = 5.3e9
         else:
             # version 0.3.x is for tinySA
             self.name = "tinySA"
-            self.sweep_max_freq_Hz = 0.96e9
+            self.sweep_max_freq_hz = 0.96e9
 
     def read_firmware_version(self) -> "Version":
         """For example, command version in TinySA returns as this
@@ -167,13 +150,13 @@ class TinySA_Ultra(TinySA):  # noqa: N801
         result = list(self.exec_command("version"))
         logger.debug("firmware version result:\n%s", result[0])
         # transform from tinySA4_v1.4-193-g6ff182b to 1.4.193
-        major_minor_version, revision_version, hash = (
+        major_minor_version, revision_version, _ = (
             result[0].split("_v")[1].split("-")
         )
         revision_version = revision_version.split("-")[0]
-        return Version(major_minor_version + "." + revision_version)
+        return Version.parse(major_minor_version + "." + revision_version)
 
-    def read_hardware_revision(self) -> str:
+    def read_hardware_revision(self) -> Version:
         result = list(self.exec_command("version"))
         logger.debug("hardware version result:\n%s", result[1])
-        return Version(result[1])
+        return Version.parse(result[1])

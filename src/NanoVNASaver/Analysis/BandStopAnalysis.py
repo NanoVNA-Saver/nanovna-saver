@@ -18,9 +18,9 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-import NanoVNASaver.AnalyticTools as At
-from NanoVNASaver.Analysis.BandPassAnalysis import BandPassAnalysis
-from NanoVNASaver.Analysis.Base import CUTOFF_VALS
+from .. import AnalyticTools as At
+from .BandPassAnalysis import BandPassAnalysis
+from .Base import CUTOFF_VALS
 
 logger = logging.getLogger(__name__)
 

@@ -19,14 +19,14 @@
 import logging
 import math
 
-from PyQt6 import QtGui, QtWidgets
+from PySide6 import QtGui, QtWidgets
 
-from NanoVNASaver.Charts.Chart import Chart, ChartPosition
-from NanoVNASaver.Charts.Frequency import FrequencyChart
-from NanoVNASaver.Formatting import format_frequency_chart
-from NanoVNASaver.Marker.Widget import Marker
-from NanoVNASaver.RFTools import Datapoint
-from NanoVNASaver.SITools import Format, Value
+from ..Formatting import format_frequency_chart
+from ..Marker.Widget import Marker
+from ..RFTools import Datapoint
+from ..SITools import Format, Value
+from .Chart import Chart, ChartPosition
+from .Frequency import FrequencyChart
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,7 @@ class RealImaginaryChart(FrequencyChart):
         self.y_menu.addAction(self.y_action_automatic)
         self.y_menu.addAction(self.y_action_fixed_span)
 
-    def copy(self):
+    def copy(self) -> "RealImaginaryChart":
         new_chart: RealImaginaryChart = super().copy()
 
         new_chart.maxDisplayReal = self.maxDisplayReal
@@ -216,11 +216,21 @@ class RealImaginaryChart(FrequencyChart):
 
                 # Real part first
                 line_pen.setColor(Chart.color.sweep)
-                self._draw_line(qp, line_pen, (x, y_re), (prev_x, prev_y_re))
+                self._draw_line(
+                    qp,
+                    line_pen,
+                    ChartPosition(x, y_re),
+                    ChartPosition(prev_x, prev_y_re),
+                )
 
                 # Imag part second
                 line_pen.setColor(Chart.color.sweep_secondary)
-                self._draw_line(qp, line_pen, (x, y_im), (prev_x, prev_y_im))
+                self._draw_line(
+                    qp,
+                    line_pen,
+                    ChartPosition(x, y_im),
+                    ChartPosition(prev_x, prev_y_im),
+                )
 
     def _draw_line(
         self, qp, line_pen, p: ChartPosition, prev_p: ChartPosition
@@ -302,19 +312,17 @@ class RealImaginaryChart(FrequencyChart):
         return min_real, max_real, min_imag, max_imag
 
     def imag_scaling_constraints(self, min_imag, max_imag):
-        if max_imag - min_imag < 8:  # noqa: PLR2004
+        if max_imag - min_imag < 8:
             missing = 8 - (max_imag - min_imag)
             max_imag += math.ceil(missing / 2)
             min_imag -= math.floor(missing / 2)
 
-        if 0 > max_imag > -2:  # noqa: PLR2004
+        if 0 > max_imag > -2:
             max_imag = 0
-        if 0 < min_imag < 2:  # noqa: PLR2004
+        if 0 < min_imag < 2:
             min_imag = 0
 
-        if (
-            max_imag - min_imag
-        ) > 8 and min_imag < 0 < max_imag:  # noqa: PLR2004
+        if (max_imag - min_imag) > 8 and min_imag < 0 < max_imag:
             # We should show a "0" line for the reactive part
             span = max_imag - min_imag
             step_size = span / 8
@@ -359,7 +367,7 @@ class RealImaginaryChart(FrequencyChart):
         val1 = self.valueAtPosition(y1)
         val2 = self.valueAtPosition(y2)
 
-        if len(val1) == len(val2) == 2 and val1[0] != val2[0]:  # noqa: PLR2004
+        if len(val1) == len(val2) == 2 and val1[0] != val2[0]:
             self.minDisplayReal = round(min(val1[0], val2[0]), 2)
             self.maxDisplayReal = round(max(val1[0], val2[0]), 2)
             self.minDisplayImag = round(min(val1[1], val2[1]), 2)

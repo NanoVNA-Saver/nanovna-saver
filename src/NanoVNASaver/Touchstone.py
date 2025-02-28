@@ -21,10 +21,11 @@ import io
 import logging
 import math
 from operator import attrgetter
+from typing import Callable, ClassVar, List
 
 from scipy.interpolate import interp1d
 
-from NanoVNASaver.RFTools import Datapoint
+from .RFTools import Datapoint
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +33,7 @@ logger = logging.getLogger(__name__)
 class Options:
     # Fun fact: In Touchstone 1.1 spec all params are optional unordered.
     # Just the line has to start with "#"
-    UNIT_TO_FACTOR = {
+    UNIT_TO_FACTOR: ClassVar[dict[str, int]] = {
         "ghz": 10**9,
         "mhz": 10**6,
         "khz": 10**3,
@@ -65,8 +66,7 @@ class Options:
 
     def __str__(self) -> str:
         return (
-            f"# {self.unit} {self.parameter}"
-            f" {self.format} r {self.resistance}"
+            f"# {self.unit} {self.parameter} {self.format} r {self.resistance}"
         ).upper()
 
     def parse(self, line: str):
@@ -100,10 +100,15 @@ class Touchstone:
 
     def __init__(self, filename: str = ""):
         self.filename = filename
-        self.sdata = [[], [], [], []]  # at max 4 data pairs
-        self.comments = []
+        self.sdata: List[List[Datapoint]] = [
+            [],
+            [],
+            [],
+            [],
+        ]  # at max 4 data pairs
+        self.comments: list[str] = []
         self.opts = Options()
-        self._interp = {}
+        self._interp: dict[str, dict[str, Callable]] = {}
 
     @property
     def s11(self) -> list[Datapoint]:
@@ -222,8 +227,9 @@ class Touchstone:
                 self.comments.append(line)
                 continue
             return line
+        return ""
 
-    def _append_line_data(self, freq: int, data: list):
+    def _append_line_data(self, freq: int, data: list[str]):
         data_list = iter(self.sdata)
         vals = iter(data)
         for v in vals:
@@ -277,8 +283,7 @@ class Touchstone:
                     continue
 
                 # ignore comments at data end
-                data = line.split("!")[0]
-                data = data.split()
+                data = line.split("!")[0].split()
                 freq, data = round(float(data[0]) * self.opts.factor), data[1:]
                 data_len = len(data)
                 if data_len % 2 != 0:

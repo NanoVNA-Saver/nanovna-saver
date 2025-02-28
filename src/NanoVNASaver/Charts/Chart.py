@@ -18,15 +18,15 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 from dataclasses import dataclass, field, replace
-from typing import Any, ClassVar, NamedTuple
+from typing import Any, ClassVar, NamedTuple, Optional
 
-from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QAction, QColor, QColorConstants
+from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QAction, QColor, QColorConstants
 
-from NanoVNASaver import Defaults
-from NanoVNASaver.Marker.Widget import Marker
-from NanoVNASaver.RFTools import Datapoint
+from ..Defaults import get_app_config
+from ..Marker.Widget import Marker
+from ..RFTools import Datapoint
 
 logger = logging.getLogger(__name__)
 
@@ -73,8 +73,10 @@ class ChartDimensions:
 
 @dataclass
 class ChartDragBox:
-    pos: ChartPosition = (-1, -1)
-    pos_start: ChartPosition = (0, 0)
+    pos: ChartPosition = field(default_factory=lambda: ChartPosition(-1, -1))
+    pos_start: ChartPosition = field(
+        default_factory=lambda: ChartPosition(0, 0)
+    )
     state: bool = False
     move_x: int = -1
     move_y: int = -1
@@ -87,13 +89,14 @@ class ChartFlags:
 
 
 class ChartMarker(QtWidgets.QWidget):
-    def __init__(self, qp: QtGui.QPaintDevice):
+    def __init__(self, qp: QtGui.QPainter):
         super().__init__()
         self.qp = qp
 
     def draw(self, x: int, y: int, color: QtGui.QColor, text: str = ""):
-        offset = int(Defaults.cfg.chart.marker_size // 2)
-        if Defaults.cfg.chart.marker_at_tip:
+        app_config = get_app_config()
+        offset = int(app_config.chart.marker_size // 2)
+        if app_config.chart.marker_at_tip:
             y -= offset
         pen = QtGui.QPen(color)
         self.qp.setPen(pen)
@@ -103,19 +106,19 @@ class ChartMarker(QtWidgets.QWidget):
         qpp.lineTo(x + offset, y - offset)
         qpp.lineTo(x, y + offset)
 
-        if Defaults.cfg.chart.marker_filled:
+        if app_config.chart.marker_filled:
             self.qp.fillPath(qpp, color)
         else:
             self.qp.drawPath(qpp)
 
-        if text and Defaults.cfg.chart.marker_label:
+        if text and app_config.chart.marker_label:
             text_width = self.qp.fontMetrics().horizontalAdvance(text)
             self.qp.drawText(x - int(text_width // 2), y - 3 - offset, text)
 
 
 class Chart(QtWidgets.QWidget):
     bands: ClassVar[Any] = None
-    popout_requested: ClassVar[pyqtSignal] = pyqtSignal(object)
+    popout_requested: ClassVar[Signal] = Signal(object)
     color: ClassVar[ChartColors] = ChartColors()
 
     def __init__(self, name) -> None:
@@ -132,7 +135,7 @@ class Chart(QtWidgets.QWidget):
         self.dragbox = ChartDragBox()
         self.flag = ChartFlags()
 
-        self.draggedMarker = None
+        self.draggedMarker: Marker | None = None
 
         self.data: list[Datapoint] = []
         self.reference: list[Datapoint] = []
@@ -168,7 +171,7 @@ class Chart(QtWidgets.QWidget):
         self.markers = markers
 
     def setBands(self, bands) -> None:
-        self.bands = bands
+        Chart.bands = bands
 
     def setLineThickness(self, thickness) -> None:
         self.dim.line = thickness
@@ -179,14 +182,14 @@ class Chart(QtWidgets.QWidget):
         self.update()
 
     def setMarkerSize(self, size) -> None:
-        Defaults.cfg.chart.marker_size = size
+        get_app_config().chart.marker_size = size
         self.update()
 
     def setSweepTitle(self, title) -> None:
         self.sweepTitle = title
         self.update()
 
-    def getActiveMarker(self) -> Marker:
+    def getActiveMarker(self) -> Marker | None:
         if self.draggedMarker is not None:
             return self.draggedMarker
         return next(
@@ -201,7 +204,7 @@ class Chart(QtWidgets.QWidget):
     def getNearestMarker(self, x, y) -> None | Marker:
         if not self.data:
             return None
-        shortest = 10**6
+        shortest = 10.0**6
         nearest = None
         for m in self.markers:
             mx, my = self.getPosition(self.data[m.location])
@@ -222,24 +225,21 @@ class Chart(QtWidgets.QWidget):
         if event.buttons() == Qt.MouseButton.RightButton:
             event.ignore()
             return
+        x = event.position().x()
+        y = event.position().y()
         if event.buttons() == Qt.MouseButton.MiddleButton:
             # Drag event
             event.accept()
-            self.dragbox.move_x = event.position().x()
-            self.dragbox.move_y = event.position().y()
+            self.dragbox.move_x = x
+            self.dragbox.move_y = y
             return
         if event.modifiers() == Qt.KeyboardModifier.ControlModifier:
             event.accept()
             self.dragbox.state = True
-            self.dragbox.pos_start = (
-                event.position().x(),
-                event.position().y(),
-            )
+            self.dragbox.pos_start = ChartPosition(x, y)
             return
         if event.modifiers() == Qt.KeyboardModifier.ShiftModifier:
-            self.draggedMarker = self.getNearestMarker(
-                event.position().x(), event.position().y()
-            )
+            self.draggedMarker = self.getNearestMarker(x, y)
         self.mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, a0: QtGui.QMouseEvent) -> None:
@@ -252,14 +252,16 @@ class Chart(QtWidgets.QWidget):
                 a0.position().y(),
             )
             self.dragbox.state = False
-            self.dragbox.pos = (-1, -1)
-            self.dragbox.pos_start = (0, 0)
+            self.dragbox.pos = ChartPosition(-1, -1)
+            self.dragbox.pos_start = ChartPosition(0, 0)
             self.update()
 
     def wheelEvent(self, a0: QtGui.QWheelEvent) -> None:
         delta = a0.angleDelta().y()
+        logger.debug("wheelEvent %s, %s, %s", delta, self.data, self.reference)
         if not delta or (not self.data and not self.reference):
             a0.ignore()
+            logger.debug("nothing to do, returning")
             return
         modifiers = a0.modifiers()
 
@@ -312,7 +314,6 @@ class Chart(QtWidgets.QWidget):
         new_chart.flag = replace(self.flag)
         new_chart.markers = self.markers
         new_chart.swrMarkers = self.swrMarkers
-        new_chart.bands = self.bands
 
         new_chart.resize(self.width(), self.height())
         new_chart.setPointSize(self.dim.point)
@@ -343,17 +344,27 @@ class Chart(QtWidgets.QWidget):
         cmarker.draw(x, y, color, f"{number}")
 
     def drawTitle(
-        self, qp: QtGui.QPainter, position: QtCore.QPoint = None
+        self, qp: QtGui.QPainter, position: Optional[QtCore.QPoint] = None
     ) -> None:
         qp.setPen(Chart.color.text)
         if position is None:
             qf = QtGui.QFontMetricsF(self.font())
             width = qf.boundingRect(self.sweepTitle).width()
-            position = QtCore.QPointF(self.width() / 2 - width / 2, 15)
+            position = QtCore.QPoint(round(self.width() / 2 - width / 2), 15)
         qp.drawText(position, self.sweepTitle)
 
-    def update(self) -> None:
+    def update(self, a=None, b=None, c=None, d=None) -> None:  # pylint: disable=unused-argument
         pal = self.palette()
         pal.setColor(QtGui.QPalette.ColorRole.Window, Chart.color.background)
         self.setPalette(pal)
         super().update()
+
+    def drawDragbog(self, qp: QtGui.QPainter):
+        dashed_pen = QtGui.QPen(Chart.color.foreground, 1, Qt.PenStyle.DashLine)
+        qp.setPen(dashed_pen)
+        top_left = QtCore.QPoint(
+            self.dragbox.pos_start[0], self.dragbox.pos_start[1]
+        )
+        bottom_right = QtCore.QPoint(self.dragbox.pos[0], self.dragbox.pos[1])
+        rect = QtCore.QRect(top_left, bottom_right)
+        qp.drawRect(rect)

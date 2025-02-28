@@ -18,8 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from NanoVNASaver.RFTools import Datapoint
-
+from ..RFTools import Datapoint
 from .MagnitudeZ import MagnitudeZChart
 
 logger = logging.getLogger(__name__)

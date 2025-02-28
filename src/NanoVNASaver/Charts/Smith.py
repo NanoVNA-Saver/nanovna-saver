@@ -18,10 +18,10 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from PyQt6 import QtCore, QtGui
+from PySide6 import QtCore, QtGui
 
-from NanoVNASaver.Charts.Chart import Chart
-from NanoVNASaver.Charts.Square import SquareChart
+from .Chart import Chart
+from .Square import SquareChart
 
 logger = logging.getLogger(__name__)
 

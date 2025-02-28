@@ -21,9 +21,9 @@ import platform
 from struct import pack, unpack_from
 from time import sleep
 
-from NanoVNASaver.Hardware.Serial import Interface
-from NanoVNASaver.Hardware.VNA import VNA
-from NanoVNASaver.Version import Version
+from ..utils import Version
+from .Serial import Interface
+from .VNA import VNA
 
 if platform.system() != "Windows":
     import tty
@@ -67,9 +67,17 @@ _ADF4350_TXPOWER_DESC_REV_MAP = {
 }
 
 
-class NanoVNA_V2(VNA):  # noqa: N801
+class NanoVNA_V2(VNA):
     name = "NanoVNA-V2"
-    valid_datapoints = (101, 11, 51, 201, 301, 501, 1023)
+    valid_datapoints: tuple[int, ...] = (
+        101,
+        11,
+        51,
+        201,
+        301,
+        501,
+        1023,
+    )
     screenwidth = 320
     screenheight = 240
 
@@ -77,7 +85,7 @@ class NanoVNA_V2(VNA):  # noqa: N801
         super().__init__(iface)
 
         if platform.system() != "Windows":
-            tty.setraw(self.serial.fd)
+            tty.setraw(self.serial.fd or 0)
 
         # reset protocol to known state
         with self.serial.lock:
@@ -85,39 +93,47 @@ class NanoVNA_V2(VNA):  # noqa: N801
             sleep(WRITE_SLEEP)
 
         # firmware major version of 0xff indicates dfu mode
-        if self.version.major == 0xFF:  # noqa: PLR2004
+        if self.version.major == 0xFF:
             raise IOError("Device is in DFU mode")
 
         if "S21 hack" in self.features:
-            self.valid_datapoints = (101, 11, 51, 201, 301, 501, 1021)
+            self.valid_datapoints: tuple[int, ...] = (
+                101,
+                11,
+                51,
+                201,
+                301,
+                501,
+                1021,
+            )
 
         self.sweepStartHz = 200e6
         self.sweepStepHz = 1e6
 
-        self._sweepdata = []
+        self._sweepdata: list[tuple[complex, complex]] = []
         self._updateSweep()
 
     def getCalibration(self) -> str:
         return "Unknown"
 
-    def read_features(self):
+    def init_features(self) -> None:
         self.features.add("Customizable data points")
         # TODO: more than one dp per freq
         self.features.add("Multi data points")
         self.board_revision = self.read_board_revision()
-        if self.board_revision >= Version("2.0.4"):
-            self.sweep_max_freq_Hz = 4400e6
+        if self.board_revision >= Version.parse("2.0.4"):
+            self.sweep_max_freq_hz = 4400e6
         else:
-            self.sweep_max_freq_Hz = 3000e6
-        if self.version <= Version("1.0.1"):
+            self.sweep_max_freq_hz = 3000e6
+        if self.version <= Version.parse("1.0.1"):
             logger.debug("Hack for s21 oddity in first sweeppoint")
             self.features.add("S21 hack")
-        if self.version >= Version("1.0.2"):
+        if self.version >= Version.parse("1.0.2"):
             self.features.update({"Set TX power partial", "Set Average"})
             # Can only set ADF4350 power, i.e. for >= 140MHz
             self.txPowerRanges = [
                 (
-                    (140e6, self.sweep_max_freq_Hz),
+                    (140e6, self.sweep_max_freq_hz),
                     [
                         _ADF4350_TXPOWER_DESC_MAP[value]
                         for value in (3, 2, 1, 0)
@@ -227,7 +243,7 @@ class NanoVNA_V2(VNA):  # noqa: N801
     def resetSweep(self, start: int, stop: int):
         self.setSweep(start, stop)
 
-    def _read_version(self, cmd_0: int, cmd_1: int):
+    def _read_version(self, cmd_0: int, cmd_1: int) -> Version:
         cmd = pack("<BBBB", _CMD_READ, cmd_0, _CMD_READ, cmd_1)
         with self.serial.lock:
             self.serial.write(cmd)
@@ -235,17 +251,17 @@ class NanoVNA_V2(VNA):  # noqa: N801
             sleep(2.0)  # could fix bug #585 but shoud be done
             # in a more predictive way
             resp = self.serial.read(2)
-        if len(resp) != 2:  # noqa: PLR2004
+        if len(resp) != 2:
             logger.error("Timeout reading version registers. Got: %s", resp)
             raise IOError("Timeout reading version registers")
-        return Version(f"{resp[0]}.0.{resp[1]}")
+        return Version.build(resp[0], 0, resp[1])
 
-    def readVersion(self) -> "Version":
+    def read_fw_version(self) -> Version:
         result = self._read_version(_ADDR_FW_MAJOR, _ADDR_FW_MINOR)
-        logger.debug("readVersion: %s", result)
+        logger.debug("Firmware Version: %s", result)
         return result
 
-    def read_board_revision(self) -> "Version":
+    def read_board_revision(self) -> Version:
         result = self._read_version(
             _ADDR_DEVICE_VARIANT, _ADDR_HARDWARE_REVISION
         )
@@ -286,7 +302,7 @@ class NanoVNA_V2(VNA):  # noqa: N801
             sleep(WRITE_SLEEP)
 
     def setTXPower(self, freq_range, power_desc):
-        if freq_range[0] != 140e6:  # noqa: PLR2004
+        if freq_range[0] != 140e6:
             raise ValueError("Invalid TX power frequency range")
         # 140MHz..max => ADF4350
         self._set_register(0x42, _ADF4350_TXPOWER_DESC_REV_MAP[power_desc], 1)
@@ -295,11 +311,11 @@ class NanoVNA_V2(VNA):  # noqa: N801
         packet = b""
         if size == 1:
             packet = pack("<BBB", _CMD_WRITE, addr, value)
-        elif size == 2:  # noqa: PLR2004
+        elif size == 2:
             packet = pack("<BBH", _CMD_WRITE2, addr, value)
-        elif size == 4:  # noqa: PLR2004
+        elif size == 4:
             packet = pack("<BBI", _CMD_WRITE4, addr, value)
-        elif size == 8:  # noqa: PLR2004
+        elif size == 8:
             packet = pack("<BBQ", _CMD_WRITE8, addr, value)
         self.serial.write(packet)
         logger.debug("set register %02x (size %d) to %x", addr, size, value)

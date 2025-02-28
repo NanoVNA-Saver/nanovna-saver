@@ -16,14 +16,17 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+import logging
 import math
+from typing import ClassVar, Optional
 
-from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtGui import QColorConstants
+from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6.QtCore import Signal
+from PySide6.QtGui import QColorConstants
 
-from NanoVNASaver import RFTools
-from NanoVNASaver.Formatting import (
+from .. import RFTools
+from ..Controls.SweepControl import FrequencyInputWidget
+from ..Formatting import (
     format_capacitance,
     format_complex_adm,
     format_complex_imp,
@@ -39,8 +42,9 @@ from NanoVNASaver.Formatting import (
     format_wavelength,
     parse_frequency,
 )
-from NanoVNASaver.Inputs import MarkerFrequencyInputWidget as FrequencyInput
-from NanoVNASaver.Marker.Values import TYPES, Value, default_label_ids
+from .Values import TYPES, Value, default_label_ids
+
+logger = logging.getLogger(__name__)
 
 COLORS = (
     QtGui.QColor(QColorConstants.DarkGray),
@@ -53,6 +57,26 @@ COLORS = (
 )
 
 
+class MarkerFrequencyInputWidget(FrequencyInputWidget):
+    def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
+        logger.debug("keyPressEvent: %s", a0.key())
+        if a0.type() == QtGui.QKeyEvent.Type.KeyPress:
+            if a0.key() == QtCore.Qt.Key.Key_Up and self.nextFrequency != -1:
+                a0.accept()
+                self.setText(str(self.nextFrequency))
+                self.editingFinished.emit()  # self.text())
+                return
+            if (
+                a0.key() == QtCore.Qt.Key.Key_Down
+                and self.previousFrequency != -1
+            ):
+                a0.accept()
+                self.setText(str(self.previousFrequency))
+                self.editingFinished.emit()  # self.text())
+                return
+        super().keyPressEvent(a0)
+
+
 class MarkerLabel(QtWidgets.QLabel):
     def __init__(self, name):
         super().__init__("")
@@ -61,17 +85,19 @@ class MarkerLabel(QtWidgets.QLabel):
 
 class Marker(QtCore.QObject, Value):
     _instances = 0
-    coloredText = True
+    colored_text = True
     location = -1
     returnloss_is_positive = False
-    updated = pyqtSignal(object)
-    active_labels = []
+    updated = Signal(object)
+    active_labels: ClassVar[list[str]] = []
 
     @classmethod
     def count(cls):
         return cls._instances
 
-    def __init__(self, name: str = "", qsettings: QtCore.QSettings = None):
+    def __init__(
+        self, name: str = "", qsettings: Optional[QtCore.QSettings] = None
+    ):
         super().__init__()
         self.qsettings = qsettings
         self.name = name
@@ -81,20 +107,18 @@ class Marker(QtCore.QObject, Value):
         if self.qsettings:
             Marker._instances += 1
             Marker.active_labels = self.qsettings.value(
-                "MarkerFields", defaultValue=default_label_ids()
-            )
+                "MarkerFields", defaultValue=default_label_ids(), type=list
+            )  # type: ignore
             self.index = Marker._instances
 
         if not self.name:
             self.name = f"Marker {Marker._instances}"
 
-        self.frequencyInput = FrequencyInput()
+        self.frequencyInput = MarkerFrequencyInputWidget()
         self.frequencyInput.setMinimumHeight(20)
         self.frequencyInput.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
         self.frequencyInput.editingFinished.connect(
-            lambda: self.setFrequency(
-                parse_frequency(self.frequencyInput.text())
-            )
+            lambda: self.setFrequency(self.frequencyInput.get_freq())
         )
 
         ###############################################################
@@ -138,13 +162,17 @@ class Marker(QtCore.QObject, Value):
         box_layout = QtWidgets.QHBoxLayout(self.group_box)
 
         try:
-            self.setColor(
-                self.qsettings.value(
-                    f"Marker{self.count()}Color", COLORS[self.count()]
+            if self.qsettings:
+                set_val = (
+                    self.qsettings.value(
+                        f"Marker{self.count()}Color",
+                        defaultValue=COLORS[self.count()],
+                    )
+                    or COLORS[1]
                 )
-            )
-        except AttributeError:  # happens when qsettings == None
-            self.setColor(COLORS[1])
+                self.setColor(set_val)
+            else:
+                self.setColor(COLORS[1])
         except IndexError:
             self.setColor(COLORS[0])
 
@@ -182,7 +210,7 @@ class Marker(QtCore.QObject, Value):
         self.label["actualfreq"].setMinimumWidth(int(100 * scale))
         self.label["actualfreq"].setMinimumWidth(int(100 * scale))
         self.label["returnloss"].setMinimumWidth(int(80 * scale))
-        if self.coloredText:
+        if self.colored_text:
             self.group_box.setStyleSheet(
                 f"QGroupBox {{ color: {self.color.name()}; "
                 f"font-size: {self._size_str()}}};"
@@ -231,7 +259,7 @@ class Marker(QtCore.QObject, Value):
             p = self.btnColorPicker.palette()
             p.setColor(QtGui.QPalette.ColorRole.ButtonText, self.color)
             self.btnColorPicker.setPalette(p)
-        if self.coloredText:
+        if self.colored_text:
             self.group_box.setStyleSheet(
                 f"QGroupBox {{ color: {color.name()}; "
                 f"font-size: {self._size_str()}}};"
@@ -242,7 +270,7 @@ class Marker(QtCore.QObject, Value):
             )
 
     def setColoredText(self, colored_text):
-        self.coloredText = colored_text
+        self.colored_text = colored_text
         self.setColor(self.color)
 
     def getRow(self):
@@ -311,7 +339,7 @@ class Marker(QtCore.QObject, Value):
             self.location = 0
             return
 
-        self.frequencyInput.setText(_s11.freq)
+        self.frequencyInput.setText(str(_s11.freq))
         self.store(self.location, s11, s21)
 
         imp = _s11.impedance()
@@ -350,7 +378,7 @@ class Marker(QtCore.QObject, Value):
         self.label["s11mag"].setText(format_magnitude(abs(_s11.z)))
         self.label["s11phase"].setText(format_phase(_s11.phase))
         self.label["s11polar"].setText(
-            f"{str(round(abs(_s11.z), 2))}∠{format_phase(_s11.phase)}"
+            f"{round(abs(_s11.z), 2)!s}∠{format_phase(_s11.phase)}"
         )
 
         self.label["s11q"].setText(format_q_factor(_s11.qFactor()))
@@ -370,7 +398,7 @@ class Marker(QtCore.QObject, Value):
             self.label["s21mag"].setText(format_magnitude(abs(_s21.z)))
             self.label["s21phase"].setText(format_phase(_s21.phase))
             self.label["s21polar"].setText(
-                f"{str(round(abs(_s21.z), 2))}∠{format_phase(_s21.phase)}"
+                f"{round(abs(_s21.z), 2)!s}∠{format_phase(_s21.phase)}"
             )
             self.label["s21magshunt"].setText(
                 format_magnitude(abs(_s21.shuntImpedance()))

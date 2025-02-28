@@ -20,13 +20,13 @@ import logging
 import math
 
 import numpy as np
-from PyQt6 import QtGui, QtWidgets
+from PySide6 import QtGui, QtWidgets
 from scipy.constants import mu_0
 
-from NanoVNASaver.Charts.Chart import Chart
-from NanoVNASaver.Charts.RI import RealImaginaryChart
-from NanoVNASaver.Formatting import format_frequency_chart
-from NanoVNASaver.RFTools import Datapoint
+from ..Formatting import format_frequency_chart
+from ..RFTools import Datapoint
+from .Chart import Chart
+from .RI import RealImaginaryChart
 
 logger = logging.getLogger(__name__)
 
@@ -92,7 +92,7 @@ class RealImaginaryMuChart(RealImaginaryChart):
         self.menu.addAction(self.action_set_core_area)
         self.menu.addAction(self.action_set_core_windings)
 
-    def copy(self):
+    def copy(self) -> "RealImaginaryMuChart":
         new_chart: RealImaginaryMuChart = super().copy()
 
         new_chart.coreLength = self.coreLength

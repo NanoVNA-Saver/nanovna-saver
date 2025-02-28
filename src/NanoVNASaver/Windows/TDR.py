@@ -18,16 +18,67 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 import math
+from typing import TYPE_CHECKING
 
 import numpy as np
 import numpy.typing as npt
-from PyQt6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QShortcut
 from scipy.constants import speed_of_light  # type: ignore
 from scipy.signal import convolve  # type: ignore
 
-from NanoVNASaver.Windows.Defaults import make_scrollable
+from .Defaults import make_scrollable
+from .ui import get_window_icon
+
+if TYPE_CHECKING:
+    from ..NanoVNASaver.NanoVNASaver import NanoVNASaver as vna_app
 
 logger = logging.getLogger(__name__)
+
+
+#
+# Amplitude correction for losses in the IFFT due to windowing and zero-padding
+# when using kaiser window (numpy.kaiser()). From Christian Zietz,
+# https://groups.io/g/nanovna-users/topic/should_the_builtin_tdr_mode/77043091
+#
+def kaiser_correction(lens11, arg):
+    factor = np.sum(np.kaiser(lens11, arg))
+    logger.debug("kaiser correction (%s, %s) factor: %s", lens11, arg, factor)
+    return factor
+
+
+WINDOWING_FUNCTION = (
+    ("Hanning", np.hanning, lambda lens11, arg: lens11 / 2.0, None),
+    # The 1/0.42 is the Amplitude Correction Factor for the Blackman window.
+    # 0.42 is the average amplitude of the window across its range.
+    # ("Blackman", np.blackman, lambda lens11, arg : lens11 / 0.42, None),
+    ("Blackman", np.blackman, lambda lens11, arg: lens11 / (1 / 0.42), None),
+    (
+        "Minimal (Kaiser, \N{GREEK SMALL LETTER BETA}=0)",
+        np.kaiser,
+        kaiser_correction,
+        0,
+    ),
+    (
+        "Normal  (Kaiser, \N{GREEK SMALL LETTER BETA}=6)",
+        np.kaiser,
+        kaiser_correction,
+        6,
+    ),
+    (
+        "Strong  (Kaiser, \N{GREEK SMALL LETTER BETA}=13)",
+        np.kaiser,
+        kaiser_correction,
+        13,
+    ),
+    (
+        "Maximal (Kaiser, \N{GREEK SMALL LETTER BETA}=100)",
+        np.kaiser,
+        kaiser_correction,
+        100,
+    ),
+)
 
 CABLE_PARAMETERS = (
     ("Jelly filled (0.64)", 0.64),
@@ -67,16 +118,13 @@ CABLE_PARAMETERS = (
     ("Davis Bury-FLEX (0.82)", 0.82),
 )
 
-MIN_DATA_LENGHT = 2
-
-# TODO: Let the user select whether to use high or low resolution TDR?
-FFT_POINTS = 2**14
+MIN_DATA_LENGTH = 2
 
 
 class TDRWindow(QtWidgets.QWidget):
-    updated = QtCore.pyqtSignal()
+    updated = QtCore.Signal()
 
-    def __init__(self, app: QtWidgets.QWidget):
+    def __init__(self, app: "vna_app"):
         super().__init__()
         self.app = app
 
@@ -86,14 +134,15 @@ class TDRWindow(QtWidgets.QWidget):
         self.step_response_Z: npt.NDArray[np.float64]
 
         self.setWindowTitle("TDR")
-        self.setWindowIcon(self.app.icon)
+        self.setWindowIcon(get_window_icon())
 
-        QtGui.QShortcut(QtCore.Qt.Key.Key_Escape, self, self.hide)
+        QShortcut(Qt.Key.Key_Escape, self, self.hide)
 
         layout = QtWidgets.QFormLayout()
         make_scrollable(self, layout)
 
         dropdown_layout = QtWidgets.QHBoxLayout()
+        dropdown_layout.addWidget(QtWidgets.QLabel("Velocity factor"), 0)
 
         self.tdr_velocity_dropdown = QtWidgets.QComboBox()
         for cable_name, velocity in CABLE_PARAMETERS:
@@ -105,8 +154,21 @@ class TDRWindow(QtWidgets.QWidget):
         self.tdr_velocity_dropdown.setCurrentIndex(1)  # Default to PE (0.66)
         self.tdr_velocity_dropdown.currentIndexChanged.connect(self.updateTDR)
 
-        dropdown_layout.addWidget(self.tdr_velocity_dropdown)
+        dropdown_layout.addWidget(self.tdr_velocity_dropdown, 1)
 
+        self.tdr_velocity_input = QtWidgets.QLineEdit()
+        self.tdr_velocity_input.setDisabled(True)
+        self.tdr_velocity_input.setText("0.66")
+        self.tdr_velocity_input.textChanged.connect(self.app.dataUpdated)
+        self.tdr_velocity_input.setValidator(
+            QtGui.QDoubleValidator(0.01, 1.0, 2)
+        )
+        dropdown_layout.addWidget(self.tdr_velocity_input, 0)
+        dropdown_layout.addWidget(QtWidgets.QLabel(), 1)
+
+        layout.addRow(dropdown_layout)
+
+        format_window_layout = QtWidgets.QHBoxLayout()
         self.format_dropdown = QtWidgets.QComboBox()
         self.format_dropdown.addItem("|Z| (lowpass)")
         self.format_dropdown.addItem("S11 (lowpass)")
@@ -115,16 +177,31 @@ class TDRWindow(QtWidgets.QWidget):
         self.format_dropdown.addItem("Refl (bandpass)")
 
         self.format_dropdown.currentIndexChanged.connect(self.updateFormat)
+        format_window_layout.addWidget(QtWidgets.QLabel("Format"), 0)
+        format_window_layout.addWidget(self.format_dropdown, 1)
 
-        dropdown_layout.addWidget(self.format_dropdown)
+        self.window_dropdown = QtWidgets.QComboBox()
+        for (
+            method_name,
+            method_call,
+            method_correction,
+            method_arg,
+        ) in WINDOWING_FUNCTION:
+            self.window_dropdown.addItem(
+                method_name,
+                {
+                    "function": method_call,
+                    "arg": method_arg,
+                    "corr": method_correction,
+                },
+            )
+        self.window_dropdown.currentIndexChanged.connect(self.updateTDR)
+        self.window_dropdown.setCurrentIndex(0)
 
-        layout.addRow(dropdown_layout)
-
-        self.tdr_velocity_input = QtWidgets.QLineEdit()
-        self.tdr_velocity_input.setDisabled(True)
-        self.tdr_velocity_input.setText("0.66")
-        self.tdr_velocity_input.textChanged.connect(self.app.dataUpdated)
-        layout.addRow("Velocity factor", self.tdr_velocity_input)
+        format_window_layout.addWidget(QtWidgets.QLabel("Window"), 0)
+        format_window_layout.addWidget(self.window_dropdown, 1)
+        format_window_layout.addWidget(QtWidgets.QLabel(" "), 1)
+        layout.addRow(format_window_layout)
 
         self.tdr_result_label = QtWidgets.QLabel()
         layout.addRow("Estimated cable length:", self.tdr_result_label)
@@ -135,11 +212,8 @@ class TDRWindow(QtWidgets.QWidget):
         self.updateTDR()
 
     def updateTDR(self):
-        if len(self.app.data.s11) < MIN_DATA_LENGHT:
-            return
-
         TDR_format = self.format_dropdown.currentText()
-
+        TDR_window = self.window_dropdown.currentData()
         if self.tdr_velocity_dropdown.currentData() == -1:
             self.tdr_velocity_input.setDisabled(False)
         else:
@@ -151,6 +225,9 @@ class TDRWindow(QtWidgets.QWidget):
         try:
             v = float(self.tdr_velocity_input.text())
         except ValueError:
+            return
+
+        if len(self.app.data.s11) < MIN_DATA_LENGTH:
             return
 
         step_size = self.app.data.s11[1].freq - self.app.data.s11[0].freq
@@ -175,18 +252,33 @@ class TDRWindow(QtWidgets.QWidget):
                 np.concatenate([s11, np.conj(s11[-1:0:-1])])
             )
 
-        self.windowed_s11 = np.blackman(len(s11)) * s11
+        if TDR_window["arg"] is None:
+            self.windowed_s11 = TDR_window["function"](len(s11)) * s11
+        else:
+            self.windowed_s11 = (
+                TDR_window["function"](len(s11), TDR_window["arg"]) * s11
+            )
 
         if "lowpass" in TDR_format:
-            td = self._tdr_lowpass(TDR_format, s11)
+            td = self._tdr_lowpass(TDR_format, s11, TDR_window)
         else:
-            td = np.abs(np.fft.ifft(self.windowed_s11, FFT_POINTS))
+            td = np.abs(
+                np.fft.ifft(
+                    self.windowed_s11, self.app.tdr_chart.get_fft_points()
+                )
+            )
             # Convolving with a step function is unnecessary, we can only get
             # the magnitude of impulse response
             if TDR_format == "Refl (bandpass)":
-                self.step_response_Z = td * FFT_POINTS / len(s11) * 1 / 0.42
+                self.step_response_Z = (
+                    td
+                    * self.app.tdr_chart.get_fft_points()
+                    / TDR_window["corr"](len(s11), TDR_window["arg"])
+                )
 
-        time_axis = np.linspace(0, 1 / step_size, FFT_POINTS)
+        time_axis = np.linspace(
+            0, 1 / step_size, self.app.tdr_chart.get_fft_points()
+        )
         self.distance_axis = time_axis * v * speed_of_light
         # peak = np.max(td)
         # We should check that this is an actual *peak*, and not just
@@ -202,15 +294,17 @@ class TDRWindow(QtWidgets.QWidget):
         self.td = list(td)
         self.updated.emit()
 
-    def _tdr_lowpass(self, tdr_format, s11) -> np.ndarray:
-        pad_points = (FFT_POINTS - len(self.windowed_s11)) // 2
+    def _tdr_lowpass(self, tdr_format, s11, tdr_window) -> np.ndarray:
+        pad_points = (
+            self.app.tdr_chart.get_fft_points() - len(self.windowed_s11)
+        ) // 2
         self.windowed_s11 = np.pad(
             self.windowed_s11, [pad_points + 1, pad_points]
-        )  # Pad array to length FFT_POINTS
+        )  # Pad array to length self.app.tdr_chart.get_fft_points()
         self.windowed_s11 = np.fft.ifftshift(self.windowed_s11)
 
         td = np.fft.ifft(self.windowed_s11)
-        step = np.ones(FFT_POINTS)
+        step = np.ones(self.app.tdr_chart.get_fft_points())
         step_response = convolve(td, step)
         step_response_rev = convolve(td[::-1], step)
 
@@ -233,10 +327,9 @@ class TDRWindow(QtWidgets.QWidget):
             )
             return td
         if tdr_format == "Refl (lowpass)":
-            # The 1/0.42 is the Amplitude Correction Factor for the
-            # Blackman window. 0.42 is the average amplitude of the
-            # window across its range.
             self.step_response_Z = np.real(
-                td * FFT_POINTS / len(s11) * 1 / 0.42
+                td
+                * self.app.tdr_chart.get_fft_points()
+                / tdr_window["corr"](len(s11), tdr_window["arg"])
             )
         return td

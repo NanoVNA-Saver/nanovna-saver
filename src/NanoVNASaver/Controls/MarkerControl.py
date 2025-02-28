@@ -17,32 +17,36 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
+from typing import TYPE_CHECKING
 
-from PyQt6 import QtCore, QtWidgets
-from PyQt6.QtWidgets import QCheckBox, QSizePolicy
+from PySide6 import QtCore, QtWidgets
+from PySide6.QtWidgets import QCheckBox, QSizePolicy
 
-from NanoVNASaver import Defaults
-from NanoVNASaver.Controls.Control import Control
-from NanoVNASaver.Marker.Widget import Marker
+from ..Defaults import get_app_config
+from ..Marker.Widget import Marker
+from .Control import Control
+
+if TYPE_CHECKING:
+    from ..NanoVNASaver.NanoVNASaver import NanoVNASaver as vna_app
 
 logger = logging.getLogger(__name__)
 
 
 class ShowButton(QtWidgets.QPushButton):
     def setText(self, text: str = ""):
+        app_config = get_app_config()
         if not text:
-            text = (
-                "Show data" if Defaults.cfg.gui.markers_hidden else "Hide data"
-            )
+            text = "Show data" if app_config.gui.markers_hidden else "Hide data"
         super().setText(text)
         self.setToolTip("Toggle visibility of marker readings area")
 
 
 class MarkerControl(Control):
-    def __init__(self, app: QtWidgets.QWidget):
+    def __init__(self, app: "vna_app"):
         super().__init__(app, "Markers")
 
-        for i in range(Defaults.cfg.chart.marker_count):
+        app_config = get_app_config()
+        for i in range(app_config.chart.marker_count):
             marker = Marker("", self.app.settings)
             # marker.setFixedHeight(20)
             marker.updated.connect(self.app.markerUpdated)
@@ -84,8 +88,9 @@ class MarkerControl(Control):
 
     def toggle_frame(self):
         def settings(hidden: bool):
-            Defaults.cfg.gui.markers_hidden = not hidden
-            self.app.marker_frame.setHidden(Defaults.cfg.gui.markers_hidden)
+            app_config = get_app_config()
+            app_config.gui.markers_hidden = not hidden
+            self.app.marker_frame.setHidden(app_config.gui.markers_hidden)
             self.showMarkerButton.setText()
             self.showMarkerButton.repaint()
 

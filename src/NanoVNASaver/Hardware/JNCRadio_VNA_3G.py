@@ -19,10 +19,11 @@
 import logging
 
 import serial
-from PyQt6.QtGui import QImage, QPixmap
+from PySide6.QtGui import QPixmap
 
-from NanoVNASaver.Hardware.NanoVNA import NanoVNA
-from NanoVNASaver.Hardware.Serial import Interface
+from .Convert import get_rgb16_pixmap
+from .NanoVNA import NanoVNA
+from .Serial import Interface
 
 logger = logging.getLogger(__name__)
 
@@ -31,13 +32,18 @@ class JNCRadio_VNA_3G(NanoVNA):
     name = "JNCRadio_VNA_3G"
     screenwidth = 800
     screenheight = 480
-    valid_datapoints = (501, 11, 101, 1001)
+    valid_datapoints: tuple[int, ...] = (
+        501,
+        11,
+        101,
+        1001,
+    )
     sweep_points_min = 11
     sweep_points_max = 1001
 
     def __init__(self, iface: Interface):
         super().__init__(iface)
-        self.sweep_max_freq_Hz = 3e9
+        self.sweep_max_freq_hz = 3e9
 
     def getScreenshot(self) -> QPixmap:
         logger.debug("Capturing screenshot...")
@@ -45,15 +51,10 @@ class JNCRadio_VNA_3G(NanoVNA):
         if not self.connected():
             return QPixmap()
         try:
-            rgba_array = self._capture_data()
-            image = QImage(
-                rgba_array,
-                self.screenwidth,
-                self.screenheight,
-                QImage.Format.Format_RGB16,
-            )
             logger.debug("Captured screenshot")
-            return QPixmap(image)
+            return get_rgb16_pixmap(
+                self._capture_data(), self.screenwidth, self.screenheight
+            )
         except serial.SerialException as exc:
             logger.exception("Exception while capturing screenshot: %s", exc)
         return QPixmap()

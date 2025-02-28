@@ -16,10 +16,12 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-from PyQt6 import QtCore
+from typing import Optional
 
-from NanoVNASaver import RFTools
-from NanoVNASaver.Formatting import (
+from PySide6 import QtCore
+
+from .. import RFTools
+from ..Formatting import (
     format_capacitance,
     format_complex_adm,
     format_complex_imp,
@@ -34,14 +36,16 @@ from NanoVNASaver.Formatting import (
     format_vswr,
     format_wavelength,
 )
-from NanoVNASaver.Marker.Widget import Marker
+from .Widget import Marker
 
 
 class DeltaMarker(Marker):
-    def __init__(self, name: str = "", qsettings: QtCore.QSettings = None):
+    def __init__(
+        self, name: str = "", qsettings: Optional[QtCore.QSettings] = None
+    ):
         super().__init__(name, qsettings)
-        self.marker_a = None
-        self.marker_b = None
+        self.marker_a: Optional[Marker] = None
+        self.marker_b: Optional[Marker] = None
 
     def set_markers(self, marker_a: Marker, marker_b: Marker):
         self.marker_a = marker_a
