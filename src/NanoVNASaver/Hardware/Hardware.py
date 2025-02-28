@@ -143,7 +143,6 @@ def get_portinfos() -> list[str]:
 def get_VNA(iface: Interface) -> VNA:
     # serial_port.timeout = TIMEOUT
     return NAME2DEVICE[iface.comment](iface)
-
 def get_comment(iface: Interface) -> str:
     logger.info("Finding correct VNA type...")
     with iface.lock:
