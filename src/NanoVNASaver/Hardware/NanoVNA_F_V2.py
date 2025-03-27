@@ -65,6 +65,18 @@ class NanoVNA_F_V2(NanoVNA):
         except serial.SerialException as exc:
             logger.exception("Exception while capturing screenshot: %s", exc)
         return QPixmap()
+    """
+    Add missing function to fix SN display in device setting window
+    Copied from _F_V3
+    """
+
+    def init_features(self) -> None:
+        super().init_features()
+        result = " ".join(self.exec_command("help")).lower().split()
+        if "sn:" in result:
+            self.features.add("SN")
+            self.SN = self.getSerialNumber()
+
 
     def read_firmware_version(self) -> "Version":
         """For example, command version in NanoVNA_F_V2 and NanoVNA_F_V3
@@ -80,6 +92,7 @@ class NanoVNA_F_V2(NanoVNA):
         if "sn:" or "SN:" in result:
             self.features.add("SN")
             self.SN = self.getSerialNumber()
+        return self.features    # add missing return fixes combobox not getting initialized with proper values for valid sweep points
 
     def getSerialNumber(self) -> str:
         return (
