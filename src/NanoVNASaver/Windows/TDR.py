@@ -28,6 +28,7 @@ from PySide6.QtGui import QShortcut
 from scipy.constants import speed_of_light  # type: ignore
 from scipy.signal import convolve  # type: ignore
 
+from ..RFTools import Datapoint
 from .Defaults import make_scrollable
 from .ui import get_window_icon
 
@@ -292,6 +293,10 @@ class TDRWindow(QtWidgets.QWidget):
         self.tdr_result_label.setText(f"{cable_len}m ({feet}ft {inches}in)")
         self.app.tdr_result_label.setText(f"{cable_len}m")
         self.td = list(td)
+        self.app.tdr_chart.data = [
+            Datapoint(0, 0.0, 0.0)
+        ]  # A bit of cheating otherwise the super().wheelEvent() exits
+        # without doing anything.
         self.updated.emit()
 
     def _tdr_lowpass(self, tdr_format, s11, tdr_window) -> np.ndarray:

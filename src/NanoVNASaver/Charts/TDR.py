@@ -37,7 +37,6 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import QDialog, QInputDialog, QMenu, QSizePolicy
 
-from ..RFTools import Datapoint
 from .Chart import Chart, ChartPosition
 
 logger = logging.getLogger(__name__)
@@ -343,10 +342,6 @@ class TDRChart(Chart):
 
     def wheelEvent(self, a0: QWheelEvent) -> None:
         a0.accept()
-        self.data = [
-            Datapoint(0, 0.0, 0.0)
-        ]  # A bit of cheating otherwise the super().wheelEvent() exits
-        # without doing anything.
         super().wheelEvent(a0)
 
     def mouseMoveEvent(self, a0: QMouseEvent) -> None:
