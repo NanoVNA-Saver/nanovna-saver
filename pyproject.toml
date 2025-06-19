@@ -81,6 +81,7 @@ backend-path = ["src/tools"]
 [tool.setuptools.packages.find]
 # See https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html for more details
 where = ["src"]
+exclude = ["tools"]
 
 [tool.setuptools_scm]
 # For smarter version schemes and other configuration options,
