@@ -7,7 +7,7 @@ authors = [
 maintainers = [
     { name = "Holger Mueller", email = "zarath@gmx.de" }
 ]
-requires-python = ">=3.10,<3.13"
+requires-python = ">=3.10"
 license = {text = "GPL-3.0-or-later"}
 readme = "README.rst"
 
