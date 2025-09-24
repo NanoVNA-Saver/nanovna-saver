@@ -72,8 +72,8 @@ requires = [
 # build-backend = 'setuptools.build_meta'
 # in-tree build backend, wrapper around setuptools, just to run ui-compile task
 # See also https://setuptools.pypa.io/en/latest/build_meta.html#dynamic-build-dependencies-and-other-build-meta-tweaks
-build-backend = "setuptools_wrapper"
-backend-path = ["src/tools"]
+build-backend = "src.tools.setuptools_wrapper"
+backend-path = ["."]
 
 [tool.setuptools.exclude-package-data]
 "*" = ['*.png', '*.ui', '*.qrc' ]

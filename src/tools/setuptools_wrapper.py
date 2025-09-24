@@ -5,7 +5,7 @@ from setuptools.build_meta import *  # Do not remove this line, it's nedded!  # 
 
 
 def compile_ui() -> None:
-    protoc_call = ["python", "-m", "src.tools.ui_compile"]
+    protoc_call = ["python3", "-m", "src.tools.ui_compile"]
     subprocess.call(protoc_call)
 
 
