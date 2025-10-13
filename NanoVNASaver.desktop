@@ -1,7 +1,8 @@
+# Some fields are generated from NanoVNASaver.metainfo.xml.
 [Desktop Entry]
-Categories=Electronics;Education;
+Categories=Science;Electronics
 Comment[de_DE]=Programm das Daten vom NanoVNA liest, anzeigt und speichert
-Comment=Tool for reading, displaying and saving data from the NanoVNA
+Comment=View and export Touchstone data from a NanoVNA radio network tester device
 Exec=NanoVNASaver
 GenericName[de_DE]=
 GenericName=
