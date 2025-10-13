@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+https://freedesktop.org/software/appstream/docs
+
+Run these commands after each modification.
+
+metainfo=io.github.nanovnasaver.nanovna-saver.metainfo.xml
+desktop=NanoVNASaver.desktop
+appstreamcli validate $metainfo
+appstreamcli make-desktop-file $metainfo $desktop
+desktop-file-validate $desktop
+-->
+<component type="desktop-application">
+  <id>io.github.nanovnasaver.nanovna-saver</id>
+  <metadata_license>FSFAP</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>NanoVNASaver</name>
+  <summary>View and export Touchstone data from a NanoVNA radio network tester device</summary>
+  <description>
+    <p>The NanoVNA device is a vector network analyzer and antenna
+    analyzer, useful to test or instrument various kinds of radio
+    networks.</p>
+    <p>NanoVNA-saver imports Touchstone files from the NanoVNA, sweeps
+    frequency spans in segments to gain more than 101 data points, and
+    generally displays and analyzes the resulting data.</p>
+  </description>
+  <launchable type="desktop-id">Nanovnasaver.desktop</launchable>
+  <url type="homepage">https://github.com/NanoVNA-Saver/nanovna-saver</url>
+  <developer id="io.github.nanovna-saver">
+    <name>The NanoVNA-Saver Authors</name>
+  </developer>
+  <provides>
+    <binary>NanoVNASaver</binary>
+  </provides>
+  <content_rating type="oars-1.0"/>
+  <icon type="stock">NanoVNASaver_96x96</icon>
+  <categories>
+    <category>Science</category>
+    <category>Electronics</category>
+  </categories>
+  <keywords>
+    <keyword>radio</keyword>
+    <keyword>frequency</keyword>
+    <keyword>analysis</keyword>
+  </keywords>
+  <screenshots>
+    <screenshot type="default">
+      <caption>Screenshot of version 0.1.4</caption>
+      <image>https://i.imgur.com/ZoFsV2V.png</image>
+    </screenshot>
+  </screenshots>
+</component>
