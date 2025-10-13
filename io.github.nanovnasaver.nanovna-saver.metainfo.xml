@@ -34,7 +34,7 @@ desktop-file-validate $desktop
     <binary>NanoVNASaver</binary>
   </provides>
   <content_rating type="oars-1.0"/>
-  <icon type="stock">NanoVNASaver_48x48</icon>
+  <icon type="stock">NanoVNASaver_96x96</icon>
   <categories>
     <category>Science</category>
     <category>Electronics</category>
