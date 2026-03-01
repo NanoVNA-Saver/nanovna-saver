@@ -17,13 +17,15 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
+from threading import RLock
 from time import sleep
 from typing import TYPE_CHECKING
 
+import serial
 from PySide6 import QtWidgets
 from PySide6.QtCore import Signal
 
-from ..Hardware.Hardware import Interface, get_interfaces, get_VNA
+from ..Hardware.Hardware import Interface, get_comment, get_interfaces, get_VNA
 from .Control import Control
 
 if TYPE_CHECKING:
@@ -41,16 +43,23 @@ class SerialControl(Control):
         super().__init__(app, "Serial port control")
 
         self.interface = Interface("serial", "none")
+
+        self.cb_tcp = QtWidgets.QCheckBox("TCP/IP")
+        self.cb_tcp.stateChanged.connect(self.update_connect_btn_state)
+
         self.inp_port = QtWidgets.QComboBox()
         self.inp_port.setMinimumHeight(20)
         self.rescanSerialPort()
         self.inp_port.setEditable(True)
         self.inp_port.currentIndexChanged.connect(self.update_connect_btn_state)
+        self.inp_port.editTextChanged.connect(self.update_connect_btn_state)
+
         self.btn_rescan = QtWidgets.QPushButton("Rescan")
         self.btn_rescan.setMinimumHeight(20)
         self.btn_rescan.setFixedWidth(60)
         self.btn_rescan.clicked.connect(self.rescanSerialPort)
         intput_layout = QtWidgets.QHBoxLayout()
+        intput_layout.addWidget(self.cb_tcp)
         intput_layout.addWidget(QtWidgets.QLabel("Port"), stretch=0)
         intput_layout.addWidget(self.inp_port, stretch=1)
         intput_layout.addWidget(self.btn_rescan, stretch=0)
@@ -92,18 +101,38 @@ class SerialControl(Control):
 
     def connect_device(self):
         with self.interface.lock:
-            new_interface = self.inp_port.currentData()
-            if not new_interface:
-                return
-            self.interface = new_interface
-            logger.info("Connection %s", self.interface)
-            try:
-                self.interface.open()
-            except (IOError, AttributeError) as exc:
-                logger.error(
-                    "Tried to open %s and failed: %s", self.interface, exc
-                )
-                return
+            if self.cb_tcp.isChecked():
+                address = self.inp_port.currentText()
+                if not address:
+                    return
+                url = f"socket://{address}"
+                logger.info("Connection TCP %s", url)
+                try:
+                    s = serial.serial_for_url(url, do_not_open=True)
+                    s.type = "network"
+                    s.lock = RLock()
+                    s.timeout = 0.05
+                    s.open()
+                    s.comment = get_comment(s)
+                    s.close()
+                    self.interface = s
+                    self.interface.open()
+                except Exception as exc:
+                    logger.error("Failed to connect to %s: %s", url, exc)
+                    return
+            else:
+                new_interface = self.inp_port.currentData()
+                if not new_interface:
+                    return
+                self.interface = new_interface
+                logger.info("Connection %s", self.interface)
+                try:
+                    self.interface.open()
+                except (IOError, AttributeError) as exc:
+                    logger.error(
+                        "Tried to open %s and failed: %s", self.interface, exc
+                    )
+                    return
             if not self.interface.isOpen():
                 logger.error("Unable to open port %s", self.interface)
                 return
@@ -171,8 +200,10 @@ class SerialControl(Control):
         # Eanble Connect/Dicsonnect button only if:
         # a) serial was already connected
         # b) serial is disconnected AND inp_port was selected
+        # c) TCP is checked and text is present
         port_selected = self.inp_port.currentData() is not None
-        self.btn_toggle.setEnabled(self.is_vna_connected() or port_selected)
+        tcp_selected = self.cb_tcp.isChecked() and self.inp_port.currentText()
+        self.btn_toggle.setEnabled(self.is_vna_connected() or port_selected or tcp_selected)
 
     def is_vna_connected(self) -> bool:
         return self.app.vna and self.app.vna.connected()
