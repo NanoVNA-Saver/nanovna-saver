@@ -47,6 +47,28 @@ class SerialControl(Control):
         self.cb_tcp = QtWidgets.QCheckBox("TCP/IP")
         self.cb_tcp.stateChanged.connect(self.update_connect_btn_state)
 
+        # Move TCP/IP checkbox to the title
+        # self.setTitle("")
+        
+        # Create a widget for the header
+        header_widget = QtWidgets.QWidget()
+        header_layout = QtWidgets.QHBoxLayout(header_widget)
+        header_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # The label
+        lbl_title = QtWidgets.QLabel("Network connection")
+        # Make it look like a groupbox title (usually bold)
+        font = lbl_title.font()
+        font.setBold(True)
+        font.setPointSize(10)
+        lbl_title.setFont(font)
+        
+        header_layout.addWidget(lbl_title)
+        header_layout.addStretch()
+        header_layout.addWidget(self.cb_tcp)
+        
+        self.layout.addRow(header_widget)
+
         self.inp_port = QtWidgets.QComboBox()
         self.inp_port.setMinimumHeight(20)
         self.rescanSerialPort()
@@ -59,7 +81,6 @@ class SerialControl(Control):
         self.btn_rescan.setFixedWidth(60)
         self.btn_rescan.clicked.connect(self.rescanSerialPort)
         intput_layout = QtWidgets.QHBoxLayout()
-        intput_layout.addWidget(self.cb_tcp)
         intput_layout.addWidget(QtWidgets.QLabel("Port"), stretch=0)
         intput_layout.addWidget(self.inp_port, stretch=1)
         intput_layout.addWidget(self.btn_rescan, stretch=0)
