@@ -223,7 +223,7 @@ class SerialControl(Control):
         # b) serial is disconnected AND inp_port was selected
         # c) TCP is checked and text is present
         port_selected = self.inp_port.currentData() is not None
-        tcp_selected = self.cb_tcp.isChecked() and self.inp_port.currentText()
+        tcp_selected = self.cb_tcp.isChecked() and len(self.inp_port.currentText()) > 0
         self.btn_toggle.setEnabled(self.is_vna_connected() or port_selected or tcp_selected)
 
     def is_vna_connected(self) -> bool:
