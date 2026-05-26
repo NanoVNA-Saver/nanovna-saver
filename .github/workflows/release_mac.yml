@@ -1,0 +1,49 @@
+name: macOS Release
+
+on:
+  push:
+    tags:
+      - v*
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: macos-14
+    strategy:
+      matrix:
+        arch: [arm64]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.13
+        architecture: ${{ matrix.arch }}
+
+    - name: Install dependencies and pyinstall
+      run: |
+        python -m pip install uv
+        uv sync
+
+    - name: Build app
+      run: |
+        uv run task ui-compile
+        uv run task build-pkg-macos
+
+    - name: Verify artifact
+      run: |
+        set -eux
+        test -f "dist/NanoVNASaver.app-$(uname -m).tar.gz"
+        ls -lh dist/NanoVNASaver.app-*.tar.gz
+
+    - name: Archive production artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: NanoVNASaver.macos.${{ matrix.arch }}
+        path: dist/NanoVNASaver.app-*.tar.gz
+        if-no-files-found: error
