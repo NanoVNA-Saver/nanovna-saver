@@ -138,7 +138,10 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         self.datapoints.setCurrentIndex(self.datapoints.findText(str(dpoints)))
 
     def _set_bandwidth_index(self, bw: int) -> None:
-        self.bandwidth.setCurrentIndex(self.bandwidth.findText(str(bw)))
+        for i in range(self.bandwidth.count()):
+            if self.bandwidth.itemData(i) == bw:
+                self.bandwidth.setCurrentIndex(i)
+                return
 
     def show(self):
         super().show()
@@ -192,8 +195,13 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         if "Bandwidth" in features:
             self.bandwidth.clear()
             cur_bw = self.app.vna.bandwidth
-            for d in sorted(self.app.vna.get_bandwidths()):
-                self.bandwidth.addItem(str(d))
+
+            for bw in sorted(self.app.vna.get_bandwidths()):
+                self.bandwidth.addItem(
+                self.app.vna.format_bandwidth(bw),
+                bw,
+                )
+
             self._set_bandwidth_index(cur_bw)
             self.bandwidth.setDisabled(False)
         else:
@@ -227,8 +235,12 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
     def updateBandwidth(self, i) -> None:
         if i < 0 or self.app.worker.isRunning():
             return
-        logger.debug("Bandwidth: %s", self.bandwidth.itemText(i))
-        self.app.vna.set_bandwidth(int(self.bandwidth.itemText(i)))
+
+        bw = self.bandwidth.itemData(i)
+
+        logger.debug("Bandwidth: %d Hz", bw)
+
+        self.app.vna.set_bandwidth(bw)
 
     def customPoint_check(self, validate_data: bool) -> None:
         self.datapoints.setDisabled(validate_data)
