@@ -78,10 +78,13 @@ class VNA:
             self.version = self.read_fw_version()
             self.init_features()
             logger.debug("Features: %s", self.features)
-            #  cannot read current bandwidth, so set to highest
-            #  to get initial sweep fast
+
+            # The firmware does not reliably expose the persisted IFBW value
+            # when switching from standalone LCD mode to USB mode.
+            # cannot read current bandwidth,
+            # Initialise to the same default used by NanoVNA-QT. (-3 from the table)
             if "Bandwidth" in self.features:
-                self.set_bandwidth(self.get_bandwidths()[-1])
+                self.set_bandwidth(self.get_bandwidths()[-3])
 
     def connect(self):
         logger.info("connect %s", self.serial)

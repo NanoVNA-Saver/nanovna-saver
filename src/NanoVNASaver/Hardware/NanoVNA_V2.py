@@ -44,6 +44,7 @@ _CMD_WRITEFIFO = 0x28
 
 _ADDR_SWEEP_START = 0x00
 _ADDR_SWEEP_STEP = 0x10
+_ADDR_IFBW = 0x42
 _ADDR_SWEEP_POINTS = 0x20
 _ADDR_SWEEP_VALS_PER_FREQ = 0x22
 _ADDR_RAW_SAMPLES_MODE = 0x26
@@ -66,6 +67,25 @@ _ADF4350_TXPOWER_DESC_REV_MAP = {
     value: key for key, value in _ADF4350_TXPOWER_DESC_MAP.items()
 }
 
+# Mapping:
+# GUI bandwidth (Hz) -> NanoRFE IFBW register value
+IFBW_TABLE = [
+    (300,    2),   # Experimental
+    (800,    5),
+    (1600,  10),
+    (3100,  20),
+    (4700,  30),
+    (6200,  40),
+    (8200,  50),   # Experimental (awaiting NanoRFE confirmation)
+    (10000, 60),
+]
+
+IFBW_REGISTER_VALUES = dict(IFBW_TABLE)
+
+REGISTER_TO_IFBW = {
+    reg: bw
+    for bw, reg in IFBW_TABLE
+}
 
 class NanoVNA_V2(VNA):
     name = "NanoVNA-V2"
@@ -125,6 +145,13 @@ class NanoVNA_V2(VNA):
             self.sweep_max_freq_hz = 4400e6
         else:
             self.sweep_max_freq_hz = 3000e6
+
+        # Adjustable IFBW is officially supported starting with
+        # NanoRFE V2 Plus4 PRO (board revision 2.0.5) and all 
+        # subsequent hardware generations (VNA6000 series).
+        if self.board_revision >= Version.parse("2.0.5"):
+            self.features.add("Bandwidth")
+
         if self.version <= Version.parse("1.0.1"):
             logger.debug("Hack for s21 oddity in first sweeppoint")
             self.features.add("S21 hack")
@@ -300,6 +327,29 @@ class NanoVNA_V2(VNA):
         with self.serial.lock:
             self.serial.write(cmd)
             sleep(WRITE_SLEEP)
+
+    def format_bandwidth(self, bw: int) -> str:
+        return f"{bw/1000:.1f} kHz"
+
+
+    def get_bandwidths(self) -> list[int]:
+        return [bw for bw, _ in IFBW_TABLE]
+
+
+    def set_bandwidth(self, bandwidth: int):
+        if bandwidth not in IFBW_REGISTER_VALUES:
+            raise ValueError(f"Unsupported IFBW: {bandwidth}")
+
+        self._set_register(
+            _ADDR_IFBW,
+            IFBW_REGISTER_VALUES[bandwidth],
+            1,
+        )
+
+        self.bandwidth = bandwidth
+
+        logger.debug("IFBW set to %d Hz", bandwidth)
+
 
     def setTXPower(self, freq_range, power_desc):
         if freq_range[0] != 140e6:

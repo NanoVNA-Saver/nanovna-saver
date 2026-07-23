@@ -134,3 +134,6 @@ class NanoVNA(VNA):
             return [x[1] for x in self._sweepdata]
         # default to data 0
         return [x[0] for x in self._sweepdata]
+
+    def format_bandwidth(self, bw: int) -> str:
+        return str(bw)
