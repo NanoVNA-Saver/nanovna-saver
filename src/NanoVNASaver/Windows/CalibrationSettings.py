@@ -19,6 +19,7 @@
 
 import logging
 from functools import partial
+from pathlib import Path
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
@@ -121,6 +122,10 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.btn_automatic.setMinimumHeight(20)
         calibration_control_layout.addRow(self.btn_automatic)
         self.btn_automatic.clicked.connect(self.automaticCalibration)
+
+        self.defaultColorName = self.btn_automatic.palette().window().color().name()
+        self.usedColorName = "cyan"
+        self.activeColorName = "green"
 
         apply_reset_layout = QtWidgets.QHBoxLayout()
 
@@ -531,9 +536,11 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.calibration_status_label.setText("Device calibration")
         self.calibration_source_label.setText("Device")
         self.notes_textedit.clear()
-        self.short_touchstone = None
-        self.open_touchstone = None
-        self.load_touchstone = None
+        # issue #852: "Calibration Assistent" runs reset before calibration!
+        #             touchstones must not be cleared - otherwise it is useless!
+        # self.short_touchstone = None
+        # self.open_touchstone = None
+        # self.load_touchstone = None
 
         if len(self.app.worker.rawData11) > 0:
             # There's raw data, so we can get corrected data
@@ -756,34 +763,43 @@ class CalibrationWindow(QtWidgets.QWidget):
             logger.error("Calibration save failed!")
             self.app.showError("Calibration save failed.")
 
+    def setS1pColor(self, button):
+        if button.isEnabled() is False:
+            button.setStyleSheet("background-color: " + self.defaultColorName)
+        elif "S1P file" not in button.text():
+            # S1P-button shows real filename:
+            button.setStyleSheet("background-color: " + self.usedColorName)
+
+    def showUseS1P(self, isActive):
+        self.file_button_short.setDisabled(not isActive)
+        self.setS1pColor(self.file_button_short)
+        self.file_button_open.setDisabled(not isActive)
+        self.setS1pColor(self.file_button_open)
+        self.file_button_load.setDisabled(not isActive)
+        self.setS1pColor(self.file_button_load)
+
+    def showUseCoeff(self, isActive):
+        self.cal_short_box.setDisabled(not isActive)
+        self.cal_open_box.setDisabled(not isActive)
+        self.cal_load_box.setDisabled(not isActive)
+        self.cal_standard_save_box.setDisabled(not isActive)
+
+    def showUseThroughBox(self, isActive):
+        self.cal_through_box.setDisabled(not isActive)
+
     def calStandardChanged(self, button):
         if button == self.use_ideal_values:
-            self.cal_short_box.setDisabled(True)
-            self.cal_open_box.setDisabled(True)
-            self.cal_load_box.setDisabled(True)
-            self.cal_through_box.setDisabled(True)
-            self.cal_standard_save_box.setDisabled(True)
-            self.file_button_short.setDisabled(True)
-            self.file_button_open.setDisabled(True)
-            self.file_button_load.setDisabled(True)
+            self.showUseCoeff(False)
+            self.showUseS1P(False)
+            self.showUseThroughBox(False)
         elif button == self.use_s1p_files:
-            self.cal_short_box.setDisabled(True)
-            self.cal_open_box.setDisabled(True)
-            self.cal_load_box.setDisabled(True)
-            self.cal_through_box.setDisabled(False)
-            self.cal_standard_save_box.setDisabled(True)
-            self.file_button_short.setDisabled(False)
-            self.file_button_open.setDisabled(False)
-            self.file_button_load.setDisabled(False)
+            self.showUseCoeff(False)
+            self.showUseS1P(True)
+            self.showUseThroughBox(True)
         elif button == self.use_coefficients:
-            self.cal_short_box.setDisabled(False)
-            self.cal_open_box.setDisabled(False)
-            self.cal_load_box.setDisabled(False)
-            self.cal_through_box.setDisabled(False)
-            self.cal_standard_save_box.setDisabled(False)
-            self.file_button_short.setDisabled(True)
-            self.file_button_open.setDisabled(True)
-            self.file_button_load.setDisabled(True)
+            self.showUseCoeff(True)
+            self.showUseS1P(False)
+            self.showUseThroughBox(True)
 
     def automaticCalibration(self):
         self.btn_automatic.setDisabled(True)
@@ -1050,6 +1066,8 @@ class CalibrationWindow(QtWidgets.QWidget):
         if filename != "":
             self.open_touchstone = Touchstone(filename)
             self.open_touchstone.load()
+            self.file_button_open.setText("Open:\t" + Path(filename).stem)
+            self.setS1pColor(self.file_button_open)
 
     def select_file_short(self):
         filename, _ = QtWidgets.QFileDialog.getOpenFileName(
@@ -1058,6 +1076,8 @@ class CalibrationWindow(QtWidgets.QWidget):
         if filename != "":
             self.short_touchstone = Touchstone(filename)
             self.short_touchstone.load()
+            self.file_button_short.setText("Short:\t" + Path(filename).stem)
+            self.setS1pColor(self.file_button_short)
 
     def select_file_load(self):
         filename, _ = QtWidgets.QFileDialog.getOpenFileName(
@@ -1066,3 +1086,5 @@ class CalibrationWindow(QtWidgets.QWidget):
         if filename != "":
             self.load_touchstone = Touchstone(filename)
             self.load_touchstone.load()
+            self.file_button_load.setText("Load:\t" + Path(filename).stem)
+            self.setS1pColor(self.file_button_load)
