@@ -343,6 +343,23 @@ class NanoVNASaver(QWidget):
         self.s11_min_rl_label = QtWidgets.QLabel()
         s11_control_layout.addRow("Return loss:", self.s11_min_rl_label)
 
+        btn_s11_minmax = QtWidgets.QPushButton("S11 min / max")
+        btn_s11_minmax.setMinimumHeight(20)
+        btn_s11_minmax.setToolTip(
+            "Find minimum and maximum of S11 (dB).\n"
+            "Marker 1 goes to the minimum, marker 2 to the maximum."
+        )
+        btn_s11_minmax.clicked.connect(self.find_s11_min_max)
+        self.s11_minmax_auto = QtWidgets.QCheckBox("after every sweep")
+        minmax_row = QtWidgets.QHBoxLayout()
+        minmax_row.addWidget(btn_s11_minmax)
+        minmax_row.addWidget(self.s11_minmax_auto)
+        s11_control_layout.addRow(minmax_row)
+        self.s11_min_label = QtWidgets.QLabel()
+        s11_control_layout.addRow("S11 min:", self.s11_min_label)
+        self.s11_max_label = QtWidgets.QLabel()
+        s11_control_layout.addRow("S11 max:", self.s11_max_label)
+
         self.marker_column.addWidget(s11_control_box)
 
         s21_control_box = QtWidgets.QGroupBox()
@@ -643,11 +660,33 @@ class NanoVNASaver(QWidget):
         self.updateTitle()
         self.communicate.data_available.emit()
 
+    def find_s11_min_max(self) -> None:
+        """Minimum (best match) and maximum of S11 in dB, marker 1 / 2"""
+        with self.dataLock:
+            s11 = self.data.s11[:]
+        if not s11:
+            self.s11_min_label.setText("no data")
+            self.s11_max_label.setText("")
+            return
+        lo = min(s11, key=lambda d: d.gain)
+        hi = max(s11, key=lambda d: d.gain)
+        self.s11_min_label.setText(
+            f"{format_gain(lo.gain)} @ {format_frequency(lo.freq)}"
+            f" (VSWR {format_vswr(lo.vswr)})"
+        )
+        self.s11_max_label.setText(
+            f"{format_gain(hi.gain)} @ {format_frequency(hi.freq)}"
+        )
+        for marker, point in zip(self.markers, (lo, hi), strict=False):
+            marker.setFrequency(str(point.freq))
+
     def sweepFinished(self):
         self._sweep_control(start=False)
 
         for marker in self.markers:
             marker.frequencyInput.textEdited.emit(marker.frequencyInput.text())
+        if self.s11_minmax_auto.isChecked():
+            self.find_s11_min_max()
 
     def setReference(self, s11=None, s21=None, source=None):
         if not s11:

@@ -193,3 +193,14 @@ def test_matching_and_gate(window):
     assert tdr.gate_settings() is not None
     assert len(tdr.gated_s11()) == len(window.data.s11)
     tdr.gate_enabled.setChecked(False)
+
+
+def test_s11_min_max_button(window):
+    sweep(window)
+    window.find_s11_min_max()
+    db = 20 * np.log10(np.abs(s11(window)))
+    freqs = [d.freq for d in window.data.s11]
+    assert window.markers[0].freq == freqs[int(np.argmin(db))]
+    assert window.markers[1].freq == freqs[int(np.argmax(db))]
+    assert "@" in window.s11_min_label.text()
+    assert "@" in window.s11_max_label.text()
