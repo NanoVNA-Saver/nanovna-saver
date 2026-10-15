@@ -120,6 +120,8 @@ class Chart(QtWidgets.QWidget):
     bands: ClassVar[Any] = None
     popout_requested: ClassVar[Signal] = Signal(object)
     color: ClassVar[ChartColors] = ChartColors()
+    # active trace processing (averaging, smoothing, ...) shown on all charts
+    processing_tag: ClassVar[str] = ""
 
     def __init__(self, name) -> None:
         super().__init__()
@@ -352,6 +354,13 @@ class Chart(QtWidgets.QWidget):
             width = qf.boundingRect(self.sweepTitle).width()
             position = QtCore.QPoint(round(self.width() / 2 - width / 2), 15)
         qp.drawText(position, self.sweepTitle)
+        if Chart.processing_tag:
+            qf = QtGui.QFontMetricsF(self.font())
+            width = qf.boundingRect(Chart.processing_tag).width()
+            qp.drawText(
+                QtCore.QPoint(round(self.width() - width - 4), 12),
+                Chart.processing_tag,
+            )
 
     def update(self, a=None, b=None, c=None, d=None) -> None:  # pylint: disable=unused-argument
         pal = self.palette()

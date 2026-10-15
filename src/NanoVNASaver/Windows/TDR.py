@@ -28,6 +28,8 @@ from PySide6.QtGui import QShortcut
 from scipy.constants import speed_of_light  # type: ignore
 from scipy.signal import convolve  # type: ignore
 
+from ..engine.sweepdata import to_datapoints
+from ..engine.tdr import distance_to_time, time_gate
 from ..RFTools import Datapoint
 from .Defaults import make_scrollable
 from .ui import get_window_icon
@@ -206,7 +208,80 @@ class TDRWindow(QtWidgets.QWidget):
 
         self.tdr_result_label = QtWidgets.QLabel()
         layout.addRow("Estimated cable length:", self.tdr_result_label)
+        layout.addRow(self.gate_box())
         layout.addRow(self.app.tdr_chart)
+
+    def gate_box(self) -> QtWidgets.QGroupBox:
+        box = QtWidgets.QGroupBox("Time gate")
+        form = QtWidgets.QFormLayout(box)
+        self.gate_enabled = QtWidgets.QCheckBox(
+            "Enable gate (used by 'S11 gated' traces)"
+        )
+        self.gate_start = QtWidgets.QDoubleSpinBox()
+        self.gate_stop = QtWidgets.QDoubleSpinBox()
+        for spin, value in ((self.gate_start, 0.0), (self.gate_stop, 1.0)):
+            spin.setRange(-1000.0, 10000.0)
+            spin.setDecimals(3)
+            spin.setSingleStep(0.05)
+            spin.setSuffix(" m")
+            spin.setValue(value)
+        self.gate_mode = QtWidgets.QComboBox()
+        self.gate_mode.addItem("Band pass (keep inside)", "bandpass")
+        self.gate_mode.addItem("Notch (remove inside)", "notch")
+        btn = QtWidgets.QPushButton("Show gated S11 as reference trace")
+        btn.clicked.connect(self.gated_to_reference)
+        form.addRow(self.gate_enabled)
+        form.addRow("Gate start (distance)", self.gate_start)
+        form.addRow("Gate stop (distance)", self.gate_stop)
+        form.addRow("Mode", self.gate_mode)
+        form.addRow(btn)
+        label = QtWidgets.QLabel(
+            "Distances use the velocity factor above. Gating isolates one"
+            " reflection (e.g. the antenna at the end of a cable) and"
+            " converts it back to the frequency domain."
+        )
+        label.setWordWrap(True)
+        form.addRow(label)
+        return box
+
+    def velocity_factor(self) -> float:
+        try:
+            return float(self.tdr_velocity_input.text())
+        except ValueError:
+            return 1.0
+
+    def gate_settings(self) -> tuple[float, float, str] | None:
+        """(start, stop) round trip times in s and mode, None if off"""
+        if not self.gate_enabled.isChecked():
+            return None
+        vf = self.velocity_factor()
+        return (
+            distance_to_time(self.gate_start.value(), vf),
+            distance_to_time(self.gate_stop.value(), vf),
+            self.gate_mode.currentData(),
+        )
+
+    def gated_s11(self) -> list[Datapoint]:
+        if len(self.app.data.s11) < MIN_DATA_LENGTH:
+            return []
+        vf = self.velocity_factor()
+        freq = np.array([d.freq for d in self.app.data.s11], dtype=float)
+        s11 = np.array([d.z for d in self.app.data.s11])
+        gated = time_gate(
+            freq,
+            s11,
+            distance_to_time(self.gate_start.value(), vf),
+            distance_to_time(self.gate_stop.value(), vf),
+            self.gate_mode.currentData(),
+        )
+        return to_datapoints(freq, gated)
+
+    def gated_to_reference(self) -> None:
+        gated = self.gated_s11()
+        if not gated:
+            self.app.showError("No S11 data to gate.")
+            return
+        self.app.setReference(gated, self.app.data.s21[:], "S11 gated")
 
     def updateFormat(self):
         self.app.tdr_chart.resetDisplayLimits()

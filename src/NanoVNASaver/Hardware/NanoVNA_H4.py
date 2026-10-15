@@ -39,5 +39,7 @@ class NanoVNA_H4(NanoVNA_H):
         super().__init__(iface)
         self.sweep_max_freq_hz = 1500e6
         self.sweep_method = "scan"
-        if "Scan mask command" in self.features:
+        if "Binary scan" in self.features:
+            self.sweep_method = "scan_bin"
+        elif "Scan mask command" in self.features:
             self.sweep_method = "scan_mask"

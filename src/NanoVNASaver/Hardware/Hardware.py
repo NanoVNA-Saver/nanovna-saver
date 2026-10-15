@@ -39,6 +39,7 @@ from .Serial import Interface, drain_serial
 from .SV4401A import SV4401A
 from .SV6301A import SV6301A
 from .TinySA import TinySA, TinySA_Ultra
+from .VirtualVNA import VirtualInterface, VirtualVNA
 from .VNA import VNA
 
 logger = logging.getLogger(__name__)
@@ -69,6 +70,7 @@ NAME2DEVICE = {
     "SV4401A": SV4401A,
     "SV6301A": SV6301A,
     "LiteVNA64": LiteVNA64,
+    "Virtual": VirtualVNA,
     "Unknown": NanoVNA,
 }
 
@@ -122,8 +124,23 @@ def get_interfaces() -> list[Interface]:
         iface.close()
         interfaces.append(iface)
 
+    # always offer the simulated device (training / testing without HW)
+    interfaces.append(VirtualInterface("demo"))
     logger.debug("Interfaces: %s", interfaces)
     return interfaces
+
+
+def get_interface_for_port(port: str) -> Interface:
+    """Interface for a port name like COM3, /dev/ttyACM0 or
+    virtual:demo (used by the command line tools)"""
+    if port.startswith("virtual:"):
+        return VirtualInterface(port.split(":", 1)[1] or "demo")
+    iface = Interface("serial", "")
+    iface.port = port
+    iface.open()
+    iface.comment = get_comment(iface)
+    iface.close()
+    return iface
 
 
 def get_portinfos() -> list[str]:

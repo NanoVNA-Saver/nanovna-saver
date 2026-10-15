@@ -17,14 +17,23 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-from time import sleep
+import threading
 from typing import TYPE_CHECKING
 
 import numpy as np
 from PySide6.QtCore import QObject, QThread, Signal, Slot
 
-from .Calibration import correct_delay
-from .Hardware.VNA import VNA
+from .engine.acquire import (
+    SweepStoppedError,
+    correct,
+    read_averaged_segment,
+    read_segment,
+    truncate,
+)
+from .engine.acquire import read_data as _read_data
+from .engine.deembed import FixtureSettings
+from .engine.dsp import SegmentRunningAverage
+from .engine.sweepdata import SweepData, to_datapoints
 from .RFTools import Datapoint
 from .Settings.Sweep import Sweep, SweepMode
 
@@ -33,27 +42,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-VALUE_MAX: float = 9.5
-RETRIES_RECONNECT: int = 5
-RETRIES_MAX: int = 10
-
-
-def truncate(values: list[list[complex]], count: int) -> list[list[complex]]:
-    """truncate drops extrema from data list if averaging is active"""
-    keep = len(values) - count
-    logger.debug("Truncating from %d values to %d", len(values), keep)
-    if count < 1 or keep < 1:
-        logger.info("Not doing illegal truncate")
-        return values
-    truncated = []
-    for valueset in np.swapaxes(values, 0, 1).tolist():
-        avg = complex(np.average(valueset))
-
-        def cmp_fn(v: complex, avg=avg) -> float:
-            return float(abs(avg - v))
-
-        truncated.append(sorted(valueset, key=cmp_fn)[:keep])
-    return np.swapaxes(truncated, 0, 1).tolist()
+__all__ = ["SweepWorker", "WorkerSignals", "truncate"]
 
 
 class WorkerSignals(QObject):
@@ -63,6 +52,7 @@ class WorkerSignals(QObject):
 
 
 class SweepWorker(QThread):
+    # pylint: disable=too-many-instance-attributes
     def __init__(self, app: "vna_app") -> None:
         super().__init__()
         logger.info("Initializing SweepWorker")
@@ -70,14 +60,78 @@ class SweepWorker(QThread):
         self.app = app
         self.sweep = Sweep()
         self.percentage: float = 0.0
-        self.data11: list[Datapoint] = []
-        self.data21: list[Datapoint] = []
-        self.rawData11: list[Datapoint] = []
-        self.rawData21: list[Datapoint] = []
-        self.init_data()
         self.error_message: str = ""
         self.offsetDelay: float = 0.0
         self._terminate: bool = False
+        self._lock = threading.RLock()
+
+        # processing pipeline settings
+        self.smoothing_pct: float = 0.0
+        self.fixture = FixtureSettings()
+        self.running_average = SegmentRunningAverage(1)
+
+        self.raw = SweepData()
+        self.processed = SweepData()
+        self.init_data()
+
+    # Compatibility accessors (lists of Datapoints)
+
+    @property
+    def rawData11(self) -> list[Datapoint]:
+        return self.raw.datapoints("s11")
+
+    @property
+    def rawData21(self) -> list[Datapoint]:
+        return self.raw.datapoints("s21")
+
+    @property
+    def data11(self) -> list[Datapoint]:
+        return self.processed.datapoints("s11")
+
+    @data11.setter
+    def data11(self, value: list[Datapoint]) -> None:
+        self.processed.s11 = np.array([d.z for d in value], dtype=complex)
+
+    @property
+    def data21(self) -> list[Datapoint]:
+        return self.processed.datapoints("s21")
+
+    @data21.setter
+    def data21(self, value: list[Datapoint]) -> None:
+        self.processed.s21 = np.array([d.z for d in value], dtype=complex)
+
+    def has_raw_data(self) -> bool:
+        return len(self.raw) > 0 and bool(np.any(self.raw.s11))
+
+    @property
+    def averaging_count(self) -> int:
+        return self.running_average.count
+
+    def set_running_average(self, count: int) -> None:
+        self.running_average.set_count(count)
+
+    def processing_tag(self) -> str:
+        """Short description of the active processing for chart titles"""
+        parts = []
+        props = self.sweep.properties
+        if props.mode == SweepMode.AVERAGE:
+            parts.append(f"Avg {props.averages[0]}")
+        elif self.running_average.count > 1:
+            parts.append(
+                f"Avg {self.running_average.n}/{self.running_average.count}"
+            )
+        if self.smoothing_pct > 0:
+            parts.append(f"Smo {self.smoothing_pct:g}%")
+        if self.fixture.port1.active or self.fixture.port2.active:
+            parts.append("PortExt")
+        if (
+            self.fixture.fixture1 is not None
+            or self.fixture.fixture2 is not None
+        ):
+            parts.append("De-emb")
+        if self.fixture.z0 != 50.0:
+            parts.append(f"Z0 {np.real(self.fixture.z0):g}Ω")
+        return " · ".join(parts)
 
     @Slot()
     def quit(self) -> None:
@@ -89,6 +143,9 @@ class SweepWorker(QThread):
         self._terminate = False
         try:
             self._run()
+        except SweepStoppedError:
+            logger.info("Sweep stopped during averaging")
+            self.signals.finished.emit()
         except BaseException as exc:  # pylint: disable=broad-except
             logger.exception("%s", exc)
             self.gui_error(f"ERROR during sweep\n\nStopped\n\n{exc}")
@@ -110,6 +167,7 @@ class SweepWorker(QThread):
         if sweep != self.sweep:  # parameters changed
             self.sweep = sweep
             self.init_data()
+        self.running_average.reset()
 
         self._run_loop()
 
@@ -151,16 +209,13 @@ class SweepWorker(QThread):
                 break
 
     def init_data(self) -> None:
-        self.data11 = []
-        self.data21 = []
-        self.rawData11 = []
-        self.rawData21 = []
-        for freq in self.sweep.get_frequencies():
-            self.data11.append(Datapoint(freq, 0.0, 0.0))
-            self.data21.append(Datapoint(freq, 0.0, 0.0))
-            self.rawData11.append(Datapoint(freq, 0.0, 0.0))
-            self.rawData21.append(Datapoint(freq, 0.0, 0.0))
-        logger.debug("Init data length: %s", len(self.data11))
+        freq = np.array(list(self.sweep.get_frequencies()), dtype=np.float64)
+        zeros = np.zeros(len(freq), dtype=np.complex128)
+        with self._lock:
+            self.raw = SweepData(freq, zeros.copy(), zeros.copy())
+            self.processed = self.raw.copy()
+        self.running_average.reset()
+        logger.debug("Init data length: %s", len(freq))
 
     def update_data(
         self,
@@ -169,175 +224,92 @@ class SweepWorker(QThread):
         values21: list[complex],
         index: int,
     ) -> None:
-        # Update the data from (i*101) to (i+1)*101
         logger.debug(
             "Calculating data and inserting in existing data at index %d", index
         )
         offset = self.sweep.points * index
+        n = len(frequencies)
+        s11 = np.asarray(values11, dtype=np.complex128)
+        s21 = np.asarray(values21, dtype=np.complex128)
+        if (
+            self.sweep.properties.mode == SweepMode.CONTINOUS
+            and self.running_average.count > 1
+        ):
+            both = self.running_average.add(index, np.concatenate([s11, s21]))
+            s11, s21 = both[:n], both[n:]
+        with self._lock:
+            if offset + n > len(self.raw):
+                logger.warning("Segment does not fit into sweep data")
+                return
+            self.raw.freq[offset : offset + n] = frequencies
+            self.raw.s11[offset : offset + n] = s11
+            self.raw.s21[offset : offset + n] = s21
+        self.reprocess(keep_source=False)
 
-        raw_data11 = [
-            Datapoint(freq, values11[i].real, values11[i].imag)
-            for i, freq in enumerate(frequencies)
-        ]
-        raw_data21 = [
-            Datapoint(freq, values21[i].real, values21[i].imag)
-            for i, freq in enumerate(frequencies)
-        ]
-
-        data11, data21 = self.applyCalibration(raw_data11, raw_data21)
-        logger.debug("update Freqs: %s, Offset: %s", len(frequencies), offset)
-        for i in range(len(frequencies)):
-            self.data11[offset + i] = data11[i]
-            self.data21[offset + i] = data21[i]
-            self.rawData11[offset + i] = raw_data11[i]
-            self.rawData21[offset + i] = raw_data21[i]
-
-        logger.debug(
-            "Saving data to application (%d and %d points)",
-            len(self.data11),
-            len(self.data21),
+    def process(self, raw: SweepData) -> SweepData:
+        return correct(
+            raw,
+            self.app.calibration,
+            self.offsetDelay,
+            self.fixture,
+            self.smoothing_pct,
         )
-        self.app.saveData(self.data11, self.data21)
-        logger.debug('Sending "updated" signal')
-        self.signals.updated.emit()
+
+    def reprocess(self, emit: bool = True, keep_source: bool = True) -> None:
+        """Re-run calibration / fixture / smoothing on the stored raw data
+        and publish the result to the application"""
+        with self._lock:
+            if len(self.raw) == 0:
+                return
+            raw = self.raw.copy()
+        processed = self.process(raw)
+        with self._lock:
+            self.processed = processed
+        self.app.saveData(
+            processed.datapoints("s11"),
+            processed.datapoints("s21"),
+            self.app.sweepSource
+            if keep_source and self.app.sweepSource
+            else None,
+        )
+        if emit:
+            logger.debug('Sending "updated" signal')
+            self.signals.updated.emit()
 
     def applyCalibration(
         self, raw_data11: list[Datapoint], raw_data21: list[Datapoint]
     ) -> tuple[list[Datapoint], list[Datapoint]]:
-        data11: list[Datapoint] = []
-        data21: list[Datapoint] = []
-
-        if not self.app.calibration.isCalculated:
-            data11 = raw_data11.copy()
-            data21 = raw_data21.copy()
-        elif self.app.calibration.isValid1Port():
-            data11.extend(
-                self.app.calibration.correct11(dp) for dp in raw_data11
-            )
-        else:
-            data11 = raw_data11.copy()
-
-        if self.app.calibration.isValid2Port():
-            for counter, dp in enumerate(raw_data21):
-                dp11 = raw_data11[counter]
-                data21.append(self.app.calibration.correct21(dp, dp11))
-        else:
-            data21 = raw_data21
-
-        if self.offsetDelay != 0.0:
-            data11 = [
-                correct_delay(dp, self.offsetDelay, reflect=True)
-                for dp in data11
-            ]
-            data21 = [correct_delay(dp, self.offsetDelay) for dp in data21]
-
-        return data11, data21
+        raw = SweepData.from_datapoints(raw_data11, raw_data21)
+        out = self.process(raw)
+        return (
+            to_datapoints(out.freq, out.s11),
+            to_datapoints(out.freq, out.s21),
+        )
 
     def read_averaged_segment(
         self, start: int, stop: int, averages: int = 1
     ) -> tuple[list[int], list[complex], list[complex]]:
-        logger.info(
-            "Reading from %d to %d. Averaging %d values", start, stop, averages
-        )
-
-        freq: list[int] = []
-        values11: list[list[complex]] = []
-        values21: list[list[complex]] = []
-
-        for i in range(averages):
-            if self._terminate:
-                logger.debug("Stopping averaging as signalled.")
-                if averages == 1:
-                    break
-                logger.warning("Stop during average. Discarding sweep result.")
-                return [], [], []
-            logger.debug("Reading average no %d / %d", i + 1, averages)
-            retries = RETRIES_RECONNECT
-            tmp_11: list[complex] = []
-            tmp_21: list[complex] = []
-            while retries and not tmp_11:
-                if retries < RETRIES_RECONNECT:
-                    logger.warning("retry readSegment(%s,%s)", start, stop)
-                    sleep(0.5)
-                retries -= 1
-                freq, tmp_11, tmp_21 = self.read_segment(start, stop)
-
-            if not tmp_11:
-                raise IOError("Invalid data during sweep")
-
-            values11.append(tmp_11)
-            values21.append(tmp_21)
+        def progress() -> None:
             self.percentage += 100 / (self.sweep.segments * averages)
             self.signals.updated.emit()
 
-        if not values11:
-            raise IOError("Invalid data during sweep")
-
-        truncates = self.sweep.properties.averages[1]
-        if truncates > 0 and averages > 1:
-            logger.debug("Truncating %d values by %d", len(values11), truncates)
-            values11 = truncate(values11, truncates)
-            values21 = truncate(values21, truncates)
-
-        logger.debug("Averaging %d values", len(values11[0]))
-        return (
-            freq,
-            np.average(values11, axis=0).tolist(),
-            np.average(values21, axis=0).tolist(),
+        return read_averaged_segment(
+            self.app.vna,
+            start,
+            stop,
+            averages,
+            self.sweep.properties.averages[1],
+            should_stop=lambda: self._terminate,
+            on_progress=progress if averages > 1 else None,
         )
 
     def read_segment(
         self, start: int, stop: int
     ) -> tuple[list[int], list[complex], list[complex]]:
-        logger.debug("Setting sweep range to %d to %d", start, stop)
-        self.app.vna.setSweep(start, stop)
-
-        frequencies = self.app.vna.read_frequencies()
-        logger.debug("Read %s frequencies", len(frequencies))
-        values11 = self.read_data("data 0")
-        values21 = self.read_data("data 1")
-        if not len(frequencies) == len(values11) == len(values21):
-            logger.info("No valid data during this run")
-            frequencies = []
-            values11 = values21 = []
-        return frequencies, values11, values21
+        return read_segment(self.app.vna, start, stop)
 
     def read_data(self, data) -> list[complex]:
-        logger.debug("Reading %s", data)
-
-        vna: "VNA" = self.app.vna  # shortcut to device
-        retries = RETRIES_MAX
-        while retries:
-            retries -= 1
-            try:
-                result = vna.readValues(data)
-                logger.debug("Read %d values", len(result))
-                if vna.validateInput and any(
-                    abs(v) > VALUE_MAX for v in result
-                ):
-                    logger.error("Got a non plausible data: (%s)", data)
-                else:
-                    return result
-            except ValueError as exc:
-                logger.exception(
-                    "An exception occurred reading %s: %s", data, exc
-                )
-            logger.error("Re-reading %s", data)
-            sleep(0.2)
-            vna.reconnect()
-
-        logger.critical(
-            "Tried and failed to read %s %s times. Giving up.",
-            data,
-            RETRIES_MAX,
-        )
-        raise IOError(
-            f"Failed reading {data} {RETRIES_MAX} times.\n"
-            f"Data outside expected valid ranges,"
-            f" or in an unexpected format.\n\n"
-            f"You can disable data validation on the"
-            f"device settings screen."
-        )
+        return _read_data(self.app.vna, data)
 
     def gui_error(self, message: str) -> None:
         self.error_message = message
