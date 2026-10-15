@@ -30,7 +30,7 @@ def wait_until(cond, timeout=20.0) -> bool:
 
 @pytest.fixture(scope="module")
 def window():
-    from NanoVNASaver.NanoVNASaver import NanoVNASaver  # noqa: PLC0415
+    from NanoVNASaver.NanoVNASaver import NanoVNASaver
 
     win = NanoVNASaver()
     win.errors = []
@@ -154,6 +154,17 @@ def test_pro_traces(window, tmp_path):
     pro.trace_select.setCurrentIndex(2)  # Tr3 = S21 log mag
     pro.search_max()
     assert pro.marker_freqs[0] == pytest.approx(435e6, rel=0.03)
+    # tracking: marker 2 follows the S11 minimum on every refresh
+    pro.marker_select.setCurrentIndex(1)
+    pro.trace_select.setCurrentIndex(0)
+    pro.track_check.setChecked(True)
+    pro.search_min()
+    pro.marker_freqs[1] = None
+    pro.refresh(fetch=False)
+    assert pro.marker_freqs[1] == pytest.approx(435e6, rel=0.03)
+    pro.marker_select.setCurrentIndex(0)
+    pro.trace_select.setCurrentIndex(2)
+    pro.track_check.setChecked(False)
     pro.bw_value.setValue(3.0)
     pro.search_bandwidth()
     assert "BW" in pro.search_result.text()
@@ -161,7 +172,7 @@ def test_pro_traces(window, tmp_path):
     pro.trace_widgets[2][3].setCurrentIndex(2)  # data / mem
     pro.refresh(fetch=False)
     report = tmp_path / "r.html"
-    from NanoVNASaver.engine.report import (  # noqa: PLC0415
+    from NanoVNASaver.engine.report import (
         ReportInfo,
         build_report,
         save_report,

@@ -36,6 +36,18 @@ It's developed in **Python 3 (>=3.10)** using **pyside6**, **numpy** and
 **scipy**.
 
 
+Pro features (this fork)
+------------------------
+
+Vectorized engine, trace smoothing and running averaging, full 2-port
+measurement by DUT reversal, port extension / de-embedding / Z0, cal kit
+library and calibration health checks, 4-trace display with memory math,
+marker search and limit lines with pass/fail, L-network matching, TDR time
+gating, HTML reports, the ``nanovna-pro`` command line tool, a Python API, a
+REST/WebSocket server and a virtual VNA for working without hardware.
+See `docs/PRO_FEATURES.md <docs/PRO_FEATURES.md>`_.
+
+
 Introduction
 ------------
 

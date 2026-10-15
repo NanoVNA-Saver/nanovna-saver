@@ -61,6 +61,7 @@ Issues = "https://github.com/NanoVNA-Saver/nanovna-saver/issues"
 
 [project.scripts]
 NanoVNASaver = 'NanoVNASaver.__main__:main'
+nanovna-pro = 'NanoVNASaver.engine.cli:main'
 
 [project.gui-scripts]
 NanoVNASaver-gui = 'NanoVNASaver.__main__:main'

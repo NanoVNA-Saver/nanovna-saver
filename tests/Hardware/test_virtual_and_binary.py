@@ -38,7 +38,9 @@ def _sweep(vna, standard):
 
 
 def _dps(freq, values):
-    return [Datapoint(f, v.real, v.imag) for f, v in zip(freq, values)]
+    return [
+        Datapoint(f, v.real, v.imag) for f, v in zip(freq, values, strict=False)
+    ]
 
 
 def test_virtual_calibration_recovers_ideal_dut():
@@ -116,9 +118,7 @@ def binary_response(cmd: str, points: int, corrupt=False) -> bytes:
     rec["s11"][:, 1] = -0.25
     rec["s21"][:, 0] = 0.125
     header = struct.pack("<HH", 0x87 if not corrupt else 0x81, points)
-    return (
-        cmd.encode() + b"\r\n" + header + rec.tobytes() + b"ch> "
-    )
+    return cmd.encode() + b"\r\n" + header + rec.tobytes() + b"ch> "
 
 
 def make_nanovna(serial, method="scan_bin", points=11):

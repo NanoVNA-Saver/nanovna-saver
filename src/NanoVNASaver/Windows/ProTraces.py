@@ -146,6 +146,14 @@ class TracePane(pg.PlotWidget):
         if fmt == self.fmt:
             return
         self.fmt = fmt
+        # clip to view / downsampling need ascending x values, which a
+        # Smith or polar trace (x = Re) does not have
+        for curve in (self.curve, self.mem_curve):
+            curve.setClipToView(not fmt.is_complex_plane)
+            if fmt.is_complex_plane:
+                curve.setDownsampling(ds=1, auto=False)
+            else:
+                curve.setDownsampling(auto=True, method="peak")
         for item in self.static_items:
             self.plot_item.removeItem(item)
         self.static_items = []
@@ -298,6 +306,8 @@ class ProTracesWindow(QtWidgets.QWidget):
         self.data = SweepData()
         self.memory: Optional[SweepData] = None
         self.marker_freqs: list[Optional[float]] = [None] * N_MARKERS
+        # marker -> (search, trace) re-run on every new sweep
+        self.tracking: dict[int, tuple[str, int]] = {}
         self.spec: Optional[LimitSpec] = None
         self.last_result: Optional[LimitResult] = None
         self.log_path: Optional[Path] = None
@@ -465,6 +475,10 @@ class ProTracesWindow(QtWidgets.QWidget):
         grid.addWidget(self.bw_value, 4, 1)
         grid.addWidget(self.bw_notch, 4, 2)
         grid.addWidget(btn_bw, 4, 3)
+        self.track_check = QtWidgets.QCheckBox(
+            "Track: repeat Min/Max on every sweep"
+        )
+        grid.addWidget(self.track_check, 6, 0, 1, 4)
         self.search_result = QtWidgets.QLabel("")
         self.search_result.setWordWrap(True)
         self.search_result.setTextInteractionFlags(
@@ -631,6 +645,7 @@ class ProTracesWindow(QtWidgets.QWidget):
                     if s.param == cfg.param and s.trace_format is cfg.fmt
                 ]
             )
+        self.apply_tracking()
         self.update_markers()
         self.update_verdict()
 
@@ -714,15 +729,35 @@ class ProTracesWindow(QtWidgets.QWidget):
         self.marker_freqs[marker] = float(self.data.freq[index])
         self.update_markers()
 
+    def _remember(self, marker: int, search: str) -> None:
+        if self.track_check.isChecked():
+            self.tracking[marker] = (search, self.trace_select.currentIndex())
+        else:
+            self.tracking.pop(marker, None)
+
     def search_min(self) -> None:
         if ctx := self._search_context():
             marker, y, _ = ctx
+            self._remember(marker, "min")
             self._set_marker(marker, search_min(y))
 
     def search_max(self) -> None:
         if ctx := self._search_context():
             marker, y, _ = ctx
+            self._remember(marker, "max")
             self._set_marker(marker, search_max(y))
+
+    def apply_tracking(self) -> None:
+        for marker, (search, trace) in self.tracking.items():
+            cfg = self.configs[trace]
+            if not cfg.enabled or cfg.fmt.is_complex_plane:
+                continue
+            _, y = self.trace_values(cfg, self.data)
+            if y is None or len(y) == 0:
+                continue
+            y = np.real(np.asarray(y, dtype=float))
+            idx = search_min(y) if search == "min" else search_max(y)
+            self.marker_freqs[marker] = float(self.data.freq[idx])
 
     def search_peak(self, direction: int) -> None:
         if ctx := self._search_context():
@@ -787,6 +822,7 @@ class ProTracesWindow(QtWidgets.QWidget):
 
     def marker_off(self) -> None:
         self.marker_freqs[self.marker_select.currentIndex()] = None
+        self.tracking.pop(self.marker_select.currentIndex(), None)
         self.update_markers()
 
     # ------------------------------------------------------------- memory

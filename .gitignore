@@ -62,3 +62,6 @@ src/NanoVNASaver/Windows/ui/about.py
 
 *.spec
 *_rc.py
+
+# nanovna-pro example sequence output
+examples/results/
