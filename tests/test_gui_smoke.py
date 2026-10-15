@@ -204,3 +204,18 @@ def test_s11_min_max_button(window):
     assert window.markers[1].freq == freqs[int(np.argmax(db))]
     assert "@" in window.s11_min_label.text()
     assert "@" in window.s11_max_label.text()
+
+
+def test_s21_min_max_button(window):
+    sweep(window)
+    window.find_s21_min_max()
+    s21 = np.array([d.z for d in window.data.s21])
+    db = 20 * np.log10(np.abs(s21))
+    freqs = [d.freq for d in window.data.s21]
+    assert window.markers[0].freq == freqs[int(np.argmin(db))]
+    assert window.markers[1].freq == freqs[int(np.argmax(db))]
+    assert "@" in window.s21_max_label.text()
+    window.s11_minmax_auto.setChecked(True)
+    window.s21_minmax_auto.setChecked(True)
+    assert not window.s11_minmax_auto.isChecked()
+    window.s21_minmax_auto.setChecked(False)

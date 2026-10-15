@@ -374,6 +374,29 @@ class NanoVNASaver(QWidget):
         self.s21_max_gain_label = QtWidgets.QLabel()
         s21_control_layout.addRow("Max gain:", self.s21_max_gain_label)
 
+        btn_s21_minmax = QtWidgets.QPushButton("S21 min / max")
+        btn_s21_minmax.setMinimumHeight(20)
+        btn_s21_minmax.setToolTip(
+            "Find minimum and maximum of S21 (dB).\n"
+            "Marker 1 goes to the minimum, marker 2 to the maximum."
+        )
+        btn_s21_minmax.clicked.connect(self.find_s21_min_max)
+        self.s21_minmax_auto = QtWidgets.QCheckBox("after every sweep")
+        minmax21_row = QtWidgets.QHBoxLayout()
+        minmax21_row.addWidget(btn_s21_minmax)
+        minmax21_row.addWidget(self.s21_minmax_auto)
+        s21_control_layout.addRow(minmax21_row)
+        self.s21_min_label = QtWidgets.QLabel()
+        s21_control_layout.addRow("S21 min:", self.s21_min_label)
+        self.s21_max_label = QtWidgets.QLabel()
+        s21_control_layout.addRow("S21 max:", self.s21_max_label)
+        self.s11_minmax_auto.toggled.connect(
+            lambda: self._minmax_auto_toggled(self.s11_minmax_auto)
+        )
+        self.s21_minmax_auto.toggled.connect(
+            lambda: self._minmax_auto_toggled(self.s21_minmax_auto)
+        )
+
         self.marker_column.addWidget(s21_control_box)
 
         # self.marker_column.addStretch(1)
@@ -680,6 +703,35 @@ class NanoVNASaver(QWidget):
         for marker, point in zip(self.markers, (lo, hi), strict=False):
             marker.setFrequency(str(point.freq))
 
+    def find_s21_min_max(self) -> None:
+        """Minimum and maximum of S21 in dB, marker 1 / 2"""
+        with self.dataLock:
+            s21 = self.data.s21[:]
+        if not s21:
+            self.s21_min_label.setText("no data")
+            self.s21_max_label.setText("")
+            return
+        lo = min(s21, key=lambda d: d.gain)
+        hi = max(s21, key=lambda d: d.gain)
+        self.s21_min_label.setText(
+            f"{format_gain(lo.gain)} @ {format_frequency(lo.freq)}"
+        )
+        self.s21_max_label.setText(
+            f"{format_gain(hi.gain)} @ {format_frequency(hi.freq)}"
+        )
+        for marker, point in zip(self.markers, (lo, hi), strict=False):
+            marker.setFrequency(str(point.freq))
+
+    def _minmax_auto_toggled(self, source: QtWidgets.QCheckBox) -> None:
+        # both searches use markers 1 and 2: only one can follow sweeps
+        if source.isChecked():
+            other = (
+                self.s21_minmax_auto
+                if source is self.s11_minmax_auto
+                else self.s11_minmax_auto
+            )
+            other.setChecked(False)
+
     def sweepFinished(self):
         self._sweep_control(start=False)
 
@@ -687,6 +739,8 @@ class NanoVNASaver(QWidget):
             marker.frequencyInput.textEdited.emit(marker.frequencyInput.text())
         if self.s11_minmax_auto.isChecked():
             self.find_s11_min_max()
+        if self.s21_minmax_auto.isChecked():
+            self.find_s21_min_max()
 
     def setReference(self, s11=None, s21=None, source=None):
         if not s11:
