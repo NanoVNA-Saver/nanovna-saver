@@ -8,3 +8,19 @@ Read more about conftest.py under:
 """
 
 # import pytest
+
+import os
+import tempfile
+
+# GUI tests run headless and must never touch the user's real settings.
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+os.environ["APPDATA"] = tempfile.mkdtemp(prefix="nanovna-test-appdata-")
+os.environ["XDG_DATA_HOME"] = os.environ["APPDATA"]
+
+from PySide6.QtCore import QSettings  # noqa: E402
+
+QSettings.setPath(
+    QSettings.Format.IniFormat,
+    QSettings.Scope.UserScope,
+    tempfile.mkdtemp(prefix="nanovna-test-settings-"),
+)

@@ -112,9 +112,16 @@ class FilesWindow(QtWidgets.QWidget):
         ts.sdata[0] = self.app.data.s11
         if nr_params > 1:
             ts.sdata[1] = self.app.data.s21
-            for dp in self.app.data.s11:
-                ts.sdata[2].append(Datapoint(dp.freq, 0, 0))
-                ts.sdata[3].append(Datapoint(dp.freq, 0, 0))
+            n = len(self.app.data.s11)
+            if len(self.app.data.s12) == n and len(self.app.data.s22) == n:
+                # full 2-port measurement (forward + reverse)
+                ts.sdata[2] = self.app.data.s12
+                ts.sdata[3] = self.app.data.s22
+            else:
+                logger.info("No reverse data, writing zero S12/S22")
+                for dp in self.app.data.s11:
+                    ts.sdata[2].append(Datapoint(dp.freq, 0, 0))
+                    ts.sdata[3].append(Datapoint(dp.freq, 0, 0))
         try:
             ts.save(nr_params)
         except IOError as e:

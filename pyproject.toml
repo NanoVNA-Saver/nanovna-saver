@@ -30,6 +30,7 @@ dependencies=[
   'pyside6~=6.8',
   'numpy~=2.1',
   'scipy~=1.14',
+  "pyqtgraph~=0.13",
 ]
 
 [dependency-groups]
@@ -60,6 +61,7 @@ Issues = "https://github.com/NanoVNA-Saver/nanovna-saver/issues"
 
 [project.scripts]
 NanoVNASaver = 'NanoVNASaver.__main__:main'
+nanovna-pro = 'NanoVNASaver.engine.cli:main'
 
 [project.gui-scripts]
 NanoVNASaver-gui = 'NanoVNASaver.__main__:main'

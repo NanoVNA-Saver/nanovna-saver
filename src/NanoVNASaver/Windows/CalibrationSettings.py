@@ -17,12 +17,18 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import html
 import logging
 from functools import partial
+from pathlib import Path
 
+import numpy as np
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..Calibration import Calibration
+from ..engine.calkit import CalKit, CalKitLibrary
+from ..engine.health import check_calibration, verify_standard
+from ..Hardware.VirtualVNA import STANDARDS, VirtualVNA
 from ..Settings.Sweep import SweepMode
 from ..Touchstone import Touchstone
 from .Defaults import make_scrollable
@@ -293,6 +299,10 @@ class CalibrationWindow(QtWidgets.QWidget):
 
         cal_standard_layout.addWidget(self.cal_standard_save_box)
         right_layout.addWidget(cal_standard_box)
+        right_layout.addWidget(self.calkit_box())
+        left_layout.addWidget(self.health_box())
+        left_layout.addWidget(self.virtual_box())
+        self.app.communicate.data_available.connect(self.auto_health)
         self.open_touchstone = None
         self.short_touchstone = None
         self.load_touchstone = None
@@ -326,11 +336,247 @@ class CalibrationWindow(QtWidgets.QWidget):
         return True
 
     def cal_save(self, name: str):
-        if name in {"through", "isolation"}:
-            self.app.calibration.insert(name, self.app.data.s21)
+        # Standards must be captured uncorrected: use the raw sweep data
+        # (no calibration, fixture or smoothing) when available.
+        worker = self.app.worker
+        if worker.has_raw_data() and len(worker.raw) == len(self.app.data.s11):
+            s11, s21 = worker.rawData11, worker.rawData21
         else:
-            self.app.calibration.insert(name, self.app.data.s11)
-        self.cal_label[name].setText(_format_cal_label(len(self.app.data.s11)))
+            s11, s21 = self.app.data.s11, self.app.data.s21
+        if name in {"through", "isolation"}:
+            self.app.calibration.insert(name, s21)
+        else:
+            self.app.calibration.insert(name, s11)
+        self.cal_label[name].setText(_format_cal_label(len(s11)))
+
+    # Virtual device support
+
+    def virtual_box(self) -> QtWidgets.QGroupBox:
+        self._virtual_group = QtWidgets.QGroupBox("Virtual device: connected")
+        layout = QtWidgets.QHBoxLayout(self._virtual_group)
+        self.virtual_standard = QtWidgets.QComboBox()
+        for name in STANDARDS:
+            self.virtual_standard.addItem(name, name)
+        self.virtual_standard.currentIndexChanged.connect(
+            lambda: self._virtual_connect(self.virtual_standard.currentData())
+        )
+        layout.addWidget(self.virtual_standard)
+        layout.addWidget(
+            QtWidgets.QLabel("(the assistant switches automatically)")
+        )
+        self._virtual_group.setVisible(False)
+        return self._virtual_group
+
+    def _virtual_connect(self, standard: str) -> None:
+        vna = self.app.vna
+        if isinstance(vna, VirtualVNA):
+            vna.set_standard(standard)
+            self.virtual_standard.blockSignals(True)
+            self.virtual_standard.setCurrentIndex(STANDARDS.index(standard))
+            self.virtual_standard.blockSignals(False)
+
+    def showEvent(self, event: QtGui.QShowEvent) -> None:
+        super().showEvent(event)
+        self._virtual_group.setVisible(isinstance(self.app.vna, VirtualVNA))
+        self.update_health()
+
+    # Cal kit library
+
+    def calkit_box(self) -> QtWidgets.QGroupBox:
+        box = QtWidgets.QGroupBox("Calibration kit library")
+        layout = QtWidgets.QVBoxLayout(box)
+        self.calkit_library = CalKitLibrary()
+        self.calkit_selector = QtWidgets.QComboBox()
+        layout.addWidget(self.calkit_selector)
+        buttons = QtWidgets.QGridLayout()
+        for i, (label, slot) in enumerate(
+            (
+                ("Use kit", self.use_calkit),
+                ("Save fields as kit ...", self.save_calkit),
+                ("Delete", self.delete_calkit),
+                ("Import ...", self.import_calkit),
+                ("Export ...", self.export_calkit),
+            )
+        ):
+            btn = QtWidgets.QPushButton(label)
+            btn.clicked.connect(slot)
+            buttons.addWidget(btn, i // 3, i % 3)
+        layout.addLayout(buttons)
+        self.calkit_info = QtWidgets.QLabel()
+        self.calkit_info.setWordWrap(True)
+        layout.addWidget(self.calkit_info)
+        self.calkit_selector.currentIndexChanged.connect(self._calkit_selected)
+        self.refresh_calkits()
+        return box
+
+    def refresh_calkits(self, select: str = "") -> None:
+        self.calkit_selector.blockSignals(True)
+        self.calkit_selector.clear()
+        for name in self.calkit_library.names():
+            self.calkit_selector.addItem(name)
+        if select:
+            self.calkit_selector.setCurrentText(select)
+        self.calkit_selector.blockSignals(False)
+        self._calkit_selected()
+
+    def _calkit_selected(self) -> None:
+        name = self.calkit_selector.currentText()
+        try:
+            kit = self.calkit_library.get(name)
+        except KeyError:
+            self.calkit_info.setText("")
+            return
+        origin = "builtin" if self.calkit_library.is_builtin(name) else "user"
+        self.calkit_info.setText(f"{kit.description} ({origin})".strip())
+
+    def _kit_to_fields(self, kit: CalKit) -> None:
+        if kit.ideal:
+            self.use_ideal_values.setChecked(True)
+            self.calStandardChanged(self.use_ideal_values)
+            return
+        self.use_coefficients.setChecked(True)
+        self.calStandardChanged(self.use_coefficients)
+        for field, value, scale in (
+            (self.short_l0_input, kit.short_l0, 1e12),
+            (self.short_l1_input, kit.short_l1, 1e24),
+            (self.short_l2_input, kit.short_l2, 1e33),
+            (self.short_l3_input, kit.short_l3, 1e42),
+            (self.short_length, kit.short_delay, 1e12),
+            (self.open_c0_input, kit.open_c0, 1e15),
+            (self.open_c1_input, kit.open_c1, 1e27),
+            (self.open_c2_input, kit.open_c2, 1e36),
+            (self.open_c3_input, kit.open_c3, 1e45),
+            (self.open_length, kit.open_delay, 1e12),
+            (self.load_resistance, kit.load_r, 1.0),
+            (self.load_inductance, kit.load_l, 1e12),
+            (self.load_capacitance, kit.load_c, 1e15),
+            (self.load_length, kit.load_delay, 1e12),
+            (self.through_length, kit.through_delay, 1e12),
+        ):
+            field.setText(f"{value * scale:.6g}")
+
+    def _kit_from_fields(self, name: str) -> CalKit:
+        return CalKit(
+            name=name,
+            ideal=self.use_ideal_values.isChecked(),
+            short_l0=getFloatValue(self.short_l0_input.text()) / 1e12,
+            short_l1=getFloatValue(self.short_l1_input.text()) / 1e24,
+            short_l2=getFloatValue(self.short_l2_input.text()) / 1e33,
+            short_l3=getFloatValue(self.short_l3_input.text()) / 1e42,
+            short_delay=getFloatValue(self.short_length.text()) / 1e12,
+            open_c0=getFloatValue(self.open_c0_input.text()) / 1e15,
+            open_c1=getFloatValue(self.open_c1_input.text()) / 1e27,
+            open_c2=getFloatValue(self.open_c2_input.text()) / 1e36,
+            open_c3=getFloatValue(self.open_c3_input.text()) / 1e45,
+            open_delay=getFloatValue(self.open_length.text()) / 1e12,
+            load_r=getFloatValue(self.load_resistance.text()) or 50.0,
+            load_l=getFloatValue(self.load_inductance.text()) / 1e12,
+            load_c=getFloatValue(self.load_capacitance.text()) / 1e15,
+            load_delay=getFloatValue(self.load_length.text()) / 1e12,
+            through_delay=getFloatValue(self.through_length.text()) / 1e12,
+        )
+
+    def use_calkit(self) -> None:
+        try:
+            kit = self.calkit_library.get(self.calkit_selector.currentText())
+        except KeyError:
+            return
+        self._kit_to_fields(kit)
+        self.calkit_info.setText(
+            f"Fields set from {kit.name}. Press Apply to recalculate."
+        )
+
+    def save_calkit(self) -> None:
+        name, ok = QtWidgets.QInputDialog.getText(
+            self, "Save cal kit", "Kit name:"
+        )
+        if not ok or not name.strip():
+            return
+        try:
+            self.calkit_library.save(self._kit_from_fields(name.strip()))
+        except ValueError as exc:
+            self.app.showError(str(exc))
+            return
+        self.refresh_calkits(name.strip())
+
+    def delete_calkit(self) -> None:
+        name = self.calkit_selector.currentText()
+        try:
+            self.calkit_library.delete(name)
+        except ValueError as exc:
+            self.app.showError(str(exc))
+            return
+        self.refresh_calkits()
+
+    def import_calkit(self) -> None:
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Import cal kit", "", "Cal kit (*.json)"
+        )
+        if not filename:
+            return
+        try:
+            kit = CalKit.load(Path(filename))
+            self.calkit_library.save(kit)
+        except (ValueError, TypeError, OSError) as exc:
+            self.app.showError(f"Unable to import: {exc}")
+            return
+        self.refresh_calkits(kit.name)
+
+    def export_calkit(self) -> None:
+        try:
+            kit = self.calkit_library.get(self.calkit_selector.currentText())
+        except KeyError:
+            return
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self, "Export cal kit", f"{kit.name}.json", "Cal kit (*.json)"
+        )
+        if filename:
+            kit.save(Path(filename))
+
+    # Calibration health
+
+    def health_box(self) -> QtWidgets.QGroupBox:
+        box = QtWidgets.QGroupBox("Calibration health")
+        layout = QtWidgets.QVBoxLayout(box)
+        self.health_label = QtWidgets.QLabel()
+        self.health_label.setWordWrap(True)
+        self.health_label.setTextFormat(QtCore.Qt.TextFormat.RichText)
+        layout.addWidget(self.health_label)
+        row = QtWidgets.QHBoxLayout()
+        btn = QtWidgets.QPushButton("Check")
+        btn.clicked.connect(self.update_health)
+        row.addWidget(btn)
+        for std in ("load", "open", "short"):
+            b = QtWidgets.QPushButton(f"Verify {std}")
+            b.setToolTip(
+                f"Connect a {std} standard, sweep, then press to verify the"
+                " corrected measurement."
+            )
+            b.clicked.connect(lambda _=False, n=std: self.verify(n))
+            row.addWidget(b)
+        layout.addLayout(row)
+        return box
+
+    def update_health(self) -> None:
+        freq = np.array([d.freq for d in self.app.data.s11], dtype=float)
+        report = check_calibration(self.app.calibration, freq)
+        color = ("#16a34a", "#2563eb", "#d97706", "#dc2626")[report.severity]
+        text = "<br>".join(
+            html.escape(x) for x in report.summary().splitlines()
+        )
+        self.health_label.setText(f'<span style="color:{color}">{text}</span>')
+
+    def auto_health(self) -> None:
+        if self.isVisible():
+            self.update_health()
+
+    def verify(self, standard: str) -> None:
+        s11 = np.array([d.z for d in self.app.data.s11])
+        result = verify_standard(s11, standard)
+        color = "#16a34a" if result.passed else "#dc2626"
+        self.health_label.setText(
+            f'<span style="color:{color}">{html.escape(result.message)}</span>'
+        )
 
     def manual_save(self, name: str):
         if self.checkExpertUser():
@@ -535,36 +781,17 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.open_touchstone = None
         self.load_touchstone = None
 
-        if len(self.app.worker.rawData11) > 0:
-            # There's raw data, so we can get corrected data
-            logger.debug("Saving and displaying raw data.")
-            self.app.saveData(
-                self.app.worker.rawData11,
-                self.app.worker.rawData21,
-                self.app.sweepSource,
-            )
-            self.app.worker.signals.updated.emit()
+        if self.app.worker.has_raw_data():
+            # no calibration any more: show the raw data
+            self.app.worker.reprocess()
         self.app.sweep_control.update_text()
 
     def setOffsetDelay(self, value: float):
         logger.debug("New offset delay value: %f ps", value)
         self.app.worker.offsetDelay = value / 1e12
-        if len(self.app.worker.rawData11) > 0:
-            # There's raw data, so we can get corrected data
+        if self.app.worker.has_raw_data():
             logger.debug("Applying new offset to existing sweep data.")
-            (
-                self.app.worker.data11,
-                self.app.worker.data21,
-            ) = self.app.worker.applyCalibration(
-                self.app.worker.rawData11, self.app.worker.rawData21
-            )
-            logger.debug("Saving and displaying corrected data.")
-            self.app.saveData(
-                self.app.worker.data11,
-                self.app.worker.data21,
-                self.app.sweepSource,
-            )
-            self.app.worker.signals.updated.emit()
+            self.app.worker.reprocess()
 
     def calculate(self):
         cal_element = self.app.calibration.cal_element
@@ -674,22 +901,10 @@ class CalibrationWindow(QtWidgets.QWidget):
                     f"{self.app.calibration.source} (Standards: Custom)"
                 )
 
-            if self.app.worker.rawData11:
-                # There's raw data, so we can get corrected data
+            if self.app.worker.has_raw_data():
                 logger.debug("Applying calibration to existing sweep data.")
-                (
-                    self.app.worker.data11,
-                    self.app.worker.data21,
-                ) = self.app.worker.applyCalibration(
-                    self.app.worker.rawData11, self.app.worker.rawData21
-                )
-                logger.debug("Saving and displaying corrected data.")
-                self.app.saveData(
-                    self.app.worker.data11,
-                    self.app.worker.data21,
-                    self.app.sweepSource,
-                )
-                self.app.worker.signals.updated.emit()
+                self.app.worker.reprocess()
+            self.update_health()
 
         except ValueError as e:
             # showError here hides the calibration window,
@@ -856,6 +1071,7 @@ class CalibrationWindow(QtWidgets.QWidget):
         self.app.calibration.source = "Calibration assistant"
         self.next_step = 0
         self.app.worker.signals.finished.connect(self.automaticCalibrationStep)
+        self._virtual_connect("short")
         self.app.sweep_start()
         return
 
@@ -893,6 +1109,7 @@ class CalibrationWindow(QtWidgets.QWidget):
                     self.automaticCalibrationStep
                 )
                 return
+            self._virtual_connect("open")
             self.app.sweep_start()
             return
 
@@ -920,6 +1137,7 @@ class CalibrationWindow(QtWidgets.QWidget):
                     self.automaticCalibrationStep
                 )
                 return
+            self._virtual_connect("load")
             self.app.sweep_start()
             return
 
@@ -944,6 +1162,7 @@ class CalibrationWindow(QtWidgets.QWidget):
 
             response = continue_step.exec()
             if response == QtWidgets.QMessageBox.StandardButton.Apply:
+                self._virtual_connect("dut")
                 self.calculate()
                 self.next_step = -1
                 self.app.worker.signals.finished.disconnect(
@@ -981,6 +1200,7 @@ class CalibrationWindow(QtWidgets.QWidget):
                     self.automaticCalibrationStep
                 )
                 return
+            self._virtual_connect("isolation")
             self.app.sweep_start()
             return
 
@@ -1008,6 +1228,7 @@ class CalibrationWindow(QtWidgets.QWidget):
                     self.automaticCalibrationStep
                 )
                 return
+            self._virtual_connect("thru")
             self.app.sweep_start()
             return
 
@@ -1035,6 +1256,7 @@ class CalibrationWindow(QtWidgets.QWidget):
                 )
                 return
 
+            self._virtual_connect("dut")
             self.calculate()
             self.btn_automatic.setDisabled(False)
             self.next_step = -1

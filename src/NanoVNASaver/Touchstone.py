@@ -325,7 +325,7 @@ class Touchstone:
         """
         assert nr_params in {1, 4}
 
-        ts_str = "# HZ S RI R 50\n"
+        ts_str = f"# HZ S RI R {self.opts.resistance}\n"
         for i, dp_s11 in enumerate(self.s11):
             ts_str += f"{dp_s11.freq} {dp_s11.re} {dp_s11.im}"
             for j in range(1, nr_params):

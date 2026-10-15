@@ -53,6 +53,7 @@ class SweepSettingsWindow(QtWidgets.QWidget):
 
         layout.addWidget(self.title_box())
         layout.addWidget(self.settings_box())
+        layout.addWidget(self.processing_box())
         # We can only populate this box after the VNA has been connected.
         self._power_box = QtWidgets.QGroupBox("Power")
         self._power_layout = QtWidgets.QFormLayout(self._power_box)
@@ -173,6 +174,49 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         )
         layout.addRow("Attenuator in port CH1 (s21) in dB", input_att)
         return box
+
+    def processing_box(self) -> "QtWidgets.QWidget":
+        box = QtWidgets.QGroupBox("Trace processing")
+        layout = QtWidgets.QFormLayout(box)
+        label = QtWidgets.QLabel(
+            "Smoothing averages neighbouring points (aperture in percent of"
+            " the span). Running average blends every new continuous sweep"
+            " into the trace (weight 1/N), so noise settles without waiting"
+            " for N sweeps. Both apply to display and exported data."
+        )
+        label.setWordWrap(True)
+        label.setMinimumHeight(50)
+        layout.addRow(label)
+
+        self.smoothing_input = QtWidgets.QDoubleSpinBox()
+        self.smoothing_input.setRange(0.0, 25.0)
+        self.smoothing_input.setSingleStep(0.5)
+        self.smoothing_input.setSuffix(" %")
+        self.smoothing_input.setSpecialValueText("Off")
+        self.smoothing_input.setValue(self.app.worker.smoothing_pct)
+        self.smoothing_input.valueChanged.connect(self.update_smoothing)
+        layout.addRow("Smoothing aperture", self.smoothing_input)
+
+        self.running_avg_input = QtWidgets.QSpinBox()
+        self.running_avg_input.setRange(1, 999)
+        self.running_avg_input.setSpecialValueText("Off")
+        self.running_avg_input.setValue(self.app.worker.averaging_count)
+        self.running_avg_input.valueChanged.connect(self.update_running_avg)
+        layout.addRow(
+            "Running average (continuous sweep)", self.running_avg_input
+        )
+        return box
+
+    def update_smoothing(self, value: float) -> None:
+        self.app.worker.smoothing_pct = value
+        self.app.settings.setValue("ProcessingSmoothing", value)
+        if self.app.worker.has_raw_data():
+            self.app.worker.reprocess()
+
+    def update_running_avg(self, value: int) -> None:
+        self.app.worker.set_running_average(value)
+        self.app.settings.setValue("ProcessingRunningAverage", value)
+        self.app.update_processing_tag()
 
     def sweep_box(self) -> "QtWidgets.QWidget":
         box = QtWidgets.QGroupBox("Sweep band")

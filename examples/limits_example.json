@@ -1,0 +1,13 @@
+{
+  "name": "435 MHz band pass filter",
+  "limits": [
+    {"param": "s21", "format": "logmag", "type": "lower",
+     "start": 420e6, "stop": 450e6, "value": -3},
+    {"param": "s21", "format": "logmag", "type": "upper",
+     "start": 300e6, "stop": 350e6, "value": -20},
+    {"param": "s21", "format": "logmag", "type": "upper",
+     "start": 520e6, "stop": 600e6, "value": -15, "value_stop": -20},
+    {"param": "s11", "format": "vswr", "type": "upper",
+     "start": 425e6, "stop": 445e6, "value": 2.0}
+  ]
+}

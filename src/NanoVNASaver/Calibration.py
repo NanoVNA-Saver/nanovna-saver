@@ -23,9 +23,11 @@ import os
 import re
 from collections import UserDict, defaultdict
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Optional
 
-from scipy.interpolate import interp1d
+import numpy as np
+import numpy.typing as npt
 
 from .RFTools import Datapoint
 from .Touchstone import Touchstone
@@ -280,13 +282,122 @@ class CalDataSet(UserDict):
         return any(self.data)
 
 
+ERROR_TERMS = ("e00", "e11", "delta_e", "e10e01", "e30", "e22", "e10e32")
+RXP_CREATED = re.compile(r"^Created:\s*(?P<ts>\S+)")
+
+FloatArray = npt.NDArray[np.float64]
+ComplexArray = npt.NDArray[np.complex128]
+
+
+def _interp_complex(
+    freq: FloatArray, xp: FloatArray, fp: ComplexArray
+) -> ComplexArray:
+    """Linear interpolation of complex values, holding the edge values
+    outside of the calibrated range (same behaviour as the former
+    scipy interp1d(kind="slinear", fill_value=(first, last)))."""
+    return np.interp(freq, xp, fp.real) + 1j * np.interp(freq, xp, fp.imag)
+
+
+def solve_one_port(  # noqa: PLR0913
+    gm1: ComplexArray,
+    gm2: ComplexArray,
+    gm3: ComplexArray,
+    g1: ComplexArray,
+    g2: ComplexArray,
+    g3: ComplexArray,
+) -> tuple[ComplexArray, ComplexArray, ComplexArray]:
+    """Solve the 3-term error model from measured (gm) and actual (g)
+    reflection of short (1), open (2) and load (3).
+
+    Returns (e00, e11, delta_e) with S11 = (m - e00) / (m * e11 - delta_e)
+    """
+    denominator = (
+        g1 * (g2 - g3) * gm1
+        + g2 * g3 * gm2
+        - g2 * g3 * gm3
+        - (g2 * gm2 - g3 * gm3) * g1
+    )
+    if np.any(denominator == 0):
+        raise ZeroDivisionError("singular SOL measurement")
+    e00 = (
+        -(
+            (g2 * gm3 - g3 * gm3) * g1 * gm2
+            - (g2 * g3 * gm2 - g2 * g3 * gm3 - (g3 * gm2 - g2 * gm3) * g1) * gm1
+        )
+        / denominator
+    )
+    e11 = ((g2 - g3) * gm1 - g1 * (gm2 - gm3) + g3 * gm2 - g2 * gm3) / (
+        denominator
+    )
+    delta_e = (
+        -(
+            (g1 * (gm2 - gm3) - g2 * gm2 + g3 * gm3) * gm1
+            + (g2 * gm3 - g3 * gm3) * gm2
+        )
+        / denominator
+    )
+    return e00, e11, delta_e
+
+
+def solve_two_port(  # noqa: PLR0913
+    e00: ComplexArray,
+    e11: ComplexArray,
+    delta_e: ComplexArray,
+    gm4: ComplexArray,
+    gm5: ComplexArray,
+    gm6: ComplexArray,
+    gt: ComplexArray,
+) -> tuple[ComplexArray, ComplexArray, ComplexArray, ComplexArray]:
+    """Solve forward transmission terms from through (gm4), reflection at
+    port 1 while through connected (gm5) and isolation (gm6).
+
+    Returns (e10e01, e30, e22, e10e32)"""
+    gm7 = gm5 - e00
+    e30 = gm6
+    e10e01 = e00 * e11 - delta_e
+    e22 = gm7 / (gm7 * e11 * gt**2 + e10e01 * gt**2)
+    e10e32 = (gm4 - gm6) * (1 - e11 * e22 * gt**2) / gt
+    return e10e01, e30, e22, e10e32
+
+
+def correct_full_two_port(
+    terms: dict[str, ComplexArray],
+    s11m: ComplexArray,
+    s21m: ComplexArray,
+    s12m: ComplexArray,
+    s22m: ComplexArray,
+) -> tuple[ComplexArray, ComplexArray, ComplexArray, ComplexArray]:
+    """Full 2-port correction for a one-path (T/R) VNA using a forward
+    and a reversed (DUT flipped) measurement.
+
+    As the DUT is physically reversed, the reverse error terms equal the
+    forward ones: reverse source match = e11, reverse load match = e22,
+    reverse directivity = e00, ... This is the 12-term correction with
+    those identities applied.
+    """
+    e00, e11, e10e01 = terms["e00"], terms["e11"], terms["e10e01"]
+    e30, e22, e10e32 = terms["e30"], terms["e22"], terms["e10e32"]
+    n11 = (s11m - e00) / e10e01
+    n22 = (s22m - e00) / e10e01
+    n21 = (s21m - e30) / e10e32
+    n12 = (s12m - e30) / e10e32
+    d = (1 + n11 * e11) * (1 + n22 * e11) - n21 * n12 * e22 * e22
+    s11 = (n11 * (1 + n22 * e11) - e22 * n21 * n12) / d
+    s22 = (n22 * (1 + n11 * e11) - e22 * n21 * n12) / d
+    s21 = n21 * (1 + n22 * (e11 - e22)) / d
+    s12 = n12 * (1 + n11 * (e11 - e22)) / d
+    return s11, s21, s12, s22
+
+
 class Calibration:
     def __init__(self):
         self.notes = []
         self.dataset = CalDataSet()
         self.cal_element = CalElement()
-        self.interp = {}
+        self.interp: dict[str, ComplexArray] = {}
+        self._interp_freq: FloatArray = np.array([], dtype=np.float64)
         self.isCalculated = False
+        self.created: Optional[datetime] = None
 
         self.source = "Manual"
 
@@ -306,52 +417,11 @@ class Calibration:
     def isValid2Port(self) -> bool:
         return self.dataset.complete2port()
 
-    def _calc_port_1(self, freq: int, cal: CalData):
-        g1 = self.gamma_short(freq)
-        g2 = self.gamma_open(freq)
-        g3 = self.gamma_load(freq)
-
-        gm1 = cal.short
-        gm2 = cal.open
-        gm3 = cal.load
-
-        denominator = (
-            g1 * (g2 - g3) * gm1
-            + g2 * g3 * gm2
-            - g2 * g3 * gm3
-            - (g2 * gm2 - g3 * gm3) * g1
+    def _measured(self, name: str) -> ComplexArray:
+        return np.array(
+            [getattr(c, name) for c in self.dataset.values()],
+            dtype=np.complex128,
         )
-        cal.e00 = (
-            -(
-                (g2 * gm3 - g3 * gm3) * g1 * gm2
-                - (g2 * g3 * gm2 - g2 * g3 * gm3 - (g3 * gm2 - g2 * gm3) * g1)
-                * gm1
-            )
-            / denominator
-        )
-        cal.e11 = (
-            (g2 - g3) * gm1 - g1 * (gm2 - gm3) + g3 * gm2 - g2 * gm3
-        ) / denominator
-        cal.delta_e = (
-            -(
-                (g1 * (gm2 - gm3) - g2 * gm2 + g3 * gm3) * gm1
-                + (g2 * gm3 - g3 * gm3) * gm2
-            )
-            / denominator
-        )
-
-    def _calc_port_2(self, freq: int, cal: CalData):
-        gt = self.gamma_through(freq)
-
-        gm4 = cal.through
-        gm5 = cal.thrurefl
-        gm6 = cal.isolation
-        gm7 = gm5 - cal.e00
-
-        cal.e30 = cal.isolation
-        cal.e10e01 = cal.e00 * cal.e11 - cal.delta_e
-        cal.e22 = gm7 / (gm7 * cal.e11 * gt**2 + cal.e10e01 * gt**2)
-        cal.e10e32 = (gm4 - gm6) * (1 - cal.e11 * cal.e22 * gt**2) / gt
 
     def calc_corrections(self):
         if not self.isValid1Port():
@@ -362,203 +432,215 @@ class Calibration:
             )
         logger.debug("Calculating calibration for %d points.", self.size())
 
-        for freq, caldata in self.dataset.items():
-            try:
-                self._calc_port_1(freq, caldata)
-                if self.isValid2Port():
-                    self._calc_port_2(freq, caldata)
-            except ZeroDivisionError as exc:
-                self.isCalculated = False
-                logger.error(
-                    "Division error - did you use the same measurement"
-                    " for two of short, open and load?"
+        freq = np.array(self.dataset.frequencies(), dtype=np.float64)
+        error_msg = (
+            "Two of short, open and load returned the same"
+            " values at some frequency."
+        )
+        try:
+            with np.errstate(divide="raise", invalid="raise"):
+                e00, e11, delta_e = solve_one_port(
+                    self._measured("short"),
+                    self._measured("open"),
+                    self._measured("load"),
+                    self.gamma_short(freq),
+                    self.gamma_open(freq),
+                    self.gamma_load(freq),
                 )
-                raise ValueError(
-                    f"Two of short, open and load returned the same"
-                    f" values at frequency {freq}Hz."
-                ) from exc
+                if self.isValid2Port():
+                    e10e01, e30, e22, e10e32 = solve_two_port(
+                        e00,
+                        e11,
+                        delta_e,
+                        self._measured("through"),
+                        self._measured("thrurefl"),
+                        self._measured("isolation"),
+                        self.gamma_through(freq),
+                    )
+                else:
+                    e10e01 = e00 * e11 - delta_e
+                    e30 = np.zeros_like(e00)
+                    e22 = np.zeros_like(e00)
+                    e10e32 = np.zeros_like(e00)
+        except (ZeroDivisionError, FloatingPointError) as exc:
+            self.isCalculated = False
+            logger.error(
+                "Division error - did you use the same measurement"
+                " for two of short, open and load?"
+            )
+            raise ValueError(error_msg) from exc
+        terms = {
+            "e00": e00,
+            "e11": e11,
+            "delta_e": delta_e,
+            "e10e01": e10e01,
+            "e30": e30,
+            "e22": e22,
+            "e10e32": e10e32,
+        }
+        if not all(np.all(np.isfinite(v)) for v in terms.values()):
+            self.isCalculated = False
+            raise ValueError(error_msg)
 
-        self.gen_interpolation()
+        # keep per frequency values in dataset for reference / export
+        for i, caldata in enumerate(self.dataset.values()):
+            for name, values in terms.items():
+                setattr(caldata, name, complex(values[i]))
+
+        self._interp_freq = freq
+        self.interp = terms
         self.isCalculated = True
+        if self.created is None:
+            self.created = datetime.now()
         logger.debug("Calibration correctly calculated.")
 
-    def gamma_short(self, freq: int) -> complex:
+    # Calibration standard models. All accept scalar or array frequencies.
+
+    @staticmethod
+    def _touchstone_gamma(touchstone, freq) -> ComplexArray:
+        f_ts = np.array([d.freq for d in touchstone.s11], dtype=np.float64)
+        z_ts = np.array([d.z for d in touchstone.s11], dtype=np.complex128)
+        return _interp_complex(np.asarray(freq, dtype=np.float64), f_ts, z_ts)
+
+    def gamma_short(self, freq):
+        freq = np.asarray(freq, dtype=np.float64)
         if self.cal_element.short_state == "IDEAL":
-            return IDEAL_SHORT
+            return np.full(freq.shape, IDEAL_SHORT, dtype=np.complex128)
         if self.cal_element.short_state == "FILE":
-            self.cal_element.short_touchstone.gen_interpolation_s11()
-            dp = self.cal_element.short_touchstone.s_freq("11", freq)
-            return complex(dp.re, dp.im)
+            return self._touchstone_gamma(
+                self.cal_element.short_touchstone, freq
+            )
         logger.debug("Using short calibration set values.")
-        cal_element = self.cal_element
-        Zsp = complex(
-            0.0,
+        ce = self.cal_element
+        Zsp = 1j * (
             2.0
             * math.pi
             * freq
             * (
-                cal_element.short_l0
-                + cal_element.short_l1 * freq
-                + cal_element.short_l2 * freq**2
-                + cal_element.short_l3 * freq**3
-            ),
+                ce.short_l0
+                + ce.short_l1 * freq
+                + ce.short_l2 * freq**2
+                + ce.short_l3 * freq**3
+            )
         )
         # Referencing https://arxiv.org/pdf/1606.02446.pdf (18) - (21)
         return (
             (Zsp / 50.0 - 1.0)
             / (Zsp / 50.0 + 1.0)
-            * cmath.exp(
-                complex(0.0, -4.0 * math.pi * freq * cal_element.short_length)
-            )
+            * np.exp(-4.0j * math.pi * freq * ce.short_length)
         )
 
-    def gamma_open(self, freq: int) -> complex:
+    def gamma_open(self, freq):
+        freq = np.asarray(freq, dtype=np.float64)
         if self.cal_element.open_state == "IDEAL":
-            return IDEAL_OPEN
+            return np.full(freq.shape, IDEAL_OPEN, dtype=np.complex128)
         if self.cal_element.open_state == "FILE":
-            self.cal_element.open_touchstone.gen_interpolation_s11()
-            dp = self.cal_element.open_touchstone.s_freq("11", freq)
-            return complex(dp.re, dp.im)
+            return self._touchstone_gamma(
+                self.cal_element.open_touchstone, freq
+            )
         logger.debug("Using open calibration set values.")
-        cal_element = self.cal_element
-        Zop = complex(
-            0.0,
+        ce = self.cal_element
+        Zop = 1j * (
             2.0
             * math.pi
             * freq
             * (
-                cal_element.open_c0
-                + cal_element.open_c1 * freq
-                + cal_element.open_c2 * freq**2
-                + cal_element.open_c3 * freq**3
-            ),
+                ce.open_c0
+                + ce.open_c1 * freq
+                + ce.open_c2 * freq**2
+                + ce.open_c3 * freq**3
+            )
         )
-        return ((1.0 - 50.0 * Zop) / (1.0 + 50.0 * Zop)) * cmath.exp(
-            complex(0.0, -4.0 * math.pi * freq * cal_element.open_length)
+        return ((1.0 - 50.0 * Zop) / (1.0 + 50.0 * Zop)) * np.exp(
+            -4.0j * math.pi * freq * ce.open_length
         )
 
-    def gamma_load(self, freq: int) -> complex:
+    def gamma_load(self, freq):
+        freq = np.asarray(freq, dtype=np.float64)
         if self.cal_element.load_state == "IDEAL":
-            return IDEAL_LOAD
+            return np.full(freq.shape, IDEAL_LOAD, dtype=np.complex128)
         if self.cal_element.load_state == "FILE":
-            self.cal_element.load_touchstone.gen_interpolation_s11()
-            dp = self.cal_element.load_touchstone.s_freq("11", freq)
-            return complex(dp.re, dp.im)
-        logger.debug("Using load calibration set values.")
-        cal_element = self.cal_element
-        Zl = complex(cal_element.load_r, 0.0)
-        if cal_element.load_c > 0.0:
-            Zl = cal_element.load_r / complex(
-                1.0,
-                2.0 * cal_element.load_r * math.pi * freq * cal_element.load_c,
+            return self._touchstone_gamma(
+                self.cal_element.load_touchstone, freq
             )
-        if cal_element.load_l > 0.0:
-            Zl = Zl + complex(0.0, 2 * math.pi * freq * cal_element.load_l)
+        logger.debug("Using load calibration set values.")
+        ce = self.cal_element
+        Zl = np.full(freq.shape, ce.load_r, dtype=np.complex128)
+        if ce.load_c > 0.0:
+            Zl = ce.load_r / (
+                1.0 + 2.0j * ce.load_r * math.pi * freq * ce.load_c
+            )
+        if ce.load_l > 0.0:
+            Zl = Zl + 2j * math.pi * freq * ce.load_l
         return (
             (Zl / 50.0 - 1.0)
             / (Zl / 50.0 + 1.0)
-            * cmath.exp(
-                complex(0.0, -4 * math.pi * freq * cal_element.load_length)
-            )
+            * np.exp(-4j * math.pi * freq * ce.load_length)
         )
 
-    def gamma_through(self, freq: int) -> complex:
+    def gamma_through(self, freq):
+        freq = np.asarray(freq, dtype=np.float64)
         if self.cal_element.through_is_ideal:
-            return IDEAL_THROUGH
+            return np.full(freq.shape, IDEAL_THROUGH, dtype=np.complex128)
         logger.debug("Using through calibration set values.")
-        cal_element = self.cal_element
-        return cmath.exp(
-            complex(0.0, -2.0 * math.pi * cal_element.through_length * freq)
-        )
+        return np.exp(-2.0j * math.pi * self.cal_element.through_length * freq)
 
-    def gen_interpolation(self):
-        (freq, e00, e11, delta_e, e10e01, e30, e22, e10e32) = zip(
-            *[
-                (
-                    c.freq,
-                    c.e00,
-                    c.e11,
-                    c.delta_e,
-                    c.e10e01,
-                    c.e30,
-                    c.e22,
-                    c.e10e32,
-                )
-                for c in self.dataset.values()
-            ],
-            strict=False,
-        )
+    # Correction
 
-        self.interp = {
-            "e00": interp1d(
-                freq,
-                e00,
-                kind="slinear",
-                bounds_error=False,
-                fill_value=(e00[0], e00[-1]),
-            ),
-            "e11": interp1d(
-                freq,
-                e11,
-                kind="slinear",
-                bounds_error=False,
-                fill_value=(e11[0], e11[-1]),
-            ),
-            "delta_e": interp1d(
-                freq,
-                delta_e,
-                kind="slinear",
-                bounds_error=False,
-                fill_value=(delta_e[0], delta_e[-1]),
-            ),
-            "e10e01": interp1d(
-                freq,
-                e10e01,
-                kind="slinear",
-                bounds_error=False,
-                fill_value=(e10e01[0], e10e01[-1]),
-            ),
-            "e30": interp1d(
-                freq,
-                e30,
-                kind="slinear",
-                bounds_error=False,
-                fill_value=(e30[0], e30[-1]),
-            ),
-            "e22": interp1d(
-                freq,
-                e22,
-                kind="slinear",
-                bounds_error=False,
-                fill_value=(e22[0], e22[-1]),
-            ),
-            "e10e32": interp1d(
-                freq,
-                e10e32,
-                kind="slinear",
-                bounds_error=False,
-                fill_value=(e10e32[0], e10e32[-1]),
-            ),
+    def terms_at(self, freq) -> dict[str, ComplexArray]:
+        """Error terms interpolated to the given frequencies"""
+        freq = np.asarray(freq, dtype=np.float64)
+        return {
+            name: _interp_complex(freq, self._interp_freq, values)
+            for name, values in self.interp.items()
         }
 
-    def correct11(self, dp: Datapoint):
-        i = self.interp
-        s11 = (dp.z - i["e00"](dp.freq)) / (
-            (dp.z * i["e11"](dp.freq)) - i["delta_e"](dp.freq)
+    def correct11_array(self, freq, s11m) -> ComplexArray:
+        t = self.terms_at(freq)
+        s11m = np.asarray(s11m, dtype=np.complex128)
+        return (s11m - t["e00"]) / (s11m * t["e11"] - t["delta_e"])
+
+    def correct21_array(self, freq, s21m, s11m) -> ComplexArray:
+        """Enhanced response correction of S21 (source match corrected)"""
+        t = self.terms_at(freq)
+        s11m = np.asarray(s11m, dtype=np.complex128)
+        s21m = np.asarray(s21m, dtype=np.complex128)
+        s21 = (s21m - t["e30"]) / t["e10e32"]
+        return s21 * (t["e10e01"] / (t["e11"] * s11m - t["delta_e"]))
+
+    def correct_two_port_array(
+        self, freq, s11m, s21m, s12m, s22m
+    ) -> tuple[ComplexArray, ComplexArray, ComplexArray, ComplexArray]:
+        if not self.isValid2Port():
+            raise ValueError(
+                "Full 2-port correction needs a 2-port calibration"
+            )
+        return correct_full_two_port(
+            self.terms_at(freq),
+            *(
+                np.asarray(v, dtype=np.complex128)
+                for v in (s11m, s21m, s12m, s22m)
+            ),
         )
+
+    def correct11(self, dp: Datapoint):
+        s11 = complex(self.correct11_array([dp.freq], [dp.z])[0])
         return Datapoint(dp.freq, s11.real, s11.imag)
 
     def correct21(self, dp: Datapoint, dp11: Datapoint):
-        i = self.interp
-        s21 = (dp.z - i["e30"](dp.freq)) / i["e10e32"](dp.freq)
-        s21 = s21 * (
-            i["e10e01"](dp.freq)
-            / (i["e11"](dp.freq) * dp11.z - i["delta_e"](dp.freq))
-        )
+        s21 = complex(self.correct21_array([dp.freq], [dp.z], [dp11.z])[0])
         return Datapoint(dp.freq, s21.real, s21.imag)
 
+    def freq_range(self) -> tuple[int, int]:
+        return self.dataset.freq_min(), self.dataset.freq_max()
+
     def save(self, filename: str):
-        self.dataset.notes = "\n".join(self.notes)
+        notes = [n for n in self.notes if not RXP_CREATED.match(n)]
+        if self.created:
+            notes.append(
+                f"Created: {self.created.isoformat(timespec='seconds')}"
+            )
+        self.dataset.notes = "\n".join(notes)
         if not self.isValid1Port():
             raise ValueError("Not a valid calibration")
         with open(filename, mode="w", encoding="utf-8") as calfile:
@@ -569,3 +651,17 @@ class Calibration:
         with open(filename, encoding="utf-8") as calfile:
             self.dataset = CalDataSet().from_str(calfile.read())
             self.notes = self.dataset.notes.splitlines()
+        self.created = None
+        for note in self.notes:
+            if m := RXP_CREATED.match(note):
+                try:
+                    self.created = datetime.fromisoformat(m.group("ts"))
+                except ValueError:
+                    logger.warning("Unparsable calibration date: %s", note)
+        if self.created is None:
+            try:
+                self.created = datetime.fromtimestamp(
+                    os.path.getmtime(filename)
+                )
+            except OSError:
+                self.created = None

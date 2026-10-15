@@ -67,6 +67,7 @@ class VNA:
         self.serial = iface
         self.version = Version.parse("0.0.0")
         self.features: set[str] = set()
+        self.help_text: str = ""
         self.validateInput = False
         self.datapoints = self.valid_datapoints[0]
         self.bandwidth = 1000
@@ -124,7 +125,8 @@ class VNA:
                 yield line
 
     def init_features(self) -> None:
-        result = " ".join(self.exec_command("help")).split()
+        self.help_text = " ".join(self.exec_command("help"))
+        result = self.help_text.split()
         logger.debug("result:\n%s", result)
         if "capture" in result:
             self.features.add("Screenshots")

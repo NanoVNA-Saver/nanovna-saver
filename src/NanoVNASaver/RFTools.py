@@ -26,6 +26,24 @@ FMT_FREQ = Format()
 FMT_SHORT = Format(max_nr_digits=4)
 FMT_SWEEP = Format(max_nr_digits=9, allow_strip=True)
 
+# System reference impedance. Changed when data is renormalised to an
+# other Z0 (fixture settings) so all impedance views stay consistent.
+_REFERENCE_IMPEDANCE = [50.0]
+
+
+def reference_impedance() -> float:
+    return _REFERENCE_IMPEDANCE[0]
+
+
+def set_reference_impedance(z0: float) -> None:
+    if z0 <= 0:
+        raise ValueError(f"Reference impedance must be positive: {z0}")
+    _REFERENCE_IMPEDANCE[0] = float(z0)
+
+
+def _ref(ref_impedance: float | None) -> float:
+    return reference_impedance() if ref_impedance is None else ref_impedance
+
 
 class Datapoint(NamedTuple):
     freq: int
@@ -56,38 +74,42 @@ class Datapoint(NamedTuple):
     def wavelength(self) -> float:
         return 299792458 / self.freq if self.freq else math.inf
 
-    def impedance(self, ref_impedance: float = 50) -> complex:
-        return gamma_to_impedance(self.z, ref_impedance)
+    def impedance(self, ref_impedance: float | None = None) -> complex:
+        return gamma_to_impedance(self.z, _ref(ref_impedance))
 
-    def shuntImpedance(self, ref_impedance: float = 50) -> complex:
+    def shuntImpedance(self, ref_impedance: float | None = None) -> complex:
         try:
-            return 0.5 * ref_impedance * self.z / (1 - self.z)
+            return 0.5 * _ref(ref_impedance) * self.z / (1 - self.z)
         except ZeroDivisionError:
             return math.inf
 
-    def seriesImpedance(self, ref_impedance: float = 50) -> complex:
+    def seriesImpedance(self, ref_impedance: float | None = None) -> complex:
         try:
-            return 2 * ref_impedance * (1 - self.z) / self.z
+            return 2 * _ref(ref_impedance) * (1 - self.z) / self.z
         except ZeroDivisionError:
             return math.inf
 
-    def qFactor(self, ref_impedance: float = 50) -> float:
-        imp = self.impedance(ref_impedance)
+    def qFactor(self, ref_impedance: float | None = None) -> float:
+        imp = self.impedance(_ref(ref_impedance))
         return -1 if imp.real == 0.0 else abs(imp.imag / imp.real)
 
-    def capacitiveEquivalent(self, ref_impedance: float = 50) -> float:
+    def capacitiveEquivalent(self, ref_impedance: float | None = None) -> float:
         return impedance_to_capacitance(
-            self.impedance(ref_impedance), self.freq
+            self.impedance(_ref(ref_impedance)), self.freq
         )
 
-    def inductiveEquivalent(self, ref_impedance: float = 50) -> float:
-        return impedance_to_inductance(self.impedance(ref_impedance), self.freq)
+    def inductiveEquivalent(self, ref_impedance: float | None = None) -> float:
+        return impedance_to_inductance(
+            self.impedance(_ref(ref_impedance)), self.freq
+        )
 
 
-def gamma_to_impedance(gamma: complex, ref_impedance: float = 50) -> complex:
+def gamma_to_impedance(
+    gamma: complex, ref_impedance: float | None = None
+) -> complex:
     """Calculate impedance from gamma"""
     try:
-        return ((-gamma - 1) / (gamma - 1)) * ref_impedance
+        return ((-gamma - 1) / (gamma - 1)) * _ref(ref_impedance)
     except ZeroDivisionError:
         return math.inf
 
@@ -112,14 +134,18 @@ def impedance_to_inductance(z: complex, freq: float) -> float:
     return 0 if freq == 0 else z.imag * 1 / (freq * 2 * math.pi)
 
 
-def impedance_to_norm(z: complex, ref_impedance: float = 50) -> complex:
+def impedance_to_norm(
+    z: complex, ref_impedance: float | None = None
+) -> complex:
     """Calculate normalized z from impedance"""
-    return z / ref_impedance
+    return z / _ref(ref_impedance)
 
 
-def norm_to_impedance(z: complex, ref_impedance: float = 50) -> complex:
+def norm_to_impedance(
+    z: complex, ref_impedance: float | None = None
+) -> complex:
     """Calculate impedance from normalized z"""
-    return z * ref_impedance
+    return z * _ref(ref_impedance)
 
 
 def parallel_to_serial(z: complex) -> complex:
@@ -128,9 +154,11 @@ def parallel_to_serial(z: complex) -> complex:
     return complex(z.real * z.imag**2 / z_sq_sum, z.real**2 * z.imag / z_sq_sum)
 
 
-def reflection_coefficient(z: complex, ref_impedance: float = 50) -> complex:
+def reflection_coefficient(
+    z: complex, ref_impedance: float | None = None
+) -> complex:
     """Calculate reflection coefficient for z"""
-    return (z - ref_impedance) / (z + ref_impedance)
+    return (z - _ref(ref_impedance)) / (z + _ref(ref_impedance))
 
 
 def serial_to_parallel(z: complex) -> complex:

@@ -23,9 +23,10 @@ from typing import TYPE_CHECKING
 
 import serial
 from PySide6 import QtWidgets
-from PySide6.QtCore import Signal
+from PySide6.QtCore import QThread, Signal
 
 from ..Hardware.Hardware import Interface, get_comment, get_interfaces, get_VNA
+from ..Hardware.VirtualVNA import VirtualInterface
 from .Control import Control
 
 if TYPE_CHECKING:
@@ -33,6 +34,25 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger(__name__)
+
+
+class _ConnectThread(QThread):
+    """Device detection and initialisation off the GUI thread"""
+
+    done = Signal(object, str)  # VNA or None, error message
+
+    def __init__(self, interface: Interface) -> None:
+        super().__init__()
+        self.interface = interface
+
+    def run(self) -> None:
+        try:
+            vna = get_VNA(self.interface)
+        except (IOError, ValueError, KeyError) as exc:
+            logger.error("Unable to connect to VNA: %s", exc)
+            self.done.emit(None, str(exc))
+            return
+        self.done.emit(vna, "")
 
 
 class SerialControl(Control):
@@ -49,12 +69,12 @@ class SerialControl(Control):
 
         # Move TCP/IP checkbox to the title
         # self.setTitle("")
-        
+
         # Create a widget for the header
         header_widget = QtWidgets.QWidget()
         header_layout = QtWidgets.QHBoxLayout(header_widget)
         header_layout.setContentsMargins(0, 0, 0, 0)
-        
+
         # The label
         lbl_title = QtWidgets.QLabel("Network connection")
         # Make it look like a groupbox title (usually bold)
@@ -62,11 +82,11 @@ class SerialControl(Control):
         font.setBold(True)
         font.setPointSize(10)
         lbl_title.setFont(font)
-        
+
         header_layout.addWidget(lbl_title)
         header_layout.addStretch()
         header_layout.addWidget(self.cb_tcp)
-        
+
         self.layout.addRow(header_widget)
 
         self.inp_port = QtWidgets.QComboBox()
@@ -107,6 +127,13 @@ class SerialControl(Control):
         self.update_settings_state(False)
 
         self.connected.connect(self.update_settings_state)
+
+    def real_device_count(self) -> int:
+        return sum(
+            1
+            for i in range(self.inp_port.count())
+            if not isinstance(self.inp_port.itemData(i), VirtualInterface)
+        )
 
     def rescanSerialPort(self):
         self.inp_port.clear()
@@ -159,11 +186,20 @@ class SerialControl(Control):
                 return
             self.interface.timeout = 0.05
         sleep(0.1)
-        try:
-            self.app.vna = get_VNA(self.interface)
-        except IOError as exc:
-            logger.error("Unable to connect to VNA: %s", exc)
+        self.btn_toggle.setText("Connecting ...")
+        self.btn_toggle.setEnabled(False)
+        self._connect_thread = _ConnectThread(self.interface)
+        self._connect_thread.done.connect(self._connected)
+        self._connect_thread.start()
 
+    def _connected(self, vna, error: str) -> None:
+        self.btn_toggle.setEnabled(True)
+        if vna is None:
+            self.btn_toggle.setText("Connect to device")
+            self.interface.close()
+            self.app.showError(f"Unable to connect to VNA: {error}")
+            return
+        self.app.vna = vna
         self.app.vna.validateInput = self.app.settings.value(
             "SerialInputValidation", False, bool
         )
@@ -223,8 +259,12 @@ class SerialControl(Control):
         # b) serial is disconnected AND inp_port was selected
         # c) TCP is checked and text is present
         port_selected = self.inp_port.currentData() is not None
-        tcp_selected = self.cb_tcp.isChecked() and len(self.inp_port.currentText()) > 0
-        self.btn_toggle.setEnabled(self.is_vna_connected() or port_selected or tcp_selected)
+        tcp_selected = (
+            self.cb_tcp.isChecked() and len(self.inp_port.currentText()) > 0
+        )
+        self.btn_toggle.setEnabled(
+            self.is_vna_connected() or port_selected or tcp_selected
+        )
 
     def is_vna_connected(self) -> bool:
         return self.app.vna and self.app.vna.connected()

@@ -60,7 +60,7 @@ from .Hardware.Hardware import Interface
 from .Hardware.VNA import VNA
 from .Marker.Delta import DeltaMarker
 from .Marker.Widget import Marker
-from .RFTools import corr_att_data
+from .RFTools import Datapoint, corr_att_data
 from .Settings.Bands import BandsModel
 from .Settings.Sweep import Sweep
 from .SweepWorker import SweepWorker
@@ -72,14 +72,20 @@ from .Windows import (
     DeviceSettingsWindow,
     DisplaySettingsWindow,
     FilesWindow,
+    FixtureWindow,
+    MatchingWindow,
+    ProTracesWindow,
     SweepSettingsWindow,
     TDRWindow,
+    TwoPortWindow,
 )
 from .Windows.ui import get_window_icon
 
 logger = logging.getLogger(__name__)
 
 WORKING_KILL_TIME_MS = 10 * 1000
+# Coalesce data updates: redraw at most every UPDATE_INTERVAL_MS
+UPDATE_INTERVAL_MS = 50
 
 
 class Communicate(QObject):
@@ -102,7 +108,17 @@ class NanoVNASaver(QWidget):
         self.sweep = Sweep()
         self.worker = SweepWorker(self)
 
-        self.worker.signals.updated.connect(self.dataUpdated)
+        self.worker.smoothing_pct = self.settings.value(
+            "ProcessingSmoothing", 0.0, float
+        )
+        self.worker.set_running_average(
+            self.settings.value("ProcessingRunningAverage", 1, int)
+        )
+        self._update_timer = QtCore.QTimer(self)
+        self._update_timer.setSingleShot(True)
+        self._update_timer.setInterval(UPDATE_INTERVAL_MS)
+        self._update_timer.timeout.connect(self.dataUpdated)
+        self.worker.signals.updated.connect(self.schedule_update)
         self.worker.signals.finished.connect(self.sweepFinished)
         self.worker.signals.sweep_error.connect(self.showSweepError)
 
@@ -269,6 +285,10 @@ class NanoVNASaver(QWidget):
             "sweep_settings": SweepSettingsWindow(self),
             "setup": DisplaySettingsWindow(self),
             "tdr": TDRWindow(self),
+            "pro_traces": ProTracesWindow(self),
+            "fixture": FixtureWindow(self),
+            "two_port": TwoPortWindow(self),
+            "matching": MatchingWindow(self),
         }
 
         ###############################################################
@@ -323,6 +343,23 @@ class NanoVNASaver(QWidget):
         self.s11_min_rl_label = QtWidgets.QLabel()
         s11_control_layout.addRow("Return loss:", self.s11_min_rl_label)
 
+        btn_s11_minmax = QtWidgets.QPushButton("S11 min / max")
+        btn_s11_minmax.setMinimumHeight(20)
+        btn_s11_minmax.setToolTip(
+            "Find minimum and maximum of S11 (dB).\n"
+            "Marker 1 goes to the minimum, marker 2 to the maximum."
+        )
+        btn_s11_minmax.clicked.connect(self.find_s11_min_max)
+        self.s11_minmax_auto = QtWidgets.QCheckBox("after every sweep")
+        minmax_row = QtWidgets.QHBoxLayout()
+        minmax_row.addWidget(btn_s11_minmax)
+        minmax_row.addWidget(self.s11_minmax_auto)
+        s11_control_layout.addRow(minmax_row)
+        self.s11_min_label = QtWidgets.QLabel()
+        s11_control_layout.addRow("S11 min:", self.s11_min_label)
+        self.s11_max_label = QtWidgets.QLabel()
+        s11_control_layout.addRow("S11 max:", self.s11_max_label)
+
         self.marker_column.addWidget(s11_control_box)
 
         s21_control_box = QtWidgets.QGroupBox()
@@ -336,6 +373,29 @@ class NanoVNASaver(QWidget):
 
         self.s21_max_gain_label = QtWidgets.QLabel()
         s21_control_layout.addRow("Max gain:", self.s21_max_gain_label)
+
+        btn_s21_minmax = QtWidgets.QPushButton("S21 min / max")
+        btn_s21_minmax.setMinimumHeight(20)
+        btn_s21_minmax.setToolTip(
+            "Find minimum and maximum of S21 (dB).\n"
+            "Marker 1 goes to the minimum, marker 2 to the maximum."
+        )
+        btn_s21_minmax.clicked.connect(self.find_s21_min_max)
+        self.s21_minmax_auto = QtWidgets.QCheckBox("after every sweep")
+        minmax21_row = QtWidgets.QHBoxLayout()
+        minmax21_row.addWidget(btn_s21_minmax)
+        minmax21_row.addWidget(self.s21_minmax_auto)
+        s21_control_layout.addRow(minmax21_row)
+        self.s21_min_label = QtWidgets.QLabel()
+        s21_control_layout.addRow("S21 min:", self.s21_min_label)
+        self.s21_max_label = QtWidgets.QLabel()
+        s21_control_layout.addRow("S21 max:", self.s21_max_label)
+        self.s11_minmax_auto.toggled.connect(
+            lambda: self._minmax_auto_toggled(self.s11_minmax_auto)
+        )
+        self.s21_minmax_auto.toggled.connect(
+            lambda: self._minmax_auto_toggled(self.s21_minmax_auto)
+        )
 
         self.marker_column.addWidget(s21_control_box)
 
@@ -375,6 +435,26 @@ class NanoVNASaver(QWidget):
         tdr_control_layout.addRow(self.tdr_button)
 
         left_column.addWidget(tdr_control_box)
+
+        ###############################################################
+        #  Pro tools
+        ###############################################################
+
+        pro_box = QtWidgets.QGroupBox("Pro tools")
+        pro_layout = QtWidgets.QGridLayout(pro_box)
+        for i, (label, name) in enumerate(
+            (
+                ("Traces && limits ...", "pro_traces"),
+                ("Fixture / Z0 ...", "fixture"),
+                ("Full 2-port ...", "two_port"),
+                ("Matching ...", "matching"),
+            )
+        ):
+            btn = QtWidgets.QPushButton(label)
+            btn.setMinimumHeight(20)
+            btn.clicked.connect(lambda _=False, n=name: self.display_window(n))
+            pro_layout.addWidget(btn, i // 2, i % 2)
+        left_column.addWidget(pro_box)
 
         ###############################################################
         #  Spacer
@@ -458,8 +538,8 @@ class NanoVNASaver(QWidget):
 
     def auto_connect(
         self,
-    ):  # connect if there is exactly one detected serial device
-        if self.serial_control.inp_port.count() == 1:
+    ):  # connect if there is exactly one detected (real) device
+        if self.serial_control.real_device_count() == 1:
             self.serial_control.connect_device()
 
     def _sweep_control(self, start: bool = True) -> None:
@@ -488,10 +568,20 @@ class NanoVNASaver(QWidget):
         # https://www.pythonguis.com/tutorials/multithreading-pyqt6-applications-qthreadpool/
         # self.threadpool.start(self.worker)
 
-    def saveData(self, data, data21, source=None):
+    def saveData(
+        self,
+        data,
+        data21,
+        source=None,
+        s12: list[Datapoint] | None = None,
+        s22: list[Datapoint] | None = None,
+    ):
         with self.dataLock:
             self.data.s11 = data
             self.data.s21 = data21
+            # reverse data is only valid together with its forward sweep
+            self.data.s12 = s12 or []
+            self.data.s22 = s22 or []
             if self.s21att > 0:
                 self.data.s21 = corr_att_data(self.data.s21, self.s21att)
         if source is not None:
@@ -531,7 +621,19 @@ class NanoVNASaver(QWidget):
                 with contextlib.suppress(IndexError):
                     self.delta_marker.updateLabels()
 
+    def schedule_update(self) -> None:
+        if not self._update_timer.isActive():
+            self._update_timer.start()
+
+    def update_processing_tag(self) -> None:
+        tag = self.worker.processing_tag()
+        if tag != Chart.processing_tag:
+            Chart.processing_tag = tag
+            for c in self.subscribing_charts:
+                c.update()
+
     def dataUpdated(self):
+        self.update_processing_tag()
         with self.dataLock:
             s11 = self.data.s11[:]
             s21 = self.data.s21[:]
@@ -581,11 +683,64 @@ class NanoVNASaver(QWidget):
         self.updateTitle()
         self.communicate.data_available.emit()
 
+    def find_s11_min_max(self) -> None:
+        """Minimum (best match) and maximum of S11 in dB, marker 1 / 2"""
+        with self.dataLock:
+            s11 = self.data.s11[:]
+        if not s11:
+            self.s11_min_label.setText("no data")
+            self.s11_max_label.setText("")
+            return
+        lo = min(s11, key=lambda d: d.gain)
+        hi = max(s11, key=lambda d: d.gain)
+        self.s11_min_label.setText(
+            f"{format_gain(lo.gain)} @ {format_frequency(lo.freq)}"
+            f" (VSWR {format_vswr(lo.vswr)})"
+        )
+        self.s11_max_label.setText(
+            f"{format_gain(hi.gain)} @ {format_frequency(hi.freq)}"
+        )
+        for marker, point in zip(self.markers, (lo, hi), strict=False):
+            marker.setFrequency(str(point.freq))
+
+    def find_s21_min_max(self) -> None:
+        """Minimum and maximum of S21 in dB, marker 1 / 2"""
+        with self.dataLock:
+            s21 = self.data.s21[:]
+        if not s21:
+            self.s21_min_label.setText("no data")
+            self.s21_max_label.setText("")
+            return
+        lo = min(s21, key=lambda d: d.gain)
+        hi = max(s21, key=lambda d: d.gain)
+        self.s21_min_label.setText(
+            f"{format_gain(lo.gain)} @ {format_frequency(lo.freq)}"
+        )
+        self.s21_max_label.setText(
+            f"{format_gain(hi.gain)} @ {format_frequency(hi.freq)}"
+        )
+        for marker, point in zip(self.markers, (lo, hi), strict=False):
+            marker.setFrequency(str(point.freq))
+
+    def _minmax_auto_toggled(self, source: QtWidgets.QCheckBox) -> None:
+        # both searches use markers 1 and 2: only one can follow sweeps
+        if source.isChecked():
+            other = (
+                self.s21_minmax_auto
+                if source is self.s11_minmax_auto
+                else self.s11_minmax_auto
+            )
+            other.setChecked(False)
+
     def sweepFinished(self):
         self._sweep_control(start=False)
 
         for marker in self.markers:
             marker.frequencyInput.textEdited.emit(marker.frequencyInput.text())
+        if self.s11_minmax_auto.isChecked():
+            self.find_s11_min_max()
+        if self.s21_minmax_auto.isChecked():
+            self.find_s21_min_max()
 
     def setReference(self, s11=None, s21=None, source=None):
         if not s11:

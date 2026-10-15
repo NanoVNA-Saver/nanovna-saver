@@ -1,0 +1,15 @@
+{
+  "name": "Filter production test",
+  "device": "virtual:demo",
+  "sweep": {"start": 300e6, "stop": 600e6, "points": 101, "segments": 3},
+  "processing": {"smoothing": 0.5, "z0": 50},
+  "limits": "limits_example.json",
+  "steps": [
+    {"action": "prompt", "message": "Connect DUT {serial}"},
+    {"action": "sweep"},
+    {"action": "check"},
+    {"action": "save", "path": "results/{serial}_{timestamp}.s2p"},
+    {"action": "report", "path": "results/{serial}_{timestamp}.html"},
+    {"action": "log", "path": "results/results.csv"}
+  ]
+}
