@@ -163,11 +163,11 @@ class BandsModel(QtCore.QAbstractTableModel):
             return False
         name, start, end = self.bands[row]
         match col:
-            case 1:
+            case 0:
                 name = value
-            case 2:
+            case 1:
                 start = value
-            case 3:
+            case 2:
                 end = value
         self.bands[index.row()] = (name, start, end)
         self.dataChanged.emit(index, index)
