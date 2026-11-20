@@ -1,6 +1,7 @@
 [project]
-name='NanoVNASaver'
-description='GUI for the NanoVNA and derivates'
+name="NanoVNASaver"
+version = "0.7.3.852"
+description="GUI for the NanoVNA and derivates"
 authors = [
     { name = "Rune B. Broberg", email = "NanoVNA-Saver@users.noreply.github.com" }
 ]
@@ -23,7 +24,7 @@ classifiers =[
   'Programming Language :: Python :: 3.13',
 ]
 keywords = ["Communications", "Ham Radio", "nanovna"]
-dynamic=['version']
+#dynamic=['version']
 
 dependencies=[
   'pyserial~=3.5',
