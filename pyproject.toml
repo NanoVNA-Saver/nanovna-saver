@@ -1,6 +1,7 @@
 [project]
-name='NanoVNASaver'
-description='GUI for the NanoVNA and derivates'
+name="NanoVNASaver"
+version = "0.7.3.852"
+description="GUI for the NanoVNA and derivates"
 authors = [
     { name = "Rune B. Broberg", email = "NanoVNA-Saver@users.noreply.github.com" }
 ]
