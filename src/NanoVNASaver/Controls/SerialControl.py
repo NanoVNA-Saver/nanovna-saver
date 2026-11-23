@@ -17,30 +17,65 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
+from threading import RLock
 from time import sleep
+from typing import TYPE_CHECKING
 
-from PyQt6 import QtCore, QtWidgets
+import serial
+from PySide6 import QtWidgets
+from PySide6.QtCore import Signal
 
-from NanoVNASaver.Controls.Control import Control
-from NanoVNASaver.Hardware.Hardware import Interface, get_interfaces, get_VNA
+from ..Hardware.Hardware import Interface, get_comment, get_interfaces, get_VNA
+from .Control import Control
+
+if TYPE_CHECKING:
+    from ..NanoVNASaver.NanoVNASaver import NanoVNASaver as vna_app
+
 
 logger = logging.getLogger(__name__)
 
 
 class SerialControl(Control):
-
     # true when serial port was connected and false when it was disconnected
-    connected = QtCore.pyqtSignal(bool)
+    connected = Signal(bool)
 
-    def __init__(self, app: QtWidgets.QWidget):
+    def __init__(self, app: "vna_app"):
         super().__init__(app, "Serial port control")
 
         self.interface = Interface("serial", "none")
+
+        self.cb_tcp = QtWidgets.QCheckBox("TCP/IP")
+        self.cb_tcp.stateChanged.connect(self.update_connect_btn_state)
+
+        # Move TCP/IP checkbox to the title
+        # self.setTitle("")
+        
+        # Create a widget for the header
+        header_widget = QtWidgets.QWidget()
+        header_layout = QtWidgets.QHBoxLayout(header_widget)
+        header_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # The label
+        lbl_title = QtWidgets.QLabel("Network connection")
+        # Make it look like a groupbox title (usually bold)
+        font = lbl_title.font()
+        font.setBold(True)
+        font.setPointSize(10)
+        lbl_title.setFont(font)
+        
+        header_layout.addWidget(lbl_title)
+        header_layout.addStretch()
+        header_layout.addWidget(self.cb_tcp)
+        
+        self.layout.addRow(header_widget)
+
         self.inp_port = QtWidgets.QComboBox()
         self.inp_port.setMinimumHeight(20)
         self.rescanSerialPort()
         self.inp_port.setEditable(True)
         self.inp_port.currentIndexChanged.connect(self.update_connect_btn_state)
+        self.inp_port.editTextChanged.connect(self.update_connect_btn_state)
+
         self.btn_rescan = QtWidgets.QPushButton("Rescan")
         self.btn_rescan.setMinimumHeight(20)
         self.btn_rescan.setFixedWidth(60)
@@ -87,18 +122,38 @@ class SerialControl(Control):
 
     def connect_device(self):
         with self.interface.lock:
-            new_interface = self.inp_port.currentData()
-            if not new_interface:
-                return
-            self.interface = new_interface
-            logger.info("Connection %s", self.interface)
-            try:
-                self.interface.open()
-            except (IOError, AttributeError) as exc:
-                logger.error(
-                    "Tried to open %s and failed: %s", self.interface, exc
-                )
-                return
+            if self.cb_tcp.isChecked():
+                address = self.inp_port.currentText()
+                if not address:
+                    return
+                url = f"socket://{address}"
+                logger.info("Connection TCP %s", url)
+                try:
+                    s = serial.serial_for_url(url, do_not_open=True)
+                    s.type = "network"
+                    s.lock = RLock()
+                    s.timeout = 0.05
+                    s.open()
+                    s.comment = get_comment(s)
+                    s.close()
+                    self.interface = s
+                    self.interface.open()
+                except Exception as exc:
+                    logger.error("Failed to connect to %s: %s", url, exc)
+                    return
+            else:
+                new_interface = self.inp_port.currentData()
+                if not new_interface:
+                    return
+                self.interface = new_interface
+                logger.info("Connection %s", self.interface)
+                try:
+                    self.interface.open()
+                except (IOError, AttributeError) as exc:
+                    logger.error(
+                        "Tried to open %s and failed: %s", self.interface, exc
+                    )
+                    return
             if not self.interface.isOpen():
                 logger.error("Unable to open port %s", self.interface)
                 return
@@ -151,6 +206,11 @@ class SerialControl(Control):
     def disconnect_device(self):
         with self.interface.lock:
             logger.info("Closing connection to %s", self.interface)
+            try:
+                self.app.vna.disconnect()
+            except IOError as exc:
+                logger.error("Unable to disconnect from VNA: %s", exc)
+
             self.interface.close()
             self.btn_toggle.setText("Connect to device")
             self.btn_toggle.repaint()
@@ -161,8 +221,10 @@ class SerialControl(Control):
         # Eanble Connect/Dicsonnect button only if:
         # a) serial was already connected
         # b) serial is disconnected AND inp_port was selected
+        # c) TCP is checked and text is present
         port_selected = self.inp_port.currentData() is not None
-        self.btn_toggle.setEnabled(self.is_vna_connected() or port_selected)
+        tcp_selected = self.cb_tcp.isChecked() and len(self.inp_port.currentText()) > 0
+        self.btn_toggle.setEnabled(self.is_vna_connected() or port_selected or tcp_selected)
 
     def is_vna_connected(self) -> bool:
         return self.app.vna and self.app.vna.connected()

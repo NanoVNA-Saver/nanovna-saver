@@ -19,14 +19,15 @@
 import logging
 from typing import TYPE_CHECKING
 
-from PyQt6 import QtWidgets
+from PySide6 import QtWidgets
 
-import NanoVNASaver.AnalyticTools as At
-from NanoVNASaver.Analysis.Base import Analysis, QHLine
-from NanoVNASaver.Formatting import format_frequency, format_vswr
+from .. import AnalyticTools as At
+from ..Formatting import format_frequency, format_vswr
+from .Base import Analysis, QHLine
 
 if TYPE_CHECKING:
-    from NanoVNASaver.NanoVNASaver import NanoVNASaver as NanoVNA
+    from ..NanoVNASaver.NanoVNASaver import NanoVNASaver as vna_app
+
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +36,7 @@ class VSWRAnalysis(Analysis):
     MAX_DIPS_SHOWN: int = 3
     vswr_limit_value: float = 1.5
 
-    def __init__(self, app: "NanoVNA") -> None:
+    def __init__(self, app: "vna_app") -> None:
         super().__init__(app)
 
         self._widget = QtWidgets.QWidget()

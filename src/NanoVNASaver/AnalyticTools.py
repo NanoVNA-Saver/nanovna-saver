@@ -25,7 +25,7 @@ import numpy as np
 # pylint: disable=import-error, no-name-in-module
 from scipy.signal import find_peaks
 
-from NanoVNASaver.RFTools import Datapoint
+from .RFTools import Datapoint
 
 
 def zero_crossings(data: list[float]) -> list[int]:
@@ -174,7 +174,7 @@ def dip_cut_offs(
     gains: list[float], peak_gain: float, attn: float = 3.0
 ) -> tuple[int, int]:
     rng = np.where(np.array(gains) < (peak_gain - attn))[0].tolist()
-    return (rng[0], rng[-1]) if rng else (math.nan, math.nan)
+    return (rng[0], rng[-1]) if rng else (0, 0)
 
 
 def calculate_rolloff(

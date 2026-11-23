@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="window">
+    <file>icon_48x48.png</file>
+    <file>logo_128x128.png</file>
+  </qresource>
+</RCC>

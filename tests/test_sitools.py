@@ -52,7 +52,6 @@ F_WITH_UNDERSCORE = Format(space_str="_")
 
 
 class TestSIToolsValue(unittest.TestCase):
-
     def test_format_assertions(self):
         self.assertRaises(AssertionError, Value, fmt=F_ASSERT_DIGITS_0)
         self.assertRaises(AssertionError, Value, fmt=F_ASSERT_DIGITS_2)
@@ -183,7 +182,6 @@ class TestSIToolsValue(unittest.TestCase):
 
 
 class TestSIToolsFunctions(unittest.TestCase):
-
     def test_log_floor_125(self):
         self.assertEqual(log_floor_125(1), 1)
         self.assertEqual(log_floor_125(2), 2)

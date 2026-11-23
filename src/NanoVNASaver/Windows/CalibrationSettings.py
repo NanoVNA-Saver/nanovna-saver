@@ -20,12 +20,13 @@
 import logging
 from functools import partial
 
-from PyQt6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
-from NanoVNASaver.Calibration import Calibration
-from NanoVNASaver.Settings.Sweep import SweepMode
-from NanoVNASaver.Touchstone import Touchstone
-from NanoVNASaver.Windows.Defaults import make_scrollable
+from ..Calibration import Calibration
+from ..Settings.Sweep import SweepMode
+from ..Touchstone import Touchstone
+from .Defaults import make_scrollable
+from .ui import get_window_icon
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +51,7 @@ class CalibrationWindow(QtWidgets.QWidget):
 
         self.setMinimumWidth(450)
         self.setWindowTitle("Calibration")
-        self.setWindowIcon(self.app.icon)
+        self.setWindowIcon(get_window_icon())
         self.setSizePolicy(
             QtWidgets.QSizePolicy.Policy.MinimumExpanding,
             QtWidgets.QSizePolicy.Policy.MinimumExpanding,
@@ -543,6 +544,7 @@ class CalibrationWindow(QtWidgets.QWidget):
                 self.app.sweepSource,
             )
             self.app.worker.signals.updated.emit()
+        self.app.sweep_control.update_text()
 
     def setOffsetDelay(self, value: float):
         logger.debug("New offset delay value: %f ps", value)
@@ -697,10 +699,11 @@ class CalibrationWindow(QtWidgets.QWidget):
             )
             self.calibration_source_label.setText(self.app.calibration.source)
             self.app.showError(
-                f"{e}" " Please complete SOL calibration and try again."
+                f"{e} Please complete SOL calibration and try again."
             )
             self.reset()
             return
+        self.app.sweep_control.update_text()
 
     def loadCalibration(self):
         filename, _ = QtWidgets.QFileDialog.getOpenFileName(
@@ -725,6 +728,7 @@ class CalibrationWindow(QtWidgets.QWidget):
         for note in self.app.calibration.notes:
             self.notes_textedit.appendPlainText(note)
         self.app.settings.setValue("CalibrationFile", filename)
+        self.app.sweep_control.update_text()
 
     def saveCalibration(self):
         if not self.app.calibration.isCalculated:
@@ -919,7 +923,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.app.sweep_start()
             return
 
-        if self.next_step == 2:  # noqa: PLR2004
+        if self.next_step == 2:
             # Load
             self.cal_save("load")
             self.next_step = 3
@@ -980,7 +984,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.app.sweep_start()
             return
 
-        if self.next_step == 3:  # noqa: PLR2004
+        if self.next_step == 3:
             # Isolation
             self.cal_save("isolation")
             self.next_step = 4
@@ -1007,7 +1011,7 @@ class CalibrationWindow(QtWidgets.QWidget):
             self.app.sweep_start()
             return
 
-        if self.next_step == 4:  # noqa: PLR2004
+        if self.next_step == 4:
             # Done
             self.cal_save("thrurefl")
             self.cal_save("through")

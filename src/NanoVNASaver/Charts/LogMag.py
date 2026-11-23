@@ -20,12 +20,12 @@ import logging
 import math
 from dataclasses import dataclass
 
-from PyQt6 import QtGui
+from PySide6 import QtGui
 
-from NanoVNASaver.Charts.Chart import Chart
-from NanoVNASaver.Charts.Frequency import FrequencyChart
-from NanoVNASaver.RFTools import Datapoint
-from NanoVNASaver.SITools import log_floor_125
+from ..RFTools import Datapoint
+from ..SITools import log_floor_125
+from .Chart import Chart
+from .Frequency import FrequencyChart
 
 logger = logging.getLogger(__name__)
 
@@ -84,14 +84,14 @@ class LogMagChart(FrequencyChart):
             minValue = self.minDisplayValue
         else:
             # Find scaling
-            minValue = 100
-            maxValue = -100
+            min_val = 100.0
+            max_val = -100.0
             for d in self.data:
                 logmag = self.logMag(d)
                 if math.isinf(logmag):
                     continue
-                maxValue = max(maxValue, logmag)
-                minValue = min(minValue, logmag)
+                max_val = max(max_val, logmag)
+                min_val = min(min_val, logmag)
 
             # Also check min/max for the reference sweep
             for d in self.reference:
@@ -100,10 +100,10 @@ class LogMagChart(FrequencyChart):
                 logmag = self.logMag(d)
                 if math.isinf(logmag):
                     continue
-                maxValue = max(maxValue, logmag)
-                minValue = min(minValue, logmag)
-            minValue = 10 * math.floor(minValue / 10)
-            maxValue = 10 * math.ceil(maxValue / 10)
+                max_val = max(max_val, logmag)
+                min_val = min(min_val, logmag)
+            minValue = 10 * math.floor(min_val / 10)
+            maxValue = 10 * math.ceil(max_val / 10)
 
         self.minValue = minValue
         self.maxValue = maxValue
@@ -172,7 +172,7 @@ class LogMagChart(FrequencyChart):
     def logMag(self, p: Datapoint) -> float:
         return -p.gain if self.isInverted else p.gain
 
-    def copy(self):
+    def copy(self) -> "LogMagChart":
         new_chart: LogMagChart = super().copy()
         new_chart.isInverted = self.isInverted
         new_chart.span = self.span

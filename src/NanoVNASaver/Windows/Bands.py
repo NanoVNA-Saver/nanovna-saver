@@ -17,19 +17,25 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
+from typing import TYPE_CHECKING
 
-from PyQt6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
+
+from .ui import get_window_icon
+
+if TYPE_CHECKING:
+    from ..NanoVNASaver.NanoVNASaver import NanoVNASaver as vna_app
 
 logger = logging.getLogger(__name__)
 
 
 class BandsWindow(QtWidgets.QWidget):
-    def __init__(self, app: QtWidgets.QWidget):
+    def __init__(self, app: "vna_app"):
         super().__init__()
 
         self.app = app
         self.setWindowTitle("Manage bands")
-        self.setWindowIcon(self.app.icon)
+        self.setWindowIcon(get_window_icon())
 
         QtGui.QShortcut(QtCore.Qt.Key.Key_Escape, self, self.hide)
 

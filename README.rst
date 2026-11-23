@@ -32,7 +32,7 @@ points, and generally display and analyze the resulting data.
 * Copyright 2019, 2020 Rune B. Broberg
 * Copyright 2020ff NanoVNA-Saver Authors
 
-It's developed in **Python 3 (>=3.8)** using **PyQt6**, **numpy** and
+It's developed in **Python 3 (>=3.10)** using **pyside6**, **numpy** and
 **scipy**.
 
 
@@ -42,14 +42,13 @@ Introduction
 This software connects to a NanoVNA and extracts the data for
 display on a computer and allows saving the sweep data to Touchstone files.
 
-:raw-html-m2r:`<a href="#current-features"></a>`
 
 Current features
 ^^^^^^^^^^^^^^^^
 
 
 * Reading data from a NanoVNA -- Compatible devices: NanoVNA, NanoVNA-H,
-  NanoVNA-H4, NanoVNA-F, AVNA via Teensy
+  NanoVNA-H4, NanoVNA-F, AVNA via Teensy, LiteVNA
 * Reading data from a TinySA
 * Splitting a frequency range into multiple segments to increase resolution
   (tried up to >10k points)
@@ -83,7 +82,7 @@ Screenshot
 Running the application
 -----------------------
 
-Main development is currently done on Linux (Mint 21 "Vanessa" Cinnamon)
+Main development is currently done on Linux (Debian 11)
 
 Installation
 ------------
@@ -91,11 +90,8 @@ Installation
 Binary releases
 ^^^^^^^^^^^^^^^
 
-You can find current binary releases for Windows, Linux and MacOS under
+You can find current binary releases for Windows, Linux under
 https://github.com/NanoVNA-Saver/nanovna-saver/releases/latest
-
-The 32bit Windows binaries are somewhat smaller and seems to be a
-little bit more stable.
 
 `Detailed installation instructions <docs/INSTALLATION.md>`_
 
@@ -180,33 +176,10 @@ for the plot (right click on the plot).
 Latest Changes
 ^^^^^^^^^^^^^^
 
-* Using PyQt6
-* Moved to PyScaffold project structure
-* Fixed crash in resonance analysis
-* Added TinySA readout and screenshot
+See Notes in github release notes.
 
-
-Changes in 0.5.5
-^^^^^^^^^^^^^^^^
-
-* Measuring inductor core permeability
-* Bugfixes for calibration data loading and saving
-* Let V2 Devices more time for usb-serial setup
-* Make some windows scrollable
-
-Changes in 0.5.4
-^^^^^^^^^^^^^^^^
-
-* Bugfixes for Python3.11 compatability
-* Bugfix for Python3.8 compatability
-* use math instead of table for log step calculation
-* Support of NanoVNA V2 Plus5 on Windows
-* New SI prefixes added - Ronna, Quetta
-* addes a Makefile to build a packages
-* Simplyfied sweep worker
-* Fixed calibration data loading
-* Explicit import of scipy functions - #555
-* Refactoring of Analysis modules
+* Using pyside6
+* Use uv and pyproject.toml
 
 Contributing
 ------------

@@ -19,7 +19,7 @@
 
 from typing import NamedTuple
 
-from NanoVNASaver.RFTools import Datapoint
+from ..RFTools import Datapoint
 
 
 class Label(NamedTuple):
@@ -64,16 +64,14 @@ TYPES = (
 )
 
 
-def default_label_ids() -> str:
+def default_label_ids() -> list[str]:
     return [label.label_id for label in TYPES if label.default_active]
 
 
 class Value:
     """Contains the data area to calculate marker values from"""
 
-    def __init__(
-        self,
-    ):
+    def __init__(self) -> None:
         self.freq: int = 0
         self.s11: list[Datapoint] = []
         self.s21: list[Datapoint] = []
@@ -82,13 +80,9 @@ class Value:
         # handle boundaries
         if index == 0:
             index = 1
-            s11 = [
-                s11[0],
-            ] + s11
+            s11 = [s11[0], *s11]
             if s21:
-                s21 = [
-                    s21[0],
-                ] + s21
+                s21 = [s21[0], *s21]
         if index == len(s11):
             s11 += [
                 s11[-1],

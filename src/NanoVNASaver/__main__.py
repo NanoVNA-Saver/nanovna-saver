@@ -24,15 +24,17 @@ NanoVNA, sweep frequency spans in segments to gain more
 data points, and generally display and analyze the
 resulting data.
 """
+
 import argparse
 import logging
 import sys
 
-from PyQt6 import QtWidgets
+from PySide6 import QtWidgets
 
+from NanoVNASaver import NanoVNASaver
 from NanoVNASaver.About import INFO, VERSION
-from NanoVNASaver.NanoVNASaver import NanoVNASaver
 from NanoVNASaver.Touchstone import Touchstone
+from NanoVNASaver.utils import get_runtime_information
 
 
 def main():
@@ -55,12 +57,12 @@ def main():
     parser.add_argument(
         "-f",
         "--file",
-        help="Touchstone file to load as sweep for off" " device usage",
+        help="Touchstone file to load as sweep for off device usage",
     )
     parser.add_argument(
         "-r",
         "--ref-file",
-        help="Touchstone file to load as reference for off" " device usage",
+        help="Touchstone file to load as reference for off device usage",
     )
     parser.add_argument(
         "--version", action="version", version=f"NanoVNASaver {VERSION}"
@@ -91,6 +93,11 @@ def main():
         fh.setLevel(file_log_level)
         fh.setFormatter(formatter)
         logger.addHandler(fh)
+
+    # Print diagnostic data
+    logger.debug("Runtime information:")
+    for lib in get_runtime_information():
+        logger.debug(" - %s", lib)
 
     logger.info("Startup...")
 

@@ -18,28 +18,33 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 from functools import partial
+from typing import TYPE_CHECKING
 
-from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtCore import Qt
+from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6.QtCore import Qt
 
-from NanoVNASaver.Formatting import (
+from ..Formatting import (
     format_frequency_short,
     format_frequency_sweep,
 )
-from NanoVNASaver.Settings.Sweep import SweepMode
-from NanoVNASaver.Windows.Defaults import make_scrollable
+from ..Settings.Sweep import SweepMode
+from .Defaults import make_scrollable
+from .ui import get_window_icon
+
+if TYPE_CHECKING:
+    from ..NanoVNASaver.NanoVNASaver import NanoVNASaver as vna_app
 
 logger = logging.getLogger(__name__)
 
 
 class SweepSettingsWindow(QtWidgets.QWidget):
-    def __init__(self, app: QtWidgets.QWidget):
+    def __init__(self, app: "vna_app"):
         super().__init__()
         self.app = app
         self.padding = 0
 
         self.setWindowTitle("Sweep settings")
-        self.setWindowIcon(self.app.icon)
+        self.setWindowIcon(get_window_icon())
 
         QtGui.QShortcut(QtCore.Qt.Key.Key_Escape, self, self.hide)
 
@@ -214,9 +219,7 @@ class SweepSettingsWindow(QtWidgets.QWidget):
                 partial(self.update_tx_power, freq_range)
             )
             self._power_layout.addRow(
-                "TX power {}..{}".format(
-                    *map(format_frequency_short, freq_range)
-                ),
+                f"TX power {format_frequency_short}..{freq_range}",
                 power_sel,
             )
 
@@ -229,14 +232,10 @@ class SweepSettingsWindow(QtWidgets.QWidget):
             self.band_list.currentIndex(), 2
         )
         start = int(
-            self.band_list.model()
-            .data(index_start, Qt.ItemDataRole.EditRole)
-            .value()
+            self.band_list.model().data(index_start, Qt.ItemDataRole.EditRole)
         )
         stop = int(
-            self.band_list.model()
-            .data(index_stop, Qt.ItemDataRole.EditRole)
-            .value()
+            self.band_list.model().data(index_stop, Qt.ItemDataRole.EditRole)
         )
 
         if self.padding > 0:
@@ -253,12 +252,14 @@ class SweepSettingsWindow(QtWidgets.QWidget):
         if not apply:
             return
 
-        self.app.sweep_control.input_start.setText(
+        self.app.sweep_control.inputs["Start"].setText(
             format_frequency_sweep(start)
         )
-        self.app.sweep_control.input_end.setText(format_frequency_sweep(stop))
-        self.app.sweep_control.input_end.textEdited.emit(
-            self.app.sweep_control.input_end.text()
+        self.app.sweep_control.inputs["Stop"].setText(
+            format_frequency_sweep(stop)
+        )
+        self.app.sweep_control.inputs["Stop"].textEdited.emit(
+            self.app.sweep_control.inputs["Stop"].text()
         )
 
     def update_attenuator(self, value: "QtWidgets.QLineEdit"):

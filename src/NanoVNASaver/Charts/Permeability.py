@@ -19,13 +19,13 @@
 import logging
 import math
 
-from PyQt6 import QtGui
+from PySide6 import QtGui
 
-from NanoVNASaver.Charts.Chart import Chart
-from NanoVNASaver.Charts.Frequency import FrequencyChart
-from NanoVNASaver.Marker.Widget import Marker
-from NanoVNASaver.RFTools import Datapoint
-from NanoVNASaver.SITools import Format, Value
+from ..Marker.Widget import Marker
+from ..RFTools import Datapoint
+from ..SITools import Format, Value
+from .Chart import Chart
+from .Frequency import FrequencyChart
 
 logger = logging.getLogger(__name__)
 
@@ -89,11 +89,11 @@ class PermeabilityChart(FrequencyChart):
 
         # Find scaling
         if self.fixedValues:
-            min_val = self.minDisplayValue
-            max_val = self.maxDisplayValue
+            min_val = float(self.minDisplayValue)
+            max_val = float(self.maxDisplayValue)
         else:
-            min_val = 1000
-            max_val = -1000
+            min_val = 1000.0
+            max_val = -1000.0
             for d in self.data:
                 imp = d.impedance()
                 re, im = imp.real, imp.imag
@@ -340,9 +340,9 @@ class PermeabilityChart(FrequencyChart):
 
     def getNearestMarker(self, x, y) -> Marker:
         if len(self.data) == 0:
-            return None
-        shortest = 10**6
-        nearest = None
+            return Marker()
+        shortest = 10.0**6
+        nearest = Marker()
         for m in self.markers:
             mx, _ = self.getPosition(self.data[m.location])
             myr = self.getReYPosition(self.data[m.location])

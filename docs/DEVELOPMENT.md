@@ -12,12 +12,14 @@ Prerequerements:
 Following commands to prepare local env and run application or run tests:
 
 * `uv sync` - prepare virtual environment and install prod and dev dependencies
+* `uv run ui-compile` - compile Qt resources. Should be executed before first `uv run NanoVNASaver` run
 * `uv run NanoVNASaver` - run local instance
 * `uv run task test` - run unit tests in current venv
 * `uv run task test-cov` - run unit tests in current venv and display test coverage report
 * `uv run task test-full` - run unit tests for all avialable python versions
 * `uv run task clean` - remove temporally artifacts (dist, build, *.pyc etc)
- 
+* `uv run task lint` - check sources and try to fix issues
+
 ## Development Routines
 
 A few usefull commands:
@@ -25,6 +27,18 @@ A few usefull commands:
 * 🚧 TODO: - update dependencies in `pyproject.toml` respecting specified version constraints.
 * 🚧 TODO: - update dependencies ignoring in `pyproject.toml` specified version constraints.
 * `uv lock` - update dependency lock file respecting specified version constraints.
+
+## UI Development
+
+UI layout of Widget, Dialogs and Window stored in `*.ui` files and may be edited by QT Designer. Please use `uv run pyside6-designer` or `uv run task ui-designer` to launch QT Designer. Please note
+
+* UI layout should be creatd and stored via UI files
+  * fields name should follow python_snake_style_naming scheme
+  * elements should have meaningful names and initial values
+  * elements which are not going to be changed during runtime should have `_` prefix
+* Icons, images and other resources should be stored as part of `main.qrc` file.
+  * compiled resource files (e.g. `main_rc.py`) should not be put under git version control
+  * ui and resource files may be compiled manually via `uv run task compile` or will be executed automatically during `uv build` phase.
 
 ## Build Process
 

@@ -20,8 +20,10 @@ from __future__ import annotations
 
 import math
 from decimal import Context, Decimal, InvalidOperation
-from numbers import Number, Real
-from typing import NamedTuple
+from numbers import Real
+from typing import NamedTuple, Sequence, SupportsFloat, TypeAlias, TypeVar
+
+ValueType: TypeAlias = Decimal | float | str | tuple[int, Sequence[int], int]
 
 PREFIXES = (
     "q",
@@ -48,27 +50,30 @@ PREFIXES = (
 )
 
 
-def clamp_value(value: Real, rmin: Real, rmax: Real) -> Real:
+V = TypeVar("V", int, Real)
+
+
+def clamp_value(value: V, rmin: V, rmax: V) -> V:
     assert rmin <= rmax
     return rmin if value < rmin else min(value, rmax)
 
 
-def round_ceil(value: Real, digits: int = 0) -> Real:
+def round_ceil(value: SupportsFloat, digits: int = 0) -> float:
     factor = 10**-digits
     return factor * math.ceil(value / factor)
 
 
-def round_floor(value: Real, digits: int = 0) -> Real:
+def round_floor(value: SupportsFloat, digits: int = 0) -> float:
     factor = 10**-digits
     return factor * math.floor(value / factor)
 
 
-def log_floor_125(x: float) -> float:
+def log_floor_125(x: SupportsFloat) -> float:
     log_base = 10 ** (math.floor(math.log10(x)))
     log_factor = x / log_base
-    if log_factor >= 5:  # noqa: PLR2004
+    if log_factor >= 5:
         return 5 * log_base
-    return 2 * log_base if log_factor >= 2 else log_base  # noqa: PLR2004
+    return 2 * log_base if log_factor >= 2 else log_base
 
 
 class Format(NamedTuple):
@@ -97,10 +102,13 @@ class Value:
     CTX = Context(prec=60, Emin=-33, Emax=33)
 
     def __init__(
-        self, value: Real = Decimal(0), unit: str = "", fmt=DEFAULT_FMT
+        self,
+        value: ValueType = Decimal(0),
+        unit: str = "",
+        fmt=DEFAULT_FMT,
     ) -> None:
-        assert 1 <= fmt.max_nr_digits <= 30  # noqa: PLR2004
-        assert -10 <= fmt.min_offset <= fmt.max_offset <= 10  # noqa: PLR2004
+        assert 1 <= fmt.max_nr_digits <= 30
+        assert -10 <= fmt.min_offset <= fmt.max_offset <= 10
         assert fmt.parse_clamp_min < fmt.parse_clamp_max
         assert fmt.printable_min < fmt.printable_max
         self._unit = unit
@@ -115,7 +123,7 @@ class Value:
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}("
-            f"{repr(self._value)}, '{self._unit}', {self.fmt})"
+            f"{self._value!r}, '{self._unit}', {self.fmt})"
         )
 
     def __str__(self) -> str:
@@ -148,20 +156,12 @@ class Value:
 
         real = float(self._value) / (10 ** (offset * 3))
 
-        if fmt.max_nr_digits < 3:  # noqa: PLR2004
+        if fmt.max_nr_digits < 3:
             formstr = ".0f"
         else:
             max_digits = fmt.max_nr_digits + (
-                (
-                    1
-                    if not fmt.fix_decimals and abs(real) < 10  # noqa: PLR2004
-                    else 0
-                )
-                + (
-                    1
-                    if not fmt.fix_decimals and abs(real) < 100  # noqa: PLR2004
-                    else 0
-                )
+                (1 if not fmt.fix_decimals and abs(real) < 10 else 0)
+                + (1 if not fmt.fix_decimals and abs(real) < 100 else 0)
             )
             formstr = f".{max_digits - 3}f"
 
@@ -188,11 +188,11 @@ class Value:
         return self._value
 
     @value.setter
-    def value(self, value: Number):
+    def value(self, value: ValueType):
         self._value = Decimal(value, context=Value.CTX)
 
-    def parse(self, value: str) -> "Value":
-        if isinstance(value, Number):
+    def parse(self, value: str) -> Value:
+        if isinstance(value, SupportsFloat):
             self.value = value
             return self
 
@@ -217,9 +217,9 @@ class Value:
             value = value[:-1]
 
         if self.fmt.assume_infinity and value == "\N{INFINITY}":
-            self._value = math.inf
+            self._value = Decimal(math.inf)
         elif self.fmt.assume_infinity and value == "-\N{INFINITY}":
-            self._value = -math.inf
+            self._value = Decimal(-math.inf)
         else:
             try:
                 self._value = Decimal(value, context=Value.CTX) * Decimal(

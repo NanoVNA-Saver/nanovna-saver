@@ -20,11 +20,11 @@ import logging
 import math
 
 import numpy as np
-from PyQt6.QtGui import QAction, QPainter, QPen
+from PySide6.QtGui import QAction, QPainter, QPen
 
-from NanoVNASaver.Charts.Chart import Chart
-from NanoVNASaver.Charts.Frequency import FrequencyChart
-from NanoVNASaver.RFTools import Datapoint
+from ..RFTools import Datapoint
+from .Chart import Chart
+from .Frequency import FrequencyChart
 
 logger = logging.getLogger(__name__)
 
@@ -85,12 +85,10 @@ class PhaseChart(FrequencyChart):
             minAngle = -180
             maxAngle = 180
 
-        span = maxAngle - minAngle
-        if span == 0:
-            span = 0.01
+        span = float(maxAngle - minAngle)
         self.minAngle = minAngle
         self.maxAngle = maxAngle
-        self.span = span
+        self.span = span if span != 0 else 0.01
 
         tickcount = math.floor(self.dim.height / 60)
 

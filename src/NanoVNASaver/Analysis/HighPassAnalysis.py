@@ -19,11 +19,11 @@
 import logging
 import math
 
-from PyQt6 import QtWidgets
+from PySide6 import QtWidgets
 
-import NanoVNASaver.AnalyticTools as At
-from NanoVNASaver.Analysis.Base import CUTOFF_VALS, MIN_CUTOFF_DAMPING, Analysis
-from NanoVNASaver.Formatting import format_frequency
+from .. import AnalyticTools as At
+from ..Formatting import format_frequency
+from .Base import CUTOFF_VALS, MIN_CUTOFF_DAMPING, Analysis
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +96,7 @@ class HighPassAnalysis(Analysis):
 
         for label, val in cutoff_freq.items():
             self.label[label].setText(
-                f"{format_frequency(val)}" f" ({cutoff_gain[label]:.1f} dB)"
+                f"{format_frequency(val)} ({cutoff_gain[label]:.1f} dB)"
             )
 
         self.label["octave"].setText(f"{octave:.3f}dB/octave")

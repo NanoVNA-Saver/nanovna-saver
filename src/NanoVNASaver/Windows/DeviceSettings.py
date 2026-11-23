@@ -17,33 +17,38 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
+from typing import TYPE_CHECKING
 
-from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtGui import QIntValidator
+from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6.QtGui import QIntValidator
 
-from NanoVNASaver.SweepWorker import SweepState
-from NanoVNASaver.Windows.Defaults import make_scrollable
-from NanoVNASaver.Windows.Screenshot import ScreenshotWindow
+from .Defaults import make_scrollable
+from .Screenshot import LiveViewWindow, ScreenshotWindow
+from .ui import get_window_icon
+
+if TYPE_CHECKING:
+    from ..NanoVNASaver.NanoVNASaver import NanoVNASaver as vna_app
 
 logger = logging.getLogger(__name__)
 
 
 class DeviceSettingsWindow(QtWidgets.QWidget):
-    custom_points_checkbox = QtWidgets.QCheckBox
-    custom_points_edit = QtWidgets.QLineEdit
+    custom_points_checkbox: QtWidgets.QCheckBox
+    custom_points_edit: QtWidgets.QLineEdit
 
-    def __init__(self, app: QtWidgets.QWidget) -> None:  # noqa: PLR0915
+    def __init__(self, app: "vna_app") -> None:
         super().__init__()
 
         self.app = app
         self.setWindowTitle("Device settings")
-        self.setWindowIcon(self.app.icon)
+        self.setWindowIcon(get_window_icon())
 
         QtGui.QShortcut(QtCore.Qt.Key.Key_Escape, self, self.hide)
 
         self.label = {
             "status": QtWidgets.QLabel("Not connected."),
             "firmware": QtWidgets.QLabel("Not connected."),
+            "hardware": QtWidgets.QLabel("Not connected."),
             "calibration": QtWidgets.QLabel("Not connected."),
             "SN": QtWidgets.QLabel("Not connected."),
         }
@@ -60,6 +65,7 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
 
         status_layout.addRow("Status:", self.label["status"])
         status_layout.addRow("Firmware:", self.label["firmware"])
+        status_layout.addRow("Hardware:", self.label["hardware"])
         status_layout.addRow("Calibration:", self.label["calibration"])
         status_layout.addRow("SN:", self.label["SN"])
 
@@ -90,6 +96,14 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         self.btnCaptureScreenshot = QtWidgets.QPushButton("Screenshot")
         self.btnCaptureScreenshot.clicked.connect(self.captureScreenshot)
         control_layout.addWidget(self.btnCaptureScreenshot)
+
+        self.liveViewWindow = LiveViewWindow(self)
+        self.btnLiveView = QtWidgets.QPushButton("Live view")
+        self.btnLiveView.clicked.connect(self.liveView)
+        self.liveViewWindow.setAttribute(
+            QtCore.Qt.WidgetAttribute.WA_DeleteOnClose
+        )
+        control_layout.addWidget(self.btnLiveView)
 
         left_layout.addWidget(status_box)
         left_layout.addLayout(control_layout)
@@ -134,27 +148,31 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         if not self.app.vna.connected():
             self.label["status"].setText("Not connected.")
             self.label["firmware"].setText("Not connected.")
+            self.label["hardware"].setText("Not connected.")
             self.label["calibration"].setText("Not connected.")
             self.label["SN"].setText("Not connected.")
             self.featureList.clear()
             self.btnCaptureScreenshot.setDisabled(True)
+            self.btnLiveView.setDisabled(True)
             return
 
         self.label["status"].setText(f"Connected to {self.app.vna.name}.")
         self.label["firmware"].setText(
             f"{self.app.vna.name} v{self.app.vna.version}"
         )
-        if self.app.worker.state == SweepState.RUNNING:
+        self.label["hardware"].setText(f"{self.app.vna.hardware_revision}")
+        if self.app.worker.isRunning():
             self.label["calibration"].setText("(Sweep running)")
         else:
             self.label["calibration"].setText(self.app.vna.getCalibration())
         self.label["SN"].setText(self.app.vna.SN)
         self.featureList.clear()
-        features = self.app.vna.getFeatures()
+        features = self.app.vna.get_features()
         for item in features:
             self.featureList.addItem(item)
 
         self.btnCaptureScreenshot.setDisabled("Screenshots" not in features)
+        self.btnLiveView.setDisabled("Screenshots" not in features)
 
         if "Customizable data points" in features:
             self.datapoints.clear()
@@ -186,7 +204,7 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         self.app.settings.setValue("SerialInputValidation", validate_data)
 
     def captureScreenshot(self) -> None:
-        if self.app.worker.state != SweepState.RUNNING:
+        if not self.app.worker.isRunning():
             pixmap = self.app.vna.getScreenshot()
             self.screenshotWindow.setScreenshot(pixmap)
             self.screenshotWindow.show()
@@ -194,8 +212,12 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         # TODO: Consider having a list of widgets that want to be
         #       disabled when a sweep is running?
 
+    def liveView(self) -> None:
+        if not self.app.worker.isRunning():
+            self.liveViewWindow.start()
+
     def updateNrDatapoints(self, i) -> None:
-        if i < 0 or self.app.worker.state == SweepState.RUNNING:
+        if i < 0 or self.app.worker.isRunning():
             return
         logger.debug("DP: %s", self.datapoints.itemText(i))
         self.app.vna.datapoints = int(self.datapoints.itemText(i))
@@ -203,7 +225,7 @@ class DeviceSettingsWindow(QtWidgets.QWidget):
         self.app.sweep_control.update_step_size()
 
     def updateBandwidth(self, i) -> None:
-        if i < 0 or self.app.worker.state == SweepState.RUNNING:
+        if i < 0 or self.app.worker.isRunning():
             return
         logger.debug("Bandwidth: %s", self.bandwidth.itemText(i))
         self.app.vna.set_bandwidth(int(self.bandwidth.itemText(i)))

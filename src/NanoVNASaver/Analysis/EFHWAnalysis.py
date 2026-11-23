@@ -19,17 +19,17 @@
 import csv
 import logging
 
-from PyQt6 import QtWidgets
+from PySide6 import QtWidgets
 
-import NanoVNASaver.AnalyticTools as At
-from NanoVNASaver.Analysis.ResonanceAnalysis import (
-    ResonanceAnalysis,
-    format_resistence_neg,
-)
-from NanoVNASaver.Formatting import (
+from .. import AnalyticTools as At
+from ..Formatting import (
     format_complex_imp,
     format_frequency,
     format_frequency_short,
+)
+from .ResonanceAnalysis import (
+    ResonanceAnalysis,
+    format_resistence_neg,
 )
 
 logger = logging.getLogger(__name__)

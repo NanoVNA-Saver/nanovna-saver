@@ -17,38 +17,42 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
+from typing import TYPE_CHECKING
 
-from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtCore import Qt
+from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6.QtCore import Qt
 
-from NanoVNASaver.Analysis.AntennaAnalysis import MagLoopAnalysis
-from NanoVNASaver.Analysis.BandPassAnalysis import BandPassAnalysis
-from NanoVNASaver.Analysis.BandStopAnalysis import BandStopAnalysis
-from NanoVNASaver.Analysis.Base import Analysis
-from NanoVNASaver.Analysis.EFHWAnalysis import EFHWAnalysis
-from NanoVNASaver.Analysis.HighPassAnalysis import HighPassAnalysis
-from NanoVNASaver.Analysis.LowPassAnalysis import LowPassAnalysis
-from NanoVNASaver.Analysis.PeakSearchAnalysis import PeakSearchAnalysis
-from NanoVNASaver.Analysis.ResonanceAnalysis import ResonanceAnalysis
-from NanoVNASaver.Analysis.SimplePeakSearchAnalysis import (
+from ..Analysis.AntennaAnalysis import MagLoopAnalysis
+from ..Analysis.BandPassAnalysis import BandPassAnalysis
+from ..Analysis.BandStopAnalysis import BandStopAnalysis
+from ..Analysis.Base import Analysis
+from ..Analysis.EFHWAnalysis import EFHWAnalysis
+from ..Analysis.HighPassAnalysis import HighPassAnalysis
+from ..Analysis.LowPassAnalysis import LowPassAnalysis
+from ..Analysis.PeakSearchAnalysis import PeakSearchAnalysis
+from ..Analysis.ResonanceAnalysis import ResonanceAnalysis
+from ..Analysis.SimplePeakSearchAnalysis import (
     SimplePeakSearchAnalysis,
 )
-from NanoVNASaver.Analysis.VSWRAnalysis import VSWRAnalysis
-from NanoVNASaver.Windows.Defaults import make_scrollable
+from ..Analysis.VSWRAnalysis import VSWRAnalysis
+from ..Windows.Defaults import make_scrollable
+from .ui import get_window_icon
+
+if TYPE_CHECKING:
+    from ..NanoVNASaver.NanoVNASaver import NanoVNASaver as vna_app
 
 logger = logging.getLogger(__name__)
 
 
 class AnalysisWindow(QtWidgets.QWidget):
-    analyses = []
-    analysis: Analysis = None
+    analysis: Analysis | None = None
 
-    def __init__(self, app: QtWidgets.QWidget):
+    def __init__(self, app: "vna_app"):
         super().__init__()
 
         self.app = app
         self.setWindowTitle("Sweep analysis")
-        self.setWindowIcon(self.app.icon)
+        self.setWindowIcon(get_window_icon())
 
         QtGui.QShortcut(QtCore.Qt.Key.Key_Escape, self, self.hide)
 

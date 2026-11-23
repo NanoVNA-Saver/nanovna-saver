@@ -18,7 +18,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from NanoVNASaver.Charts.Frequency import FrequencyChart
+from .Frequency import FrequencyChart
 
 logger = logging.getLogger(__name__)
 

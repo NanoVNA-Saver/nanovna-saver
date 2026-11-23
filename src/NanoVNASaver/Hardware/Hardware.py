@@ -25,24 +25,25 @@ import serial
 from serial.tools import list_ports
 from serial.tools.list_ports_common import ListPortInfo
 
-from NanoVNASaver.Hardware.AVNA import AVNA
-from NanoVNASaver.Hardware.JNCRadio_VNA_3G import JNCRadio_VNA_3G
-from NanoVNASaver.Hardware.NanoVNA import NanoVNA
-from NanoVNASaver.Hardware.NanoVNA_F import NanoVNA_F
-from NanoVNASaver.Hardware.NanoVNA_F_V2 import NanoVNA_F_V2
-from NanoVNASaver.Hardware.NanoVNA_F_V3 import NanoVNA_F_V3
-from NanoVNASaver.Hardware.NanoVNA_H import NanoVNA_H
-from NanoVNASaver.Hardware.NanoVNA_H4 import NanoVNA_H4
-from NanoVNASaver.Hardware.NanoVNA_V2 import NanoVNA_V2
-from NanoVNASaver.Hardware.Serial import Interface, drain_serial
-from NanoVNASaver.Hardware.SV4401A import SV4401A
-from NanoVNASaver.Hardware.SV6301A import SV6301A
-from NanoVNASaver.Hardware.TinySA import TinySA, TinySA_Ultra
-from NanoVNASaver.Hardware.VNA import VNA
+from .AVNA import AVNA
+from .JNCRadio_VNA_3G import JNCRadio_VNA_3G
+from .LiteVNA64 import LiteVNA64
+from .NanoVNA import NanoVNA
+from .NanoVNA_F import NanoVNA_F
+from .NanoVNA_F_V2 import NanoVNA_F_V2
+from .NanoVNA_F_V3 import NanoVNA_F_V3
+from .NanoVNA_H import NanoVNA_H
+from .NanoVNA_H4 import NanoVNA_H4
+from .NanoVNA_V2 import NanoVNA_V2
+from .Serial import Interface, drain_serial
+from .SV4401A import SV4401A
+from .SV6301A import SV6301A
+from .TinySA import TinySA, TinySA_Ultra
+from .VNA import VNA
 
 logger = logging.getLogger(__name__)
 
-USBDevice = namedtuple("Device", "vid pid name")
+USBDevice = namedtuple("USBDevice", "vid pid name")
 
 USBDEVICETYPES = (
     USBDevice(0x0483, 0x5740, "NanoVNA"),
@@ -67,6 +68,7 @@ NAME2DEVICE = {
     "JNCRadio": JNCRadio_VNA_3G,
     "SV4401A": SV4401A,
     "SV6301A": SV6301A,
+    "LiteVNA64": LiteVNA64,
     "Unknown": NanoVNA,
 }
 
@@ -148,6 +150,8 @@ def get_comment(iface: Interface) -> str:
         vna_version = detect_version(iface)
     if vna_version == "v2":
         return "S-A-A-2"
+    if vna_version == "lite_vna_64":
+        return "LiteVNA64"
 
     logger.info("Finding firmware variant...")
     info = get_info(iface)
@@ -190,7 +194,9 @@ def detect_version(serial_port: serial.Serial) -> str:
         if data.startswith("\r\n?\r\nch> "):
             return "vh"
         if data.startswith("2"):
-            return "v2"
+            return (
+                "lite_vna_64" if LiteVNA64.is_lite_vna_64(serial_port) else "v2"
+            )
         logger.debug("Retry detection: %s", i + 1)
     logger.error("No VNA detected. Hardware responded to CR with: %s", data)
     return ""
@@ -203,8 +209,7 @@ def get_info(serial_port: serial.Serial) -> str:
         lines = []
         retries = 0
         while True:
-            line = serial_port.readline()
-            line = line.decode("ascii").strip()
+            line = serial_port.readline().decode("ascii").strip()
             if not line:
                 retries += 1
                 if retries > RETRIES:
@@ -219,3 +224,4 @@ def get_info(serial_port: serial.Serial) -> str:
             lines.append(line)
         logger.debug("Info output: %s", lines)
         return "\n".join(lines)
+    return ""

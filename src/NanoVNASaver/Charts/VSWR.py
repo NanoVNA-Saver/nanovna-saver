@@ -19,11 +19,11 @@
 import logging
 import math
 
-from PyQt6 import QtGui
+from PySide6 import QtGui
 
-from NanoVNASaver.Charts.Chart import Chart
-from NanoVNASaver.Charts.Frequency import FrequencyChart
-from NanoVNASaver.RFTools import Datapoint
+from ..RFTools import Datapoint
+from .Chart import Chart
+from .Frequency import FrequencyChart
 
 logger = logging.getLogger(__name__)
 
@@ -63,11 +63,11 @@ class VSWRChart(FrequencyChart):
 
         # Find scaling
         if self.fixedValues:
-            minVSWR = max(1, self.minDisplayValue)
-            maxVSWR = self.maxDisplayValue
+            minVSWR = max(1.0, self.minDisplayValue)
+            maxVSWR = float(self.maxDisplayValue)
         else:
-            minVSWR = 1
-            maxVSWR = 3
+            minVSWR = 1.0
+            maxVSWR = 3.0
             for d in self.data:
                 vswr = d.vswr
                 maxVSWR = max(vswr, maxVSWR)

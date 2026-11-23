@@ -37,7 +37,6 @@ from NanoVNASaver.RFTools import (
 
 
 class TestRFTools(unittest.TestCase):
-
     def test_norm_to_impedance(self):
         self.assertEqual(norm_to_impedance(50, 0), 0)
         self.assertEqual(norm_to_impedance(1), 50)
@@ -147,7 +146,6 @@ class TestRFTools(unittest.TestCase):
 
 
 class TestRFToolsDatapoint(unittest.TestCase):
-
     def setUp(self):
         self.dp = Datapoint(100000, 0.1091, 0.3118)
         self.dp0 = Datapoint(100000, 0, 0)

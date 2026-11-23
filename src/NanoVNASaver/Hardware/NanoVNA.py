@@ -17,15 +17,14 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
-import struct
 
-import numpy as np
 import serial
-from PyQt6.QtGui import QImage, QPixmap
+from PySide6.QtGui import QPixmap
 
-from NanoVNASaver.Hardware.Serial import Interface, drain_serial
-from NanoVNASaver.Hardware.VNA import VNA
-from NanoVNASaver.Version import Version
+from ..utils import Version
+from .Convert import get_argb32_pixmap
+from .Serial import Interface, drain_serial
+from .VNA import VNA
 
 logger = logging.getLogger(__name__)
 
@@ -38,18 +37,18 @@ class NanoVNA(VNA):
     def __init__(self, iface: Interface):
         super().__init__(iface)
         self.sweep_method = "sweep"
-        self.read_features()
+        self.init_features()
         logger.debug("Setting initial start,stop")
         self.start, self.stop = self._get_running_frequencies()
-        self.sweep_max_freq_Hz = 300e6
-        self._sweepdata = []
+        self.sweep_max_freq_hz = 300e6
+        self._sweepdata: list[tuple[complex, complex]] = []
 
     def _get_running_frequencies(self):
         logger.debug("Reading values: frequencies")
         try:
             frequencies = super().readValues("frequencies")
             return int(frequencies[0].real), int(frequencies[-1].real)
-        except Exception as e:
+        except serial.SerialException as e:
             logger.warning("%s reading frequencies", e)
             logger.info("falling back to generic")
 
@@ -69,32 +68,15 @@ class NanoVNA(VNA):
         self.serial.timeout = timeout
         return image_data
 
-    def _convert_data(self, image_data: bytes) -> bytes:
-        rgb_data = struct.unpack(
-            f">{self.screenwidth * self.screenheight}H", image_data
-        )
-        rgb_array = np.array(rgb_data, dtype=np.uint32)
-        return (
-            0xFF000000
-            + ((rgb_array & 0xF800) << 8)
-            + ((rgb_array & 0x07E0) << 5)
-            + ((rgb_array & 0x001F) << 3)
-        )
-
     def getScreenshot(self) -> QPixmap:
         logger.debug("Capturing screenshot...")
         if not self.connected():
             return QPixmap()
         try:
-            rgba_array = self._convert_data(self._capture_data())
-            image = QImage(
-                rgba_array,
-                self.screenwidth,
-                self.screenheight,
-                QImage.Format.Format_ARGB32,
-            )
             logger.debug("Captured screenshot")
-            return QPixmap(image)
+            return get_argb32_pixmap(
+                self._capture_data(), self.screenwidth, self.screenheight
+            )
         except serial.SerialException as exc:
             logger.exception("Exception while capturing screenshot: %s", exc)
         return QPixmap()
@@ -111,13 +93,13 @@ class NanoVNA(VNA):
         elif self.sweep_method == "scan":
             list(self.exec_command(f"scan {start} {stop} {self.datapoints}"))
 
-    def read_features(self):
-        super().read_features()
-        if self.version >= Version("0.7.1"):
+    def init_features(self) -> None:
+        super().init_features()
+        if self.version >= Version.parse("0.7.1"):
             logger.debug("Using scan mask command.")
             self.features.add("Scan mask command")
             self.sweep_method = "scan_mask"
-        elif self.version >= Version("0.2.0"):
+        elif self.version >= Version.parse("0.2.0"):
             logger.debug("Using new scan command.")
             self.features.add("Scan command")
             self.sweep_method = "scan"
@@ -148,7 +130,7 @@ class NanoVNA(VNA):
                 self._sweepdata.append(
                     (complex(d[0], d[1]), complex(d[2], d[3]))
                 )
-        if value == "data 0":
-            return [x[0] for x in self._sweepdata]
         if value == "data 1":
             return [x[1] for x in self._sweepdata]
+        # default to data 0
+        return [x[0] for x in self._sweepdata]

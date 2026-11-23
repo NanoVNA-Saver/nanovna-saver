@@ -17,23 +17,27 @@
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
+from typing import TYPE_CHECKING
 
-from PyQt6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
-from NanoVNASaver.RFTools import Datapoint
-from NanoVNASaver.Touchstone import Touchstone
-from NanoVNASaver.Windows.Defaults import make_scrollable
+from ..RFTools import Datapoint
+from ..Touchstone import Touchstone
+from .Defaults import make_scrollable
+from .ui import get_window_icon
 
+if TYPE_CHECKING:
+    from ..NanoVNASaver.NanoVNASaver import NanoVNASaver as vna_app
 logger = logging.getLogger(__name__)
 
 
 class FilesWindow(QtWidgets.QWidget):
-    def __init__(self, app: QtWidgets.QWidget):
+    def __init__(self, app: "vna_app"):
         super().__init__()
         self.app = app
 
         self.setWindowTitle("Files")
-        self.setWindowIcon(self.app.icon)
+        self.setWindowIcon(get_window_icon())
         self.setMinimumWidth(200)
         QtGui.QShortcut(QtCore.Qt.Key.Key_Escape, self, self.hide)
 
@@ -78,7 +82,7 @@ class FilesWindow(QtWidgets.QWidget):
                 self, "No data to save", "There is no data to save."
             )
             return
-        if nr_params > 2 and len(self.app.data.s21) == 0:  # noqa: PLR2004
+        if nr_params > 2 and len(self.app.data.s21) == 0:
             QtWidgets.QMessageBox.warning(
                 self, "No S21 data to save", "There is no S21 data to save."
             )

@@ -1,0 +1,24 @@
+exclude: (.vscode|.tox|ui)
+default_language_version:
+    python: python3.11
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: check-toml
+      - id: check-yaml
+      - id: name-tests-test
+        exclude: '/fixtures/'
+        args: [--pytest-test-first]
+      - id: pretty-format-json
+        args: [--autofix]
+
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.9.3
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]

@@ -19,13 +19,13 @@
 import logging
 import math
 
-from PyQt6 import QtGui
+from PySide6 import QtGui
 
-from NanoVNASaver.Charts.Chart import Chart
-from NanoVNASaver.Charts.Frequency import FrequencyChart
-from NanoVNASaver.Charts.LogMag import LogMagChart
-from NanoVNASaver.RFTools import Datapoint
-from NanoVNASaver.SITools import Format, Value, round_ceil, round_floor
+from ..RFTools import Datapoint
+from ..SITools import Format, Value, round_ceil, round_floor
+from .Chart import Chart
+from .Frequency import FrequencyChart
+from .LogMag import LogMagChart
 
 logger = logging.getLogger(__name__)
 
@@ -145,7 +145,7 @@ class MagnitudeZChart(FrequencyChart):
     def logarithmicYAllowed(self) -> bool:
         return True
 
-    def copy(self):
+    def copy(self) -> "MagnitudeZChart":
         new_chart: LogMagChart = super().copy()
         new_chart.span = self.span
         return new_chart

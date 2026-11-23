@@ -43,7 +43,9 @@ except FileNotFoundError:
 try:
     import sphinx
 
-    cmd_line = f"sphinx-apidoc --implicit-namespaces -f -o {output_dir} {module_dir}"
+    cmd_line = (
+        f"sphinx-apidoc --implicit-namespaces -f -o {output_dir} {module_dir}"
+    )
 
     args = cmd_line.split(" ")
     if tuple(sphinx.__version__.split(".")) >= ("1", "7"):
@@ -90,13 +92,14 @@ master_doc = "index"
 project = "nanovna-saver"
 copyright = "2023, Holger Mueller"
 
+
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
 # version: The short X.Y version.
 # release: The full version, including alpha/beta/rc tags.
-# If you don’t need the separation provided between version and release,
+# If you don't need the separation provided between version and release,
 # just set them both to the same value.
 try:
     from NanoVNASaver import __version__ as version
@@ -104,7 +107,9 @@ except ImportError:
     version = ""
 
 if not version or version.lower() == "unknown":
-    version = os.getenv("READTHEDOCS_VERSION", "unknown")  # automatically set by RTD
+    version = os.getenv(
+        "READTHEDOCS_VERSION", "unknown"
+    )  # automatically set by RTD
 
 release = version
 
@@ -158,10 +163,7 @@ html_theme = "alabaster"
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-html_theme_options = {
-    "sidebar_width": "300px",
-    "page_width": "1200px"
-}
+html_theme_options = {"sidebar_width": "300px", "page_width": "1200px"}
 
 # Add any paths that contain custom themes here, relative to this directory.
 # html_theme_path = []
@@ -246,7 +248,13 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-    ("index", "user_guide.tex", "nanovna-saver Documentation", "Holger Mueller", "manual")
+    (
+        "index",
+        "user_guide.tex",
+        "nanovna-saver Documentation",
+        "Holger Mueller",
+        "manual",
+    )
 ]
 
 # The name of an image file (relative to this directory) to place at the top of

@@ -20,25 +20,25 @@ import logging
 import math
 
 import numpy as np
-from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtCore import Qt
+from PySide6 import QtGui, QtWidgets
+from PySide6.QtCore import Qt
 
-from NanoVNASaver.Charts.Chart import Chart
-from NanoVNASaver.Formatting import (
+from ..Formatting import (
     format_frequency_chart,
     format_frequency_chart_2,
     format_y_axis,
     parse_frequency,
     parse_value,
 )
-from NanoVNASaver.RFTools import Datapoint
-from NanoVNASaver.SITools import Format, Value
+from ..RFTools import Datapoint
+from ..SITools import Format, Value
+from .Chart import Chart, ChartPosition
 
 logger = logging.getLogger(__name__)
 
 
 class FrequencyChart(Chart):
-    def __init__(self, name):  # noqa: PLR0915
+    def __init__(self, name) -> None:
         super().__init__(name)
         self.maxFrequency = 100000000
         self.minFrequency = 1000000
@@ -64,9 +64,9 @@ class FrequencyChart(Chart):
         self.minDisplayValue = -1
         self.maxDisplayValue = 1
 
-        self.minValue = -1
-        self.maxValue = 1
-        self.span = 1
+        self.minValue = -1.0
+        self.maxValue = 1.0
+        self.span = 1.0
 
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.DefaultContextMenu)
         mode_group = QtGui.QActionGroup(self)
@@ -353,10 +353,12 @@ class FrequencyChart(Chart):
         self.update()
 
     def getXPosition(self, d: Datapoint) -> int:
-        span = self.fstop - self.fstart
+        span = float(self.fstop - self.fstart)
         if span > 0:
             if self.logarithmicX:
-                span = math.log(self.fstop) - math.log(self.fstart)
+                span = math.log(float(self.fstop)) - math.log(
+                    float(self.fstart)
+                )
                 return self.leftMargin + round(
                     self.dim.width
                     * (math.log(d.freq) - math.log(self.fstart))
@@ -442,12 +444,14 @@ class FrequencyChart(Chart):
         if a0.buttons() == Qt.MouseButton.RightButton:
             a0.ignore()
             return
+        x = a0.position().x()
+        y = a0.position().y()
         if a0.buttons() == Qt.MouseButton.MiddleButton:
             # Drag the display
             a0.accept()
             if self.dragbox.move_x != -1 and self.dragbox.move_y != -1:
-                dx = self.dragbox.move_x - a0.position().x()
-                dy = self.dragbox.move_y - a0.position().y()
+                dx = self.dragbox.move_x - x
+                dy = self.dragbox.move_y - y
                 self.zoomTo(
                     self.leftMargin + dx,
                     self.topMargin + dy,
@@ -455,14 +459,14 @@ class FrequencyChart(Chart):
                     self.topMargin + self.dim.height + dy,
                 )
 
-            self.dragbox.move_x = a0.position().x()
-            self.dragbox.move_y = a0.position().y()
+            self.dragbox.move_x = x
+            self.dragbox.move_y = y
             return
         if a0.modifiers() == Qt.KeyboardModifier.ControlModifier:
             # Dragging a box
             if not self.dragbox.state:
-                self.dragbox.pos_start = (a0.position().x(), a0.position().y())
-            self.dragbox.pos = (a0.position().x(), a0.position().y())
+                self.dragbox.pos_start = ChartPosition(x, y)
+            self.dragbox.pos = ChartPosition(x, y)
             self.update()
             a0.accept()
             return
@@ -511,16 +515,6 @@ class FrequencyChart(Chart):
                 "Data outside frequency span",
             )
 
-    def drawDragbog(self, qp: QtGui.QPainter):
-        dashed_pen = QtGui.QPen(Chart.color.foreground, 1, Qt.PenStyle.DashLine)
-        qp.setPen(dashed_pen)
-        top_left = QtCore.QPoint(
-            self.dragbox.pos_start[0], self.dragbox.pos_start[1]
-        )
-        bottom_right = QtCore.QPoint(self.dragbox.pos[0], self.dragbox.pos[1])
-        rect = QtCore.QRect(top_left, bottom_right)
-        qp.drawRect(rect)
-
     def drawChart(self, qp: QtGui.QPainter):
         qp.setPen(QtGui.QPen(Chart.color.text))
         headline = self.name
@@ -562,7 +556,7 @@ class FrequencyChart(Chart):
         self.maxValue = max_value
         self.minValue = min_value
         span = max_value - min_value
-        if span == 0:
+        if span == 0.0:
             logger.info(
                 "Span is zero for %s-Chart, setting to a small value.",
                 self.name,
@@ -628,10 +622,7 @@ class FrequencyChart(Chart):
         ticks = math.floor(self.dim.width / 100)
 
         # try to adapt format to span
-        if (
-            self.fstart == 0
-            or int(fspan / ticks / self.fstart * 10000) > 2  # noqa: PLR2004
-        ):
+        if self.fstart == 0 or int(fspan / ticks / self.fstart * 10000) > 2:
             my_format_frequency = format_frequency_chart
         else:
             my_format_frequency = format_frequency_chart_2
@@ -807,6 +798,7 @@ class FrequencyChart(Chart):
         return new_chart
 
     def keyPressEvent(self, a0: QtGui.QKeyEvent) -> None:
+        logger.debug("Key pressed: %s", a0.key())
         m = self.getActiveMarker()
         if m is not None and a0.modifiers() == Qt.KeyboardModifier.NoModifier:
             if a0.key() in [Qt.Key.Key_Down, Qt.Key.Key_Left]:

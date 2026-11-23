@@ -19,11 +19,11 @@
 import logging
 import math
 
-from PyQt6 import QtGui
+from PySide6 import QtGui
 
-from NanoVNASaver.Charts.Chart import Chart
-from NanoVNASaver.Charts.Frequency import FrequencyChart
-from NanoVNASaver.RFTools import Datapoint
+from ..RFTools import Datapoint
+from .Chart import Chart
+from .Frequency import FrequencyChart
 
 logger = logging.getLogger(__name__)
 
@@ -51,8 +51,8 @@ class MagnitudeChart(FrequencyChart):
             self.drawBands(qp, self.fstart, self.fstop)
 
         if self.fixedValues:
-            max_value = self.maxDisplayValue
-            min_value = self.minDisplayValue
+            max_value = float(self.maxDisplayValue)
+            min_value = float(self.minDisplayValue)
         else:
             # Find scaling
             min_value = 100

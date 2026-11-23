@@ -18,18 +18,22 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 import math
+from typing import TYPE_CHECKING
 
-from PyQt6 import QtWidgets
+from PySide6 import QtWidgets as QtW
 
-import NanoVNASaver.AnalyticTools as At
-from NanoVNASaver.Analysis.Base import CUTOFF_VALS, MIN_CUTOFF_DAMPING, Analysis
-from NanoVNASaver.Formatting import format_frequency
+from .. import AnalyticTools as At
+from ..Formatting import format_frequency
+from .Base import CUTOFF_VALS, MIN_CUTOFF_DAMPING, Analysis
+
+if TYPE_CHECKING:
+    from ..NanoVNASaver.NanoVNASaver import NanoVNASaver as vna_app
 
 logger = logging.getLogger(__name__)
 
 
 class BandPassAnalysis(Analysis):
-    def __init__(self, app) -> None:
+    def __init__(self, app: "vna_app") -> None:
         super().__init__(app)
 
         for label in (
@@ -42,37 +46,37 @@ class BandPassAnalysis(Analysis):
             "span_6.0dB",
             "q_factor",
         ):
-            self.label[label] = QtWidgets.QLabel()
+            self.label[label] = QtW.QLabel()
         for attn in CUTOFF_VALS:
-            self.label[f"{attn:.1f}dB_l"] = QtWidgets.QLabel()
-            self.label[f"{attn:.1f}dB_r"] = QtWidgets.QLabel()
+            self.label[f"{attn:.1f}dB_l"] = QtW.QLabel()
+            self.label[f"{attn:.1f}dB_r"] = QtW.QLabel()
 
         layout = self.layout
         layout.addRow(self.label["titel"])
         layout.addRow(
-            QtWidgets.QLabel(
+            QtW.QLabel(
                 f"Please place {self.app.markers[0].name}"
                 f" in the filter passband."
             )
         )
         layout.addRow("Result:", self.label["result"])
-        layout.addRow(QtWidgets.QLabel(""))
+        layout.addRow(QtW.QLabel(""))
 
         layout.addRow("Center frequency:", self.label["freq_center"])
         layout.addRow("Bandwidth (-3 dB):", self.label["span_3.0dB"])
         layout.addRow("Quality factor:", self.label["q_factor"])
         layout.addRow("Bandwidth (-6 dB):", self.label["span_6.0dB"])
-        layout.addRow(QtWidgets.QLabel(""))
+        layout.addRow(QtW.QLabel(""))
 
-        layout.addRow(QtWidgets.QLabel("Lower side:"))
+        layout.addRow(QtW.QLabel("Lower side:"))
         layout.addRow("Cutoff frequency:", self.label["3.0dB_l"])
         layout.addRow("-6 dB point:", self.label["6.0dB_l"])
         layout.addRow("-60 dB point:", self.label["60.0dB_l"])
         layout.addRow("Roll-off:", self.label["octave_l"])
         layout.addRow("Roll-off:", self.label["decade_l"])
-        layout.addRow(QtWidgets.QLabel(""))
+        layout.addRow(QtW.QLabel(""))
 
-        layout.addRow(QtWidgets.QLabel("Upper side:"))
+        layout.addRow(QtW.QLabel("Upper side:"))
         layout.addRow("Cutoff frequency:", self.label["3.0dB_r"])
         layout.addRow("-6 dB point:", self.label["6.0dB_r"])
         layout.addRow("-60 dB point:", self.label["60.0dB_r"])
@@ -129,7 +133,7 @@ class BandPassAnalysis(Analysis):
 
         for label, val in cutoff_freq.items():
             self.label[label].setText(
-                f"{format_frequency(val)}" f" ({cutoff_gain[label]:.1f} dB)"
+                f"{format_frequency(val)} ({cutoff_gain[label]:.1f} dB)"
             )
         for label in ("freq_center", "span_3.0dB", "span_6.0dB"):
             self.label[label].setText(format_frequency(result[label]))

@@ -1,0 +1,1 @@
+socat -d -d /dev/cu.usbmodem4001,ispeed=115200,ospeed=115200,raw,echo=0 TCP-LISTEN:2000,reuseaddr,fork

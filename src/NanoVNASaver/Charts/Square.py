@@ -19,10 +19,10 @@
 import logging
 import math
 
-from PyQt6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtGui, QtWidgets
 
-from NanoVNASaver.Charts.Chart import Chart
-from NanoVNASaver.RFTools import Datapoint
+from ..RFTools import Datapoint
+from .Chart import Chart
 
 logger = logging.getLogger(__name__)
 

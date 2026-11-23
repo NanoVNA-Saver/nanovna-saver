@@ -18,12 +18,11 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import logging
 
-from PyQt6 import QtGui
+from PySide6 import QtGui
 
-from NanoVNASaver.Charts.Chart import Chart
-from NanoVNASaver.Formatting import format_frequency_chart
-from NanoVNASaver.RFTools import Datapoint
-
+from ..Formatting import format_frequency_chart
+from ..RFTools import Datapoint
+from .Chart import Chart
 from .RI import RealImaginaryChart
 
 logger = logging.getLogger(__name__)
