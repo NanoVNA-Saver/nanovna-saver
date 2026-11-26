@@ -398,7 +398,10 @@ class TDRChart(Chart):
         delta_length = max_length - min_length
 
         step_length = delta_length / desired_steps
+        if step_length <= 0:
+            return
         decimals = math.ceil(abs(math.log10(step_length)))
+
         step_length_rounded = math.ceil(step_length * (10**decimals)) / (
             10**decimals
         )

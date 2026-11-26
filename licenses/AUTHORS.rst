@@ -31,6 +31,7 @@ Contributors
 * Mauro <mauro@lenny.station>
 * Maxim Medvedev <redrathnure@gmail.com>
 * mihtjel <mihtjel@gmail.com>
+* Mike Brown <mb2452@gmail.com>
 * Mike4U <9957897+Mike4U@users.noreply.github.com>
 * mss <marcspeck@gmail.com>
 * Name <nicolas@debian.org>
