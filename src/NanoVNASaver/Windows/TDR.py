@@ -227,6 +227,8 @@ class TDRWindow(QtWidgets.QWidget):
             v = float(self.tdr_velocity_input.text())
         except ValueError:
             return
+        if v <= 0:          # incomplete entry such as "0" or "0."
+            return
 
         if len(self.app.data.s11) < MIN_DATA_LENGTH:
             return
